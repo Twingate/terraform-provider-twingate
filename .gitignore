@@ -4,3 +4,4 @@ releases/
 terraform-provider-sops
 pkg/
 .vscode/
+vendor/
