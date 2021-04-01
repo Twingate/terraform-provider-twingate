@@ -1,0 +1,22 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.16
+    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
+    steps:
+      - checkout
+      - run:
+          name: Tests
+          command: make test
+      - run:
+          name: Build
+          command: make build
+
+workflows:
+  version: 2
+  build:
+   jobs:
+      - build
+        
