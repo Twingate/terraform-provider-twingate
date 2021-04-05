@@ -20,4 +20,4 @@ fmt:
 	gofmt -w $(GOFMT_FILES)
 
 lint:
-	scripts/golintsec.sh
+	./scripts/golintsec.sh

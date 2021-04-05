@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 gofmt_files=$(gofmt -l `find . -name '*.go' | grep -v vendor`)
 if [[ -n ${gofmt_files} ]]; then

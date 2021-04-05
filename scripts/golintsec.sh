@@ -1,7 +1,7 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 LINTER_CONFIG='./golangci.yml'
-PACKAGES=('./' './twingate')
+PACKAGES=('.' './twingate')
 
 if [ ! -f "${GOPATH}"/bin/golangci-lint ]; then
     # install last golangci-lint
