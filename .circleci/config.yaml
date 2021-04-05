@@ -8,6 +8,12 @@ jobs:
     steps:
       - checkout
       - run:
+          name: gofmt check
+          command: ./scripts/gofmt.sh
+      - run:
+          name: Linter and gosec checks
+          command: make lint
+      - run:
           name: Tests
           command: make test
       - run:
