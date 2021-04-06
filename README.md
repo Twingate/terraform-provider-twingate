@@ -14,12 +14,18 @@ Requirements
 -	[Terraform](https://www.terraform.io/downloads.html) 0.12.x
 -	[Go](https://golang.org/doc/install) 1.16.2 (to build the provider plugin)
 
-Building The Provider
----------------------
+## Build: 
 
-Using the provider
-----------------------
-## Fill in for each provider
+Run the following command to build the provider
 
-Developing the Provider
----------------------------
+```shell
+make build
+```
+
+## Install:
+
+First, build and install the provider.
+
+```shell
+make install
+```
