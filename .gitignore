@@ -1,0 +1,8 @@
+bin/
+binaries/
+releases/
+pkg/
+.vscode/
+vendor/
+.idea/
+terraform-provider-twingate

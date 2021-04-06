@@ -1,0 +1,58 @@
+version: 2.1
+
+jobs:
+  test:
+    environment:
+      TEST_RESULTS: /tmp/test-results
+    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
+    docker:
+      - image: circleci/golang:1.16
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+
+      - run:
+          name: Run tests
+          command: |
+            make test
+
+      - run:
+          name: Publish coverage report
+          command: ./scripts/coveralls.sh
+
+      # Store Artifacts
+      - store_artifacts:
+          path: /tmp/test-results/coverage.html
+          destination: coverage.html
+
+      - store_test_results:
+          path: /tmp/test-results
+
+      - run:
+          name: Run Lint
+          command: |
+            make lint
+
+  build:
+
+    docker:
+      - image: circleci/golang:1.16
+
+    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
+
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: make build
+
+workflows:
+  version: 2
+  build:
+   jobs:
+     - test
+     - build
+        
