@@ -6,7 +6,7 @@ set -o nounset
 export CGO_ENABLED=0
 export GO111MODULE=on
 
-PACKAGES=('./cmd' './internal')
+PACKAGES=('./twingate')
 
 echo -n "Checking gofmt on ${PACKAGES[*]}: "
 ERRS=$(find ${PACKAGES[*]} -type f -name \*.go | xargs gofmt -l 2>&1 || true)
