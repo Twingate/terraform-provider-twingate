@@ -23,4 +23,4 @@ fmt:
 	gofmt -w $(GOFMT_FILES)
 
 lint:
-	./ops/golintsec.sh
+	./ops/lint.sh
