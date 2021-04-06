@@ -1,8 +1,8 @@
 bin/
 binaries/
 releases/
-terraform-provider-sops
 pkg/
 .vscode/
 vendor/
 .idea/
+terraform-provider-twingate
