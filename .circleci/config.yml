@@ -21,7 +21,7 @@ jobs:
 
       - run:
           name: Publish coverage report
-          command: ./scripts/coveralls.sh
+          command: ./ops/coveralls.sh
 
       # Store Artifacts
       - store_artifacts:
