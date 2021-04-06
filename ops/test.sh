@@ -6,7 +6,7 @@ set -o nounset
 export CGO_ENABLED=1
 export GO111MODULE=on
 
-PACKAGE_NAMES=$(go list ./cmd/relay/... ./internal/...)
+PACKAGE_NAMES=$(go list ./twingate/...)
 TEST_RESULTS=${TEST_RESULTS:-"./test/out"}
 
 mkdir -p "${TEST_RESULTS}"

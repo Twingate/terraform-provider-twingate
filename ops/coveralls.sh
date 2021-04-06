@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 export GO111MODULE=on
 
 TEST_RESULTS=${TEST_RESULTS:-"./test/out"}
