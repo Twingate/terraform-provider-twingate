@@ -21,7 +21,7 @@ fi
 echo "PASS"
 echo
 
-LINTER_CONFIG='./ops/golangci.yml'
+LINTER_CONFIG='./scripts/golangci.yml'
 if [ ! -f "${GOPATH}"/bin/golangci-lint ]; then
     # install last golangci-lint
     curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin latest

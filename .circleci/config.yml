@@ -20,8 +20,12 @@ jobs:
             make test
 
       - run:
+          name: Run Acc tests
+          command: |
+            make testacc
+      - run:
           name: Publish coverage report
-          command: ./ops/coveralls.sh
+          command: ./scripts/coveralls.sh
 
       # Store Artifacts
       - store_artifacts:

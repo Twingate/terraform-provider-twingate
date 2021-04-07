@@ -1,7 +1,7 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=hashicorp.com
 NAMESPACE=twingate
-NAME=twingate
+PKG_NAME=twingate
 BINARY=terraform-provider-${NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
@@ -26,8 +26,8 @@ release:
 	GOOS=windows GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_windows_amd64
 
 install: build
-	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
-	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${PKG_NAME}/${VERSION}/${OS_ARCH}
+	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
 test-deps: ## Install test dependencies
 	GO111MODULE=off go get gotest.tools/gotestsum
@@ -37,7 +37,11 @@ test: test-deps  ## Run tests
 	ops/test.sh .
 
 fmt:
-	gofmt -w $(GOFMT_FILES)
+	@echo "==> Fixing source code with gofmt..."
+	gofmt -w -s ./$(PKG_NAME)
 
 lint:
-	./ops/lint.sh
+	./scripts/lint.sh
+
+testacc:
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
