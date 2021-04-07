@@ -34,7 +34,7 @@ test-deps: ## Install test dependencies
 
 test: test-deps  ## Run tests
 	@echo "running all tests for all packages"
-	ops/test.sh .
+	./scripts/test.sh .
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
