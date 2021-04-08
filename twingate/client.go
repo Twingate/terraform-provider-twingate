@@ -2,11 +2,17 @@ package twingate
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
+)
+
+const (
+	TimeOut = 10 * time.Second
 )
 
 type Client struct {
@@ -18,7 +24,7 @@ type Client struct {
 
 func NewClient(tenant, token, url *string) (*Client, error) {
 	c := Client{
-		HTTPClient: &http.Client{Timeout: 10 * time.Second},
+		HTTPClient: &http.Client{Timeout: TimeOut},
 		ServerURL:  fmt.Sprintf("https:%s.%s", *tenant, *url),
 	}
 
@@ -36,7 +42,7 @@ func NewClient(tenant, token, url *string) (*Client, error) {
 		}
 		jsonValue, _ := json.Marshal(jsonData)
 
-		req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/graphql/", c.ServerURL), bytes.NewBuffer(jsonValue))
+		req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/api/graphql/", c.ServerURL), bytes.NewBuffer(jsonValue))
 
 		if err != nil {
 			return nil, err
@@ -47,10 +53,15 @@ func NewClient(tenant, token, url *string) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	return &c, nil
+}
+
+func Check(f func() error) {
+	if err := f(); err != nil {
+		log.Printf("[ERROR] Error Closing: %s", err)
+	}
 }
 
 func (c *Client) doRequest(req *http.Request) ([]byte, error) {
@@ -60,15 +71,14 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
-
+	defer Check(res.Body.Close)
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
+		return nil, fmt.Errorf("status: %d, body: %s , %w", res.StatusCode, body, err)
 	}
 
 	return body, err

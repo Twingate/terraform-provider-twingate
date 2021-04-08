@@ -117,6 +117,8 @@ linters:
     - gofumpt
     - exhaustivestruct
     - interfacer
+    - wrapcheck
+    - forcetypeassert
   disable-all: false
   #presets:
   #  - bugs

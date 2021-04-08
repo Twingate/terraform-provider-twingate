@@ -64,6 +64,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			Summary:  "Unable to create Twingate client",
 			Detail:   "Unable to create anonymous Twingate client , token and tenant have to be provided",
 		})
+
 		return nil, diags
 	}
 
