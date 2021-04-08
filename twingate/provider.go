@@ -12,13 +12,13 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"token": {
 				Type:        schema.TypeString,
-				Optional:    false,
+				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_TOKEN", nil),
 			},
 			"tenant": {
 				Type:        schema.TypeString,
-				Optional:    false,
+				Optional:    true,
 				Sensitive:   false,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_TENANT", nil),
 			},

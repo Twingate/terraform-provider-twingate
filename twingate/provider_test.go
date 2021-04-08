@@ -7,6 +7,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+var twingateEnvVars = []string{
+	"TWINGATE_TOKEN",
+	"TWINGATE_TENANT",
+}
+
 var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
 
