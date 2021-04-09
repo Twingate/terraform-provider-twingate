@@ -67,7 +67,6 @@ func dataSourceIngredientsRead(ctx context.Context, d *schema.ResourceData, m in
 	for _, group := range queryGroups.Path("data.groups.edges").Children() {
 		name := strings.Trim(group.Path("node.name").String(), "\"")
 		id := strings.Trim(group.Path("node.id").String(), "\"")
-		log.Printf("[INFO] iterating over %s with ID %s", name, id)
 		if groupName == name {
 			_ = d.Set("name", name)
 			d.SetId(id)
