@@ -1,8 +1,8 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
-HOSTNAME=hashicorp.com
+HOSTNAME=registry.terraform.io
 NAMESPACE=twingate
 PKG_NAME=twingate
-BINARY=terraform-provider-${NAME}
+BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
 

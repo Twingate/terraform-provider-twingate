@@ -25,34 +25,29 @@ type Client struct {
 func NewClient(tenant, token, url *string) (*Client, error) {
 	c := Client{
 		HTTPClient: &http.Client{Timeout: TimeOut},
-		ServerURL:  fmt.Sprintf("https:%s.%s", *tenant, *url),
+		ServerURL:  fmt.Sprintf("https://%s.%s", *tenant, *url),
+		Token:      *token,
 	}
-
-	if (token != nil) && (tenant != nil) {
-		jsonData := map[string]string{
-			"query": `
-            { 
-                remoteNetworks {
-                    edges {
-						id
-					}
-                }
-            }
+	log.Printf("[INFO] Creating Server URL %s", c.ServerURL)
+	jsonData := map[string]string{
+		"query": `
+			{
+			  remoteNetworks {
+				edges {
+				  node {
+					id
+				  }
+				}
+			  }
+			}
         `,
-		}
-		jsonValue, _ := json.Marshal(jsonData)
+	}
+	body, err := c.doGraphqlRequest(jsonData)
+	_ = body
+	if err != nil {
+		log.Printf("[ERROR] Cannot initialize Grqhql Server %s", jsonData)
 
-		req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/api/graphql/", c.ServerURL), bytes.NewBuffer(jsonValue))
-
-		if err != nil {
-			return nil, err
-		}
-
-		body, err := c.doRequest(req)
-		_ = body
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	return &c, nil
@@ -66,7 +61,7 @@ func Check(f func() error) {
 
 func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("X-API-KEY", c.Token)
-
+	req.Header.Set("content-type", "application/json")
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -79,6 +74,25 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("status: %d, body: %s , %w", res.StatusCode, body, err)
+	}
+
+	return body, err
+}
+
+func (c *Client) doGraphqlRequest(query map[string]string) ([]byte, error) {
+	jsonValue, _ := json.Marshal(query)
+
+	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/api/graphql/", c.ServerURL), bytes.NewBuffer(jsonValue))
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.doRequest(req)
+	_ = body
+	if err != nil {
+		log.Printf("[ERROR] Cant execute request %s", err)
+
+		return nil, err
 	}
 
 	return body, err

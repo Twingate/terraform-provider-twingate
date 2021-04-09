@@ -4,6 +4,7 @@ pkg/
 .idea/
 terraform-provider-twingate
 
+
 .DS_Store
 bin
 
@@ -64,3 +65,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 terraform
+
+# Ignore terraform lock files
+.terraform.lock.hcl
+*.tfvars

@@ -29,8 +29,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_URL", "twingate.com"),
 			},
 		},
-		ResourcesMap:         map[string]*schema.Resource{},
-		DataSourcesMap:       map[string]*schema.Resource{},
+		ResourcesMap: map[string]*schema.Resource{
+			"twingate_remote_network": resourceRemoteNetwork(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"twingate_group": dataSourceGroup(),
+		},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
@@ -39,7 +43,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	token := d.Get("token").(string)
 	tenant := d.Get("tenant").(string)
 	url := d.Get("url").(string)
-
 	var diags diag.Diagnostics
 
 	if (token != "") && (tenant != "") {
