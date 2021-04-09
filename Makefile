@@ -45,3 +45,9 @@ lint:
 
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+
+docs: tools
+	tfplugindocs generate
+
+tools:
+	GO111MODULE=on go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
