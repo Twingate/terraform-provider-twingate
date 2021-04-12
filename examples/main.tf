@@ -2,7 +2,7 @@ variable "token" {
   type = string
   sensitive = true
 }
-variable "tenant" {
+variable "network" {
   type = string
 }
 
@@ -12,7 +12,7 @@ variable "url" {
 
 provider "twingate" {
   token = var.token
-  tenant = var.tenant
+  network = var.network
   url = var.url
 }
 

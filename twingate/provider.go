@@ -16,11 +16,11 @@ func Provider() *schema.Provider {
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_TOKEN", nil),
 			},
-			"tenant": {
+			"network": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   false,
-				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_TENANT", nil),
+				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_NETWORK", nil),
 			},
 			"url": {
 				Type:        schema.TypeString,
@@ -41,17 +41,17 @@ func Provider() *schema.Provider {
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	token := d.Get("token").(string)
-	tenant := d.Get("tenant").(string)
+	network := d.Get("network").(string)
 	url := d.Get("url").(string)
 	var diags diag.Diagnostics
 
-	if (token != "") && (tenant != "") {
-		c, err := NewClient(&tenant, &token, &url)
+	if (token != "") && (network != "") {
+		c, err := NewClient(&network, &token, &url)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to create Twingate client",
-				Detail:   "Unable to authenticate with provided token / tenant",
+				Detail:   "Unable to authenticate with provided token / network",
 			})
 
 			return nil, diags
@@ -65,7 +65,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create Twingate client",
-			Detail:   "Unable to create anonymous Twingate client , token and tenant have to be provided",
+			Detail:   "Unable to create anonymous Twingate client , token and network have to be provided",
 		})
 
 		return nil, diags

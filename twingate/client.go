@@ -19,15 +19,15 @@ const (
 
 type Client struct {
 	Token      string
-	Tenant     string
+	network    string
 	ServerURL  string
 	HTTPClient *http.Client
 }
 
-func NewClient(tenant, token, url *string) (*Client, error) {
+func NewClient(network, token, url *string) (*Client, error) {
 	c := Client{
 		HTTPClient: &http.Client{Timeout: TimeOut},
-		ServerURL:  fmt.Sprintf("https://%s.%s", *tenant, *url),
+		ServerURL:  fmt.Sprintf("https://%s.%s", *network, *url),
 		Token:      *token,
 	}
 	log.Printf("[INFO] Creating Server URL %s", c.ServerURL)
