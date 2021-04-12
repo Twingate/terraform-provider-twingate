@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/Jeffail/gabs/v2"
 )
 
 const (
@@ -42,8 +44,8 @@ func NewClient(tenant, token, url *string) (*Client, error) {
 			}
         `,
 	}
-	body, err := c.doGraphqlRequest(jsonData)
-	_ = body
+	parsedBody, err := c.doGraphqlRequest(jsonData)
+	_ = parsedBody
 	if err != nil {
 		log.Printf("[ERROR] Cannot initialize Grqhql Server %s", jsonData)
 
@@ -79,7 +81,7 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	return body, err
 }
 
-func (c *Client) doGraphqlRequest(query map[string]string) ([]byte, error) {
+func (c *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
 	jsonValue, _ := json.Marshal(query)
 
 	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/api/graphql/", c.ServerURL), bytes.NewBuffer(jsonValue))
@@ -94,6 +96,10 @@ func (c *Client) doGraphqlRequest(query map[string]string) ([]byte, error) {
 
 		return nil, err
 	}
-
-	return body, err
+	parsedResponse, err := gabs.ParseJSON(body)
+	if err != nil {
+		log.Printf("[ERROR] Error parsing response %s", string(body))
+		return nil, err
+	}
+	return parsedResponse, err
 }

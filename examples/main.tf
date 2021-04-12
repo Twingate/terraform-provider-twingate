@@ -18,8 +18,13 @@ data "twingate_group" "test" {
 
 resource "twingate_remote_network" "test_remote_network" {
   name = "hello_from_terraform"
+  is_active = true
 }
 
 output "test" {
   value = data.twingate_group.test.name
+}
+
+output "is_active" {
+  value = twingate_remote_network.test_remote_network.is_active
 }

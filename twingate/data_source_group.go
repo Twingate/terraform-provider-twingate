@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Jeffail/gabs/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -50,17 +49,8 @@ func dataSourceIngredientsRead(ctx context.Context, d *schema.ResourceData, m in
         `,
 	}
 
-	body, err := c.doGraphqlRequest(query)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to fetch groups",
-			Detail:   "Unable to fetch groups",
-		})
+	queryGroups, err := c.doGraphqlRequest(query)
 
-		return diags
-	}
-	queryGroups, err := gabs.ParseJSON(body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

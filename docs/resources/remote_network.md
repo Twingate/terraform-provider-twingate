@@ -22,5 +22,13 @@ description: |-
 ### Read-Only
 
 - **id** (String) The ID of this resource.
+- **is_active** (Boolean)
 
 
+## Import
+
+Remote networks can be imported using their id.
+
+```
+$ terraform import remote_network.test "UmVtb3RlTmV0d29yazoyNjA2OA=="
+```
