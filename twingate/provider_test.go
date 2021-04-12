@@ -9,7 +9,7 @@ import (
 
 var twingateEnvVars = []string{
 	"TWINGATE_TOKEN",
-	"TWINGATE_TENANT",
+	"TWINGATE_NETWORK",
 }
 
 var testAccProviders map[string]*schema.Provider
@@ -36,7 +36,7 @@ func testAccPreCheck(t *testing.T) {
 	if err := os.Getenv("TWINGATE_TOKEN"); err == "" {
 		t.Fatal("TWINGATE_TOKEN must be set for acceptance tests")
 	}
-	if err := os.Getenv("TWINGATE_TENANT"); err == "" {
-		t.Fatal("TWINGATE_TENANT must be set for acceptance tests")
+	if err := os.Getenv("TWINGATE_NETWORK"); err == "" {
+		t.Fatal("TWINGATE_NETWORK must be set for acceptance tests")
 	}
 }
