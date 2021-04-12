@@ -6,10 +6,14 @@ variable "tenant" {
   type = string
 }
 
+variable "url" {
+  type = string
+}
+
 provider "twingate" {
   token = var.token
   tenant = var.tenant
-  url = "dev.opstg.com"
+  url = var.url
 }
 
 data "twingate_group" "test" {
