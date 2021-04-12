@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -75,7 +74,7 @@ func resourceRemoteNetworkCreate(ctx context.Context, d *schema.ResourceData, m 
 
 		return diags
 	}
-	d.SetId(strings.Trim(mutationRemoteNetwork.Path("data.remoteNetworkCreate.entity.id").String(), "\""))
+	d.SetId(mutationRemoteNetwork.Path("data.remoteNetworkCreate.entity.id").Data().(string))
 	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, d.Id())
 	resourceRemoteNetworkRead(ctx, d, m)
 
@@ -200,7 +199,7 @@ func resourceRemoteNetworkRead(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	err = d.Set("name", strings.Trim(remoteNetwork.Path("name").String(), "\""))
+	err = d.Set("name", remoteNetwork.Path("name").Data().(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}

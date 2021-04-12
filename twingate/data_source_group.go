@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -55,8 +54,8 @@ func dataSourceIngredientsRead(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 	for _, group := range queryGroups.Path("data.groups.edges").Children() {
-		name := strings.Trim(group.Path("node.name").String(), "\"")
-		id := strings.Trim(group.Path("node.id").String(), "\"")
+		name := group.Path("node.name").Data().(string)
+		id := group.Path("node.id").Data().(string)
 		if groupName == name {
 			_ = d.Set("name", name)
 			d.SetId(id)
