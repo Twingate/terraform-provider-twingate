@@ -87,12 +87,11 @@ func resourceRemoteNetworkUpdate(ctx context.Context, d *schema.ResourceData, m 
 
 	var diags diag.Diagnostics
 
-	remoteNetworkId := d.Id()
 	remoteNetworkName := d.Get("name").(string)
 	isActive := d.Get("is_active").(bool)
 
 	if d.HasChanges("is_active", "name") {
-
+		remoteNetworkId := d.Id()
 		log.Printf("[INFO] Updating remote network id %s", remoteNetworkId)
 		mutation := map[string]string{
 			"query": fmt.Sprintf(`
@@ -193,10 +192,18 @@ func resourceRemoteNetworkRead(ctx context.Context, d *schema.ResourceData, m in
 			Summary:  "Unable to read remote network",
 			Detail:   fmt.Sprintf("Unable to read remote network with id \"%s\"", remoteNetworkId),
 		})
+
 		return diags
 	}
-	d.Set("is_active", remoteNetwork.Path("isActive").Data().(bool))
-	d.Set("name", strings.Trim(remoteNetwork.Path("name").String(), "\""))
+
+	err = d.Set("is_active", remoteNetwork.Path("isActive").Data().(bool))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	err = d.Set("name", strings.Trim(remoteNetwork.Path("name").String(), "\""))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	return diags
 }

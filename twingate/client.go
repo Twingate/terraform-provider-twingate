@@ -99,7 +99,9 @@ func (c *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, err
 	parsedResponse, err := gabs.ParseJSON(body)
 	if err != nil {
 		log.Printf("[ERROR] Error parsing response %s", string(body))
+
 		return nil, err
 	}
+
 	return parsedResponse, err
 }
