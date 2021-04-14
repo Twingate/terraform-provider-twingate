@@ -10,11 +10,11 @@ default: build
 
 .PHONY: docs
 
-build: fmtcheck vendor
-	go build -o ${BINARY} -mod vendor
-
 vendor:
 	go mod vendor
+
+build: vendor fmtcheck
+	go build -o ${BINARY}
 
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
@@ -40,7 +40,7 @@ lint: tools
 	@golangci-lint run ./$(PKG_NAME)
 
 docs: tools
-	tfplugindocs generate
+	tfplugindocs
 
 tools:
 	@echo "==> installing required toolilintng..."
@@ -72,4 +72,4 @@ endif
 docscheck:
 	@sh -c "'$(CURDIR)/scripts/docscheck.sh'"
 
-.PHONY: build test testacc vet fmt fmtcheck lint tools errcheck test-compile website website-test docscheck generate
+.PHONY: build test testacc vet fmt fmtcheck lint tools errcheck test-compile website website-test docscheck
