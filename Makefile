@@ -10,17 +10,17 @@ default: build
 
 .PHONY: docs
 
-build: fmtcheck generate
+build: fmtcheck
 	go build -o ${BINARY}
 
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
-test: fmtcheck generate
+test: fmtcheck
 	./scripts/test.sh
 
-testacc: fmtcheck generate
+testacc: fmtcheck
 	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 10m
 
 fmt:
@@ -43,9 +43,6 @@ tools:
 	@echo "==> installing required toolilintng..."
 	go install github.com/client9/misspell/cmd/misspell
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint
-
-generate:
-	go generate  ./...
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
