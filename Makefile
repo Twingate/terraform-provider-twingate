@@ -45,8 +45,8 @@ docs: tools
 tools:
 	@echo "==> installing required toolilintng..."
 	go install
-	#go install github.com/client9/misspell/cmd/misspell
-	#go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	go install github.com/client9/misspell/cmd/misspell@v0.3.4
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0
 	go install gotest.tools/gotestsum@v1.6.3
 
 test-compile:
