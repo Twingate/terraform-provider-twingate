@@ -28,7 +28,6 @@ func dataSourceGroup() *schema.Resource {
 func dataSourceIngredientsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*Client)
 
-	// // Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
 	groupName := d.Get("name").(string)
