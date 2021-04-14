@@ -44,8 +44,10 @@ docs: tools
 
 tools:
 	@echo "==> installing required toolilintng..."
+	go install
 	go install github.com/client9/misspell/cmd/misspell
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	go install gotest.tools/gotestsum@v1.6.3
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
