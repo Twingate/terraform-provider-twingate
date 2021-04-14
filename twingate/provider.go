@@ -52,7 +52,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to create Twingate client",
-				Detail:   fmt.Sprintf("Unable to authenticate with provided api token and network %s", network),
+				Detail:   fmt.Sprintf("Unable to authenticate with provided api token and network %s : %s", network, err),
 			})
 
 			return nil, diags
@@ -66,7 +66,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create Twingate client",
-			Detail:   "Unable to create anonymous Twingate client , token and network have to be provided",
+			Detail:   fmt.Sprintf("Unable to create anonymous Twingate client , token and network have to be provided : %s", err),
 		})
 
 		return nil, diags

@@ -32,7 +32,15 @@ func NewClient(network, apiToken, url *string) (*Client, error) {
 		ApiServerURL: fmt.Sprintf("%s/api/graphql/", serverUrl),
 		ApiToken:     *apiToken,
 	}
-	log.Printf("[INFO] Creating Server URL %s", client.ServerURL)
+	log.Printf("[INFO] Using Server URL %s", client.ServerURL)
+
+	if err := client.ping(); err != nil {
+		return nil, err
+	}
+
+	return &client, nil
+}
+func (client *Client) ping() error {
 	jsonData := map[string]string{
 		"query": `
 			{
@@ -49,14 +57,14 @@ func NewClient(network, apiToken, url *string) (*Client, error) {
 	parsedBody, err := client.doGraphqlRequest(jsonData)
 	_ = parsedBody
 	if err != nil {
-		log.Printf("[ERROR] Cannot initialize Graphql API Server %s", jsonData)
+		log.Printf("[ERROR] Cannot reach Graphql API Server %s", jsonData)
 
-		return nil, err
+		return err
 	}
+	log.Printf("[INFO] Graphql API Server at URL %s reachable", client.ApiServerURL)
 
-	return &client, nil
+	return nil
 }
-
 func Check(f func() error) {
 	if err := f(); err != nil {
 		log.Printf("[ERROR] Error Closing: %s", err)
