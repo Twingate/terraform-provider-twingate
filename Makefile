@@ -10,8 +10,11 @@ default: build
 
 .PHONY: docs
 
-build: fmtcheck
-	go build -o ${BINARY}
+build: fmtcheck vendor
+	go build -o ${BINARY} -mod vendor
+
+vendor:
+	go mod vendor
 
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
