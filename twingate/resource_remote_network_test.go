@@ -11,7 +11,9 @@ import (
 
 func TestAccTwingateRemoteNetwork_basic(t *testing.T) {
 
-	resourceName := acctest.RandomWithPrefix("tf-acc")
+	remoteNetworkNameBefore := acctest.RandomWithPrefix("tf-acc")
+	remoteNetworkNameAfter := acctest.RandomWithPrefix("tf-acc")
+	resourceName := "twingate_remote_network.test"
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -19,9 +21,17 @@ func TestAccTwingateRemoteNetwork_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateRemoteNetwork(resourceName),
+				Config: testTwingateRemoteNetwork(remoteNetworkNameBefore),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateRemoteNetworkExists("twingate_remote_network.test"),
+					testAccCheckTwingateRemoteNetworkExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", remoteNetworkNameBefore),
+				),
+			},
+			{
+				Config: testTwingateRemoteNetwork(remoteNetworkNameAfter),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateRemoteNetworkExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", remoteNetworkNameAfter),
 				),
 			},
 		},
@@ -61,11 +71,11 @@ func testAccCheckTwingateRemoteNetworkExists(resourceName string) resource.TestC
 		rs, ok := s.RootModule().Resources[resourceName]
 
 		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
+			return fmt.Errorf("Not found: %s ", resourceName)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No RemoteNetworkID set")
+			return fmt.Errorf("No RemoteNetworkID set ")
 		}
 
 		return nil
