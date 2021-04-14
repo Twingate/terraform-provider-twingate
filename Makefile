@@ -32,7 +32,7 @@ fmtcheck:
 	@echo "==> Checking source code against gofmt..."
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
-lint:
+lint: tools
 	@echo "==> Checking source code against linters..."
 	@golangci-lint run ./$(PKG_NAME)
 
