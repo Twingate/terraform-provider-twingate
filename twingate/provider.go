@@ -47,7 +47,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {
-		c, err := NewClient(&network, &apiToken, &url)
+		client := NewClient(&network, &apiToken, &url)
+
+		err := client.ping()
+
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -58,19 +61,14 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			return nil, diags
 		}
 
-		return c, diags
+		return client, diags
 	}
 
-	c, err := NewClient(nil, nil, &url)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create Twingate client",
-			Detail:   fmt.Sprintf("Unable to create anonymous Twingate client , token and network have to be provided : %s", err),
-		})
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  "Unable to create Twingate client",
+		Detail:   "Unable to create anonymous Twingate client , token and network have to be provided ",
+	})
 
-		return nil, diags
-	}
-
-	return c, diags
+	return nil, diags
 }

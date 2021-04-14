@@ -17,14 +17,18 @@ const (
 	TimeOut = 10 * time.Second
 )
 
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type Client struct {
 	ApiToken     string
 	ServerURL    string
 	ApiServerURL string
-	HTTPClient   *http.Client
+	HTTPClient   HTTPClient
 }
 
-func NewClient(network, apiToken, url *string) (*Client, error) {
+func NewClient(network, apiToken, url *string) *Client {
 	serverUrl := fmt.Sprintf("https://%s.%s", *network, *url)
 	client := Client{
 		HTTPClient:   &http.Client{Timeout: TimeOut},
@@ -33,12 +37,7 @@ func NewClient(network, apiToken, url *string) (*Client, error) {
 		ApiToken:     *apiToken,
 	}
 	log.Printf("[INFO] Using Server URL %s", client.ServerURL)
-
-	if err := client.ping(); err != nil {
-		return nil, err
-	}
-
-	return &client, nil
+	return &client
 }
 func (client *Client) ping() error {
 	jsonData := map[string]string{
