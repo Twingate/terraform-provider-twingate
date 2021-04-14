@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -26,12 +25,6 @@ func resourceRemoteNetwork() *schema.Resource {
 				Required:    true,
 				Description: "The name of the remote network",
 			},
-			"is_active": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Whether the network is enabled or disabled",
-			},
 		},
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -40,41 +33,17 @@ func resourceRemoteNetwork() *schema.Resource {
 }
 
 func resourceRemoteNetworkCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*Client)
+	client := m.(*Client)
 
 	var diags diag.Diagnostics
-
 	remoteNetworkName := d.Get("name").(string)
-	isActive := d.Get("is_active").(bool)
-
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-		mutation{
-		  remoteNetworkCreate(name: "%s", isActive: %t) {
-			ok
-			entity {
-			  id
-			}
-		  }
-		}
-        `, remoteNetworkName, isActive),
-	}
-	mutationRemoteNetwork, err := c.doGraphqlRequest(mutation)
+	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	status := mutationRemoteNetwork.Path("data.remoteNetworkCreate.ok").Data().(bool)
-	if !status {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create remote network",
-			Detail:   fmt.Sprintf("Unable to create remote network %s", mutationRemoteNetwork.Path("data.remoteNetworkCreate.error").String()),
-		})
 
-		return diags
-	}
-	d.SetId(mutationRemoteNetwork.Path("data.remoteNetworkCreate.entity.id").Data().(string))
+	d.SetId(remoteNetwork.Id)
 	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, d.Id())
 	resourceRemoteNetworkRead(ctx, d, m)
 
@@ -82,39 +51,15 @@ func resourceRemoteNetworkCreate(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func resourceRemoteNetworkUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*Client)
-
-	var diags diag.Diagnostics
+	client := m.(*Client)
 
 	remoteNetworkName := d.Get("name").(string)
-	isActive := d.Get("is_active").(bool)
 
-	if d.HasChanges("is_active", "name") {
+	if d.HasChange("name") {
 		remoteNetworkId := d.Id()
 		log.Printf("[INFO] Updating remote network id %s", remoteNetworkId)
-		mutation := map[string]string{
-			"query": fmt.Sprintf(`
-				mutation {
-					remoteNetworkUpdate(id: "%s", name: "%s", isActive: %t){
-						ok
-						error
-					}
-				}
-        `, remoteNetworkId, remoteNetworkName, isActive),
-		}
-		mutationRemoteNetwork, err := c.doGraphqlRequest(mutation)
-		if err != nil {
+		if err := client.updateRemoteNetwork(&remoteNetworkId, &remoteNetworkName); err != nil {
 			return diag.FromErr(err)
-		}
-		status := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.ok").Data().(bool)
-		if !status {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Unable to update network",
-				Detail:   fmt.Sprintf("Unable to update network %s", mutationRemoteNetwork.Path("data.remoteNetworkUpdate.error").String()),
-			})
-
-			return diags
 		}
 	}
 
@@ -122,45 +67,24 @@ func resourceRemoteNetworkUpdate(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func resourceRemoteNetworkDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*Client)
+	client := m.(*Client)
 
 	var diags diag.Diagnostics
 
 	remoteNetworkId := d.Id()
 
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-		 mutation {
-		  remoteNetworkDelete(id: "%s"){
-			ok
-			error
-		  }
-		}
-		`, remoteNetworkId),
-	}
-	deleteRemoteNetwork, err := c.doGraphqlRequest(mutation)
-
+	err := client.deleteRemoteNetwork(&remoteNetworkId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	status := deleteRemoteNetwork.Path("data.remoteNetworkDelete.ok").Data().(bool)
-	if !status {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to delete remote network",
-			Detail:   fmt.Sprintf("Unable to delete remote network \"%s\"", deleteRemoteNetwork.Path("data.remoteNetworkDelete.error").String()),
-		})
-
-		return diags
-	}
 	log.Printf("[INFO] Deleted remote network id %s", d.Id())
 
 	return diags
 }
 
 func resourceRemoteNetworkRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*Client)
+	client := m.(*Client)
 
 	var diags diag.Diagnostics
 
@@ -168,38 +92,13 @@ func resourceRemoteNetworkRead(ctx context.Context, d *schema.ResourceData, m in
 
 	log.Printf("[INFO] Reading remote network id %s", d.Id())
 
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-		{
-		  remoteNetwork(id: "%s") {
-			name
-			isActive
-		  }
-		}
+	remoteNetwork, err := client.readRemoteNetwork(&remoteNetworkId)
 
-        `, remoteNetworkId),
-	}
-	queryRemoteNetwork, err := c.doGraphqlRequest(mutation)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	remoteNetwork := queryRemoteNetwork.Path("data.remoteNetwork")
-	if remoteNetwork.Data() == nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to read remote network",
-			Detail:   fmt.Sprintf("Unable to read remote network with id \"%s\"", remoteNetworkId),
-		})
-
-		return diags
-	}
-
-	err = d.Set("is_active", remoteNetwork.Path("isActive").Data().(bool))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	err = d.Set("name", remoteNetwork.Path("name").Data().(string))
+	err = d.Set("name", remoteNetwork.Name)
 	if err != nil {
 		return diag.FromErr(err)
 	}

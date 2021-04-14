@@ -1,54 +1,75 @@
-TEST?=$$(go list ./... | grep -v 'vendor')
+TEST?=$$(go list ./...)
+WEBSITE_REPO=github.com/hashicorp/terraform-website
 HOSTNAME=registry.terraform.io
-NAMESPACE=twingate
 PKG_NAME=twingate
 BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
 
-default: install
+default: build
 
-build:
+.PHONY: docs
+
+build: fmtcheck generate
 	go build -o ${BINARY}
 
-release:
-	GOOS=darwin GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_darwin_amd64
-	GOOS=freebsd GOARCH=386 go build -o ./bin/${BINARY}_${VERSION}_freebsd_386
-	GOOS=freebsd GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_freebsd_amd64
-	GOOS=freebsd GOARCH=arm go build -o ./bin/${BINARY}_${VERSION}_freebsd_arm
-	GOOS=linux GOARCH=386 go build -o ./bin/${BINARY}_${VERSION}_linux_386
-	GOOS=linux GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_linux_amd64
-	GOOS=linux GOARCH=arm go build -o ./bin/${BINARY}_${VERSION}_linux_arm
-	GOOS=openbsd GOARCH=386 go build -o ./bin/${BINARY}_${VERSION}_openbsd_386
-	GOOS=openbsd GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_openbsd_amd64
-	GOOS=solaris GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_solaris_amd64
-	GOOS=windows GOARCH=386 go build -o ./bin/${BINARY}_${VERSION}_windows_386
-	GOOS=windows GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_windows_amd64
-
 install: build
-	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${PKG_NAME}/${VERSION}/${OS_ARCH}
-	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${PKG_NAME}/${VERSION}/${OS_ARCH}
+	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
+	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
-test-deps: ## Install test dependencies
-	GO111MODULE=off go get gotest.tools/gotestsum
+test: fmtcheck generate
+	./scripts/test.sh
 
-test: test-deps  ## Run tests
-	@echo "running all tests for all packages"
-	./scripts/test.sh .
+testacc: fmtcheck generate
+	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/hashicorp/terraform-provider-google/version.ProviderVersion=acc"
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
 	gofmt -w -s ./$(PKG_NAME)
 
+# Currently required by tf-deploy compile
+fmtcheck:
+	@echo "==> Checking source code against gofmt..."
+	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
+
 lint:
-	./scripts/lint.sh
+	@echo "==> Checking source code against linters..."
+	@golangci-lint run ./$(PKG_NAME)
 
-testacc:
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
-
-.PHONY: docs
 docs: tools
 	tfplugindocs generate
 
 tools:
-	GO111MODULE=on go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	@echo "==> installing required toolilintng..."
+	go install github.com/client9/misspell/cmd/misspell
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint
+
+generate:
+	go generate  ./...
+
+test-compile:
+	@if [ "$(TEST)" = "./..." ]; then \
+		echo "ERROR: Set TEST to a specific package. For example,"; \
+		echo "  make test-compile TEST=./$(PKG_NAME)"; \
+		exit 1; \
+	fi
+	go test -c $(TEST) $(TESTARGS)
+
+website:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+
+website-test:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+
+docscheck:
+	@sh -c "'$(CURDIR)/scripts/docscheck.sh'"
+
+.PHONY: build test testacc vet fmt fmtcheck lint tools errcheck test-compile website website-test docscheck generate

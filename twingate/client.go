@@ -18,19 +18,21 @@ const (
 )
 
 type Client struct {
-	Token      string
-	network    string
-	ServerURL  string
-	HTTPClient *http.Client
+	ApiToken     string
+	ServerURL    string
+	ApiServerURL string
+	HTTPClient   *http.Client
 }
 
-func NewClient(network, token, url *string) (*Client, error) {
-	c := Client{
-		HTTPClient: &http.Client{Timeout: TimeOut},
-		ServerURL:  fmt.Sprintf("https://%s.%s", *network, *url),
-		Token:      *token,
+func NewClient(network, apiToken, url *string) (*Client, error) {
+	serverUrl := fmt.Sprintf("https://%s.%s", *network, *url)
+	client := Client{
+		HTTPClient:   &http.Client{Timeout: TimeOut},
+		ServerURL:    serverUrl,
+		ApiServerURL: fmt.Sprintf("%s/api/graphql/", serverUrl),
+		ApiToken:     *apiToken,
 	}
-	log.Printf("[INFO] Creating Server URL %s", c.ServerURL)
+	log.Printf("[INFO] Creating Server URL %s", client.ServerURL)
 	jsonData := map[string]string{
 		"query": `
 			{
@@ -44,15 +46,15 @@ func NewClient(network, token, url *string) (*Client, error) {
 			}
         `,
 	}
-	parsedBody, err := c.doGraphqlRequest(jsonData)
+	parsedBody, err := client.doGraphqlRequest(jsonData)
 	_ = parsedBody
 	if err != nil {
-		log.Printf("[ERROR] Cannot initialize Grqhql Server %s", jsonData)
+		log.Printf("[ERROR] Cannot initialize Graphql API Server %s", jsonData)
 
 		return nil, err
 	}
 
-	return &c, nil
+	return &client, nil
 }
 
 func Check(f func() error) {
@@ -61,10 +63,10 @@ func Check(f func() error) {
 	}
 }
 
-func (c *Client) doRequest(req *http.Request) ([]byte, error) {
-	req.Header.Set("X-API-KEY", c.Token)
+func (client *Client) doRequest(req *http.Request) ([]byte, error) {
+	req.Header.Set("X-API-KEY", client.ApiToken)
 	req.Header.Set("content-type", "application/json")
-	res, err := c.HTTPClient.Do(req)
+	res, err := client.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +83,15 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	return body, err
 }
 
-func (c *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
+func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
 	jsonValue, _ := json.Marshal(query)
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/api/graphql/", c.ServerURL), bytes.NewBuffer(jsonValue))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", client.ApiServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req)
+	body, err := client.doRequest(req)
 	_ = body
 	if err != nil {
 		log.Printf("[ERROR] Cant execute request %s", err)

@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -10,11 +11,11 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"token": {
+			"api_token": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
-				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_TOKEN", nil),
+				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_API_TOKEN", nil),
 			},
 			"network": {
 				Type:        schema.TypeString,
@@ -40,18 +41,18 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	token := d.Get("token").(string)
+	apiToken := d.Get("api_token").(string)
 	network := d.Get("network").(string)
 	url := d.Get("url").(string)
 	var diags diag.Diagnostics
 
-	if (token != "") && (network != "") {
-		c, err := NewClient(&network, &token, &url)
+	if (apiToken != "") && (network != "") {
+		c, err := NewClient(&network, &apiToken, &url)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to create Twingate client",
-				Detail:   "Unable to authenticate with provided token / network",
+				Detail:   fmt.Sprintf("Unable to authenticate with provided api token and network %s", network),
 			})
 
 			return nil, diags

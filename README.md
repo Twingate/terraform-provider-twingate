@@ -1,5 +1,5 @@
 
-Terraform Provider
+Twingate Terraform Provider
 ==================
 
 - Website: https://www.terraform.io

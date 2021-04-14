@@ -10,6 +10,7 @@ jobs:
 
     steps:
       - checkout
+
       - restore_cache:
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}
@@ -23,6 +24,7 @@ jobs:
           name: Run Acc tests
           command: |
             make testacc
+
       - run:
           name: Publish coverage report
           command: ./scripts/coveralls.sh
@@ -49,15 +51,23 @@ jobs:
 
     steps:
       - checkout
+
       - run:
           name: Build
           command: make build
+
+      # publish command goes here
+      # - run:
+      #     name: Publish
+      #     command: make publish
 
 workflows:
   version: 2
   build:
    jobs:
-     - test
+     - test:
+         context:
+           - terraform-provider
      - build:
          requires:
            - test

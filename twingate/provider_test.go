@@ -7,36 +7,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var twingateEnvVars = []string{
-	"TWINGATE_TOKEN",
+var requiredEnvironmentVariables = []string{
+	"TWINGATE_API_TOKEN",
 	"TWINGATE_NETWORK",
+	"TWINGATE_URL",
 }
 
-var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
+var testAccProviderFactories map[string]func() (*schema.Provider, error)
 
 func init() {
 	testAccProvider = Provider()
-	testAccProviders = map[string]*schema.Provider{
-		"twingate": testAccProvider,
+	testAccProviderFactories = map[string]func() (*schema.Provider, error){
+		"twingate": func() (*schema.Provider, error) {
+			return testAccProvider, nil
+		},
 	}
 }
 
 func TestProvider(t *testing.T) {
-	if err := Provider().InternalValidate(); err != nil {
+	if err := testAccProvider.InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
 
-func TestProvider_impl(t *testing.T) {
-	var _ *schema.Provider = Provider()
-}
-
 func testAccPreCheck(t *testing.T) {
-	if err := os.Getenv("TWINGATE_TOKEN"); err == "" {
-		t.Fatal("TWINGATE_TOKEN must be set for acceptance tests")
-	}
-	if err := os.Getenv("TWINGATE_NETWORK"); err == "" {
-		t.Fatal("TWINGATE_NETWORK must be set for acceptance tests")
+	for _, requiredEnvironmentVariable := range requiredEnvironmentVariables {
+		if value := os.Getenv(requiredEnvironmentVariable); value == "" {
+			t.Fatalf("%s must be set before running acceptance tests.", requiredEnvironmentVariable)
+		}
 	}
 }

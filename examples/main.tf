@@ -11,24 +11,20 @@ variable "url" {
 }
 
 provider "twingate" {
-  token = var.token
+  api_token = var.token
   network = var.network
   url = var.url
 }
 
-data "twingate_group" "test" {
-  name = "Employees"
-}
+//data "twingate_group" "test" {
+//  name = "Employees"
+//}
 
 resource "twingate_remote_network" "test_remote_network" {
   name = "hello_from_terraform"
-  is_active = true
 }
 
-output "test" {
-  value = data.twingate_group.test.name
+output "network_id" {
+  value = twingate_remote_network.test_remote_network.id
 }
 
-output "is_active" {
-  value = twingate_remote_network.test_remote_network.is_active
-}
