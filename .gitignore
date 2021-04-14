@@ -26,7 +26,9 @@ website/node_modules
 *.test
 *.iml
 .vscode/
-.vendor/
+
+vendor/
+
 .idea/
 website/vendor
 .terraform.lock.hcl

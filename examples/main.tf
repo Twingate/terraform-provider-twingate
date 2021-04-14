@@ -16,10 +16,6 @@ provider "twingate" {
   url = var.url
 }
 
-//data "twingate_group" "test" {
-//  name = "Employees"
-//}
-
 resource "twingate_remote_network" "test_remote_network" {
   name = "hello_from_terraform"
 }

@@ -21,7 +21,7 @@ test: fmtcheck generate
 	./scripts/test.sh
 
 testacc: fmtcheck generate
-	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/hashicorp/terraform-provider-google/version.ProviderVersion=acc"
+	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 10m
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
@@ -30,7 +30,7 @@ fmt:
 # Currently required by tf-deploy compile
 fmtcheck:
 	@echo "==> Checking source code against gofmt..."
-	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
+	@sh -c $(CURDIR)/scripts/gofmtcheck.sh
 
 lint: tools
 	@echo "==> Checking source code against linters..."
