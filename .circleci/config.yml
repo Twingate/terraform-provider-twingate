@@ -52,9 +52,18 @@ jobs:
     steps:
       - checkout
 
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+
       - run:
           name: Build
           command: make build
+
+      - save_cache: # Store cache in the /go/pkg directory
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
 
       # publish command goes here
       # - run:
