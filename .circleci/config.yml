@@ -10,14 +10,30 @@ jobs:
 
     steps:
       - checkout
+
       - restore_cache:
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
+          name: Run Lint
+          command: |
+            make lint
+
+      - run:
+          name: Run Sec Check
+          command: |
+            make sec
+
+      - run:
           name: Run tests
           command: |
             make test
+
+      - run:
+          name: Run Acc tests
+          command: |
+            make testacc
 
       - run:
           name: Publish coverage report
@@ -31,10 +47,7 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-      - run:
-          name: Run Lint
-          command: |
-            make lint
+
 
   build:
 
@@ -45,14 +58,29 @@ jobs:
 
     steps:
       - checkout
+
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+
       - run:
           name: Build
           command: make build
+
+      - save_cache: # Store cache in the /go/pkg directory
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
 
 workflows:
   version: 2
   build:
    jobs:
-     - test
-     - build
-        
+     - test:
+         context:
+           - terraform-provider
+
+     - build:
+         requires:
+           - test
+
