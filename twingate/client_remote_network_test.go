@@ -12,7 +12,7 @@ import (
 func TestClientRemoteNetworkCreateOk(t *testing.T) {
 
 	// response JSON
-	json := `{
+	createNetworkOkJson := `{
 	  "data": {
 		"remoteNetworkCreate": {
 		  "entity": {
@@ -24,7 +24,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 	  }
 	}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
+	r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
 	client := createTestClient()
 
 	GetDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -36,8 +36,37 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 	remoteNetworkName := "test"
 
 	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
-	_ = remoteNetwork
 
 	assert.Nil(t, err)
 	assert.EqualValues(t, "test-id", remoteNetwork.Id)
+}
+
+func TestClientRemoteNetworkCreateError(t *testing.T) {
+
+	// response JSON
+	createNetworkOkJson := `{
+	  "data": {
+		"remoteNetworkCreate": {
+		  "ok": false,
+		  "error": "Cant create network"
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	remoteNetworkName := "test"
+
+	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
+
+	assert.NotNil(t, err, " %s", "formatted")
+	assert.Contains(t, err.Error(), "test")
+	assert.Nil(t, remoteNetwork)
 }
