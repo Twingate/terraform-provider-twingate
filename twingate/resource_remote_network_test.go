@@ -61,8 +61,6 @@ func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 		if err == nil {
 			return fmt.Errorf("Remote network with ID %s still present : ", remoteNetworkId)
 		}
-
-		return err
 	}
 
 	return nil
