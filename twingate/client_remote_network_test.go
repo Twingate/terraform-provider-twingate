@@ -48,7 +48,7 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 	  "data": {
 		"remoteNetworkCreate": {
 		  "ok": false,
-		  "error": "Cant create network"
+		  "error": "error_1"
 		}
 	  }
 	}`
@@ -66,7 +66,6 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 
 	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
 
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "test")
+	assert.NotNilf(t, err, "Cant create network with name test, Error:  error_1")
 	assert.Nil(t, remoteNetwork)
 }

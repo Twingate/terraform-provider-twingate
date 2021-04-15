@@ -26,11 +26,6 @@ jobs:
             make sec
 
       - run:
-          name: Run tests
-          command: |
-            make test
-
-      - run:
           name: Run Acc tests
           command: |
             make testacc

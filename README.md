@@ -2,8 +2,6 @@
 Twingate Terraform Provider
 ==================
 
-- Website: https://www.terraform.io
-- [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
 - [![Coverage Status](https://coveralls.io/repos/github/Twingate/terraform-provider-twingate/badge.svg?branch=develop&t=rqgifB)](https://coveralls.io/github/Twingate/terraform-provider-twingate?branch=develop)
 
 <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">

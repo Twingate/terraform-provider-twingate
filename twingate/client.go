@@ -84,7 +84,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s , %w", res.StatusCode, body, err)
+		return nil, fmt.Errorf("status: %d, body: %s ", res.StatusCode, body)
 	}
 
 	return body, err

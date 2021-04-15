@@ -75,8 +75,7 @@ func TestInitializeTwingateClientRequestFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "500")
+	assert.NotNilf(t, err, "status: 500, body: {} ")
 }
 
 func TestInitializeTwingateClientRequestParsingFails(t *testing.T) {
@@ -95,6 +94,5 @@ func TestInitializeTwingateClientRequestParsingFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "invalid character")
+	assert.NotNilf(t, err, "invalid character 'e' looking for beginning of object key string")
 }
