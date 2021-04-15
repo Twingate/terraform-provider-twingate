@@ -53,6 +53,7 @@ tools:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0
 	go install gotest.tools/gotestsum@v1.6.3
 	go install github.com/securego/gosec/v2/cmd/gosec@v2.7.0
+	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.4.0
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \

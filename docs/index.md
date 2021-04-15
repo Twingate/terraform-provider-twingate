@@ -17,6 +17,6 @@ description: |-
 
 ### Optional
 
-- **tenant** (String)
-- **token** (String, Sensitive)
+- **api_token** (String, Sensitive)
+- **network** (String)
 - **url** (String)

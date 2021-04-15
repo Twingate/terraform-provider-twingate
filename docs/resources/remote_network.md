@@ -19,10 +19,6 @@ description: |-
 
 - **name** (String) The name of the remote network
 
-### Optional
-
-- **is_active** (Boolean) Whether the network is enabled or disabled
-
 ### Read-Only
 
 - **id** (String) The ID of this resource.
