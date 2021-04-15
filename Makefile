@@ -39,6 +39,10 @@ lint: tools
 	@echo "==> Checking source code against linters..."
 	@golangci-lint run ./$(PKG_NAME)
 
+sec: tools
+	@echo "==> Checking source code against security issues..."
+	@gosec ./$(PKG_NAME)
+
 docs: tools
 	tfplugindocs
 
@@ -48,6 +52,7 @@ tools:
 	go install github.com/client9/misspell/cmd/misspell@v0.3.4
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0
 	go install gotest.tools/gotestsum@v1.6.3
+	go install github.com/securego/gosec/v2/cmd/gosec@v2.7.0
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \

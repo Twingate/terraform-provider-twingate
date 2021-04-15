@@ -16,6 +16,16 @@ jobs:
             - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
+          name: Run Lint
+          command: |
+            make lint
+
+      - run:
+          name: Run Sec Check
+          command: |
+            make sec
+
+      - run:
           name: Run tests
           command: |
             make test
@@ -37,10 +47,7 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-      - run:
-          name: Run Lint
-          command: |
-            make lint
+
 
   build:
 

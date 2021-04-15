@@ -33,9 +33,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"twingate_remote_network": resourceRemoteNetwork(),
 		},
-		DataSourcesMap: map[string]*schema.Resource{
-			"twingate_group": dataSourceGroup(),
-		},
+		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
