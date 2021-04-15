@@ -24,7 +24,7 @@ test: fmtcheck
 	./scripts/test.sh
 
 testacc: fmtcheck
-	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 10m
+	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 ./scripts/test.sh
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
