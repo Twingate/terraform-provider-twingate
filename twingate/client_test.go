@@ -2,11 +2,10 @@ package twingate
 
 import (
 	"bytes"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // MockClient is the mock client
@@ -15,13 +14,23 @@ type MockClient struct {
 }
 
 var (
-	// GetDoFunc fetches the mock client's `Do` func
 	GetDoFunc func(req *http.Request) (*http.Response, error)
 )
 
-// Do is the mock client's `Do` func
 func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
 	return GetDoFunc(req)
+}
+
+func createTestClient() *Client {
+
+	testToken := "token"
+	testNetwork := "network"
+	testUrl := "twingate.com"
+
+	mockClient := NewClient(&testNetwork, &testToken, &testUrl)
+	mockClient.HTTPClient = &MockClient{}
+
+	return mockClient
 }
 
 func TestInitializeTwingateClient(t *testing.T) {
@@ -35,9 +44,6 @@ func TestInitializeTwingateClient(t *testing.T) {
 		}
 	  }
 	}`
-	testToken := "token"
-	testNetwork := "network"
-	testUrl := "twingate.com"
 
 	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
 	GetDoFunc = func(*http.Request) (*http.Response, error) {
@@ -46,9 +52,7 @@ func TestInitializeTwingateClient(t *testing.T) {
 			Body:       r,
 		}, nil
 	}
-	client := NewClient(&testNetwork, &testToken, &testUrl)
-
-	client.HTTPClient = &MockClient{}
+	client := createTestClient()
 
 	err := client.ping()
 
