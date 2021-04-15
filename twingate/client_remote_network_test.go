@@ -66,7 +66,7 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 
 	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
 
-	assert.NotNil(t, err, " %s", "formatted")
+	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "test")
 	assert.Nil(t, remoteNetwork)
 }

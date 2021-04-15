@@ -46,7 +46,7 @@ func TestInitializeTwingateClient(t *testing.T) {
 	}`
 
 	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
-	GetDoFunc = func(*http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -57,4 +57,44 @@ func TestInitializeTwingateClient(t *testing.T) {
 	err := client.ping()
 
 	assert.Nil(t, err)
+}
+
+func TestInitializeTwingateClientRequestFails(t *testing.T) {
+
+	// response JSON
+	json := `{}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
+	GetDoFunc = func(*http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 500,
+			Body:       r,
+		}, nil
+	}
+	client := createTestClient()
+
+	err := client.ping()
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "500")
+}
+
+func TestInitializeTwingateClientRequestParsingFails(t *testing.T) {
+
+	// response JSON
+	json := `{ error }`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
+	GetDoFunc = func(*http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	client := createTestClient()
+
+	err := client.ping()
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "invalid character")
 }
