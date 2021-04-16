@@ -24,7 +24,6 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 				Config: testTwingateConnector(remoteNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-					//resource.TestCheckResourceAttr(resourceName, "name", connectorNameBefore),
 				),
 			},
 		},
@@ -72,6 +71,14 @@ func testAccCheckTwingateConnectorExists(connectorName, remoteNetworkName string
 
 		if connector.Primary.ID == "" {
 			return fmt.Errorf("No connectorID set ")
+		}
+
+		if connector.Primary.Attributes["access_token"] == "" {
+			return fmt.Errorf("No access token set ")
+		}
+
+		if connector.Primary.Attributes["refresh_token"] == "" {
+			return fmt.Errorf("No refresh token set ")
 		}
 
 		remoteNetwork, ok := s.RootModule().Resources[remoteNetworkName]

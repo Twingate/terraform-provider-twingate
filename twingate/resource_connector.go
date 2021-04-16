@@ -13,7 +13,6 @@ func resourceConnector() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceConnectorCreate,
 		ReadContext:   resourceConnectorRead,
-		UpdateContext: resourceConnectorUpdate,
 		DeleteContext: resourceConnectorDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -42,6 +41,7 @@ func resourceConnector() *schema.Resource {
 			"remote_network_id": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "The ID of the remote network to attach the connector to",
 			},
 		},
@@ -82,22 +82,6 @@ func resourceConnectorCreate(ctx context.Context, d *schema.ResourceData, m inte
 	resourceConnectorRead(ctx, d, m)
 
 	return diags
-}
-
-func resourceConnectorUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
-
-	connectorName := d.Get("name").(string)
-
-	if d.HasChange("name") {
-		connectorId := d.Id()
-		log.Printf("[INFO] Updating remote network id %s", connectorId)
-		if err := client.updateConnector(&connectorId, &connectorName); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	return resourceConnectorRead(ctx, d, m)
 }
 
 func resourceConnectorDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

@@ -118,28 +118,7 @@ func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 	return &connector, nil
 
 }
-func (client *Client) updateConnector(connectorId, connectorName *string) error {
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-				mutation {
-					connectorUpdate(id: "%s", name: "%s"){
-						ok
-						error
-					}
-				}
-        `, *connectorId, *connectorName),
-	}
-	mutationConnector, err := client.doGraphqlRequest(mutation)
-	if err != nil {
-		return err
-	}
 
-	status := mutationConnector.Path("data.connectorUpdate.ok").Data().(bool)
-	if !status {
-		return fmt.Errorf("Unable to update network:  %s", mutationConnector.Path("data.connectorUpdate.error").Data().(string))
-	}
-	return nil
-}
 func (client *Client) deleteConnector(connectorId *string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
