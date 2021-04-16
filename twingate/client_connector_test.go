@@ -9,14 +9,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestClientRemoteNetworkCreateOk(t *testing.T) {
+func TestClientConnectorCreateOk(t *testing.T) {
 
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
-		"remoteNetworkCreate": {
+		"connectorCreate": {
 		  "entity": {
-			"id": "test-id"
+			"id": "test-id",
+			"name" : "test-name"
 		  },
 		  "ok": true,
 		  "error": null
@@ -35,18 +36,19 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 	}
 	remoteNetworkName := "test"
 
-	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
+	connector, err := client.createConnector(&remoteNetworkName)
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "test-id", remoteNetwork.Id)
+	assert.EqualValues(t, "test-id", connector.Id)
+	assert.EqualValues(t, "test-name", connector.Name)
 }
 
-func TestClientRemoteNetworkCreateError(t *testing.T) {
+func TestClientConnectorCreateError(t *testing.T) {
 
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
-		"remoteNetworkCreate": {
+		"connectorCreate": {
 		  "ok": false,
 		  "error": "error_1"
 		}
@@ -64,8 +66,8 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 	}
 	remoteNetworkName := "test"
 
-	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
+	remoteNetwork, err := client.createConnector(&remoteNetworkName)
 
-	assert.EqualError(t, err, "Cant create network with name test, Error:  error_1")
+	assert.EqualError(t, err, "Cant create connector under the network with name test, Error:  error_1")
 	assert.Nil(t, remoteNetwork)
 }
