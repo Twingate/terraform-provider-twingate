@@ -43,6 +43,35 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	assert.EqualValues(t, "test-name", connector.Name)
 }
 
+func TestClientConnectorCreateTokensError(t *testing.T) {
+
+	// response JSON
+	createNetworkOkJson := `{
+	  "data": {
+		"connectorGenerateTokens": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	connector := &Connector{
+		Id: "test",
+	}
+	err := client.populateConnectorTokens(connector)
+
+	assert.EqualError(t, err, "Cant create tokens for connector test, Error:  error_1")
+}
+
 func TestClientConnectorCreateError(t *testing.T) {
 
 	// response JSON
