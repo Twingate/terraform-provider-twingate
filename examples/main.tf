@@ -9,6 +9,9 @@ resource "twingate_connector" "test_connector" {
 
 resource "twingate_connector_keys" "test_keys" {
   connector_id = twingate_connector.test_connector.id
+  keepers = {
+    foo = "bar"
+  }
 }
 
 resource "helm_release" "connector" {
