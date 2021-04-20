@@ -5,6 +5,7 @@ PKG_NAME=twingate
 BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
+GOBINPATH=${GOPATH}/bin
 
 default: build
 
@@ -20,28 +21,23 @@ install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
-test: fmtcheck
+test:
 	./scripts/test.sh
 
-testacc: fmtcheck
+testacc:
 	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 ./scripts/test.sh
 
-fmt:
-	@echo "==> Fixing source code with gofmt..."
-	gofmt -w -s ./$(PKG_NAME)
-
-# Currently required by tf-deploy compile
 fmtcheck:
 	@echo "==> Checking source code against gofmt..."
 	@sh -c $(CURDIR)/scripts/gofmtcheck.sh
 
 lint: tools
 	@echo "==> Checking source code against linters..."
-	@golangci-lint run ./$(PKG_NAME)
+	@$(GOBINPATH)/golangci-lint run -c golangci.yml ./$(PKG_NAME)
 
 sec: tools
 	@echo "==> Checking source code against security issues..."
-	@gosec ./$(PKG_NAME)
+	@$(GOBINPATH)/gosec ./$(PKG_NAME)
 
 docs: tools
 	tfplugindocs
