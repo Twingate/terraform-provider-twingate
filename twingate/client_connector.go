@@ -47,39 +47,6 @@ func (client *Client) createConnector(remoteNetworkId *string) (*Connector, erro
 	return &connector, nil
 }
 
-func (client *Client) populateConnectorTokens(connector *Connector) error {
-
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-			mutation{
-			  connectorGenerateTokens(connectorId: "%s"){
-				connectorTokens {
-				  accessToken
-				  refreshToken
-				}
-				ok
-				error
-			  }
-			}
-        `, connector.Id),
-	}
-	mutationConnector, err := client.doGraphqlRequest(mutation)
-	if err != nil {
-		return err
-	}
-	createTokensResult := mutationConnector.Path("data.connectorGenerateTokens")
-	status := createTokensResult.Path("ok").Data().(bool)
-	if !status {
-		errorString := createTokensResult.Path("error").Data().(string)
-		return fmt.Errorf("Cant create tokens for connector %s, Error:  %s", connector.Id, errorString)
-	}
-
-	connector.AccessToken = createTokensResult.Path("connectorTokens.accessToken").Data().(string)
-	connector.RefreshToken = createTokensResult.Path("connectorTokens.refreshToken").Data().(string)
-
-	return nil
-}
-
 func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`

@@ -1,7 +1,7 @@
 data "google_client_config" "provider" {}
 
 data "google_container_cluster" "cluster" {
-  name     = "beamreachinc-prod"
+  name     = "beamreachinc-stg"
   location = "us-central1-a"
 }
 

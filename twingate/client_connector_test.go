@@ -67,7 +67,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	connector := &Connector{
 		Id: "test",
 	}
-	err := client.populateConnectorTokens(connector)
+	err := client.generateConnectorTokens(connector)
 
 	assert.EqualError(t, err, "Cant create tokens for connector test, Error:  error_1")
 }

@@ -30,6 +30,26 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 	})
 }
 
+func TestAccRemoteConnector_withKeys(t *testing.T) {
+
+	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+	connectorKeysResource := "twingate_connector_keys.test"
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateConnectorDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateConnectorKeys(remoteNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateConnectorKeysExists(connectorKeysResource),
+				),
+			},
+		},
+	})
+}
+
 func testTwingateConnector(remoteNetworkName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test" {
@@ -37,6 +57,20 @@ func testTwingateConnector(remoteNetworkName string) string {
 	}
 	resource "twingate_connector" "test" {
 	  remote_network_id = twingate_remote_network.test.id
+	}
+	`, remoteNetworkName)
+}
+
+func testTwingateConnectorKeys(remoteNetworkName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+	resource "twingate_connector" "test" {
+	  remote_network_id = twingate_remote_network.test.id
+	}
+	resource "twingate_connector_keys" "test" {
+	  connector_id = twingate_connector.test.id
 	}
 	`, remoteNetworkName)
 }
@@ -73,14 +107,6 @@ func testAccCheckTwingateConnectorExists(connectorName, remoteNetworkName string
 			return fmt.Errorf("No connectorID set ")
 		}
 
-		if connector.Primary.Attributes["access_token"] == "" {
-			return fmt.Errorf("No access token set ")
-		}
-
-		if connector.Primary.Attributes["refresh_token"] == "" {
-			return fmt.Errorf("No refresh token set ")
-		}
-
 		remoteNetwork, ok := s.RootModule().Resources[remoteNetworkName]
 		if !ok {
 			return fmt.Errorf("Not found: %s ", remoteNetworkName)
@@ -88,6 +114,30 @@ func testAccCheckTwingateConnectorExists(connectorName, remoteNetworkName string
 		if connector.Primary.Attributes["remote_network_id"] != remoteNetwork.Primary.ID {
 			return fmt.Errorf("Remote Network ID not set properly in the connector ")
 		}
+		return nil
+	}
+}
+
+func testAccCheckTwingateConnectorKeysExists(connectorNameKeys string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		connectorKeys, ok := s.RootModule().Resources[connectorNameKeys]
+
+		if !ok {
+			return fmt.Errorf("Not found: %s ", connectorNameKeys)
+		}
+
+		if connectorKeys.Primary.ID == "" {
+			return fmt.Errorf("No connectorKeysID set ")
+		}
+
+		if connectorKeys.Primary.Attributes["access_token"] == "" {
+			return fmt.Errorf("No access token set ")
+		}
+
+		if connectorKeys.Primary.Attributes["refresh_token"] == "" {
+			return fmt.Errorf("No refresh token set ")
+		}
+
 		return nil
 	}
 }

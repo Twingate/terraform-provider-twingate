@@ -1,14 +1,14 @@
 
 init:
-#	@if [[ -f .terraform.lock.hcl ]]; then \
-#		rm -f .terraform.lock.hcl && terraform init; \
-#  	fi
+	@if [[ -f .terraform.lock.hcl ]]; then \
+		rm -f .terraform.lock.hcl && terraform init; \
+  	fi
 
-plan: init
-	@terraform plan -var-file=vars.tfvars
+plan:
+	@TF_LOG=info terraform plan -var-file=vars.tfvars
 
-apply: init
-	@terraform apply -var-file=vars.tfvars --auto-approve
+apply:
+	@TF_LOG=info terraform apply -var-file=vars.tfvars --auto-approve
 
-destroy: init
-	@terraform destroy -var-file=vars.tfvars --auto-approve
+destroy:
+	@TF_LOG=info terraform destroy -var-file=vars.tfvars --auto-approve
