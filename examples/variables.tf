@@ -9,3 +9,7 @@ variable "network" {
 variable "url" {
   type = string
 }
+
+variable "gke_cluster_to_deploy" {
+  type = string
+}
