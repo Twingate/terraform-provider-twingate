@@ -56,7 +56,7 @@ tools:
 
 lint-install:
 	@if ! [ -x "$(command -v golangci-lint)" ]; then \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.39.0 ;\
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.39.0 ;\
 	fi
 
 test-compile:
