@@ -35,9 +35,9 @@ fmtcheck:
 	@echo "==> Checking source code against gofmt..."
 	@sh -c $(CURDIR)/scripts/gofmtcheck.sh
 
-lint: lint-install tools
+lint:
 	@echo "==> Checking source code against linters..."
-	@golangci-lint run ./$(PKG_NAME)
+	ops/code-analysis.sh
 
 sec: tools
 	@echo "==> Checking source code against security issues..."
@@ -53,11 +53,6 @@ tools:
 	go install gotest.tools/gotestsum@v1.6.3
 	go install github.com/securego/gosec/v2/cmd/gosec@v2.7.0
 	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.4.0
-
-lint-install:
-	@if ! [ -x "$(command -v golangci-lint)" ]; then \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.39.0 ;\
-	fi
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
