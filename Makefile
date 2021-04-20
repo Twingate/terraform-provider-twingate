@@ -55,9 +55,9 @@ tools:
 	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.4.0
 
 lint-install:
-	  @if ! [ -x "$(command -v golangci-lint)" ]; then
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.39.0
-	  fi
+	@if ! [ -x "$(command -v golangci-lint)" ]; then \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.39.0 ;\
+	fi
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
