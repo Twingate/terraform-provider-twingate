@@ -16,6 +16,11 @@ jobs:
             - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
+          name: Format Check
+          command: |
+            make fmtcheck
+
+      - run:
           name: Run Lint
           command: |
             make lint

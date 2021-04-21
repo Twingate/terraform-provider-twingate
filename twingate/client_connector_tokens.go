@@ -9,29 +9,26 @@ import (
 )
 
 func (client *Client) verifyConnectorTokens(refreshToken, accessToken *string) error {
-
 	jsonValue, _ := json.Marshal(
 		map[string]string{
 			"refresh_token": *refreshToken,
 		})
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/access_node/refresh", client.ApiServerURL), bytes.NewBuffer(jsonValue))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return fmt.Errorf("Cant create context : %s ", err)
+		return fmt.Errorf("Cant create context : %w ", err)
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", *accessToken))
 	body, err := client.doRequest(req)
 	_ = body
 	if err != nil {
-		return fmt.Errorf("Connector tokens are invalid : %s ", err)
+		return fmt.Errorf("Connector tokens are invalid : %w ", err)
 	}
 
 	return nil
 }
-
 func (client *Client) generateConnectorTokens(connector *Connector) error {
-
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{

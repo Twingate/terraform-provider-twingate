@@ -1,26 +1,80 @@
+
 run:
-  deadline: 2m30s
+  concurrency: 4
+  deadline: 2m
+  issues-exit-code: 1
+  tests: false
+  skip-dirs: []
+  skip-files: []
 
-issues:
-  max-per-linter: 0
-  max-same-issues: 0
-
-linters:
-  disable-all: true
-  enable:
-    - deadcode
-    - errcheck
-    - gofmt
-    - gosimple
-    - ineffassign
-    - misspell
-    - staticcheck
-    - structcheck
-    - unconvert
-    - unused
-    - varcheck
-    - vet
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
 
 linters-settings:
   errcheck:
-    ignore: github.com/hashicorp/terraform-plugin-sdk/helper/schema:ForceNew|Set,fmt:.*,io:Close,github.com/hashicorp/terraform-provider-twingate/twingate:Set
+    check-type-assertions: false
+    check-blank: false
+  govet:
+    check-shadowing: true
+    use-installed-packages: false
+  golint:
+    min-confidence: 0.8
+  gofmt:
+    simplify: true
+  gocyclo:
+    min-complexity: 20
+  maligned:
+    suggest-new: true
+  dupl:
+    threshold: 200
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  depguard:
+    list-type: blacklist
+    include-go-root: false
+    packages:
+      - github.com/davecgh/go-spew/spew
+  nestif:
+    min-complexity: 7
+linters:
+  enable-all: true
+  disable:
+    - maligned
+    - unparam
+    - lll
+    - gochecknoglobals
+    - bodyclose
+    - scopelint
+    - cyclop
+    - godox
+    - wsl
+    - gofumpt
+    - exhaustivestruct
+    - interfacer
+  disable-all: false
+  fast: false
+
+issues:
+  exclude:
+    - composite literal uses unkeyed fields
+    - "shadow: declaration of \"err\" shadows declaration"
+    - "should be.*IDP?`?"
+    - should have comment
+    - "G304: "
+    - package comment should be of the form
+
+  exclude-rules:
+    - linters:
+        - stylecheck
+      text: "ST1000:"
+
+    - path: internal/pkg/errors/errors.go
+      linters:
+        - wrapcheck
+  exclude-use-default: false
+  max-per-linter: 0
+  max-same: 0
+  new: false

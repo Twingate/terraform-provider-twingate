@@ -6,7 +6,7 @@ import (
 
 type Connector struct {
 	Id            string
-	remoteNetwork *RemoteNetwork
+	RemoteNetwork *RemoteNetwork
 	Name          string
 	AccessToken   string
 	RefreshToken  string
@@ -54,7 +54,7 @@ func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 		  connector(id: "%s") {
 			id
 			name
-			remoteNetwork {
+			RemoteNetwork {
 				name
 				id
 			}
@@ -76,14 +76,13 @@ func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 	connector := Connector{
 		Id:   connectorRead.Path("id").Data().(string),
 		Name: connectorRead.Path("name").Data().(string),
-		remoteNetwork: &RemoteNetwork{
-			Id:   connectorRead.Path("remoteNetwork.id").Data().(string),
-			Name: connectorRead.Path("remoteNetwork.name").Data().(string),
+		RemoteNetwork: &RemoteNetwork{
+			Id:   connectorRead.Path("RemoteNetwork.id").Data().(string),
+			Name: connectorRead.Path("RemoteNetwork.name").Data().(string),
 		},
 	}
 
 	return &connector, nil
-
 }
 
 func (client *Client) deleteConnector(connectorId *string) error {

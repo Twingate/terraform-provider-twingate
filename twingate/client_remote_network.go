@@ -67,7 +67,6 @@ func (client *Client) readRemoteNetwork(remoteNetworkId *string) (*RemoteNetwork
 	}
 
 	return &remoteNetwork, nil
-
 }
 func (client *Client) updateRemoteNetwork(remoteNetworkId, remoteNetworkName *string) error {
 	mutation := map[string]string{
@@ -111,7 +110,6 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkId *string) error {
 	status := deleteRemoteNetwork.Path("data.remoteNetworkDelete.ok").Data().(bool)
 	if !status {
 		return fmt.Errorf("Unable to delete network with Id %s, Error:  %s", *remoteNetworkId, deleteRemoteNetwork.Path("data.remoteNetworkDelete.error").Data().(string))
-
 	}
 
 	return nil
