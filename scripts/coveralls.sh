@@ -7,4 +7,4 @@ TEST_RESULTS=${TEST_RESULTS:-"./test/out"}
 
 go install github.com/mattn/goveralls@latest
 
-goveralls -coverprofile="${TEST_RESULTS}"/coverage.out -service=circleci -repotoken "${COVERALLS_TOKEN}"
+${GOPATH}/bin/goveralls -coverprofile="${TEST_RESULTS}"/coverage.out -service=circleci -repotoken "${COVERALLS_TOKEN}"
