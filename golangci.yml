@@ -54,6 +54,7 @@ linters:
     - gofumpt
     - exhaustivestruct
     - interfacer
+    - forcetypeassert
   disable-all: false
   fast: false
 

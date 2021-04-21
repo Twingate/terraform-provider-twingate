@@ -93,9 +93,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		var RequestFailedError = errors.New(fmt.Sprintf("Request %s Failed with Code %d", req.RequestURI, res.StatusCode))
-
-		return nil, fmt.Errorf("RequestFailed: %w, body: %s ", RequestFailedError, body)
+		return nil, APIError(fmt.Sprintf("request %s failed, status %d, body %s", req.RequestURI, res.StatusCode, body))
 	}
 
 	return body, nil
