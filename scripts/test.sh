@@ -3,9 +3,6 @@
 set -o errexit
 set -o nounset
 
-export CGO_ENABLED=1
-export GO111MODULE=on
-
 PACKAGE_NAMES=$(go list ./twingate/...)
 TEST_RESULTS=${TEST_RESULTS:-"./test/out"}
 
@@ -13,7 +10,7 @@ mkdir -p "${TEST_RESULTS}"
 
 echo PACKAGE_NAMES: "$PACKAGE_NAMES"
 echo "Running tests:"
-gotestsum --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg=./... -coverprofile="${TEST_RESULTS}"/coverage.out.tmp ${PACKAGE_NAMES}
+${GOPATH}/bin/gotestsum --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg=./... -coverprofile="${TEST_RESULTS}"/coverage.out.tmp ${PACKAGE_NAMES}
 echo
 
 echo "Generating coverage report (removing generated **/api/gen/** and *.pb.go files)"

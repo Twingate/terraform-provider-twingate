@@ -1,9 +1,10 @@
 #!/bin/sh
-export GO111MODULE=on
+
+set -o errexit
+set -o nounset
 
 TEST_RESULTS=${TEST_RESULTS:-"./test/out"}
 
-GO111MODULE=off go get golang.org/x/tools/cmd/cover
-GO111MODULE=off go get github.com/mattn/goveralls
+go install github.com/mattn/goveralls@latest
 
-goveralls -coverprofile="${TEST_RESULTS}"/coverage.out -service=circleci -repotoken "${COVERALLS_TOKEN}"
+${GOPATH}/bin/goveralls -coverprofile="${TEST_RESULTS}"/coverage.out -service=circleci -repotoken "${COVERALLS_TOKEN}"

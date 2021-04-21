@@ -27,6 +27,7 @@ test:
 testacc:
 	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 ./scripts/test.sh
 
+
 fmt:
 	@echo "==> Fixing source code with gofmt..."
 	gofmt -w -s ./$(PKG_NAME)
@@ -47,13 +48,13 @@ docs: tools
 	tfplugindocs
 
 tools:
-	@echo "==> installing required tooling.."
-	go install
-	go install github.com/client9/misspell/cmd/misspell@v0.3.4
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0
-	go install gotest.tools/gotestsum@v1.6.3
-	go install github.com/securego/gosec/v2/cmd/gosec@v2.7.0
-	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.4.0
+	@echo "==> installing required tools ..."
+	go install github.com/client9/misspell/cmd/misspell@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install gotest.tools/gotestsum@latest
+	go install github.com/securego/gosec/v2/cmd/gosec@latest
+	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
+
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
