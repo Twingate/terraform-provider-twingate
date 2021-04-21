@@ -61,19 +61,30 @@ func resourceConnectorTokensCreate(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("access_token", connector.AccessToken); err != nil {
-		return diag.FromErr(fmt.Errorf("Error setting access_token: %w ", err))
+	if err := d.Set("access_token", connector.ConnectorTokens.AccessToken); err != nil {
+		return diag.FromErr(fmt.Errorf("error setting access_token: %w ", err))
 	}
-	if err := d.Set("refresh_token", connector.RefreshToken); err != nil {
-		return diag.FromErr(fmt.Errorf("Error setting refresh_token: %w ", err))
+	if err := d.Set("refresh_token", connector.ConnectorTokens.RefreshToken); err != nil {
+		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
 	}
+
 	return resourceConnectorTokensRead(ctx, d, m)
 }
 
 func resourceConnectorTokensDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(*Client)
+
 	var diags diag.Diagnostics
 
-	log.Printf("[INFO] Destroyed ConnectorTokens id %s", d.Id())
+	connector := Connector{Id: d.Id()}
+	// Just calling generate new tokens for the connector so the old ones are invalidated
+	err := client.generateConnectorTokens(&connector)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf("[INFO] Invalidating Connector Tokens id %s", d.Id())
 	d.SetId("")
 
 	return diags
@@ -94,6 +105,7 @@ func resourceConnectorTokensRead(ctx context.Context, d *schema.ResourceData, m 
 			Detail:   fmt.Sprintf("Unable to verify connector %s tokens, assuming not valid and needs to be recreated", d.Id()),
 		})
 		d.SetId("")
+
 		return diags
 	}
 

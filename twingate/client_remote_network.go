@@ -32,7 +32,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName *string) (*RemoteNet
 	if !status {
 		errorMessage := mutationRemoteNetwork.Path("data.remoteNetworkCreate.error").Data().(string)
 
-		return nil, fmt.Errorf("cant create network with name %s, error: %w ", *remoteNetworkName, APIError(fmt.Sprintf("CreateNetwork failed with error : %s", errorMessage)))
+		return nil, fmt.Errorf("can't create network with name %s, error: %w", *remoteNetworkName, APIError(errorMessage))
 	}
 
 	remoteNetwork := RemoteNetwork{

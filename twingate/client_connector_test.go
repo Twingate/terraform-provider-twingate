@@ -43,19 +43,19 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	assert.EqualValues(t, "test-name", connector.Name)
 }
 
-func TestClientConnectorCreateTokensError(t *testing.T) {
+func TestClientConnectorDeleteOk(t *testing.T) {
 
 	// response JSON
-	createNetworkOkJson := `{
+	deleteConnectorOkJson := `{
 	  "data": {
-		"connectorGenerateTokens": {
-		  "ok": false,
-		  "error": "error_1"
+		"connectorDelete": {
+		  "ok": true,
+		  "error": null
 		}
 	  }
 	}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
+	r := ioutil.NopCloser(bytes.NewReader([]byte(deleteConnectorOkJson)))
 	client := createTestClient()
 
 	GetDoFunc = func(req *http.Request) (*http.Response, error) {
@@ -64,12 +64,11 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 			Body:       r,
 		}, nil
 	}
-	connector := &Connector{
-		Id: "test",
-	}
-	err := client.generateConnectorTokens(connector)
+	connectorId := "test"
 
-	assert.EqualError(t, err, "Cant create tokens for connector test, Error:  error_1")
+	err := client.deleteConnector(&connectorId)
+
+	assert.Nil(t, err)
 }
 
 func TestClientConnectorCreateError(t *testing.T) {
@@ -97,6 +96,34 @@ func TestClientConnectorCreateError(t *testing.T) {
 
 	remoteNetwork, err := client.createConnector(&remoteNetworkName)
 
-	assert.EqualError(t, err, "Cant create connector under the network with name test, Error:  error_1")
+	assert.EqualError(t, err, "cant create connector under the network with name test, error: api request error : error_1")
 	assert.Nil(t, remoteNetwork)
+}
+
+func TestClientConnectorDeleteError(t *testing.T) {
+
+	// response JSON
+	deleteConnectorOkJson := `{
+	  "data": {
+		"connectorDelete": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(deleteConnectorOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	connectorId := "test"
+
+	err := client.deleteConnector(&connectorId)
+
+	assert.EqualError(t, err, "unable to delete connector with Id test, error:  api request error : error_1")
 }

@@ -92,7 +92,7 @@ func resourceConnectorRead(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	if err := d.Set("name", connector.Name); err != nil {
-		return diag.FromErr(fmt.Errorf("Error setting name: %w ", err))
+		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
 
 	return diags

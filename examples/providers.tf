@@ -14,7 +14,7 @@ provider "helm" {
 }
 
 provider "twingate" {
-  api_token = var.token
+  api_token = var.api_token
   network = var.network
   url = var.url
 }

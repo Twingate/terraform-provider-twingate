@@ -5,11 +5,10 @@ import (
 )
 
 type Connector struct {
-	Id            string
-	RemoteNetwork *RemoteNetwork
-	Name          string
-	AccessToken   string
-	RefreshToken  string
+	Id              string
+	RemoteNetwork   *RemoteNetwork
+	Name            string
+	ConnectorTokens *ConnectorTokens
 }
 
 func (client *Client) createConnector(remoteNetworkId *string) (*Connector, error) {
@@ -37,13 +36,15 @@ func (client *Client) createConnector(remoteNetworkId *string) (*Connector, erro
 
 	if !status {
 		errorString := connectorResult.Path("error").Data().(string)
-		return nil, fmt.Errorf("Cant create connector under the network with name %s, Error:  %s", *remoteNetworkId, errorString)
+
+		return nil, fmt.Errorf("can't create connector under the network with name %s, error: %w", *remoteNetworkId, APIError(errorString))
 	}
 
 	connector := Connector{
 		Id:   connectorResult.Path("entity.id").Data().(string),
 		Name: connectorResult.Path("entity.name").Data().(string),
 	}
+
 	return &connector, nil
 }
 
@@ -54,7 +55,7 @@ func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 		  connector(id: "%s") {
 			id
 			name
-			RemoteNetwork {
+			remoteNetwork {
 				name
 				id
 			}
@@ -70,15 +71,15 @@ func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 	connectorRead := queryConnector.Path("data.connector")
 
 	if connectorRead.Data() == nil {
-		return nil, fmt.Errorf("Unable to read connector %s information ", *connectorId)
+		return nil, APIError(fmt.Sprintf("Unable to read connector %s information ", *connectorId))
 	}
 
 	connector := Connector{
 		Id:   connectorRead.Path("id").Data().(string),
 		Name: connectorRead.Path("name").Data().(string),
 		RemoteNetwork: &RemoteNetwork{
-			Id:   connectorRead.Path("RemoteNetwork.id").Data().(string),
-			Name: connectorRead.Path("RemoteNetwork.name").Data().(string),
+			Id:   connectorRead.Path("remoteNetwork.id").Data().(string),
+			Name: connectorRead.Path("remoteNetwork.name").Data().(string),
 		},
 	}
 
@@ -104,7 +105,9 @@ func (client *Client) deleteConnector(connectorId *string) error {
 	connectorDelete := mutationConnector.Path("data.connectorDelete")
 	status := connectorDelete.Path("ok").Data().(bool)
 	if !status {
-		return fmt.Errorf("Unable to delete network with Id %s, Error:  %s", *connectorId, connectorDelete.Path("error").Data().(string))
+		errorMessage := connectorDelete.Path("error").Data().(string)
+
+		return fmt.Errorf("unable to delete connector with Id %s, error:  %w", *connectorId, APIError(errorMessage))
 	}
 
 	return nil

@@ -25,7 +25,7 @@ type HTTPClient interface {
 var ErrAPIRequest = errors.New("api request error")
 
 func APIError(op string) error {
-	return fmt.Errorf("APIRequestError %w : %s", ErrAPIRequest, op)
+	return fmt.Errorf("%w : %s", ErrAPIRequest, op)
 }
 
 type Client struct {
@@ -44,7 +44,6 @@ func NewClient(network, apiToken, url *string) *Client {
 		GraphqlServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
 		APIServerURL:     fmt.Sprintf("%s/api/v1", serverURL),
 		APIToken:         *apiToken,
-
 	}
 	log.Printf("[INFO] Using Server URL %s", client.ServerURL)
 
@@ -104,7 +103,7 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 	req, err := http.NewRequestWithContext(context.Background(), "POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
 
 	if err != nil {
-		return nil, fmt.Errorf("could not create request context : %w", err)
+		return nil, fmt.Errorf("can't create request context : %w", err)
 	}
 
 	req.Header.Set("X-API-KEY", client.APIToken)
@@ -113,13 +112,13 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 	if err != nil {
 		log.Printf("[ERROR] Cant execute request %s", err)
 
-		return nil, fmt.Errorf("could not execute request : %w", err)
+		return nil, fmt.Errorf("can't execute request : %w", err)
 	}
 	parsedResponse, err := gabs.ParseJSON(body)
 	if err != nil {
 		log.Printf("[ERROR] Error parsing response %s", string(body))
 
-		return nil, fmt.Errorf("could not parse request body : %w", err)
+		return nil, fmt.Errorf("can't parse request body : %w", err)
 	}
 
 	return parsedResponse, nil

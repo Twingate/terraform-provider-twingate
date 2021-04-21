@@ -8,6 +8,11 @@ import (
 	"net/http"
 )
 
+type ConnectorTokens struct {
+	AccessToken  string
+	RefreshToken string
+}
+
 func (client *Client) verifyConnectorTokens(refreshToken, accessToken *string) error {
 	jsonValue, _ := json.Marshal(
 		map[string]string{
@@ -16,18 +21,19 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken *string) e
 
 	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return fmt.Errorf("Cant create context : %w ", err)
+		return fmt.Errorf("can't create context : %w ", err)
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", *accessToken))
 	body, err := client.doRequest(req)
 	_ = body
 	if err != nil {
-		return fmt.Errorf("Connector tokens are invalid : %w ", err)
+		return fmt.Errorf("connector tokens are invalid : %w", err)
 	}
 
 	return nil
 }
+
 func (client *Client) generateConnectorTokens(connector *Connector) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -51,11 +57,14 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 	status := createTokensResult.Path("ok").Data().(bool)
 	if !status {
 		errorString := createTokensResult.Path("error").Data().(string)
-		return fmt.Errorf("Cant create tokens for connector %s, Error:  %s", connector.Id, errorString)
+
+		return fmt.Errorf("cant create tokens for connector %s, error:  %w", connector.Id, APIError(errorString))
 	}
 
-	connector.AccessToken = createTokensResult.Path("connectorTokens.accessToken").Data().(string)
-	connector.RefreshToken = createTokensResult.Path("connectorTokens.refreshToken").Data().(string)
+	connector.ConnectorTokens = &ConnectorTokens{
+		AccessToken:  createTokensResult.Path("connectorTokens.accessToken").Data().(string),
+		RefreshToken: createTokensResult.Path("connectorTokens.refreshToken").Data().(string),
+	}
 
 	return nil
 }
