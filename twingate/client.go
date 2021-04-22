@@ -127,7 +127,7 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 		for _, child := range parsedResponse.Path("errors").Children() {
 			messages = append(messages, child.Path("message").Data().(string))
 		}
-		return nil, APIError(fmt.Sprintf("graphql request returned with errors : %s", strings.Join(messages[:], ",")))
+		return nil, APIError(fmt.Sprintf("graphql request returned with errors : %s", strings.Join(messages, ",")))
 	}
 
 	return parsedResponse, nil
