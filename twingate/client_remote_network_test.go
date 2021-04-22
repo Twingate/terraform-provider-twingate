@@ -69,3 +69,58 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 	assert.EqualError(t, err, "api request error : can't create network with name test, error: error_1")
 	assert.Nil(t, remoteNetwork)
 }
+
+func TestClientRemoteNetworkUpdateError(t *testing.T) {
+
+	// response JSON
+	updateNetworkOkJson := `{
+	  "data": {
+		"remoteNetworkUpdate": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(updateNetworkOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	remoteNetworkId := "id"
+	remoteNetworkName := "test-name"
+
+	err := client.updateRemoteNetwork(&remoteNetworkId, &remoteNetworkName)
+
+	assert.EqualError(t, err, "api request error : unable to update network:  error_1")
+}
+
+func TestClientRemoteNetworkReadError(t *testing.T) {
+
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(readNetworkOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	remoteNetworkId := "id"
+
+	remoteNetwork, err := client.readRemoteNetwork(&remoteNetworkId)
+
+	assert.Nil(t, remoteNetwork)
+	assert.EqualError(t, err, "api request error : unable to read remote network:  id")
+}
