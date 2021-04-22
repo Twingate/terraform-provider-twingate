@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -119,6 +120,14 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 		log.Printf("[ERROR] Error parsing response %s", string(body))
 
 		return nil, fmt.Errorf("can't parse request body : %w", err)
+	}
+
+	if parsedResponse.Path("errors") != nil {
+		var messages []string
+		for _, child := range parsedResponse.Path("errors").Children() {
+			messages = append(messages, child.Path("message").Data().(string))
+		}
+		return nil, APIError(fmt.Sprintf("graphql request returned with errors : %s", strings.Join(messages[:], ",")))
 	}
 
 	return parsedResponse, nil

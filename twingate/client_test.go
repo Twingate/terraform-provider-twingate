@@ -2,10 +2,11 @@ package twingate
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // MockClient is the mock client
@@ -75,7 +76,8 @@ func TestInitializeTwingateClientRequestFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.NotNilf(t, err, "status: 500, body: {} ")
+	assert.EqualError(t, err, "can't execute request : api request error : request  failed, status 500, body {}")
+
 }
 
 func TestInitializeTwingateClientRequestParsingFails(t *testing.T) {
@@ -94,5 +96,45 @@ func TestInitializeTwingateClientRequestParsingFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.NotNilf(t, err, "invalid character 'e' looking for beginning of object key string")
+	assert.EqualError(t, err, "can't parse request body : invalid character 'e' looking for beginning of object key string")
+
+}
+
+func TestInitializeTwingateClientGraphqlRequestReturnsErrors(t *testing.T) {
+
+	// response JSON
+	json := `{
+	  "errors": [
+		{
+		  "message": "error message",
+		  "locations": [
+			{
+			  "line": 2,
+			  "column": 3
+			}
+		  ],
+		  "path": [
+			"remoteNetwork"
+		  ]
+		}
+	  ],
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
+	GetDoFunc = func(*http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	client := createTestClient()
+	remoteNetworkId := "testId"
+	remoteNetwork, err := client.readRemoteNetwork(&remoteNetworkId)
+
+	assert.Nil(t, remoteNetwork)
+	assert.EqualError(t, err, "api request error : graphql request returned with errors : error message")
+
 }
