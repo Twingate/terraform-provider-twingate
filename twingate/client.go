@@ -38,11 +38,11 @@ type Client struct {
 func NewClient(network, apiToken, url *string) *Client {
 	serverURL := fmt.Sprintf("https://%s.%s", *network, *url)
 
-	retryClient := retryablehttp.NewClient()
-	retryClient.HTTPClient.Timeout = TimeOut
+	httpClient := retryablehttp.NewClient()
+	httpClient.HTTPClient.Timeout = TimeOut
 
 	client := Client{
-		HTTPClient:   retryClient,
+		HTTPClient:   httpClient,
 		ServerURL:    serverURL,
 		APIServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
 		APIToken:     *apiToken,
