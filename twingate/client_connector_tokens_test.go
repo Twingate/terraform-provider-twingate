@@ -118,5 +118,5 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	}
 	err := client.generateConnectorTokens(connector)
 
-	assert.EqualError(t, err, "cant create tokens for connector test, error:  api request error : error_1")
+	assert.EqualError(t, err, "api request error : cant create tokens for connector test, error: error_1")
 }

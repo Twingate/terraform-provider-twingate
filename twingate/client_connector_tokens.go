@@ -58,7 +58,7 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 	if !status {
 		errorString := createTokensResult.Path("error").Data().(string)
 
-		return fmt.Errorf("cant create tokens for connector %s, error:  %w", connector.Id, APIError(errorString))
+		return APIError(fmt.Sprintf("cant create tokens for connector %s, error: %s", connector.Id, errorString))
 	}
 
 	connector.ConnectorTokens = &ConnectorTokens{

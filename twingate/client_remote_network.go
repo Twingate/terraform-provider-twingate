@@ -32,7 +32,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName *string) (*RemoteNet
 	if !status {
 		errorMessage := mutationRemoteNetwork.Path("data.remoteNetworkCreate.error").Data().(string)
 
-		return nil, fmt.Errorf("can't create network with name %s, error: %w", *remoteNetworkName, APIError(errorMessage))
+		return nil, APIError(fmt.Sprintf("can't create network with name %s, error: %s", *remoteNetworkName, errorMessage))
 	}
 
 	remoteNetwork := RemoteNetwork{
@@ -61,7 +61,7 @@ func (client *Client) readRemoteNetwork(remoteNetworkId *string) (*RemoteNetwork
 	remoteNetworkQuery := queryRemoteNetwork.Path("data.remoteNetwork")
 
 	if remoteNetworkQuery.Data() == nil {
-		return nil, APIError(fmt.Sprintf("unable to read remote network :  %s", *remoteNetworkId))
+		return nil, APIError(fmt.Sprintf("unable to read remote network:  %s", *remoteNetworkId))
 	}
 
 	remoteNetwork := RemoteNetwork{
@@ -92,7 +92,7 @@ func (client *Client) updateRemoteNetwork(remoteNetworkId, remoteNetworkName *st
 	if !status {
 		errorMessage := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.error").Data().(string)
 
-		return fmt.Errorf("unable to update network:  %w", APIError(errorMessage))
+		return APIError(fmt.Sprintf("unable to update network:  %s", errorMessage))
 	}
 
 	return nil
@@ -119,7 +119,7 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkId *string) error {
 	if !status {
 		errorMessage := deleteRemoteNetwork.Path("data.remoteNetworkDelete.error").Data().(string)
 
-		return fmt.Errorf("unable to delete network with Id %s, error:  %w", *remoteNetworkId, APIError(errorMessage))
+		return APIError(fmt.Sprintf("unable to delete network with Id %s, error: %s", *remoteNetworkId, errorMessage))
 	}
 
 	return nil

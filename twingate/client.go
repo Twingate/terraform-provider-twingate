@@ -24,8 +24,8 @@ type HTTPClient interface {
 
 var ErrAPIRequest = errors.New("api request error")
 
-func APIError(op string) error {
-	return fmt.Errorf("%w : %s", ErrAPIRequest, op)
+func APIError(message string) error {
+	return fmt.Errorf("%w : %s", ErrAPIRequest, message)
 }
 
 type Client struct {

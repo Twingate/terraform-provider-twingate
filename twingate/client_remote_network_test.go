@@ -66,6 +66,6 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 
 	remoteNetwork, err := client.createRemoteNetwork(&remoteNetworkName)
 
-	assert.EqualError(t, err, "can't create network with name test, error: api request error : error_1")
+	assert.EqualError(t, err, "api request error : can't create network with name test, error: error_1")
 	assert.Nil(t, remoteNetwork)
 }

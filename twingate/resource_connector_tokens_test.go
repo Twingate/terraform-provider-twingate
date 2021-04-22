@@ -9,10 +9,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccRemoteConnector_withKeys(t *testing.T) {
+func TestAccRemoteConnector_withTokens(t *testing.T) {
 
 	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
-	connectorKeysResource := "twingate_connector_tokens.test"
+	connectorTokensResource := "twingate_connector_tokens.test"
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -20,16 +20,16 @@ func TestAccRemoteConnector_withKeys(t *testing.T) {
 		CheckDestroy:      testAccCheckTwingateConnectorTokensInvalidated,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateConnectorKeys(remoteNetworkName),
+				Config: testTwingateConnectorTokens(remoteNetworkName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateConnectorKeysExists(connectorKeysResource),
+					testAccCheckTwingateConnectorTokensExists(connectorTokensResource),
 				),
 			},
 		},
 	})
 }
 
-func testTwingateConnectorKeys(remoteNetworkName string) string {
+func testTwingateConnectorTokens(remoteNetworkName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test" {
 	  name = "%s"
@@ -64,24 +64,24 @@ func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckTwingateConnectorKeysExists(connectorNameKeys string) resource.TestCheckFunc {
+func testAccCheckTwingateConnectorTokensExists(connectorNameTokens string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		connectorKeys, ok := s.RootModule().Resources[connectorNameKeys]
+		connectorTokens, ok := s.RootModule().Resources[connectorNameTokens]
 
 		if !ok {
-			return fmt.Errorf("Not found: %s ", connectorNameKeys)
+			return fmt.Errorf("not found: %s", connectorNameTokens)
 		}
 
-		if connectorKeys.Primary.ID == "" {
-			return fmt.Errorf("No connectorKeysID set ")
+		if connectorTokens.Primary.ID == "" {
+			return fmt.Errorf("no connectorTokensID set")
 		}
 
-		if connectorKeys.Primary.Attributes["access_token"] == "" {
-			return fmt.Errorf("No access token set ")
+		if connectorTokens.Primary.Attributes["access_token"] == "" {
+			return fmt.Errorf("no access token set")
 		}
 
-		if connectorKeys.Primary.Attributes["refresh_token"] == "" {
-			return fmt.Errorf("No refresh token set ")
+		if connectorTokens.Primary.Attributes["refresh_token"] == "" {
+			return fmt.Errorf("no refresh token set")
 		}
 
 		return nil

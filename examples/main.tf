@@ -7,7 +7,7 @@ resource "twingate_connector" "test_connector" {
   remote_network_id = twingate_remote_network.test_remote_network.id
 }
 
-resource "twingate_connector_keys" "test_keys" {
+resource "twingate_connector_tokens" "test_tokens" {
   connector_id = twingate_connector.test_connector.id
   keepers = {
     foo = "bar"
@@ -33,15 +33,15 @@ resource "helm_release" "connector" {
 
   set_sensitive  {
     name  = "connector.accessToken"
-    value = twingate_connector_keys.test_keys.access_token
+    value = twingate_connector_tokens.test_tokens.access_token
   }
 
   set_sensitive  {
     name  = "connector.refreshToken"
-    value = twingate_connector_keys.test_keys.refresh_token
+    value = twingate_connector_tokens.test_tokens.refresh_token
   }
 
-  depends_on = [twingate_connector.test_connector]
+  depends_on = [twingate_connector_tokens.test_tokens]
 }
 
 

@@ -37,7 +37,7 @@ func (client *Client) createConnector(remoteNetworkId *string) (*Connector, erro
 	if !status {
 		errorString := connectorResult.Path("error").Data().(string)
 
-		return nil, fmt.Errorf("can't create connector under the network with name %s, error: %w", *remoteNetworkId, APIError(errorString))
+		return nil, APIError(fmt.Sprintf("can't create connector under the network with name %s, error: %s", *remoteNetworkId, errorString))
 	}
 
 	connector := Connector{
@@ -107,7 +107,7 @@ func (client *Client) deleteConnector(connectorId *string) error {
 	if !status {
 		errorMessage := connectorDelete.Path("error").Data().(string)
 
-		return fmt.Errorf("unable to delete connector with Id %s, error:  %w", *connectorId, APIError(errorMessage))
+		return APIError(fmt.Sprintf("unable to delete connector with Id %s, error: %s", *connectorId, errorMessage))
 	}
 
 	return nil
