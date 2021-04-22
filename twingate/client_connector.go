@@ -37,7 +37,7 @@ func (client *Client) createConnector(remoteNetworkId *string) (*Connector, erro
 	if !status {
 		errorString := connectorResult.Path("error").Data().(string)
 
-		return nil, APIError(fmt.Sprintf("can't create connector under the network with name %s, error: %s", *remoteNetworkId, errorString))
+		return nil, APIError(fmt.Sprintf("can't create connector under the network with id %s, error: %s", *remoteNetworkId, errorString))
 	}
 
 	connector := Connector{
