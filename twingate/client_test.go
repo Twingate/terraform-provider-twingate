@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"bytes"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -10,14 +11,14 @@ import (
 
 // MockClient is the mock client
 type MockClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
+	DoFunc func(req *retryablehttp.Request) (*http.Response, error)
 }
 
 var (
-	GetDoFunc func(req *http.Request) (*http.Response, error)
+	GetDoFunc func(req *retryablehttp.Request) (*http.Response, error)
 )
 
-func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
+func (m *MockClient) Do(req *retryablehttp.Request) (*http.Response, error) {
 	return GetDoFunc(req)
 }
 
