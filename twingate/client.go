@@ -10,9 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hashicorp/go-retryablehttp"
-
 	"github.com/Jeffail/gabs/v2"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 const (
