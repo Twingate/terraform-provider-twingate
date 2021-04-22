@@ -47,7 +47,7 @@ func TestInitializeTwingateClient(t *testing.T) {
 	}`
 
 	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -66,7 +66,7 @@ func TestInitializeTwingateClientRequestFails(t *testing.T) {
 	json := `{}`
 
 	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
-	GetDoFunc = func(*http.Request) (*http.Response, error) {
+	GetDoFunc = func(*retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 500,
 			Body:       r,
@@ -85,7 +85,7 @@ func TestInitializeTwingateClientRequestParsingFails(t *testing.T) {
 	json := `{ error }`
 
 	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
-	GetDoFunc = func(*http.Request) (*http.Response, error) {
+	GetDoFunc = func(*retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
