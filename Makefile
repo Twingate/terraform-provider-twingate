@@ -5,7 +5,7 @@ PKG_NAME=twingate
 BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
-GOBINPATH=${GOPATH}/bin
+GOBINPATH=$(shell go env GOPATH)/bin
 
 default: build
 
