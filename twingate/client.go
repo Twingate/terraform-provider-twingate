@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/Jeffail/gabs/v2"
 )
