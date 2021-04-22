@@ -2,10 +2,10 @@ package twingate
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/go-retryablehttp"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -19,7 +19,7 @@ const (
 )
 
 type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
+	Do(req *retryablehttp.Request) (*http.Response, error)
 }
 
 var ErrAPIRequest = errors.New("api request error")
@@ -37,8 +37,12 @@ type Client struct {
 
 func NewClient(network, apiToken, url *string) *Client {
 	serverURL := fmt.Sprintf("https://%s.%s", *network, *url)
+
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient.Timeout = TimeOut
+
 	client := Client{
-		HTTPClient:   &http.Client{Timeout: TimeOut},
+		HTTPClient:   retryClient,
 		ServerURL:    serverURL,
 		APIServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
 		APIToken:     *apiToken,
@@ -79,7 +83,7 @@ func Check(f func() error) {
 	}
 }
 
-func (client *Client) doRequest(req *http.Request) ([]byte, error) {
+func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	req.Header.Set("X-API-KEY", client.APIToken)
 	req.Header.Set("content-type", "application/json")
 	res, err := client.HTTPClient.Do(req)
@@ -102,7 +106,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
 	jsonValue, _ := json.Marshal(query)
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", client.APIServerURL, bytes.NewBuffer(jsonValue))
+	req, err := retryablehttp.NewRequest("POST", client.APIServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, fmt.Errorf("could not create request context : %w", err)
 	}
