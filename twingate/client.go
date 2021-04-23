@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 )
 
 type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
+	Do(req *retryablehttp.Request) (*http.Response, error)
 }
 
 var ErrAPIRequest = errors.New("api request error")
@@ -38,14 +38,21 @@ type Client struct {
 	HTTPClient       HTTPClient
 }
 
+
 func NewClient(network, apiToken, url string) *Client {
 	serverURL := fmt.Sprintf("https://%s.%s", network, url)
+
+	httpClient := retryablehttp.NewClient()
+	httpClient.HTTPClient.Timeout = Timeout
+	httpClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
+		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
+	}
+
 	client := Client{
-		HTTPClient:       &http.Client{Timeout: Timeout},
-		ServerURL:        serverURL,
-		GraphqlServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
-		APIServerURL:     fmt.Sprintf("%s/api/v1", serverURL),
-		APIToken:         apiToken,
+		HTTPClient:   httpClient,
+		ServerURL:    serverURL,
+		APIServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
+		APIToken:     apiToken,
 	}
 	log.Printf("[INFO] Using Server URL %s", client.ServerURL)
 
@@ -82,7 +89,9 @@ func Check(f func() error) {
 		log.Printf("[ERROR] Error Closing: %s", err)
 	}
 }
-func (client *Client) doRequest(req *http.Request) ([]byte, error) {
+
+func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
+
 	req.Header.Set("content-type", "application/json")
 	res, err := client.HTTPClient.Do(req)
 	if err != nil {
@@ -102,10 +111,10 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
 	jsonValue, _ := json.Marshal(query)
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
-
+	req, err := retryablehttp.NewRequest("POST", client.APIServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return nil, fmt.Errorf("can't create request context: %w", err)
+		return nil, fmt.Errorf("could not create GraphQL request : %w", err)
+
 	}
 
 	req.Header.Set("X-API-KEY", client.APIToken)
