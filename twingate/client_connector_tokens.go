@@ -13,10 +13,10 @@ type ConnectorTokens struct {
 	RefreshToken string
 }
 
-func (client *Client) verifyConnectorTokens(refreshToken, accessToken *string) error {
+func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) error {
 	jsonValue, _ := json.Marshal(
 		map[string]string{
-			"refresh_token": *refreshToken,
+			"refresh_token": refreshToken,
 		})
 
 	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
@@ -24,7 +24,7 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken *string) e
 		return fmt.Errorf("can't create context : %w ", err)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", *accessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	body, err := client.doRequest(req)
 	_ = body
 	if err != nil {
@@ -51,14 +51,14 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 	}
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return err
+		return fmt.Errorf("can't generate tokens : %w", err)
 	}
 	createTokensResult := mutationConnector.Path("data.connectorGenerateTokens")
 	status := createTokensResult.Path("ok").Data().(bool)
 	if !status {
 		errorString := createTokensResult.Path("error").Data().(string)
 
-		return APIError(fmt.Sprintf("cant create tokens for connector %s, error: %s", connector.Id, errorString))
+		return APIError("can't create tokens for connector %s, error: %s", connector.Id, errorString)
 	}
 
 	connector.ConnectorTokens = &ConnectorTokens{

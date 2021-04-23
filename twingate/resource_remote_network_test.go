@@ -77,7 +77,7 @@ func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 		remoteNetworkId := rs.Primary.ID
 
-		err := client.deleteRemoteNetwork(&remoteNetworkId)
+		err := client.deleteRemoteNetwork(remoteNetworkId)
 		// expecting error here , since the network is already gone
 		if err == nil {
 			return fmt.Errorf("Remote network with ID %s still present : ", remoteNetworkId)

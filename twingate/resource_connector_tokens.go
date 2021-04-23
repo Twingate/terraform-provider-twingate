@@ -97,12 +97,12 @@ func resourceConnectorTokensRead(ctx context.Context, d *schema.ResourceData, m 
 	accessToken := d.Get("access_token").(string)
 	refreshToken := d.Get("refresh_token").(string)
 	// Confirming the tokens are still valid
-	err := client.verifyConnectorTokens(&refreshToken, &accessToken)
+	err := client.verifyConnectorTokens(refreshToken, accessToken)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
-			Summary:  "Unable to verify connector tokens",
-			Detail:   fmt.Sprintf("Unable to verify connector %s tokens, assuming not valid and needs to be recreated", d.Id()),
+			Summary:  "can't to verify connector tokens",
+			Detail:   fmt.Sprintf("can't verify connector %s tokens, assuming not valid and needs to be recreated", d.Id()),
 		})
 		d.SetId("")
 

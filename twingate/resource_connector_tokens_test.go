@@ -20,7 +20,7 @@ func TestAccRemoteConnector_withTokens(t *testing.T) {
 		CheckDestroy:      testAccCheckTwingateConnectorTokensInvalidated,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateConnectorTokens(remoteNetworkName),
+				Config: testTwingateConnectorTokensWithKeepers(remoteNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateConnectorTokensExists(connectorTokensResource),
 				),
@@ -29,7 +29,7 @@ func TestAccRemoteConnector_withTokens(t *testing.T) {
 	})
 }
 
-func testTwingateConnectorTokens(remoteNetworkName string) string {
+func testTwingateConnectorTokensWithKeepers(remoteNetworkName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test" {
 	  name = "%s"
@@ -39,6 +39,9 @@ func testTwingateConnectorTokens(remoteNetworkName string) string {
 	}
 	resource "twingate_connector_tokens" "test" {
 	  connector_id = twingate_connector.test.id
+      keepers = {
+         foo = "bar"
+      }
 	}
 	`, remoteNetworkName)
 }
@@ -54,7 +57,7 @@ func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 		connectorId := rs.Primary.ID
 		accessToken := rs.Primary.Attributes["access_token"]
 		refreshToken := rs.Primary.Attributes["refresh_token"]
-		err := client.verifyConnectorTokens(&refreshToken, &accessToken)
+		err := client.verifyConnectorTokens(refreshToken, accessToken)
 		// expecting error here , Since tokens invalidated
 		if err == nil {
 			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active: ", connectorId)

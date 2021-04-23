@@ -11,7 +11,7 @@ type Connector struct {
 	ConnectorTokens *ConnectorTokens
 }
 
-func (client *Client) createConnector(remoteNetworkId *string) (*Connector, error) {
+func (client *Client) createConnector(remoteNetworkId string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
@@ -24,11 +24,11 @@ func (client *Client) createConnector(remoteNetworkId *string) (*Connector, erro
 				}
 			  }
 			}
-        `, *remoteNetworkId),
+        `, remoteNetworkId),
 	}
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't create connector : %w", err)
 	}
 
 	connectorResult := mutationConnector.Path("data.connectorCreate")
@@ -37,7 +37,7 @@ func (client *Client) createConnector(remoteNetworkId *string) (*Connector, erro
 	if !status {
 		errorString := connectorResult.Path("error").Data().(string)
 
-		return nil, APIError(fmt.Sprintf("can't create connector under the network with id %s, error: %s", *remoteNetworkId, errorString))
+		return nil, APIError("can't create connector under the network with id %s, error: %s", remoteNetworkId, errorString)
 	}
 
 	connector := Connector{
@@ -48,7 +48,7 @@ func (client *Client) createConnector(remoteNetworkId *string) (*Connector, erro
 	return &connector, nil
 }
 
-func (client *Client) readConnector(connectorId *string) (*Connector, error) {
+func (client *Client) readConnector(connectorId string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		{
@@ -61,17 +61,17 @@ func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 			}
           }
 		}
-        `, *connectorId),
+        `, connectorId),
 	}
 	queryConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't read connector : %w", err)
 	}
 
 	connectorRead := queryConnector.Path("data.connector")
 
 	if connectorRead.Data() == nil {
-		return nil, APIError(fmt.Sprintf("Unable to read connector %s information ", *connectorId))
+		return nil, APIError("can't read connector %s", connectorId)
 	}
 
 	connector := Connector{
@@ -86,7 +86,7 @@ func (client *Client) readConnector(connectorId *string) (*Connector, error) {
 	return &connector, nil
 }
 
-func (client *Client) deleteConnector(connectorId *string) error {
+func (client *Client) deleteConnector(connectorId string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		 mutation {
@@ -95,19 +95,19 @@ func (client *Client) deleteConnector(connectorId *string) error {
 			error
 		  }
 		}
-		`, *connectorId),
+		`, connectorId),
 	}
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("can't delete connector : %w", err)
 	}
 	connectorDelete := mutationConnector.Path("data.connectorDelete")
 	status := connectorDelete.Path("ok").Data().(bool)
 	if !status {
 		errorMessage := connectorDelete.Path("error").Data().(string)
 
-		return APIError(fmt.Sprintf("unable to delete connector with Id %s, error: %s", *connectorId, errorMessage))
+		return APIError("can't delete connector with Id %s, error: %s", connectorId, errorMessage)
 	}
 
 	return nil

@@ -36,7 +36,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	}
 	remoteNetworkName := "test"
 
-	connector, err := client.createConnector(&remoteNetworkName)
+	connector, err := client.createConnector(remoteNetworkName)
 
 	assert.Nil(t, err)
 	assert.EqualValues(t, "test-id", connector.Id)
@@ -66,7 +66,7 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 	}
 	connectorId := "test"
 
-	err := client.deleteConnector(&connectorId)
+	err := client.deleteConnector(connectorId)
 
 	assert.Nil(t, err)
 }
@@ -94,7 +94,7 @@ func TestClientConnectorCreateError(t *testing.T) {
 	}
 	remoteNetworkName := "test"
 
-	remoteNetwork, err := client.createConnector(&remoteNetworkName)
+	remoteNetwork, err := client.createConnector(remoteNetworkName)
 
 	assert.EqualError(t, err, "api request error : can't create connector under the network with id test, error: error_1")
 	assert.Nil(t, remoteNetwork)
@@ -123,7 +123,7 @@ func TestClientConnectorDeleteError(t *testing.T) {
 	}
 	connectorId := "test"
 
-	err := client.deleteConnector(&connectorId)
+	err := client.deleteConnector(connectorId)
 
-	assert.EqualError(t, err, "api request error : unable to delete connector with Id test, error: error_1")
+	assert.EqualError(t, err, "api request error : can't delete connector with Id test, error: error_1")
 }

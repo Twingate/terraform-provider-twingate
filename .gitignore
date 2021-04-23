@@ -36,3 +36,5 @@ vars.tfvars
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
+
+examples/
