@@ -27,7 +27,8 @@ var ErrAPIRequest = errors.New("api request error")
 
 func APIError(format string, a ...interface{}) error {
 	a = append([]interface{}{ErrAPIRequest}, a...)
-	return fmt.Errorf("%s : "+format, a...)
+
+	return fmt.Errorf("%s : "+format, a...) //nolint:goerr113
 }
 
 type Client struct {
@@ -91,7 +92,6 @@ func Check(f func() error) {
 }
 
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
-
 	req.Header.Set("content-type", "application/json")
 	res, err := client.HTTPClient.Do(req)
 	if err != nil {
@@ -114,7 +114,6 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 	req, err := retryablehttp.NewRequest("POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, fmt.Errorf("could not create GraphQL request : %w", err)
-
 	}
 
 	req.Header.Set("X-API-KEY", client.APIToken)
