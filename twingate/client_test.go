@@ -100,7 +100,7 @@ func TestClientPingRequestParsingFails(t *testing.T) {
 	assert.NotNilf(t, err, "invalid character 'e' looking for beginning of object key string")
 }
 
-func TestClientRetriesFailedRequests(t *testing.T) {
+func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
 	var serverCallCount int32
 	var expectedBody = []byte("Success!")
 
@@ -138,5 +138,38 @@ func TestClientRetriesFailedRequests(t *testing.T) {
 	if serverCallCount != 2 {
 		t.Fatalf("Expected server to be called %d times but it was called %d times", 2, serverCallCount)
 	}
+}
 
+func TestClientDoesNotRetryOn400Errors(t *testing.T) {
+	var serverCallCount int32
+	var expectedBody = []byte("Success!")
+
+	testToken := "token"
+	testNetwork := "network"
+	testUrl := "twingate.com"
+
+	client := NewClient(&testNetwork, &testToken, &testUrl)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&serverCallCount, 1)
+		if atomic.LoadInt32(&serverCallCount) > 1 {
+			w.Write(expectedBody)
+			w.WriteHeader(200)
+			return
+		}
+		w.WriteHeader(400)
+	}))
+	defer server.Close()
+
+	req, err := retryablehttp.NewRequest("GET", server.URL+"/some/path", nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	body, err := client.doRequest(req)
+	if err == nil {
+		t.Fatalf("Expected to get an error")
+	}
+
+	_ = body
 }
