@@ -40,6 +40,9 @@ func NewClient(network, apiToken, url *string) *Client {
 
 	httpClient := retryablehttp.NewClient()
 	httpClient.HTTPClient.Timeout = Timeout
+	httpClient.RequestLogHook = func(logger Logger, req *http.Request, retryNumber int) {
+		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
+	}
 
 	client := Client{
 		HTTPClient:   httpClient,
