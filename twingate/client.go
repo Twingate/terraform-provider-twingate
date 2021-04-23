@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	TimeOut = 10 * time.Second
+	Timeout = 10 * time.Second
 )
 
 type HTTPClient interface {
@@ -39,7 +39,7 @@ func NewClient(network, apiToken, url *string) *Client {
 	serverURL := fmt.Sprintf("https://%s.%s", *network, *url)
 
 	httpClient := retryablehttp.NewClient()
-	httpClient.HTTPClient.Timeout = TimeOut
+	httpClient.HTTPClient.Timeout = Timeout
 
 	client := Client{
 		HTTPClient:   httpClient,
