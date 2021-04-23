@@ -108,7 +108,7 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 
 	req, err := retryablehttp.NewRequest("POST", client.APIServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return nil, fmt.Errorf("could not create request context : %w", err)
+		return nil, fmt.Errorf("could not create GraphQL request : %w", err)
 	}
 
 	body, err := client.doRequest(req)
