@@ -5,7 +5,7 @@ PKG_NAME=twingate
 BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
-GOBINPATH=${GOPATH}/bin
+GOBINPATH=$(shell go env GOPATH)/bin
 
 default: build
 
@@ -34,6 +34,10 @@ fmtcheck:
 lint: tools
 	@echo "==> Checking source code against linters..."
 	@$(GOBINPATH)/golangci-lint run -c golangci.yml ./$(PKG_NAME)
+
+lint-fix: tools
+	@echo "==> Checking source code against linters with fix enabled..."
+	@$(GOBINPATH)/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)
 
 sec: tools
 	@echo "==> Checking source code against security issues..."
