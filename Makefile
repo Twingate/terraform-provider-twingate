@@ -36,7 +36,7 @@ lint: tools
 	@$(GOBINPATH)/golangci-lint run -c golangci.yml ./$(PKG_NAME)
 
 lint-fix: tools
-	@echo "==> Checking source code against linters..."
+	@echo "==> Checking source code against linters with fix enabled..."
 	@$(GOBINPATH)/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)
 
 sec: tools
