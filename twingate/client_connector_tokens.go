@@ -2,10 +2,10 @@ package twingate
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 type ConnectorTokens struct {
@@ -19,9 +19,10 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) er
 			"refresh_token": refreshToken,
 		})
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
+	req, err := retryablehttp.NewRequest("POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return fmt.Errorf("can't create context : %w ", err)
+		return fmt.Errorf("could not create Api request : %w", err)
+
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))

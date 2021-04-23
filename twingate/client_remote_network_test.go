@@ -2,10 +2,11 @@ package twingate
 
 import (
 	"bytes"
-	"github.com/hashicorp/go-retryablehttp"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -86,7 +87,7 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(updateNetworkOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -112,7 +113,7 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(readNetworkOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,

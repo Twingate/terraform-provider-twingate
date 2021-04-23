@@ -38,7 +38,6 @@ type Client struct {
 	HTTPClient       HTTPClient
 }
 
-
 func NewClient(network, apiToken, url string) *Client {
 	serverURL := fmt.Sprintf("https://%s.%s", network, url)
 
@@ -49,10 +48,11 @@ func NewClient(network, apiToken, url string) *Client {
 	}
 
 	client := Client{
-		HTTPClient:   httpClient,
-		ServerURL:    serverURL,
-		APIServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
-		APIToken:     apiToken,
+		HTTPClient:       httpClient,
+		ServerURL:        serverURL,
+		GraphqlServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
+		APIServerURL:     fmt.Sprintf("%s/api/v1", serverURL),
+		APIToken:         apiToken,
 	}
 	log.Printf("[INFO] Using Server URL %s", client.ServerURL)
 
@@ -111,7 +111,7 @@ func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
 	jsonValue, _ := json.Marshal(query)
 
-	req, err := retryablehttp.NewRequest("POST", client.APIServerURL, bytes.NewBuffer(jsonValue))
+	req, err := retryablehttp.NewRequest("POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, fmt.Errorf("could not create GraphQL request : %w", err)
 

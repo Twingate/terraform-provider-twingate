@@ -11,8 +11,6 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // MockClient is the mock client
@@ -130,7 +128,7 @@ func TestInitializeTwingateClientGraphqlRequestReturnsErrors(t *testing.T) {
 	}`
 
 	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
-	GetDoFunc = func(*http.Request) (*http.Response, error) {
+	GetDoFunc = func(*retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -153,7 +151,7 @@ func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
 	testNetwork := "network"
 	testUrl := "twingate.com"
 
-	client := NewClient(&testNetwork, &testToken, &testUrl)
+	client := NewClient(testNetwork, testToken, testUrl)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&serverCallCount, 1)
@@ -193,7 +191,7 @@ func TestClientDoesNotRetryOn400Errors(t *testing.T) {
 	testNetwork := "network"
 	testUrl := "twingate.com"
 
-	client := NewClient(&testNetwork, &testToken, &testUrl)
+	client := NewClient(testNetwork, testToken, testUrl)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&serverCallCount, 1)

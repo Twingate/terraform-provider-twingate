@@ -60,7 +60,7 @@ func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 		err := client.verifyConnectorTokens(refreshToken, accessToken)
 		// expecting error here , Since tokens invalidated
 		if err == nil {
-			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active: ", connectorId)
+			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active", connectorId)
 		}
 	}
 

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/hashicorp/go-retryablehttp"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +30,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -58,7 +60,7 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(deleteConnectorOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -86,7 +88,7 @@ func TestClientConnectorCreateError(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -115,7 +117,7 @@ func TestClientConnectorDeleteError(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(deleteConnectorOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,

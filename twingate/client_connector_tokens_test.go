@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/hashicorp/go-retryablehttp"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +30,7 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -55,7 +57,7 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		header := req.Header.Get("Authorization")
 		assert.Contains(t, header, accessToken)
 		return &http.Response{
@@ -79,7 +81,7 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		header := req.Header.Get("Authorization")
 		assert.Contains(t, header, accessToken)
 		return &http.Response{
@@ -107,7 +109,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
 	client := createTestClient()
 
-	GetDoFunc = func(req *http.Request) (*http.Response, error) {
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
