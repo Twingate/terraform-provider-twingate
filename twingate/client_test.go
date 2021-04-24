@@ -2,8 +2,10 @@ package twingate
 
 import (
 	"bytes"
+
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/stretchr/testify/assert"
+
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +32,7 @@ func createTestClient() *Client {
 	testNetwork := "network"
 	testUrl := "twingate.com"
 
-	mockClient := NewClient(&testNetwork, &testToken, &testUrl)
+	mockClient := NewClient(testNetwork, testToken, testUrl)
 	mockClient.HTTPClient = &MockClient{}
 
 	return mockClient
@@ -78,7 +80,8 @@ func TestClientPingRequestFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.NotNilf(t, err, "status: 500, body: {} ")
+	assert.EqualError(t, err, "can't parse graphql response: can't execute request : api request error : request  failed, status 500, body {}")
+
 }
 
 func TestClientPingRequestParsingFails(t *testing.T) {
@@ -97,7 +100,47 @@ func TestClientPingRequestParsingFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.NotNilf(t, err, "invalid character 'e' looking for beginning of object key string")
+	assert.EqualError(t, err, "can't parse graphql response: can't parse request body : invalid character 'e' looking for beginning of object key string")
+
+}
+
+func TestInitializeTwingateClientGraphqlRequestReturnsErrors(t *testing.T) {
+
+	// response JSON
+	json := `{
+	  "errors": [
+		{
+		  "message": "error message",
+		  "locations": [
+			{
+			  "line": 2,
+			  "column": 3
+			}
+		  ],
+		  "path": [
+			"remoteNetwork"
+		  ]
+		}
+	  ],
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(json)))
+	GetDoFunc = func(*retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	client := createTestClient()
+	remoteNetworkId := "testId"
+	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
+
+	assert.Nil(t, remoteNetwork)
+	assert.EqualError(t, err, "can't read remote network : api request error : graphql request returned with errors : error message")
+
 }
 
 func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
@@ -108,7 +151,7 @@ func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
 	testNetwork := "network"
 	testUrl := "twingate.com"
 
-	client := NewClient(&testNetwork, &testToken, &testUrl)
+	client := NewClient(testNetwork, testToken, testUrl)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&serverCallCount, 1)
@@ -148,7 +191,7 @@ func TestClientDoesNotRetryOn400Errors(t *testing.T) {
 	testNetwork := "network"
 	testUrl := "twingate.com"
 
-	client := NewClient(&testNetwork, &testToken, &testUrl)
+	client := NewClient(testNetwork, testToken, testUrl)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&serverCallCount, 1)

@@ -38,6 +38,27 @@ func TestAccTwingateRemoteNetwork_basic(t *testing.T) {
 	})
 }
 
+func TestAccTwingateRemoteNetwork_deleteNonExisting(t *testing.T) {
+
+	remoteNetworkNameBefore := acctest.RandomWithPrefix("tf-acc")
+	resourceName := "twingate_remote_network.test"
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:  testTwingateRemoteNetwork(remoteNetworkNameBefore),
+				Destroy: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateRemoteNetworkDoesNotExists(resourceName),
+				),
+			},
+		},
+	})
+}
+
 func testTwingateRemoteNetwork(name string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test" {
@@ -56,7 +77,7 @@ func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 		remoteNetworkId := rs.Primary.ID
 
-		err := client.deleteRemoteNetwork(&remoteNetworkId)
+		err := client.deleteRemoteNetwork(remoteNetworkId)
 		// expecting error here , since the network is already gone
 		if err == nil {
 			return fmt.Errorf("Remote network with ID %s still present : ", remoteNetworkId)
@@ -79,5 +100,17 @@ func testAccCheckTwingateRemoteNetworkExists(resourceName string) resource.TestC
 		}
 
 		return nil
+	}
+}
+
+func testAccCheckTwingateRemoteNetworkDoesNotExists(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		_ = rs
+		if !ok {
+			return nil
+		}
+
+		return fmt.Errorf("this resource should not be here: %s ", resourceName)
 	}
 }

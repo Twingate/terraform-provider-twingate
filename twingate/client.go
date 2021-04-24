@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -24,19 +25,22 @@ type HTTPClient interface {
 
 var ErrAPIRequest = errors.New("api request error")
 
-func APIError(op string) error {
-	return fmt.Errorf("APIRequestError %w : %s", ErrAPIRequest, op)
+func APIError(format string, a ...interface{}) error {
+	a = append([]interface{}{ErrAPIRequest}, a...)
+
+	return fmt.Errorf("%s : "+format, a...) //nolint:goerr113
 }
 
 type Client struct {
-	APIToken     string
-	ServerURL    string
-	APIServerURL string
-	HTTPClient   HTTPClient
+	APIToken         string
+	ServerURL        string
+	GraphqlServerURL string
+	APIServerURL     string
+	HTTPClient       HTTPClient
 }
 
-func NewClient(network, apiToken, url *string) *Client {
-	serverURL := fmt.Sprintf("https://%s.%s", *network, *url)
+func NewClient(network, apiToken, url string) *Client {
+	serverURL := fmt.Sprintf("https://%s.%s", network, url)
 
 	httpClient := retryablehttp.NewClient()
 	httpClient.HTTPClient.Timeout = Timeout
@@ -45,10 +49,11 @@ func NewClient(network, apiToken, url *string) *Client {
 	}
 
 	client := Client{
-		HTTPClient:   httpClient,
-		ServerURL:    serverURL,
-		APIServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
-		APIToken:     *apiToken,
+		HTTPClient:       httpClient,
+		ServerURL:        serverURL,
+		GraphqlServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
+		APIServerURL:     fmt.Sprintf("%s/api/v1", serverURL),
+		APIToken:         apiToken,
 	}
 	log.Printf("[INFO] Using Server URL %s", client.ServerURL)
 
@@ -74,9 +79,9 @@ func (client *Client) ping() error {
 	if err != nil {
 		log.Printf("[ERROR] Cannot reach Graphql API Server %s", jsonData)
 
-		return err
+		return fmt.Errorf("can't parse graphql response: %w", err)
 	}
-	log.Printf("[INFO] Graphql API Server at URL %s reachable", client.APIServerURL)
+	log.Printf("[INFO] Graphql API Server at URL %s reachable", client.GraphqlServerURL)
 
 	return nil
 }
@@ -87,45 +92,48 @@ func Check(f func() error) {
 }
 
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
-	req.Header.Set("X-API-KEY", client.APIToken)
 	req.Header.Set("content-type", "application/json")
 	res, err := client.HTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("cant execute http request : %w", err)
+		return nil, fmt.Errorf("can't execute http request: %w", err)
 	}
 	defer Check(res.Body.Close)
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("cant read response body : %w", err)
+		return nil, fmt.Errorf("can't read response body: %w", err)
 	}
-
 	if res.StatusCode != http.StatusOK {
-		return nil, APIError(fmt.Sprintf("request %s failed, status %d, body %s", req.RequestURI, res.StatusCode, body))
+		return nil, APIError("request %s failed, status %d, body %s", req.RequestURI, res.StatusCode, body)
 	}
 
 	return body, nil
 }
-
 func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
 	jsonValue, _ := json.Marshal(query)
 
-	req, err := retryablehttp.NewRequest("POST", client.APIServerURL, bytes.NewBuffer(jsonValue))
+	req, err := retryablehttp.NewRequest("POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return nil, fmt.Errorf("could not create GraphQL request : %w", err)
 	}
 
+	req.Header.Set("X-API-KEY", client.APIToken)
 	body, err := client.doRequest(req)
 	_ = body
 	if err != nil {
-		log.Printf("[ERROR] Cant execute request %s", err)
-
-		return nil, fmt.Errorf("could not execute request : %w", err)
+		return nil, fmt.Errorf("can't execute request : %w", err)
 	}
 	parsedResponse, err := gabs.ParseJSON(body)
 	if err != nil {
-		log.Printf("[ERROR] Error parsing response %s", string(body))
+		return nil, fmt.Errorf("can't parse request body : %w", err)
+	}
 
-		return nil, fmt.Errorf("could not parse request body : %w", err)
+	if parsedResponse.Path("errors") != nil {
+		var messages []string
+		for _, child := range parsedResponse.Path("errors").Children() {
+			messages = append(messages, child.Path("message").Data().(string))
+		}
+
+		return nil, APIError("graphql request returned with errors : %s", strings.Join(messages, ","))
 	}
 
 	return parsedResponse, nil

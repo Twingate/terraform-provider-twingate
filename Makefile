@@ -27,6 +27,10 @@ test:
 testacc:
 	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 ./scripts/test.sh
 
+fmt:
+	@echo "==> Fixing source code with gofmt..."
+	gofmt -w -s ./$(PKG_NAME)
+
 fmtcheck:
 	@echo "==> Checking source code against gofmt..."
 	@sh -c $(CURDIR)/scripts/gofmtcheck.sh

@@ -31,7 +31,9 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"twingate_remote_network": resourceRemoteNetwork(),
+			"twingate_remote_network":   resourceRemoteNetwork(),
+			"twingate_connector":        resourceConnector(),
+			"twingate_connector_tokens": resourceConnectorTokens(),
 		},
 		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
@@ -45,7 +47,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {
-		client := NewClient(&network, &apiToken, &url)
+		client := NewClient(network, apiToken, url)
 
 		err := client.ping()
 

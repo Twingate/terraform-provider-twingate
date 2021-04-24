@@ -19,7 +19,7 @@ jobs:
           name: Format Check
           command: |
             make fmtcheck
-            
+
       - run:
           name: Run Lint
           command: |
