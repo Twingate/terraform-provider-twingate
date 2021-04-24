@@ -120,12 +120,10 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 	body, err := client.doRequest(req)
 	_ = body
 	if err != nil {
-
 		return nil, fmt.Errorf("can't execute request : %w", err)
 	}
 	parsedResponse, err := gabs.ParseJSON(body)
 	if err != nil {
-
 		return nil, fmt.Errorf("can't parse request body : %w", err)
 	}
 
