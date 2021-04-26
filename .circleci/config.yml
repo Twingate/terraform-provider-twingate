@@ -58,19 +58,56 @@ jobs:
 
     steps:
       - checkout
-
       - restore_cache:
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
           name: Build
-          command: make build
+          command: |
+            CGO_ENABLED=0 GOOS=darwin GOARCH=386 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-darwin-386
+            CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-darwin-amd64
+            CGO_ENABLED=0 GOOS=linux GOARCH=386 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-linux-386
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-linux-amd64
+            CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-linux-arm
+            CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-windows-386.exe
+            CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-windows-amd64.exe
+
+      - run:
+          name: Compute checksum of binaries
+          command: |
+            for binary in build/*; do
+              sha256sum -b $binary > $binary.sha256
+            done
 
       - save_cache: # Store cache in the /go/pkg directory
           key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
+
+      - persist_to_workspace:
+          root: /go/src/github.com/twingate/terraform-provider-twingate
+          paths:
+            - build
+
+  release:
+
+    docker:
+      - image: golang:1.16
+
+    working_directory: /build
+
+    steps:
+      - attach_workspace:
+          at: /
+      - run:
+          name: Instal GHR
+          command: |
+            go get github.com/tcnksm/ghr
+      - run:
+          name: Publish release
+          command: |
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete -draft ${CIRCLE_TAG} .
 
 workflows:
   version: 2
@@ -84,3 +121,11 @@ workflows:
          requires:
            - test
 
+     - release:
+         requires:
+           - build
+         filters:
+           branches:
+             ignore: /.*/
+           tags:
+             only: /^v\d+\.\d+\.\d+$/
