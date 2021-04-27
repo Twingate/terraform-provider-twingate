@@ -37,4 +37,3 @@ vars.tfvars
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
 
-examples/
