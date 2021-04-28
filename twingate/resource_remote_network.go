@@ -10,6 +10,8 @@ import (
 
 func resourceRemoteNetwork() *schema.Resource {
 	return &schema.Resource{
+		Description: "Connectors are Twingate components that are deployed behind your firewall to provide access to private Resources.\n" +
+			"Checkout the [twingate docs](https://docs.twingate.com/docs/connectors) for detailed info ",
 		CreateContext: resourceRemoteNetworkCreate,
 		ReadContext:   resourceRemoteNetworkRead,
 		UpdateContext: resourceRemoteNetworkUpdate,

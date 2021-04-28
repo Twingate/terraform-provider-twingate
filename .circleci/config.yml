@@ -47,6 +47,9 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
+      - docs_generation_check:
+          name: Check if docs is updated
+          command: make ci-checks
 
 
   build:

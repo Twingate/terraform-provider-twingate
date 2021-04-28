@@ -11,6 +11,11 @@ default: build
 
 .PHONY: docs
 
+.PHONY: ci-checks
+ci-checks: docs
+	echo "Checking if latest docs generated"
+	git diff --exit-code || echo "ERROR: Update and push the latest documentation"; exit 1
+
 vendor:
 	go mod vendor
 
