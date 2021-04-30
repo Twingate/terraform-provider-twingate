@@ -76,9 +76,7 @@ workflows:
   version: 2
   build:
    jobs:
-     - test:
-         context:
-           - terraform-provider
+     - test
 
      - build:
          requires:
