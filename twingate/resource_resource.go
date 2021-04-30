@@ -10,13 +10,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceResource() *schema.Resource {
+func resourceResource() *schema.Resource { //nolint:funlen
 	portsResource := schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"policy": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"RESTRICTED", "ALLOW_ALL"}, false),
+				Description:  "Whether to allow all ports or restrict protocol access within certain port ranges.",
 			},
 			"ports": {
 				Type:     schema.TypeList,
@@ -25,38 +26,10 @@ func resourceResource() *schema.Resource {
 					Type:        schema.TypeString,
 					Description: "List of port ranges 1 and 65535 inclusively, in the format '100-200' for a range , or '8080' a single port ",
 				},
-				//ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-				//	ports := val.([]string)
-				//	for _, port := range ports {
-				//		if strings.Contains(port, "-") {
-				//			split := strings.SplitN(port, "-", 2)
-				//			start, err := strconv.Atoi(split[0])
-				//			if err != nil {
-				//				errs = append(errs, fmt.Errorf("cant parse port %s, error : %w", split[0], err))
-				//			}
-				//			end, err := strconv.Atoi(split[1])
-				//			if err != nil {
-				//				errs = append(errs, fmt.Errorf("cant parse port %s, error : %w", split[1], err))
-				//			}
-				//			if start < 1 || start > 65535 || end < start || end > 65535 {
-				//				errs = append(errs, fmt.Errorf("ports should be in range 1 to 65535 and %d should be smaller then %d", start, end))
-				//			}
-				//		} else {
-				//			p, err := strconv.Atoi(port)
-				//			if err != nil {
-				//				errs = append(errs, fmt.Errorf("cant parse port %s, error : %w", port, err))
-				//			}
-				//			if p < 1 || p > 65535 {
-				//				errs = append(errs, fmt.Errorf("port %d should be in range 1 to 65535", p))
-				//			}
-				//		}
-				//
-				//	}
-				//	return
-				//},
 			},
 		},
 	}
+
 	return &schema.Resource{
 		CreateContext: resourceResourceCreate,
 		UpdateContext: resourceResourceUpdate,
@@ -131,43 +104,58 @@ func convertSlice(a []interface{}) []string {
 	for _, elem := range a {
 		res = append(res, elem.(string))
 	}
+
 	return res
 }
 
-func extractProtocols(p interface{}, protocols *Protocols) {
+func extractProtocols(p interface{}) *Protocols {
+	protocols := &Protocols{}
 	protocolsMap := p.(map[string]interface{})
 	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
 	u := protocolsMap["udp"].([]interface{})
 	t := protocolsMap["tcp"].([]interface{})
 	if len(u) > 0 {
 		udp := u[0].(map[string]interface{})
-		protocols.UdpPolicy = udp["policy"].(string)
-		protocols.UdpPorts = convertSlice(udp["ports"].([]interface{}))
+		protocols.UDPPolicy = udp["policy"].(string)
+		protocols.UDPPorts = convertSlice(udp["ports"].([]interface{}))
 	}
 	if len(t) > 0 {
 		tcp := t[0].(map[string]interface{})
-		protocols.TcpPolicy = tcp["policy"].(string)
-		protocols.TcpPorts = convertSlice(tcp["ports"].([]interface{}))
+		protocols.TCPPolicy = tcp["policy"].(string)
+		protocols.TCPPorts = convertSlice(tcp["ports"].([]interface{}))
+	}
+	return protocols
+}
+func newEmptyProtocols() *Protocols {
+	return &Protocols{
+		true, "ALLOW_ALL", []string{}, "ALLOW_ALL", []string{},
 	}
 }
 
-func resourceResourceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
-
-	protocols := &Protocols{}
-
-	p := d.Get("protocols").([]interface{})
-	if len(p) > 0 {
-		extractProtocols(p[0], protocols)
-	}
-
+func extractResource(d *schema.ResourceData) *Resource {
 	resource := &Resource{
 		Name:            d.Get("name").(string),
 		RemoteNetworkId: d.Get("remote_network_id").(string),
 		Address:         d.Get("address").(string),
 		Groups:          convertSlice(d.Get("groups").([]interface{})),
-		Protocols:       protocols,
 	}
+
+	p := d.Get("protocols").([]interface{})
+
+	if len(p) > 0 {
+		resource.Protocols = extractProtocols(p[0])
+	} else {
+		resource.Protocols = newEmptyProtocols()
+	}
+
+	return resource
+}
+
+func resourceResourceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(*Client)
+
+	resource := extractResource(d)
+
 	err := client.createResource(resource)
 
 	if err != nil {
@@ -182,14 +170,15 @@ func resourceResourceCreate(ctx context.Context, d *schema.ResourceData, m inter
 
 func resourceResourceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
-	_ = client
-	//orderID := d.Id()
-	//
-	//if d.HasChange("protocols") {
-	//
-	//	client.updateResource()
-	//
-	//}
+
+	if d.HasChanges("protocols", "remote_network_id", "name", "address", "groups") {
+		resource := extractResource(d)
+		resource.Id = d.Id()
+		err := client.updateResource(resource)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	return resourceResourceRead(ctx, d, m)
 }
@@ -235,9 +224,11 @@ func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err := d.Set("groups", resource.Groups); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting groups: %w ", err))
 	}
-	protocols := flattenProtocols(resource.Protocols)
-	if err := d.Set("protocols", protocols); err != nil {
-		return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
+	if len(d.Get("protocols").([]interface{})) > 0 {
+		protocols := flattenProtocols(resource.Protocols)
+		if err := d.Set("protocols", protocols); err != nil {
+			return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
+		}
 	}
 
 	return diags
@@ -248,8 +239,8 @@ func flattenProtocols(protocols *Protocols) []interface{} {
 		p := make(map[string]interface{})
 
 		p["allow_icmp"] = protocols.AllowIcmp
-		p["tcp"] = flattenPorts(protocols.TcpPolicy, protocols.TcpPorts)
-		p["udp"] = flattenPorts(protocols.UdpPolicy, protocols.UdpPorts)
+		p["tcp"] = flattenPorts(protocols.TCPPolicy, protocols.TCPPorts)
+		p["udp"] = flattenPorts(protocols.UDPPolicy, protocols.UDPPorts)
 
 		return []interface{}{p}
 	}
@@ -260,5 +251,6 @@ func flattenPorts(policy string, ports []string) []interface{} {
 	c := make(map[string]interface{})
 	c["policy"] = policy
 	c["ports"] = ports
+
 	return []interface{}{c}
 }

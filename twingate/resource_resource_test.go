@@ -20,16 +20,34 @@ func TestAccTwingateResource_basic(t *testing.T) {
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateResource(remoteNetworkName, resourceName),
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "groups.#"),
+				),
+			},
+			{
+				Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "address", "updated-acc-test.com"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "groups.#", "1"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
+				),
+			},
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "groups.#"),
 				),
 			},
 		},
 	})
 }
 
-func testTwingateResource(networkName, resourceName string) string {
+func testTwingateResource_Simple(networkName, resourceName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test" {
 	  name = "%s"
@@ -37,6 +55,19 @@ func testTwingateResource(networkName, resourceName string) string {
 	resource "twingate_resource" "test" {
 	  name = "%s"
 	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.test.id
+	}
+	`, networkName, resourceName)
+}
+
+func testTwingateResource_withProtocolsAndGroups(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "test" {
+	  name = "%s"
+	  address = "updated-acc-test.com"
 	  remote_network_id = twingate_remote_network.test.id
 	  groups = ["R3JvdXA6MQ=="]
       protocols {
