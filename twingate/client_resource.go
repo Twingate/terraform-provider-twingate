@@ -126,6 +126,7 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 			id
 			name
 			address {
+			  type
 			  value
 			}
 			remoteNetwork {
@@ -157,7 +158,6 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 			}
 		  }
 		}
-
         `, resourceId),
 	}
 	queryResource, err := client.doGraphqlRequest(mutation)
