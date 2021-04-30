@@ -124,6 +124,7 @@ func extractProtocols(p interface{}) *Protocols {
 		protocols.TCPPolicy = tcp["policy"].(string)
 		protocols.TCPPorts = convertSlice(tcp["ports"].([]interface{}))
 	}
+
 	return protocols
 }
 func newEmptyProtocols() *Protocols {
