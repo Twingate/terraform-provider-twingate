@@ -100,7 +100,7 @@ func resourceResource() *schema.Resource { //nolint:funlen
 	}
 }
 func convertSlice(a []interface{}) []string {
-	var res = make([]string, 0)
+	var res []string
 	for _, elem := range a {
 		res = append(res, elem.(string))
 	}
@@ -108,7 +108,7 @@ func convertSlice(a []interface{}) []string {
 	return res
 }
 
-func extractProtocols(p interface{}) *Protocols {
+func extractProtocolsFromContext(p interface{}) *Protocols {
 	protocols := &Protocols{}
 	protocolsMap := p.(map[string]interface{})
 	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
@@ -144,7 +144,7 @@ func extractResource(d *schema.ResourceData) *Resource {
 	p := d.Get("protocols").([]interface{})
 
 	if len(p) > 0 {
-		resource.Protocols = extractProtocols(p[0])
+		resource.Protocols = extractProtocolsFromContext(p[0])
 	} else {
 		resource.Protocols = newEmptyProtocols()
 	}

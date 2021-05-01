@@ -24,8 +24,8 @@ type Resource struct {
 	Protocols       *Protocols
 }
 
-func convertPortsToGraphql(ports []string) string {
-	var converted = make([]string, 0)
+func convertPorts(ports []string) string {
+	var converted []string
 	for _, elem := range ports {
 		if strings.Contains(elem, "-") {
 			split := strings.SplitN(elem, "-", 2)
@@ -41,21 +41,21 @@ func convertPortsToGraphql(ports []string) string {
 	return ""
 }
 
-func protocolsToGraphql(protocols *Protocols) string {
-	var converted = make([]string, 0)
+func convertProtocols(protocols *Protocols) string {
+	var converted []string
 	if protocols == nil {
 		return ""
 	}
 
-	converted = append(converted, fmt.Sprintf("tcp: {policy: %s, ports: [%s]}", protocols.TCPPolicy, convertPortsToGraphql(protocols.TCPPorts)))
-	converted = append(converted, fmt.Sprintf("udp: {policy: %s, ports: [%s]}", protocols.UDPPolicy, convertPortsToGraphql(protocols.UDPPorts)))
+	converted = append(converted, fmt.Sprintf("tcp: {policy: %s, ports: [%s]}", protocols.TCPPolicy, convertPorts(protocols.TCPPorts)))
+	converted = append(converted, fmt.Sprintf("udp: {policy: %s, ports: [%s]}", protocols.UDPPolicy, convertPorts(protocols.UDPPorts)))
 	converted = append(converted, fmt.Sprintf("allowIcmp: %t", protocols.AllowIcmp))
 	protocolsQuery := fmt.Sprintf("{%s}", strings.Join(converted, ","))
 
 	return protocolsQuery
 }
 func convertGroups(groups []string) string {
-	var converted = make([]string, 0)
+	var converted []string
 	for _, elem := range groups {
 		converted = append(converted, fmt.Sprintf("\"%s\"", elem))
 	}
@@ -74,7 +74,7 @@ func (client *Client) createResource(resource *Resource) error {
 				}
 			  }
 		}
-        `, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.Groups), protocolsToGraphql(resource.Protocols)),
+        `, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.Groups), convertProtocols(resource.Protocols)),
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
@@ -92,7 +92,7 @@ func (client *Client) createResource(resource *Resource) error {
 	return nil
 }
 
-func convertGraphqlPortsToTFState(resourceData *gabs.Container, portPath string) []string {
+func extractPortsFromResults(resourceData *gabs.Container, portPath string) []string {
 	var parsedPorts = make([]string, 0)
 	if resourceData.ExistsP(portPath) {
 		for _, elem := range resourceData.Path(portPath).Children() {
@@ -108,14 +108,14 @@ func convertGraphqlPortsToTFState(resourceData *gabs.Container, portPath string)
 
 	return parsedPorts
 }
-func convertProtocolsToTFState(resource *Resource, resourceData *gabs.Container) {
+func extractProtocolsFromResult(resource *Resource, resourceData *gabs.Container) {
 	resource.Protocols = &Protocols{
 		AllowIcmp: resourceData.Path("protocols.allowIcmp").Data().(bool),
 		UDPPolicy: resourceData.Path("protocols.udp.policy").Data().(string),
 		TCPPolicy: resourceData.Path("protocols.tcp.policy").Data().(string),
 	}
-	resource.Protocols.TCPPorts = convertGraphqlPortsToTFState(resourceData, "protocols.tcp.ports")
-	resource.Protocols.UDPPorts = convertGraphqlPortsToTFState(resourceData, "protocols.udp.ports")
+	resource.Protocols.TCPPorts = extractPortsFromResults(resourceData, "protocols.tcp.ports")
+	resource.Protocols.UDPPorts = extractPortsFromResults(resourceData, "protocols.udp.ports")
 }
 
 func (client *Client) readResource(resourceId string) (*Resource, error) { //nolint:funlen
@@ -170,7 +170,7 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 	if resourceQuery.Data() == nil {
 		return nil, APIError("can't read resource: %s", resourceId)
 	}
-	var groups = make([]string, 0)
+	var groups []string
 	for _, elem := range resourceQuery.Path("groups.edges").Children() {
 		nodeId := elem.Path("node.id").Data().(string)
 		groups = append(groups, nodeId)
@@ -187,7 +187,7 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 		resource.RemoteNetworkId = resourceQuery.Path("remoteNetwork.id").Data().(string)
 	}
 
-	convertProtocolsToTFState(resource, resourceQuery)
+	extractProtocolsFromResult(resource, resourceQuery)
 
 	return resource, nil
 }
@@ -201,7 +201,7 @@ func (client *Client) updateResource(resource *Resource) error {
 				error
 			  }
 		}
-        `, resource.Id, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.Groups), protocolsToGraphql(resource.Protocols)),
+        `, resource.Id, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.Groups), convertProtocols(resource.Protocols)),
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {

@@ -11,10 +11,10 @@ import (
 )
 
 func TestParsePortsToGraphql(t *testing.T) {
-	emptyPorts := convertPortsToGraphql(make([]string, 0))
+	emptyPorts := convertPorts(make([]string, 0))
 	assert.Equal(t, emptyPorts, "")
 	vars := []string{"80", "81-82"}
-	ports := convertPortsToGraphql(vars)
+	ports := convertPorts(vars)
 	assert.Equal(t, ports, "{start: 80, end: 80},{start: 81, end: 82}")
 }
 
