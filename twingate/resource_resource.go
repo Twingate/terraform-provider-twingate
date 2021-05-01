@@ -100,7 +100,7 @@ func resourceResource() *schema.Resource { //nolint:funlen
 	}
 }
 func convertSlice(a []interface{}) []string {
-	var res []string
+	var res = make([]string, 0)
 	for _, elem := range a {
 		res = append(res, elem.(string))
 	}

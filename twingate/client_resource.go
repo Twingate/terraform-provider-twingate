@@ -25,7 +25,7 @@ type Resource struct {
 }
 
 func convertPorts(ports []string) string {
-	var converted []string
+	var converted = make([]string, 0)
 	for _, elem := range ports {
 		if strings.Contains(elem, "-") {
 			split := strings.SplitN(elem, "-", 2)
@@ -42,7 +42,7 @@ func convertPorts(ports []string) string {
 }
 
 func convertProtocols(protocols *Protocols) string {
-	var converted []string
+	var converted = make([]string, 0)
 	if protocols == nil {
 		return ""
 	}
@@ -55,7 +55,7 @@ func convertProtocols(protocols *Protocols) string {
 	return protocolsQuery
 }
 func convertGroups(groups []string) string {
-	var converted []string
+	var converted = make([]string, 0)
 	for _, elem := range groups {
 		converted = append(converted, fmt.Sprintf("\"%s\"", elem))
 	}
@@ -170,7 +170,7 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 	if resourceQuery.Data() == nil {
 		return nil, APIError("can't read resource: %s", resourceId)
 	}
-	var groups []string
+	var groups = make([]string, 0)
 	for _, elem := range resourceQuery.Path("groups.edges").Children() {
 		nodeId := elem.Path("node.id").Data().(string)
 		groups = append(groups, nodeId)
