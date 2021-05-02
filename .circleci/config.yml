@@ -1,15 +1,31 @@
 version: 2.1
 
+
+commands:
+  install_terraform:
+    steps:
+      - checkout
+      - run:
+          name: "Install Terraform"
+          command: |
+            curl -sO https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip \
+            unzip terraform_${TF_VERSION}_linux_amd64.zip \
+            mv terraform /usr/local/bin/ \
+            rm terraform_${TF_VERSION}_linux_amd64.zip
+
 jobs:
   test:
     environment:
       TEST_RESULTS: /tmp/test-results
+      TF_VERSION: 0.15.0
     working_directory: /go/src/github.com/twingate/terraform-provider-twingate
     docker:
       - image: circleci/golang:1.16
 
     steps:
       - checkout
+
+      - install_terraform
 
       - restore_cache:
           keys:
