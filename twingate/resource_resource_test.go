@@ -41,6 +41,7 @@ func TestAccTwingateResource_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test"),
 					resource.TestCheckNoResourceAttr("twingate_resource.test", "groups.#"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0"),
 				),
 			},
 		},
