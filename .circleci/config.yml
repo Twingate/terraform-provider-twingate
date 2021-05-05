@@ -27,9 +27,9 @@ jobs:
 
 #      - install_terraform
 
-      - restore_cache:
-          keys:
-            - go-mod-v1-{{ checksum "go.sum" }}
+#      - restore_cache:
+#          keys:
+#            - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
           name: Format Check
@@ -75,18 +75,18 @@ jobs:
     steps:
       - checkout
 
-      - restore_cache:
-          keys:
-            - go-mod-v1-{{ checksum "go.sum" }}
+#      - restore_cache:
+#          keys:
+#            - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
           name: Build
           command: make build
 
-      - save_cache: # Store cache in the /go/pkg directory
-          key: go-mod-v1-{{ checksum "go.sum" }}
-          paths:
-            - "/go/pkg/mod"
+#      - save_cache: # Store cache in the /go/pkg directory
+#          key: go-mod-v1-{{ checksum "go.sum" }}
+#          paths:
+#            - "/go/pkg/mod"
 
 workflows:
   version: 2
