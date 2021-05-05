@@ -1,35 +1,15 @@
 version: 2.1
 
 
-#commands:
-#  install_terraform:
-#    steps:
-#      - checkout
-#      - run:
-#          name: "Install Terraform"
-#          command: |
-#            curl -sO https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
-#            unzip terraform_${TF_VERSION}_linux_amd64.zip
-#            sudo mv terraform /usr/local/bin/
-#            rm terraform_${TF_VERSION}_linux_amd64.zip
-
 jobs:
   test:
     environment:
       TEST_RESULTS: /tmp/test-results
-      TF_VERSION: 0.15.0
-#    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
     docker:
       - image: cimg/go:1.16.3
 
     steps:
       - checkout
-
-#      - install_terraform
-
-#      - restore_cache:
-#          keys:
-#            - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
           name: Format Check
@@ -70,30 +50,19 @@ jobs:
     docker:
       - image: cimg/go:1.16.3
 
-#    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
-
     steps:
       - checkout
-
-#      - restore_cache:
-#          keys:
-#            - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
           name: Build
           command: make build
 
-#      - save_cache: # Store cache in the /go/pkg directory
-#          key: go-mod-v1-{{ checksum "go.sum" }}
-#          paths:
-#            - "/go/pkg/mod"
 
 workflows:
   version: 2
   build:
    jobs:
      - test
-
      - build:
          requires:
            - test
