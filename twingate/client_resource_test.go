@@ -122,6 +122,9 @@ func TestClientResourceReadOk(t *testing.T) {
 			"id": "network1"
 		  },
 		  "groups": {
+			"pageInfo": {
+			  "hasNextPage": false
+			},
 			"edges": [
 			  {
 				"node": {
@@ -179,6 +182,77 @@ func TestClientResourceReadOk(t *testing.T) {
 	assert.EqualValues(t, resource.RemoteNetworkId, "network1")
 	assert.Len(t, resource.Protocols.UDPPorts, 0)
 	assert.EqualValues(t, resource.Name, "test resource")
+}
+
+func TestClientResourceReadTooManyGroups(t *testing.T) {
+
+	// response JSON
+	createResourceOkJson := `{
+	  "data": {
+		"resource": {
+		  "id": "resource1",
+		  "name": "test resource",
+		  "address": {
+			"type": "DNS",
+			"value": "test.com"
+		  },
+		  "remoteNetwork": {
+			"id": "network1"
+		  },
+		  "groups": {
+			"pageInfo": {
+			  "hasNextPage": true
+			},
+			"edges": [
+			  {
+				"node": {
+				  "id": "group1"
+				}
+			  },
+			  {
+				"node": {
+				  "id": "group2"
+				}
+			  }
+			]
+		  },
+		  "protocols": {
+			"udp": {
+			  "ports": [],
+			  "policy": "ALLOW_ALL"
+			},
+			"tcp": {
+			  "ports": [
+				{
+				  "end": 80,
+				  "start": 80
+				},
+				{
+				  "end": 8090,
+				  "start": 8080
+				}
+			  ],
+			  "policy": "RESTRICTED"
+			},
+			"allowIcmp": true
+		  }
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(createResourceOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+
+	resource, err := client.readResource("resource1")
+	assert.Nil(t, resource)
+	assert.EqualError(t, err, "api request error: provider does not support more than 50 groups per resource: resource1")
 }
 
 func TestClientResourceReadError(t *testing.T) {

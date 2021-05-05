@@ -173,8 +173,11 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 			remoteNetwork {
 			  id
 			}
-			groups {
-			  edges {
+			groups (first: 50){
+			  pageInfo{
+				hasNextPage
+			  }
+			  edges{
 				node {
 				  id
 				}
@@ -212,6 +215,10 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 		return nil, APIError("can't read resource: %s", resourceId)
 	}
 	var groups = make([]string, 0)
+	hasNextPage := resourceQuery.Path("groups.pageInfo.hasNextPage").Data().(bool)
+	if hasNextPage {
+		return nil, APIError("provider does not support more than 50 groups per resource: %s", resourceId)
+	}
 	for _, elem := range resourceQuery.Path("groups.edges").Children() {
 		nodeId := elem.Path("node.id").Data().(string)
 		groups = append(groups, nodeId)
