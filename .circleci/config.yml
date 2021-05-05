@@ -18,7 +18,7 @@ jobs:
     environment:
       TEST_RESULTS: /tmp/test-results
       TF_VERSION: 0.15.0
-    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
+#    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
     docker:
       - image: cimg/go:1.16.3
 
@@ -70,7 +70,7 @@ jobs:
     docker:
       - image: cimg/go:1.16.3
 
-    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
+#    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
 
     steps:
       - checkout
