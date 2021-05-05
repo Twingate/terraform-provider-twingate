@@ -30,9 +30,10 @@ func validatePort(port string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("port is not a valid integer :%w", err)
 	}
-	if (parsed < 0) || (parsed > 65535) {
-		return parsed, fmt.Errorf("port %d not in the range of 0-65535", parsed)
+	if parsed < 0 || parsed > 65535 {
+		return parsed, fmt.Errorf("port %d not in the range of 0-65535", parsed) //nolint:goerr113
 	}
+
 	return parsed, nil
 }
 func convertPorts(ports []string) (string, error) {
@@ -49,11 +50,10 @@ func convertPorts(ports []string) (string, error) {
 				return "", err
 			}
 			if end < start {
-				return "", fmt.Errorf("ports %d, %d needs to be in a rising sequence", start, end)
+				return "", fmt.Errorf("ports %d, %d needs to be in a rising sequence", start, end) //nolint:goerr113
 			}
 			converted = append(converted, fmt.Sprintf("{start: %s, end: %s}", split[0], split[1]))
 		} else {
-
 			_, err := validatePort(elem)
 			if err != nil {
 				return "", err
