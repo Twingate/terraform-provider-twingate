@@ -48,7 +48,7 @@ func resourceResource() *schema.Resource { //nolint:funlen
 				Required:    true,
 				Description: "The resource's IP/FQDN",
 			},
-			"groups": {
+			"group_ids": {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
@@ -138,7 +138,7 @@ func extractResource(d *schema.ResourceData) *Resource {
 		Name:            d.Get("name").(string),
 		RemoteNetworkId: d.Get("remote_network_id").(string),
 		Address:         d.Get("address").(string),
-		Groups:          convertSlice(d.Get("groups").([]interface{})),
+		GroupsIds:       convertSlice(d.Get("group_ids").([]interface{})),
 	}
 
 	p := d.Get("protocols").([]interface{})
@@ -172,7 +172,7 @@ func resourceResourceCreate(ctx context.Context, d *schema.ResourceData, m inter
 func resourceResourceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
 
-	if d.HasChanges("protocols", "remote_network_id", "name", "address", "groups") {
+	if d.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
 		resource := extractResource(d)
 		resource.Id = d.Id()
 		err := client.updateResource(resource)
@@ -222,8 +222,8 @@ func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err := d.Set("address", resource.Address); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting address: %w ", err))
 	}
-	if err := d.Set("groups", resource.Groups); err != nil {
-		return diag.FromErr(fmt.Errorf("error setting groups: %w ", err))
+	if err := d.Set("group_ids", resource.GroupsIds); err != nil {
+		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
 	if len(d.Get("protocols").([]interface{})) > 0 {
 		protocols := flattenProtocols(resource.Protocols)

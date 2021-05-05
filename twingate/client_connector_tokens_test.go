@@ -91,7 +91,7 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 	}
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-	assert.EqualError(t, err, "connector tokens are invalid : api request error : request  failed, status 501, body {}")
+	assert.EqualError(t, err, "connector tokens are invalid : api request error: request  failed, status 501, body {}")
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
@@ -120,5 +120,5 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	}
 	err := client.generateConnectorTokens(connector)
 
-	assert.EqualError(t, err, "api request error : can't create tokens for connector test, error: error_1")
+	assert.EqualError(t, err, "api request error: can't create tokens for connector test, error: error_1")
 }

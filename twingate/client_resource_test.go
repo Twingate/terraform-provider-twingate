@@ -11,11 +11,24 @@ import (
 )
 
 func TestParsePortsToGraphql(t *testing.T) {
-	emptyPorts := convertPorts(make([]string, 0))
+	emptyPorts, err := convertPorts(make([]string, 0))
+	assert.Nil(t, err)
 	assert.Equal(t, emptyPorts, "")
 	vars := []string{"80", "81-82"}
-	ports := convertPorts(vars)
+	ports, err := convertPorts(vars)
 	assert.Equal(t, ports, "{start: 80, end: 80},{start: 81, end: 82}")
+	assert.Nil(t, err)
+}
+
+func TestParseErrorPortsToGraphql(t *testing.T) {
+	vars := []string{"foo"}
+	_, err := convertPorts(vars)
+	assert.EqualError(t, err, "port is not a valid integer :strconv.ParseInt: parsing \"foo\": invalid syntax")
+
+	vars = []string{"10-9"}
+	_, err = convertPorts(vars)
+	assert.EqualError(t, err, "ports 10, 9 needs to be in a rising sequence")
+
 }
 
 func TestClientResourceCreateOk(t *testing.T) {
@@ -46,7 +59,7 @@ func TestClientResourceCreateOk(t *testing.T) {
 		RemoteNetworkId: "id1",
 		Address:         "test",
 		Name:            "testName",
-		Groups:          make([]string, 0),
+		GroupsIds:       make([]string, 0),
 		Protocols:       &Protocols{},
 	}
 
@@ -84,13 +97,13 @@ func TestClientResourceCreateError(t *testing.T) {
 		RemoteNetworkId: "id1",
 		Address:         "test",
 		Name:            "testName",
-		Groups:          make([]string, 0),
+		GroupsIds:       make([]string, 0),
 		Protocols:       &Protocols{},
 	}
 
 	err := client.createResource(resource)
 
-	assert.EqualError(t, err, "api request error : can't create resource name testName, error: something went wrong")
+	assert.EqualError(t, err, "api request error: can't create resource name testName, error: something went wrong")
 }
 
 func TestClientResourceReadOk(t *testing.T) {
@@ -160,7 +173,7 @@ func TestClientResourceReadOk(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.EqualValues(t, "resource1", resource.Id)
-	assert.Contains(t, resource.Groups, "group1")
+	assert.Contains(t, resource.GroupsIds, "group1")
 	assert.Contains(t, resource.Protocols.TCPPorts, "8080-8090")
 	assert.EqualValues(t, resource.Address, "test.com")
 	assert.EqualValues(t, resource.RemoteNetworkId, "network1")
@@ -190,7 +203,7 @@ func TestClientResourceReadError(t *testing.T) {
 	resource, err := client.readResource("resource1")
 
 	assert.Nil(t, resource)
-	assert.EqualError(t, err, "api request error : can't read resource: resource1")
+	assert.EqualError(t, err, "api request error: can't read resource: resource1")
 }
 
 func TestClientResourceUpdateOk(t *testing.T) {
@@ -218,7 +231,7 @@ func TestClientResourceUpdateOk(t *testing.T) {
 		RemoteNetworkId: "network1",
 		Address:         "test.com",
 		Name:            "test resource",
-		Groups:          make([]string, 0),
+		GroupsIds:       make([]string, 0),
 		Protocols:       &Protocols{},
 	}
 
@@ -252,13 +265,13 @@ func TestClientResourceUpdateError(t *testing.T) {
 		RemoteNetworkId: "network1",
 		Address:         "test.com",
 		Name:            "test resource",
-		Groups:          make([]string, 0),
+		GroupsIds:       make([]string, 0),
 		Protocols:       &Protocols{},
 	}
 
 	err := client.updateResource(resource)
 
-	assert.EqualError(t, err, "api request error : can't update resource: cant update resource")
+	assert.EqualError(t, err, "api request error: can't update resource: cant update resource")
 }
 
 func TestClientResourceDeleteOk(t *testing.T) {
@@ -310,5 +323,5 @@ func TestClientResourceDeleteError(t *testing.T) {
 
 	err := client.deleteResource("resource1")
 
-	assert.EqualError(t, err, "api request error : unable to delete resource Id resource1, error: cant delete resource")
+	assert.EqualError(t, err, "api request error: unable to delete resource Id resource1, error: cant delete resource")
 }

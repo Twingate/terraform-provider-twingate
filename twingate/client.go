@@ -28,7 +28,7 @@ var ErrAPIRequest = errors.New("api request error")
 func APIError(format string, a ...interface{}) error {
 	a = append([]interface{}{ErrAPIRequest}, a...)
 
-	return fmt.Errorf("%s : "+format, a...) //nolint:goerr113
+	return fmt.Errorf("%s: "+format, a...) //nolint:goerr113
 }
 
 type Client struct {

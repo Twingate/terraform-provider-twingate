@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
@@ -20,40 +21,74 @@ type Resource struct {
 	RemoteNetworkId string
 	Address         string
 	Name            string
-	Groups          []string
+	GroupsIds       []string
 	Protocols       *Protocols
 }
 
-func convertPorts(ports []string) string {
+func validatePort(port string) (int64, error) {
+	parsed, err := strconv.ParseInt(port, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("port is not a valid integer :%w", err)
+	}
+	if (parsed < 0) || (parsed > 65535) {
+		return parsed, fmt.Errorf("port %d not in the range of 0-65535", parsed)
+	}
+	return parsed, nil
+}
+func convertPorts(ports []string) (string, error) {
 	var converted = make([]string, 0)
 	for _, elem := range ports {
 		if strings.Contains(elem, "-") {
 			split := strings.SplitN(elem, "-", 2)
+			start, err := validatePort(split[0])
+			if err != nil {
+				return "", err
+			}
+			end, err := validatePort(split[1])
+			if err != nil {
+				return "", err
+			}
+			if end < start {
+				return "", fmt.Errorf("ports %d, %d needs to be in a rising sequence", start, end)
+			}
 			converted = append(converted, fmt.Sprintf("{start: %s, end: %s}", split[0], split[1]))
 		} else {
+
+			_, err := validatePort(elem)
+			if err != nil {
+				return "", err
+			}
 			converted = append(converted, fmt.Sprintf("{start: %s, end: %s}", elem, elem))
 		}
 	}
 	if len(converted) > 0 {
-		return strings.Join(converted, ",")
+		return strings.Join(converted, ","), nil
 	}
 
-	return ""
+	return "", nil
 }
 
-func convertProtocols(protocols *Protocols) string {
+func convertProtocols(protocols *Protocols) (string, error) {
 	var converted = make([]string, 0)
 	if protocols == nil {
-		return ""
+		return "", nil
 	}
-
-	converted = append(converted, fmt.Sprintf("tcp: {policy: %s, ports: [%s]}", protocols.TCPPolicy, convertPorts(protocols.TCPPorts)))
-	converted = append(converted, fmt.Sprintf("udp: {policy: %s, ports: [%s]}", protocols.UDPPolicy, convertPorts(protocols.UDPPorts)))
+	tcpPorts, err := convertPorts(protocols.TCPPorts)
+	if err != nil {
+		return "", err
+	}
+	udpPorts, err := convertPorts(protocols.UDPPorts)
+	if err != nil {
+		return "", err
+	}
+	converted = append(converted, fmt.Sprintf("tcp: {policy: %s, ports: [%s]}", protocols.TCPPolicy, tcpPorts))
+	converted = append(converted, fmt.Sprintf("udp: {policy: %s, ports: [%s]}", protocols.UDPPolicy, udpPorts))
 	converted = append(converted, fmt.Sprintf("allowIcmp: %t", protocols.AllowIcmp))
 	protocolsQuery := fmt.Sprintf("{%s}", strings.Join(converted, ","))
 
-	return protocolsQuery
+	return protocolsQuery, nil
 }
+
 func convertGroups(groups []string) string {
 	var converted = make([]string, 0)
 	for _, elem := range groups {
@@ -62,7 +97,13 @@ func convertGroups(groups []string) string {
 
 	return fmt.Sprintf("[%s]", strings.Join(converted, ","))
 }
+
 func (client *Client) createResource(resource *Resource) error {
+	protocols, err := convertProtocols(resource.Protocols)
+	if err != nil {
+		return fmt.Errorf("can't convert protocols %w", err)
+	}
+
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
@@ -74,7 +115,7 @@ func (client *Client) createResource(resource *Resource) error {
 				}
 			  }
 		}
-        `, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.Groups), convertProtocols(resource.Protocols)),
+        `, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.GroupsIds), protocols),
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
@@ -177,10 +218,10 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 	}
 
 	resource := &Resource{
-		Id:      resourceId,
-		Name:    resourceQuery.Path("name").Data().(string),
-		Address: resourceQuery.Path("address.value").Data().(string),
-		Groups:  groups,
+		Id:        resourceId,
+		Name:      resourceQuery.Path("name").Data().(string),
+		Address:   resourceQuery.Path("address.value").Data().(string),
+		GroupsIds: groups,
 	}
 
 	if resourceQuery.ExistsP("remoteNetwork.id") {
@@ -193,6 +234,10 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 }
 
 func (client *Client) updateResource(resource *Resource) error {
+	protocols, err := convertProtocols(resource.Protocols)
+	if err != nil {
+		return fmt.Errorf("can't conver protocols %w", err)
+	}
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
@@ -201,7 +246,7 @@ func (client *Client) updateResource(resource *Resource) error {
 				error
 			  }
 		}
-        `, resource.Id, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.Groups), convertProtocols(resource.Protocols)),
+        `, resource.Id, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.GroupsIds), protocols),
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {

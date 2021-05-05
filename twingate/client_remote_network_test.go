@@ -68,7 +68,7 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 
 	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
-	assert.EqualError(t, err, "api request error : can't create network with name test, error: error_1")
+	assert.EqualError(t, err, "api request error: can't create network with name test, error: error_1")
 	assert.Nil(t, remoteNetwork)
 }
 
@@ -98,7 +98,7 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 
 	err := client.updateRemoteNetwork(remoteNetworkId, remoteNetworkName)
 
-	assert.EqualError(t, err, "api request error : can't update network: error_1")
+	assert.EqualError(t, err, "api request error: can't update network: error_1")
 }
 
 func TestClientRemoteNetworkReadError(t *testing.T) {
@@ -124,5 +124,5 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
 
 	assert.Nil(t, remoteNetwork)
-	assert.EqualError(t, err, "api request error : can't read remote network: id")
+	assert.EqualError(t, err, "api request error: can't read remote network: id")
 }
