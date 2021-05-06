@@ -50,11 +50,11 @@ func resourceConnectorTokens() *schema.Resource {
 func resourceConnectorTokensCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
 
-	connectorId := d.Get("connector_id").(string)
+	connectorID := d.Get("connector_id").(string)
 
-	d.SetId(connectorId)
+	d.SetId(connectorID)
 
-	connector := Connector{Id: connectorId}
+	connector := Connector{ID: connectorID}
 	err := client.generateConnectorTokens(&connector)
 
 	if err != nil {
@@ -64,6 +64,7 @@ func resourceConnectorTokensCreate(ctx context.Context, d *schema.ResourceData, 
 	if err := d.Set("access_token", connector.ConnectorTokens.AccessToken); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting access_token: %w ", err))
 	}
+
 	if err := d.Set("refresh_token", connector.ConnectorTokens.RefreshToken); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
 	}
@@ -76,7 +77,7 @@ func resourceConnectorTokensDelete(ctx context.Context, d *schema.ResourceData, 
 
 	var diags diag.Diagnostics
 
-	connector := Connector{Id: d.Id()}
+	connector := Connector{ID: d.Id()}
 	// Just calling generate new tokens for the connector so the old ones are invalidated
 	err := client.generateConnectorTokens(&connector)
 
@@ -92,11 +93,12 @@ func resourceConnectorTokensDelete(ctx context.Context, d *schema.ResourceData, 
 
 func resourceConnectorTokensRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
+
 	var diags diag.Diagnostics
 
 	accessToken := d.Get("access_token").(string)
 	refreshToken := d.Get("refresh_token").(string)
-	// Confirming the tokens are still valid
+
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -104,6 +106,7 @@ func resourceConnectorTokensRead(ctx context.Context, d *schema.ResourceData, m 
 			Summary:  "can't to verify connector tokens",
 			Detail:   fmt.Sprintf("can't verify connector %s tokens, assuming not valid and needs to be recreated", d.Id()),
 		})
+
 		d.SetId("")
 
 		return diags
