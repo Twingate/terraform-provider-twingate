@@ -1,7 +1,6 @@
 *.dll
 *.exe
 .DS_Store
-example.tf
 terraform.tfvars
 terraform.tfplan
 terraform.tfstate
@@ -29,7 +28,7 @@ website/node_modules
 .vscode/
 test/
 vendor/
-
+examples/
 .idea/
 website/vendor
 .terraform.lock.hcl

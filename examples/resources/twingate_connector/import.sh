@@ -1,1 +1,0 @@
-terraform import twingate_connector.connector Q29ubmVjdG1b0qe0
