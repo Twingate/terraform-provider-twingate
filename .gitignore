@@ -6,6 +6,7 @@ terraform.tfvars
 terraform.tfplan
 terraform.tfstate
 bin/
+build/
 terraform-provider-twingate
 modules-dev/
 /pkg/

@@ -18,7 +18,6 @@ build: vendor fmtcheck
 	go build -o ${BINARY}
 
 build-release:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=386 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-darwin-386
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-darwin-amd64
 	CGO_ENABLED=0 GOOS=linux GOARCH=386 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-linux-386
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -a -o build/terraform-provider-twingate-linux-amd64
