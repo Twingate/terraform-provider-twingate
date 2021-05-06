@@ -64,31 +64,6 @@ jobs:
               sha256sum -b $binary > $binary.sha256
             done
 
-
-      - persist_to_workspace:
-          root: /home/circleci/project
-          paths:
-            - build
-
-  release:
-
-    docker:
-      - image: cimg/go:1.16.3
-
-    working_directory: /home/circleci/project/build
-
-    steps:
-      - attach_workspace:
-          at: /home/circleci/project
-      - run:
-          name: Instal GHR
-          command: |
-            go get github.com/tcnksm/ghr
-      - run:
-          name: Publish release
-          command: |
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete -draft ${CIRCLE_TAG} .
-
 workflows:
   version: 2
   build:
@@ -97,10 +72,3 @@ workflows:
      - build:
          requires:
            - test
-
-     - release:
-         requires:
-           - build
-         filters:
-           tags:
-             only: /^v\d+\.\d+\.\d+$/
