@@ -12,7 +12,6 @@ import (
 )
 
 func TestClientRemoteNetworkCreateOk(t *testing.T) {
-
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
@@ -40,11 +39,10 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "test-id", remoteNetwork.Id)
+	assert.EqualValues(t, "test-id", remoteNetwork.ID)
 }
 
 func TestClientRemoteNetworkCreateError(t *testing.T) {
-
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
@@ -68,12 +66,11 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 
 	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
-	assert.EqualError(t, err, "api request error : can't create network with name test, error: error_1")
+	assert.EqualError(t, err, "failed to create remote network: error_1")
 	assert.Nil(t, remoteNetwork)
 }
 
 func TestClientRemoteNetworkUpdateError(t *testing.T) {
-
 	// response JSON
 	updateNetworkOkJson := `{
 	  "data": {
@@ -98,11 +95,10 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 
 	err := client.updateRemoteNetwork(remoteNetworkId, remoteNetworkName)
 
-	assert.EqualError(t, err, "api request error : can't update network: error_1")
+	assert.EqualError(t, err, "failed to update remote network with id id: error_1")
 }
 
 func TestClientRemoteNetworkReadError(t *testing.T) {
-
 	// response JSON
 	readNetworkOkJson := `{
 	  "data": {
@@ -124,5 +120,5 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
 
 	assert.Nil(t, remoteNetwork)
-	assert.EqualError(t, err, "api request error : can't read remote network: id")
+	assert.EqualError(t, err, "failed to read remote network with id id")
 }

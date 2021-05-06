@@ -43,14 +43,8 @@ linters:
   enable-all: true
   disable:
     - maligned
-    - unparam
     - lll
-    - gochecknoglobals
-    - bodyclose
     - scopelint
-    - cyclop
-    - godox
-    - wsl
     - gofumpt
     - exhaustivestruct
     - interfacer
@@ -60,21 +54,14 @@ linters:
 
 issues:
   exclude:
-    - composite literal uses unkeyed fields
-    - "shadow: declaration of \"err\" shadows declaration"
-    - "should be.*IDP?`?"
     - should have comment
-    - "G304: "
-    - package comment should be of the form
+    - "shadow: declaration of \"err\" shadows declaration"
 
   exclude-rules:
     - linters:
         - stylecheck
       text: "ST1000:"
 
-    - path: internal/pkg/errors/errors.go
-      linters:
-        - wrapcheck
   exclude-use-default: false
   max-per-linter: 0
   max-same: 0
