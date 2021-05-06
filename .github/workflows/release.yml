@@ -18,13 +18,12 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Wait for CircleCI'
-        id: waitforstatuschecks
-        uses: "WyriHaximus/github-action-wait-for-status@v2"
+      - name: Wait for CircleCI tests
+        uses: "WyriHaximus/github-action-wait-for-status@v1.3.0"
         with:
-          checkInterval: 10
+          checkInterval: 30
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Checkout
         uses: actions/checkout@v2
