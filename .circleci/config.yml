@@ -101,8 +101,6 @@ workflows:
      - release:
          requires:
            - build
+         filters:
            tags:
              only: /^v\d+\.\d+\.\d+$/
-#         filters:
-#           branches:
-#             ignore: /.*/
