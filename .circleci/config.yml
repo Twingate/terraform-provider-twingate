@@ -75,11 +75,11 @@ jobs:
     docker:
       - image: cimg/go:1.16.3
 
-    working_directory: /build
+    working_directory: /home/circleci/project/build
 
     steps:
       - attach_workspace:
-          at: /
+          at: /home/circleci/project
       - run:
           name: Instal GHR
           command: |
