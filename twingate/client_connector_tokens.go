@@ -13,6 +13,8 @@ type ConnectorTokens struct {
 	RefreshToken string
 }
 
+const connectorTokensResourceName = "connector tokens"
+
 func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) error {
 	jsonValue, _ := json.Marshal(
 		map[string]string{
@@ -21,13 +23,13 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) er
 
 	req, err := retryablehttp.NewRequest("POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return NewAPIError(err, "verify", "connector tokens")
+		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	_, err = client.doRequest(req)
 	if err != nil {
-		return NewAPIError(err, "verify", "connector tokens")
+		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}
 
 	return nil
@@ -50,14 +52,14 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 	}
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return NewAPIError(err, "generate", "connector tokens")
+		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}
 	createTokensResult := mutationConnector.Path("data.connectorGenerateTokens")
 	status := createTokensResult.Path("ok").Data().(bool)
 	if !status {
 		message := createTokensResult.Path("error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "generate", "connector tokens", connector.Id)
+		return NewAPIErrorWithId(NewMutationError(message), "generate", connectorTokensResourceName, connector.Id)
 	}
 
 	connector.ConnectorTokens = &ConnectorTokens{

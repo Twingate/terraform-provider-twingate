@@ -58,6 +58,8 @@ type Resource struct {
 	Protocols       *Protocols
 }
 
+const resourceResourceName = "resource"
+
 func validatePort(port string) (int64, error) {
 	parsed, err := strconv.ParseInt(port, 10, 64)
 	if err != nil {
@@ -162,7 +164,7 @@ func extractProtocolsFromResult(resource *Resource, resourceData *gabs.Container
 func (client *Client) createResource(resource *Resource) error {
 	protocols, err := convertProtocols(resource.Protocols)
 	if err != nil {
-		return NewAPIError(err, "create", "resource")
+		return NewAPIError(err, "create", resourceResourceName)
 	}
 
 	mutation := map[string]string{
@@ -180,14 +182,14 @@ func (client *Client) createResource(resource *Resource) error {
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return NewAPIError(err, "create", "resource")
+		return NewAPIError(err, "create", resourceResourceName)
 	}
 
 	status := mutationResource.Path("data.resourceCreate.ok").Data().(bool)
 	if !status {
 		message := mutationResource.Path("data.resourceCreate.error").Data().(string)
 
-		return NewAPIError(NewMutationError(message), "create", "resource")
+		return NewAPIError(NewMutationError(message), "create", resourceResourceName)
 	}
 	resource.Id = mutationResource.Path("data.resourceCreate.entity.id").Data().(string)
 
@@ -241,18 +243,18 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 	}
 	queryResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, NewAPIErrorWithId(err, "read", "resource", resourceId)
+		return nil, NewAPIErrorWithId(err, "read", resourceResourceName, resourceId)
 	}
 
 	resourceQuery := queryResource.Path("data.resource")
 	if resourceQuery.Data() == nil {
-		return nil, NewAPIErrorWithId(err, "read", "resource", resourceId)
+		return nil, NewAPIErrorWithId(err, "read", resourceResourceName, resourceId)
 	}
 
 	var groups = make([]string, 0)
 	hasNextPage := resourceQuery.Path("groups.pageInfo.hasNextPage").Data().(bool)
 	if hasNextPage {
-		return nil, NewAPIErrorWithId(ErrTooManyGroupsError, "read", "resource", resourceId)
+		return nil, NewAPIErrorWithId(ErrTooManyGroupsError, "read", resourceResourceName, resourceId)
 	}
 	for _, elem := range resourceQuery.Path("groups.edges").Children() {
 		nodeId := elem.Path("node.id").Data().(string)
@@ -278,7 +280,7 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 func (client *Client) updateResource(resource *Resource) error {
 	protocols, err := convertProtocols(resource.Protocols)
 	if err != nil {
-		return NewAPIErrorWithId(err, "update", "resource", resource.Id)
+		return NewAPIErrorWithId(err, "update", resourceResourceName, resource.Id)
 	}
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -292,14 +294,14 @@ func (client *Client) updateResource(resource *Resource) error {
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return NewAPIErrorWithId(err, "update", "resource", resource.Id)
+		return NewAPIErrorWithId(err, "update", resourceResourceName, resource.Id)
 	}
 
 	status := mutationResource.Path("data.resourceUpdate.ok").Data().(bool)
 	if !status {
 		message := mutationResource.Path("data.resourceUpdate.error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "update", "resource", resource.Id)
+		return NewAPIErrorWithId(NewMutationError(message), "update", resourceResourceName, resource.Id)
 	}
 
 	return nil
@@ -319,14 +321,14 @@ func (client *Client) deleteResource(resourceId string) error {
 	deleteResource, err := client.doGraphqlRequest(mutation)
 
 	if err != nil {
-		return NewAPIErrorWithId(err, "delete", "resource", resourceId)
+		return NewAPIErrorWithId(err, "delete", resourceResourceName, resourceId)
 	}
 
 	status := deleteResource.Path("data.resourceDelete.ok").Data().(bool)
 	if !status {
 		message := deleteResource.Path("data.resourceDelete.error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "delete", "resource", resourceId)
+		return NewAPIErrorWithId(NewMutationError(message), "delete", resourceResourceName, resourceId)
 	}
 
 	return nil

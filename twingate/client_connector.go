@@ -11,6 +11,8 @@ type Connector struct {
 	ConnectorTokens *ConnectorTokens
 }
 
+const connectorResourceName = "connector"
+
 func (client *Client) createConnector(remoteNetworkId string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -28,7 +30,7 @@ func (client *Client) createConnector(remoteNetworkId string) (*Connector, error
 	}
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, NewAPIError(err, "create", "connector")
+		return nil, NewAPIError(err, "create", connectorResourceName)
 	}
 
 	connectorResult := mutationConnector.Path("data.connectorCreate")
@@ -37,7 +39,7 @@ func (client *Client) createConnector(remoteNetworkId string) (*Connector, error
 	if !status {
 		message := connectorResult.Path("error").Data().(string)
 
-		return nil, NewAPIError(NewMutationError(message), "create", "connector")
+		return nil, NewAPIError(NewMutationError(message), "create", connectorResourceName)
 	}
 
 	connector := Connector{
@@ -65,13 +67,13 @@ func (client *Client) readConnector(connectorId string) (*Connector, error) {
 	}
 	queryConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, NewAPIErrorWithId(err, "reed", "connector", connectorId)
+		return nil, NewAPIErrorWithId(err, "reed", connectorResourceName, connectorId)
 	}
 
 	connectorRead := queryConnector.Path("data.connector")
 
 	if connectorRead.Data() == nil {
-		return nil, NewAPIErrorWithId(nil, "reed", "connector", connectorId)
+		return nil, NewAPIErrorWithId(nil, "reed", connectorResourceName, connectorId)
 	}
 
 	connector := Connector{
@@ -100,14 +102,14 @@ func (client *Client) deleteConnector(connectorId string) error {
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 
 	if err != nil {
-		return NewAPIErrorWithId(err, "delete", "connector", connectorId)
+		return NewAPIErrorWithId(err, "delete", connectorResourceName, connectorId)
 	}
 	connectorDelete := mutationConnector.Path("data.connectorDelete")
 	status := connectorDelete.Path("ok").Data().(bool)
 	if !status {
 		message := connectorDelete.Path("error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "delete", "connector", connectorId)
+		return NewAPIErrorWithId(NewMutationError(message), "delete", connectorResourceName, connectorId)
 	}
 
 	return nil
