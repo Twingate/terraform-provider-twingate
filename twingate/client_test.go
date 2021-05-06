@@ -80,7 +80,7 @@ func TestClientPingRequestFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.EqualError(t, err, "can't parse graphql response: can't execute request : api request error: request  failed, status 500, body {}")
+	assert.EqualError(t, err, "failed to ping twingate: can't execute request : request  failed, status 500, body {}")
 
 }
 
@@ -100,7 +100,7 @@ func TestClientPingRequestParsingFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.EqualError(t, err, "can't parse graphql response: can't parse request body : invalid character 'e' looking for beginning of object key string")
+	assert.EqualError(t, err, "failed to ping twingate: can't parse response body: invalid character 'e' looking for beginning of object key string")
 
 }
 
@@ -139,8 +139,7 @@ func TestInitializeTwingateClientGraphqlRequestReturnsErrors(t *testing.T) {
 	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
 
 	assert.Nil(t, remoteNetwork)
-	assert.EqualError(t, err, "can't read remote network : api request error: graphql request returned with errors : error message")
-
+	assert.EqualError(t, err, "failed to read remote network with id testId: graphql errors: error message")
 }
 
 func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {

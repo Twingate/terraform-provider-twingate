@@ -25,14 +25,14 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	}
 	mutationRemoteNetwork, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, fmt.Errorf("can't create network : %w", err)
+		return nil, NewAPIError(err, "create", "remote network")
 	}
 
 	status := mutationRemoteNetwork.Path("data.remoteNetworkCreate.ok").Data().(bool)
 	if !status {
-		errorMessage := mutationRemoteNetwork.Path("data.remoteNetworkCreate.error").Data().(string)
+		message := mutationRemoteNetwork.Path("data.remoteNetworkCreate.error").Data().(string)
 
-		return nil, APIError("can't create network with name %s, error: %s", remoteNetworkName, errorMessage)
+		return nil, NewAPIError(NewMutationError(message), "create", "remote network")
 	}
 
 	remoteNetwork := RemoteNetwork{
@@ -55,13 +55,13 @@ func (client *Client) readRemoteNetwork(remoteNetworkId string) (*RemoteNetwork,
 	}
 	queryRemoteNetwork, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, fmt.Errorf("can't read remote network : %w", err)
+		return nil, NewAPIErrorWithId(err, "read", "remote network", remoteNetworkId)
 	}
 
 	remoteNetworkQuery := queryRemoteNetwork.Path("data.remoteNetwork")
 
 	if remoteNetworkQuery.Data() == nil {
-		return nil, APIError("can't read remote network: %s", remoteNetworkId)
+		return nil, NewAPIErrorWithId(err, "read", "remote network", remoteNetworkId)
 	}
 
 	remoteNetwork := RemoteNetwork{
@@ -85,14 +85,14 @@ func (client *Client) updateRemoteNetwork(remoteNetworkId, remoteNetworkName str
 	}
 	mutationRemoteNetwork, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return fmt.Errorf("can't update remote network : %w", err)
+		return NewAPIErrorWithId(err, "update", "remote network", remoteNetworkId)
 	}
 
 	status := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.ok").Data().(bool)
 	if !status {
-		errorMessage := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.error").Data().(string)
+		message := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.error").Data().(string)
 
-		return APIError("can't update network: %s", errorMessage)
+		return NewAPIErrorWithId(NewMutationError(message), "update", "remote network", remoteNetworkId)
 	}
 
 	return nil
@@ -112,14 +112,14 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkId string) error {
 	deleteRemoteNetwork, err := client.doGraphqlRequest(mutation)
 
 	if err != nil {
-		return fmt.Errorf("can't delete remote network : %w", err)
+		return NewAPIErrorWithId(err, "delete", "remote network", remoteNetworkId)
 	}
 
 	status := deleteRemoteNetwork.Path("data.remoteNetworkDelete.ok").Data().(bool)
 	if !status {
-		errorMessage := deleteRemoteNetwork.Path("data.remoteNetworkDelete.error").Data().(string)
+		message := deleteRemoteNetwork.Path("data.remoteNetworkDelete.error").Data().(string)
 
-		return APIError("unable to delete network with Id %s, error: %s", remoteNetworkId, errorMessage)
+		return NewAPIErrorWithId(NewMutationError(message), "delete", "remote network", remoteNetworkId)
 	}
 
 	return nil

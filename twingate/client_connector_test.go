@@ -98,7 +98,7 @@ func TestClientConnectorCreateError(t *testing.T) {
 
 	remoteNetwork, err := client.createConnector(remoteNetworkName)
 
-	assert.EqualError(t, err, "api request error: can't create connector under the network with id test, error: error_1")
+	assert.EqualError(t, err, "failed to create connector: error_1")
 	assert.Nil(t, remoteNetwork)
 }
 
@@ -127,5 +127,5 @@ func TestClientConnectorDeleteError(t *testing.T) {
 
 	err := client.deleteConnector(connectorId)
 
-	assert.EqualError(t, err, "api request error: can't delete connector with Id test, error: error_1")
+	assert.EqualError(t, err, "failed to delete connector with id test: error_1")
 }

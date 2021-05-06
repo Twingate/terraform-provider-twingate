@@ -28,16 +28,16 @@ func (client *Client) createConnector(remoteNetworkId string) (*Connector, error
 	}
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, fmt.Errorf("can't create connector : %w", err)
+		return nil, NewAPIError(err, "create", "connector")
 	}
 
 	connectorResult := mutationConnector.Path("data.connectorCreate")
 	status := connectorResult.Path("ok").Data().(bool)
 
 	if !status {
-		errorString := connectorResult.Path("error").Data().(string)
+		message := connectorResult.Path("error").Data().(string)
 
-		return nil, APIError("can't create connector under the network with id %s, error: %s", remoteNetworkId, errorString)
+		return nil, NewAPIError(NewMutationError(message), "create", "connector")
 	}
 
 	connector := Connector{
@@ -65,13 +65,13 @@ func (client *Client) readConnector(connectorId string) (*Connector, error) {
 	}
 	queryConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, fmt.Errorf("can't read connector : %w", err)
+		return nil, NewAPIErrorWithId(err, "reed", "connector", connectorId)
 	}
 
 	connectorRead := queryConnector.Path("data.connector")
 
 	if connectorRead.Data() == nil {
-		return nil, APIError("can't read connector %s", connectorId)
+		return nil, NewAPIErrorWithId(nil, "reed", "connector", connectorId)
 	}
 
 	connector := Connector{
@@ -100,14 +100,14 @@ func (client *Client) deleteConnector(connectorId string) error {
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 
 	if err != nil {
-		return fmt.Errorf("can't delete connector : %w", err)
+		return NewAPIErrorWithId(err, "delete", "connector", connectorId)
 	}
 	connectorDelete := mutationConnector.Path("data.connectorDelete")
 	status := connectorDelete.Path("ok").Data().(bool)
 	if !status {
-		errorMessage := connectorDelete.Path("error").Data().(string)
+		message := connectorDelete.Path("error").Data().(string)
 
-		return APIError("can't delete connector with Id %s, error: %s", connectorId, errorMessage)
+		return NewAPIErrorWithId(NewMutationError(message), "delete", "connector", connectorId)
 	}
 
 	return nil

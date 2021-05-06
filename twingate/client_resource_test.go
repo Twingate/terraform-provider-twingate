@@ -23,7 +23,7 @@ func TestParsePortsToGraphql(t *testing.T) {
 func TestParseErrorPortsToGraphql(t *testing.T) {
 	vars := []string{"foo"}
 	_, err := convertPorts(vars)
-	assert.EqualError(t, err, "port is not a valid integer :strconv.ParseInt: parsing \"foo\": invalid syntax")
+	assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"foo\": invalid syntax")
 
 	vars = []string{"10-9"}
 	_, err = convertPorts(vars)
@@ -103,7 +103,7 @@ func TestClientResourceCreateError(t *testing.T) {
 
 	err := client.createResource(resource)
 
-	assert.EqualError(t, err, "api request error: can't create resource name testName, error: something went wrong")
+	assert.EqualError(t, err, "failed to create resource: something went wrong")
 }
 
 func TestClientResourceReadOk(t *testing.T) {
@@ -252,7 +252,7 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 
 	resource, err := client.readResource("resource1")
 	assert.Nil(t, resource)
-	assert.EqualError(t, err, "api request error: provider does not support more than 50 groups per resource: resource1")
+	assert.EqualError(t, err, "failed to read resource with id resource1: provider does not support more than 50 groups per resource")
 }
 
 func TestClientResourceReadError(t *testing.T) {
@@ -277,7 +277,7 @@ func TestClientResourceReadError(t *testing.T) {
 	resource, err := client.readResource("resource1")
 
 	assert.Nil(t, resource)
-	assert.EqualError(t, err, "api request error: can't read resource: resource1")
+	assert.EqualError(t, err, "failed to read resource with id resource1")
 }
 
 func TestClientResourceUpdateOk(t *testing.T) {
@@ -345,7 +345,7 @@ func TestClientResourceUpdateError(t *testing.T) {
 
 	err := client.updateResource(resource)
 
-	assert.EqualError(t, err, "api request error: can't update resource: cant update resource")
+	assert.EqualError(t, err, "failed to update resource: cant update resource")
 }
 
 func TestClientResourceDeleteOk(t *testing.T) {
@@ -397,5 +397,5 @@ func TestClientResourceDeleteError(t *testing.T) {
 
 	err := client.deleteResource("resource1")
 
-	assert.EqualError(t, err, "api request error: unable to delete resource Id resource1, error: cant delete resource")
+	assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
 }

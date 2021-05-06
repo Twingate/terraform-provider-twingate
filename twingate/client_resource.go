@@ -1,12 +1,45 @@
 package twingate
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 )
+
+var ErrTooManyGroupsError = errors.New("provider does not support more than 50 groups per resource")
+
+type PortNotInRangeError struct {
+	Port int64
+}
+
+func NewPortNotInRangeError(port int64) *PortNotInRangeError {
+	return &PortNotInRangeError{
+		Port: port,
+	}
+}
+
+func (e *PortNotInRangeError) Error() string {
+	return fmt.Sprintf("port %d not in the range of 0-65535", e.Port)
+}
+
+type PortRangeNotRisingSequenceError struct {
+	Start int64
+	End   int64
+}
+
+func NewPortRangeNotRisingSequenceError(start int64, end int64) *PortRangeNotRisingSequenceError {
+	return &PortRangeNotRisingSequenceError{
+		Start: start,
+		End:   end,
+	}
+}
+
+func (e *PortRangeNotRisingSequenceError) Error() string {
+	return fmt.Sprintf("ports %d, %d needs to be in a rising sequence", e.Start, e.End)
+}
 
 type Protocols struct {
 	AllowIcmp bool
@@ -28,14 +61,15 @@ type Resource struct {
 func validatePort(port string) (int64, error) {
 	parsed, err := strconv.ParseInt(port, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("port is not a valid integer :%w", err)
+		return 0, fmt.Errorf("port is not a valid integer: %w", err)
 	}
 	if parsed < 0 || parsed > 65535 {
-		return parsed, fmt.Errorf("port %d not in the range of 0-65535", parsed) //nolint:goerr113
+		return 0, NewPortNotInRangeError(parsed)
 	}
 
 	return parsed, nil
 }
+
 func convertPorts(ports []string) (string, error) {
 	var converted = make([]string, 0)
 	for _, elem := range ports {
@@ -50,7 +84,7 @@ func convertPorts(ports []string) (string, error) {
 				return "", err
 			}
 			if end < start {
-				return "", fmt.Errorf("ports %d, %d needs to be in a rising sequence", start, end) //nolint:goerr113
+				return "", NewPortRangeNotRisingSequenceError(start, end)
 			}
 			converted = append(converted, fmt.Sprintf("{start: %s, end: %s}", split[0], split[1]))
 		} else {
@@ -98,10 +132,37 @@ func convertGroups(groups []string) string {
 	return fmt.Sprintf("[%s]", strings.Join(converted, ","))
 }
 
+func extractPortsFromResults(resourceData *gabs.Container, portPath string) []string {
+	var parsedPorts = make([]string, 0)
+	if resourceData.ExistsP(portPath) {
+		for _, elem := range resourceData.Path(portPath).Children() {
+			start := int(elem.Path("start").Data().(float64))
+			end := int(elem.Path("end").Data().(float64))
+			if start == end {
+				parsedPorts = append(parsedPorts, fmt.Sprintf("%d", start))
+			} else {
+				parsedPorts = append(parsedPorts, fmt.Sprintf("%d-%d", start, end))
+			}
+		}
+	}
+
+	return parsedPorts
+}
+
+func extractProtocolsFromResult(resource *Resource, resourceData *gabs.Container) {
+	resource.Protocols = &Protocols{
+		AllowIcmp: resourceData.Path("protocols.allowIcmp").Data().(bool),
+		UDPPolicy: resourceData.Path("protocols.udp.policy").Data().(string),
+		TCPPolicy: resourceData.Path("protocols.tcp.policy").Data().(string),
+	}
+	resource.Protocols.TCPPorts = extractPortsFromResults(resourceData, "protocols.tcp.ports")
+	resource.Protocols.UDPPorts = extractPortsFromResults(resourceData, "protocols.udp.ports")
+}
+
 func (client *Client) createResource(resource *Resource) error {
 	protocols, err := convertProtocols(resource.Protocols)
 	if err != nil {
-		return fmt.Errorf("can't convert protocols %w", err)
+		return NewAPIError(err, "create", "resource")
 	}
 
 	mutation := map[string]string{
@@ -119,44 +180,18 @@ func (client *Client) createResource(resource *Resource) error {
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return fmt.Errorf("can't create resource : %w", err)
+		return NewAPIError(err, "create", "resource")
 	}
 
 	status := mutationResource.Path("data.resourceCreate.ok").Data().(bool)
 	if !status {
-		errorMessage := mutationResource.Path("data.resourceCreate.error").Data().(string)
+		message := mutationResource.Path("data.resourceCreate.error").Data().(string)
 
-		return APIError("can't create resource name %s, error: %s", resource.Name, errorMessage)
+		return NewAPIError(NewMutationError(message), "create", "resource")
 	}
 	resource.Id = mutationResource.Path("data.resourceCreate.entity.id").Data().(string)
 
 	return nil
-}
-
-func extractPortsFromResults(resourceData *gabs.Container, portPath string) []string {
-	var parsedPorts = make([]string, 0)
-	if resourceData.ExistsP(portPath) {
-		for _, elem := range resourceData.Path(portPath).Children() {
-			start := int(elem.Path("start").Data().(float64))
-			end := int(elem.Path("end").Data().(float64))
-			if start == end {
-				parsedPorts = append(parsedPorts, fmt.Sprintf("%d", start))
-			} else {
-				parsedPorts = append(parsedPorts, fmt.Sprintf("%d-%d", start, end))
-			}
-		}
-	}
-
-	return parsedPorts
-}
-func extractProtocolsFromResult(resource *Resource, resourceData *gabs.Container) {
-	resource.Protocols = &Protocols{
-		AllowIcmp: resourceData.Path("protocols.allowIcmp").Data().(bool),
-		UDPPolicy: resourceData.Path("protocols.udp.policy").Data().(string),
-		TCPPolicy: resourceData.Path("protocols.tcp.policy").Data().(string),
-	}
-	resource.Protocols.TCPPorts = extractPortsFromResults(resourceData, "protocols.tcp.ports")
-	resource.Protocols.UDPPorts = extractPortsFromResults(resourceData, "protocols.udp.ports")
 }
 
 func (client *Client) readResource(resourceId string) (*Resource, error) { //nolint:funlen
@@ -206,18 +241,18 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 	}
 	queryResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, fmt.Errorf("can't read resource : %w", err)
+		return nil, NewAPIErrorWithId(err, "read", "resource", resourceId)
 	}
 
 	resourceQuery := queryResource.Path("data.resource")
-
 	if resourceQuery.Data() == nil {
-		return nil, APIError("can't read resource: %s", resourceId)
+		return nil, NewAPIErrorWithId(err, "read", "resource", resourceId)
 	}
+
 	var groups = make([]string, 0)
 	hasNextPage := resourceQuery.Path("groups.pageInfo.hasNextPage").Data().(bool)
 	if hasNextPage {
-		return nil, APIError("provider does not support more than 50 groups per resource: %s", resourceId)
+		return nil, NewAPIErrorWithId(ErrTooManyGroupsError, "read", "resource", resourceId)
 	}
 	for _, elem := range resourceQuery.Path("groups.edges").Children() {
 		nodeId := elem.Path("node.id").Data().(string)
@@ -243,7 +278,7 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 func (client *Client) updateResource(resource *Resource) error {
 	protocols, err := convertProtocols(resource.Protocols)
 	if err != nil {
-		return fmt.Errorf("can't conver protocols %w", err)
+		return NewAPIErrorWithId(err, "update", "resource", resource.Id)
 	}
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -257,14 +292,14 @@ func (client *Client) updateResource(resource *Resource) error {
 	}
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return fmt.Errorf("can't update resource : %w", err)
+		return NewAPIErrorWithId(err, "update", "resource", resource.Id)
 	}
 
 	status := mutationResource.Path("data.resourceUpdate.ok").Data().(bool)
 	if !status {
-		errorMessage := mutationResource.Path("data.resourceUpdate.error").Data().(string)
+		message := mutationResource.Path("data.resourceUpdate.error").Data().(string)
 
-		return APIError("can't update resource: %s", errorMessage)
+		return NewAPIErrorWithId(NewMutationError(message), "update", "resource", resource.Id)
 	}
 
 	return nil
@@ -284,14 +319,14 @@ func (client *Client) deleteResource(resourceId string) error {
 	deleteResource, err := client.doGraphqlRequest(mutation)
 
 	if err != nil {
-		return fmt.Errorf("can't delete resource : %w", err)
+		return NewAPIErrorWithId(err, "delete", "resource", resourceId)
 	}
 
 	status := deleteResource.Path("data.resourceDelete.ok").Data().(bool)
 	if !status {
-		errorMessage := deleteResource.Path("data.resourceDelete.error").Data().(string)
+		message := deleteResource.Path("data.resourceDelete.error").Data().(string)
 
-		return APIError("unable to delete resource Id %s, error: %s", resourceId, errorMessage)
+		return NewAPIErrorWithId(NewMutationError(message), "delete", "resource", resourceId)
 	}
 
 	return nil
