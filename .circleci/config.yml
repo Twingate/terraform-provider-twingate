@@ -60,15 +60,13 @@ jobs:
       - run:
           name: Compute checksum of binaries
           command: |
-            ls -l
-            pwd
             for binary in build/*; do
               sha256sum -b $binary > $binary.sha256
             done
 
 
       - persist_to_workspace:
-          root: /go/src/github.com/twingate/terraform-provider-twingate
+          root: /home/circleci/project
           paths:
             - build
 
