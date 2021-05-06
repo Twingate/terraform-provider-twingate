@@ -10,7 +10,7 @@ mkdir -p "${TEST_RESULTS}"
 
 echo PACKAGE_NAMES: "$PACKAGE_NAMES"
 echo "Running tests:"
-$(go env GOPATH)/bin/gotestsum --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg=./... -coverprofile="${TEST_RESULTS}"/coverage.out.tmp ${PACKAGE_NAMES}
+"$(go env GOPATH)"/bin/gotestsum --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg=./... -coverprofile="${TEST_RESULTS}"/coverage.out.tmp "${PACKAGE_NAMES}"
 echo
 
 echo "Generating coverage report (removing generated **/api/gen/** and *.pb.go files)"
