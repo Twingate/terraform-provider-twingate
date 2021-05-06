@@ -19,12 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       -
-        name: Wait for CircleCI
-        uses: "WyriHaximus/github-action-wait-for-status@v1.3.0"
+      - name: 'Wait for CircleCI'
+        id: waitforstatuschecks
+        uses: "WyriHaximus/github-action-wait-for-status@v2"
         with:
-          checkInterval: 15
+          checkInterval: 10
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       -
         name: Checkout
         uses: actions/checkout@v2
