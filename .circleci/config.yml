@@ -55,8 +55,19 @@ jobs:
 
       - run:
           name: Build
-          command: make build
+          command: make build-release
 
+      - run:
+          name: Compute checksum of binaries
+          command: |
+            for binary in build/*; do
+              sha256sum -b $binary > $binary.sha256
+            done
+
+      - persist_to_workspace:
+          root: /home/circleci/project
+          paths:
+            - build
 
 workflows:
   version: 2
@@ -66,4 +77,7 @@ workflows:
      - build:
          requires:
            - test
-
+         filters:
+          branches:
+            only:
+              - main
