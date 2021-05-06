@@ -61,6 +61,7 @@ jobs:
           name: Compute checksum of binaries
           command: |
             ls -l
+            pwd
             for binary in build/*; do
               sha256sum -b $binary > $binary.sha256
             done
