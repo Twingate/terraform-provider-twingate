@@ -38,6 +38,7 @@ func resourceRemoteNetworkCreate(ctx context.Context, d *schema.ResourceData, m 
 	client := m.(*Client)
 
 	var diags diag.Diagnostics
+
 	remoteNetworkName := d.Get("name").(string)
 	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
@@ -45,7 +46,7 @@ func resourceRemoteNetworkCreate(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
-	d.SetId(remoteNetwork.Id)
+	d.SetId(remoteNetwork.ID)
 	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, d.Id())
 	resourceRemoteNetworkRead(ctx, d, m)
 
@@ -58,9 +59,10 @@ func resourceRemoteNetworkUpdate(ctx context.Context, d *schema.ResourceData, m 
 	remoteNetworkName := d.Get("name").(string)
 
 	if d.HasChange("name") {
-		remoteNetworkId := d.Id()
-		log.Printf("[INFO] Updating remote network id %s", remoteNetworkId)
-		if err := client.updateRemoteNetwork(remoteNetworkId, remoteNetworkName); err != nil {
+		remoteNetworkID := d.Id()
+		log.Printf("[INFO] Updating remote network id %s", remoteNetworkID)
+
+		if err := client.updateRemoteNetwork(remoteNetworkID, remoteNetworkName); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -73,9 +75,9 @@ func resourceRemoteNetworkDelete(ctx context.Context, d *schema.ResourceData, m 
 
 	var diags diag.Diagnostics
 
-	remoteNetworkId := d.Id()
+	remoteNetworkID := d.Id()
 
-	err := client.deleteRemoteNetwork(remoteNetworkId)
+	err := client.deleteRemoteNetwork(remoteNetworkID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -90,11 +92,11 @@ func resourceRemoteNetworkRead(ctx context.Context, d *schema.ResourceData, m in
 
 	var diags diag.Diagnostics
 
-	remoteNetworkId := d.Id()
+	remoteNetworkID := d.Id()
 
 	log.Printf("[INFO] Reading remote network id %s", d.Id())
 
-	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
+	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkID)
 
 	if err != nil {
 		return diag.FromErr(err)

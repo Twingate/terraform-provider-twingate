@@ -41,6 +41,7 @@ func Provider() *schema.Provider {
 			"twingate_remote_network":   resourceRemoteNetwork(),
 			"twingate_connector":        resourceConnector(),
 			"twingate_connector_tokens": resourceConnectorTokens(),
+			"twingate_resource":         resourceResource(),
 		},
 		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
@@ -51,6 +52,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	apiToken := d.Get("api_token").(string)
 	network := d.Get("network").(string)
 	url := d.Get("url").(string)
+
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {

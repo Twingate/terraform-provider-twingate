@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccRemoteConnector_basic(t *testing.T) {
-
 	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
 	connectorResource := "twingate_connector.test"
 	remoteNetworkResource := "twingate_remote_network.test"

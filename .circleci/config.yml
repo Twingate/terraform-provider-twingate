@@ -1,19 +1,15 @@
 version: 2.1
 
+
 jobs:
   test:
     environment:
       TEST_RESULTS: /tmp/test-results
-    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
     docker:
-      - image: circleci/golang:1.16
+      - image: cimg/go:1.16.3
 
     steps:
       - checkout
-
-      - restore_cache:
-          keys:
-            - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
           name: Format Check
@@ -55,35 +51,36 @@ jobs:
   build:
 
     docker:
-      - image: circleci/golang:1.16
-
-    working_directory: /go/src/github.com/twingate/terraform-provider-twingate
+      - image: cimg/go:1.16.3
 
     steps:
       - checkout
 
-      - restore_cache:
-          keys:
-            - go-mod-v1-{{ checksum "go.sum" }}
-
       - run:
           name: Build
-          command: make build
+          command: make build-release
 
-      - save_cache: # Store cache in the /go/pkg directory
-          key: go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: Compute checksum of binaries
+          command: |
+            for binary in build/*; do
+              sha256sum -b $binary > $binary.sha256
+            done
+
+      - persist_to_workspace:
+          root: /home/circleci/project
           paths:
-            - "/go/pkg/mod"
+            - build
 
 workflows:
   version: 2
   build:
    jobs:
-     - test:
-         context:
-           - terraform-provider
-
+     - test
      - build:
          requires:
            - test
-
+         filters:
+          branches:
+            only:
+              - main
