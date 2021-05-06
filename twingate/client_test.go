@@ -80,7 +80,7 @@ func TestClientPingRequestFails(t *testing.T) {
 
 	err := client.ping()
 
-	assert.EqualError(t, err, "failed to ping twingate: can't execute request : request  failed, status 500, body {}")
+	assert.EqualError(t, err, "failed to ping twingate: can't execute request: request  failed, status 500, body {}")
 
 }
 

@@ -17,7 +17,7 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
-			  connectorCreate(remoteNetworkID: "%s"){
+			  connectorCreate(remoteNetworkId: "%s"){
 				ok
 				error
 				entity{
