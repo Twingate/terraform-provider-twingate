@@ -12,7 +12,6 @@ import (
 )
 
 func TestClientConnectorCreateTokensOK(t *testing.T) {
-
 	// response JSON
 	createTokensOkJson := `{
 		"data": {
@@ -37,7 +36,7 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 		}, nil
 	}
 	connector := &Connector{
-		Id: "test",
+		ID: "test",
 	}
 	err := client.generateConnectorTokens(connector)
 
@@ -47,7 +46,6 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 }
 
 func TestClientConnectorTokensVerifyOK(t *testing.T) {
-
 	// response JSON
 	verifyTokensOkJson := `{}`
 
@@ -71,7 +69,6 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 }
 
 func TestClientConnectorTokensVerifyError(t *testing.T) {
-
 	// response JSON
 	verifyTokensOkJson := `{}`
 
@@ -91,11 +88,10 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 	}
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-	assert.EqualError(t, err, "connector tokens are invalid : api request error : request  failed, status 501, body {}")
+	assert.EqualError(t, err, "failed to verify connector tokens: request  failed, status 501, body {}")
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
-
 	// response JSON
 	createTokensOkJson := `{
 	  "data": {
@@ -116,9 +112,9 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 		}, nil
 	}
 	connector := &Connector{
-		Id: "test",
+		ID: "test",
 	}
 	err := client.generateConnectorTokens(connector)
 
-	assert.EqualError(t, err, "api request error : can't create tokens for connector test, error: error_1")
+	assert.EqualError(t, err, "failed to generate connector tokens with id test: error_1")
 }
