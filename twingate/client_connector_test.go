@@ -12,7 +12,6 @@ import (
 )
 
 func TestClientConnectorCreateOk(t *testing.T) {
-
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
@@ -46,7 +45,6 @@ func TestClientConnectorCreateOk(t *testing.T) {
 }
 
 func TestClientConnectorDeleteOk(t *testing.T) {
-
 	// response JSON
 	deleteConnectorOkJson := `{
 	  "data": {
@@ -74,7 +72,6 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 }
 
 func TestClientConnectorCreateError(t *testing.T) {
-
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
@@ -103,7 +100,6 @@ func TestClientConnectorCreateError(t *testing.T) {
 }
 
 func TestClientConnectorDeleteError(t *testing.T) {
-
 	// response JSON
 	deleteConnectorOkJson := `{
 	  "data": {

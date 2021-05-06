@@ -32,7 +32,6 @@ func TestParseErrorPortsToGraphql(t *testing.T) {
 }
 
 func TestClientResourceCreateOk(t *testing.T) {
-
 	// response JSON
 	createResourceOkJson := `{
 	  "data": {
@@ -70,7 +69,6 @@ func TestClientResourceCreateOk(t *testing.T) {
 }
 
 func TestClientResourceCreateError(t *testing.T) {
-
 	// response JSON
 	createResourceErrorJson := `{
 	  "data": {
@@ -107,7 +105,6 @@ func TestClientResourceCreateError(t *testing.T) {
 }
 
 func TestClientResourceReadOk(t *testing.T) {
-
 	// response JSON
 	createResourceOkJson := `{
 	  "data": {
@@ -185,7 +182,6 @@ func TestClientResourceReadOk(t *testing.T) {
 }
 
 func TestClientResourceReadTooManyGroups(t *testing.T) {
-
 	// response JSON
 	createResourceOkJson := `{
 	  "data": {
@@ -256,7 +252,6 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 }
 
 func TestClientResourceReadError(t *testing.T) {
-
 	// response JSON
 	createResourceErrorJson := `{
 		"data": {

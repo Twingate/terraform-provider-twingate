@@ -12,7 +12,6 @@ import (
 )
 
 func TestClientRemoteNetworkCreateOk(t *testing.T) {
-
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
@@ -44,7 +43,6 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 }
 
 func TestClientRemoteNetworkCreateError(t *testing.T) {
-
 	// response JSON
 	createNetworkOkJson := `{
 	  "data": {
@@ -73,7 +71,6 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 }
 
 func TestClientRemoteNetworkUpdateError(t *testing.T) {
-
 	// response JSON
 	updateNetworkOkJson := `{
 	  "data": {
@@ -102,7 +99,6 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 }
 
 func TestClientRemoteNetworkReadError(t *testing.T) {
-
 	// response JSON
 	readNetworkOkJson := `{
 	  "data": {

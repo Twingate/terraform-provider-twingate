@@ -12,7 +12,6 @@ import (
 )
 
 func TestClientConnectorCreateTokensOK(t *testing.T) {
-
 	// response JSON
 	createTokensOkJson := `{
 		"data": {
@@ -47,7 +46,6 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 }
 
 func TestClientConnectorTokensVerifyOK(t *testing.T) {
-
 	// response JSON
 	verifyTokensOkJson := `{}`
 
@@ -71,7 +69,6 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 }
 
 func TestClientConnectorTokensVerifyError(t *testing.T) {
-
 	// response JSON
 	verifyTokensOkJson := `{}`
 
@@ -95,7 +92,6 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
-
 	// response JSON
 	createTokensOkJson := `{
 	  "data": {
