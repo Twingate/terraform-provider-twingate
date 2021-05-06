@@ -44,14 +44,14 @@ func resourceConnector() *schema.Resource {
 func resourceConnectorCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
 
-	remoteNetworkId := d.Get("remote_network_id").(string)
-	connector, err := client.createConnector(remoteNetworkId)
+	remoteNetworkID := d.Get("remote_network_id").(string)
+	connector, err := client.createConnector(remoteNetworkID)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(connector.Id)
 
+	d.SetId(connector.ID)
 	log.Printf("[INFO] Created conector %s", connector.Name)
 
 	return resourceConnectorRead(ctx, d, m)
@@ -62,9 +62,9 @@ func resourceConnectorDelete(ctx context.Context, d *schema.ResourceData, m inte
 
 	var diags diag.Diagnostics
 
-	connectorId := d.Id()
+	connectorID := d.Id()
 
-	err := client.deleteConnector(connectorId)
+	err := client.deleteConnector(connectorID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -76,11 +76,11 @@ func resourceConnectorDelete(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceConnectorRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
+
 	var diags diag.Diagnostics
 
-	connectorId := d.Id()
-
-	connector, err := client.readConnector(connectorId)
+	connectorID := d.Id()
+	connector, err := client.readConnector(connectorID)
 
 	if err != nil {
 		return diag.FromErr(err)

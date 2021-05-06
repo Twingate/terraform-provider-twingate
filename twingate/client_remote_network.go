@@ -5,7 +5,7 @@ import (
 )
 
 type RemoteNetwork struct {
-	Id   string
+	ID   string
 	Name string
 }
 
@@ -25,6 +25,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 		}
         `, remoteNetworkName),
 	}
+
 	mutationRemoteNetwork, err := client.doGraphqlRequest(mutation)
 	if err != nil {
 		return nil, NewAPIError(err, "create", remoteNetworkResourceName)
@@ -38,13 +39,13 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	}
 
 	remoteNetwork := RemoteNetwork{
-		Id: mutationRemoteNetwork.Path("data.remoteNetworkCreate.entity.id").Data().(string),
+		ID: mutationRemoteNetwork.Path("data.remoteNetworkCreate.entity.id").Data().(string),
 	}
 
 	return &remoteNetwork, nil
 }
 
-func (client *Client) readRemoteNetwork(remoteNetworkId string) (*RemoteNetwork, error) {
+func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		{
@@ -53,28 +54,29 @@ func (client *Client) readRemoteNetwork(remoteNetworkId string) (*RemoteNetwork,
 		  }
 		}
 
-        `, remoteNetworkId),
+        `, remoteNetworkID),
 	}
+
 	queryRemoteNetwork, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, NewAPIErrorWithId(err, "read", remoteNetworkResourceName, remoteNetworkId)
+		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	remoteNetworkQuery := queryRemoteNetwork.Path("data.remoteNetwork")
 
 	if remoteNetworkQuery.Data() == nil {
-		return nil, NewAPIErrorWithId(err, "read", remoteNetworkResourceName, remoteNetworkId)
+		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	remoteNetwork := RemoteNetwork{
-		Id:   remoteNetworkId,
+		ID:   remoteNetworkID,
 		Name: remoteNetworkQuery.Path("name").Data().(string),
 	}
 
 	return &remoteNetwork, nil
 }
 
-func (client *Client) updateRemoteNetwork(remoteNetworkId, remoteNetworkName string) error {
+func (client *Client) updateRemoteNetwork(remoteNetworkID, remoteNetworkName string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 				mutation {
@@ -83,24 +85,25 @@ func (client *Client) updateRemoteNetwork(remoteNetworkId, remoteNetworkName str
 						error
 					}
 				}
-        `, remoteNetworkId, remoteNetworkName),
+        `, remoteNetworkID, remoteNetworkName),
 	}
+
 	mutationRemoteNetwork, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return NewAPIErrorWithId(err, "update", remoteNetworkResourceName, remoteNetworkId)
+		return NewAPIErrorWithID(err, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	status := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.ok").Data().(bool)
 	if !status {
 		message := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "update", remoteNetworkResourceName, remoteNetworkId)
+		return NewAPIErrorWithID(NewMutationError(message), "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil
 }
 
-func (client *Client) deleteRemoteNetwork(remoteNetworkId string) error {
+func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		 mutation {
@@ -109,19 +112,19 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkId string) error {
 			error
 		  }
 		}
-		`, remoteNetworkId),
+		`, remoteNetworkID),
 	}
-	deleteRemoteNetwork, err := client.doGraphqlRequest(mutation)
 
+	deleteRemoteNetwork, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return NewAPIErrorWithId(err, "delete", remoteNetworkResourceName, remoteNetworkId)
+		return NewAPIErrorWithID(err, "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	status := deleteRemoteNetwork.Path("data.remoteNetworkDelete.ok").Data().(bool)
 	if !status {
 		message := deleteRemoteNetwork.Path("data.remoteNetworkDelete.error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "delete", remoteNetworkResourceName, remoteNetworkId)
+		return NewAPIErrorWithID(NewMutationError(message), "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil

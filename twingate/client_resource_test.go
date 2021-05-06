@@ -55,7 +55,7 @@ func TestClientResourceCreateOk(t *testing.T) {
 		}, nil
 	}
 	resource := &Resource{
-		RemoteNetworkId: "id1",
+		RemoteNetworkID: "id1",
 		Address:         "test",
 		Name:            "testName",
 		GroupsIds:       make([]string, 0),
@@ -65,7 +65,7 @@ func TestClientResourceCreateOk(t *testing.T) {
 	err := client.createResource(resource)
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "test-id", resource.Id)
+	assert.EqualValues(t, "test-id", resource.ID)
 }
 
 func TestClientResourceCreateError(t *testing.T) {
@@ -92,7 +92,7 @@ func TestClientResourceCreateError(t *testing.T) {
 		}, nil
 	}
 	resource := &Resource{
-		RemoteNetworkId: "id1",
+		RemoteNetworkID: "id1",
 		Address:         "test",
 		Name:            "testName",
 		GroupsIds:       make([]string, 0),
@@ -172,11 +172,11 @@ func TestClientResourceReadOk(t *testing.T) {
 	resource, err := client.readResource("resource1")
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "resource1", resource.Id)
+	assert.EqualValues(t, "resource1", resource.ID)
 	assert.Contains(t, resource.GroupsIds, "group1")
 	assert.Contains(t, resource.Protocols.TCPPorts, "8080-8090")
 	assert.EqualValues(t, resource.Address, "test.com")
-	assert.EqualValues(t, resource.RemoteNetworkId, "network1")
+	assert.EqualValues(t, resource.RemoteNetworkID, "network1")
 	assert.Len(t, resource.Protocols.UDPPorts, 0)
 	assert.EqualValues(t, resource.Name, "test resource")
 }
@@ -297,7 +297,7 @@ func TestClientResourceUpdateOk(t *testing.T) {
 	}
 
 	resource := &Resource{
-		RemoteNetworkId: "network1",
+		RemoteNetworkID: "network1",
 		Address:         "test.com",
 		Name:            "test resource",
 		GroupsIds:       make([]string, 0),
@@ -331,7 +331,7 @@ func TestClientResourceUpdateError(t *testing.T) {
 	}
 
 	resource := &Resource{
-		RemoteNetworkId: "network1",
+		RemoteNetworkID: "network1",
 		Address:         "test.com",
 		Name:            "test resource",
 		GroupsIds:       make([]string, 0),

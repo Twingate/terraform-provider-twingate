@@ -5,7 +5,7 @@ import (
 )
 
 type Connector struct {
-	Id              string
+	ID              string
 	RemoteNetwork   *RemoteNetwork
 	Name            string
 	ConnectorTokens *ConnectorTokens
@@ -13,11 +13,11 @@ type Connector struct {
 
 const connectorResourceName = "connector"
 
-func (client *Client) createConnector(remoteNetworkId string) (*Connector, error) {
+func (client *Client) createConnector(remoteNetworkID string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
-			  connectorCreate(remoteNetworkId: "%s"){
+			  connectorCreate(remoteNetworkID: "%s"){
 				ok
 				error
 				entity{
@@ -26,16 +26,17 @@ func (client *Client) createConnector(remoteNetworkId string) (*Connector, error
 				}
 			  }
 			}
-        `, remoteNetworkId),
+        `, remoteNetworkID),
 	}
+
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
 		return nil, NewAPIError(err, "create", connectorResourceName)
 	}
 
 	connectorResult := mutationConnector.Path("data.connectorCreate")
-	status := connectorResult.Path("ok").Data().(bool)
 
+	status := connectorResult.Path("ok").Data().(bool)
 	if !status {
 		message := connectorResult.Path("error").Data().(string)
 
@@ -43,14 +44,14 @@ func (client *Client) createConnector(remoteNetworkId string) (*Connector, error
 	}
 
 	connector := Connector{
-		Id:   connectorResult.Path("entity.id").Data().(string),
+		ID:   connectorResult.Path("entity.id").Data().(string),
 		Name: connectorResult.Path("entity.name").Data().(string),
 	}
 
 	return &connector, nil
 }
 
-func (client *Client) readConnector(connectorId string) (*Connector, error) {
+func (client *Client) readConnector(connectorID string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		{
@@ -63,24 +64,24 @@ func (client *Client) readConnector(connectorId string) (*Connector, error) {
 			}
           }
 		}
-        `, connectorId),
+        `, connectorID),
 	}
+
 	queryConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, NewAPIErrorWithId(err, "reed", connectorResourceName, connectorId)
+		return nil, NewAPIErrorWithID(err, "reed", connectorResourceName, connectorID)
 	}
 
 	connectorRead := queryConnector.Path("data.connector")
-
 	if connectorRead.Data() == nil {
-		return nil, NewAPIErrorWithId(nil, "reed", connectorResourceName, connectorId)
+		return nil, NewAPIErrorWithID(nil, "reed", connectorResourceName, connectorID)
 	}
 
 	connector := Connector{
-		Id:   connectorRead.Path("id").Data().(string),
+		ID:   connectorRead.Path("id").Data().(string),
 		Name: connectorRead.Path("name").Data().(string),
 		RemoteNetwork: &RemoteNetwork{
-			Id:   connectorRead.Path("remoteNetwork.id").Data().(string),
+			ID:   connectorRead.Path("remoteNetwork.id").Data().(string),
 			Name: connectorRead.Path("remoteNetwork.name").Data().(string),
 		},
 	}
@@ -88,7 +89,7 @@ func (client *Client) readConnector(connectorId string) (*Connector, error) {
 	return &connector, nil
 }
 
-func (client *Client) deleteConnector(connectorId string) error {
+func (client *Client) deleteConnector(connectorID string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		 mutation {
@@ -97,19 +98,21 @@ func (client *Client) deleteConnector(connectorId string) error {
 			error
 		  }
 		}
-		`, connectorId),
+		`, connectorID),
 	}
-	mutationConnector, err := client.doGraphqlRequest(mutation)
 
+	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return NewAPIErrorWithId(err, "delete", connectorResourceName, connectorId)
+		return NewAPIErrorWithID(err, "delete", connectorResourceName, connectorID)
 	}
+
 	connectorDelete := mutationConnector.Path("data.connectorDelete")
+
 	status := connectorDelete.Path("ok").Data().(bool)
 	if !status {
 		message := connectorDelete.Path("error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "delete", connectorResourceName, connectorId)
+		return NewAPIErrorWithID(NewMutationError(message), "delete", connectorResourceName, connectorID)
 	}
 
 	return nil

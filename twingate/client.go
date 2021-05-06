@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -58,15 +59,15 @@ type APIError struct {
 	WrappedError error
 	Operation    string
 	Resource     string
-	Id           string
+	ID           string
 }
 
-func NewAPIErrorWithId(wrappedError error, operation string, resource string, id string) *APIError {
+func NewAPIErrorWithID(wrappedError error, operation string, resource string, id string) *APIError {
 	return &APIError{
 		WrappedError: wrappedError,
 		Operation:    operation,
 		Resource:     resource,
-		Id:           id,
+		ID:           id,
 	}
 }
 
@@ -75,20 +76,25 @@ func NewAPIError(wrappedError error, operation string, resource string) *APIErro
 		WrappedError: wrappedError,
 		Operation:    operation,
 		Resource:     resource,
-		Id:           "",
+		ID:           "",
 	}
 }
 
 func (e *APIError) Error() string {
-	var format = "failed to %s %s"
 	var a = make([]interface{}, 0, 2)
 	a = append(a, e.Operation, e.Resource)
-	if len(e.Id) > 0 {
+
+	var format = "failed to %s %s"
+
+	if len(e.ID) > 0 {
 		format += " with id %s"
-		a = append(a, e.Id)
+
+		a = append(a, e.ID)
 	}
+
 	if e.WrappedError != nil {
 		format += ": %s"
+
 		a = append(a, e.WrappedError)
 	}
 
@@ -152,35 +158,38 @@ func (client *Client) ping() error {
 			}
         `,
 	}
-	parsedBody, err := client.doGraphqlRequest(jsonData)
-	_ = parsedBody
+	_, err := client.doGraphqlRequest(jsonData)
+
 	if err != nil {
 		log.Printf("[ERROR] Cannot reach Graphql API Server %s", jsonData)
 
 		return NewAPIError(err, "ping", "twingate")
 	}
+
 	log.Printf("[INFO] Graphql API Server at URL %s reachable", client.GraphqlServerURL)
 
 	return nil
 }
 
-func Check(f func() error) {
-	if err := f(); err != nil {
-		log.Printf("[ERROR] Error Closing: %s", err)
-	}
-}
-
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
 	res, err := client.HTTPClient.Do(req)
+
 	if err != nil {
 		return nil, fmt.Errorf("can't execute http request: %w", err)
 	}
-	defer Check(res.Body.Close)
+
+	defer func(closer io.Closer) {
+		if err := closer.Close(); err != nil {
+			log.Printf("[ERROR] Error Closing: %s", err)
+		}
+	}(res.Body)
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("can't read response body: %w", err)
 	}
+
 	if res.StatusCode != http.StatusOK {
 		return nil, NewHTTPError(req.RequestURI, res.StatusCode, body)
 	}
@@ -197,11 +206,12 @@ func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container
 	}
 
 	req.Header.Set("X-API-KEY", client.APIToken)
+
 	body, err := client.doRequest(req)
-	_ = body
 	if err != nil {
 		return nil, fmt.Errorf("can't execute request : %w", err)
 	}
+
 	parsedResponse, err := gabs.ParseJSON(body)
 	if err != nil {
 		return nil, fmt.Errorf("can't parse response body: %w", err)

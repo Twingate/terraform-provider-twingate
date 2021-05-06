@@ -50,8 +50,8 @@ type Protocols struct {
 }
 
 type Resource struct {
-	Id              string
-	RemoteNetworkId string
+	ID              string
+	RemoteNetworkID string
 	Address         string
 	Name            string
 	GroupsIds       []string
@@ -65,6 +65,7 @@ func validatePort(port string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("port is not a valid integer: %w", err)
 	}
+
 	if parsed < 0 || parsed > 65535 {
 		return 0, NewPortNotInRangeError(parsed)
 	}
@@ -74,29 +75,36 @@ func validatePort(port string) (int64, error) {
 
 func convertPorts(ports []string) (string, error) {
 	var converted = make([]string, 0)
+
 	for _, elem := range ports {
 		if strings.Contains(elem, "-") {
 			split := strings.SplitN(elem, "-", 2)
+
 			start, err := validatePort(split[0])
 			if err != nil {
 				return "", err
 			}
+
 			end, err := validatePort(split[1])
 			if err != nil {
 				return "", err
 			}
+
 			if end < start {
 				return "", NewPortRangeNotRisingSequenceError(start, end)
 			}
+
 			converted = append(converted, fmt.Sprintf("{start: %s, end: %s}", split[0], split[1]))
 		} else {
 			_, err := validatePort(elem)
 			if err != nil {
 				return "", err
 			}
+
 			converted = append(converted, fmt.Sprintf("{start: %s, end: %s}", elem, elem))
 		}
 	}
+
 	if len(converted) > 0 {
 		return strings.Join(converted, ","), nil
 	}
@@ -105,18 +113,21 @@ func convertPorts(ports []string) (string, error) {
 }
 
 func convertProtocols(protocols *Protocols) (string, error) {
-	var converted = make([]string, 0)
 	if protocols == nil {
 		return "", nil
 	}
+
 	tcpPorts, err := convertPorts(protocols.TCPPorts)
 	if err != nil {
 		return "", err
 	}
+
 	udpPorts, err := convertPorts(protocols.UDPPorts)
 	if err != nil {
 		return "", err
 	}
+
+	var converted = make([]string, 0)
 	converted = append(converted, fmt.Sprintf("tcp: {policy: %s, ports: [%s]}", protocols.TCPPolicy, tcpPorts))
 	converted = append(converted, fmt.Sprintf("udp: {policy: %s, ports: [%s]}", protocols.UDPPolicy, udpPorts))
 	converted = append(converted, fmt.Sprintf("allowIcmp: %t", protocols.AllowIcmp))
@@ -136,10 +147,12 @@ func convertGroups(groups []string) string {
 
 func extractPortsFromResults(resourceData *gabs.Container, portPath string) []string {
 	var parsedPorts = make([]string, 0)
+
 	if resourceData.ExistsP(portPath) {
 		for _, elem := range resourceData.Path(portPath).Children() {
 			start := int(elem.Path("start").Data().(float64))
 			end := int(elem.Path("end").Data().(float64))
+
 			if start == end {
 				parsedPorts = append(parsedPorts, fmt.Sprintf("%d", start))
 			} else {
@@ -178,8 +191,9 @@ func (client *Client) createResource(resource *Resource) error {
 				}
 			  }
 		}
-        `, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.GroupsIds), protocols),
+        `, resource.Name, resource.Address, resource.RemoteNetworkID, convertGroups(resource.GroupsIds), protocols),
 	}
+
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
@@ -191,12 +205,13 @@ func (client *Client) createResource(resource *Resource) error {
 
 		return NewAPIError(NewMutationError(message), "create", resourceResourceName)
 	}
-	resource.Id = mutationResource.Path("data.resourceCreate.entity.id").Data().(string)
+
+	resource.ID = mutationResource.Path("data.resourceCreate.entity.id").Data().(string)
 
 	return nil
 }
 
-func (client *Client) readResource(resourceId string) (*Resource, error) { //nolint:funlen
+func (client *Client) readResource(resourceID string) (*Resource, error) { //nolint:funlen
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		{
@@ -239,37 +254,40 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 			}
 		  }
 		}
-        `, resourceId),
+        `, resourceID),
 	}
+
 	queryResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, NewAPIErrorWithId(err, "read", resourceResourceName, resourceId)
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
 	resourceQuery := queryResource.Path("data.resource")
 	if resourceQuery.Data() == nil {
-		return nil, NewAPIErrorWithId(err, "read", resourceResourceName, resourceId)
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
 	var groups = make([]string, 0)
+
 	hasNextPage := resourceQuery.Path("groups.pageInfo.hasNextPage").Data().(bool)
 	if hasNextPage {
-		return nil, NewAPIErrorWithId(ErrTooManyGroupsError, "read", resourceResourceName, resourceId)
+		return nil, NewAPIErrorWithID(ErrTooManyGroupsError, "read", resourceResourceName, resourceID)
 	}
+
 	for _, elem := range resourceQuery.Path("groups.edges").Children() {
-		nodeId := elem.Path("node.id").Data().(string)
-		groups = append(groups, nodeId)
+		nodeID := elem.Path("node.id").Data().(string)
+		groups = append(groups, nodeID)
 	}
 
 	resource := &Resource{
-		Id:        resourceId,
+		ID:        resourceID,
 		Name:      resourceQuery.Path("name").Data().(string),
 		Address:   resourceQuery.Path("address.value").Data().(string),
 		GroupsIds: groups,
 	}
 
 	if resourceQuery.ExistsP("remoteNetwork.id") {
-		resource.RemoteNetworkId = resourceQuery.Path("remoteNetwork.id").Data().(string)
+		resource.RemoteNetworkID = resourceQuery.Path("remoteNetwork.id").Data().(string)
 	}
 
 	extractProtocolsFromResult(resource, resourceQuery)
@@ -280,8 +298,9 @@ func (client *Client) readResource(resourceId string) (*Resource, error) { //nol
 func (client *Client) updateResource(resource *Resource) error {
 	protocols, err := convertProtocols(resource.Protocols)
 	if err != nil {
-		return NewAPIErrorWithId(err, "update", resourceResourceName, resource.Id)
+		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
 	}
+
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
@@ -290,24 +309,25 @@ func (client *Client) updateResource(resource *Resource) error {
 				error
 			  }
 		}
-        `, resource.Id, resource.Name, resource.Address, resource.RemoteNetworkId, convertGroups(resource.GroupsIds), protocols),
+        `, resource.ID, resource.Name, resource.Address, resource.RemoteNetworkID, convertGroups(resource.GroupsIds), protocols),
 	}
+
 	mutationResource, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return NewAPIErrorWithId(err, "update", resourceResourceName, resource.Id)
+		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
 	}
 
 	status := mutationResource.Path("data.resourceUpdate.ok").Data().(bool)
 	if !status {
 		message := mutationResource.Path("data.resourceUpdate.error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "update", resourceResourceName, resource.Id)
+		return NewAPIErrorWithID(NewMutationError(message), "update", resourceResourceName, resource.ID)
 	}
 
 	return nil
 }
 
-func (client *Client) deleteResource(resourceId string) error {
+func (client *Client) deleteResource(resourceID string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		 mutation {
@@ -316,19 +336,19 @@ func (client *Client) deleteResource(resourceId string) error {
 			error
 		  }
 		}
-		`, resourceId),
+		`, resourceID),
 	}
 	deleteResource, err := client.doGraphqlRequest(mutation)
 
 	if err != nil {
-		return NewAPIErrorWithId(err, "delete", resourceResourceName, resourceId)
+		return NewAPIErrorWithID(err, "delete", resourceResourceName, resourceID)
 	}
 
 	status := deleteResource.Path("data.resourceDelete.ok").Data().(bool)
 	if !status {
 		message := deleteResource.Path("data.resourceDelete.error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "delete", resourceResourceName, resourceId)
+		return NewAPIErrorWithID(NewMutationError(message), "delete", resourceResourceName, resourceID)
 	}
 
 	return nil

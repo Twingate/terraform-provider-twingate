@@ -45,6 +45,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	apiToken := d.Get("api_token").(string)
 	network := d.Get("network").(string)
 	url := d.Get("url").(string)
+
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {

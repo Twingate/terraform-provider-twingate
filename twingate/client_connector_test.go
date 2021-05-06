@@ -40,7 +40,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	connector, err := client.createConnector(remoteNetworkName)
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "test-id", connector.Id)
+	assert.EqualValues(t, "test-id", connector.ID)
 	assert.EqualValues(t, "test-name", connector.Name)
 }
 

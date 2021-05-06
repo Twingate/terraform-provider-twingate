@@ -27,6 +27,7 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) er
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+
 	_, err = client.doRequest(req)
 	if err != nil {
 		return NewAPIError(err, "verify", connectorTokensResourceName)
@@ -48,18 +49,21 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 				error
 			  }
 			}
-        `, connector.Id),
+        `, connector.ID),
 	}
+
 	mutationConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
 		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}
+
 	createTokensResult := mutationConnector.Path("data.connectorGenerateTokens")
+
 	status := createTokensResult.Path("ok").Data().(bool)
 	if !status {
 		message := createTokensResult.Path("error").Data().(string)
 
-		return NewAPIErrorWithId(NewMutationError(message), "generate", connectorTokensResourceName, connector.Id)
+		return NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
 	}
 
 	connector.ConnectorTokens = &ConnectorTokens{

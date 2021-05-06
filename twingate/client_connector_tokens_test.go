@@ -36,7 +36,7 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 		}, nil
 	}
 	connector := &Connector{
-		Id: "test",
+		ID: "test",
 	}
 	err := client.generateConnectorTokens(connector)
 
@@ -112,7 +112,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 		}, nil
 	}
 	connector := &Connector{
-		Id: "test",
+		ID: "test",
 	}
 	err := client.generateConnectorTokens(connector)
 

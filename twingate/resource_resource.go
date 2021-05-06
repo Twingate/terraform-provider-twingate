@@ -112,13 +112,15 @@ func extractProtocolsFromContext(p interface{}) *Protocols {
 	protocols := &Protocols{}
 	protocolsMap := p.(map[string]interface{})
 	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
+
 	u := protocolsMap["udp"].([]interface{})
-	t := protocolsMap["tcp"].([]interface{})
 	if len(u) > 0 {
 		udp := u[0].(map[string]interface{})
 		protocols.UDPPolicy = udp["policy"].(string)
 		protocols.UDPPorts = convertSlice(udp["ports"].([]interface{}))
 	}
+
+	t := protocolsMap["tcp"].([]interface{})
 	if len(t) > 0 {
 		tcp := t[0].(map[string]interface{})
 		protocols.TCPPolicy = tcp["policy"].(string)
@@ -136,7 +138,7 @@ func newEmptyProtocols() *Protocols {
 func extractResource(d *schema.ResourceData) *Resource {
 	resource := &Resource{
 		Name:            d.Get("name").(string),
-		RemoteNetworkId: d.Get("remote_network_id").(string),
+		RemoteNetworkID: d.Get("remote_network_id").(string),
 		Address:         d.Get("address").(string),
 		GroupsIds:       convertSlice(d.Get("group_ids").([]interface{})),
 	}
@@ -154,16 +156,14 @@ func extractResource(d *schema.ResourceData) *Resource {
 
 func resourceResourceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
-
 	resource := extractResource(d)
 
 	err := client.createResource(resource)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(resource.Id)
 
+	d.SetId(resource.ID)
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
 	return resourceResourceRead(ctx, d, m)
@@ -174,7 +174,8 @@ func resourceResourceUpdate(ctx context.Context, d *schema.ResourceData, m inter
 
 	if d.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
 		resource := extractResource(d)
-		resource.Id = d.Id()
+		resource.ID = d.Id()
+
 		err := client.updateResource(resource)
 		if err != nil {
 			return diag.FromErr(err)
@@ -189,9 +190,9 @@ func resourceResourceDelete(ctx context.Context, d *schema.ResourceData, m inter
 
 	var diags diag.Diagnostics
 
-	resourceId := d.Id()
+	resourceID := d.Id()
 
-	err := client.deleteResource(resourceId)
+	err := client.deleteResource(resourceID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -202,13 +203,12 @@ func resourceResourceDelete(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
 	var diags diag.Diagnostics
 
-	resourceId := d.Id()
+	client := m.(*Client)
+	resourceID := d.Id()
 
-	resource, err := client.readResource(resourceId)
-
+	resource, err := client.readResource(resourceID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -216,15 +216,19 @@ func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err := d.Set("name", resource.Name); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
-	if err := d.Set("remote_network_id", resource.RemoteNetworkId); err != nil {
+
+	if err := d.Set("remote_network_id", resource.RemoteNetworkID); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting remote network: %w ", err))
 	}
+
 	if err := d.Set("address", resource.Address); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting address: %w ", err))
 	}
+
 	if err := d.Set("group_ids", resource.GroupsIds); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
+
 	if len(d.Get("protocols").([]interface{})) > 0 {
 		protocols := flattenProtocols(resource.Protocols)
 		if err := d.Set("protocols", protocols); err != nil {
