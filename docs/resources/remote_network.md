@@ -3,12 +3,14 @@
 page_title: "twingate_remote_network Resource - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  
+  Connectors are Twingate components that are deployed behind your firewall to provide access to private Resources.
+  Checkout the twingate docs https://docs.twingate.com/docs/connectors for detailed info
 ---
 
 # twingate_remote_network (Resource)
 
-
+Connectors are Twingate components that are deployed behind your firewall to provide access to private Resources.
+Checkout the [twingate docs](https://docs.twingate.com/docs/connectors) for detailed info
 
 
 

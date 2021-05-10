@@ -11,6 +11,8 @@ import (
 
 func resourceConnector() *schema.Resource {
 	return &schema.Resource{
+		Description: "Remote networks are the logical containers that group Resources together.\n" +
+			"Checkout the [twingate docs](https://docs.twingate.com/docs/remote-networks) for detailed information",
 		CreateContext: resourceConnectorCreate,
 		ReadContext:   resourceConnectorRead,
 		DeleteContext: resourceConnectorDelete,

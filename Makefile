@@ -11,6 +11,11 @@ default: build
 
 .PHONY: docs
 
+.PHONY: ci-checks
+ci-checks: docs
+	echo "Checking if latest docs generated"
+	git diff --exit-code || echo "ERROR: Update and push the latest documentation"; exit 1
+
 vendor:
 	go mod vendor
 
@@ -87,8 +92,5 @@ ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
 	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
 endif
 	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
-
-docscheck:
-	@sh -c "'$(CURDIR)/scripts/docscheck.sh'"
 
 .PHONY: build test testacc vet fmt fmtcheck lint tools errcheck test-compile website website-test docscheck
