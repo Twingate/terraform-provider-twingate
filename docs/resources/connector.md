@@ -3,12 +3,14 @@
 page_title: "twingate_connector Resource - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  
+  Remote networks are the logical containers that group Resources together.
+  Checkout the twingate docs https://docs.twingate.com/docs/remote-networks for detailed information
 ---
 
 # twingate_connector (Resource)
 
-
+Remote networks are the logical containers that group Resources together.
+Checkout the [twingate docs](https://docs.twingate.com/docs/remote-networks) for detailed information
 
 
 
@@ -18,10 +20,6 @@ description: |-
 ### Required
 
 - **remote_network_id** (String) The ID of the remote network to attach the connector to
-
-### Optional
-
-- **created_at** (String)
 
 ### Read-Only
 

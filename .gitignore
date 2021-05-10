@@ -1,11 +1,11 @@
 *.dll
 *.exe
 .DS_Store
-example.tf
 terraform.tfvars
 terraform.tfplan
 terraform.tfstate
 bin/
+build/
 terraform-provider-twingate
 modules-dev/
 /pkg/
@@ -28,7 +28,7 @@ website/node_modules
 .vscode/
 test/
 vendor/
-
+examples/
 .idea/
 website/vendor
 .terraform.lock.hcl
@@ -37,4 +37,3 @@ vars.tfvars
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
 
-examples/

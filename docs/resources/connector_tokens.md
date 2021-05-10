@@ -3,12 +3,12 @@
 page_title: "twingate_connector_tokens Resource - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  
+  Generate access and refresh tokens for the connector
 ---
 
 # twingate_connector_tokens (Resource)
 
-
+Generate access and refresh tokens for the connector
 
 
 

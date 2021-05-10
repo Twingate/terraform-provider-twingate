@@ -11,6 +11,7 @@ import (
 
 func resourceConnectorTokens() *schema.Resource {
 	return &schema.Resource{
+		Description:   "Generate access and refresh tokens for the connector",
 		CreateContext: resourceConnectorTokensCreate,
 		ReadContext:   resourceConnectorTokensRead,
 		DeleteContext: resourceConnectorTokensDelete,
