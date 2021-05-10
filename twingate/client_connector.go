@@ -69,7 +69,7 @@ func (client *Client) readConnector(connectorID string) (*Connector, error) {
 
 	queryConnector, err := client.doGraphqlRequest(mutation)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "reed", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
 	}
 
 	connectorRead := queryConnector.Path("data.connector")
