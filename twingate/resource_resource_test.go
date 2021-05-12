@@ -85,6 +85,8 @@ func testTwingateResource_withProtocolsAndGroups(networkName, resourceName strin
 	`, networkName, resourceName)
 }
 
+// adding test when policy is restricted and ports are empty list
+
 func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*Client)
 

@@ -28,7 +28,7 @@ website/node_modules
 .vscode/
 test/
 vendor/
-examples/
+examples_local/
 .idea/
 website/vendor
 .terraform.lock.hcl
