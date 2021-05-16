@@ -5,7 +5,7 @@ description: |-
 An example of how to deploy a connector using a precompiled AMI
 ---
 
-# Deploy a connector in AWS with a precompiled AMI
+## Deploy a connector in AWS with a precompiled AMI
 
 Given that we have defined a remote network and connector:
 
@@ -30,9 +30,6 @@ Here is an proposed example of how you could deploy a connector using aws module
 
 ```terraform
 # Getting the latest connector version
-
-
-
 data "aws_ami" "connector" {
   most_recent = true
   filter {
@@ -44,7 +41,7 @@ data "aws_ami" "connector" {
   owners = ["617935088040"]
 }
 
-# aws connectors creation
+# AMI startup template
 data "template_file" "cloud_init" {
   template = file("${path.module}/aws-connector-runner.sh.tpl")
   vars = {

@@ -1,8 +1,5 @@
 
 # Getting the latest connector version
-
-
-
 data "aws_ami" "connector" {
   most_recent = true
   filter {
@@ -14,7 +11,7 @@ data "aws_ami" "connector" {
   owners = ["617935088040"]
 }
 
-# aws connectors creation
+# AMI startup template
 data "template_file" "cloud_init" {
   template = file("${path.module}/aws-connector-runner.sh.tpl")
   vars = {
