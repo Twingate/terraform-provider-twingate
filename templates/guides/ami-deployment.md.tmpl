@@ -1,0 +1,21 @@
+---
+subcategory: "aws"
+page_title: "Deploy AWS EC2 connector - Twingate Provider"
+description: |-
+An example of how to deploy a connector using a precompiled AMI
+---
+
+## Deploy a connector in AWS with a precompiled AMI
+
+Given that we have defined a remote network and connector:
+
+{{tffile "examples/tenant/tenant_setup.tf"}}
+
+Here is an proposed example of how you could deploy a connector using aws modules:
+
+{{tffile "examples/ami/ami.tf"}}
+
+And the sh file used in the example
+
+{{codefile "sh" "examples/ami/aws-connector-runner.sh.tpl"}}
+
