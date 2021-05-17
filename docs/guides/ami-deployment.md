@@ -51,7 +51,7 @@ data "template_file" "cloud_init" {
   }
 }
 
-module "vpc_beamreach" {
+module "vpc_tenant" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "2.64.0"
 
@@ -71,10 +71,10 @@ module "vpc_beamreach" {
   }
 }
 
-module "beamreach_sg_connector" {
+module "tenant_sg_connector" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "3.17.0"
-  vpc_id  = module.vpc_beamreach.vpc_id
+  vpc_id  = module.vpc_tenant.vpc_id
   name    = format("%s-connector", var.tenant_name)
 
   ingress_cidr_blocks = ["10.0.0.0/16"]
@@ -83,10 +83,10 @@ module "beamreach_sg_connector" {
   egress_cidr_blocks = ["0.0.0.0/0"]
 
   egress_rules = ["all-tcp", "all-udp", "all-icmp"]
-  depends_on   = [module.vpc_beamreach]
+  depends_on   = [module.vpc_tenant]
 }
 
-module "ec2_beamreach_connector" {
+module "ec2_tenant_connector" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "2.19.0"
 
@@ -95,14 +95,14 @@ module "ec2_beamreach_connector" {
   user_data              = data.template_file.cloud_init.rendered
   ami                    = data.aws_ami.connector.id
   instance_type          = "t2.micro"
-  vpc_security_group_ids = [module.beamreach_sg_connector.this_security_group_id]
-  subnet_id              = module.vpc_beamreach.private_subnets[0]
+  vpc_security_group_ids = [module.tenant_sg_connector.this_security_group_id]
+  subnet_id              = module.vpc_tenant.private_subnets[0]
 
   tags = {
     Environment    = var.tenant_name
     connector_name = twingate_connector.connector.name
   }
-  depends_on = [module.vpc_beamreach]
+  depends_on = [module.vpc_tenant]
 }
 ```
 
