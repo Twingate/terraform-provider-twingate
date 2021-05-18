@@ -26,22 +26,22 @@ jobs:
           command: |
             make sec
 
-      - run:
-          name: Run Acc tests
-          command: |
-            make testacc
-
-      - run:
-          name: Publish coverage report
-          command: ./scripts/coveralls.sh
-
-      # Store Artifacts
-      - store_artifacts:
-          path: /tmp/test-results/coverage.html
-          destination: coverage.html
-
-      - store_test_results:
-          path: /tmp/test-results
+##      - run:
+##          name: Run Acc tests
+##          command: |
+##            make testacc
+#
+#      - run:
+#          name: Publish coverage report
+#          command: ./scripts/coveralls.sh
+#
+#      # Store Artifacts
+#      - store_artifacts:
+#          path: /tmp/test-results/coverage.html
+#          destination: coverage.html
+#
+#      - store_test_results:
+#          path: /tmp/test-results
 
 
   build:

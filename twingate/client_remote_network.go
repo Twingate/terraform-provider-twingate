@@ -45,6 +45,29 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	return &remoteNetwork, nil
 }
 
+func (client *Client) readAllRemoteNetwork() (*Resource, error) {
+	query := map[string]string{
+		"query": "{ remoteNetworks { edges { node { id } } } }",
+	}
+	queryResource, err := client.doGraphqlRequest(query)
+	if err != nil {
+		return nil, fmt.Errorf("error getting resources %s", resourceResourceName)
+	}
+
+	var remoteNetworks = make([]string, 0)
+
+	for _, elem := range queryResource.Path("data.remoteNetwork.edges").Children() {
+		nodeID := elem.Path("node.id").Data().(string)
+		remoteNetworks = append(remoteNetworks, nodeID)
+	}
+
+	resource := &Resource{
+		RemoteNetworkIDs: remoteNetworks,
+	}
+
+	return resource, nil
+}
+
 func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`

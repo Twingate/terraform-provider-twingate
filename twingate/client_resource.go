@@ -50,12 +50,14 @@ type Protocols struct {
 }
 
 type Resource struct {
-	ID              string
-	RemoteNetworkID string
-	Address         string
-	Name            string
-	GroupsIds       []string
-	Protocols       *Protocols
+	ID               string
+	RemoteNetworkID  string
+	Address          string
+	Name             string
+	GroupsIds        []string
+	Protocols        *Protocols
+	ResourceIDs      []string
+	RemoteNetworkIDs []string
 }
 
 const resourceResourceName = "resource"
@@ -209,6 +211,29 @@ func (client *Client) createResource(resource *Resource) error {
 	resource.ID = mutationResource.Path("data.resourceCreate.entity.id").Data().(string)
 
 	return nil
+}
+
+func (client *Client) readAllResources() (*Resource, error) {
+	query := map[string]string{
+		"query": "{ resources { edges { node { id } } } }",
+	}
+	queryResource, err := client.doGraphqlRequest(query)
+	if err != nil {
+		return nil, fmt.Errorf("error getting resources %s", resourceResourceName)
+	}
+
+	var resources = make([]string, 0)
+
+	for _, elem := range queryResource.Path("data.resources.edges").Children() {
+		nodeID := elem.Path("node.id").Data().(string)
+		resources = append(resources, nodeID)
+	}
+
+	resource := &Resource{
+		ResourceIDs: resources,
+	}
+
+	return resource, nil
 }
 
 func (client *Client) readResource(resourceID string) (*Resource, error) { //nolint:funlen
