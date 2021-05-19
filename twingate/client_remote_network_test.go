@@ -127,7 +127,7 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 	// response JSON
 	readNetworkOkJson := `{
 	  "data": {
-		"remoteNetwork": {
+		"remoteNetworks": {
 		  "edges": [
 			{
 			  "node": {
