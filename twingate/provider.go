@@ -17,7 +17,8 @@ func Provider() *schema.Provider {
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_API_TOKEN", nil),
 				Description: "The access key for API operations. You can retrieve this\n" +
-					"from the 'Settings -> API' section of the Twingate console.",
+					"from the 'Settings -> API' section of the Twingate console.\n" +
+					"Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable",
 			},
 			"network": {
 				Type:        schema.TypeString,
@@ -26,7 +27,8 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_NETWORK", nil),
 				Description: "The name of twingate network for API operations\n" +
 					"You can find it in URL, for example:\n" +
-					"mycompany.twingate.com where 'mycompany' is network",
+					"mycompany.twingate.com where 'mycompany' is network\n" +
+					"Alternatively, this can be specified using the TWINGATE_NETWORK environment variable",
 			},
 			"url": {
 				Type:        schema.TypeString,

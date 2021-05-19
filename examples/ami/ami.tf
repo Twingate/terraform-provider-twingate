@@ -1,6 +1,6 @@
 
 # Getting the latest connector version
-data "aws_ami" "connector" {
+data "aws_ami" "latest" {
   most_recent = true
   filter {
     name = "name"
@@ -11,21 +11,12 @@ data "aws_ami" "connector" {
   owners = ["617935088040"]
 }
 
-# AMI startup template
-data "template_file" "cloud_init" {
-  template = file("${path.module}/aws-connector-runner.sh.tpl")
-  vars = {
-    url           = "https://${var.tenant_name}.twignate.com"
-    access_token  = twingate_connector_tokens.connector_tokens.access_token
-    refresh_token = twingate_connector_tokens.connector_tokens.refresh_token
-  }
-}
-
-module "vpc_tenant" {
+# define or use an existing VPC
+module "demo_vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "2.64.0"
 
-  name = "vpc"
+  name = "demo_vpc"
   cidr = "10.0.0.0/16"
 
   azs                            = ["us-east-1a"]
@@ -35,42 +26,37 @@ module "vpc_tenant" {
   enable_dns_hostnames           = true
   enable_nat_gateway             = true
 
-
-  tags = {
-    Environment = var.tenant_name
-  }
 }
 
-module "tenant_sg_connector" {
+# define or use an existing Security group , the connector requires egress traffic enabled
+module "demo_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "3.17.0"
-  vpc_id  = module.vpc_tenant.vpc_id
-  name    = format("%s-connector", var.tenant_name)
-
-  ingress_cidr_blocks = ["10.0.0.0/16"]
-  ingress_rules       = ["ssh-tcp", "http-80-tcp", "all-icmp"]
-
+  vpc_id  = module.demo_vpc.vpc_id
+  name    = "demo_security_group"
   egress_cidr_blocks = ["0.0.0.0/0"]
-
   egress_rules = ["all-tcp", "all-udp", "all-icmp"]
-  depends_on   = [module.vpc_tenant]
 }
 
+#spin off a ec2 instance from Twingate AMI
 module "ec2_tenant_connector" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "2.19.0"
 
-  name                   = "connector"
-  instance_count         = 1
-  user_data              = data.template_file.cloud_init.rendered
-  ami                    = data.aws_ami.connector.id
+  name                   = "demo_connector"
+  user_data = <<-EOT
+    #!/bin/bash
+    set -e
+    mkdir -p /etc/twingate/
+    {
+      echo TWINGATE_URL="https://[NETWORK_NAME_HERE].twignate.com"
+      echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.connector_tokens.access_token}"
+      echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.connector_tokens.refresh_token}"
+    } > /etc/twingate/connector.conf
+    sudo systemctl enable --now twingate-connector
+  EOT
+  ami                    = data.aws_ami.latest.id
   instance_type          = "t2.micro"
-  vpc_security_group_ids = [module.tenant_sg_connector.this_security_group_id]
-  subnet_id              = module.vpc_tenant.private_subnets[0]
-
-  tags = {
-    Environment    = var.tenant_name
-    connector_name = twingate_connector.connector.name
-  }
-  depends_on = [module.vpc_tenant]
+  vpc_security_group_ids = [module.demo_sg.this_security_group_id]
+  subnet_id              = module.demo_vpc.private_subnets[0]
 }

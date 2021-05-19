@@ -3,15 +3,10 @@ provider "twingate" {
   network   = "mynetwork"
 }
 
-variable "twingate_network" {
-  description = "Name of twingate remote network"
-  default     = "my_test_network"
+resource "twingate_remote_network" "aws_network" {
+  name = "aws_remote_network"
 }
 
-resource "twingate_remote_network" "network" {
-  name = var.twingate_network
-}
-
-resource "twingate_connector" "connector" {
-  remote_network_id = twingate_remote_network.network.id
+resource "twingate_connector" "aws_connector" {
+  remote_network_id = twingate_remote_network.aws_network.id
 }

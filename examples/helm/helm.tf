@@ -12,7 +12,7 @@ resource "helm_release" "connector" {
 
   set {
     name  = "connector.network"
-    value = var.tenant_name
+    value = "[NETWORK_NAME_HERE]"
   }
 
   set {
@@ -27,12 +27,12 @@ resource "helm_release" "connector" {
 
   set {
     name  = "connector.accessToken"
-    value = twingate_connector_tokens.connector_tokens.access_token
+    value = twingate_connector_tokens.aws_connector_tokens.access_token
   }
 
   set {
     name  = "connector.refreshToken"
-    value = twingate_connector_tokens.connector_tokens.refresh_token
+    value = twingate_connector_tokens.aws_connector_tokens.refresh_token
   }
 
 }
