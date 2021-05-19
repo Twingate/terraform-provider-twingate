@@ -22,7 +22,6 @@ First, we need to set up the Twingate Terraform provider by providing your netwo
 provider "twingate" {
   api_token = data.sops_file.secret.data["autoco_api_token"]
   network   = "autoco"
-  url       = lookup(local.twingate_domain, var.tenant_namespace)
 }
 ```
 
@@ -61,7 +60,7 @@ data "aws_ami" "connector" {
 }
 ```
 
-Lets go ahead and deploy the AMI. Either create an VPC and SG or use the ones from the example below
+Now, let's go ahead and deploy the AMI. For this example, we're creating a new VPC and security group, but you can use an existing one too. We'll deploy the Connector on a private subnet, because it doesn't need and shouldn't have a public IP address. Note the shell script that we use to configure the Connector tokens when the AMI launches.
 
 ```terraform
 # define or use an existing VPC
@@ -81,7 +80,7 @@ module "demo_vpc" {
 
 }
 
-# define or use an existing Security group , the connector requires egress traffic enabled
+# define or use an existing Security group, the Connector requires egress traffic enabled but does not require ingress
 module "demo_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "3.17.0"
@@ -91,7 +90,7 @@ module "demo_sg" {
   egress_rules = ["all-tcp", "all-udp", "all-icmp"]
 }
 
-#spin off a ec2 instance from Twingate AMI
+# spin off a ec2 instance from Twingate AMI and configure tokens in user_data
 module "ec2_tenant_connector" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "2.19.0"
@@ -102,7 +101,7 @@ module "ec2_tenant_connector" {
     set -e
     mkdir -p /etc/twingate/
     {
-      echo TWINGATE_URL="https://[NETWORK_NAME_HERE].twignate.com"
+      echo TWINGATE_URL="https://autoco.twignate.com"
       echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.aws_connector_tokens.access_token}"
       echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.aws_connector_tokens.refresh_token}"
     } > /etc/twingate/connector.conf
@@ -112,5 +111,18 @@ module "ec2_tenant_connector" {
   instance_type          = "t2.micro"
   vpc_security_group_ids = [module.demo_sg.this_security_group_id]
   subnet_id              = module.demo_vpc.private_subnets[0]
+}
+```
+
+## Creating Resources
+
+Now that you've deployed the Connector, we can create Resources on the same Remote Network that can be accessed through Twingate. You'll need to define the Group ID explicitly, which you can pull from the Twingate Admin Console or the API. It's the 12 character ID at the end of the URL when you're viewing the Group in the Admin Console. For this example, we'll assume you already have an `aws_instance` defined.
+
+```terraform
+resource "twingate_resource" "tg_instance" {
+  name = "My AWS Instance"
+  address = aws_instance.my_instance.private_dns
+  remote_network_id = twingate_remote_network.my_aws_network.id
+  group_ids = ["R3JvdXG6OGky"]
 }
 ```

@@ -22,7 +22,7 @@ func resourceResource() *schema.Resource { //nolint:funlen
 			"ports": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "List of port ranges 1 and 65535 inclusively, in the format '100-200' for a range , or '8080' for a single port",
+				Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

@@ -15,7 +15,7 @@ module "demo_vpc" {
 
 }
 
-# define or use an existing Security group , the connector requires egress traffic enabled
+# define or use an existing Security group, the Connector requires egress traffic enabled but does not require ingress
 module "demo_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "3.17.0"
@@ -25,7 +25,7 @@ module "demo_sg" {
   egress_rules = ["all-tcp", "all-udp", "all-icmp"]
 }
 
-#spin off a ec2 instance from Twingate AMI
+# spin off a ec2 instance from Twingate AMI and configure tokens in user_data
 module "ec2_tenant_connector" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "2.19.0"
@@ -36,7 +36,7 @@ module "ec2_tenant_connector" {
     set -e
     mkdir -p /etc/twingate/
     {
-      echo TWINGATE_URL="https://[NETWORK_NAME_HERE].twignate.com"
+      echo TWINGATE_URL="https://autoco.twignate.com"
       echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.aws_connector_tokens.access_token}"
       echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.aws_connector_tokens.refresh_token}"
     } > /etc/twingate/connector.conf
