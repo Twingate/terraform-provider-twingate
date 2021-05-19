@@ -61,43 +61,6 @@ data "aws_ami" "connector" {
 }
 ```
 
-Next, we need to create a shell script to [run a command](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html) to configure the Connector's tokens when the AMI is launched. We recommend you use the following template, which we will name `aws-connector-runner.sh.tpl`:
+Lets go ahead and deploy the AMI. Either create an VPC and SG or use the ones from the example below
 
-{{codefile "sh" "examples/ami/aws-connector-runner.sh.tpl"}}
-
-Now, let's configure the template with your Twingate URL (which will always be the same for a given organization) and the Connector tokens created in the previous step.
-
-```terraform
-data "template_file" "aws_init" {
-  template = file("${path.module}/bin/aws-connector-runner.sh")
-
-  vars = {
-    url           = "https://autoco.twingate.com"
-    access_token  = twingate_connector_tokens.aws_connector_tokens.access_token
-    refresh_token = twingate_connector_tokens.aws_connector_tokens.refresh_token
-  }
-}
-```
-
-Now we're ready to deploy the Connector AMI image to the VPC. For the purpose of this example, we'll assume you already have a VPC, subnet, and security group created. We'll deploy the Connector on a private subnet, because it doesn't need and shouldn't have a public IP address.
-
-```terraform
-module "aws_connector" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "2.16.0"
-
-  name                   = "AWS Connector"
-  instance_count         = 1
-  user_data              = data.template_file.cloud_init.rendered
-  ami                    = data.aws_ami.connector.id
-  instance_type          = "t2.micro"
-  vpc_security_group_ids = [module.my_security_group.this_security_group_id]
-  subnet_id              = module.my_vpc.private_subnets[0]
-
-  depends_on = [module.vpc_beamreach] TODO ROMAN DO WE ACTUALLY NEED THIS?
-}
-```
-
-## Creating Resources
-
-TODO NEED EXAMPLES OF CREATING TG RESOURCES
+{{tffile "examples/ami/ami.tf"}}

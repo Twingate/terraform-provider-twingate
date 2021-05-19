@@ -61,55 +61,56 @@ data "aws_ami" "connector" {
 }
 ```
 
-Next, we need to create a shell script to [run a command](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html) to configure the Connector's tokens when the AMI is launched. We recommend you use the following template, which we will name `aws-connector-runner.sh.tpl`:
-
-```sh
-#!/bin/bash
-set -e
-mkdir -p /etc/twingate/
-
-{
-  echo TWINGATE_URL="${url}"
-  echo TWINGATE_ACCESS_TOKEN="${access_token}"
-  echo TWINGATE_REFRESH_TOKEN="${refresh_token}"
-} > /etc/twingate/connector.conf
-
-sudo systemctl enable --now twingate-connector
-```
-
-Now, let's configure the template with your Twingate URL (which will always be the same for a given organization) and the Connector tokens created in the previous step.
+Lets go ahead and deploy the AMI. Either create an VPC and SG or use the ones from the example below
 
 ```terraform
-data "template_file" "aws_init" {
-  template = file("${path.module}/bin/aws-connector-runner.sh")
+# define or use an existing VPC
+module "demo_vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "2.64.0"
 
-  vars = {
-    url           = "https://autoco.twingate.com"
-    access_token  = twingate_connector_tokens.aws_connector_tokens.access_token
-    refresh_token = twingate_connector_tokens.aws_connector_tokens.refresh_token
-  }
+  name = "demo_vpc"
+  cidr = "10.0.0.0/16"
+
+  azs                            = ["us-east-1a"]
+  private_subnets                = ["10.0.1.0/24"]
+  public_subnets                 = ["10.0.2.0/24"]
+  enable_classiclink_dns_support = true
+  enable_dns_hostnames           = true
+  enable_nat_gateway             = true
+
 }
-```
 
-Now we're ready to deploy the Connector AMI image to the VPC. For the purpose of this example, we'll assume you already have a VPC, subnet, and security group created. We'll deploy the Connector on a private subnet, because it doesn't need and shouldn't have a public IP address.
+# define or use an existing Security group , the connector requires egress traffic enabled
+module "demo_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "3.17.0"
+  vpc_id  = module.demo_vpc.vpc_id
+  name    = "demo_security_group"
+  egress_cidr_blocks = ["0.0.0.0/0"]
+  egress_rules = ["all-tcp", "all-udp", "all-icmp"]
+}
 
-```terraform
-module "aws_connector" {
+#spin off a ec2 instance from Twingate AMI
+module "ec2_tenant_connector" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "2.16.0"
+  version = "2.19.0"
 
-  name                   = "AWS Connector"
-  instance_count         = 1
-  user_data              = data.template_file.cloud_init.rendered
-  ami                    = data.aws_ami.connector.id
+  name                   = "demo_connector"
+  user_data = <<-EOT
+    #!/bin/bash
+    set -e
+    mkdir -p /etc/twingate/
+    {
+      echo TWINGATE_URL="https://[NETWORK_NAME_HERE].twignate.com"
+      echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.aws_connector_tokens.access_token}"
+      echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.aws_connector_tokens.refresh_token}"
+    } > /etc/twingate/connector.conf
+    sudo systemctl enable --now twingate-connector
+  EOT
+  ami                    = data.aws_ami.latest.id
   instance_type          = "t2.micro"
-  vpc_security_group_ids = [module.my_security_group.this_security_group_id]
-  subnet_id              = module.my_vpc.private_subnets[0]
-
-  depends_on = [module.vpc_beamreach] TODO ROMAN DO WE ACTUALLY NEED THIS?
+  vpc_security_group_ids = [module.demo_sg.this_security_group_id]
+  subnet_id              = module.demo_vpc.private_subnets[0]
 }
 ```
-
-## Creating Resources
-
-TODO NEED EXAMPLES OF CREATING TG RESOURCES

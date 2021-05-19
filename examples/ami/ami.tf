@@ -1,16 +1,3 @@
-
-# Getting the latest connector version
-data "aws_ami" "latest" {
-  most_recent = true
-  filter {
-    name = "name"
-    values = [
-      "twingate/images/hvm-ssd/twingate-amd64-*",
-    ]
-  }
-  owners = ["617935088040"]
-}
-
 # define or use an existing VPC
 module "demo_vpc" {
   source  = "terraform-aws-modules/vpc/aws"
@@ -50,8 +37,8 @@ module "ec2_tenant_connector" {
     mkdir -p /etc/twingate/
     {
       echo TWINGATE_URL="https://[NETWORK_NAME_HERE].twignate.com"
-      echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.connector_tokens.access_token}"
-      echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.connector_tokens.refresh_token}"
+      echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.aws_connector_tokens.access_token}"
+      echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.aws_connector_tokens.refresh_token}"
     } > /etc/twingate/connector.conf
     sudo systemctl enable --now twingate-connector
   EOT
