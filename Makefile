@@ -6,6 +6,23 @@ BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
+SWEEP_TENANT=terraformtests
+SWEEP_FOLDER=./twingate
+
+
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
+
+.PHONY: sweep
+sweep:
+	$(call check_defined, TWINGATE_NETWORK)
+	$(call check_defined, TWINGATE_API_TOKEN)
+	$(call check_defined, TWINGATE_URL)
+	go test ${SWEEP_FOLDER} -v -sweep=${SWEEP_FOLDER} -timeout 60m 
 
 default: build
 
