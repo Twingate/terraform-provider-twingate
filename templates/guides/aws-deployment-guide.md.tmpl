@@ -20,9 +20,8 @@ First, we need to set up the Twingate Terraform provider by providing your netwo
 
 ```terraform
 provider "twingate" {
-  api_token = data.sops_file.secret.data["autoco_api_token"]
-  network   = "autoco"
-  url       = lookup(local.twingate_domain, var.tenant_namespace)
+  api_token = "1234567890abcdef"
+  network   = "mynetwork"
 }
 ```
 
@@ -31,12 +30,12 @@ provider "twingate" {
 Next, we'll create the objects in Twingate that correspond to the AWS network that we're deploying Twingate into: A Remote Network to represent the AWS VPC, and a Connector to be deployed in that VPC. We'll use these objects when we're deploying the Connector image and creating Resources to access through Twingate.
 
 ```terraform
-resource "twingate_remote_network" "my_aws_network" {
+resource "twingate_remote_network" "aws_network" {
   name = "AWS Network"
 }
 
 resource "twingate_connector" "aws_connector" {
-  remote_network_id = twingate_remote_network.my_aws_network.id
+  remote_network_id = twingate_remote_network.aws_network.id
 }
 
 resource "twingate_connector_tokens" "aws_connector_tokens" {
