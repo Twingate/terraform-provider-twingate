@@ -28,7 +28,7 @@ func testSweepTwingateConnector(tenant string) error {
 	}
 
 	if len(connectorList) == 0 {
-		fmt.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
+		log.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
 		return nil
 	}
 

@@ -28,7 +28,7 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 	}
 
 	if len(networkList) == 0 {
-		fmt.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
+		log.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
 		return nil
 	}
 

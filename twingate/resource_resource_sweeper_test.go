@@ -28,7 +28,7 @@ func testSweepTwingateResource(tenant string) error {
 	}
 
 	if len(resourceList) == 0 {
-		fmt.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
+		log.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
 		return nil
 	}
 

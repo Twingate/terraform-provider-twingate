@@ -57,7 +57,7 @@ func (client *Client) readAllRemoteNetwork() ([]string, error) { //nolint
 
 	var remoteNetworks = make([]string, 0)
 
-	for _, elem := range queryResource.Path("data.remoteNetwork.edges").Children() {
+	for _, elem := range queryResource.Path("data.remoteNetworks.edges").Children() {
 		nodeID := elem.Path("node.id").Data().(string)
 		remoteNetworks = append(remoteNetworks, nodeID)
 	}
