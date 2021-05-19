@@ -57,7 +57,7 @@ data "aws_ami" "connector" {
       "twingate/images/hvm-ssd/twingate-amd64-*",
     ]
   }
-  owners = [lookup(local.ami_owners, var.tenant_namespace)]
+  owners = ["617935088040"]
 }
 ```
 
