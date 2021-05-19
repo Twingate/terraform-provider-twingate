@@ -122,3 +122,40 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 	assert.Nil(t, remoteNetwork)
 	assert.EqualError(t, err, "failed to read remote network with id id")
 }
+
+func TestClientNetworkReadAllOk(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetwork": {
+		  "edges": [
+			{
+			  "node": {
+				"id": "network1"
+			  }
+			},
+			{
+			  "node": {
+				"id": "network2"
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(readNetworkOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+
+	network, err := client.readAllRemoteNetwork()
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, []string{"network1", "network2"}, network)
+}

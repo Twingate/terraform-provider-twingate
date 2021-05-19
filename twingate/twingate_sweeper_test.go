@@ -13,7 +13,7 @@ func TestMain(m *testing.M) {
 }
 
 // sharedClientForRegion returns a common TwingateClient setup needed for the sweeper
-func sharedClient(tenant string) (interface{}, error) {
+func sharedClient(tenant string) (*Client, error) {
 	if os.Getenv("TWINGATE_API_TOKEN") == "" {
 		return nil, fmt.Errorf("must provide environment variable TWINGATE_API_TOKEN")
 	}

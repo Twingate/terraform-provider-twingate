@@ -13,7 +13,7 @@ import (
 
 func TestClientConnectorCreateOk(t *testing.T) {
 	// response JSON
-	createNetworkOkJson := `{
+	createConnectorOkJson := `{
 	  "data": {
 		"connectorCreate": {
 		  "entity": {
@@ -26,7 +26,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	  }
 	}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
+	r := ioutil.NopCloser(bytes.NewReader([]byte(createConnectorOkJson)))
 	client := createTestClient()
 
 	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
@@ -124,4 +124,66 @@ func TestClientConnectorDeleteError(t *testing.T) {
 	err := client.deleteConnector(connectorId)
 
 	assert.EqualError(t, err, "failed to delete connector with id test: error_1")
+}
+
+func TestClientConnectorReadError(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"connector": null
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(readNetworkOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+	connectorId := "id"
+
+	connector, err := client.readConnector(connectorId)
+
+	assert.Nil(t, connector)
+	assert.EqualError(t, err, "failed to read connector with id id")
+}
+
+func TestClientConnectorReadAllOk(t *testing.T) {
+	// response JSON
+	readConnectorsOkJson := `{
+	  "data": {
+		"connectors": {
+		  "edges": [
+			{
+			  "node": {
+				"id": "connector1"
+			  }
+			},
+			{
+			  "node": {
+				"id": "connector2"
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(readConnectorsOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+
+	connector, err := client.readAllConnectors()
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, []string{"connector1", "connector2"}, connector)
 }

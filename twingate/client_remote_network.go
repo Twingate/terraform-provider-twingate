@@ -45,7 +45,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	return &remoteNetwork, nil
 }
 
-func (client *Client) readAllRemoteNetwork() (*Resource, error) {
+func (client *Client) readAllRemoteNetwork() ([]string, error) {
 	query := map[string]string{
 		"query": "{ remoteNetworks { edges { node { id } } } }",
 	}
@@ -61,11 +61,7 @@ func (client *Client) readAllRemoteNetwork() (*Resource, error) {
 		remoteNetworks = append(remoteNetworks, nodeID)
 	}
 
-	resource := &Resource{
-		RemoteNetworkIDs: remoteNetworks,
-	}
-
-	return resource, nil
+	return remoteNetworks, nil
 }
 
 func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork, error) {

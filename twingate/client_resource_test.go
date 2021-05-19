@@ -394,3 +394,40 @@ func TestClientResourceDeleteError(t *testing.T) {
 
 	assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
 }
+
+func TestClientResourcesReadAllOk(t *testing.T) {
+	// response JSON
+	readResourcesOkJson := `{
+	  "data": {
+		"resources": {
+		  "edges": [
+			{
+			  "node": {
+				"id": "resource1"
+			  }
+			},
+			{
+			  "node": {
+				"id": "resource2"
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(readResourcesOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+
+	resources, err := client.readAllResources()
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, []string{"resource1", "resource2"}, resources)
+}

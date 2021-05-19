@@ -213,7 +213,7 @@ func (client *Client) createResource(resource *Resource) error {
 	return nil
 }
 
-func (client *Client) readAllResources() (*Resource, error) {
+func (client *Client) readAllResources() ([]string, error) {
 	query := map[string]string{
 		"query": "{ resources { edges { node { id } } } }",
 	}
@@ -229,11 +229,7 @@ func (client *Client) readAllResources() (*Resource, error) {
 		resources = append(resources, nodeID)
 	}
 
-	resource := &Resource{
-		ResourceIDs: resources,
-	}
-
-	return resource, nil
+	return resources, nil
 }
 
 func (client *Client) readResource(resourceID string) (*Resource, error) { //nolint:funlen

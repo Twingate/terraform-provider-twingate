@@ -22,18 +22,19 @@ func testSweepTwingateResource(tenant string) error {
 		return fmt.Errorf("error getting client: %s", err)
 	}
 
-	resourceList, ok := client.readAllResources()
-	if !ok {
-		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response.")
-		return nil
+	resourceList, err := client.readAllResources()
+	if err != nil {
+		return fmt.Errorf("[INFO][SWEEPER_LOG] Nothing found in response: %s", err)
 	}
 
 	for _, i := range resourceList {
-		if i == nil {
-			log.Printf("[INFO][SWEEPER_LOG] %s resource name was nil", resourceName)
-			return nil
+		if i == "" {
+			return fmt.Errorf("[INFO][SWEEPER_LOG] %s resource name was nil", resourceName)
 		}
-		resourceResourceDelete(i)
+		err = client.deleteResource(i)
+		if err != nil {
+			return fmt.Errorf("[INFO][SWEEPER_LOG] %s cannot be deleted", err)
+		}
 	}
 
 	return nil
