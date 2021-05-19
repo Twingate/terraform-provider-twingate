@@ -45,13 +45,14 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	return &remoteNetwork, nil
 }
 
-func (client *Client) readAllRemoteNetwork() ([]string, error) {
+func (client *Client) readAllRemoteNetwork() ([]string, error) { //nolint
 	query := map[string]string{
 		"query": "{ remoteNetworks { edges { node { id } } } }",
 	}
+
 	queryResource, err := client.doGraphqlRequest(query)
 	if err != nil {
-		return nil, fmt.Errorf("error getting resources %s", resourceResourceName)
+		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
 
 	var remoteNetworks = make([]string, 0)

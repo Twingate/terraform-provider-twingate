@@ -22,7 +22,7 @@ sweep:
 	$(call check_defined, TWINGATE_NETWORK)
 	$(call check_defined, TWINGATE_API_TOKEN)
 	$(call check_defined, TWINGATE_URL)
-	go test ${SWEEP_FOLDER} -v -sweep=${SWEEP_FOLDER} -timeout 60m 
+	go test ${SWEEP_FOLDER} -v -sweep=${SWEEP_TENANT} -timeout 60m
 
 default: build
 

@@ -213,13 +213,14 @@ func (client *Client) createResource(resource *Resource) error {
 	return nil
 }
 
-func (client *Client) readAllResources() ([]string, error) {
+func (client *Client) readAllResources() ([]string, error) { //nolint
 	query := map[string]string{
 		"query": "{ resources { edges { node { id } } } }",
 	}
+
 	queryResource, err := client.doGraphqlRequest(query)
 	if err != nil {
-		return nil, fmt.Errorf("error getting resources %s", resourceResourceName)
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
 	var resources = make([]string, 0)

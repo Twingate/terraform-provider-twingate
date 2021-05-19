@@ -51,13 +51,14 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	return &connector, nil
 }
 
-func (client *Client) readAllConnectors() ([]string, error) {
+func (client *Client) readAllConnectors() ([]string, error) { //nolint
 	query := map[string]string{
 		"query": "{ connectors { edges { node { id } } } }",
 	}
+
 	queryResource, err := client.doGraphqlRequest(query)
 	if err != nil {
-		return nil, fmt.Errorf("error getting resources %s", resourceResourceName)
+		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
 	var connectors = make([]string, 0)
