@@ -84,7 +84,7 @@ Required:
 
 Optional:
 
-- **ports** (List of String)
+- **ports** (List of String) List of port ranges 1 and 65535 inclusively, in the format '100-200' for a range , or '8080' for a single port
 
 
 <a id="nestedblock--protocols--udp"></a>
@@ -96,6 +96,6 @@ Required:
 
 Optional:
 
-- **ports** (List of String)
+- **ports** (List of String) List of port ranges 1 and 65535 inclusively, in the format '100-200' for a range , or '8080' for a single port
 
 

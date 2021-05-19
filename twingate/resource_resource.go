@@ -20,11 +20,11 @@ func resourceResource() *schema.Resource { //nolint:funlen
 				Description:  "Whether to allow all ports or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed) or `ALLOW_ALL`",
 			},
 			"ports": {
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "List of port ranges 1 and 65535 inclusively, in the format '100-200' for a range , or '8080' for a single port",
 				Elem: &schema.Schema{
-					Type:        schema.TypeString,
-					Description: "List of port ranges 1 and 65535 inclusively, in the format '100-200' for a range , or '8080' for a single port",
+					Type: schema.TypeString,
 				},
 			},
 		},
