@@ -13,6 +13,7 @@ The Twingate provider can be used to interact with [Twingate](https://www.twinga
 
 ## Twingate Setup
 
+
 This Terraform provider should be configured to use the API-KEY, what could be generated in [Admin UI](https://docs.twingate.com/docs/api-overview) and network what is prefix of your twingate URL when you login into your account, for example: URL `mycompany.twingate.com` where network: `mycompany`
 
 ## Guidance and documentation
