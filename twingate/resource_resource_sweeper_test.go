@@ -1,7 +1,6 @@
 package twingate
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -19,12 +18,14 @@ func testSweepTwingateResource(tenant string) error {
 	log.Printf("\"[INFO][SWEEPER_LOG] Starting sweeper for %s\"", resourceName)
 	client, err := sharedClient(tenant)
 	if err != nil {
-		return fmt.Errorf("error getting client: %s", err)
+		log.Printf("[ERROR][SWEEPER_LOG] error getting client: %s", err)
+		return err
 	}
 
 	resourceList, err := client.readAllResources()
 	if err != nil {
-		return fmt.Errorf("[INFO][SWEEPER_LOG] Nothing found in response: %s", err)
+		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
+		return nil
 	}
 
 	if len(resourceList) == 0 {
@@ -34,11 +35,13 @@ func testSweepTwingateResource(tenant string) error {
 
 	for _, i := range resourceList {
 		if i == "" {
-			return fmt.Errorf("[INFO][SWEEPER_LOG] %s resource name was nil", resourceName)
+			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
+			return nil
 		}
 		err = client.deleteResource(i)
 		if err != nil {
-			return fmt.Errorf("[INFO][SWEEPER_LOG] %s cannot be deleted", err)
+			log.Printf("[INFO][SWEEPER_LOG] %s cannot be deleted, error: %s", i, err)
+			return nil
 		}
 	}
 
