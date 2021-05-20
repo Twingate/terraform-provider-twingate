@@ -48,7 +48,7 @@ resource "twingate_connector_tokens" "aws_connector_tokens" {
 Now that we have the data types created in Twingate, we need to deploy a Connector into the AWS VPC to handle Twingate traffic. We'll use the pre-existing AWS AMI image for the Twingate Connector. First, we need to look up the latest AMI ID.
 
 ```terraform
-data "aws_ami" "connector" {
+data "aws_ami" "latest" {
   most_recent = true
   filter {
     name = "name"
@@ -80,7 +80,7 @@ module "demo_vpc" {
 
 }
 
-# define or use an existing Security group, the Connector requires egress traffic enabled but does not require ingress
+# define or use an existing security group, the Connector requires egress traffic enabled but does not require ingress
 module "demo_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "3.17.0"
