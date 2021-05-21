@@ -15,7 +15,7 @@ module "demo_vpc" {
 
 }
 
-# define or use an existing Security group, the Connector requires egress traffic enabled but does not require ingress
+# If you use an existing Security group, the Connector requires egress traffic enabled but does not require ingress
 module "demo_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "3.17.0"

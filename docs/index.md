@@ -24,7 +24,11 @@ Visit our [documentation](https://docs.twingate.com/docs) for more information o
 ```terraform
 provider "twingate" {
   api_token = "1234567890abcdef"
-  network   = "mynetwork"
+  network   = "autoco"
+}
+
+variable "network" {
+  default = "autoco"
 }
 ```
 
