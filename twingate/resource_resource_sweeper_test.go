@@ -22,7 +22,7 @@ func testSweepTwingateResource(tenant string) error {
 		return err
 	}
 
-	resourceList, err := client.readAllResources()
+	resourceList, err := client.readTestResources()
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil

@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Connector struct {
@@ -51,9 +52,9 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	return &connector, nil
 }
 
-func (client *Client) readAllConnectors() ([]string, error) { //nolint
+func (client *Client) readTestConnectors() ([]string, error) { //nolint
 	query := map[string]string{
-		"query": "{ connectors { edges { node { id } } } }",
+		"query": "{ connectors { edges { node { id name } } } }",
 	}
 
 	queryResource, err := client.doGraphqlRequest(query)
@@ -65,7 +66,10 @@ func (client *Client) readAllConnectors() ([]string, error) { //nolint
 
 	for _, elem := range queryResource.Path("data.connectors.edges").Children() {
 		nodeID := elem.Path("node.id").Data().(string)
-		connectors = append(connectors, nodeID)
+		nodeName := elem.Path("node.name").Data().(string)
+		if strings.HasPrefix(nodeName, "tf-acc") {
+			connectors = append(connectors, nodeID)
+		}
 	}
 
 	return connectors, nil

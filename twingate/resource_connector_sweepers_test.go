@@ -22,7 +22,7 @@ func testSweepTwingateConnector(tenant string) error {
 		return err
 	}
 
-	connectorList, err := client.readAllConnectors()
+	connectorList, err := client.readTestConnectors()
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil

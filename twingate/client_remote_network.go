@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"fmt"
+	"strings"
 )
 
 type RemoteNetwork struct {
@@ -45,9 +46,9 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	return &remoteNetwork, nil
 }
 
-func (client *Client) readAllRemoteNetwork() ([]string, error) { //nolint
+func (client *Client) readTestRemoteNetwork() ([]string, error) { //nolint
 	query := map[string]string{
-		"query": "{ remoteNetworks { edges { node { id } } } }",
+		"query": "{ remoteNetworks { edges { node { id name } } } }",
 	}
 
 	queryResource, err := client.doGraphqlRequest(query)
@@ -59,7 +60,10 @@ func (client *Client) readAllRemoteNetwork() ([]string, error) { //nolint
 
 	for _, elem := range queryResource.Path("data.remoteNetworks.edges").Children() {
 		nodeID := elem.Path("node.id").Data().(string)
-		remoteNetworks = append(remoteNetworks, nodeID)
+		nodeName := elem.Path("node.name").Data().(string)
+		if strings.HasPrefix(nodeName, "tf-acc") {
+			remoteNetworks = append(remoteNetworks, nodeID)
+		}
 	}
 
 	return remoteNetworks, nil

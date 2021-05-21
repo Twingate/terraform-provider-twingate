@@ -213,9 +213,9 @@ func (client *Client) createResource(resource *Resource) error {
 	return nil
 }
 
-func (client *Client) readAllResources() ([]string, error) { //nolint
+func (client *Client) readTestResources() ([]string, error) { //nolint
 	query := map[string]string{
-		"query": "{ resources { edges { node { id } } } }",
+		"query": "{ resources { edges { node { id name } } } }",
 	}
 
 	queryResource, err := client.doGraphqlRequest(query)
@@ -227,7 +227,10 @@ func (client *Client) readAllResources() ([]string, error) { //nolint
 
 	for _, elem := range queryResource.Path("data.resources.edges").Children() {
 		nodeID := elem.Path("node.id").Data().(string)
-		resources = append(resources, nodeID)
+		nodeName := elem.Path("node.name").Data().(string)
+		if strings.HasPrefix(nodeName, "tf-acc") {
+			resources = append(resources, nodeID)
+		}
 	}
 
 	return resources, nil

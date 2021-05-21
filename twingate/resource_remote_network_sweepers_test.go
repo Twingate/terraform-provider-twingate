@@ -22,7 +22,7 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 		return err
 	}
 
-	networkList, err := client.readAllRemoteNetwork()
+	networkList, err := client.readTestRemoteNetwork()
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil

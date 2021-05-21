@@ -131,12 +131,20 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		  "edges": [
 			{
 			  "node": {
-				"id": "network1"
+				"id": "network1",
+				"name": "tf-acc-network1"
 			  }
 			},
 			{
 			  "node": {
-				"id": "network2"
+				"id": "network2",
+				"name": "network2"
+			  }
+			},
+			{
+			  "node": {
+				"id": "network3",
+				"name": "tf-acc-network3"
 			  }
 			}
 		  ]
@@ -154,8 +162,8 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		}, nil
 	}
 
-	network, err := client.readAllRemoteNetwork()
+	network, err := client.readTestRemoteNetwork()
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"network1", "network2"}, network)
+	assert.EqualValues(t, []string{"network1", "network3"}, network)
 }

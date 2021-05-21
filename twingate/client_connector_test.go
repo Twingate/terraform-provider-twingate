@@ -159,12 +159,20 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 		  "edges": [
 			{
 			  "node": {
-				"id": "connector1"
+				"id": "connector1",
+				"name": "tf-acc-connector1"
 			  }
 			},
 			{
 			  "node": {
-				"id": "connector2"
+				"id": "connector2",
+				"name": "connector2"
+			  }
+			},
+			{
+			  "node": {
+				"id": "connector3",
+				"name": "tf-acc-connector3"
 			  }
 			}
 		  ]
@@ -182,8 +190,8 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 		}, nil
 	}
 
-	connector, err := client.readAllConnectors()
+	connector, err := client.readTestConnectors()
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"connector1", "connector2"}, connector)
+	assert.EqualValues(t, []string{"connector1", "connector3"}, connector)
 }

@@ -403,12 +403,20 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		  "edges": [
 			{
 			  "node": {
-				"id": "resource1"
+				"id": "resource1",
+				"name": "tf-acc-resource1"
 			  }
 			},
 			{
 			  "node": {
-				"id": "resource2"
+				"id": "resource2",
+				"name": "resource2"
+			  }
+			},
+			{
+			  "node": {
+				"id": "resource3",
+				"name": "tf-acc-resource3"
 			  }
 			}
 		  ]
@@ -426,8 +434,8 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		}, nil
 	}
 
-	resources, err := client.readAllResources()
+	resources, err := client.readTestResources()
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"resource1", "resource2"}, resources)
+	assert.EqualValues(t, []string{"resource1", "resource3"}, resources)
 }
