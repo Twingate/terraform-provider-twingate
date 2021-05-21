@@ -99,13 +99,13 @@ module "ec2_tenant_connector" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "2.19.0"
 
-  name                   = "demo_connector"
+  name = "demo_connector"
   user_data = <<-EOT
     #!/bin/bash
     set -e
     mkdir -p /etc/twingate/
     {
-      echo TWINGATE_URL="https://${var.network}.twignate.com"
+      echo TWINGATE_URL="https://${var.network}.twingate.com"
       echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.aws_connector_tokens.access_token}"
       echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.aws_connector_tokens.refresh_token}"
     } > /etc/twingate/connector.conf
