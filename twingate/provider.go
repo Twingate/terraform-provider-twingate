@@ -17,26 +17,26 @@ func Provider() *schema.Provider {
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_API_TOKEN", nil),
 				Description: "The access key for API operations. You can retrieve this\n" +
-					"from the 'Settings -> API' section of the Twingate console.\n" +
-					"Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable",
+					"from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).\n" +
+					"Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.",
 			},
 			"network": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   false,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_NETWORK", nil),
-				Description: "The name of twingate network for API operations\n" +
-					"You can find it in URL, for example:\n" +
-					"mycompany.twingate.com where 'mycompany' is network\n" +
-					"Alternatively, this can be specified using the TWINGATE_NETWORK environment variable",
+				Description: "Your Twingate network ID for API operations.\n" +
+					"You can find it in the Admin Console URL, for example:\n" +
+					"`autoco.twingate.com`, where `autoco` is your network ID\n" +
+					"Alternatively, this can be specified using the TWINGATE_NETWORK environment variable.",
 			},
 			"url": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   false,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_URL", "twingate.com"),
-				Description: "Default is 'twingate.com'\n" +
-					"Optional and shouldn't be changed",
+				Description: "The default is 'twingate.com'\n" +
+					"This is optional and shouldn't be changed under normal circumstances.",
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{

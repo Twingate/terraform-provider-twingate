@@ -13,7 +13,7 @@ The Twingate provider can be used with [Twingate](https://www.twingate.com) to m
 
 ## Twingate Setup
 
-To use Twingate's Terraform provider, you need an API key, which requires the Enterprise tier. See our [documentation](https://docs.twingate.com/docs/api-overview) for more details about creating an API key. You will also need your network ID, or the prefix of your Twingate URL that you use to sign into the Admin Console. For example, if your URL is `mycompany.twingate.com` your network ID is `mycompany`.
+To use Twingate's Terraform provider, you need an API key, which requires the Enterprise tier. See our [documentation](https://docs.twingate.com/docs/api-overview) for more details about creating an API key. You will also need your network ID, or the prefix of your Twingate URL that you use to sign into the Admin Console. For example, if your URL is `autoco.twingate.com` your network ID is `autoco`.
 
 ## Guidance and documentation
 
@@ -24,7 +24,11 @@ Visit our [documentation](https://docs.twingate.com/docs) for more information o
 ```terraform
 provider "twingate" {
   api_token = "1234567890abcdef"
-  network   = "mynetwork"
+  network   = "autoco"
+}
+
+variable "network" {
+  default = "autoco"
 }
 ```
 
@@ -34,11 +38,11 @@ provider "twingate" {
 ### Optional
 
 - **api_token** (String, Sensitive) The access key for API operations. You can retrieve this
-from the 'Settings -> API' section of the Twingate console.
-Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable
-- **network** (String) The name of twingate network for API operations
-You can find it in URL, for example:
-mycompany.twingate.com where 'mycompany' is network
-Alternatively, this can be specified using the TWINGATE_NETWORK environment variable
-- **url** (String) Default is 'twingate.com'
-Optional and shouldn't be changed
+from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).
+Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
+- **network** (String) Your Twingate network ID for API operations.
+You can find it in the Admin Console URL, for example:
+`autoco.twingate.com`, where `autoco` is your network ID
+Alternatively, this can be specified using the TWINGATE_NETWORK environment variable.
+- **url** (String) The default is 'twingate.com'
+This is optional and shouldn't be changed under normal circumstances.

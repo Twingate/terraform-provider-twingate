@@ -80,7 +80,7 @@ module "demo_vpc" {
 
 }
 
-# define or use an existing security group, the Connector requires egress traffic enabled but does not require ingress
+# If you use an existing Security group, the Connector requires egress traffic enabled but does not require ingress
 module "demo_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "3.17.0"
@@ -101,14 +101,14 @@ module "ec2_tenant_connector" {
     set -e
     mkdir -p /etc/twingate/
     {
-      echo TWINGATE_URL="https://autoco.twignate.com"
+      echo TWINGATE_URL="https://${var.network}.twignate.com"
       echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.aws_connector_tokens.access_token}"
       echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.aws_connector_tokens.refresh_token}"
     } > /etc/twingate/connector.conf
     sudo systemctl enable --now twingate-connector
   EOT
   ami                    = data.aws_ami.latest.id
-  instance_type          = "t2.micro"
+  instance_type          = "t3a.micro"
   vpc_security_group_ids = [module.demo_sg.this_security_group_id]
   subnet_id              = module.demo_vpc.private_subnets[0]
 }
@@ -117,8 +117,6 @@ module "ec2_tenant_connector" {
 ## Creating Resources
 
 Now that you've deployed the Connector, we can create Resources on the same Remote Network that can be accessed through Twingate. For this example, we'll assume you already have an `aws_instance` defined. You'll need to define the Group ID explicitly, which you can pull from the Twingate Admin Console or the API. It's the 12 character ID at the end of the URL when you're viewing the Group in the Admin Console. 
-
-![Pull Group ID from Admin Console](../../examples/ami/group_id.png)
 
 ```terraform
 resource "twingate_resource" "tg_instance" {
