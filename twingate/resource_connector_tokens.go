@@ -11,7 +11,7 @@ import (
 
 func resourceConnectorTokens() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Generate access and refresh tokens for the connector",
+		Description:   "This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.",
 		CreateContext: resourceConnectorTokensCreate,
 		ReadContext:   resourceConnectorTokensRead,
 		DeleteContext: resourceConnectorTokensDelete,
@@ -26,7 +26,7 @@ func resourceConnectorTokens() *schema.Resource {
 			},
 			// optional
 			"keepers": {
-				Description: "Arbitrary map of values that, when changed, will trigger recreation of resource.",
+				Description: "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.",
 				Type:        schema.TypeMap,
 				Optional:    true,
 				ForceNew:    true,
@@ -36,7 +36,7 @@ func resourceConnectorTokens() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Sensitive:   true,
-				Description: "The Access token of the parent Connector",
+				Description: "The Access Token of the parent Connector",
 			},
 			"refresh_token": {
 				Type:        schema.TypeString,

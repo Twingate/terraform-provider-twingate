@@ -3,14 +3,12 @@
 page_title: "twingate_remote_network Resource - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Connectors are Twingate components that are deployed behind your firewall to provide access to private Resources.
-  Checkout the twingate docs https://docs.twingate.com/docs/connectors for detailed info
+  A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's documentation https://docs.twingate.com/docs/remote-networks.
 ---
 
 # twingate_remote_network (Resource)
 
-Connectors are Twingate components that are deployed behind your firewall to provide access to private Resources.
-Checkout the [twingate docs](https://docs.twingate.com/docs/connectors) for detailed info
+A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).
 
 ## Example Usage
 
@@ -20,13 +18,8 @@ provider "twingate" {
   network   = "mynetwork"
 }
 
-variable "twingate_network" {
-  description = "Name of twingate remote network"
-  default     = "my_test_network"
-}
-
-resource "twingate_remote_network" "network" {
-  name = var.twingate_network
+resource "twingate_remote_network" "aws_network" {
+  name = "aws_remote_network"
 }
 ```
 
@@ -35,11 +28,11 @@ resource "twingate_remote_network" "network" {
 
 ### Required
 
-- **name** (String) The name of the remote network
+- **name** (String) The name of the Remote Network
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- **id** (String) The ID of the Remote Network
 
 ## Import
 
