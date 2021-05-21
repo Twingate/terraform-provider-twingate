@@ -21,7 +21,11 @@ First, we need to set up the Twingate Terraform provider by providing your netwo
 ```terraform
 provider "twingate" {
   api_token = "1234567890abcdef"
-  network   = "mynetwork"
+  network   = "autoco"
+}
+
+variable "network" {
+  default "autoco"
 }
 ```
 
