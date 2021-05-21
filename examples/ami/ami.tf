@@ -36,7 +36,7 @@ module "ec2_tenant_connector" {
     set -e
     mkdir -p /etc/twingate/
     {
-      echo TWINGATE_URL="https://autoco.twignate.com"
+      echo TWINGATE_URL="https://${var.network}.twignate.com"
       echo TWINGATE_ACCESS_TOKEN="${twingate_connector_tokens.aws_connector_tokens.access_token}"
       echo TWINGATE_REFRESH_TOKEN="${twingate_connector_tokens.aws_connector_tokens.refresh_token}"
     } > /etc/twingate/connector.conf
