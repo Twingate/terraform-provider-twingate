@@ -43,7 +43,7 @@ module "ec2_tenant_connector" {
     sudo systemctl enable --now twingate-connector
   EOT
   ami                    = data.aws_ami.latest.id
-  instance_type          = "t2.micro"
+  instance_type          = "t3a.micro"
   vpc_security_group_ids = [module.demo_sg.this_security_group_id]
   subnet_id              = module.demo_vpc.private_subnets[0]
 }
