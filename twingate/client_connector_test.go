@@ -223,7 +223,7 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 	}
 
 	if len(mockMap) != counter {
-		t.Errorf("Expeted map not equal to origin!")
+		t.Errorf("Expected map not equal to origin!")
 	}
 	assert.EqualValues(t, len(mockMap), counter)
 }
