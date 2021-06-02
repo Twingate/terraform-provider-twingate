@@ -163,20 +163,40 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 	}
 
 	network, err := client.readRemoteNetworks()
+	assert.NoError(t, err)
+	// Resources return dynamic and not ordered object
+	// See gabs Children() method.
 
-	listIDs := make([]string, 0)
+	r0 := &RemoteNetwork{
+		ID:   "network1",
+		Name: "tf-acc-network1",
+	}
+	r1 := &RemoteNetwork{
+		ID:   "network2",
+		Name: "network2",
+	}
+	r2 := &RemoteNetwork{
+		ID:   "network3",
+		Name: "tf-acc-network3",
+	}
+	mockMap := make(map[int]*RemoteNetwork)
+
+	mockMap[0] = r0
+	mockMap[1] = r1
+	mockMap[2] = r2
+
+	counter := 0
 
 	for _, elem := range network {
-		listIDs = append(listIDs, elem.ID)
+		for _, i := range mockMap {
+			if elem.Name == i.Name && elem.ID == i.ID {
+				counter++
+			}
+		}
 	}
 
-	listNames := make([]string, 0)
-
-	for _, elem := range network {
-		listNames = append(listNames, elem.Name)
+	if len(mockMap) != counter {
+		t.Errorf("Expeted map not equal to origin!")
 	}
-
-	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"network1", "network2", "network3"}, listIDs)
-	assert.EqualValues(t, []string{"tf-acc-network1", "network2", "tf-acc-network3"}, listNames)
+	assert.EqualValues(t, len(mockMap), counter)
 }

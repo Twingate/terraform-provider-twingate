@@ -435,20 +435,39 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 	}
 
 	resources, err := client.readResources()
+	assert.NoError(t, err)
+	// Resources return dynamic and not ordered object
+	// See gabs Children() method.
 
-	listIDs := make([]string, 0)
+	r0 := &Resources{
+		ID:   "resource1",
+		Name: "tf-acc-resource1",
+	}
+	r1 := &Resources{
+		ID:   "resource2",
+		Name: "resource2",
+	}
+	r2 := &Resources{
+		ID:   "resource3",
+		Name: "tf-acc-resource3",
+	}
+	mockMap := make(map[int]*Resources)
 
+	mockMap[0] = r0
+	mockMap[1] = r1
+	mockMap[2] = r2
+
+	counter := 0
 	for _, elem := range resources {
-		listIDs = append(listIDs, elem.NodeID)
+		for _, i := range mockMap {
+			if elem.Name == i.Name && elem.ID == i.ID {
+				counter++
+			}
+		}
 	}
 
-	listNames := make([]string, 0)
-
-	for _, elem := range resources {
-		listNames = append(listNames, elem.NodeName)
+	if len(mockMap) != counter {
+		t.Errorf("Expeted map not equal to origin!")
 	}
-
-	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"resource1", "resource2", "resource3"}, listIDs)
-	assert.EqualValues(t, []string{"tf-acc-resource1", "resource2", "tf-acc-resource3"}, listNames)
+	assert.EqualValues(t, len(mockMap), counter)
 }

@@ -191,20 +191,39 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 	}
 
 	connector, err := client.readConnectors()
+	assert.NoError(t, err)
+	// Resources return dynamic and not ordered object
+	// See gabs Children() method.
 
-	listIDs := make([]string, 0)
+	r0 := &Connectors{
+		ID:   "connector1",
+		Name: "tf-acc-connector1",
+	}
+	r1 := &Connectors{
+		ID:   "connector2",
+		Name: "connector2",
+	}
+	r2 := &Connectors{
+		ID:   "connector3",
+		Name: "tf-acc-connector3",
+	}
+	mockMap := make(map[int]*Connectors)
 
+	mockMap[0] = r0
+	mockMap[1] = r1
+	mockMap[2] = r2
+
+	counter := 0
 	for _, elem := range connector {
-		listIDs = append(listIDs, elem.nodeID)
+		for _, i := range mockMap {
+			if elem.Name == i.Name && elem.ID == i.ID {
+				counter++
+			}
+		}
 	}
 
-	listNames := make([]string, 0)
-
-	for _, elem := range connector {
-		listNames = append(listNames, elem.nodeName)
+	if len(mockMap) != counter {
+		t.Errorf("Expeted map not equal to origin!")
 	}
-
-	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"connector1", "connector2", "connector3"}, listIDs)
-	assert.EqualValues(t, []string{"tf-acc-connector1", "connector2", "tf-acc-connector3"}, listNames)
+	assert.EqualValues(t, len(mockMap), counter)
 }

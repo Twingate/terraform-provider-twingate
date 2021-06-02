@@ -37,8 +37,8 @@ func testSweepTwingateResource(tenant string) error {
 	var testResources = make([]string, 0)
 
 	for _, elem := range resourceMap {
-		if strings.HasPrefix(elem.NodeName, "tf-acc") {
-			testResources = append(testResources, elem.NodeID)
+		if strings.HasPrefix(elem.Name, "tf-acc") {
+			testResources = append(testResources, elem.ID)
 		}
 	}
 

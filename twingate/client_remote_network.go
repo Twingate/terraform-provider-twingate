@@ -55,7 +55,7 @@ func (client *Client) readRemoteNetworks() (map[int]*RemoteNetwork, error) { //n
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
 
-	var remoteNetworks = make(map[int]*RemoteNetwork, 0)
+	var remoteNetworks = make(map[int]*RemoteNetwork)
 
 	queryChildren := queryResource.Path("data.remoteNetworks.edges").Children()
 

@@ -12,8 +12,8 @@ type Connector struct {
 }
 
 type Connectors struct {
-	nodeID   string
-	nodeName string
+	ID   string
+	Name string
 }
 
 const connectorResourceName = "connector"
@@ -66,14 +66,14 @@ func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
-	var connectors = make(map[int]*Connectors, 0)
+	var connectors = make(map[int]*Connectors)
 
 	queryChildren := queryResource.Path("data.connectors.edges").Children()
 
 	for i, elem := range queryChildren {
 		nodeID := elem.Path("node.id").Data().(string)
 		nodeName := elem.Path("node.name").Data().(string)
-		c := &Connectors{nodeID: nodeID, nodeName: nodeName}
+		c := &Connectors{ID: nodeID, Name: nodeName}
 		connectors[i] = c
 	}
 

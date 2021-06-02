@@ -37,8 +37,8 @@ func testSweepTwingateConnector(tenant string) error {
 	var testConnectors = make([]string, 0)
 
 	for _, elem := range connectorMap {
-		if strings.HasPrefix(elem.nodeName, "tf-acc") {
-			testConnectors = append(testConnectors, elem.nodeID)
+		if strings.HasPrefix(elem.Name, "tf-acc") {
+			testConnectors = append(testConnectors, elem.ID)
 		}
 	}
 

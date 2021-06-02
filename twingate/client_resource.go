@@ -61,8 +61,8 @@ type Resource struct {
 }
 
 type Resources struct {
-	NodeID   string
-	NodeName string
+	ID   string
+	Name string
 }
 
 const resourceResourceName = "resource"
@@ -228,12 +228,14 @@ func (client *Client) readResources() (map[int]*Resources, error) { //nolint
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	var resources = make(map[int]*Resources, 0)
+	var resources = make(map[int]*Resources)
 
-	for i, elem := range queryResource.Path("data.resources.edges").Children() {
+	queryChildren := queryResource.Path("data.resources.edges").Children()
+
+	for i, elem := range queryChildren {
 		nodeID := elem.Path("node.id").Data().(string)
 		nodeName := elem.Path("node.name").Data().(string)
-		c := &Resources{NodeID: nodeID, NodeName: nodeName}
+		c := &Resources{ID: nodeID, Name: nodeName}
 		resources[i] = c
 	}
 
