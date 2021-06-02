@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"fmt"
-	"strings"
 )
 
 type RemoteNetwork struct {
@@ -46,7 +45,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	return &remoteNetwork, nil
 }
 
-func (client *Client) readTestRemoteNetwork() ([]string, error) { //nolint
+func (client *Client) readRemoteNetworks() (map[int]*RemoteNetwork, error) { //nolint
 	query := map[string]string{
 		"query": "{ remoteNetworks { edges { node { id name } } } }",
 	}
@@ -56,14 +55,15 @@ func (client *Client) readTestRemoteNetwork() ([]string, error) { //nolint
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
 
-	var remoteNetworks = make([]string, 0)
+	var remoteNetworks = make(map[int]*RemoteNetwork, 0)
 
-	for _, elem := range queryResource.Path("data.remoteNetworks.edges").Children() {
+	queryChildren := queryResource.Path("data.remoteNetworks.edges").Children()
+
+	for i, elem := range queryChildren {
 		nodeID := elem.Path("node.id").Data().(string)
 		nodeName := elem.Path("node.name").Data().(string)
-		if strings.HasPrefix(nodeName, "tf-acc") {
-			remoteNetworks = append(remoteNetworks, nodeID)
-		}
+		c := &RemoteNetwork{ID: nodeID, Name: nodeName}
+		remoteNetworks[i] = c
 	}
 
 	return remoteNetworks, nil

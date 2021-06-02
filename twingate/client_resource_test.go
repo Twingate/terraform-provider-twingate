@@ -434,8 +434,21 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		}, nil
 	}
 
-	resources, err := client.readTestResources()
+	resources, err := client.readResources()
+
+	listIDs := make([]string, 0)
+
+	for _, elem := range resources {
+		listIDs = append(listIDs, elem.NodeID)
+	}
+
+	listNames := make([]string, 0)
+
+	for _, elem := range resources {
+		listNames = append(listNames, elem.NodeName)
+	}
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"resource1", "resource3"}, resources)
+	assert.EqualValues(t, []string{"resource1", "resource2", "resource3"}, listIDs)
+	assert.EqualValues(t, []string{"tf-acc-resource1", "resource2", "tf-acc-resource3"}, listNames)
 }

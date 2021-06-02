@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -22,18 +23,31 @@ func testSweepTwingateConnector(tenant string) error {
 		return err
 	}
 
-	connectorList, err := client.readTestConnectors()
+	connectorMap, err := client.readConnectors()
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil
 	}
 
-	if len(connectorList) == 0 {
+	if len(connectorMap) == 0 {
 		log.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
 		return nil
 	}
 
-	for _, i := range connectorList {
+	var testConnectors = make([]string, 0)
+
+	for _, elem := range connectorMap {
+		if strings.HasPrefix(elem.nodeName, "tf-acc") {
+			testConnectors = append(testConnectors, elem.nodeID)
+		}
+	}
+
+	if len(testConnectors) == 0 {
+		log.Printf("[INFO][SWEEPER_LOG] List with test connectors %s is empty", resourceName)
+		return nil
+	}
+
+	for _, i := range testConnectors {
 		if i == "" {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
 			return nil

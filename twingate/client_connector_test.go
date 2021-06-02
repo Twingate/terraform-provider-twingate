@@ -190,8 +190,21 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 		}, nil
 	}
 
-	connector, err := client.readTestConnectors()
+	connector, err := client.readConnectors()
+
+	listIDs := make([]string, 0)
+
+	for _, elem := range connector {
+		listIDs = append(listIDs, elem.nodeID)
+	}
+
+	listNames := make([]string, 0)
+
+	for _, elem := range connector {
+		listNames = append(listNames, elem.nodeName)
+	}
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"connector1", "connector3"}, connector)
+	assert.EqualValues(t, []string{"connector1", "connector2", "connector3"}, listIDs)
+	assert.EqualValues(t, []string{"tf-acc-connector1", "connector2", "tf-acc-connector3"}, listNames)
 }

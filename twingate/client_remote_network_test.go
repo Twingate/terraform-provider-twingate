@@ -162,8 +162,21 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		}, nil
 	}
 
-	network, err := client.readTestRemoteNetwork()
+	network, err := client.readRemoteNetworks()
+
+	listIDs := make([]string, 0)
+
+	for _, elem := range network {
+		listIDs = append(listIDs, elem.ID)
+	}
+
+	listNames := make([]string, 0)
+
+	for _, elem := range network {
+		listNames = append(listNames, elem.Name)
+	}
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, []string{"network1", "network3"}, network)
+	assert.EqualValues(t, []string{"network1", "network2", "network3"}, listIDs)
+	assert.EqualValues(t, []string{"tf-acc-network1", "network2", "tf-acc-network3"}, listNames)
 }

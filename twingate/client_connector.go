@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Connector struct {
@@ -10,6 +9,11 @@ type Connector struct {
 	RemoteNetwork   *RemoteNetwork
 	Name            string
 	ConnectorTokens *ConnectorTokens
+}
+
+type Connectors struct {
+	nodeID   string
+	nodeName string
 }
 
 const connectorResourceName = "connector"
@@ -52,7 +56,7 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	return &connector, nil
 }
 
-func (client *Client) readTestConnectors() ([]string, error) { //nolint
+func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 	query := map[string]string{
 		"query": "{ connectors { edges { node { id name } } } }",
 	}
@@ -62,14 +66,15 @@ func (client *Client) readTestConnectors() ([]string, error) { //nolint
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
-	var connectors = make([]string, 0)
+	var connectors = make(map[int]*Connectors, 0)
 
-	for _, elem := range queryResource.Path("data.connectors.edges").Children() {
+	queryChildren := queryResource.Path("data.connectors.edges").Children()
+
+	for i, elem := range queryChildren {
 		nodeID := elem.Path("node.id").Data().(string)
 		nodeName := elem.Path("node.name").Data().(string)
-		if strings.HasPrefix(nodeName, "tf-acc") {
-			connectors = append(connectors, nodeID)
-		}
+		c := &Connectors{nodeID: nodeID, nodeName: nodeName}
+		connectors[i] = c
 	}
 
 	return connectors, nil

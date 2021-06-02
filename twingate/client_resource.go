@@ -60,6 +60,11 @@ type Resource struct {
 	RemoteNetworkIDs []string
 }
 
+type Resources struct {
+	NodeID   string
+	NodeName string
+}
+
 const resourceResourceName = "resource"
 
 func validatePort(port string) (int64, error) {
@@ -213,7 +218,7 @@ func (client *Client) createResource(resource *Resource) error {
 	return nil
 }
 
-func (client *Client) readTestResources() ([]string, error) { //nolint
+func (client *Client) readResources() (map[int]*Resources, error) { //nolint
 	query := map[string]string{
 		"query": "{ resources { edges { node { id name } } } }",
 	}
@@ -223,14 +228,13 @@ func (client *Client) readTestResources() ([]string, error) { //nolint
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	var resources = make([]string, 0)
+	var resources = make(map[int]*Resources, 0)
 
-	for _, elem := range queryResource.Path("data.resources.edges").Children() {
+	for i, elem := range queryResource.Path("data.resources.edges").Children() {
 		nodeID := elem.Path("node.id").Data().(string)
 		nodeName := elem.Path("node.name").Data().(string)
-		if strings.HasPrefix(nodeName, "tf-acc") {
-			resources = append(resources, nodeID)
-		}
+		c := &Resources{NodeID: nodeID, NodeName: nodeName}
+		resources[i] = c
 	}
 
 	return resources, nil

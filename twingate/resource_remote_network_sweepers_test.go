@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -22,18 +23,31 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 		return err
 	}
 
-	networkList, err := client.readTestRemoteNetwork()
+	networkMap, err := client.readRemoteNetworks()
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil
 	}
 
-	if len(networkList) == 0 {
+	if len(networkMap) == 0 {
 		log.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
 		return nil
 	}
 
-	for _, i := range networkList {
+	var testNetworks = make([]string, 0)
+
+	for _, elem := range networkMap {
+		if strings.HasPrefix(elem.Name, "tf-acc") {
+			testNetworks = append(testNetworks, elem.ID)
+		}
+	}
+
+	if len(testNetworks) == 0 {
+		log.Printf("[INFO][SWEEPER_LOG] List with test networks %s is empty", resourceName)
+		return nil
+	}
+
+	for _, i := range testNetworks {
 		if i == "" {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
 			return nil
