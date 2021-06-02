@@ -50,14 +50,12 @@ type Protocols struct {
 }
 
 type Resource struct {
-	ID               string
-	RemoteNetworkID  string
-	Address          string
-	Name             string
-	GroupsIds        []string
-	Protocols        *Protocols
-	ResourceIDs      []string
-	RemoteNetworkIDs []string
+	ID              string
+	RemoteNetworkID string
+	Address         string
+	Name            string
+	GroupsIds       []string
+	Protocols       *Protocols
 }
 
 type Resources struct {
