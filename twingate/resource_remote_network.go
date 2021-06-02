@@ -10,8 +10,7 @@ import (
 
 func resourceRemoteNetwork() *schema.Resource {
 	return &schema.Resource{
-		Description: "Connectors are Twingate components that are deployed behind your firewall to provide access to private Resources.\n" +
-			"Checkout the [twingate docs](https://docs.twingate.com/docs/connectors) for detailed info ",
+		Description:   "A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).",
 		CreateContext: resourceRemoteNetworkCreate,
 		ReadContext:   resourceRemoteNetworkRead,
 		UpdateContext: resourceRemoteNetworkUpdate,
@@ -19,13 +18,14 @@ func resourceRemoteNetwork() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The ID of the Remote Network",
 			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the remote network",
+				Description: "The name of the Remote Network",
 			},
 		},
 		Importer: &schema.ResourceImporter{
