@@ -70,7 +70,7 @@ func testTwingateResource_withProtocolsAndGroups(networkName, resourceName strin
 	  name = "%s"
 	  address = "updated-acc-test.com"
 	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = ["R3JvdXA6MQ=="]
+	  group_ids = ["R3JvdXA6MTk0MjQ="]
       protocols {
 		allow_icmp = true
         tcp  {

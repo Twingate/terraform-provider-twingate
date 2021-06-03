@@ -11,6 +11,11 @@ type Connector struct {
 	ConnectorTokens *ConnectorTokens
 }
 
+type Connectors struct {
+	ID   string
+	Name string
+}
+
 const connectorResourceName = "connector"
 
 func (client *Client) createConnector(remoteNetworkID string) (*Connector, error) {
@@ -51,6 +56,30 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	return &connector, nil
 }
 
+func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
+	query := map[string]string{
+		"query": "{ connectors { edges { node { id name } } } }",
+	}
+
+	queryResource, err := client.doGraphqlRequest(query)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
+	}
+
+	var connectors = make(map[int]*Connectors)
+
+	queryChildren := queryResource.Path("data.connectors.edges").Children()
+
+	for i, elem := range queryChildren {
+		nodeID := elem.Path("node.id").Data().(string)
+		nodeName := elem.Path("node.name").Data().(string)
+		c := &Connectors{ID: nodeID, Name: nodeName}
+		connectors[i] = c
+	}
+
+	return connectors, nil
+}
+
 func (client *Client) readConnector(connectorID string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -74,7 +103,7 @@ func (client *Client) readConnector(connectorID string) (*Connector, error) {
 
 	connectorRead := queryConnector.Path("data.connector")
 	if connectorRead.Data() == nil {
-		return nil, NewAPIErrorWithID(nil, "reed", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
 	}
 
 	connector := Connector{

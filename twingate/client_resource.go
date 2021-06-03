@@ -58,6 +58,11 @@ type Resource struct {
 	Protocols       *Protocols
 }
 
+type Resources struct {
+	ID   string
+	Name string
+}
+
 const resourceResourceName = "resource"
 
 func validatePort(port string) (int64, error) {
@@ -209,6 +214,30 @@ func (client *Client) createResource(resource *Resource) error {
 	resource.ID = mutationResource.Path("data.resourceCreate.entity.id").Data().(string)
 
 	return nil
+}
+
+func (client *Client) readResources() (map[int]*Resources, error) { //nolint
+	query := map[string]string{
+		"query": "{ resources { edges { node { id name } } } }",
+	}
+
+	queryResource, err := client.doGraphqlRequest(query)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
+	}
+
+	var resources = make(map[int]*Resources)
+
+	queryChildren := queryResource.Path("data.resources.edges").Children()
+
+	for i, elem := range queryChildren {
+		nodeID := elem.Path("node.id").Data().(string)
+		nodeName := elem.Path("node.name").Data().(string)
+		c := &Resources{ID: nodeID, Name: nodeName}
+		resources[i] = c
+	}
+
+	return resources, nil
 }
 
 func (client *Client) readResource(resourceID string) (*Resource, error) { //nolint:funlen
