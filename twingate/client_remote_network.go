@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type RemoteNetwork struct {
+type remoteNetwork struct {
 	ID   string
 	Name string
 }
@@ -29,17 +29,7 @@ type createRemoteNetworkResponseDataRemoteNetworkCreateEntity struct {
 	Id string `json:"id"`
 }
 
-func newCreateRemoteNetworkResponse() *createRemoteNetworkResponse {
-	return &createRemoteNetworkResponse{
-		Data: &createRemoteNetworkResponseData{
-			RemoteNetworkCreate: &createRemoteNetworkResponseDataRemoteNetworkCreate{
-				Entity: &createRemoteNetworkResponseDataRemoteNetworkCreateEntity{},
-			},
-		},
-	}
-}
-
-func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetwork, error) {
+func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetwork, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
@@ -54,7 +44,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
         `, remoteNetworkName),
 	}
 
-	r := newCreateRemoteNetworkResponse()
+	r := createRemoteNetworkResponse{}
 
 	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
@@ -67,34 +57,74 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 		return nil, NewAPIError(NewMutationError(message), "create", remoteNetworkResourceName)
 	}
 
-	remoteNetwork := RemoteNetwork{
+	remoteNetwork := remoteNetwork{
 		ID: r.Data.RemoteNetworkCreate.Entity.Id,
 	}
 
 	return &remoteNetwork, nil
 }
 
-type readRemoteNetworkResponse struct {
-	Data *readRemoteNetworkResponseData `json:"data"`
+type readRemoteNetworksResponse struct {
+	Data struct {
+		RemoteNetworks struct {
+			Edges []struct {
+				Node struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"remoteNetworks"`
+	} `json:"data"`
 }
 
-type readRemoteNetworkResponseData struct {
-	RemoteNetwork *readRemoteNetworkResponseDataRemoteNetwork `json:"remoteNetwork"`
-}
-
-type readRemoteNetworkResponseDataRemoteNetwork struct {
-	Name string `json:"name"`
-}
-
-func newReadRemoteNetworkResponse() *readRemoteNetworkResponse {
-	return &readRemoteNetworkResponse{
-		Data: &readRemoteNetworkResponseData{
-			RemoteNetwork: &readRemoteNetworkResponseDataRemoteNetwork{},
-		},
+func (client *Client) readRemoteNetworks() (map[int]*remoteNetwork, error) { //nolint
+	query := map[string]string{
+		"query": "{ remoteNetworks { edges { node { id name } } } }",
 	}
+
+	r := readRemoteNetworksResponse{}
+	err := client.doGraphqlRequest(query, &r)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
+	}
+
+	var remoteNetworks = make(map[int]*remoteNetwork)
+
+	for i, elem := range r.Data.RemoteNetworks.Edges {
+		c := &remoteNetwork{ID: elem.Node.ID, Name: elem.Node.Name}
+		remoteNetworks[i] = c
+	}
+
+	return remoteNetworks, nil
 }
 
-func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork, error) {
+type readRemoteNetworkResponse struct {
+	Errors []*readRemoteNetworkResponseErrors `json:"errors"`
+	Data   *struct {
+		RemoteNetwork *struct {
+			Name string `json:"name"`
+		} `json:"remoteNetwork"`
+	} `json:"data"`
+}
+
+type readRemoteNetworkResponseErrors struct {
+	Message   string `json:"message"`
+	Locations []struct {
+		Line   int `json:"line"`
+		Column int `json:"column"`
+	} `json:"locations"`
+	Path []string `json:"path"`
+}
+
+func (r *readRemoteNetworkResponse) parseErrors() []string {
+	var messages []string
+	for _, e := range r.Errors {
+		messages = append(messages, e.Message)
+	}
+	return messages
+}
+
+func (client *Client) readRemoteNetwork(remoteNetworkID string) (*remoteNetwork, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 		{
@@ -106,18 +136,22 @@ func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork,
         `, remoteNetworkID),
 	}
 
-	r := newReadRemoteNetworkResponse()
+	r := readRemoteNetworkResponse{}
 
 	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
+	if r.Errors != nil {
+		return nil, NewAPIErrorWithID(NewGraphQLError(r.parseErrors()), "read", remoteNetworkResourceName, remoteNetworkID)
+	}
+
 	if r.Data == nil || r.Data.RemoteNetwork == nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	remoteNetwork := RemoteNetwork{
+	remoteNetwork := remoteNetwork{
 		ID:   remoteNetworkID,
 		Name: r.Data.RemoteNetwork.Name,
 	}
@@ -175,14 +209,6 @@ type deleteRemoteNetworkResponseDataRemoteNetworkDelete struct {
 	Error string `json:"error"`
 }
 
-func newDeleteRemoteNetworkResponse() *deleteRemoteNetworkResponse {
-	return &deleteRemoteNetworkResponse{
-		Data: &deleteRemoteNetworkResponseData{
-			RemoteNetworkDelete: &deleteRemoteNetworkResponseDataRemoteNetworkDelete{},
-		},
-	}
-}
-
 func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -195,7 +221,7 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {
 		`, remoteNetworkID),
 	}
 
-	r := newDeleteRemoteNetworkResponse()
+	r := deleteRemoteNetworkResponse{}
 
 	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {

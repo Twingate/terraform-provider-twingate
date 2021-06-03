@@ -144,9 +144,12 @@ func NewClient(network, apiToken, url string) *Client {
 }
 
 type pingResponse struct {
-	Data struct {
+	Errors string `json:"error"`
+	Data   struct {
 		Remotenetworks struct {
-			Edges []interface{} `json:"edges"`
+			Edges []*struct {
+				Name string `json:"name"`
+			} `json:"edges"`
 		} `json:"remoteNetworks"`
 	} `json:"data"`
 }
@@ -220,25 +223,11 @@ func (client *Client) doGraphqlRequest(query map[string]string, v interface{}) e
 	if err != nil {
 		return fmt.Errorf("can't execute request: %w", err)
 	}
-	log.Println("body " + string(body))
 	err = json.Unmarshal(body, v)
 	if err != nil {
-		return err
+		log.Println("body " + string(body))
+		return fmt.Errorf("can't parse response body: %w", err)
 	}
-
-	// parsedResponse, err := gabs.ParseJSON(body)
-	// if err != nil {
-	// 	return fmt.Errorf("can't parse response body: %w", err)
-	// }
-
-	// if parsedResponse.Path("errors") != nil {
-	// 	var messages []string
-	// 	for _, child := range parsedResponse.Path("errors").Children() {
-	// 		messages = append(messages, child.Path("message").Data().(string))
-	// 	}
-
-	// 	return NewGraphQLError(messages)
-	// }
 
 	return nil
 }

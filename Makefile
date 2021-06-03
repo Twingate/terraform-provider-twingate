@@ -6,6 +6,23 @@ BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
 OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
+SWEEP_TENANT=terraformtests
+SWEEP_FOLDER=./twingate
+
+
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
+
+.PHONY: sweep
+sweep:
+	$(call check_defined, TWINGATE_NETWORK)
+	$(call check_defined, TWINGATE_API_TOKEN)
+	$(call check_defined, TWINGATE_URL)
+	go test ${SWEEP_FOLDER} -v -sweep=${SWEEP_TENANT} -timeout 60m
 
 default: build
 
@@ -13,6 +30,7 @@ default: build
 ci-checks: docs
 	echo "Checking if latest docs generated"
 	git diff --exit-code || echo "ERROR: Update and push the latest documentation"; exit 1
+
 
 .PHONY: vendor
 vendor:
@@ -111,3 +129,4 @@ ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
 	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
 endif
 	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+

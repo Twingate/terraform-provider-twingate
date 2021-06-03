@@ -394,3 +394,80 @@ func TestClientResourceDeleteError(t *testing.T) {
 
 	assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
 }
+
+func TestClientResourcesReadAllOk(t *testing.T) {
+	// response JSON
+	readResourcesOkJson := `{
+	  "data": {
+		"resources": {
+		  "edges": [
+			{
+			  "node": {
+				"id": "resource1",
+				"name": "tf-acc-resource1"
+			  }
+			},
+			{
+			  "node": {
+				"id": "resource2",
+				"name": "resource2"
+			  }
+			},
+			{
+			  "node": {
+				"id": "resource3",
+				"name": "tf-acc-resource3"
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(readResourcesOkJson)))
+	client := createTestClient()
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Body:       r,
+		}, nil
+	}
+
+	resources, err := client.readResources()
+	assert.NoError(t, err)
+	// Resources return dynamic and not ordered object
+	// See gabs Children() method.
+
+	r0 := &Resources{
+		ID:   "resource1",
+		Name: "tf-acc-resource1",
+	}
+	r1 := &Resources{
+		ID:   "resource2",
+		Name: "resource2",
+	}
+	r2 := &Resources{
+		ID:   "resource3",
+		Name: "tf-acc-resource3",
+	}
+	mockMap := make(map[int]*Resources)
+
+	mockMap[0] = r0
+	mockMap[1] = r1
+	mockMap[2] = r2
+
+	counter := 0
+	for _, elem := range resources {
+		for _, i := range mockMap {
+			if elem.Name == i.Name && elem.ID == i.ID {
+				counter++
+			}
+		}
+	}
+
+	if len(mockMap) != counter {
+		t.Errorf("Expected map not equal to origin!")
+	}
+	assert.EqualValues(t, len(mockMap), counter)
+}

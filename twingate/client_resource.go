@@ -57,6 +57,11 @@ type Resource struct {
 	Protocols       *Protocols
 }
 
+type Resources struct {
+	ID   string
+	Name string
+}
+
 const resourceResourceName = "resource"
 
 func validatePort(port string) (int64, error) {
@@ -158,21 +163,21 @@ func extractPortsFromResults(ports []*readResourceResponseProtocolsPorts) []stri
 	return parsedPorts
 }
 
-type CreateResourceResponse struct {
-	Data CreateResourceResponseData `json:"data"`
+type createResourceResponse struct {
+	Data *createResourceResponseData `json:"data"`
 }
 
-type CreateResourceResponseData struct {
-	ResourceCreate CreateResourceResponseDataResourceCreate `json:"resourceCreate"`
+type createResourceResponseData struct {
+	ResourceCreate *createResourceResponseDataResourceCreate `json:"resourceCreate"`
 }
 
-type CreateResourceResponseDataResourceCreate struct {
+type createResourceResponseDataResourceCreate struct {
 	Ok     bool                                            `json:"ok"`
 	Error  string                                          `json:"error"`
-	Entity *CreateResourceResponseDataresourceCreateEntity `json:"entity"`
+	Entity *createResourceResponseDataresourceCreateEntity `json:"entity"`
 }
 
-type CreateResourceResponseDataresourceCreateEntity struct {
+type createResourceResponseDataresourceCreateEntity struct {
 	ID string `json:"id"`
 }
 
@@ -196,7 +201,7 @@ func (client *Client) createResource(resource *Resource) error {
         `, resource.Name, resource.Address, resource.RemoteNetworkID, convertGroups(resource.GroupsIds), protocols),
 	}
 
-	r := CreateResourceResponse{}
+	r := createResourceResponse{}
 	err = client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
@@ -343,6 +348,40 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 	return resource, nil
 }
 
+type readResourcesResponse struct {
+	Data struct {
+		Resources struct {
+			Edges []struct {
+				Node struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"resources"`
+	} `json:"data"`
+}
+
+func (client *Client) readResources() (map[int]*Resources, error) { //nolint
+	query := map[string]string{
+		"query": "{ resources { edges { node { id name } } } }",
+	}
+
+	r := readResourcesResponse{}
+	err := client.doGraphqlRequest(query, &r)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
+	}
+
+	var resources = make(map[int]*Resources)
+
+	for i, elem := range r.Data.Resources.Edges {
+		c := &Resources{ID: elem.Node.ID, Name: elem.Node.Name}
+		resources[i] = c
+	}
+
+	return resources, nil
+}
+
 type updateResourceResponse struct {
 	Data *updateResourceResponseData `json:"data"`
 }
@@ -354,14 +393,6 @@ type updateResourceResponseData struct {
 type updateResourceResponseResourceUpdate struct {
 	Ok    bool   `json:"ok"`
 	Error string `json:"error"`
-}
-
-func newUpdateResourceResponse() *updateResourceResponse {
-	return &updateResourceResponse{
-		Data: &updateResourceResponseData{
-			ResourceUpdate: &updateResourceResponseResourceUpdate{},
-		},
-	}
 }
 
 func (client *Client) updateResource(resource *Resource) error {
@@ -380,7 +411,7 @@ func (client *Client) updateResource(resource *Resource) error {
 		}
         `, resource.ID, resource.Name, resource.Address, resource.RemoteNetworkID, convertGroups(resource.GroupsIds), protocols),
 	}
-	r := newUpdateResourceResponse()
+	r := updateResourceResponse{}
 
 	err = client.doGraphqlRequest(mutation, &r)
 	if err != nil {
@@ -408,14 +439,6 @@ type deleteResourceResponseDataResourceDelete struct {
 	Error string `json:"error"`
 }
 
-func newDeleteResourceResponse() *deleteResourceResponse {
-	return &deleteResourceResponse{
-		Data: &deleteResourceResponseData{
-			ResourceDelete: &deleteResourceResponseDataResourceDelete{},
-		},
-	}
-}
-
 func (client *Client) deleteResource(resourceID string) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -428,7 +451,7 @@ func (client *Client) deleteResource(resourceID string) error {
 		`, resourceID),
 	}
 
-	r := newDeleteResourceResponse()
+	r := deleteResourceResponse{}
 
 	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {

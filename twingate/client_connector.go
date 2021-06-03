@@ -7,9 +7,14 @@ import (
 
 type Connector struct {
 	ID              string
-	RemoteNetwork   *RemoteNetwork
+	RemoteNetwork   *remoteNetwork
 	Name            string
 	ConnectorTokens *ConnectorTokens
+}
+
+type Connectors struct {
+	ID   string
+	Name string
 }
 
 const connectorResourceName = "connector"
@@ -63,11 +68,47 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	return &connector, nil
 }
 
+type readConnectorsResponse struct {
+	Data struct {
+		Connectors struct {
+			Edges []struct {
+				Node struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"connectors"`
+	} `json:"data"`
+}
+
+func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
+	query := map[string]string{
+		"query": "{ connectors { edges { node { id name } } } }",
+	}
+
+	r := readConnectorsResponse{}
+	err := client.doGraphqlRequest(query, &r)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
+	}
+
+	var connectors = make(map[int]*Connectors)
+
+	for i, elem := range r.Data.Connectors.Edges {
+		c := &Connectors{ID: elem.Node.ID, Name: elem.Node.Name}
+		connectors[i] = c
+	}
+
+	return connectors, nil
+}
+
 type readConnectorResponse struct {
 	Data *readConnectorResponseData `json:"data"`
 }
 
 type readConnectorResponseData struct {
+	Id        string                              `json:"id"`
+	Name      string                              `json:"name"`
 	Connector *readConnectorResponseDataConnector `json:"connector"`
 }
 
@@ -80,16 +121,6 @@ type readConnectorResponseDataConnector struct {
 type readConnectorResponseDataConnectorRemoteNetwork struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
-}
-
-func newReadConnectorResponse() *readConnectorResponse {
-	return &readConnectorResponse{
-		Data: &readConnectorResponseData{
-			Connector: &readConnectorResponseDataConnector{
-				RemoteNetwork: &readConnectorResponseDataConnectorRemoteNetwork{},
-			},
-		},
-	}
 }
 
 func (client *Client) readConnector(connectorID string) (*Connector, error) {
@@ -108,24 +139,24 @@ func (client *Client) readConnector(connectorID string) (*Connector, error) {
         `, connectorID),
 	}
 
-	r := newReadConnectorResponse()
+	r := readConnectorResponse{}
 
 	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
 	}
 
-	if r.Data == nil {
-		return nil, NewAPIErrorWithID(nil, "reed", connectorResourceName, connectorID)
+	if r.Data == nil || r.Data.Connector == nil {
+		return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
 	}
 
+	rn := &remoteNetwork{}
+	rn.ID = r.Data.Connector.RemoteNetwork.Id
+	rn.Name = r.Data.Connector.RemoteNetwork.Name
 	connector := Connector{
-		ID:   r.Data.Connector.Id,
-		Name: r.Data.Connector.Name,
-		RemoteNetwork: &RemoteNetwork{
-			ID:   r.Data.Connector.RemoteNetwork.Id,
-			Name: r.Data.Connector.RemoteNetwork.Name,
-		},
+		ID:            r.Data.Connector.Id,
+		Name:          r.Data.Connector.Name,
+		RemoteNetwork: rn,
 	}
 
 	return &connector, nil
