@@ -3,10 +3,9 @@ package twingate
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
-
-	"github.com/Jeffail/gabs/v2"
 )
 
 var ErrTooManyGroupsError = errors.New("provider does not support more than 50 groups per resource")
@@ -145,33 +144,36 @@ func convertGroups(groups []string) string {
 	return fmt.Sprintf("[%s]", strings.Join(converted, ","))
 }
 
-func extractPortsFromResults(resourceData *gabs.Container, portPath string) []string {
+func extractPortsFromResults(ports []*readResourceResponseProtocolsPorts) []string {
 	var parsedPorts = make([]string, 0)
 
-	if resourceData.ExistsP(portPath) {
-		for _, elem := range resourceData.Path(portPath).Children() {
-			start := int(elem.Path("start").Data().(float64))
-			end := int(elem.Path("end").Data().(float64))
-
-			if start == end {
-				parsedPorts = append(parsedPorts, fmt.Sprintf("%d", start))
-			} else {
-				parsedPorts = append(parsedPorts, fmt.Sprintf("%d-%d", start, end))
-			}
+	for _, port := range ports {
+		if port.Start == port.End {
+			parsedPorts = append(parsedPorts, fmt.Sprintf("%d", port.Start))
+		} else {
+			parsedPorts = append(parsedPorts, fmt.Sprintf("%d-%d", port.Start, port.End))
 		}
 	}
 
 	return parsedPorts
 }
 
-func extractProtocolsFromResult(resource *Resource, resourceData *gabs.Container) {
-	resource.Protocols = &Protocols{
-		AllowIcmp: resourceData.Path("protocols.allowIcmp").Data().(bool),
-		UDPPolicy: resourceData.Path("protocols.udp.policy").Data().(string),
-		TCPPolicy: resourceData.Path("protocols.tcp.policy").Data().(string),
-	}
-	resource.Protocols.TCPPorts = extractPortsFromResults(resourceData, "protocols.tcp.ports")
-	resource.Protocols.UDPPorts = extractPortsFromResults(resourceData, "protocols.udp.ports")
+type CreateResourceResponse struct {
+	Data CreateResourceResponseData `json:"data"`
+}
+
+type CreateResourceResponseData struct {
+	ResourceCreate CreateResourceResponseDataResourceCreate `json:"resourceCreate"`
+}
+
+type CreateResourceResponseDataResourceCreate struct {
+	Ok     bool                                            `json:"ok"`
+	Error  string                                          `json:"error"`
+	Entity *CreateResourceResponseDataresourceCreateEntity `json:"entity"`
+}
+
+type CreateResourceResponseDataresourceCreateEntity struct {
+	ID string `json:"id"`
 }
 
 func (client *Client) createResource(resource *Resource) error {
@@ -194,21 +196,66 @@ func (client *Client) createResource(resource *Resource) error {
         `, resource.Name, resource.Address, resource.RemoteNetworkID, convertGroups(resource.GroupsIds), protocols),
 	}
 
-	mutationResource, err := client.doGraphqlRequest(mutation)
+	r := CreateResourceResponse{}
+	err = client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
 	}
 
-	status := mutationResource.Path("data.resourceCreate.ok").Data().(bool)
-	if !status {
-		message := mutationResource.Path("data.resourceCreate.error").Data().(string)
-
+	if !r.Data.ResourceCreate.Ok {
+		message := r.Data.ResourceCreate.Error
 		return NewAPIError(NewMutationError(message), "create", resourceResourceName)
 	}
 
-	resource.ID = mutationResource.Path("data.resourceCreate.entity.id").Data().(string)
+	resource.ID = r.Data.ResourceCreate.Entity.ID
 
 	return nil
+}
+
+type readResourceResponse struct {
+	Data *readResourceResponseData `json:"data"`
+}
+
+type readResourceResponseData struct {
+	Resource *readResourceResponseDataResource `json:"resource"`
+}
+
+type readResourceResponseDataResource struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Address struct {
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"address"`
+	RemoteNetwork struct {
+		ID string `json:"id"`
+	} `json:"remoteNetwork"`
+	Groups struct {
+		PageInfo struct {
+			HasNextPage bool `json:"hasNextPage"`
+		} `json:"pageInfo"`
+		Edges []struct {
+			Node struct {
+				ID string `json:"id"`
+			} `json:"node"`
+		} `json:"edges"`
+	} `json:"groups"`
+	Protocols struct {
+		UDP struct {
+			Ports  []*readResourceResponseProtocolsPorts `json:"ports"`
+			Policy string                                `json:"policy"`
+		} `json:"udp"`
+		TCP struct {
+			Ports  []*readResourceResponseProtocolsPorts `json:"ports"`
+			Policy string                                `json:"policy"`
+		} `json:"tcp"`
+		AllowIcmp bool `json:"allowIcmp"`
+	} `json:"protocols"`
+}
+
+type readResourceResponseProtocolsPorts struct {
+	End   int `json:"end"`
+	Start int `json:"start"`
 }
 
 func (client *Client) readResource(resourceID string) (*Resource, error) { //nolint:funlen
@@ -256,43 +303,65 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 		}
         `, resourceID),
 	}
-
-	queryResource, err := client.doGraphqlRequest(mutation)
+	r := readResourceResponse{}
+	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
-	resourceQuery := queryResource.Path("data.resource")
-	if resourceQuery.Data() == nil {
+	log.Println(r.Data.Resource)
+
+	if r.Data.Resource == nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
 	var groups = make([]string, 0)
 
-	hasNextPage := resourceQuery.Path("groups.pageInfo.hasNextPage").Data().(bool)
-	if hasNextPage {
+	if r.Data.Resource.Groups.PageInfo.HasNextPage {
 		return nil, NewAPIErrorWithID(ErrTooManyGroupsError, "read", resourceResourceName, resourceID)
 	}
 
-	for _, elem := range resourceQuery.Path("groups.edges").Children() {
-		nodeID := elem.Path("node.id").Data().(string)
-		groups = append(groups, nodeID)
+	for _, elem := range r.Data.Resource.Groups.Edges {
+		log.Println(elem)
+		groups = append(groups, elem.Node.ID)
 	}
+
+	protocols := &Protocols{}
+	protocols.AllowIcmp = r.Data.Resource.Protocols.AllowIcmp
+	protocols.TCPPorts = extractPortsFromResults(r.Data.Resource.Protocols.TCP.Ports)
+	protocols.UDPPorts = extractPortsFromResults(r.Data.Resource.Protocols.UDP.Ports)
 
 	resource := &Resource{
-		ID:        resourceID,
-		Name:      resourceQuery.Path("name").Data().(string),
-		Address:   resourceQuery.Path("address.value").Data().(string),
-		GroupsIds: groups,
+		ID:              resourceID,
+		Name:            r.Data.Resource.Name,
+		Address:         r.Data.Resource.Address.Value,
+		RemoteNetworkID: r.Data.Resource.RemoteNetwork.ID,
+		GroupsIds:       groups,
+		Protocols:       protocols,
 	}
-
-	if resourceQuery.ExistsP("remoteNetwork.id") {
-		resource.RemoteNetworkID = resourceQuery.Path("remoteNetwork.id").Data().(string)
-	}
-
-	extractProtocolsFromResult(resource, resourceQuery)
 
 	return resource, nil
+}
+
+type updateResourceResponse struct {
+	Data *updateResourceResponseData `json:"data"`
+}
+
+type updateResourceResponseData struct {
+	ResourceUpdate *updateResourceResponseResourceUpdate `json:"resourceUpdate"`
+}
+
+type updateResourceResponseResourceUpdate struct {
+	Ok    bool   `json:"ok"`
+	Error string `json:"error"`
+}
+
+func newUpdateResourceResponse() *updateResourceResponse {
+	return &updateResourceResponse{
+		Data: &updateResourceResponseData{
+			ResourceUpdate: &updateResourceResponseResourceUpdate{},
+		},
+	}
 }
 
 func (client *Client) updateResource(resource *Resource) error {
@@ -311,20 +380,40 @@ func (client *Client) updateResource(resource *Resource) error {
 		}
         `, resource.ID, resource.Name, resource.Address, resource.RemoteNetworkID, convertGroups(resource.GroupsIds), protocols),
 	}
+	r := newUpdateResourceResponse()
 
-	mutationResource, err := client.doGraphqlRequest(mutation)
+	err = client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
 	}
 
-	status := mutationResource.Path("data.resourceUpdate.ok").Data().(bool)
-	if !status {
-		message := mutationResource.Path("data.resourceUpdate.error").Data().(string)
-
+	if !r.Data.ResourceUpdate.Ok {
+		message := r.Data.ResourceUpdate.Error
 		return NewAPIErrorWithID(NewMutationError(message), "update", resourceResourceName, resource.ID)
 	}
 
 	return nil
+}
+
+type deleteResourceResponse struct {
+	Data *deleteResourceResponseData `json:"data"`
+}
+
+type deleteResourceResponseData struct {
+	ResourceDelete *deleteResourceResponseDataResourceDelete `json:"resourceDelete"`
+}
+
+type deleteResourceResponseDataResourceDelete struct {
+	Ok    bool   `json:"ok"`
+	Error string `json:"error"`
+}
+
+func newDeleteResourceResponse() *deleteResourceResponse {
+	return &deleteResourceResponse{
+		Data: &deleteResourceResponseData{
+			ResourceDelete: &deleteResourceResponseDataResourceDelete{},
+		},
+	}
 }
 
 func (client *Client) deleteResource(resourceID string) error {
@@ -338,16 +427,16 @@ func (client *Client) deleteResource(resourceID string) error {
 		}
 		`, resourceID),
 	}
-	deleteResource, err := client.doGraphqlRequest(mutation)
 
+	r := newDeleteResourceResponse()
+
+	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", resourceResourceName, resourceID)
 	}
 
-	status := deleteResource.Path("data.resourceDelete.ok").Data().(bool)
-	if !status {
-		message := deleteResource.Path("data.resourceDelete.error").Data().(string)
-
+	if !r.Data.ResourceDelete.Ok {
+		message := r.Data.ResourceDelete.Error
 		return NewAPIErrorWithID(NewMutationError(message), "delete", resourceResourceName, resourceID)
 	}
 

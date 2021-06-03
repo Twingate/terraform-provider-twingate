@@ -38,7 +38,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 
 	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.EqualValues(t, "test-id", remoteNetwork.ID)
 }
 

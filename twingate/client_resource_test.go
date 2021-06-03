@@ -12,12 +12,12 @@ import (
 
 func TestParsePortsToGraphql(t *testing.T) {
 	emptyPorts, err := convertPorts(make([]string, 0))
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, emptyPorts, "")
 	vars := []string{"80", "81-82"}
 	ports, err := convertPorts(vars)
 	assert.Equal(t, ports, "{start: 80, end: 80},{start: 81, end: 82}")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestParseErrorPortsToGraphql(t *testing.T) {
@@ -64,7 +64,7 @@ func TestClientResourceCreateOk(t *testing.T) {
 
 	err := client.createResource(resource)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.EqualValues(t, "test-id", resource.ID)
 }
 
@@ -171,7 +171,7 @@ func TestClientResourceReadOk(t *testing.T) {
 
 	resource, err := client.readResource("resource1")
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.EqualValues(t, "resource1", resource.ID)
 	assert.Contains(t, resource.GroupsIds, "group1")
 	assert.Contains(t, resource.Protocols.TCPPorts, "8080-8090")
@@ -306,7 +306,7 @@ func TestClientResourceUpdateOk(t *testing.T) {
 
 	err := client.updateResource(resource)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestClientResourceUpdateError(t *testing.T) {
@@ -366,7 +366,7 @@ func TestClientResourceDeleteOk(t *testing.T) {
 
 	err := client.deleteResource("resource1")
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestClientResourceDeleteError(t *testing.T) {

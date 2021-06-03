@@ -36,6 +36,19 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) er
 	return nil
 }
 
+type generateConnectorTokensResponse struct {
+	Data struct {
+		ConnectorGenerateTokens struct {
+			ConnectorTokens struct {
+				AccessToken  string `json:"accessToken"`
+				RefreshToken string `json:"refreshToken"`
+			} `json:"connectorTokens"`
+			Ok    bool   `json:"ok"`
+			Error string `json:"error"`
+		} `json:"connectorGenerateTokens"`
+	} `json:"data"`
+}
+
 func (client *Client) generateConnectorTokens(connector *Connector) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -52,23 +65,22 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
         `, connector.ID),
 	}
 
-	mutationConnector, err := client.doGraphqlRequest(mutation)
+	r := generateConnectorTokensResponse{}
+
+	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}
 
-	createTokensResult := mutationConnector.Path("data.connectorGenerateTokens")
-
-	status := createTokensResult.Path("ok").Data().(bool)
-	if !status {
-		message := createTokensResult.Path("error").Data().(string)
+	if !r.Data.ConnectorGenerateTokens.Ok {
+		message := r.Data.ConnectorGenerateTokens.Error
 
 		return NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
 	}
 
 	connector.ConnectorTokens = &ConnectorTokens{
-		AccessToken:  createTokensResult.Path("connectorTokens.accessToken").Data().(string),
-		RefreshToken: createTokensResult.Path("connectorTokens.refreshToken").Data().(string),
+		AccessToken:  r.Data.ConnectorGenerateTokens.ConnectorTokens.AccessToken,
+		RefreshToken: r.Data.ConnectorGenerateTokens.ConnectorTokens.RefreshToken,
 	}
 
 	return nil

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -144,6 +143,14 @@ func NewClient(network, apiToken, url string) *Client {
 	return &client
 }
 
+type pingResponse struct {
+	Data struct {
+		Remotenetworks struct {
+			Edges []interface{} `json:"edges"`
+		} `json:"remoteNetworks"`
+	} `json:"data"`
+}
+
 func (client *Client) ping() error {
 	jsonData := map[string]string{
 		"query": `
@@ -158,7 +165,9 @@ func (client *Client) ping() error {
 			}
         `,
 	}
-	_, err := client.doGraphqlRequest(jsonData)
+
+	r := pingResponse{}
+	err := client.doGraphqlRequest(jsonData, &r)
 
 	if err != nil {
 		log.Printf("[ERROR] Cannot reach Graphql API Server %s", jsonData)
@@ -197,34 +206,39 @@ func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	return body, nil
 }
 
-func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
+func (client *Client) doGraphqlRequest(query map[string]string, v interface{}) error {
 	jsonValue, _ := json.Marshal(query)
 
 	req, err := retryablehttp.NewRequest("POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return nil, fmt.Errorf("could not create GraphQL request : %w", err)
+		return fmt.Errorf("could not create GraphQL request : %w", err)
 	}
 
 	req.Header.Set("X-API-KEY", client.APIToken)
 
 	body, err := client.doRequest(req)
 	if err != nil {
-		return nil, fmt.Errorf("can't execute request: %w", err)
+		return fmt.Errorf("can't execute request: %w", err)
 	}
-
-	parsedResponse, err := gabs.ParseJSON(body)
+	log.Println("body " + string(body))
+	err = json.Unmarshal(body, v)
 	if err != nil {
-		return nil, fmt.Errorf("can't parse response body: %w", err)
+		return err
 	}
 
-	if parsedResponse.Path("errors") != nil {
-		var messages []string
-		for _, child := range parsedResponse.Path("errors").Children() {
-			messages = append(messages, child.Path("message").Data().(string))
-		}
+	// parsedResponse, err := gabs.ParseJSON(body)
+	// if err != nil {
+	// 	return fmt.Errorf("can't parse response body: %w", err)
+	// }
 
-		return nil, NewGraphQLError(messages)
-	}
+	// if parsedResponse.Path("errors") != nil {
+	// 	var messages []string
+	// 	for _, child := range parsedResponse.Path("errors").Children() {
+	// 		messages = append(messages, child.Path("message").Data().(string))
+	// 	}
 
-	return parsedResponse, nil
+	// 	return NewGraphQLError(messages)
+	// }
+
+	return nil
 }

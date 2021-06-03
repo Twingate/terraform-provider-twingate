@@ -40,7 +40,7 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 	}
 	err := client.generateConnectorTokens(connector)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
 	assert.EqualValues(t, "token2", connector.ConnectorTokens.RefreshToken)
 }
@@ -65,7 +65,7 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 	}
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestClientConnectorTokensVerifyError(t *testing.T) {

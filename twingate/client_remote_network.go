@@ -11,6 +11,34 @@ type RemoteNetwork struct {
 
 const remoteNetworkResourceName = "remote network"
 
+type createRemoteNetworkResponse struct {
+	Data *createRemoteNetworkResponseData `json:"data"`
+}
+
+type createRemoteNetworkResponseData struct {
+	RemoteNetworkCreate *createRemoteNetworkResponseDataRemoteNetworkCreate `json:"remoteNetworkCreate"`
+}
+
+type createRemoteNetworkResponseDataRemoteNetworkCreate struct {
+	Ok     bool                                                      `json:"ok"`
+	Error  string                                                    `json:"error"`
+	Entity *createRemoteNetworkResponseDataRemoteNetworkCreateEntity `json:"entity"`
+}
+
+type createRemoteNetworkResponseDataRemoteNetworkCreateEntity struct {
+	Id string `json:"id"`
+}
+
+func newCreateRemoteNetworkResponse() *createRemoteNetworkResponse {
+	return &createRemoteNetworkResponse{
+		Data: &createRemoteNetworkResponseData{
+			RemoteNetworkCreate: &createRemoteNetworkResponseDataRemoteNetworkCreate{
+				Entity: &createRemoteNetworkResponseDataRemoteNetworkCreateEntity{},
+			},
+		},
+	}
+}
+
 func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetwork, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -26,23 +54,44 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
         `, remoteNetworkName),
 	}
 
-	mutationRemoteNetwork, err := client.doGraphqlRequest(mutation)
+	r := newCreateRemoteNetworkResponse()
+
+	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return nil, NewAPIError(err, "create", remoteNetworkResourceName)
 	}
 
-	status := mutationRemoteNetwork.Path("data.remoteNetworkCreate.ok").Data().(bool)
-	if !status {
-		message := mutationRemoteNetwork.Path("data.remoteNetworkCreate.error").Data().(string)
+	if !r.Data.RemoteNetworkCreate.Ok {
+		message := r.Data.RemoteNetworkCreate.Error
 
 		return nil, NewAPIError(NewMutationError(message), "create", remoteNetworkResourceName)
 	}
 
 	remoteNetwork := RemoteNetwork{
-		ID: mutationRemoteNetwork.Path("data.remoteNetworkCreate.entity.id").Data().(string),
+		ID: r.Data.RemoteNetworkCreate.Entity.Id,
 	}
 
 	return &remoteNetwork, nil
+}
+
+type readRemoteNetworkResponse struct {
+	Data *readRemoteNetworkResponseData `json:"data"`
+}
+
+type readRemoteNetworkResponseData struct {
+	RemoteNetwork *readRemoteNetworkResponseDataRemoteNetwork `json:"remoteNetwork"`
+}
+
+type readRemoteNetworkResponseDataRemoteNetwork struct {
+	Name string `json:"name"`
+}
+
+func newReadRemoteNetworkResponse() *readRemoteNetworkResponse {
+	return &readRemoteNetworkResponse{
+		Data: &readRemoteNetworkResponseData{
+			RemoteNetwork: &readRemoteNetworkResponseDataRemoteNetwork{},
+		},
+	}
 }
 
 func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork, error) {
@@ -57,23 +106,32 @@ func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork,
         `, remoteNetworkID),
 	}
 
-	queryRemoteNetwork, err := client.doGraphqlRequest(mutation)
+	r := newReadRemoteNetworkResponse()
+
+	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	remoteNetworkQuery := queryRemoteNetwork.Path("data.remoteNetwork")
-
-	if remoteNetworkQuery.Data() == nil {
+	if r.Data == nil || r.Data.RemoteNetwork == nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	remoteNetwork := RemoteNetwork{
 		ID:   remoteNetworkID,
-		Name: remoteNetworkQuery.Path("name").Data().(string),
+		Name: r.Data.RemoteNetwork.Name,
 	}
 
 	return &remoteNetwork, nil
+}
+
+type updateRemoteNetworkResponse struct {
+	Data struct {
+		RemoteNetworkUpdate struct {
+			Ok    bool   `json:"ok"`
+			Error string `json:"error"`
+		} `json:"remoteNetworkUpdate"`
+	} `json:"data"`
 }
 
 func (client *Client) updateRemoteNetwork(remoteNetworkID, remoteNetworkName string) error {
@@ -88,19 +146,41 @@ func (client *Client) updateRemoteNetwork(remoteNetworkID, remoteNetworkName str
         `, remoteNetworkID, remoteNetworkName),
 	}
 
-	mutationRemoteNetwork, err := client.doGraphqlRequest(mutation)
+	r := updateRemoteNetworkResponse{}
+
+	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	status := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.ok").Data().(bool)
-	if !status {
-		message := mutationRemoteNetwork.Path("data.remoteNetworkUpdate.error").Data().(string)
+	if !r.Data.RemoteNetworkUpdate.Ok {
+		message := r.Data.RemoteNetworkUpdate.Error
 
 		return NewAPIErrorWithID(NewMutationError(message), "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil
+}
+
+type deleteRemoteNetworkResponse struct {
+	Data *deleteRemoteNetworkResponseData `json:"data"`
+}
+
+type deleteRemoteNetworkResponseData struct {
+	RemoteNetworkDelete *deleteRemoteNetworkResponseDataRemoteNetworkDelete `json:"remoteNetworkDelete"`
+}
+
+type deleteRemoteNetworkResponseDataRemoteNetworkDelete struct {
+	Ok    bool   `json:"ok"`
+	Error string `json:"error"`
+}
+
+func newDeleteRemoteNetworkResponse() *deleteRemoteNetworkResponse {
+	return &deleteRemoteNetworkResponse{
+		Data: &deleteRemoteNetworkResponseData{
+			RemoteNetworkDelete: &deleteRemoteNetworkResponseDataRemoteNetworkDelete{},
+		},
+	}
 }
 
 func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {
@@ -115,14 +195,15 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {
 		`, remoteNetworkID),
 	}
 
-	deleteRemoteNetwork, err := client.doGraphqlRequest(mutation)
+	r := newDeleteRemoteNetworkResponse()
+
+	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	status := deleteRemoteNetwork.Path("data.remoteNetworkDelete.ok").Data().(bool)
-	if !status {
-		message := deleteRemoteNetwork.Path("data.remoteNetworkDelete.error").Data().(string)
+	if !r.Data.RemoteNetworkDelete.Ok {
+		message := r.Data.RemoteNetworkDelete.Error
 
 		return NewAPIErrorWithID(NewMutationError(message), "delete", remoteNetworkResourceName, remoteNetworkID)
 	}

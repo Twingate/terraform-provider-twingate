@@ -61,7 +61,7 @@ func TestClientPing(t *testing.T) {
 
 	err := client.ping()
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestClientPingRequestFails(t *testing.T) {

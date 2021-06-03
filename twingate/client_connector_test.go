@@ -39,7 +39,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 
 	connector, err := client.createConnector(remoteNetworkName)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.EqualValues(t, "test-id", connector.ID)
 	assert.EqualValues(t, "test-name", connector.Name)
 }
@@ -68,7 +68,7 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 
 	err := client.deleteConnector(connectorId)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestClientConnectorCreateError(t *testing.T) {
