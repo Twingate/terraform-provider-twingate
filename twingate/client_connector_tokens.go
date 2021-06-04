@@ -43,8 +43,7 @@ type generateConnectorTokensResponse struct {
 				AccessToken  string `json:"accessToken"`
 				RefreshToken string `json:"refreshToken"`
 			} `json:"connectorTokens"`
-			Ok    bool   `json:"ok"`
-			Error string `json:"error"`
+			*OkErrorResponse
 		} `json:"connectorGenerateTokens"`
 	} `json:"data"`
 }

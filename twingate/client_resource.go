@@ -3,7 +3,6 @@ package twingate
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -164,21 +163,14 @@ func extractPortsFromResults(ports []*readResourceResponseProtocolsPorts) []stri
 }
 
 type createResourceResponse struct {
-	Data *createResourceResponseData `json:"data"`
-}
-
-type createResourceResponseData struct {
-	ResourceCreate *createResourceResponseDataResourceCreate `json:"resourceCreate"`
-}
-
-type createResourceResponseDataResourceCreate struct {
-	Ok     bool                                            `json:"ok"`
-	Error  string                                          `json:"error"`
-	Entity *createResourceResponseDataresourceCreateEntity `json:"entity"`
-}
-
-type createResourceResponseDataresourceCreateEntity struct {
-	ID string `json:"id"`
+	Data *struct {
+		ResourceCreate *struct {
+			*OkErrorResponse
+			Entity *struct {
+				ID string `json:"id"`
+			} `json:"entity"`
+		} `json:"resourceCreate"`
+	} `json:"data"`
 }
 
 func (client *Client) createResource(resource *Resource) error {
@@ -218,16 +210,13 @@ func (client *Client) createResource(resource *Resource) error {
 }
 
 type readResourceResponse struct {
-	Data *readResourceResponseData `json:"data"`
-}
-
-type readResourceResponseData struct {
-	Resource *readResourceResponseDataResource `json:"resource"`
+	Data *struct {
+		Resource *readResourceResponseDataResource `json:"resource"`
+	} `json:"data"`
 }
 
 type readResourceResponseDataResource struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
+	*IdNameResponse
 	Address struct {
 		Type  string `json:"type"`
 		Value string `json:"value"`
@@ -246,16 +235,15 @@ type readResourceResponseDataResource struct {
 		} `json:"edges"`
 	} `json:"groups"`
 	Protocols struct {
-		UDP struct {
-			Ports  []*readResourceResponseProtocolsPorts `json:"ports"`
-			Policy string                                `json:"policy"`
-		} `json:"udp"`
-		TCP struct {
-			Ports  []*readResourceResponseProtocolsPorts `json:"ports"`
-			Policy string                                `json:"policy"`
-		} `json:"tcp"`
-		AllowIcmp bool `json:"allowIcmp"`
+		UDP       *readResourceResponseProtocol `json:"udp"`
+		TCP       *readResourceResponseProtocol `json:"tcp"`
+		AllowIcmp bool                          `json:"allowIcmp"`
 	} `json:"protocols"`
+}
+
+type readResourceResponseProtocol struct {
+	Ports  []*readResourceResponseProtocolsPorts `json:"ports"`
+	Policy string                                `json:"policy"`
 }
 
 type readResourceResponseProtocolsPorts struct {
@@ -314,8 +302,6 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
-	log.Println(r.Data.Resource)
-
 	if r.Data.Resource == nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
@@ -327,12 +313,13 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 	}
 
 	for _, elem := range r.Data.Resource.Groups.Edges {
-		log.Println(elem)
 		groups = append(groups, elem.Node.ID)
 	}
 
 	protocols := &Protocols{}
 	protocols.AllowIcmp = r.Data.Resource.Protocols.AllowIcmp
+	protocols.TCPPolicy = r.Data.Resource.Protocols.TCP.Policy
+	protocols.UDPPolicy = r.Data.Resource.Protocols.UDP.Policy
 	protocols.TCPPorts = extractPortsFromResults(r.Data.Resource.Protocols.TCP.Ports)
 	protocols.UDPPorts = extractPortsFromResults(r.Data.Resource.Protocols.UDP.Ports)
 
@@ -351,12 +338,7 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 type readResourcesResponse struct {
 	Data struct {
 		Resources struct {
-			Edges []struct {
-				Node struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-				} `json:"node"`
-			} `json:"edges"`
+			Edges []*EdgesResponse `json:"edges"`
 		} `json:"resources"`
 	} `json:"data"`
 }
@@ -383,16 +365,9 @@ func (client *Client) readResources() (map[int]*Resources, error) { //nolint
 }
 
 type updateResourceResponse struct {
-	Data *updateResourceResponseData `json:"data"`
-}
-
-type updateResourceResponseData struct {
-	ResourceUpdate *updateResourceResponseResourceUpdate `json:"resourceUpdate"`
-}
-
-type updateResourceResponseResourceUpdate struct {
-	Ok    bool   `json:"ok"`
-	Error string `json:"error"`
+	Data *struct {
+		ResourceUpdate *OkErrorResponse `json:"resourceUpdate"`
+	} `json:"data"`
 }
 
 func (client *Client) updateResource(resource *Resource) error {
@@ -427,16 +402,9 @@ func (client *Client) updateResource(resource *Resource) error {
 }
 
 type deleteResourceResponse struct {
-	Data *deleteResourceResponseData `json:"data"`
-}
-
-type deleteResourceResponseData struct {
-	ResourceDelete *deleteResourceResponseDataResourceDelete `json:"resourceDelete"`
-}
-
-type deleteResourceResponseDataResourceDelete struct {
-	Ok    bool   `json:"ok"`
-	Error string `json:"error"`
+	Data *struct {
+		ResourceDelete *OkErrorResponse `json:"resourceDelete"`
+	} `json:"data"`
 }
 
 func (client *Client) deleteResource(resourceID string) error {

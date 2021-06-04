@@ -223,9 +223,9 @@ func (client *Client) doGraphqlRequest(query map[string]string, v interface{}) e
 	if err != nil {
 		return fmt.Errorf("can't execute request: %w", err)
 	}
+
 	err = json.Unmarshal(body, v)
 	if err != nil {
-		log.Println("body " + string(body))
 		return fmt.Errorf("can't parse response body: %w", err)
 	}
 

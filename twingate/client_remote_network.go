@@ -12,21 +12,14 @@ type remoteNetwork struct {
 const remoteNetworkResourceName = "remote network"
 
 type createRemoteNetworkResponse struct {
-	Data *createRemoteNetworkResponseData `json:"data"`
-}
-
-type createRemoteNetworkResponseData struct {
-	RemoteNetworkCreate *createRemoteNetworkResponseDataRemoteNetworkCreate `json:"remoteNetworkCreate"`
-}
-
-type createRemoteNetworkResponseDataRemoteNetworkCreate struct {
-	Ok     bool                                                      `json:"ok"`
-	Error  string                                                    `json:"error"`
-	Entity *createRemoteNetworkResponseDataRemoteNetworkCreateEntity `json:"entity"`
-}
-
-type createRemoteNetworkResponseDataRemoteNetworkCreateEntity struct {
-	Id string `json:"id"`
+	Data *struct {
+		RemoteNetworkCreate *struct {
+			*OkErrorResponse
+			Entity *struct {
+				ID string `json:"id"`
+			} `json:"entity"`
+		} `json:"remoteNetworkCreate"`
+	} `json:"data"`
 }
 
 func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetwork, error) {
@@ -58,7 +51,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetw
 	}
 
 	remoteNetwork := remoteNetwork{
-		ID: r.Data.RemoteNetworkCreate.Entity.Id,
+		ID: r.Data.RemoteNetworkCreate.Entity.ID,
 	}
 
 	return &remoteNetwork, nil
@@ -67,12 +60,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetw
 type readRemoteNetworksResponse struct {
 	Data struct {
 		RemoteNetworks struct {
-			Edges []struct {
-				Node struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-				} `json:"node"`
-			} `json:"edges"`
+			Edges []*EdgesResponse `json:"edges"`
 		} `json:"remoteNetworks"`
 	} `json:"data"`
 }
@@ -161,10 +149,7 @@ func (client *Client) readRemoteNetwork(remoteNetworkID string) (*remoteNetwork,
 
 type updateRemoteNetworkResponse struct {
 	Data struct {
-		RemoteNetworkUpdate struct {
-			Ok    bool   `json:"ok"`
-			Error string `json:"error"`
-		} `json:"remoteNetworkUpdate"`
+		RemoteNetworkUpdate *OkErrorResponse `json:"remoteNetworkUpdate"`
 	} `json:"data"`
 }
 
@@ -197,16 +182,9 @@ func (client *Client) updateRemoteNetwork(remoteNetworkID, remoteNetworkName str
 }
 
 type deleteRemoteNetworkResponse struct {
-	Data *deleteRemoteNetworkResponseData `json:"data"`
-}
-
-type deleteRemoteNetworkResponseData struct {
-	RemoteNetworkDelete *deleteRemoteNetworkResponseDataRemoteNetworkDelete `json:"remoteNetworkDelete"`
-}
-
-type deleteRemoteNetworkResponseDataRemoteNetworkDelete struct {
-	Ok    bool   `json:"ok"`
-	Error string `json:"error"`
+	Data *struct {
+		RemoteNetworkDelete *OkErrorResponse `json:"remoteNetworkDelete"`
+	} `json:"data"`
 }
 
 func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {

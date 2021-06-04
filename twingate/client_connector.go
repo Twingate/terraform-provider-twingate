@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"fmt"
-	"log"
 )
 
 type Connector struct {
@@ -22,12 +21,8 @@ const connectorResourceName = "connector"
 type createConnectorResponse struct {
 	Data struct {
 		ConnectorCreate struct {
-			Entity struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"entity"`
-			Ok    bool   `json:"ok"`
-			Error string `json:"error"`
+			Entity *IdNameResponse `json:"entity"`
+			*OkErrorResponse
 		} `json:"connectorCreate"`
 	} `json:"data"`
 }
@@ -50,7 +45,6 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	r := createConnectorResponse{}
 
 	err := client.doGraphqlRequest(mutation, &r)
-	log.Println(r.Data.ConnectorCreate.Ok)
 	if err != nil {
 		return nil, NewAPIError(err, "create", connectorResourceName)
 	}
@@ -71,12 +65,7 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 type readConnectorsResponse struct {
 	Data struct {
 		Connectors struct {
-			Edges []struct {
-				Node struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-				} `json:"node"`
-			} `json:"edges"`
+			Edges []*EdgesResponse `json:"edges"`
 		} `json:"connectors"`
 	} `json:"data"`
 }
@@ -103,24 +92,13 @@ func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 }
 
 type readConnectorResponse struct {
-	Data *readConnectorResponseData `json:"data"`
-}
-
-type readConnectorResponseData struct {
-	Id        string                              `json:"id"`
-	Name      string                              `json:"name"`
-	Connector *readConnectorResponseDataConnector `json:"connector"`
-}
-
-type readConnectorResponseDataConnector struct {
-	Id            string                                           `json:"id"`
-	Name          string                                           `json:"name"`
-	RemoteNetwork *readConnectorResponseDataConnectorRemoteNetwork `json:"remoteNetwork"`
-}
-
-type readConnectorResponseDataConnectorRemoteNetwork struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Data *struct {
+		*IdNameResponse
+		Connector *struct {
+			*IdNameResponse
+			RemoteNetwork *IdNameResponse `json:"remoteNetwork"`
+		} `json:"connector"`
+	} `json:"data"`
 }
 
 func (client *Client) readConnector(connectorID string) (*Connector, error) {
@@ -151,10 +129,10 @@ func (client *Client) readConnector(connectorID string) (*Connector, error) {
 	}
 
 	rn := &remoteNetwork{}
-	rn.ID = r.Data.Connector.RemoteNetwork.Id
+	rn.ID = r.Data.Connector.RemoteNetwork.ID
 	rn.Name = r.Data.Connector.RemoteNetwork.Name
 	connector := Connector{
-		ID:            r.Data.Connector.Id,
+		ID:            r.Data.Connector.ID,
 		Name:          r.Data.Connector.Name,
 		RemoteNetwork: rn,
 	}
@@ -164,10 +142,7 @@ func (client *Client) readConnector(connectorID string) (*Connector, error) {
 
 type deleteConnectorResponse struct {
 	Data struct {
-		ConnectorDelete struct {
-			Ok    bool   `json:"ok"`
-			Error string `json:"error"`
-		} `json:"connectorDelete"`
+		ConnectorDelete *OkErrorResponse `json:"connectorDelete"`
 	} `json:"data"`
 }
 
