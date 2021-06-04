@@ -21,7 +21,7 @@ const connectorResourceName = "connector"
 type createConnectorResponse struct {
 	Data struct {
 		ConnectorCreate struct {
-			Entity *IdNameResponse `json:"entity"`
+			Entity *IDNameResponse `json:"entity"`
 			*OkErrorResponse
 		} `json:"connectorCreate"`
 	} `json:"data"`
@@ -51,6 +51,7 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 
 	if !r.Data.ConnectorCreate.Ok {
 		message := r.Data.ConnectorCreate.Error
+
 		return nil, NewAPIError(NewMutationError(message), "create", connectorResourceName)
 	}
 
@@ -70,12 +71,13 @@ type readConnectorsResponse struct {
 	} `json:"data"`
 }
 
-func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
+func (client *Client) readConnectors() (map[int]*Connectors, error) {
 	query := map[string]string{
 		"query": "{ connectors { edges { node { id name } } } }",
 	}
 
 	r := readConnectorsResponse{}
+
 	err := client.doGraphqlRequest(query, &r)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
@@ -93,10 +95,10 @@ func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 
 type readConnectorResponse struct {
 	Data *struct {
-		*IdNameResponse
+		*IDNameResponse
 		Connector *struct {
-			*IdNameResponse
-			RemoteNetwork *IdNameResponse `json:"remoteNetwork"`
+			*IDNameResponse
+			RemoteNetwork *IDNameResponse `json:"remoteNetwork"`
 		} `json:"connector"`
 	} `json:"data"`
 }

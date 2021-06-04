@@ -1,6 +1,6 @@
 package twingate
 
-type IdNameResponse struct {
+type IDNameResponse struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -11,5 +11,5 @@ type OkErrorResponse struct {
 }
 
 type EdgesResponse struct {
-	Node *IdNameResponse `json:"node"`
+	Node *IDNameResponse `json:"node"`
 }

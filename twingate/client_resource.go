@@ -216,7 +216,7 @@ type readResourceResponse struct {
 }
 
 type readResourceResponseDataResource struct {
-	*IdNameResponse
+	*IDNameResponse
 	Address struct {
 		Type  string `json:"type"`
 		Value string `json:"value"`
@@ -343,12 +343,13 @@ type readResourcesResponse struct {
 	} `json:"data"`
 }
 
-func (client *Client) readResources() (map[int]*Resources, error) { //nolint
+func (client *Client) readResources() (map[int]*Resources, error) {
 	query := map[string]string{
 		"query": "{ resources { edges { node { id name } } } }",
 	}
 
 	r := readResourcesResponse{}
+
 	err := client.doGraphqlRequest(query, &r)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
@@ -395,6 +396,7 @@ func (client *Client) updateResource(resource *Resource) error {
 
 	if !r.Data.ResourceUpdate.Ok {
 		message := r.Data.ResourceUpdate.Error
+
 		return NewAPIErrorWithID(NewMutationError(message), "update", resourceResourceName, resource.ID)
 	}
 
