@@ -8,7 +8,7 @@ type Connector struct {
 	ID              string
 	RemoteNetwork   *remoteNetwork
 	Name            string
-	ConnectorTokens *ConnectorTokens
+	ConnectorTokens *connectorTokens
 }
 
 type Connectors struct {

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-type ConnectorTokens struct {
+type connectorTokens struct {
 	AccessToken  string
 	RefreshToken string
 }
@@ -77,7 +77,7 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 		return NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
 	}
 
-	connector.ConnectorTokens = &ConnectorTokens{
+	connector.ConnectorTokens = &connectorTokens{
 		AccessToken:  r.Data.ConnectorGenerateTokens.ConnectorTokens.AccessToken,
 		RefreshToken: r.Data.ConnectorGenerateTokens.ConnectorTokens.RefreshToken,
 	}
