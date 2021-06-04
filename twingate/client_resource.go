@@ -194,14 +194,14 @@ func (client *Client) createResource(resource *Resource) error {
 	}
 
 	r := createResourceResponse{}
+
 	err = client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
 	}
 
 	if !r.Data.ResourceCreate.Ok {
-		message := r.Data.ResourceCreate.Error
-		return NewAPIError(NewMutationError(message), "create", resourceResourceName)
+		return NewAPIError(NewMutationError(r.Data.ResourceCreate.Error), "create", resourceResourceName)
 	}
 
 	resource.ID = r.Data.ResourceCreate.Entity.ID
@@ -296,7 +296,9 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 		}
         `, resourceID),
 	}
+
 	r := readResourceResponse{}
+
 	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
@@ -335,7 +337,7 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 	return resource, nil
 }
 
-type readResourcesResponse struct {
+type readResourcesResponse struct { //nolint
 	Data struct {
 		Resources struct {
 			Edges []*EdgesResponse `json:"edges"`
@@ -343,7 +345,7 @@ type readResourcesResponse struct {
 	} `json:"data"`
 }
 
-func (client *Client) readResources() (map[int]*Resources, error) {
+func (client *Client) readResources() (map[int]*Resources, error) { //nolint
 	query := map[string]string{
 		"query": "{ resources { edges { node { id name } } } }",
 	}
@@ -395,9 +397,7 @@ func (client *Client) updateResource(resource *Resource) error {
 	}
 
 	if !r.Data.ResourceUpdate.Ok {
-		message := r.Data.ResourceUpdate.Error
-
-		return NewAPIErrorWithID(NewMutationError(message), "update", resourceResourceName, resource.ID)
+		return NewAPIErrorWithID(NewMutationError(r.Data.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
 	}
 
 	return nil
@@ -429,8 +429,7 @@ func (client *Client) deleteResource(resourceID string) error {
 	}
 
 	if !r.Data.ResourceDelete.Ok {
-		message := r.Data.ResourceDelete.Error
-		return NewAPIErrorWithID(NewMutationError(message), "delete", resourceResourceName, resourceID)
+		return NewAPIErrorWithID(NewMutationError(r.Data.ResourceDelete.Error), "delete", resourceResourceName, resourceID)
 	}
 
 	return nil

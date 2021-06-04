@@ -55,7 +55,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetw
 	}, nil
 }
 
-type readRemoteNetworksResponse struct {
+type readRemoteNetworksResponse struct { //nolint
 	Data struct {
 		RemoteNetworks struct {
 			Edges []*EdgesResponse `json:"edges"`
@@ -63,7 +63,7 @@ type readRemoteNetworksResponse struct {
 	} `json:"data"`
 }
 
-func (client *Client) readRemoteNetworks() (map[int]*remoteNetwork, error) {
+func (client *Client) readRemoteNetworks() (map[int]*remoteNetwork, error) { //nolint
 	query := map[string]string{
 		"query": "{ remoteNetworks { edges { node { id name } } } }",
 	}
@@ -104,7 +104,8 @@ type readRemoteNetworkResponseErrors struct {
 }
 
 func (r *readRemoteNetworkResponse) parseErrors() []string {
-	var messages []string
+	messages := []string{}
+
 	for _, e := range r.Errors {
 		messages = append(messages, e.Message)
 	}
@@ -171,9 +172,7 @@ func (client *Client) updateRemoteNetwork(remoteNetworkID, remoteNetworkName str
 	}
 
 	if !r.Data.RemoteNetworkUpdate.Ok {
-		message := r.Data.RemoteNetworkUpdate.Error
-
-		return NewAPIErrorWithID(NewMutationError(message), "update", remoteNetworkResourceName, remoteNetworkID)
+		return NewAPIErrorWithID(NewMutationError(r.Data.RemoteNetworkUpdate.Error), "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil
@@ -205,9 +204,7 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {
 	}
 
 	if !r.Data.RemoteNetworkDelete.Ok {
-		message := r.Data.RemoteNetworkDelete.Error
-
-		return NewAPIErrorWithID(NewMutationError(message), "delete", remoteNetworkResourceName, remoteNetworkID)
+		return NewAPIErrorWithID(NewMutationError(r.Data.RemoteNetworkDelete.Error), "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil

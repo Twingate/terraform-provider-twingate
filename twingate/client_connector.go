@@ -50,9 +50,7 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	}
 
 	if !r.Data.ConnectorCreate.Ok {
-		message := r.Data.ConnectorCreate.Error
-
-		return nil, NewAPIError(NewMutationError(message), "create", connectorResourceName)
+		return nil, NewAPIError(NewMutationError(r.Data.ConnectorCreate.Error), "create", connectorResourceName)
 	}
 
 	connector := Connector{
@@ -63,7 +61,7 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	return &connector, nil
 }
 
-type readConnectorsResponse struct {
+type readConnectorsResponse struct { //nolint
 	Data struct {
 		Connectors struct {
 			Edges []*EdgesResponse `json:"edges"`
@@ -71,7 +69,7 @@ type readConnectorsResponse struct {
 	} `json:"data"`
 }
 
-func (client *Client) readConnectors() (map[int]*Connectors, error) {
+func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 	query := map[string]string{
 		"query": "{ connectors { edges { node { id name } } } }",
 	}
@@ -168,9 +166,7 @@ func (client *Client) deleteConnector(connectorID string) error {
 	}
 
 	if !r.Data.ConnectorDelete.Ok {
-		message := r.Data.ConnectorDelete.Error
-
-		return NewAPIErrorWithID(NewMutationError(message), "delete", connectorResourceName, connectorID)
+		return NewAPIErrorWithID(NewMutationError(r.Data.ConnectorDelete.Error), "delete", connectorResourceName, connectorID)
 	}
 
 	return nil

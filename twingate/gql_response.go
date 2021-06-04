@@ -10,6 +10,14 @@ type OkErrorResponse struct {
 	Error string `json:"error"`
 }
 
+func (r *OkErrorResponse) ErrorMessage() string {
+	return r.Error
+}
+
+func (r *OkErrorResponse) IsOk() bool {
+	return r.Ok
+}
+
 type EdgesResponse struct {
 	Node *IDNameResponse `json:"node"`
 }
