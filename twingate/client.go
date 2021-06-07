@@ -144,7 +144,7 @@ func NewClient(network, apiToken, url string) *Client {
 }
 
 type pingResponse struct {
-	Errors string `json:"error"`
+	Errors []*queryResponseErrors `json:"errors"`
 	Data   struct {
 		Remotenetworks struct {
 			Edges []*struct {
@@ -152,6 +152,10 @@ type pingResponse struct {
 			} `json:"edges"`
 		} `json:"remoteNetworks"`
 	} `json:"data"`
+}
+
+func (r *pingResponse) checkErrors() []*queryResponseErrors {
+	return r.Errors
 }
 
 func (client *Client) ping() error {
@@ -170,8 +174,8 @@ func (client *Client) ping() error {
 	}
 
 	r := pingResponse{}
-	err := client.doGraphqlRequest(jsonData, &r)
 
+	err := client.doGraphqlRequest(jsonData, &r)
 	if err != nil {
 		log.Printf("[ERROR] Cannot reach Graphql API Server %s", jsonData)
 
@@ -209,7 +213,7 @@ func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	return body, nil
 }
 
-func (client *Client) doGraphqlRequest(query map[string]string, v interface{}) error {
+func (client *Client) doGraphqlRequest(query map[string]string, v responseErrors) error {
 	jsonValue, _ := json.Marshal(query)
 
 	req, err := retryablehttp.NewRequest("POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
@@ -227,6 +231,10 @@ func (client *Client) doGraphqlRequest(query map[string]string, v interface{}) e
 	err = json.Unmarshal(body, v)
 	if err != nil {
 		return fmt.Errorf("can't parse response body: %w", err)
+	}
+
+	if v.checkErrors() != nil {
+		return NewGraphQLError(parseErrors(v.checkErrors()))
 	}
 
 	return nil

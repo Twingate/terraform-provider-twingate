@@ -48,6 +48,10 @@ type generateConnectorTokensResponse struct {
 	} `json:"data"`
 }
 
+func (r *generateConnectorTokensResponse) checkErrors() []*queryResponseErrors {
+	return nil
+}
+
 func (client *Client) generateConnectorTokens(connector *Connector) error {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`

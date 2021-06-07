@@ -12,6 +12,9 @@ type remoteNetwork struct {
 const remoteNetworkResourceName = "remote network"
 
 type createRemoteNetworkResponse struct {
+	Error *struct {
+		Errors []*queryResponseErrors `json:"errors"`
+	} `json:"error"`
 	Data *struct {
 		RemoteNetworkCreate *struct {
 			*OkErrorResponse
@@ -20,6 +23,13 @@ type createRemoteNetworkResponse struct {
 			} `json:"entity"`
 		} `json:"remoteNetworkCreate"`
 	} `json:"data"`
+}
+
+func (r *createRemoteNetworkResponse) checkErrors() []*queryResponseErrors {
+	if r.Error != nil {
+		return r.Error.Errors
+	}
+	return nil
 }
 
 func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetwork, error) {
@@ -56,11 +66,21 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetw
 }
 
 type readRemoteNetworksResponse struct { //nolint
+	Error *struct {
+		Errors []*queryResponseErrors `json:"errors"`
+	} `json:"error"`
 	Data struct {
 		RemoteNetworks struct {
 			Edges []*EdgesResponse `json:"edges"`
 		} `json:"remoteNetworks"`
 	} `json:"data"`
+}
+
+func (r *readRemoteNetworksResponse) checkErrors() []*queryResponseErrors {
+	if r.Error != nil {
+		return r.Error.Errors
+	}
+	return nil
 }
 
 func (client *Client) readRemoteNetworks() (map[int]*remoteNetwork, error) { //nolint
@@ -86,7 +106,7 @@ func (client *Client) readRemoteNetworks() (map[int]*remoteNetwork, error) { //n
 }
 
 type readRemoteNetworkResponse struct {
-	Errors []*readRemoteNetworkResponseErrors `json:"errors"`
+	Errors []*queryResponseErrors `json:"errors"`
 	Data   *struct {
 		RemoteNetwork *struct {
 			Name string `json:"name"`
@@ -94,23 +114,8 @@ type readRemoteNetworkResponse struct {
 	} `json:"data"`
 }
 
-type readRemoteNetworkResponseErrors struct {
-	Message   string `json:"message"`
-	Locations []struct {
-		Line   int `json:"line"`
-		Column int `json:"column"`
-	} `json:"locations"`
-	Path []string `json:"path"`
-}
-
-func (r *readRemoteNetworkResponse) parseErrors() []string {
-	messages := []string{}
-
-	for _, e := range r.Errors {
-		messages = append(messages, e.Message)
-	}
-
-	return messages
+func (r *readRemoteNetworkResponse) checkErrors() []*queryResponseErrors {
+	return r.Errors
 }
 
 func (client *Client) readRemoteNetwork(remoteNetworkID string) (*remoteNetwork, error) {
@@ -132,10 +137,6 @@ func (client *Client) readRemoteNetwork(remoteNetworkID string) (*remoteNetwork,
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	if r.Errors != nil {
-		return nil, NewAPIErrorWithID(NewGraphQLError(r.parseErrors()), "read", remoteNetworkResourceName, remoteNetworkID)
-	}
-
 	if r.Data == nil || r.Data.RemoteNetwork == nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
@@ -150,6 +151,10 @@ type updateRemoteNetworkResponse struct {
 	Data struct {
 		RemoteNetworkUpdate *OkErrorResponse `json:"remoteNetworkUpdate"`
 	} `json:"data"`
+}
+
+func (r *updateRemoteNetworkResponse) checkErrors() []*queryResponseErrors {
+	return nil
 }
 
 func (client *Client) updateRemoteNetwork(remoteNetworkID, remoteNetworkName string) error {
@@ -182,6 +187,10 @@ type deleteRemoteNetworkResponse struct {
 	Data *struct {
 		RemoteNetworkDelete *OkErrorResponse `json:"remoteNetworkDelete"`
 	} `json:"data"`
+}
+
+func (r *deleteRemoteNetworkResponse) checkErrors() []*queryResponseErrors {
+	return nil
 }
 
 func (client *Client) deleteRemoteNetwork(remoteNetworkID string) error {

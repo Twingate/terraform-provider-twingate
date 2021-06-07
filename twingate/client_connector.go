@@ -27,6 +27,10 @@ type createConnectorResponse struct {
 	} `json:"data"`
 }
 
+func (r *createConnectorResponse) checkErrors() []*queryResponseErrors {
+	return nil
+}
+
 func (client *Client) createConnector(remoteNetworkID string) (*Connector, error) {
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
@@ -69,6 +73,10 @@ type readConnectorsResponse struct { //nolint
 	} `json:"data"`
 }
 
+func (r *readConnectorsResponse) checkErrors() []*queryResponseErrors {
+	return nil
+}
+
 func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 	query := map[string]string{
 		"query": "{ connectors { edges { node { id name } } } }",
@@ -92,13 +100,18 @@ func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 }
 
 type readConnectorResponse struct {
-	Data *struct {
+	Errors []*queryResponseErrors `json:"errors"`
+	Data   *struct {
 		*IDNameResponse
 		Connector *struct {
 			*IDNameResponse
 			RemoteNetwork *IDNameResponse `json:"remoteNetwork"`
 		} `json:"connector"`
 	} `json:"data"`
+}
+
+func (r *readConnectorResponse) checkErrors() []*queryResponseErrors {
+	return r.Errors
 }
 
 func (client *Client) readConnector(connectorID string) (*Connector, error) {
@@ -128,9 +141,11 @@ func (client *Client) readConnector(connectorID string) (*Connector, error) {
 		return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
 	}
 
-	rn := &remoteNetwork{}
-	rn.ID = r.Data.Connector.RemoteNetwork.ID
-	rn.Name = r.Data.Connector.RemoteNetwork.Name
+	rn := &remoteNetwork{
+		ID:   r.Data.Connector.RemoteNetwork.ID,
+		Name: r.Data.Connector.RemoteNetwork.Name,
+	}
+
 	connector := Connector{
 		ID:            r.Data.Connector.ID,
 		Name:          r.Data.Connector.Name,
@@ -144,6 +159,10 @@ type deleteConnectorResponse struct {
 	Data struct {
 		ConnectorDelete *OkErrorResponse `json:"connectorDelete"`
 	} `json:"data"`
+}
+
+func (r *deleteConnectorResponse) checkErrors() []*queryResponseErrors {
+	return nil
 }
 
 func (client *Client) deleteConnector(connectorID string) error {

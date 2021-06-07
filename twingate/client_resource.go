@@ -173,6 +173,10 @@ type createResourceResponse struct {
 	} `json:"data"`
 }
 
+func (r *createResourceResponse) checkErrors() []*queryResponseErrors {
+	return nil
+}
+
 func (client *Client) createResource(resource *Resource) error {
 	protocols, err := convertProtocols(resource.Protocols)
 	if err != nil {
@@ -210,9 +214,14 @@ func (client *Client) createResource(resource *Resource) error {
 }
 
 type readResourceResponse struct {
-	Data *struct {
+	Errors []*queryResponseErrors `json:"errors"`
+	Data   *struct {
 		Resource *readResourceResponseDataResource `json:"resource"`
 	} `json:"data"`
+}
+
+func (r *readResourceResponse) checkErrors() []*queryResponseErrors {
+	return r.Errors
 }
 
 type readResourceResponseDataResource struct {
@@ -301,7 +310,7 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 
 	err := client.doGraphqlRequest(mutation, &r)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, resourceID)
 	}
 
 	if r.Data.Resource == nil {
@@ -318,12 +327,13 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 		groups = append(groups, elem.Node.ID)
 	}
 
-	protocols := &Protocols{}
-	protocols.AllowIcmp = r.Data.Resource.Protocols.AllowIcmp
-	protocols.TCPPolicy = r.Data.Resource.Protocols.TCP.Policy
-	protocols.UDPPolicy = r.Data.Resource.Protocols.UDP.Policy
-	protocols.TCPPorts = extractPortsFromResults(r.Data.Resource.Protocols.TCP.Ports)
-	protocols.UDPPorts = extractPortsFromResults(r.Data.Resource.Protocols.UDP.Ports)
+	protocols := &Protocols{
+		AllowIcmp: r.Data.Resource.Protocols.AllowIcmp,
+		TCPPolicy: r.Data.Resource.Protocols.TCP.Policy,
+		UDPPolicy: r.Data.Resource.Protocols.UDP.Policy,
+		TCPPorts:  extractPortsFromResults(r.Data.Resource.Protocols.TCP.Ports),
+		UDPPorts:  extractPortsFromResults(r.Data.Resource.Protocols.UDP.Ports),
+	}
 
 	resource := &Resource{
 		ID:              resourceID,
@@ -338,11 +348,21 @@ func (client *Client) readResource(resourceID string) (*Resource, error) { //nol
 }
 
 type readResourcesResponse struct { //nolint
+	Error *struct {
+		Errors []*queryResponseErrors `json:"errors"`
+	} `json:"error"`
 	Data struct {
 		Resources struct {
 			Edges []*EdgesResponse `json:"edges"`
 		} `json:"resources"`
 	} `json:"data"`
+}
+
+func (r *readResourcesResponse) checkErrors() []*queryResponseErrors {
+	if r.Error != nil {
+		return r.Error.Errors
+	}
+	return nil
 }
 
 func (client *Client) readResources() (map[int]*Resources, error) { //nolint
@@ -373,6 +393,10 @@ type updateResourceResponse struct {
 	} `json:"data"`
 }
 
+func (r *updateResourceResponse) checkErrors() []*queryResponseErrors {
+	return nil
+}
+
 func (client *Client) updateResource(resource *Resource) error {
 	protocols, err := convertProtocols(resource.Protocols)
 	if err != nil {
@@ -389,6 +413,7 @@ func (client *Client) updateResource(resource *Resource) error {
 		}
         `, resource.ID, resource.Name, resource.Address, resource.RemoteNetworkID, convertGroups(resource.GroupsIds), protocols),
 	}
+
 	r := updateResourceResponse{}
 
 	err = client.doGraphqlRequest(mutation, &r)
@@ -407,6 +432,10 @@ type deleteResourceResponse struct {
 	Data *struct {
 		ResourceDelete *OkErrorResponse `json:"resourceDelete"`
 	} `json:"data"`
+}
+
+func (r *deleteResourceResponse) checkErrors() []*queryResponseErrors {
+	return nil
 }
 
 func (client *Client) deleteResource(resourceID string) error {
