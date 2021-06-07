@@ -73,7 +73,7 @@ type readConnectorsResponse struct { //nolint
 	} `json:"data"`
 }
 
-func (r *readConnectorsResponse) checkErrors() []*queryResponseErrors {
+func (r *readConnectorsResponse) checkErrors() []*queryResponseErrors { //nolint
 	return nil
 }
 

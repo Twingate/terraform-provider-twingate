@@ -358,10 +358,11 @@ type readResourcesResponse struct { //nolint
 	} `json:"data"`
 }
 
-func (r *readResourcesResponse) checkErrors() []*queryResponseErrors {
+func (r *readResourcesResponse) checkErrors() []*queryResponseErrors { //nolint
 	if r.Error != nil {
 		return r.Error.Errors
 	}
+
 	return nil
 }
 

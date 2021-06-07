@@ -29,6 +29,7 @@ func (r *createRemoteNetworkResponse) checkErrors() []*queryResponseErrors {
 	if r.Error != nil {
 		return r.Error.Errors
 	}
+
 	return nil
 }
 
@@ -76,10 +77,11 @@ type readRemoteNetworksResponse struct { //nolint
 	} `json:"data"`
 }
 
-func (r *readRemoteNetworksResponse) checkErrors() []*queryResponseErrors {
+func (r *readRemoteNetworksResponse) checkErrors() []*queryResponseErrors { //nolint
 	if r.Error != nil {
 		return r.Error.Errors
 	}
+
 	return nil
 }
 
