@@ -27,3 +27,7 @@ Install the provider for local testing.
 ```shell
 make install
 ```
+
+## Contributions:
+
+Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) under the [project's open source license](LICENSE).
