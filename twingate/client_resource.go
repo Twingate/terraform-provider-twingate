@@ -360,7 +360,9 @@ type readResourcesResponse struct { //nolint
 
 func (r *readResourcesResponse) checkErrors() []*queryResponseErrors { //nolint
 	if r.Error != nil {
-		return r.Error.Errors
+		if r.Error.Errors != nil {
+			return r.Error.Errors
+		}
 	}
 
 	return nil

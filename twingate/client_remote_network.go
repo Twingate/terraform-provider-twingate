@@ -27,7 +27,9 @@ type createRemoteNetworkResponse struct {
 
 func (r *createRemoteNetworkResponse) checkErrors() []*queryResponseErrors {
 	if r.Error != nil {
-		return r.Error.Errors
+		if r.Error.Errors != nil {
+			return r.Error.Errors
+		}
 	}
 
 	return nil
@@ -79,7 +81,9 @@ type readRemoteNetworksResponse struct { //nolint
 
 func (r *readRemoteNetworksResponse) checkErrors() []*queryResponseErrors { //nolint
 	if r.Error != nil {
-		return r.Error.Errors
+		if r.Error.Errors != nil {
+			return r.Error.Errors
+		}
 	}
 
 	return nil
