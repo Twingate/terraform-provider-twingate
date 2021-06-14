@@ -2,7 +2,7 @@
 Twingate Terraform Provider
 ==================
 
-- [![Coverage Status](https://coveralls.io/repos/github/Twingate/terraform-provider-twingate/badge.svg?branch=develop&t=rqgifB)](https://coveralls.io/github/Twingate/terraform-provider-twingate?branch=develop)
+[![Coverage Status](https://coveralls.io/repos/github/Twingate/terraform-provider-twingate/badge.svg?branch=develop&t=rqgifB)](https://coveralls.io/github/Twingate/terraform-provider-twingate?branch=main)
 
 <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
 
@@ -27,3 +27,7 @@ Install the provider for local testing.
 ```shell
 make install
 ```
+
+## Contributions:
+
+Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) under the [project's open source license](LICENSE).
