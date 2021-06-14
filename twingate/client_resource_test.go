@@ -40,7 +40,7 @@ func TestConvertProtocolsErrors(t *testing.T) {
 		var protocols *Protocols
 		p, err := convertProtocols(protocols)
 		assert.EqualValues(t, "", p)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 	})
 }
 
