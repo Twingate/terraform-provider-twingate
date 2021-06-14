@@ -46,7 +46,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 
 func TestClientRemoteNetworkResponseNoError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Remote Network Create Response No Error", func(t *testing.T) {
-		var response *createRemoteNetworkResponse
+		response := &createRemoteNetworkResponse{}
 		err := response.checkErrors()
 		assert.Nil(t, err)
 	})
@@ -221,7 +221,7 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 
 func TestClientRemoteNetworksReadNoError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Remote Networks Read No Error", func(t *testing.T) {
-		var read *readRemoteNetworksResponse
+		read := &readRemoteNetworksResponse{}
 		err := read.checkErrors()
 		assert.Nil(t, err)
 	})

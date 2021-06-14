@@ -132,6 +132,14 @@ func TestResourceCreateCheckErrors(t *testing.T) {
 	})
 }
 
+func TestClientReadResourcesResponseNoError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Read Resources Response No Error", func(t *testing.T) {
+		response := &readResourcesResponse{}
+		err := response.checkErrors()
+		assert.Nil(t, err)
+	})
+}
+
 func TestClientResourceReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Read Ok", func(t *testing.T) {
 		// response JSON
