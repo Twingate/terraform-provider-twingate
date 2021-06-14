@@ -44,6 +44,14 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 	})
 }
 
+func TestClientRemoteNetworkResponseNoError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Remote Network Create Response No Error", func(t *testing.T) {
+		var response *createRemoteNetworkResponse
+		err := response.checkErrors()
+		assert.Nil(t, err)
+	})
+}
+
 func TestClientRemoteNetworkCreateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Remote Network Create Error", func(t *testing.T) {
 		// response JSON
@@ -208,5 +216,13 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 			t.Errorf("Expected map not equal to origin!")
 		}
 		assert.EqualValues(t, len(mockMap), counter)
+	})
+}
+
+func TestClientRemoteNetworksReadNoError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Remote Networks Read No Error", func(t *testing.T) {
+		var read *readRemoteNetworksResponse
+		err := read.checkErrors()
+		assert.Nil(t, err)
 	})
 }
