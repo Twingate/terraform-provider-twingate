@@ -37,7 +37,7 @@ func TestParseErrorPortsToGraphql(t *testing.T) {
 
 func TestConvertProtocolsErrors(t *testing.T) {
 	t.Run("Test Twingate Resource : Convert Protocols Errors", func(t *testing.T) {
-		protocols := &Protocols{}
+		var protocols *Protocols
 		p, err := convertProtocols(protocols)
 		assert.EqualValues(t, "", p)
 		assert.Error(t, err)
