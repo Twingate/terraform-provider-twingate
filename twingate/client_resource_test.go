@@ -35,6 +35,15 @@ func TestParseErrorPortsToGraphql(t *testing.T) {
 	})
 }
 
+func TestConvertProtocolsErrors(t *testing.T) {
+	t.Run("Test Twingate Resource : Convert Protocols Errors", func(t *testing.T) {
+		protocols := &Protocols{}
+		p, err := convertProtocols(protocols)
+		assert.EqualValues(t, "", p)
+		assert.Error(t, err)
+	})
+}
+
 func TestClientResourceCreateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Create Ok", func(t *testing.T) {
 		// response JSON
