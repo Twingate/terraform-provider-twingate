@@ -1,7 +1,13 @@
 package twingate
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/Jeffail/gabs/v2"
+	"github.com/hasura/go-graphql-client"
 )
 
 type RemoteNetwork struct {
@@ -70,23 +76,38 @@ func (client *Client) readRemoteNetworks() (map[int]*RemoteNetwork, error) { //n
 }
 
 func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork, error) {
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-		{
-		  remoteNetwork(id: "%s") {
-			name
-		  }
-		}
-
-        `, remoteNetworkID),
+	var q struct {
+		RemoteNetwork struct {
+			Name graphql.String
+		} `graphql:"remoteNetwork(id: $remoteNetworkID)"`
 	}
 
-	queryRemoteNetwork, err := client.doGraphqlRequest(mutation)
+	variables := map[string]interface{}{
+		"remoteNetworkID": graphql.ID(remoteNetworkID),
+	}
+
+	cl := graphql.NewClient("/query", &http.Client{})
+
+	err := cl.Query(context.Background(), &q, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	remoteNetworkQuery := queryRemoteNetwork.Path("data.remoteNetwork")
+	j, err := json.Marshal(q)
+	if err != nil {
+		return nil, fmt.Errorf("can't parse response body: %w", err)
+	}
+	parsedResponse, err := gabs.ParseJSON(j)
+	if err != nil {
+		return nil, fmt.Errorf("can't parse response body: %w", err)
+	}
+
+	// queryRemoteNetwork, err := client.doGraphqlRequest(mutation)
+	// if err != nil {
+	// 	return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
+	// }
+
+	remoteNetworkQuery := parsedResponse.Path("data.remoteNetwork")
 
 	if remoteNetworkQuery.Data() == nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
@@ -94,7 +115,7 @@ func (client *Client) readRemoteNetwork(remoteNetworkID string) (*RemoteNetwork,
 
 	remoteNetwork := RemoteNetwork{
 		ID:   remoteNetworkID,
-		Name: remoteNetworkQuery.Path("name").Data().(string),
+		Name: string(q.RemoteNetwork.Name),
 	}
 
 	return &remoteNetwork, nil
