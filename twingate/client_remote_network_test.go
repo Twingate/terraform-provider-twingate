@@ -52,6 +52,20 @@ func TestClientRemoteNetworkResponseNoError(t *testing.T) {
 	})
 }
 
+func TestClientRemoteNetworkResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Remote Network Create Response Error", func(t *testing.T) {
+		response := readRemoteNetworksResponse{
+			Error: &struct {
+				Errors []*queryResponseErrors `json:"errors"`
+			}{
+				Errors: make([]*queryResponseErrors, 1),
+			},
+		}
+		err := response.checkErrors()
+		assert.NotNil(t, err)
+	})
+}
+
 func TestClientRemoteNetworkCreateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Remote Network Create Error", func(t *testing.T) {
 		// response JSON
@@ -224,5 +238,19 @@ func TestClientRemoteNetworksReadNoError(t *testing.T) {
 		read := &readRemoteNetworksResponse{}
 		err := read.checkErrors()
 		assert.Nil(t, err)
+	})
+}
+
+func TestClientRemoteNetworksReadError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Remote Networks Read Error", func(t *testing.T) {
+		response := readRemoteNetworksResponse{
+			Error: &struct {
+				Errors []*queryResponseErrors `json:"errors"`
+			}{
+				Errors: make([]*queryResponseErrors, 1),
+			},
+		}
+		err := response.checkErrors()
+		assert.NotNil(t, err)
 	})
 }
