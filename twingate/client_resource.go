@@ -66,7 +66,7 @@ type Resources struct {
 const resourceResourceName = "resource"
 
 func validatePort(port string) (int64, error) {
-	parsed, err := strconv.ParseInt(port, 10, 64)
+	parsed, err := strconv.ParseInt(port, 10, 64) //nolint:gomnd
 	if err != nil {
 		return 0, fmt.Errorf("port is not a valid integer: %w", err)
 	}
@@ -83,7 +83,7 @@ func convertPorts(ports []string) (string, error) {
 
 	for _, elem := range ports {
 		if strings.Contains(elem, "-") {
-			split := strings.SplitN(elem, "-", 2)
+			split := strings.SplitN(elem, "-", 2) //nolint:gomnd
 
 			start, err := validatePort(split[0])
 			if err != nil {

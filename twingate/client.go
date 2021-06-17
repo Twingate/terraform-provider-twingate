@@ -81,7 +81,7 @@ func NewAPIError(wrappedError error, operation string, resource string) *APIErro
 }
 
 func (e *APIError) Error() string {
-	var a = make([]interface{}, 0, 2) //nolint:mnd
+	var a = make([]interface{}, 0, 2) //nolint:gomnd
 	a = append(a, e.Operation, e.Resource)
 
 	var format = "failed to %s %s"
