@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hasura/go-graphql-client"
 )
 
 func resourceResource() *schema.Resource { //nolint:funlen
@@ -100,48 +102,59 @@ func resourceResource() *schema.Resource { //nolint:funlen
 		},
 	}
 }
-func convertSlice(a []interface{}) []string {
-	var res = make([]string, 0)
+
+func convertGroupsGraphql(a []interface{}) []*graphql.ID {
+	res := []*graphql.ID{}
 	for _, elem := range a {
-		res = append(res, elem.(string))
+		id := graphql.ID(elem.(string))
+		res = append(res, &id)
 	}
 
 	return res
 }
 
-func extractProtocolsFromContext(p interface{}) *Protocols {
-	protocols := &Protocols{}
+func extractProtocolsFromContext(p interface{}) *ProtocolsInput {
 	protocolsMap := p.(map[string]interface{})
-	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
+	protocolsInput := newProcolsInput()
+	protocolsInput.AllowIcmp = graphql.Boolean(protocolsMap["allow_icmp"].(bool))
 
 	u := protocolsMap["udp"].([]interface{})
 	if len(u) > 0 {
 		udp := u[0].(map[string]interface{})
-		protocols.UDPPolicy = udp["policy"].(string)
-		protocols.UDPPorts = convertSlice(udp["ports"].([]interface{}))
+		protocolsInput.UDP.Policy = graphql.String(udp["policy"].(string))
+		p, err := convertPortsGraphql(udp["ports"].([]interface{}))
+		if err != nil {
+			log.Printf("[INFO] Cannot convert udp ports %v", udp["ports"].([]interface{}))
+			return nil
+		}
+		if len(p) > 0 {
+			protocolsInput.UDP.Ports = p
+		}
 	}
 
 	t := protocolsMap["tcp"].([]interface{})
 	if len(t) > 0 {
 		tcp := t[0].(map[string]interface{})
-		protocols.TCPPolicy = tcp["policy"].(string)
-		protocols.TCPPorts = convertSlice(tcp["ports"].([]interface{}))
+		protocolsInput.TCP.Policy = graphql.String(tcp["policy"].(string))
+		p, err := convertPortsGraphql(tcp["ports"].([]interface{}))
+		if err != nil {
+			log.Printf("[INFO] Cannot convert tcp ports %v", tcp["ports"].([]interface{}))
+			return nil
+		}
+		if len(p) > 0 {
+			protocolsInput.TCP.Ports = p
+		}
 	}
 
-	return protocols
-}
-func newEmptyProtocols() *Protocols {
-	return &Protocols{
-		true, "ALLOW_ALL", []string{}, "ALLOW_ALL", []string{},
-	}
+	return protocolsInput
 }
 
 func extractResource(d *schema.ResourceData) *Resource {
 	resource := &Resource{
-		Name:            d.Get("name").(string),
-		RemoteNetworkID: d.Get("remote_network_id").(string),
-		Address:         d.Get("address").(string),
-		GroupsIds:       convertSlice(d.Get("group_ids").([]interface{})),
+		Name:            graphql.String(d.Get("name").(string)),
+		RemoteNetworkID: graphql.ID(d.Get("remote_network_id").(string)),
+		Address:         graphql.String(d.Get("address").(string)),
+		GroupsIds:       convertGroupsGraphql(d.Get("group_ids").([]interface{})),
 	}
 
 	p := d.Get("protocols").([]interface{})
@@ -158,13 +171,12 @@ func extractResource(d *schema.ResourceData) *Resource {
 func resourceResourceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Client)
 	resource := extractResource(d)
-
 	err := client.createResource(resource)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(resource.ID)
+	d.SetId(resource.ID.(string))
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
 	return resourceResourceRead(ctx, d, m)
@@ -226,7 +238,7 @@ func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(fmt.Errorf("error setting address: %w ", err))
 	}
 
-	if err := d.Set("group_ids", resource.GroupsIds); err != nil {
+	if err := d.Set("group_ids", resource.stringGroups()); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
 
@@ -240,23 +252,31 @@ func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	return diags
 }
 
-func flattenProtocols(protocols *Protocols) []interface{} {
+func flattenProtocols(protocols *ProtocolsInput) []interface{} {
 	if protocols != nil {
 		p := make(map[string]interface{})
 
 		p["allow_icmp"] = protocols.AllowIcmp
-		p["tcp"] = flattenPorts(protocols.TCPPolicy, protocols.TCPPorts)
-		p["udp"] = flattenPorts(protocols.UDPPolicy, protocols.UDPPorts)
+		p["tcp"] = flattenPortsGraphql(protocols.TCP.Policy, protocols.TCP.Ports)
+		p["udp"] = flattenPortsGraphql(protocols.UDP.Policy, protocols.UDP.Ports)
 
 		return []interface{}{p}
 	}
 
 	return make([]interface{}, 0)
 }
-func flattenPorts(policy string, ports []string) []interface{} {
+
+func flattenPortsGraphql(policy graphql.String, ports []*PortRangeInput) []interface{} {
+	p := []string{}
+	for _, port := range ports {
+		p = append(p, strconv.Itoa(int(port.Start)))
+		p = append(p, strconv.Itoa(int(port.End)))
+	}
+
 	c := make(map[string]interface{})
+
 	c["policy"] = policy
-	c["ports"] = ports
+	c["ports"] = p
 
 	return []interface{}{c}
 }

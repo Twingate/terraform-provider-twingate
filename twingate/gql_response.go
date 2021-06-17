@@ -1,40 +1,72 @@
 package twingate
 
-type IDNameResponse struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+import "github.com/hasura/go-graphql-client"
+
+type IDName struct {
+	ID   graphql.ID     `json:"id"`
+	Name graphql.String `json:"name"`
 }
 
-type OkErrorResponse struct {
-	Ok    bool   `json:"ok"`
-	Error string `json:"error"`
+func (in *IDName) StringID() string {
+	return in.ID.(string)
 }
 
-type EdgesResponse struct {
-	Node *IDNameResponse `json:"node"`
+func (in *IDName) StringName() string {
+	return string(in.Name)
 }
 
-type queryResponseErrors struct {
-	Message   string                         `json:"message"`
-	Locations []*queryResponseErrorsLocation `json:"locations"`
-	Path      []string                       `json:"path"`
+type OkError struct {
+	Ok    graphql.Boolean `json:"ok"`
+	Error graphql.String  `json:"error"`
 }
 
-type queryResponseErrorsLocation struct {
-	Line   int `json:"line"`
-	Column int `json:"column"`
+type Edges struct {
+	Node *IDName `json:"node"`
 }
 
-type responseErrors interface {
-	checkErrors() []*queryResponseErrors
+func newEmptyProtocols() *ProtocolsInput {
+	pi := newProcolsInput()
+	pi.AllowIcmp = graphql.Boolean(true)
+	pi.UDP.Policy = graphql.String("ALLOW_ALL")
+	pi.TCP.Policy = graphql.String("ALLOW_ALL")
+
+	return pi
 }
 
-func parseErrors(responseErrors []*queryResponseErrors) []string {
-	messages := []string{}
+type ProtocolsInput struct {
+	UDP       *ProtocolInput  `json:"udp"`
+	TCP       *ProtocolInput  `json:"tcp"`
+	AllowIcmp graphql.Boolean `json:"allowIcmp"`
+}
 
-	for _, e := range responseErrors {
-		messages = append(messages, e.Message)
+func newProcolsInput() *ProtocolsInput {
+	tcpPorts := []*PortRangeInput{}
+	udpPorts := []*PortRangeInput{}
+	tcp := &ProtocolInput{Ports: tcpPorts}
+	udp := &ProtocolInput{Ports: udpPorts}
+
+	return &ProtocolsInput{
+		TCP: tcp,
+		UDP: udp,
 	}
-
-	return messages
 }
+
+type ProtocolInput struct {
+	Ports  []*PortRangeInput `json:"ports"`
+	Policy graphql.String    `json:"policy"`
+}
+
+type PortRangeInput struct {
+	Start graphql.Int `json:"start"`
+	End   graphql.Int `json:"end"`
+}
+
+// func parseErrors(Errors []*queryErrors) []graphql.String {
+// 	messages := []graphql.String{}
+
+// 	for _, e := range Errors {
+// 		messages = append(messages, e.Message)
+// 	}
+
+// 	return messages
+// }

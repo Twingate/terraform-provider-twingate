@@ -1,128 +1,117 @@
 package twingate
 
-import (
-	"bytes"
-	"io/ioutil"
-	"net/http"
-	"testing"
+// func TestClientConnectorCreateTokensOK(t *testing.T) {
+// 	t.Run("Test Twingate Resource : Client Connector Create Tokens Ok", func(t *testing.T) {
+// 		// response JSON
+// 		createTokensOkJson := `{
+// 		"data": {
+// 			"connectorGenerateTokens": {
+// 				"connectorTokens": {
+// 					"accessToken": "token1",
+// 					"refreshToken": "token2"
+// 				},
+// 				"ok": true,
+// 				"error": null
+// 			}
+// 		}
+// 	}`
 
-	"github.com/hashicorp/go-retryablehttp"
+// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
+// 		client := createTestClient()
 
-	"github.com/stretchr/testify/assert"
-)
+// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+// 			return &http.Response{
+// 				StatusCode: 200,
+// 				Body:       r,
+// 			}, nil
+// 		}
+// 		connector := &Connector{
+// 			ID: "test",
+// 		}
+// 		err := client.generateConnectorTokens(connector)
 
-func TestClientConnectorCreateTokensOK(t *testing.T) {
-	t.Run("Test Twingate Resource : Client Connector Create Tokens Ok", func(t *testing.T) {
-		// response JSON
-		createTokensOkJson := `{
-		"data": {
-			"connectorGenerateTokens": {
-				"connectorTokens": {
-					"accessToken": "token1",
-					"refreshToken": "token2"
-				},
-				"ok": true,
-				"error": null
-			}
-		}
-	}`
+// 		assert.NoError(t, err)
+// 		assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
+// 		assert.EqualValues(t, "token2", connector.ConnectorTokens.RefreshToken)
+// 	})
+// }
 
-		r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
-		client := createTestClient()
+// func TestClientConnectorTokensVerifyOK(t *testing.T) {
+// 	t.Run("Test Twingate Resource : Client Connector Create Tokens Verify Ok", func(t *testing.T) {
+// 		// response JSON
+// 		verifyTokensOkJson := `{}`
 
-		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: 200,
-				Body:       r,
-			}, nil
-		}
-		connector := &Connector{
-			ID: "test",
-		}
-		err := client.generateConnectorTokens(connector)
+// 		r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
+// 		client := createTestClient()
 
-		assert.NoError(t, err)
-		assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
-		assert.EqualValues(t, "token2", connector.ConnectorTokens.RefreshToken)
-	})
-}
+// 		accessToken := "test1"
+// 		refreshToken := "test2"
 
-func TestClientConnectorTokensVerifyOK(t *testing.T) {
-	t.Run("Test Twingate Resource : Client Connector Create Tokens Verify Ok", func(t *testing.T) {
-		// response JSON
-		verifyTokensOkJson := `{}`
+// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+// 			header := req.Header.Get("Authorization")
+// 			assert.Contains(t, header, accessToken)
+// 			return &http.Response{
+// 				StatusCode: 200,
+// 				Body:       r,
+// 			}, nil
+// 		}
+// 		err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-		r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
-		client := createTestClient()
+// 		assert.NoError(t, err)
+// 	})
+// }
 
-		accessToken := "test1"
-		refreshToken := "test2"
+// func TestClientConnectorTokensVerifyError(t *testing.T) {
+// 	t.Run("Test Twingate Resource : Client Connector Create Tokens Verify Error", func(t *testing.T) {
+// 		// response JSON
+// 		verifyTokensOkJson := `{}`
 
-		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-			header := req.Header.Get("Authorization")
-			assert.Contains(t, header, accessToken)
-			return &http.Response{
-				StatusCode: 200,
-				Body:       r,
-			}, nil
-		}
-		err := client.verifyConnectorTokens(refreshToken, accessToken)
+// 		r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
+// 		client := createTestClient()
 
-		assert.NoError(t, err)
-	})
-}
+// 		accessToken := "test1"
+// 		refreshToken := "test2"
 
-func TestClientConnectorTokensVerifyError(t *testing.T) {
-	t.Run("Test Twingate Resource : Client Connector Create Tokens Verify Error", func(t *testing.T) {
-		// response JSON
-		verifyTokensOkJson := `{}`
+// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+// 			header := req.Header.Get("Authorization")
+// 			assert.Contains(t, header, accessToken)
+// 			return &http.Response{
+// 				StatusCode: 501,
+// 				Body:       r,
+// 			}, nil
+// 		}
+// 		err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-		r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
-		client := createTestClient()
+// 		assert.EqualError(t, err, "failed to verify connector tokens: request  failed, status 501, body {}")
+// 	})
+// }
 
-		accessToken := "test1"
-		refreshToken := "test2"
+// func TestClientConnectorCreateTokensError(t *testing.T) {
+// 	t.Run("Test Twingate Resource : Client Connector Create Tokens Error", func(t *testing.T) {
+// 		// response JSON
+// 		createTokensOkJson := `{
+// 	  "data": {
+// 		"connectorGenerateTokens": {
+// 		  "ok": false,
+// 		  "error": "error_1"
+// 		}
+// 	  }
+// 	}`
 
-		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-			header := req.Header.Get("Authorization")
-			assert.Contains(t, header, accessToken)
-			return &http.Response{
-				StatusCode: 501,
-				Body:       r,
-			}, nil
-		}
-		err := client.verifyConnectorTokens(refreshToken, accessToken)
+// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
+// 		client := createTestClient()
 
-		assert.EqualError(t, err, "failed to verify connector tokens: request  failed, status 501, body {}")
-	})
-}
+// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+// 			return &http.Response{
+// 				StatusCode: 200,
+// 				Body:       r,
+// 			}, nil
+// 		}
+// 		connector := &Connector{
+// 			ID: "test",
+// 		}
+// 		err := client.generateConnectorTokens(connector)
 
-func TestClientConnectorCreateTokensError(t *testing.T) {
-	t.Run("Test Twingate Resource : Client Connector Create Tokens Error", func(t *testing.T) {
-		// response JSON
-		createTokensOkJson := `{
-	  "data": {
-		"connectorGenerateTokens": {
-		  "ok": false,
-		  "error": "error_1"
-		}
-	  }
-	}`
-
-		r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
-		client := createTestClient()
-
-		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: 200,
-				Body:       r,
-			}, nil
-		}
-		connector := &Connector{
-			ID: "test",
-		}
-		err := client.generateConnectorTokens(connector)
-
-		assert.EqualError(t, err, "failed to generate connector tokens with id test: error_1")
-	})
-}
+// 		assert.EqualError(t, err, "failed to generate connector tokens with id test: error_1")
+// 	})
+// }
