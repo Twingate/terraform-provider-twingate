@@ -25,7 +25,7 @@ provider "twingate" {
 }
 
 variable "network" {
-  default "autoco"
+  default = "autoco"
 }
 ```
 
@@ -120,7 +120,7 @@ module "ec2_tenant_connector" {
 
 ## Creating Resources
 
-Now that you've deployed the Connector, we can create Resources on the same Remote Network that can be accessed through Twingate. For this example, we'll assume you already have an `aws_instance` defined. You'll need to define the Group ID explicitly, which you can pull from the Twingate Admin Console or the API. It's the 12 character ID at the end of the URL when you're viewing the Group in the Admin Console. 
+Now that you've deployed the Connector, we can create Resources on the same Remote Network that can be accessed through Twingate. For this example, we'll assume you already have an `aws_instance` defined. You'll need to define the Group ID explicitly, which you can pull from the [Admin API](https://docs.twingate.com/docs/api-overview). 
 
 ```terraform
 resource "twingate_resource" "tg_instance" {
