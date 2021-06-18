@@ -1,8 +1,6 @@
 <!-- Please fill out as much as you can. Feel free to remove all irrelevant bits -->
 
-> JIRA Ticket URL:
-> Notion spec URL:
+- JIRA Ticket URL:
 
 ## Changes
-- Make sure to document here any security or network changes  .....
-
+- Make sure to document important changes ...
