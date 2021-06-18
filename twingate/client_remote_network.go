@@ -15,7 +15,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*RemoteNetw
 	mutation := map[string]string{
 		"query": fmt.Sprintf(`
 			mutation{
-			  remoteNetworkCreate(name: "%s", isActive: true) {
+			  remoteNetworkCreate(name: "%s") {
 				ok
 				error
 				entity {
