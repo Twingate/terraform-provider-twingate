@@ -25,10 +25,10 @@ type Edges struct {
 }
 
 func newEmptyProtocols() *ProtocolsInput {
-	pi := newProcolsInput()
-	pi.AllowIcmp = graphql.Boolean(true)
-	pi.UDP.Policy = graphql.String("ALLOW_ALL")
-	pi.TCP.Policy = graphql.String("ALLOW_ALL")
+	pi := newProtocolsInput()
+	pi.AllowIcmp = true
+	pi.UDP.Policy = "ALLOW_ALL"
+	pi.TCP.Policy = "ALLOW_ALL"
 
 	return pi
 }
@@ -39,7 +39,7 @@ type ProtocolsInput struct {
 	AllowIcmp graphql.Boolean `json:"allowIcmp"`
 }
 
-func newProcolsInput() *ProtocolsInput {
+func newProtocolsInput() *ProtocolsInput {
 	tcpPorts := []*PortRangeInput{}
 	udpPorts := []*PortRangeInput{}
 	tcp := &ProtocolInput{Ports: tcpPorts}

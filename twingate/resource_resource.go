@@ -115,7 +115,7 @@ func convertGroupsGraphql(a []interface{}) []*graphql.ID {
 
 func extractProtocolsFromContext(p interface{}) *ProtocolsInput {
 	protocolsMap := p.(map[string]interface{})
-	protocolsInput := newProcolsInput()
+	protocolsInput := newProtocolsInput()
 	protocolsInput.AllowIcmp = graphql.Boolean(protocolsMap["allow_icmp"].(bool))
 
 	u := protocolsMap["udp"].([]interface{})
