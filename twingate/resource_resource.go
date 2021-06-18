@@ -141,7 +141,7 @@ func extractResource(d *schema.ResourceData) *Resource {
 		Name:            d.Get("name").(string),
 		RemoteNetworkID: d.Get("remote_network_id").(string),
 		Address:         d.Get("address").(string),
-		GroupsIds:       convertSlice(d.Get("group_ids").([]interface{})),
+		GroupsIds:       convertSlice(d.Get("group_ids").(*schema.Set).List()),
 	}
 
 	p := d.Get("protocols").([]interface{})
