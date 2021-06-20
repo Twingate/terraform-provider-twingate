@@ -10,6 +10,8 @@ import (
 	"github.com/hasura/go-graphql-client"
 )
 
+const readResourceQueryGroupsSize = 50
+
 var ErrTooManyGroupsError = errors.New("provider does not support more than 50 groups per resource")
 
 type PortNotInRangeError struct {
@@ -53,11 +55,13 @@ type Resource struct {
 
 func (r *Resource) stringGroups() []string {
 	var groups []string
+
 	if len(r.GroupsIds) > 0 {
 		for _, id := range r.GroupsIds {
 			groups = append(groups, fmt.Sprintf("%v", *id))
 		}
 	}
+
 	return groups
 }
 
@@ -69,27 +73,29 @@ type StringProtocolsInput struct {
 	TCPPorts  []string
 }
 
-func (spi *StringProtocolsInput) convertToGraphql() *ProtocolsInput {
+func (spi *StringProtocolsInput) convertToGraphql() (*ProtocolsInput, error) {
 	pi := newEmptyProtocols()
 	pi.AllowIcmp = graphql.Boolean(spi.AllowIcmp)
 
 	pi.UDP.Policy = graphql.String(spi.UDPPolicy)
 	udp, err := convertPorts(spi.UDPPorts)
-	if err != nil {
-		return nil
 
+	if err != nil {
+		return nil, err
 	}
+
 	pi.UDP.Ports = udp
 
 	pi.TCP.Policy = graphql.String(spi.TCPPolicy)
 	tcp, err := convertPorts(spi.TCPPorts)
-	if err != nil {
-		return nil
 
+	if err != nil {
+		return nil, err
 	}
+
 	pi.TCP.Ports = tcp
 
-	return pi
+	return pi, nil
 }
 
 type Resources struct {
@@ -99,8 +105,8 @@ type Resources struct {
 
 const resourceResourceName = "resource"
 
-func validatePortGraphql(port string) (graphql.Int, error) {
-	parsed, err := strconv.ParseInt(port, 10, 64)
+func validatePort(port string) (graphql.Int, error) {
+	parsed, err := strconv.ParseInt(port, 10, 64) //nolint:gomnd
 	if err != nil {
 		return 0, fmt.Errorf("port is not a valid integer: %w", err)
 	}
@@ -114,9 +120,11 @@ func validatePortGraphql(port string) (graphql.Int, error) {
 
 func convertPortsToSlice(a []interface{}) []string {
 	var res = make([]string, 0)
+
 	for _, elem := range a {
 		res = append(res, elem.(string))
 	}
+
 	return res
 }
 
@@ -125,14 +133,14 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 	for _, elem := range ports {
 		if strings.Contains(elem, "-") {
-			split := strings.SplitN(elem, "-", 2)
+			split := strings.SplitN(elem, "-", 2) //nolint:gomnd
 
-			start, err := validatePortGraphql(split[0])
+			start, err := validatePort(split[0])
 			if err != nil {
 				return converted, err
 			}
 
-			end, err := validatePortGraphql(split[1])
+			end, err := validatePort(split[1])
 			if err != nil {
 				return converted, err
 			}
@@ -140,14 +148,15 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 			if end < start {
 				return converted, NewPortRangeNotRisingSequenceError(int64(start), int64(end))
 			}
+
 			c := &PortRangeInput{
 				Start: start,
 				End:   end,
 			}
-			converted = append(converted, c)
 
+			converted = append(converted, c)
 		} else {
-			p, err := validatePortGraphql(elem)
+			p, err := validatePort(elem)
 			if err != nil {
 				return converted, err
 			}
@@ -158,7 +167,6 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 			}
 
 			converted = append(converted, c)
-
 		}
 	}
 
@@ -180,9 +188,9 @@ type createResourceQuery struct {
 
 func (client *Client) createResource(resource *Resource) error {
 	variables := map[string]interface{}{
-		"name":            graphql.String(resource.Name),
-		"address":         graphql.String(resource.Address),
-		"remoteNetworkId": graphql.ID(resource.RemoteNetworkID),
+		"name":            resource.Name,
+		"address":         resource.Address,
+		"remoteNetworkId": resource.RemoteNetworkID,
 		"groupIds":        resource.GroupsIds,
 		"protocols":       resource.Protocols,
 	}
@@ -223,11 +231,11 @@ type readResourceQuery struct {
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResource(resourceID string) (*Resource, error) { //nolint:funlen
+func (client *Client) readResource(resourceID string) (*Resource, error) {
 	r := readResourceQuery{}
 	variables := map[string]interface{}{
 		"id":    graphql.ID(resourceID),
-		"first": graphql.Int(50),
+		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
 	err := client.GraphqlClient.Query(context.Background(), &r, variables)
@@ -291,12 +299,11 @@ type updateResourceQuery struct {
 }
 
 func (client *Client) updateResource(resource *Resource) error {
-
 	variables := map[string]interface{}{
-		"id":              graphql.ID(resource.ID),
-		"name":            graphql.String(resource.Name),
-		"address":         graphql.String(resource.Address),
-		"remoteNetworkId": graphql.ID(resource.RemoteNetworkID),
+		"id":              resource.ID,
+		"name":            resource.Name,
+		"address":         resource.Address,
+		"remoteNetworkId": resource.RemoteNetworkID,
 		"groupIds":        resource.GroupsIds,
 		"protocols":       resource.Protocols,
 	}

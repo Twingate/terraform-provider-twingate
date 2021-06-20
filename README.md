@@ -2,7 +2,7 @@
 Twingate Terraform Provider
 ==================
 
-[![Coverage Status](https://coveralls.io/repos/github/Twingate/terraform-provider-twingate/badge.svg?branch=develop&t=rqgifB)](https://coveralls.io/github/Twingate/terraform-provider-twingate?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/Twingate/terraform-provider-twingate/badge.svg?branch=main&t=rqgifB)](https://coveralls.io/github/Twingate/terraform-provider-twingate?branch=main)
 
 <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
 

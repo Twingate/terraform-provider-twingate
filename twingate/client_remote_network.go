@@ -30,6 +30,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName string) (*remoteNetw
 		"isActive": graphql.Boolean(true),
 	}
 	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+
 	if err != nil {
 		return nil, NewAPIError(err, "create", remoteNetworkResourceName)
 	}

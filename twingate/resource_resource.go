@@ -104,6 +104,7 @@ func resourceResource() *schema.Resource { //nolint:funlen
 
 func convertGroupsGraphql(a []interface{}) []*graphql.ID {
 	res := []*graphql.ID{}
+
 	for _, elem := range a {
 		id := graphql.ID(elem.(string))
 		res = append(res, &id)
@@ -153,7 +154,12 @@ func extractResource(d *schema.ResourceData) *Resource {
 	p := d.Get("protocols").([]interface{})
 
 	if len(p) > 0 {
-		resource.Protocols = extractProtocolsFromContext(p[0]).convertToGraphql()
+		p, err := extractProtocolsFromContext(p[0]).convertToGraphql()
+		if err != nil {
+			log.Printf("[ERROR] Cannot parse protocols value %s", err.Error())
+		}
+
+		resource.Protocols = p
 	} else {
 		resource.Protocols = newEmptyProtocols()
 	}
@@ -165,6 +171,7 @@ func resourceResourceCreate(ctx context.Context, d *schema.ResourceData, m inter
 	client := m.(*Client)
 	resource := extractResource(d)
 	err := client.createResource(resource)
+
 	if err != nil {
 		return diag.FromErr(err)
 	}

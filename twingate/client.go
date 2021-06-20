@@ -76,7 +76,7 @@ func NewAPIError(wrappedError error, operation string, resource string) *APIErro
 }
 
 func (e *APIError) Error() string {
-	var a = make([]interface{}, 0, 2)
+	var a = make([]interface{}, 0, 2) //nolint:gomnd
 	a = append(a, e.Operation, e.Resource)
 
 	var format = "failed to %s %s"
@@ -130,7 +130,8 @@ type transport struct {
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-API-KEY", t.APIToken)
-	return t.underlyingTransport.RoundTrip(req)
+
+	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
 }
 
 func NewClient(network, apiToken, url string) *Client {
@@ -162,6 +163,7 @@ func NewClient(network, apiToken, url string) *Client {
 		APIToken:         apiToken,
 		GraphqlClient:    graphql.NewClient(graphqlServerURL, &c),
 	}
+
 	log.Printf("[INFO] Using Server URL %s", graphqlServerURL)
 
 	return &client

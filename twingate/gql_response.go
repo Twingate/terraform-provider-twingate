@@ -78,6 +78,7 @@ type ProtocolInput struct {
 
 func (pi *ProtocolInput) buildPortsRnge() ([]string, string) {
 	ports := []string{}
+
 	for _, port := range pi.Ports {
 		if port.Start == port.End {
 			ports = append(ports, strconv.Itoa(int(port.Start)))
@@ -85,6 +86,7 @@ func (pi *ProtocolInput) buildPortsRnge() ([]string, string) {
 			ports = append(ports, strconv.Itoa(int(port.Start))+"-"+strconv.Itoa(int(port.End)))
 		}
 	}
+
 	return ports, string(pi.Policy)
 }
 
