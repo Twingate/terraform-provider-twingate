@@ -1,6 +1,10 @@
 package twingate
 
-import "github.com/hasura/go-graphql-client"
+import (
+	"strconv"
+
+	"github.com/hasura/go-graphql-client"
+)
 
 type IDName struct {
 	ID   graphql.ID     `json:"id"`
@@ -39,15 +43,31 @@ type ProtocolsInput struct {
 	AllowIcmp graphql.Boolean `json:"allowIcmp"`
 }
 
-func newProcolsInput() *ProtocolsInput {
-	tcpPorts := []*PortRangeInput{}
-	udpPorts := []*PortRangeInput{}
-	tcp := &ProtocolInput{Ports: tcpPorts}
-	udp := &ProtocolInput{Ports: udpPorts}
+func (pi *ProtocolsInput) flattenProtocols() []interface{} {
+	if pi != nil {
+		p := make(map[string]interface{})
 
+		p["allow_icmp"] = pi.AllowIcmp
+		p["tcp"] = pi.TCP.flattenPorts()
+		p["udp"] = pi.UDP.flattenPorts()
+
+		return []interface{}{p}
+	}
+
+	return make([]interface{}, 0)
+}
+
+func (pi *ProtocolInput) flattenPorts() []interface{} {
+	c := make(map[string]interface{})
+	c["ports"], c["policy"] = pi.buildPortsRnge()
+
+	return []interface{}{c}
+}
+
+func newProcolsInput() *ProtocolsInput {
 	return &ProtocolsInput{
-		TCP: tcp,
-		UDP: udp,
+		TCP: &ProtocolInput{Ports: []*PortRangeInput{}},
+		UDP: &ProtocolInput{Ports: []*PortRangeInput{}},
 	}
 }
 
@@ -56,17 +76,19 @@ type ProtocolInput struct {
 	Policy graphql.String    `json:"policy"`
 }
 
+func (pi *ProtocolInput) buildPortsRnge() ([]string, string) {
+	ports := []string{}
+	for _, port := range pi.Ports {
+		if port.Start == port.End {
+			ports = append(ports, strconv.Itoa(int(port.Start)))
+		} else if port.Start != port.End {
+			ports = append(ports, strconv.Itoa(int(port.Start))+"-"+strconv.Itoa(int(port.End)))
+		}
+	}
+	return ports, string(pi.Policy)
+}
+
 type PortRangeInput struct {
 	Start graphql.Int `json:"start"`
 	End   graphql.Int `json:"end"`
 }
-
-// func parseErrors(Errors []*queryErrors) []graphql.String {
-// 	messages := []graphql.String{}
-
-// 	for _, e := range Errors {
-// 		messages = append(messages, e.Message)
-// 	}
-
-// 	return messages
-// }

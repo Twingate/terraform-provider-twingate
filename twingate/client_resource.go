@@ -61,6 +61,37 @@ func (r *Resource) stringGroups() []string {
 	return groups
 }
 
+type StringProtocolsInput struct {
+	AllowIcmp bool
+	UDPPolicy string
+	UDPPorts  []string
+	TCPPolicy string
+	TCPPorts  []string
+}
+
+func (spi *StringProtocolsInput) convertToGraphql() *ProtocolsInput {
+	pi := newEmptyProtocols()
+	pi.AllowIcmp = graphql.Boolean(spi.AllowIcmp)
+
+	pi.UDP.Policy = graphql.String(spi.UDPPolicy)
+	udp, err := convertPorts(spi.UDPPorts)
+	if err != nil {
+		return nil
+
+	}
+	pi.UDP.Ports = udp
+
+	pi.TCP.Policy = graphql.String(spi.TCPPolicy)
+	tcp, err := convertPorts(spi.TCPPorts)
+	if err != nil {
+		return nil
+
+	}
+	pi.TCP.Ports = tcp
+
+	return pi
+}
+
 type Resources struct {
 	ID   string
 	Name string
@@ -81,26 +112,33 @@ func validatePortGraphql(port string) (graphql.Int, error) {
 	return graphql.Int(parsed), nil
 }
 
-func convertPortsGraphql(ports []interface{}) ([]*PortRangeInput, error) {
+func convertPortsToSlice(a []interface{}) []string {
+	var res = make([]string, 0)
+	for _, elem := range a {
+		res = append(res, elem.(string))
+	}
+	return res
+}
+
+func convertPorts(ports []string) ([]*PortRangeInput, error) {
 	converted := []*PortRangeInput{}
 
 	for _, elem := range ports {
-		e := elem.(string)
-		if strings.Contains(e, "-") {
-			split := strings.SplitN(e, "-", 2)
+		if strings.Contains(elem, "-") {
+			split := strings.SplitN(elem, "-", 2)
 
 			start, err := validatePortGraphql(split[0])
 			if err != nil {
-				return nil, err
+				return converted, err
 			}
 
 			end, err := validatePortGraphql(split[1])
 			if err != nil {
-				return nil, err
+				return converted, err
 			}
 
 			if end < start {
-				return nil, NewPortRangeNotRisingSequenceError(int64(start), int64(end))
+				return converted, NewPortRangeNotRisingSequenceError(int64(start), int64(end))
 			}
 			c := &PortRangeInput{
 				Start: start,
@@ -109,9 +147,9 @@ func convertPortsGraphql(ports []interface{}) ([]*PortRangeInput, error) {
 			converted = append(converted, c)
 
 		} else {
-			p, err := validatePortGraphql(e)
+			p, err := validatePortGraphql(elem)
 			if err != nil {
-				return nil, err
+				return converted, err
 			}
 
 			c := &PortRangeInput{
@@ -128,7 +166,7 @@ func convertPortsGraphql(ports []interface{}) ([]*PortRangeInput, error) {
 		return converted, nil
 	}
 
-	return nil, nil
+	return converted, nil
 }
 
 type createResourceQuery struct {
