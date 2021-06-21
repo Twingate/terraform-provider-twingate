@@ -31,7 +31,7 @@ func TestAccTwingateResource_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "address", "updated-acc-test.com"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "group_ids.#", "1"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "group_ids.#", "2"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
 				),
@@ -70,7 +70,7 @@ func testTwingateResource_withProtocolsAndGroups(networkName, resourceName strin
 	  name = "%s"
 	  address = "updated-acc-test.com"
 	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = ["R3JvdXA6MTk0MjQ="]
+	  group_ids = ["R3JvdXA6MjMxNTQ=", "R3JvdXA6MTk0MjQ="]
       protocols {
 		allow_icmp = true
         tcp  {
