@@ -43,7 +43,7 @@ func TestAccTwingateResource_basic(t *testing.T) {
 					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0"),
 				),
 			},
-		})
+		},
 	})
 }
 
