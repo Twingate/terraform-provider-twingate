@@ -50,7 +50,7 @@ type generateConnectorTokensQuery struct {
 
 func (client *Client) generateConnectorTokens(connector *Connector) error {
 	variables := map[string]interface{}{
-		"connectorId": graphql.ID(connector.ID),
+		"connectorId": connector.ID,
 	}
 
 	r := generateConnectorTokensQuery{}

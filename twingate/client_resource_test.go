@@ -36,41 +36,27 @@ package twingate
 
 // func TestClientResourceCreateOk(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Resource Create Ok", func(t *testing.T) {
-// 		// response JSON
-// 		createResourceOkJson := `{
-// 	  "data": {
-// 		"resourceCreate": {
-// 		  "entity": {
-// 			"id": "test-id"
-// 		  },
-// 		  "ok": true,
-// 		  "error": null
-// 		}
-// 	  }
-// 	}`
+// 		protocols := newProcolsInput()
+// 		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
+// 		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
 
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createResourceOkJson)))
-// 		client := createTestClient()
-
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
+// 		groups := make([]*graphql.ID, 0)
+// 		group := graphql.ID("testgroup")
+// 		groups = append(groups, &group)
 
 // 		resource := &Resource{
-// 			RemoteNetworkID: "id1",
-// 			Address:         "test",
-// 			Name:            "testName",
-// 			GroupsIds:       make([]string, 0),
-// 			Protocols:       &Protocols{},
+// 			RemoteNetworkID: graphql.ID("testmeplease"),
+// 			Address:         graphql.String("test"),
+// 			Name:            graphql.String("testName"),
+// 			GroupsIds:       groups,
+// 			Protocols:       protocols,
 // 		}
 
+// 		client, _ := sharedClient("terraformtests")
 // 		err := client.createResource(resource)
 
 // 		assert.NoError(t, err)
-// 		assert.EqualValues(t, "test-id", resource.ID)
+// 		assert.EqualValues(t, graphql.ID("test-id"), resource.ID)
 // 	})
 // }
 
@@ -89,22 +75,14 @@ package twingate
 // 	  }
 // 	}`
 
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createResourceErrorJson)))
-// 		client := createTestClient()
-
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
+// 		client, _ := sharedClient("terraformtests")
 
 // 		resource := &Resource{
 // 			RemoteNetworkID: "id1",
 // 			Address:         "test",
 // 			Name:            "testName",
-// 			GroupsIds:       make([]string, 0),
-// 			Protocols:       &Protocols{},
+// 			GroupsIds:       make([]*graphql.ID, 0),
+// 			Protocols:       &ProtocolsInput{},
 // 		}
 
 // 		err := client.createResource(resource)
@@ -420,77 +398,42 @@ package twingate
 
 // func TestClientResourcesReadAllOk(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Resource Read All Ok", func(t *testing.T) {
-// 		// response JSON
-// 		readResourcesOkJson := `{
-// 	  "data": {
-// 		"resources": {
-// 		  "edges": [
-// 			{
-// 			  "node": {
-// 				"id": "resource1",
-// 				"name": "tf-acc-resource1"
-// 			  }
-// 			},
-// 			{
-// 			  "node": {
-// 				"id": "resource2",
-// 				"name": "resource2"
-// 			  }
-// 			},
-// 			{
-// 			  "node": {
-// 				"id": "resource3",
-// 				"name": "tf-acc-resource3"
-// 			  }
-// 			}
-// 		  ]
-// 		}
-// 	  }
-// 	}`
+// 		client, _ := sharedClient("terraformtests")
+// 		resources := readResourcesQuery{}
+// 		variables := map[string]interface{}{}
 
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(readResourcesOkJson)))
-// 		client := createTestClient()
+// 		edges := []*Edges{}
 
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-
-// 		resources, err := client.readResources()
-// 		assert.NoError(t, err)
-
-// 		r0 := &Resources{
+// 		r0 := &Edges{&IDName{
 // 			ID:   "resource1",
 // 			Name: "tf-acc-resource1",
-// 		}
-// 		r1 := &Resources{
+// 		}}
+// 		r1 := &Edges{&IDName{
 // 			ID:   "resource2",
 // 			Name: "resource2",
-// 		}
-// 		r2 := &Resources{
+// 		}}
+// 		r2 := &Edges{&IDName{
 // 			ID:   "resource3",
 // 			Name: "tf-acc-resource3",
-// 		}
-// 		mockMap := make(map[int]*Resources)
+// 		}}
 
-// 		mockMap[0] = r0
-// 		mockMap[1] = r1
-// 		mockMap[2] = r2
+// 		edges = append(edges, r0)
+// 		edges = append(edges, r1)
+// 		edges = append(edges, r2)
+// 		resources.Resources.Edges = edges
 
-// 		counter := 0
-// 		for _, elem := range resources {
-// 			for _, i := range mockMap {
-// 				if elem.Name == i.Name && elem.ID == i.ID {
-// 					counter++
-// 				}
-// 			}
-// 		}
+// 		err := client.GraphqlClient.Query(context.Background(), &resources, variables)
+// 		assert.NoError(t, err)
 
-// 		if len(mockMap) != counter {
-// 			t.Errorf("Expected map not equal to origin!")
+// 		mockMap := make(map[graphql.ID]graphql.String)
+
+// 		mockMap[r0.Node.ID] = r0.Node.Name
+// 		mockMap[r1.Node.ID] = r1.Node.Name
+// 		mockMap[r2.Node.ID] = r2.Node.Name
+
+// 		for _, elem := range resources.Resources.Edges {
+// 			name := mockMap[elem.Node.ID]
+// 			assert.Equal(t, name, elem.Node.Name)
 // 		}
-// 		assert.EqualValues(t, len(mockMap), counter)
 // 	})
 // }

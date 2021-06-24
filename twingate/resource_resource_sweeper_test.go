@@ -23,22 +23,22 @@ func testSweepTwingateResource(tenant string) error {
 		return err
 	}
 
-	resourceMap, err := client.readResources()
+	resources, err := client.readResources()
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil
 	}
 
-	if len(resourceMap) == 0 {
+	if len(resources) == 0 {
 		log.Printf("[INFO][SWEEPER_LOG] List %s is empty", resourceName)
 		return nil
 	}
 
 	var testResources = make([]string, 0)
 
-	for _, elem := range resourceMap {
-		if strings.HasPrefix(elem.Name, "tf-acc") {
-			testResources = append(testResources, elem.ID)
+	for _, elem := range resources {
+		if strings.HasPrefix(elem.Node.StringName(), "tf-acc") {
+			testResources = append(testResources, elem.Node.StringID())
 		}
 	}
 

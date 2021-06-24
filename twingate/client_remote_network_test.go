@@ -1,37 +1,204 @@
 package twingate
 
-// func TestClientRemoteNetworkCreateOk(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Remote Network Create Ok", func(t *testing.T) {
-// 		// response JSON
-// 		createNetworkOkJson := `{
-// 	  "data": {
-// 		"remoteNetworkCreate": {
-// 		  "entity": {
-// 			"id": "test-id"
-// 		  },
-// 		  "ok": true,
-// 		  "error": null
-// 		}
-// 	  }
-// 	}`
+import (
+	"strconv"
+	"testing"
+	"time"
 
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
-// 		client := createTestClient()
+	b64 "encoding/base64"
 
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-// 		remoteNetworkName := "test"
+	"github.com/hasura/go-graphql-client"
+	"github.com/stretchr/testify/assert"
+)
 
-// 		remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
+func TestCreateReadUpdateDeleteOk(t *testing.T) {
+	t.Run("Test Twingate : Create Read Update Delete Ok", func(t *testing.T) {
 
-// 		assert.NoError(t, err)
-// 		assert.EqualValues(t, "test-id", remoteNetwork.ID)
-// 	})
-// }
+		client, _ := sharedClient("terraformtests")
+		ts := time.Now().Unix()
+		remoteNetworkName := graphql.String("test-" + strconv.Itoa(int(ts)))
+
+		remoteNetworkCreate, err := client.createRemoteNetwork(remoteNetworkName)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, remoteNetworkCreate.ID)
+
+		remoteNetworkRead, err := client.readRemoteNetwork(remoteNetworkCreate.ID)
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, remoteNetworkCreate.ID, remoteNetworkRead.ID)
+
+		network, err := client.readRemoteNetworks()
+		assert.NoError(t, err)
+		assert.NotNil(t, network[0])
+
+		protocols := newProcolsInput()
+		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
+		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
+
+		groups := make([]*graphql.ID, 0)
+		group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
+		groups = append(groups, &group)
+
+		resourceCreate := &Resource{
+			RemoteNetworkID: remoteNetworkRead.ID,
+			Address:         graphql.String("test"),
+			Name:            graphql.String("testName"),
+			GroupsIds:       groups,
+			Protocols:       protocols,
+		}
+
+		connector, err := client.createConnector(remoteNetworkRead.ID)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, connector.ID)
+		assert.NotEmpty(t, connector.Name)
+
+		connectorRead, err := client.readConnector(connector.ID)
+		assert.NoError(t, err)
+		assert.EqualValues(t, connector.Name, connectorRead.Name)
+
+		connectors, err := client.readConnectors()
+		assert.NoError(t, err)
+		assert.NotNil(t, connectors[0])
+
+		err = client.generateConnectorTokens(connector)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, connector.ConnectorTokens.AccessToken)
+		assert.NotEmpty(t, connector.ConnectorTokens.RefreshToken)
+
+		err = client.verifyConnectorTokens(connector.ConnectorTokens.RefreshToken, connector.ConnectorTokens.AccessToken)
+
+		assert.NoError(t, err)
+
+		err = client.createResource(resourceCreate)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, resourceCreate.ID)
+
+		resourceUpdate := &Resource{
+			ID:              resourceCreate.ID,
+			RemoteNetworkID: remoteNetworkRead.ID,
+			Address:         "test.com",
+			Name:            "test resource",
+			GroupsIds:       resourceCreate.GroupsIds,
+			Protocols:       protocols,
+		}
+
+		resourceRead, err := client.readResource(resourceCreate.ID)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, resourceRead)
+
+		err = client.updateResource(resourceUpdate)
+
+		assert.NoError(t, err)
+
+		err = client.deleteResource(resourceCreate.ID)
+
+		assert.NoError(t, err)
+
+		err = client.deleteConnector(connector.ID)
+
+		assert.NoError(t, err)
+
+		err = client.deleteRemoteNetwork(remoteNetworkRead.ID)
+
+		assert.NoError(t, err)
+
+	})
+}
+
+func TestCreateReadUpdateDeleteError(t *testing.T) {
+	t.Run("Test Twingate : Create Read Update Delete Error", func(t *testing.T) {
+
+		client, _ := sharedClient("terraformtests")
+		remoteNetworkName := graphql.String("")
+
+		remoteNetworkCreate, err := client.createRemoteNetwork(remoteNetworkName)
+
+		assert.Error(t, err)
+		assert.Nil(t, remoteNetworkCreate)
+
+		remoteNetworkRead, err := client.readRemoteNetwork(graphql.ID("error"))
+
+		assert.Error(t, err)
+		assert.Empty(t, remoteNetworkRead)
+
+		protocols := newProcolsInput()
+		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
+		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
+
+		groups := make([]*graphql.ID, 0)
+		group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
+		groups = append(groups, &group)
+
+		resourceCreate := &Resource{
+			RemoteNetworkID: graphql.ID("error"),
+			Address:         graphql.String("test"),
+			Name:            graphql.String("testName"),
+			GroupsIds:       groups,
+			Protocols:       protocols,
+		}
+
+		connectorCreate, err := client.createConnector(graphql.ID("error"))
+
+		assert.Error(t, err)
+		assert.Nil(t, connectorCreate)
+
+		connectorRead, err := client.readConnector(graphql.ID(b64.StdEncoding.EncodeToString([]byte("testid1"))))
+
+		assert.Nil(t, connectorRead)
+		assert.Error(t, err)
+
+		connector := &Connector{ID: graphql.ID("error")}
+		err = client.generateConnectorTokens(connector)
+
+		assert.Error(t, err)
+		assert.Nil(t, connector.ConnectorTokens)
+
+		err = client.verifyConnectorTokens("test1", "test2")
+
+		assert.Error(t, err)
+
+		err = client.deleteConnector(graphql.ID("error"))
+
+		assert.Error(t, err)
+
+		err = client.createResource(resourceCreate)
+
+		assert.Error(t, err)
+		assert.Nil(t, resourceCreate.ID)
+
+		resourceUpdate := &Resource{
+			ID:              graphql.ID("error"),
+			RemoteNetworkID: graphql.ID("error"),
+			Address:         graphql.String("test.com"),
+			Name:            graphql.String("test resource"),
+			GroupsIds:       resourceCreate.GroupsIds,
+			Protocols:       protocols,
+		}
+
+		resource, err := client.readResource(graphql.ID("resource1"))
+
+		assert.Nil(t, resource)
+		assert.Error(t, err)
+
+		err = client.updateResource(resourceUpdate)
+
+		assert.Error(t, err)
+
+		err = client.deleteResource(graphql.ID("error"))
+
+		assert.Error(t, err)
+
+		err = client.deleteRemoteNetwork(graphql.ID("error"))
+
+		assert.Error(t, err)
+
+	})
+}
 
 // func TestClientRemoteNetworkCreateError(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Remote Network Create Error", func(t *testing.T) {

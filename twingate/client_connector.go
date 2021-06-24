@@ -7,9 +7,9 @@ import (
 )
 
 type Connector struct {
-	ID              string
+	ID              graphql.ID
 	RemoteNetwork   *remoteNetwork
-	Name            string
+	Name            graphql.String
 	ConnectorTokens *connectorTokens
 }
 
@@ -27,9 +27,9 @@ type createConnectorQuery struct {
 	} `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId)"`
 }
 
-func (client *Client) createConnector(remoteNetworkID string) (*Connector, error) {
+func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, error) {
 	variables := map[string]interface{}{
-		"remoteNetworkId": graphql.ID(remoteNetworkID),
+		"remoteNetworkId": remoteNetworkID,
 	}
 	r := createConnectorQuery{}
 
@@ -43,20 +43,20 @@ func (client *Client) createConnector(remoteNetworkID string) (*Connector, error
 	}
 
 	connector := Connector{
-		ID:   r.ConnectorCreate.Entity.ID.(string),
-		Name: string(r.ConnectorCreate.Entity.Name),
+		ID:   r.ConnectorCreate.Entity.ID,
+		Name: r.ConnectorCreate.Entity.Name,
 	}
 
 	return &connector, nil
 }
 
-type readConnectorsQuery struct { //nolint
+type readConnectorsQuery struct {
 	Connectors struct {
 		Edges []*Edges
 	}
 }
 
-func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
+func (client *Client) readConnectors() (map[int]*Connectors, error) {
 	r := readConnectorsQuery{}
 
 	err := client.GraphqlClient.Query(context.Background(), &r, nil)
@@ -81,9 +81,9 @@ type readConnectorQuery struct {
 	} `graphql:"connector(id: $id)"`
 }
 
-func (client *Client) readConnector(connectorID string) (*Connector, error) {
+func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) {
 	variables := map[string]interface{}{
-		"id": graphql.ID(connectorID),
+		"id": connectorID,
 	}
 
 	r := readConnectorQuery{}
@@ -93,18 +93,14 @@ func (client *Client) readConnector(connectorID string) (*Connector, error) {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
 	}
 
-	// if r.Connector == nil {
-	// 	return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
-	// }
-
 	rn := &remoteNetwork{
-		ID:   r.Connector.RemoteNetwork.ID.(string),
-		Name: string(r.Connector.RemoteNetwork.Name),
+		ID:   r.Connector.RemoteNetwork.ID,
+		Name: r.Connector.RemoteNetwork.Name,
 	}
 
 	connector := Connector{
-		ID:            r.Connector.ID.(string),
-		Name:          string(r.Connector.Name),
+		ID:            r.Connector.ID,
+		Name:          r.Connector.Name,
 		RemoteNetwork: rn,
 	}
 
@@ -115,9 +111,9 @@ type deleteConnectorQuery struct {
 	ConnectorDelete *OkError `graphql:"connectorDelete(id: $id)"`
 }
 
-func (client *Client) deleteConnector(connectorID string) error {
+func (client *Client) deleteConnector(connectorID graphql.ID) error {
 	variables := map[string]interface{}{
-		"id": graphql.ID(connectorID),
+		"id": connectorID,
 	}
 
 	r := deleteConnectorQuery{}

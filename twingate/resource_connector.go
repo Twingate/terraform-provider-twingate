@@ -52,7 +52,7 @@ func resourceConnectorCreate(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	d.SetId(connector.ID)
+	d.SetId(connector.ID.(string))
 	log.Printf("[INFO] Created conector %s", connector.Name)
 
 	return resourceConnectorRead(ctx, d, m)

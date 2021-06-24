@@ -98,11 +98,6 @@ func (spi *StringProtocolsInput) convertToGraphql() (*ProtocolsInput, error) {
 	return pi, nil
 }
 
-type Resources struct {
-	ID   string
-	Name string
-}
-
 const resourceResourceName = "resource"
 
 func validatePort(port string) (graphql.Int, error) {
@@ -196,8 +191,8 @@ func (client *Client) createResource(resource *Resource) error {
 	}
 
 	r := createResourceQuery{}
-
 	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
 	}
@@ -206,7 +201,7 @@ func (client *Client) createResource(resource *Resource) error {
 		return NewAPIError(NewMutationError(r.ResourceCreate.Error), "create", resourceResourceName)
 	}
 
-	resource.ID = r.ResourceCreate.Entity.ID.(string)
+	resource.ID = r.ResourceCreate.Entity.ID
 
 	return nil
 }
@@ -231,10 +226,14 @@ type readResourceQuery struct {
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResource(resourceID string) (*Resource, error) {
+func (client *Client) readResource(resourceID graphql.ID) (*Resource, error) {
+	if resourceID == nil {
+		return nil, NewAPIErrorWithID(fmt.Errorf("resourceID is empty"), "read", remoteNetworkResourceName, resourceID)
+	}
+
 	r := readResourceQuery{}
 	variables := map[string]interface{}{
-		"id":    graphql.ID(resourceID),
+		"id":    resourceID,
 		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
@@ -269,13 +268,13 @@ func (client *Client) readResource(resourceID string) (*Resource, error) {
 	return resource, nil
 }
 
-type readResourcesQuery struct { //nolint
+type readResourcesQuery struct {
 	Resources struct {
 		Edges []*Edges
 	}
 }
 
-func (client *Client) readResources() (map[int]*Resources, error) { //nolint
+func (client *Client) readResources() ([]*Edges, error) {
 	r := readResourcesQuery{}
 	variables := map[string]interface{}{}
 
@@ -284,14 +283,7 @@ func (client *Client) readResources() (map[int]*Resources, error) { //nolint
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	var resources = make(map[int]*Resources)
-
-	for i, elem := range r.Resources.Edges {
-		c := &Resources{ID: elem.Node.StringID(), Name: elem.Node.StringName()}
-		resources[i] = c
-	}
-
-	return resources, nil
+	return r.Resources.Edges, nil
 }
 
 type updateResourceQuery struct {
@@ -327,11 +319,11 @@ type deleteResourceQuery struct {
 	ResourceDelete *OkError `graphql:"resourceDelete(id: $id)"`
 }
 
-func (client *Client) deleteResource(resourceID string) error {
+func (client *Client) deleteResource(resourceID graphql.ID) error {
 	r := deleteResourceQuery{}
 
 	variables := map[string]interface{}{
-		"id": graphql.ID(resourceID),
+		"id": resourceID,
 	}
 
 	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)

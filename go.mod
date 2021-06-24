@@ -8,6 +8,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.6.1
 	github.com/hasura/go-graphql-client v0.2.0
 	github.com/klauspost/compress v1.13.1 // indirect
+	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )

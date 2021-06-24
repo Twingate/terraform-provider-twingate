@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hasura/go-graphql-client"
 )
 
 func resourceRemoteNetwork() *schema.Resource {
@@ -40,13 +41,13 @@ func resourceRemoteNetworkCreate(ctx context.Context, d *schema.ResourceData, m 
 	var diags diag.Diagnostics
 
 	remoteNetworkName := d.Get("name").(string)
-	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
+	remoteNetwork, err := client.createRemoteNetwork(graphql.String(remoteNetworkName))
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(remoteNetwork.ID)
+	d.SetId(remoteNetwork.ID.(string))
 	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, d.Id())
 	resourceRemoteNetworkRead(ctx, d, m)
 

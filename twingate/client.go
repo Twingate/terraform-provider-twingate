@@ -134,17 +134,17 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
 }
 
-func NewClient(network, apiToken, url string) *Client {
-	serverURL := fmt.Sprintf("https://%s.%s", network, url)
-
-	t := &transport{
+func newTransport(apiToken string) *transport {
+	return &transport{
 		underlyingTransport: http.DefaultTransport,
 		APIToken:            apiToken,
 	}
+}
 
-	c := http.Client{
-		Transport: t,
-	}
+func NewClient(network, apiToken, url string) *Client {
+	serverURL := fmt.Sprintf("https://%s.%s", network, url)
+
+	c := http.Client{Transport: newTransport(apiToken)}
 
 	graphqlServerURL := fmt.Sprintf("%s/api/graphql/", serverURL)
 	apiServerURL := fmt.Sprintf("%s/api/v1", serverURL)
