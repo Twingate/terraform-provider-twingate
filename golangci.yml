@@ -49,6 +49,7 @@ linters:
     - exhaustivestruct
     - interfacer
     - forcetypeassert
+    - golint
   disable-all: false
   fast: false
 
