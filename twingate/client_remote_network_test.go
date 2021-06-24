@@ -32,22 +32,6 @@ func TestCreateReadUpdateDeleteOk(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, network[0])
 
-		protocols := newProcolsInput()
-		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
-		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
-
-		groups := make([]*graphql.ID, 0)
-		group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
-		groups = append(groups, &group)
-
-		resourceCreate := &Resource{
-			RemoteNetworkID: remoteNetworkRead.ID,
-			Address:         graphql.String("test"),
-			Name:            graphql.String("testName"),
-			GroupsIds:       groups,
-			Protocols:       protocols,
-		}
-
 		connector, err := client.createConnector(remoteNetworkRead.ID)
 
 		assert.NoError(t, err)
@@ -72,32 +56,48 @@ func TestCreateReadUpdateDeleteOk(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		err = client.createResource(resourceCreate)
+		// protocols := newProcolsInput()
+		// protocols.TCP.Policy = graphql.String("ALLOW_ALL")
+		// protocols.UDP.Policy = graphql.String("ALLOW_ALL")
 
-		assert.NoError(t, err)
-		assert.NotNil(t, resourceCreate.ID)
+		// groups := make([]*graphql.ID, 0)
+		// group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
+		// groups = append(groups, &group)
 
-		resourceUpdate := &Resource{
-			ID:              resourceCreate.ID,
-			RemoteNetworkID: remoteNetworkRead.ID,
-			Address:         "test.com",
-			Name:            "test resource",
-			GroupsIds:       resourceCreate.GroupsIds,
-			Protocols:       protocols,
-		}
+		// resourceCreate := &Resource{
+		// 	RemoteNetworkID: remoteNetworkRead.ID,
+		// 	Address:         graphql.String("test"),
+		// 	Name:            graphql.String("testName"),
+		// 	GroupsIds:       groups,
+		// 	Protocols:       protocols,
+		// }
 
-		resourceRead, err := client.readResource(resourceCreate.ID)
+		// err = client.createResource(resourceCreate)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, resourceRead)
+		// assert.NoError(t, err)
+		// assert.NotNil(t, resourceCreate.ID)
 
-		err = client.updateResource(resourceUpdate)
+		// resourceUpdate := &Resource{
+		// 	ID:              resourceCreate.ID,
+		// 	RemoteNetworkID: remoteNetworkRead.ID,
+		// 	Address:         "test.com",
+		// 	Name:            "test resource",
+		// 	GroupsIds:       resourceCreate.GroupsIds,
+		// 	Protocols:       protocols,
+		// }
 
-		assert.NoError(t, err)
+		// resourceRead, err := client.readResource(resourceCreate.ID)
 
-		err = client.deleteResource(resourceCreate.ID)
+		// assert.NoError(t, err)
+		// assert.NotNil(t, resourceRead)
 
-		assert.NoError(t, err)
+		// err = client.updateResource(resourceUpdate)
+
+		// assert.NoError(t, err)
+
+		// err = client.deleteResource(resourceCreate.ID)
+
+		// assert.NoError(t, err)
 
 		err = client.deleteConnector(connector.ID)
 
