@@ -25,7 +25,7 @@ provider "twingate" {
 }
 
 variable "network" {
-  default "autoco"
+  default = "autoco"
 }
 ```
 
