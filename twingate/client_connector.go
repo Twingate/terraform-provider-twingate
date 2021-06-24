@@ -28,6 +28,10 @@ type createConnectorQuery struct {
 }
 
 func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, error) {
+	if remoteNetworkID == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkID")
+	}
+
 	variables := map[string]interface{}{
 		"remoteNetworkId": remoteNetworkID,
 	}
@@ -50,13 +54,13 @@ func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, e
 	return &connector, nil
 }
 
-type readConnectorsQuery struct {
+type readConnectorsQuery struct { //nolint
 	Connectors struct {
 		Edges []*Edges
 	}
 }
 
-func (client *Client) readConnectors() (map[int]*Connectors, error) {
+func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 	r := readConnectorsQuery{}
 
 	err := client.GraphqlClient.Query(context.Background(), &r, nil)
@@ -82,6 +86,10 @@ type readConnectorQuery struct {
 }
 
 func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) {
+	if connectorID == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "connectorID")
+	}
+
 	variables := map[string]interface{}{
 		"id": connectorID,
 	}
@@ -112,6 +120,10 @@ type deleteConnectorQuery struct {
 }
 
 func (client *Client) deleteConnector(connectorID graphql.ID) error {
+	if connectorID == nil {
+		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "connectorID")
+	}
+
 	variables := map[string]interface{}{
 		"id": connectorID,
 	}

@@ -12,7 +12,10 @@ import (
 
 const readResourceQueryGroupsSize = 50
 
-var ErrTooManyGroupsError = errors.New("provider does not support more than 50 groups per resource")
+var (
+	ErrTooManyGroupsError = errors.New("provider does not support more than 50 groups per resource")
+	ErrGraphqlIDIsEmpty   = errors.New("id is empty")
+)
 
 type PortNotInRangeError struct {
 	Port int64
@@ -228,7 +231,7 @@ type readResourceQuery struct {
 
 func (client *Client) readResource(resourceID graphql.ID) (*Resource, error) {
 	if resourceID == nil {
-		return nil, NewAPIErrorWithID(fmt.Errorf("resourceID is empty"), "read", remoteNetworkResourceName, resourceID)
+		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID")
 	}
 
 	r := readResourceQuery{}
@@ -268,13 +271,13 @@ func (client *Client) readResource(resourceID graphql.ID) (*Resource, error) {
 	return resource, nil
 }
 
-type readResourcesQuery struct {
+type readResourcesQuery struct { //nolint
 	Resources struct {
 		Edges []*Edges
 	}
 }
 
-func (client *Client) readResources() ([]*Edges, error) {
+func (client *Client) readResources() ([]*Edges, error) { //nolint
 	r := readResourcesQuery{}
 	variables := map[string]interface{}{}
 
@@ -320,6 +323,10 @@ type deleteResourceQuery struct {
 }
 
 func (client *Client) deleteResource(resourceID graphql.ID) error {
+	if resourceID == nil {
+		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "resourceID")
+	}
+
 	r := deleteResourceQuery{}
 
 	variables := map[string]interface{}{
