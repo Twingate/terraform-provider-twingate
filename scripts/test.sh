@@ -8,9 +8,6 @@ TEST_RESULTS=${TEST_RESULTS:-"./test/out"}
 
 mkdir -p "${TEST_RESULTS}"
 
-echo "state: `terraform show -json`"
-echo "schema: `terraform providers schema -json`"
-
 echo PACKAGE_NAMES: "$PACKAGE_NAMES"
 echo "Running tests:"
 "$(go env GOPATH)"/bin/gotestsum --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg=./... -coverprofile="${TEST_RESULTS}"/coverage.out.tmp "${PACKAGE_NAMES}"
