@@ -28,6 +28,10 @@ Install the provider for local testing.
 make install
 ```
 
+## Documentation:
+
+To update the documentation edit the files in `templates/` and then run `make docs`.  The files in `docs/` are auto-generated and should not be updated manually.
+
 ## Contributions:
 
 Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) under the [project's open source license](LICENSE).
