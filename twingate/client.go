@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -101,7 +100,7 @@ type HTTPClient interface {
 }
 
 type Client struct {
-	GraphqlClient    Gql
+	GraphqlClient    *graphql.Client
 	HTTPClient       HTTPClient
 	ServerURL        string
 	GraphqlServerURL string
@@ -149,32 +148,21 @@ func newServerURL(network, url string) serverURL {
 
 //go:generate mockgen -destination=../mock/graphql.go -package=mock_twingate github.com/Twingate/terraform-provider-twingate Gql
 
-type Gql interface {
-	Query(ctx context.Context, q interface{}, variables map[string]interface{}) error
-	NamedQuery(ctx context.Context, name string, q interface{}, variables map[string]interface{}) error
-	Mutate(ctx context.Context, m interface{}, variables map[string]interface{}) error
-	NamedMutate(ctx context.Context, name string, m interface{}, variables map[string]interface{}) error
-	QueryRaw(ctx context.Context, q interface{}, variables map[string]interface{}) (*json.RawMessage, error)
-	NamedQueryRaw(ctx context.Context, name string, q interface{}, variables map[string]interface{}) (*json.RawMessage, error)
-	MutateRaw(ctx context.Context, m interface{}, variables map[string]interface{}) (*json.RawMessage, error)
-	NamedMutateRaw(ctx context.Context, name string, m interface{}, variables map[string]interface{}) (*json.RawMessage, error)
-}
-
-func NewClient(sURL serverURL, apiToken string, gql Gql) *Client {
+func NewClient(sURL serverURL, apiToken string) *Client {
 	httpClient := retryablehttp.NewClient()
 	httpClient.HTTPClient.Timeout = Timeout
 	httpClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
-
+	c := &http.Client{Transport: newTransport(apiToken)}
 	client := Client{
 		HTTPClient:       httpClient,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    graphql.NewClient(graphqlServerURL, &c),
-		httpClient:       &c,
+		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), c),
+		httpClient:       c,
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())

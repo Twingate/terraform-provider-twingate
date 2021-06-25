@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -56,11 +57,12 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 			}
 		  }
 		}`
-		client := NewClient("test", "xxxx", "dev.opstg.com")
+
+		client := newTestClient()
 		httpmock.ActivateNonDefault(client.httpClient)
 		defer httpmock.DeactivateAndReset()
 		// mock to list out the articles
-		httpmock.RegisterResponder("POST", `https://test.dev.opstg.com/api/graphql/`,
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
 				resp, err := httpmock.NewJsonResponse(200, deleteConnectorOkJson)
 				if err != nil {
@@ -70,7 +72,7 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 			},
 		)
 
-		err := client.deleteConnector("test")
+		err := client.deleteConnector(graphql.ID("test"))
 
 		assert.NoError(t, err)
 	})

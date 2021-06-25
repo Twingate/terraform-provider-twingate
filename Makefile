@@ -54,11 +54,6 @@ install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
-.PHONY: mockgen
-mockgen:
-	@echo "==> Code generation for mock_twingate"
-	mockgen -destination=twingate/mock_twingate/graphql.go -source twingate/client.go Gql
-
 .PHONY: test
 test:
 	./scripts/test.sh

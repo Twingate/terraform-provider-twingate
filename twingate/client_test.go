@@ -13,6 +13,11 @@ import (
 	"testing"
 )
 
+func newTestClient() *Client {
+	sURL := newServerURL("test", "dev.opstg.com")
+	return NewClient(sURL, "xxxx")
+}
+
 func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Retries Failed Requests on Server Error", func(t *testing.T) {
 		var serverCallCount int32
@@ -21,10 +26,8 @@ func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
 		testToken := "token"
 		testNetwork := "network"
 		testUrl := "twingate.com"
-		c := http.Client{Transport: newTransport(testToken)}
 		sURL := newServerURL(testNetwork, testUrl)
-		gql := graphql.NewClient(sURL.newGraphqlServerURL(), &c)
-		client := NewClient(sURL, testToken, gql)
+		client := NewClient(sURL, testToken)
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			atomic.AddInt32(&serverCallCount, 1)

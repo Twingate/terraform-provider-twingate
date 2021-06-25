@@ -2,12 +2,10 @@ package twingate
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hasura/go-graphql-client"
 )
 
 func TestMain(m *testing.M) {
@@ -27,12 +25,10 @@ func sharedClient(tenant string) (*Client, error) {
 	if os.Getenv("TWINGATE_URL") == "" {
 		return nil, fmt.Errorf("must provide environment variable TWINGATE_URL")
 	}
-	c := http.Client{Transport: newTransport(os.Getenv("TWINGATE_API_TOKEN"))}
 
 	sURL := newServerURL(os.Getenv("TWINGATE_NETWORK"), os.Getenv("TWINGATE_URL"))
-	gql := graphql.NewClient(sURL.newGraphqlServerURL(), &c)
 
-	client := NewClient(sURL, os.Getenv("TWINGATE_API_TOKEN"), gql)
+	client := NewClient(sURL, os.Getenv("TWINGATE_API_TOKEN"))
 
 	return client, nil
 }
