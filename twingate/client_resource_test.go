@@ -1,29 +1,54 @@
 package twingate
 
-// func TestParsePortsToGraphql(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Parse Ports to GraphQL ", func(t *testing.T) {
-// 		emptyPorts, err := convertPorts(make([]string, 0))
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, emptyPorts, "")
-// 		vars := []string{"80", "81-82"}
-// 		ports, err := convertPorts(vars)
-// 		assert.Equal(t, ports, "{start: 80, end: 80},{start: 81, end: 82}")
-// 		assert.NoError(t, err)
-// 	})
-// }
+import (
+	b64 "encoding/base64"
+	"terraform-provider-twingate/mock_twingate"
+	"testing"
 
-// func TestParseErrorPortsToGraphql(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Resource Parse Ports to GraphQL Error", func(t *testing.T) {
-// 		vars := []string{"foo"}
-// 		_, err := convertPorts(vars)
-// 		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"foo\": invalid syntax")
+	"github.com/golang/mock/gomock"
+	"github.com/hasura/go-graphql-client"
+	"github.com/stretchr/testify/assert"
+)
 
-// 		vars = []string{"10-9"}
-// 		_, err = convertPorts(vars)
-// 		assert.EqualError(t, err, "ports 10, 9 needs to be in a rising sequence")
+func TestParsePortsToGraphql(t *testing.T) {
+	t.Run("Test Twingate Resource : Parse Ports to GraphQL ", func(t *testing.T) {
+		pri := []*PortRangeInput{}
 
-// 	})
-// }
+		single := &PortRangeInput{
+			Start: graphql.Int(80),
+			End:   graphql.Int(80),
+		}
+
+		multi := &PortRangeInput{
+			Start: graphql.Int(81),
+			End:   graphql.Int(82),
+		}
+
+		pri = append(pri, single)
+		pri = append(pri, multi)
+
+		emptyPorts, err := convertPorts(make([]string, 0))
+		assert.NoError(t, err)
+		assert.Len(t, emptyPorts, 0)
+		vars := []string{"80", "81-82"}
+		ports, err := convertPorts(vars)
+		assert.Equal(t, ports, pri)
+		assert.NoError(t, err)
+	})
+}
+
+func TestParseErrorPortsToGraphql(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Parse Ports to GraphQL Error", func(t *testing.T) {
+		vars := []string{"foo"}
+		_, err := convertPorts(vars)
+		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"foo\": invalid syntax")
+
+		vars = []string{"10-9"}
+		_, err = convertPorts(vars)
+		assert.EqualError(t, err, "ports 10, 9 needs to be in a rising sequence")
+
+	})
+}
 
 // func TestConvertProtocolsErrors(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Convert Protocols Errors", func(t *testing.T) {
@@ -268,6 +293,55 @@ package twingate
 // 	})
 // }
 
+func TestClientResourceUpdateOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update Ok", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		gqlMock := mock_twingate.NewMockGql(mockCtrl)
+		protocols := newProcolsInput()
+		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
+		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
+
+		groups := make([]*graphql.ID, 0)
+		group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
+		groups = append(groups, &group)
+
+		resource := &Resource{
+			ID:              graphql.ID("test"),
+			RemoteNetworkID: graphql.ID("test"),
+			Address:         graphql.String("test"),
+			Name:            graphql.String("testName"),
+			GroupsIds:       groups,
+			Protocols:       protocols,
+		}
+		f := func() Gql {
+			r := updateResourceQuery{}
+
+			variables := map[string]interface{}{
+				"id":              resource.ID,
+				"name":            resource.Name,
+				"address":         resource.Address,
+				"remoteNetworkId": resource.RemoteNetworkID,
+				"groupIds":        resource.GroupsIds,
+				"protocols":       resource.Protocols,
+			}
+
+			v := updateResourceQuery{
+				ResourceUpdate: &OkError{
+					Ok: graphql.Boolean(true),
+				},
+			}
+
+			gqlMock.EXPECT().Mutate(gomock.Any(), &r, variables).SetArg(1, v).Return(nil).Times(1)
+			return gqlMock
+		}
+
+		c := Client{GraphqlClient: f()}
+
+		err := c.updateResource(resource)
+		assert.NoError(t, err)
+	})
+}
+
 // func TestClientResourceUpdateOk(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Resource Update Ok", func(t *testing.T) {
 // 		// response JSON
@@ -340,6 +414,58 @@ package twingate
 // 	})
 // }
 
+func TestClientResourceUpdateError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update Error", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		gqlMock := mock_twingate.NewMockGql(mockCtrl)
+
+		protocols := newProcolsInput()
+		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
+		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
+
+		groups := make([]*graphql.ID, 0)
+		group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
+		groups = append(groups, &group)
+
+		resource := &Resource{
+			ID:              graphql.ID("test"),
+			RemoteNetworkID: graphql.ID("test"),
+			Address:         graphql.String("test"),
+			Name:            graphql.String("testName"),
+			GroupsIds:       groups,
+			Protocols:       protocols,
+		}
+
+		f := func() Gql {
+			r := updateResourceQuery{}
+
+			variables := map[string]interface{}{
+				"id":              resource.ID,
+				"name":            resource.Name,
+				"address":         resource.Address,
+				"remoteNetworkId": resource.RemoteNetworkID,
+				"groupIds":        resource.GroupsIds,
+				"protocols":       resource.Protocols,
+			}
+
+			v := updateResourceQuery{
+				ResourceUpdate: &OkError{
+					Ok:    graphql.Boolean(false),
+					Error: graphql.String("cant update resource"),
+				},
+			}
+
+			gqlMock.EXPECT().Mutate(gomock.Any(), &r, variables).SetArg(1, v).Return(nil).Times(1)
+			return gqlMock
+		}
+
+		c := Client{GraphqlClient: f()}
+
+		err := c.updateResource(resource)
+		assert.EqualError(t, err, "failed to update resource with id "+resource.ID.(string)+": cant update resource")
+	})
+}
+
 // func TestClientResourceDeleteOk(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Resource Delete Ok", func(t *testing.T) {
 // 		// response JSON
@@ -367,6 +493,35 @@ package twingate
 // 		assert.NoError(t, err)
 // 	})
 // }
+
+func TestClientResourceDeleteOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Delete Ok", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		gqlMock := mock_twingate.NewMockGql(mockCtrl)
+
+		f := func() Gql {
+			r := deleteResourceQuery{}
+
+			variables := map[string]interface{}{
+				"id": graphql.ID("test"),
+			}
+
+			v := deleteResourceQuery{
+				ResourceDelete: &OkError{
+					Ok: graphql.Boolean(true),
+				},
+			}
+
+			gqlMock.EXPECT().Mutate(gomock.Any(), &r, variables).SetArg(1, v).Return(nil).Times(1)
+			return gqlMock
+		}
+
+		c := Client{GraphqlClient: f()}
+
+		err := c.deleteResource(graphql.ID("test"))
+		assert.NoError(t, err)
+	})
+}
 
 // func TestClientResourceDeleteError(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Resource Delete Error", func(t *testing.T) {

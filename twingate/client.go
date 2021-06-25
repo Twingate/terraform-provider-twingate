@@ -2,12 +2,12 @@ package twingate
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -34,20 +34,6 @@ func NewHTTPError(requestURI string, statusCode int, body []byte) *HTTPError {
 
 func (e *HTTPError) Error() string {
 	return fmt.Sprintf("request %s failed, status %d, body %s", e.RequestURI, e.StatusCode, e.Body)
-}
-
-type GraphQLError struct {
-	Messages []string
-}
-
-func NewGraphQLError(messages []string) *GraphQLError {
-	return &GraphQLError{
-		Messages: messages,
-	}
-}
-
-func (e *GraphQLError) Error() string {
-	return fmt.Sprintf("graphql errors: %s", strings.Join(e.Messages, ","))
 }
 
 type APIError struct {
@@ -115,7 +101,7 @@ type HTTPClient interface {
 }
 
 type Client struct {
-	GraphqlClient    *graphql.Client
+	GraphqlClient    Gql
 	HTTPClient       HTTPClient
 	ServerURL        string
 	GraphqlServerURL string
@@ -141,14 +127,38 @@ func newTransport(apiToken string) *transport {
 	}
 }
 
-func NewClient(network, apiToken, url string) *Client {
-	serverURL := fmt.Sprintf("https://%s.%s", network, url)
+func (s *serverURL) newGraphqlServerURL() string {
+	return fmt.Sprintf("%s/api/graphql/", s.url)
+}
 
-	c := http.Client{Transport: newTransport(apiToken)}
+func (s *serverURL) newAPIServerURL() string {
+	return fmt.Sprintf("%s/api/v1", s.url)
+}
 
-	graphqlServerURL := fmt.Sprintf("%s/api/graphql/", serverURL)
-	apiServerURL := fmt.Sprintf("%s/api/v1", serverURL)
+type serverURL struct {
+	url string
+}
 
+func newServerURL(network, url string) serverURL {
+	var s serverURL
+	s.url = fmt.Sprintf("https://%s.%s", network, url)
+	return s
+}
+
+//go:generate mockgen -destination=../mock/graphql.go -package=mock github.com/Twingate/terraform-provider-twingate Gql
+
+type Gql interface {
+	Query(ctx context.Context, q interface{}, variables map[string]interface{}) error
+	NamedQuery(ctx context.Context, name string, q interface{}, variables map[string]interface{}) error
+	Mutate(ctx context.Context, m interface{}, variables map[string]interface{}) error
+	NamedMutate(ctx context.Context, name string, m interface{}, variables map[string]interface{}) error
+	QueryRaw(ctx context.Context, q interface{}, variables map[string]interface{}) (*json.RawMessage, error)
+	NamedQueryRaw(ctx context.Context, name string, q interface{}, variables map[string]interface{}) (*json.RawMessage, error)
+	MutateRaw(ctx context.Context, m interface{}, variables map[string]interface{}) (*json.RawMessage, error)
+	NamedMutateRaw(ctx context.Context, name string, m interface{}, variables map[string]interface{}) (*json.RawMessage, error)
+}
+
+func NewClient(sUrl serverURL, apiToken string, gql Gql) *Client {
 	httpClient := retryablehttp.NewClient()
 	httpClient.HTTPClient.Timeout = Timeout
 	httpClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
@@ -157,14 +167,14 @@ func NewClient(network, apiToken, url string) *Client {
 
 	client := Client{
 		HTTPClient:       httpClient,
-		ServerURL:        serverURL,
-		GraphqlServerURL: graphqlServerURL,
-		APIServerURL:     apiServerURL,
+		ServerURL:        sUrl.url,
+		GraphqlServerURL: sUrl.newGraphqlServerURL(),
+		APIServerURL:     sUrl.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    graphql.NewClient(graphqlServerURL, &c),
+		GraphqlClient:    gql,
 	}
 
-	log.Printf("[INFO] Using Server URL %s", graphqlServerURL)
+	log.Printf("[INFO] Using Server URL %s", sUrl.newGraphqlServerURL())
 
 	return &client
 }

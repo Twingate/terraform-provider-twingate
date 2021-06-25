@@ -3,9 +3,11 @@ package twingate
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hasura/go-graphql-client"
 )
 
 func Provider() *schema.Provider {
@@ -58,7 +60,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {
-		client := NewClient(network, apiToken, url)
+		c := http.Client{Transport: newTransport(apiToken)}
+		sUrl := newServerURL(network, url)
+		gql := graphql.NewClient(sUrl.newGraphqlServerURL(), &c)
+		client := NewClient(sUrl, apiToken, gql)
 
 		err := client.ping()
 

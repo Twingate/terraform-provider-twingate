@@ -7,6 +7,9 @@ import (
 
 	b64 "encoding/base64"
 
+	"terraform-provider-twingate/mock_twingate"
+
+	"github.com/golang/mock/gomock"
 	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
 )
@@ -200,35 +203,45 @@ func TestCreateReadUpdateDeleteError(t *testing.T) {
 	})
 }
 
-// func TestClientRemoteNetworkCreateError(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Remote Network Create Error", func(t *testing.T) {
-// 		// response JSON
-// 		createNetworkOkJson := `{
-// 	  "data": {
-// 		"remoteNetworkCreate": {
-// 		  "ok": false,
-// 		  "error": "error_1"
-// 		}
-// 	  }
-// 	}`
+func TestClientRemoteNetworkCreateOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Remote Network Create Ok", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		gqlMock := mock_twingate.NewMockGql(mockCtrl)
 
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createNetworkOkJson)))
-// 		client := createTestClient()
+		f := func() Gql {
+			r := createRemoteNetworkQuery{}
 
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-// 		remoteNetworkName := "test"
+			variables := map[string]interface{}{
+				"name":     graphql.String("test"),
+				"isActive": graphql.Boolean(true),
+			}
 
-// 		remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
+			v := createRemoteNetworkQuery{
+				RemoteNetworkCreate: &struct {
+					OkError
+					Entity struct{ ID graphql.ID }
+				}{
+					OkError: OkError{Ok: graphql.Boolean(true)},
+					Entity: struct {
+						ID graphql.ID
+					}{
+						ID: graphql.ID("test"),
+					},
+				},
+			}
 
-// 		assert.EqualError(t, err, "failed to create remote network: error_1")
-// 		assert.Nil(t, remoteNetwork)
-// 	})
-// }
+			gqlMock.EXPECT().Mutate(gomock.Any(), &r, variables).SetArg(1, v).Return(nil).Times(1)
+			return gqlMock
+		}
+
+		c := Client{GraphqlClient: f()}
+
+		remoteNetwork, err := c.createRemoteNetwork(graphql.String("test"))
+
+		assert.NoError(t, err)
+		assert.NotNil(t, remoteNetwork)
+	})
+}
 
 // func TestClientRemoteNetworkUpdateError(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Remote Network Update Error", func(t *testing.T) {
