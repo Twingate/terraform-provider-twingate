@@ -13,17 +13,6 @@ import (
 	"testing"
 )
 
-// func createTestClient() *Client {
-// 	testToken := "token"
-// 	testNetwork := "network"
-// 	testUrl := "twingate.com"
-// 	sUrl := newServerURL(testNetwork, testUrl)
-// 	gql := MockClient{}
-// 	mockClient := NewClient(sUrl, testToken, gql)
-
-// 	return mockClient
-// }
-
 func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Retries Failed Requests on Server Error", func(t *testing.T) {
 		var serverCallCount int32
@@ -33,9 +22,9 @@ func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
 		testNetwork := "network"
 		testUrl := "twingate.com"
 		c := http.Client{Transport: newTransport(testToken)}
-		sUrl := newServerURL(testNetwork, testUrl)
-		gql := graphql.NewClient(sUrl.newGraphqlServerURL(), &c)
-		client := NewClient(sUrl, testToken, gql)
+		sURL := newServerURL(testNetwork, testUrl)
+		gql := graphql.NewClient(sURL.newGraphqlServerURL(), &c)
+		client := NewClient(sURL, testToken, gql)
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			atomic.AddInt32(&serverCallCount, 1)

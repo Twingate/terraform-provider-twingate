@@ -29,10 +29,10 @@ func sharedClient(tenant string) (*Client, error) {
 	}
 	c := http.Client{Transport: newTransport(os.Getenv("TWINGATE_API_TOKEN"))}
 
-	sUrl := newServerURL(os.Getenv("TWINGATE_NETWORK"), os.Getenv("TWINGATE_URL"))
-	gql := graphql.NewClient(sUrl.newGraphqlServerURL(), &c)
+	sURL := newServerURL(os.Getenv("TWINGATE_NETWORK"), os.Getenv("TWINGATE_URL"))
+	gql := graphql.NewClient(sURL.newGraphqlServerURL(), &c)
 
-	client := NewClient(sUrl, os.Getenv("TWINGATE_API_TOKEN"), gql)
+	client := NewClient(sURL, os.Getenv("TWINGATE_API_TOKEN"), gql)
 
 	return client, nil
 }

@@ -61,9 +61,9 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	if (apiToken != "") && (network != "") {
 		c := http.Client{Transport: newTransport(apiToken)}
-		sUrl := newServerURL(network, url)
-		gql := graphql.NewClient(sUrl.newGraphqlServerURL(), &c)
-		client := NewClient(sUrl, apiToken, gql)
+		sURL := newServerURL(network, url)
+		gql := graphql.NewClient(sURL.newGraphqlServerURL(), &c)
+		client := NewClient(sURL, apiToken, gql)
 
 		err := client.ping()
 

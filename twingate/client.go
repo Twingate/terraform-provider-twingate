@@ -142,6 +142,7 @@ type serverURL struct {
 func newServerURL(network, url string) serverURL {
 	var s serverURL
 	s.url = fmt.Sprintf("https://%s.%s", network, url)
+
 	return s
 }
 
@@ -158,7 +159,7 @@ type Gql interface {
 	NamedMutateRaw(ctx context.Context, name string, m interface{}, variables map[string]interface{}) (*json.RawMessage, error)
 }
 
-func NewClient(sUrl serverURL, apiToken string, gql Gql) *Client {
+func NewClient(sURL serverURL, apiToken string, gql Gql) *Client {
 	httpClient := retryablehttp.NewClient()
 	httpClient.HTTPClient.Timeout = Timeout
 	httpClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
@@ -167,14 +168,14 @@ func NewClient(sUrl serverURL, apiToken string, gql Gql) *Client {
 
 	client := Client{
 		HTTPClient:       httpClient,
-		ServerURL:        sUrl.url,
-		GraphqlServerURL: sUrl.newGraphqlServerURL(),
-		APIServerURL:     sUrl.newAPIServerURL(),
+		ServerURL:        sURL.url,
+		GraphqlServerURL: sURL.newGraphqlServerURL(),
+		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
 		GraphqlClient:    gql,
 	}
 
-	log.Printf("[INFO] Using Server URL %s", sUrl.newGraphqlServerURL())
+	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
 
 	return &client
 }
