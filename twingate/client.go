@@ -107,6 +107,7 @@ type Client struct {
 	GraphqlServerURL string
 	APIServerURL     string
 	APIToken         string
+	httpClient       *http.Client
 }
 
 type transport struct {
@@ -172,7 +173,8 @@ func NewClient(sURL serverURL, apiToken string, gql Gql) *Client {
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    gql,
+		GraphqlClient:    graphql.NewClient(graphqlServerURL, &c),
+		httpClient:       &c,
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
