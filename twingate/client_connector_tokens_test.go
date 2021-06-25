@@ -1,40 +1,40 @@
 package twingate
 
-// func TestClientConnectorCreateTokensOK(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Connector Create Tokens Ok", func(t *testing.T) {
-// 		// response JSON
-// 		createTokensOkJson := `{
-// 		"data": {
-// 			"connectorGenerateTokens": {
-// 				"connectorTokens": {
-// 					"accessToken": "token1",
-// 					"refreshToken": "token2"
-// 				},
-// 				"ok": true,
-// 				"error": null
-// 			}
-// 		}
-// 	}`
-
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
-// 		client := createTestClient()
-
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-// 		connector := &Connector{
-// 			ID: "test",
-// 		}
-// 		err := client.generateConnectorTokens(connector)
-
-// 		assert.NoError(t, err)
-// 		assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
-// 		assert.EqualValues(t, "token2", connector.ConnectorTokens.RefreshToken)
-// 	})
-// }
+//func TestClientConnectorCreateTokensOK(t *testing.T) {
+//	t.Run("Test Twingate Resource : Client Connector Create Tokens Ok", func(t *testing.T) {
+//		// response JSON
+//		createTokensOkJson := `{
+//		"data": {
+//			"connectorGenerateTokens": {
+//				"connectorTokens": {
+//					"accessToken": "token1",
+//					"refreshToken": "token2"
+//				},
+//				"ok": true,
+//				"error": null
+//			}
+//		}
+//	}`
+//
+//		r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
+//		client := createTestClient()
+//
+//		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+//			return &http.Response{
+//				StatusCode: 200,
+//				Body:       r,
+//			}, nil
+//		}
+//		connector := &Connector{
+//			ID: "test",
+//		}
+//		err := client.generateConnectorTokens(connector)
+//
+//		assert.NoError(t, err)
+//		assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
+//		assert.EqualValues(t, "token2", connector.ConnectorTokens.RefreshToken)
+//	})
+//}
 
 // func TestClientConnectorTokensVerifyOK(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Connector Create Tokens Verify Ok", func(t *testing.T) {

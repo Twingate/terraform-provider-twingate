@@ -1,5 +1,13 @@
 package twingate
 
+import (
+	"net/http"
+	"testing"
+
+	"github.com/jarcoal/httpmock"
+	"github.com/stretchr/testify/assert"
+)
+
 // func TestClientConnectorCreateOk(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Connector Create Ok", func(t *testing.T) {
 // 		// response JSON
@@ -35,34 +43,38 @@ package twingate
 // 	})
 // }
 
-// func TestClientConnectorDeleteOk(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Connector Delete Ok", func(t *testing.T) {
-// 		// response JSON
-// 		deleteConnectorOkJson := `{
-// 	  "data": {
-// 		"connectorDelete": {
-// 		  "ok": true,
-// 		  "error": null
-// 		}
-// 	  }
-// 	}`
+func TestClientConnectorDeleteOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Delete Ok", func(t *testing.T) {
+		// response JSON
 
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(deleteConnectorOkJson)))
-// 		client := createTestClient()
+		// our database of articles
+		deleteConnectorOkJson := `{
+		  "data": {
+			"connectorDelete": {
+			  "ok": true,
+			  "error": null
+			}
+		  }
+		}`
+		client := NewClient("test", "xxxx", "dev.opstg.com")
+		httpmock.ActivateNonDefault(client.httpClient)
+		defer httpmock.DeactivateAndReset()
+		// mock to list out the articles
+		httpmock.RegisterResponder("POST", `https://test.dev.opstg.com/api/graphql/`,
+			func(req *http.Request) (*http.Response, error) {
+				resp, err := httpmock.NewJsonResponse(200, deleteConnectorOkJson)
+				if err != nil {
+					return httpmock.NewStringResponse(500, ""), nil
+				}
+				return resp, nil
+			},
+		)
 
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-// 		connectorId := "test"
+		err := client.deleteConnector("test")
 
-// 		err := client.deleteConnector(connectorId)
-
-// 		assert.NoError(t, err)
-// 	})
-// }
+		assert.NoError(t, err)
+	})
+}
 
 // func TestClientConnectorCreateError(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Connector Create Error", func(t *testing.T) {
