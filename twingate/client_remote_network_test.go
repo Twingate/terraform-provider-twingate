@@ -1,6 +1,7 @@
 package twingate
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 	"time"
@@ -240,6 +241,51 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, remoteNetwork)
+	})
+}
+
+func TestClientRemoteNetworkCreateError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Remote Network Create Error", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		gqlMock := mock_twingate.NewMockGql(mockCtrl)
+
+		f := func() Gql {
+			r := createRemoteNetworkQuery{}
+
+			variables := map[string]interface{}{
+				"name":     graphql.String("test"),
+				"isActive": graphql.Boolean(true),
+			}
+
+			v := createRemoteNetworkQuery{
+				RemoteNetworkCreate: &struct {
+					OkError
+					Entity struct{ ID graphql.ID }
+				}{
+					OkError: OkError{Ok: graphql.Boolean(false), Error: graphql.String("error_1")},
+					Entity: struct {
+						ID graphql.ID
+					}{
+						ID: graphql.ID("test"),
+					},
+				},
+			}
+
+			gqlMock.EXPECT().Mutate(gomock.Any(), &r, variables).SetArg(1, v).Return(errors.New("error_1")).Times(1)
+			return gqlMock
+		}
+
+		c := Client{GraphqlClient: f()}
+
+		remoteNetwork, err := c.createRemoteNetwork(graphql.String(""))
+
+		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkName").Error())
+		assert.Nil(t, remoteNetwork)
+
+		remoteNetwork, err = c.createRemoteNetwork(graphql.String("test"))
+
+		assert.EqualError(t, err, "failed to create remote network with id : error_1")
+		assert.Nil(t, remoteNetwork)
 	})
 }
 

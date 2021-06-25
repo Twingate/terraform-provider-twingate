@@ -10,6 +10,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func createTestResource() *Resource {
+	protocols := newProcolsInput()
+	protocols.TCP.Policy = graphql.String("ALLOW_ALL")
+	protocols.UDP.Policy = graphql.String("ALLOW_ALL")
+
+	groups := make([]*graphql.ID, 0)
+	group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
+	groups = append(groups, &group)
+
+	return &Resource{
+		ID:              graphql.ID("test"),
+		RemoteNetworkID: graphql.ID("test"),
+		Address:         graphql.String("test"),
+		Name:            graphql.String("testName"),
+		GroupsIds:       groups,
+		Protocols:       protocols,
+	}
+}
+
 func TestParsePortsToGraphql(t *testing.T) {
 	t.Run("Test Twingate Resource : Parse Ports to GraphQL ", func(t *testing.T) {
 		pri := []*PortRangeInput{}
@@ -59,31 +78,48 @@ func TestParseErrorPortsToGraphql(t *testing.T) {
 // 	})
 // }
 
-// func TestClientResourceCreateOk(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Resource Create Ok", func(t *testing.T) {
-// 		protocols := newProcolsInput()
-// 		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
-// 		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
+func TestClientResourceCreateOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Create Ok", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		gqlMock := mock_twingate.NewMockGql(mockCtrl)
+		resource := createTestResource()
 
-// 		groups := make([]*graphql.ID, 0)
-// 		group := graphql.ID("testgroup")
-// 		groups = append(groups, &group)
+		f := func() Gql {
+			r := createResourceQuery{}
 
-// 		resource := &Resource{
-// 			RemoteNetworkID: graphql.ID("testmeplease"),
-// 			Address:         graphql.String("test"),
-// 			Name:            graphql.String("testName"),
-// 			GroupsIds:       groups,
-// 			Protocols:       protocols,
-// 		}
+			variables := map[string]interface{}{
+				"name":            resource.Name,
+				"address":         resource.Address,
+				"remoteNetworkId": resource.RemoteNetworkID,
+				"groupIds":        resource.GroupsIds,
+				"protocols":       resource.Protocols,
+			}
 
-// 		client, _ := sharedClient("terraformtests")
-// 		err := client.createResource(resource)
+			v := createResourceQuery{
+				ResourceCreate: struct {
+					OkError
+					Entity struct{ ID graphql.ID }
+				}{
+					OkError: OkError{Ok: graphql.Boolean(true)},
+					Entity: struct {
+						ID graphql.ID
+					}{
+						ID: graphql.ID("test-id"),
+					},
+				},
+			}
 
-// 		assert.NoError(t, err)
-// 		assert.EqualValues(t, graphql.ID("test-id"), resource.ID)
-// 	})
-// }
+			gqlMock.EXPECT().Mutate(gomock.Any(), &r, variables).SetArg(1, v).Return(nil).Times(1)
+			return gqlMock
+		}
+
+		c := Client{GraphqlClient: f()}
+
+		err := c.createResource(resource)
+		assert.NoError(t, err)
+		assert.EqualValues(t, graphql.ID("test-id"), resource.ID)
+	})
+}
 
 // func TestClientResourceCreateError(t *testing.T) {
 // 	t.Run("Test Twingate Resource : Client Resource Create Error", func(t *testing.T) {
@@ -297,22 +333,7 @@ func TestClientResourceUpdateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Update Ok", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		gqlMock := mock_twingate.NewMockGql(mockCtrl)
-		protocols := newProcolsInput()
-		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
-		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
-
-		groups := make([]*graphql.ID, 0)
-		group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
-		groups = append(groups, &group)
-
-		resource := &Resource{
-			ID:              graphql.ID("test"),
-			RemoteNetworkID: graphql.ID("test"),
-			Address:         graphql.String("test"),
-			Name:            graphql.String("testName"),
-			GroupsIds:       groups,
-			Protocols:       protocols,
-		}
+		resource := createTestResource()
 		f := func() Gql {
 			r := updateResourceQuery{}
 
@@ -342,99 +363,11 @@ func TestClientResourceUpdateOk(t *testing.T) {
 	})
 }
 
-// func TestClientResourceUpdateOk(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Resource Update Ok", func(t *testing.T) {
-// 		// response JSON
-// 		createResourceUpdateOkJson := `{
-// 		"data": {
-// 			"resourceUpdate": {
-// 				"ok" : true,
-// 				"error" : null
-// 			}
-// 		}
-// 	}`
-
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createResourceUpdateOkJson)))
-// 		client := createTestClient()
-
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-
-// 		resource := &Resource{
-// 			RemoteNetworkID: "network1",
-// 			Address:         "test.com",
-// 			Name:            "test resource",
-// 			GroupsIds:       make([]string, 0),
-// 			Protocols:       &Protocols{},
-// 		}
-
-// 		err := client.updateResource(resource)
-
-// 		assert.NoError(t, err)
-// 	})
-// }
-
-// func TestClientResourceUpdateError(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Resource Update Error", func(t *testing.T) {
-// 		// response JSON
-// 		createResourceUpdateErrorJson := `{
-// 		"data": {
-// 			"resourceUpdate": {
-// 				"ok" : false,
-// 				"error" : "cant update resource"
-// 			}
-// 		}
-// 	}`
-
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createResourceUpdateErrorJson)))
-// 		client := createTestClient()
-
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-
-// 		resource := &Resource{
-// 			RemoteNetworkID: "network1",
-// 			Address:         "test.com",
-// 			Name:            "test resource",
-// 			GroupsIds:       make([]string, 0),
-// 			Protocols:       &Protocols{},
-// 		}
-
-// 		err := client.updateResource(resource)
-
-// 		assert.EqualError(t, err, "failed to update resource: cant update resource")
-// 	})
-// }
-
 func TestClientResourceUpdateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Update Error", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		gqlMock := mock_twingate.NewMockGql(mockCtrl)
-
-		protocols := newProcolsInput()
-		protocols.TCP.Policy = graphql.String("ALLOW_ALL")
-		protocols.UDP.Policy = graphql.String("ALLOW_ALL")
-
-		groups := make([]*graphql.ID, 0)
-		group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
-		groups = append(groups, &group)
-
-		resource := &Resource{
-			ID:              graphql.ID("test"),
-			RemoteNetworkID: graphql.ID("test"),
-			Address:         graphql.String("test"),
-			Name:            graphql.String("testName"),
-			GroupsIds:       groups,
-			Protocols:       protocols,
-		}
+		resource := createTestResource()
 
 		f := func() Gql {
 			r := updateResourceQuery{}
@@ -465,35 +398,6 @@ func TestClientResourceUpdateError(t *testing.T) {
 		assert.EqualError(t, err, "failed to update resource with id "+resource.ID.(string)+": cant update resource")
 	})
 }
-
-// func TestClientResourceDeleteOk(t *testing.T) {
-// 	t.Run("Test Twingate Resource : Client Resource Delete Ok", func(t *testing.T) {
-// 		// response JSON
-// 		createResourceDeleteOkJson := `{
-// 		"data": {
-// 			"resourceDelete": {
-// 				"ok" : true,
-// 				"error" : null
-// 			}
-// 		}
-// 	}`
-
-// 		r := ioutil.NopCloser(bytes.NewReader([]byte(createResourceDeleteOkJson)))
-// 		client := createTestClient()
-
-// 		GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-// 			return &http.Response{
-// 				StatusCode: 200,
-// 				Body:       r,
-// 			}, nil
-// 		}
-
-// 		err := client.deleteResource("resource1")
-
-// 		assert.NoError(t, err)
-// 	})
-// }
-
 func TestClientResourceDeleteOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Delete Ok", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)

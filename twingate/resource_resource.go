@@ -216,8 +216,6 @@ func resourceResourceDelete(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
-
 	client := m.(*Client)
 	resourceID := d.Id()
 
@@ -225,6 +223,11 @@ func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	return resourceResourceReadDiagnostics(ctx, d, resource)
+}
+
+func resourceResourceReadDiagnostics(ctx context.Context, d *schema.ResourceData, resource *Resource) diag.Diagnostics {
+	var diags diag.Diagnostics
 
 	if err := d.Set("name", resource.Name); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))

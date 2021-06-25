@@ -23,6 +23,10 @@ type createRemoteNetworkQuery struct {
 }
 
 func (client *Client) createRemoteNetwork(remoteNetworkName graphql.String) (*remoteNetwork, error) {
+	if remoteNetworkName == "" {
+		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkName")
+	}
+
 	r := createRemoteNetworkQuery{}
 
 	variables := map[string]interface{}{

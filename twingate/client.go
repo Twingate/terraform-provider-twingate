@@ -146,7 +146,7 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
-//go:generate mockgen -destination=../mock/graphql.go -package=mock github.com/Twingate/terraform-provider-twingate Gql
+//go:generate mockgen -destination=../mock/graphql.go -package=mock_twingate github.com/Twingate/terraform-provider-twingate Gql
 
 type Gql interface {
 	Query(ctx context.Context, q interface{}, variables map[string]interface{}) error
