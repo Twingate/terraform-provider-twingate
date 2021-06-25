@@ -2,7 +2,6 @@ package twingate
 
 import (
 	b64 "encoding/base64"
-	"net/http"
 	"testing"
 
 	"github.com/hasura/go-graphql-client"
@@ -87,20 +86,13 @@ func TestClientResourceCreateOk(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceOkJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceOkJson))
 	resource := newTestResource()
 
 	err := client.createResource(resource)
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "test", resource.ID)
+	assert.EqualValues(t, "test-id", resource.ID)
 }
 
 func TestClientResourceCreateError(t *testing.T) {
@@ -121,19 +113,12 @@ func TestClientResourceCreateError(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceErrorJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceErrorJson))
 	resource := newTestResource()
 
 	err := client.createResource(resource)
 
-	assert.EqualError(t, err, "failed to create resource: something went wrong")
+	assert.EqualError(t, err, "failed to create resource with id : something went wrong")
 }
 
 func TestClientResourceReadOk(t *testing.T) {
@@ -195,23 +180,16 @@ func TestClientResourceReadOk(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceOkJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceOkJson))
 
 	resource, err := client.readResource("resource1")
-
+	tcpPorts, _ := resource.Protocols.TCP.buildPortsRnge()
 	assert.Nil(t, err)
-	assert.EqualValues(t, "resource1", resource.ID)
-	assert.Contains(t, resource.GroupsIds, "group1")
-	assert.Contains(t, resource.Protocols.TCP.Ports, "8080-8090")
+	assert.EqualValues(t, graphql.ID("resource1"), resource.ID)
+	assert.Contains(t, resource.stringGroups(), "group1")
+	assert.Contains(t, tcpPorts, "8080-8090")
 	assert.EqualValues(t, resource.Address, "test.com")
-	assert.EqualValues(t, resource.RemoteNetworkID, "network1")
+	assert.EqualValues(t, resource.RemoteNetworkID, graphql.ID("network1"))
 	assert.Len(t, resource.Protocols.UDP.Ports, 0)
 	assert.EqualValues(t, resource.Name, "test resource")
 }
@@ -275,14 +253,7 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceOkJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceOkJson))
 
 	resource, err := client.readResource("resource1")
 	assert.Nil(t, resource)
@@ -301,14 +272,7 @@ func TestClientResourceReadError(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceErrorJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceErrorJson))
 
 	resource, err := client.readResource("resource1")
 
@@ -331,14 +295,7 @@ func TestClientResourceUpdateOk(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceUpdateOkJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceUpdateOkJson))
 	resource := newTestResource()
 
 	err := client.updateResource(resource)
@@ -361,19 +318,12 @@ func TestClientResourceUpdateError(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceUpdateErrorJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceUpdateErrorJson))
 	resource := newTestResource()
 
 	err := client.updateResource(resource)
 
-	assert.EqualError(t, err, "failed to update resource: cant update resource")
+	assert.EqualError(t, err, "failed to update resource with id test: cant update resource")
 }
 
 func TestClientResourceDeleteOk(t *testing.T) {
@@ -391,14 +341,7 @@ func TestClientResourceDeleteOk(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceDeleteOkJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceDeleteOkJson))
 
 	err := client.deleteResource("resource1")
 
@@ -420,14 +363,7 @@ func TestClientResourceDeleteError(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, createResourceDeleteErrorJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
 
 	err := client.deleteResource("resource1")
 
@@ -467,14 +403,7 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp, err := httpmock.NewJsonResponse(200, readResourcesOkJson)
-			if err != nil {
-				return httpmock.NewStringResponse(500, ""), nil
-			}
-			return resp, nil
-		},
-	)
+		httpmock.NewStringResponder(200, readResourcesOkJson))
 
 	resources, err := client.readResources()
 	assert.NoError(t, err)

@@ -1,5 +1,182 @@
 package twingate
 
+import (
+	"testing"
+
+	"github.com/hasura/go-graphql-client"
+	"github.com/jarcoal/httpmock"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestClientRemoteNetworkCreateOk(t *testing.T) {
+	// response JSON
+	createNetworkOkJson := `{
+	  "data": {
+		"remoteNetworkCreate": {
+		  "entity": {
+			"id": "test-id"
+		  },
+		  "ok": true,
+		  "error": null
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, createNetworkOkJson))
+	remoteNetworkName := graphql.String("test")
+
+	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, "test-id", remoteNetwork.ID)
+}
+
+func TestClientRemoteNetworkCreateError(t *testing.T) {
+	// response JSON
+	createNetworkOkJson := `{
+	  "data": {
+		"remoteNetworkCreate": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, createNetworkOkJson))
+	remoteNetworkName := graphql.String("test")
+
+	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
+
+	assert.EqualError(t, err, "failed to create remote network with id : error_1")
+	assert.Nil(t, remoteNetwork)
+}
+
+func TestClientRemoteNetworkUpdateError(t *testing.T) {
+	// response JSON
+	updateNetworkOkJson := `{
+	  "data": {
+		"remoteNetworkUpdate": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, updateNetworkOkJson))
+	remoteNetworkName := graphql.String("test")
+	remoteNetworkId := graphql.ID("id")
+	err := client.updateRemoteNetwork(remoteNetworkId, remoteNetworkName)
+
+	assert.EqualError(t, err, "failed to update remote network with id id: error_1")
+}
+
+func TestClientRemoteNetworkReadError(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, readNetworkOkJson))
+	remoteNetworkId := graphql.ID("id")
+
+	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
+
+	assert.Nil(t, remoteNetwork)
+	assert.EqualError(t, err, "failed to read remote network with id id")
+}
+
+func TestClientNetworkReadAllOk(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetworks": {
+		  "edges": [
+			{
+			  "node": {
+				"id": "network1",
+				"name": "tf-acc-network1"
+			  }
+			},
+			{
+			  "node": {
+				"id": "network2",
+				"name": "network2"
+			  }
+			},
+			{
+			  "node": {
+				"id": "network3",
+				"name": "tf-acc-network3"
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, readNetworkOkJson))
+
+	network, err := client.readRemoteNetworks()
+	assert.NoError(t, err)
+	// Resources return dynamic and not ordered object
+	// See gabs Children() method.
+
+	r0 := &IDName{
+		ID:   "network1",
+		Name: "tf-acc-network1",
+	}
+	r1 := &IDName{
+		ID:   "network2",
+		Name: "network2",
+	}
+	r2 := &IDName{
+		ID:   "network3",
+		Name: "tf-acc-network3",
+	}
+	mockMap := make(map[int]*IDName)
+
+	mockMap[0] = r0
+	mockMap[1] = r1
+	mockMap[2] = r2
+
+	counter := 0
+
+	for _, elem := range network {
+		for _, i := range mockMap {
+			if elem.Name == i.Name && elem.ID == i.ID {
+				counter++
+			}
+		}
+	}
+
+	if len(mockMap) != counter {
+		t.Errorf("Expected map not equal to origin!")
+	}
+	assert.EqualValues(t, len(mockMap), counter)
+}
+
 // func TestCreateReadUpdateDeleteOk(t *testing.T) {
 // 	t.Run("Test Twingate : Create Read Update Delete Ok", func(t *testing.T) {
 

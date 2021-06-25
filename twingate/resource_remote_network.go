@@ -63,7 +63,7 @@ func resourceRemoteNetworkUpdate(ctx context.Context, d *schema.ResourceData, m 
 		remoteNetworkID := d.Id()
 		log.Printf("[INFO] Updating remote network id %s", remoteNetworkID)
 
-		if err := client.updateRemoteNetwork(remoteNetworkID, remoteNetworkName); err != nil {
+		if err := client.updateRemoteNetwork(graphql.ID(remoteNetworkID), graphql.String(remoteNetworkName)); err != nil {
 			return diag.FromErr(err)
 		}
 	}

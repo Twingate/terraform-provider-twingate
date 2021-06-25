@@ -110,10 +110,10 @@ type updateRemoteNetworkQuery struct {
 	RemoteNetworkUpdate *OkError `graphql:"remoteNetworkUpdate(id: $id, name: $name)"`
 }
 
-func (client *Client) updateRemoteNetwork(remoteNetworkID, remoteNetworkName string) error {
+func (client *Client) updateRemoteNetwork(remoteNetworkID graphql.ID, remoteNetworkName graphql.String) error {
 	variables := map[string]interface{}{
-		"id":   graphql.ID(remoteNetworkID),
-		"name": graphql.String(remoteNetworkName),
+		"id":   remoteNetworkID,
+		"name": remoteNetworkName,
 	}
 
 	r := updateRemoteNetworkQuery{}

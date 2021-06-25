@@ -116,7 +116,7 @@ func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) 
 }
 
 type deleteConnectorQuery struct {
-	ConnectorDelete *OkError `graphql:"connectorDelete(id: $id)"`
+	ConnectorDelete *OkError `graphql:"connectorDelete(id: $id)" json:"connectorDelete"`
 }
 
 func (client *Client) deleteConnector(connectorID graphql.ID) error {
