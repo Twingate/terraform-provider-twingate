@@ -1,7 +1,6 @@
 package twingate
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/hasura/go-graphql-client"
@@ -63,14 +62,7 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		// mock to list out the articles
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp, err := httpmock.NewJsonResponse(200, deleteConnectorOkJson)
-				if err != nil {
-					return httpmock.NewStringResponse(500, ""), nil
-				}
-				return resp, nil
-			},
-		)
+			httpmock.NewStringResponder(200, deleteConnectorOkJson))
 
 		err := client.deleteConnector(graphql.ID("test"))
 

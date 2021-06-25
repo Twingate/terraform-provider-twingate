@@ -58,8 +58,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {
-		sURL := newServerURL(network, url)
-		client := NewClient(sURL, apiToken)
+		client := NewClient(newServerURL(network, url), apiToken)
 
 		err := client.ping()
 
