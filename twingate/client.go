@@ -182,7 +182,7 @@ func (client *Client) ping() error {
 
 	err := client.GraphqlClient.Query(context.Background(), &r, variables)
 	if err != nil {
-		log.Printf("[ERROR] Cannot reach Graphql API Server %s", client.APIServerURL)
+		log.Printf("[ERROR] Cannot reach Graphql API Server %s", client.GraphqlServerURL)
 
 		return NewAPIError(err, "ping", "twingate")
 	}

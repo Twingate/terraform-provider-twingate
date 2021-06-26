@@ -124,7 +124,7 @@ type deleteConnectorQuery struct {
 }
 
 func (client *Client) deleteConnector(connectorID graphql.ID) error {
-	if connectorID == nil {
+	if connectorID == nil || connectorID == "" {
 		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "connectorID")
 	}
 

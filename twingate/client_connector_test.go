@@ -168,6 +168,22 @@ func TestClientConnectorReadError(t *testing.T) {
 	assert.EqualError(t, err, "failed to read connector with id test")
 }
 
+func TestClientConnectorEmptyDeleteError(t *testing.T) {
+	// response JSON
+	deleteConnectorOkJson := `{}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, deleteConnectorOkJson))
+	connectorId := graphql.ID(nil)
+
+	err := client.deleteConnector(connectorId)
+
+	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "connectorID").Error())
+}
+
 func TestClientConnectorReadAllOk(t *testing.T) {
 	// response JSON
 	readConnectorsOkJson := `{

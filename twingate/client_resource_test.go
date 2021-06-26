@@ -280,6 +280,22 @@ func TestClientResourceReadError(t *testing.T) {
 	assert.EqualError(t, err, "failed to read resource with id resource1")
 }
 
+func TestClientResourceEmptyReadError(t *testing.T) {
+	// response JSON
+	createResourceErrorJson := `{}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, createResourceErrorJson))
+
+	resource, err := client.readResource(graphql.ID(nil))
+
+	assert.Nil(t, resource)
+	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID").Error())
+}
+
 func TestClientResourceUpdateOk(t *testing.T) {
 	// response JSON
 	createResourceUpdateOkJson := `{
@@ -368,6 +384,21 @@ func TestClientResourceDeleteError(t *testing.T) {
 	err := client.deleteResource("resource1")
 
 	assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
+}
+
+func TestClientResourceEmptyDeleteError(t *testing.T) {
+	// response JSON
+	createResourceDeleteErrorJson := `{}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
+
+	err := client.deleteResource(graphql.ID(nil))
+
+	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "resourceID").Error())
 }
 
 func TestClientResourcesReadAllOk(t *testing.T) {

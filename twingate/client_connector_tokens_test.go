@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -54,6 +55,7 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
 		header := req.Header.Get("Authorization")
 		assert.Contains(t, header, accessToken)
+
 		return &http.Response{
 			StatusCode: 200,
 			Body:       r,
@@ -87,6 +89,28 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 	assert.EqualError(t, err, "failed to verify connector tokens with id : request  failed, status 501, body {}")
 }
 
+func TestClientConnectorTokensRequestError(t *testing.T) {
+	// response JSON
+	verifyTokensOkJson := `{}`
+
+	r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
+	client := newTestClient()
+
+	accessToken := "test1"
+	refreshToken := "test2"
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 501,
+			Body:       r,
+		}, errors.New("error")
+	}
+
+	err := client.verifyConnectorTokens(refreshToken, accessToken)
+
+	assert.EqualError(t, err, "failed to verify connector tokens with id : can't execute http request: error")
+}
+
 func TestClientConnectorCreateTokensError(t *testing.T) {
 	// response JSON
 	createTokensOkJson := `{
@@ -109,4 +133,23 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	err := client.generateConnectorTokens(connector)
 
 	assert.EqualError(t, err, "failed to generate connector tokens with id test: error_1")
+}
+
+func TestClientConnectorCreateTokensRequestError(t *testing.T) {
+	// response JSON
+	verifyTokensOkJson := `{}`
+	connector := &Connector{ID: "test"}
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		func(req *http.Request) (*http.Response, error) {
+			resp := httpmock.NewStringResponse(200, verifyTokensOkJson)
+			return resp, errors.New("error")
+		})
+
+	err := client.generateConnectorTokens(connector)
+
+	assert.EqualError(t, err, "failed to generate connector tokens with id : Post \"https://test.dev.opstg.com/api/graphql/\": error")
 }
