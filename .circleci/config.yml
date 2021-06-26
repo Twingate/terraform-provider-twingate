@@ -25,10 +25,6 @@ jobs:
           name: Run Sec Check
           command: |
             make sec
-      
-      - run:
-          name: Build
-          command: make build
 
       - run:
           name: Run Acc tests
