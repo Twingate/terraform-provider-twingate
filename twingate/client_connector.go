@@ -79,7 +79,7 @@ func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 }
 
 type readConnectorQuery struct {
-	Connector struct {
+	Connector *struct {
 		IDName
 		RemoteNetwork IDName
 	} `graphql:"connector(id: $id)"`
@@ -99,6 +99,10 @@ func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) 
 	err := client.GraphqlClient.Query(context.Background(), &r, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
+	}
+
+	if r.Connector == nil {
+		return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
 	}
 
 	rn := &remoteNetwork{

@@ -164,8 +164,8 @@ func TestClientConnectorReadError(t *testing.T) {
 
 	connector, err := client.readConnector(connectorId)
 
-	assert.Nil(t, connector.ID)
-	assert.EqualError(t, err, "failed to read connector with id id")
+	assert.Nil(t, connector)
+	assert.EqualError(t, err, "failed to read connector with id test")
 }
 
 func TestClientConnectorReadAllOk(t *testing.T) {

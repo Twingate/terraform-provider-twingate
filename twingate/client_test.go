@@ -15,7 +15,22 @@ import (
 
 func newTestClient() *Client {
 	sURL := newServerURL("test", "dev.opstg.com")
-	return NewClient(sURL, "xxxx")
+	client := NewClient(sURL, "xxxx")
+	client.HTTPClient = &MockClient{}
+	return client
+}
+
+// MockClient is the mock client
+type MockClient struct {
+	DoFunc func(req *retryablehttp.Request) (*http.Response, error)
+}
+
+var (
+	GetDoFunc func(req *retryablehttp.Request) (*http.Response, error)
+)
+
+func (m *MockClient) Do(req *retryablehttp.Request) (*http.Response, error) {
+	return GetDoFunc(req)
 }
 
 func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {

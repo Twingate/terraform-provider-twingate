@@ -103,6 +103,68 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 	assert.EqualError(t, err, "failed to read remote network with id id")
 }
 
+func TestClientCreateRemoteNetworkEmptyError(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, readNetworkOkJson))
+	remoteNetworkName := graphql.String("")
+
+	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
+
+	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkName").Error())
+	assert.Nil(t, remoteNetwork)
+}
+
+func TestClientReadRemoteNetworkEmptyError(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, readNetworkOkJson))
+	remoteNetworkId := graphql.ID(nil)
+
+	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
+
+	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "remoteNetworkID").Error())
+	assert.Nil(t, remoteNetwork)
+}
+
+func TestClientDeleteRemoteNetworkEmptyError(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, readNetworkOkJson))
+	remoteNetworkId := graphql.ID("")
+
+	err := client.deleteRemoteNetwork(remoteNetworkId)
+
+	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "remoteNetworkID").Error())
+}
+
 func TestClientNetworkReadAllOk(t *testing.T) {
 	// response JSON
 	readNetworkOkJson := `{
