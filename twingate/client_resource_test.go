@@ -65,6 +65,18 @@ func TestParseErrorPortsToGraphql(t *testing.T) {
 		_, err = convertPorts(vars)
 		assert.EqualError(t, err, "ports 10, 9 needs to be in a rising sequence")
 
+		vars = []string{"abc-12345"}
+		_, err = convertPorts(vars)
+		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"abc\": invalid syntax")
+
+		vars = []string{"12345-abc"}
+		_, err = convertPorts(vars)
+		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"abc\": invalid syntax")
+
+		vars = []string{"1-999999"}
+		_, err = convertPorts(vars)
+		assert.EqualError(t, err, "port 999999 not in the range of 0-65535")
+
 	})
 }
 

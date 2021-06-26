@@ -151,5 +151,5 @@ func TestClientConnectorCreateTokensRequestError(t *testing.T) {
 
 	err := client.generateConnectorTokens(connector)
 
-	assert.EqualError(t, err, "failed to generate connector tokens with id : Post \"https://test.dev.opstg.com/api/graphql/\": error")
+	assert.EqualError(t, err, "failed to generate connector tokens with id : Post \""+client.GraphqlServerURL+"\": error")
 }
