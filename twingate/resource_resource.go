@@ -223,10 +223,11 @@ func resourceResourceRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	return resourceResourceReadDiagnostics(ctx, d, resource)
+
+	return resourceResourceReadDiagnostics(d, resource)
 }
 
-func resourceResourceReadDiagnostics(ctx context.Context, d *schema.ResourceData, resource *Resource) diag.Diagnostics {
+func resourceResourceReadDiagnostics(d *schema.ResourceData, resource *Resource) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	if err := d.Set("name", resource.Name); err != nil {

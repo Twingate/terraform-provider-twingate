@@ -1,7 +1,6 @@
 package twingate
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -139,7 +138,7 @@ func TestResourceResourceReadNameError(t *testing.T) {
 			Protocols:       protocols,
 		}
 		d := &schema.ResourceData{}
-		diags := resourceResourceReadDiagnostics(context.Background(), d, resource)
+		diags := resourceResourceReadDiagnostics(d, resource)
 		assert.True(t, diags.HasError())
 	})
 }
