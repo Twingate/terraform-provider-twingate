@@ -44,17 +44,18 @@ type ProtocolsInput struct {
 }
 
 func (pi *ProtocolsInput) flattenProtocols() []interface{} {
-	if pi != nil {
-		p := make(map[string]interface{})
+	p := make(map[string]interface{})
+	p["allow_icmp"] = pi.AllowIcmp
 
-		p["allow_icmp"] = pi.AllowIcmp
+	if pi.TCP != nil {
 		p["tcp"] = pi.TCP.flattenPorts()
-		p["udp"] = pi.UDP.flattenPorts()
-
-		return []interface{}{p}
 	}
 
-	return make([]interface{}, 0)
+	if pi.UDP != nil {
+		p["udp"] = pi.UDP.flattenPorts()
+	}
+
+	return []interface{}{p}
 }
 
 func (pi *ProtocolInput) flattenPorts() []interface{} {

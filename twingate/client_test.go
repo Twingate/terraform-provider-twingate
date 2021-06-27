@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hasura/go-graphql-client"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 
 	"net/http"
@@ -120,5 +121,24 @@ func TestAPIError(t *testing.T) {
 		errString := apiErr.Error()
 
 		assert.Equal(t, "failed to operation resource with id id: test-error", errString)
+	})
+}
+
+func TestPing(t *testing.T) {
+	t.Run("Test Twingate Resource : Ping Error", func(t *testing.T) {
+		pingJson := `{}`
+
+		client := newTestClient()
+		httpmock.ActivateNonDefault(client.httpClient)
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, pingJson)
+				return resp, errors.New("error_1")
+			})
+
+		err := client.ping()
+
+		assert.EqualError(t, err, "failed to ping twingate with id : Post \""+client.GraphqlServerURL+"\": error_1")
 	})
 }
