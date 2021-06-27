@@ -30,6 +30,32 @@ func newTestResource() *Resource {
 	}
 }
 
+func TestConvertToGraphqlUDPError(t *testing.T) {
+	t.Run("Test Twingate Resource : Convert to GraphQL ", func(t *testing.T) {
+		spi := &StringProtocolsInput{
+			UDPPolicy: ".......",
+			UDPPorts:  []string{"test-me"},
+		}
+
+		pi, err := spi.convertToGraphql()
+		assert.Nil(t, pi)
+		assert.Error(t, err)
+	})
+}
+
+func TestConvertToGraphqlTCPError(t *testing.T) {
+	t.Run("Test Twingate Resource : Convert to GraphQL ", func(t *testing.T) {
+		spi := &StringProtocolsInput{
+			TCPPolicy: ".......",
+			TCPPorts:  []string{"test-me"},
+		}
+
+		pi, err := spi.convertToGraphql()
+		assert.Nil(t, pi)
+		assert.Error(t, err)
+	})
+}
+
 func TestParsePortsToGraphql(t *testing.T) {
 	t.Run("Test Twingate Resource : Parse Ports to GraphQL ", func(t *testing.T) {
 		pri := []*PortRangeInput{}
@@ -133,6 +159,35 @@ func TestClientResourceCreateError(t *testing.T) {
 	err := client.createResource(resource)
 
 	assert.EqualError(t, err, "failed to create resource with id : something went wrong")
+}
+
+func TestClientResourceCreateRequestError(t *testing.T) {
+	// response JSON
+	createResourceErrorJson := `{
+	  "data": {
+		"resourceCreate": {
+		  "entity": {
+			"id": "test-id"
+		  },
+		  "ok": false,
+		  "error": "something went wrong"
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		func(req *http.Request) (*http.Response, error) {
+			resp := httpmock.NewStringResponse(200, createResourceErrorJson)
+			return resp, errors.New("error_1")
+		})
+	resource := newTestResource()
+
+	err := client.createResource(resource)
+
+	assert.EqualError(t, err, "failed to create resource with id : Post \""+client.GraphqlServerURL+"\": error_1")
 }
 
 func TestClientResourceReadOk(t *testing.T) {
@@ -556,4 +611,37 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		t.Errorf("Expected map not equal to origin!")
 	}
 	assert.EqualValues(t, len(mockMap), counter)
+}
+
+func TestClientResourcesReadRequestError(t *testing.T) {
+	// response JSON
+	readResourcesOkJson := `{
+	  "data": {
+		"resources": {
+		  "edges": [
+			{
+			  "node": {
+				"id": "resource1",
+				"name": "tf-acc-resource1"
+			  }
+			},
+		  ]
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		func(req *http.Request) (*http.Response, error) {
+			resp := httpmock.NewStringResponse(200, readResourcesOkJson)
+			return resp, errors.New("error_1")
+		})
+
+	resources, err := client.readResources()
+
+	assert.Nil(t, resources)
+	assert.EqualError(t, err, "failed to read resource with id All: Post \""+client.GraphqlServerURL+"\": error_1")
+
 }
