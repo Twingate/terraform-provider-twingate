@@ -55,11 +55,11 @@ install: build
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
 .PHONY: test
-test: vendor
+test:
 	./scripts/test.sh
 
 .PHONY: testacc
-testacc: vendor
+testacc:
 	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 ./scripts/test.sh
 
 .PHONY: fmt
