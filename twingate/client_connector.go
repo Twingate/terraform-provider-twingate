@@ -28,7 +28,7 @@ type createConnectorQuery struct {
 }
 
 func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, error) {
-	if remoteNetworkID == nil {
+	if remoteNetworkID == nil || remoteNetworkID == "" {
 		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkID")
 	}
 
@@ -86,7 +86,7 @@ type readConnectorQuery struct {
 }
 
 func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) {
-	if connectorID == nil {
+	if connectorID == nil || connectorID == "" {
 		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "connectorID")
 	}
 

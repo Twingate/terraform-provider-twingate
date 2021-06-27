@@ -153,3 +153,19 @@ func TestClientConnectorCreateTokensRequestError(t *testing.T) {
 
 	assert.EqualError(t, err, "failed to generate connector tokens with id : Post \""+client.GraphqlServerURL+"\": error")
 }
+
+func TestClientConnectorEmptyCreateTokensError(t *testing.T) {
+	// response JSON
+	createTokensOkJson := `{}`
+	connector := &Connector{ID: nil}
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, createTokensOkJson))
+
+	err := client.generateConnectorTokens(connector)
+
+	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "generate", remoteNetworkResourceName, "connectorTokens").Error())
+}

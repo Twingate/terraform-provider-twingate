@@ -49,7 +49,7 @@ type generateConnectorTokensQuery struct {
 }
 
 func (client *Client) generateConnectorTokens(connector *Connector) error {
-	if connector.ID == nil {
+	if connector == nil || connector.ID == nil {
 		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "generate", remoteNetworkResourceName, "connectorTokens")
 	}
 
