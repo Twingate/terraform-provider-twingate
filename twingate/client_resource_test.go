@@ -326,7 +326,7 @@ func TestClientResourceReadRequestError(t *testing.T) {
 	resource, err := client.readResource(graphql.ID("id"))
 
 	assert.Nil(t, resource)
-	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID").Error())
+	assert.EqualError(t, err, "failed to read remote network with id id: Post \""+client.GraphqlServerURL+"\": error_1")
 }
 
 func TestClientResourceUpdateOk(t *testing.T) {
@@ -398,7 +398,7 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 
 	err := client.updateResource(resource)
 
-	assert.EqualError(t, err, "failed to update resource with id test: cant update resource")
+	assert.EqualError(t, err, "failed to update resource with id test: Post \""+client.GraphqlServerURL+"\": error_1")
 }
 
 func TestClientResourceDeleteOk(t *testing.T) {
@@ -467,7 +467,7 @@ func TestClientResourceDeleteRequestError(t *testing.T) {
 
 	err := client.deleteResource("resource1")
 
-	assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
+	assert.EqualError(t, err, "failed to delete resource with id resource1: Post \""+client.GraphqlServerURL+"\": error_1")
 }
 
 func TestClientResourceEmptyDeleteError(t *testing.T) {
