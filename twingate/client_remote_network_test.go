@@ -1,6 +1,8 @@
 package twingate
 
 import (
+	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/hasura/go-graphql-client"
@@ -59,6 +61,35 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 	assert.Nil(t, remoteNetwork)
 }
 
+func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
+	// response JSON
+	createNetworkOkJson := `{
+	  "data": {
+		"remoteNetworkCreate": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		func(req *http.Request) (*http.Response, error) {
+			resp := httpmock.NewStringResponse(200, createNetworkOkJson)
+			return resp, errors.New("error_1")
+		})
+
+	remoteNetworkName := graphql.String("test")
+
+	remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
+
+	assert.EqualError(t, err, "failed to create remote network with id : Post \""+client.GraphqlServerURL+"\": error_1")
+	assert.Nil(t, remoteNetwork)
+}
+
 func TestClientRemoteNetworkUpdateError(t *testing.T) {
 	// response JSON
 	updateNetworkOkJson := `{
@@ -82,6 +113,33 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 	assert.EqualError(t, err, "failed to update remote network with id id: error_1")
 }
 
+func TestClientRemoteNetworkUpdateRequestError(t *testing.T) {
+	// response JSON
+	updateNetworkOkJson := `{
+	  "data": {
+		"remoteNetworkUpdate": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		func(req *http.Request) (*http.Response, error) {
+			resp := httpmock.NewStringResponse(200, updateNetworkOkJson)
+			return resp, errors.New("error_1")
+		})
+
+	remoteNetworkName := graphql.String("test")
+	remoteNetworkId := graphql.ID("id")
+	err := client.updateRemoteNetwork(remoteNetworkId, remoteNetworkName)
+
+	assert.EqualError(t, err, "failed to update remote network with id id: Post \""+client.GraphqlServerURL+"\": error_1")
+}
+
 func TestClientRemoteNetworkReadError(t *testing.T) {
 	// response JSON
 	readNetworkOkJson := `{
@@ -101,6 +159,30 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 
 	assert.Nil(t, remoteNetwork)
 	assert.EqualError(t, err, "failed to read remote network with id id")
+}
+
+func TestClientRemoteNetworkReadRequestError(t *testing.T) {
+	// response JSON
+	readNetworkOkJson := `{
+	  "data": {
+		"remoteNetwork": null
+	  }
+	}`
+
+	client := newTestClient()
+	httpmock.ActivateNonDefault(client.httpClient)
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		func(req *http.Request) (*http.Response, error) {
+			resp := httpmock.NewStringResponse(200, readNetworkOkJson)
+			return resp, errors.New("error_1")
+		})
+	remoteNetworkId := graphql.ID("id")
+
+	remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
+
+	assert.Nil(t, remoteNetwork)
+	assert.EqualError(t, err, "failed to read remote network with id id: Post \""+client.GraphqlServerURL+"\": error_1")
 }
 
 func TestClientCreateRemoteNetworkEmptyError(t *testing.T) {
