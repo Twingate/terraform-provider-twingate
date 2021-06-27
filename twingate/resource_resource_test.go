@@ -125,8 +125,8 @@ func testAccCheckTwingateResourceExists(resourceName string) resource.TestCheckF
 	}
 }
 
-func TestResourceResourceReadNameError(t *testing.T) {
-	t.Run("Test Twingate Resource : Resource Name Error", func(t *testing.T) {
+func TestResourceResourceReadDiagnosticsError(t *testing.T) {
+	t.Run("Test Twingate Resource : Resource Read Diagnostics Error", func(t *testing.T) {
 		groups := []*graphql.ID{}
 		protocols := &ProtocolsInput{}
 
