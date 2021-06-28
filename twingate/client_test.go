@@ -7,8 +7,8 @@ import (
 func newHTTPMockClient() *Client {
 	sURL := newServerURL("test", "dev.opstg.com")
 	client := NewClient(sURL, "xxxx")
-	httpmock.ActivateNonDefault(client.RetryableClient.HTTPClient)
-	client.RetryableClient.RetryMax = 0
+	httpmock.ActivateNonDefault(client.HttpClient.HTTPClient)
+	client.HttpClient.RetryMax = 0
 
 	return client
 }
