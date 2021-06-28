@@ -17,11 +17,14 @@ import (
 func newTestClient() *Client {
 	sURL := newServerURL("test", "dev.opstg.com")
 	client := NewClient(sURL, "xxxx")
+	httpmock.ActivateNonDefault(client.httpClient)
+
 	client.HTTPClient = &MockClient{}
+
 	return client
 }
 
-// MockClient is the mock client
+// MockClient is the mock client for retryablehttp
 type MockClient struct {
 	DoFunc func(req *retryablehttp.Request) (*http.Response, error)
 }
@@ -129,7 +132,6 @@ func TestPing(t *testing.T) {
 		pingJson := `{}`
 
 		client := newTestClient()
-		httpmock.ActivateNonDefault(client.httpClient)
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {

@@ -1,9 +1,7 @@
 package twingate
 
 import (
-	"bytes"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -28,7 +26,6 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 	}`
 
 	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		httpmock.NewStringResponder(200, createTokensOkJson))
@@ -46,21 +43,27 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 	// response JSON
 	verifyTokensOkJson := `{}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
 	client := newTestClient()
 
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+	defer httpmock.DeactivateAndReset()
+
+	do := func(req *retryablehttp.Request) (*http.Response, error) {
 		header := req.Header.Get("Authorization")
 		assert.Contains(t, header, accessToken)
-
-		return &http.Response{
-			StatusCode: 200,
-			Body:       r,
-		}, nil
+		resp := httpmock.NewStringResponse(200, verifyTokensOkJson)
+		return resp, nil
 	}
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL, func(*http.Request) (*http.Response, error) {
+			return do(req)
+		})
+		return do(req)
+	}
+
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
 	assert.Nil(t, err)
@@ -70,20 +73,26 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 	// response JSON
 	verifyTokensOkJson := `{}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
 	client := newTestClient()
+	defer httpmock.DeactivateAndReset()
 
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+	do := func(req *retryablehttp.Request) (*http.Response, error) {
 		header := req.Header.Get("Authorization")
 		assert.Contains(t, header, accessToken)
-		return &http.Response{
-			StatusCode: 501,
-			Body:       r,
-		}, nil
+		resp := httpmock.NewStringResponse(501, verifyTokensOkJson)
+		return resp, nil
 	}
+
+	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL, func(*http.Request) (*http.Response, error) {
+			return do(req)
+		})
+		return do(req)
+	}
+
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
 	assert.EqualError(t, err, "failed to verify connector tokens with id : request  failed, status 501, body {}")
@@ -93,17 +102,24 @@ func TestClientConnectorTokensRequestError(t *testing.T) {
 	// response JSON
 	verifyTokensOkJson := `{}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
 	client := newTestClient()
 
 	accessToken := "test1"
 	refreshToken := "test2"
+	defer httpmock.DeactivateAndReset()
+
+	do := func(req *retryablehttp.Request) (*http.Response, error) {
+		header := req.Header.Get("Authorization")
+		assert.Contains(t, header, accessToken)
+		resp := httpmock.NewStringResponse(501, verifyTokensOkJson)
+		return resp, errors.New("error")
+	}
 
 	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 501,
-			Body:       r,
-		}, errors.New("error")
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL, func(*http.Request) (*http.Response, error) {
+			return do(req)
+		})
+		return do(req)
 	}
 
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
@@ -123,7 +139,6 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	}`
 
 	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		httpmock.NewStringResponder(200, createTokensOkJson))
@@ -141,7 +156,6 @@ func TestClientConnectorCreateTokensRequestError(t *testing.T) {
 	connector := &Connector{ID: "test"}
 
 	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		func(req *http.Request) (*http.Response, error) {
@@ -160,7 +174,6 @@ func TestClientConnectorEmptyCreateTokensError(t *testing.T) {
 	connector := &Connector{ID: nil}
 
 	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		httpmock.NewStringResponder(200, createTokensOkJson))

@@ -149,14 +149,17 @@ func newServerURL(network, url string) serverURL {
 //go:generate mockgen -destination=../mock/graphql.go -package=mock_twingate github.com/Twingate/terraform-provider-twingate Gql
 
 func NewClient(sURL serverURL, apiToken string) *Client {
-	httpClient := retryablehttp.NewClient()
-	httpClient.HTTPClient.Timeout = Timeout
-	httpClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
+	c := &http.Client{Transport: newTransport(apiToken)}
+
+	rc := retryablehttp.NewClient()
+	rc.HTTPClient.Timeout = Timeout
+	rc.HTTPClient = c
+	rc.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
-	c := &http.Client{Transport: newTransport(apiToken)}
+
 	client := Client{
-		HTTPClient:       httpClient,
+		HTTPClient:       rc,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),

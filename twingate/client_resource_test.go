@@ -31,7 +31,7 @@ func newTestResource() *Resource {
 }
 
 func TestConvertToGraphqlUDPError(t *testing.T) {
-	t.Run("Test Twingate Resource : Convert to GraphQL ", func(t *testing.T) {
+	t.Run("Test Twingate Resource : Convert to GraphQL UDP Error", func(t *testing.T) {
 		spi := &StringProtocolsInput{
 			UDPPolicy: ".......",
 			UDPPorts:  []string{"test-me"},
@@ -44,7 +44,7 @@ func TestConvertToGraphqlUDPError(t *testing.T) {
 }
 
 func TestConvertToGraphqlTCPError(t *testing.T) {
-	t.Run("Test Twingate Resource : Convert to GraphQL ", func(t *testing.T) {
+	t.Run("Test Twingate Resource : Convert to GraphQL TCP Error", func(t *testing.T) {
 		spi := &StringProtocolsInput{
 			TCPPolicy: ".......",
 			TCPPorts:  []string{"test-me"},
@@ -109,8 +109,9 @@ func TestParseErrorPortsToGraphql(t *testing.T) {
 }
 
 func TestClientResourceCreateOk(t *testing.T) {
-	// response JSON
-	createResourceOkJson := `{
+	t.Run("Test Twingate Resource : Client Resource Create Ok", func(t *testing.T) {
+		// response JSON
+		createResourceOkJson := `{
 	  "data": {
 		"resourceCreate": {
 		  "entity": {
@@ -122,22 +123,23 @@ func TestClientResourceCreateOk(t *testing.T) {
 	  }
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceOkJson))
-	resource := newTestResource()
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceOkJson))
+		resource := newTestResource()
 
-	err := client.createResource(resource)
+		err := client.createResource(resource)
 
-	assert.Nil(t, err)
-	assert.EqualValues(t, "test-id", resource.ID)
+		assert.Nil(t, err)
+		assert.EqualValues(t, "test-id", resource.ID)
+	})
 }
 
 func TestClientResourceCreateError(t *testing.T) {
-	// response JSON
-	createResourceErrorJson := `{
+	t.Run("Test Twingate Resource : lient Resource Create Error", func(t *testing.T) {
+		// response JSON
+		createResourceErrorJson := `{
 	  "data": {
 		"resourceCreate": {
 		  "entity": {
@@ -149,21 +151,22 @@ func TestClientResourceCreateError(t *testing.T) {
 	  }
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceErrorJson))
-	resource := newTestResource()
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceErrorJson))
+		resource := newTestResource()
 
-	err := client.createResource(resource)
+		err := client.createResource(resource)
 
-	assert.EqualError(t, err, "failed to create resource with id : something went wrong")
+		assert.EqualError(t, err, "failed to create resource with id : something went wrong")
+	})
 }
 
 func TestClientResourceCreateRequestError(t *testing.T) {
-	// response JSON
-	createResourceErrorJson := `{
+	t.Run("Test Twingate Resource : Client Resource Create Request Error", func(t *testing.T) {
+		// response JSON
+		createResourceErrorJson := `{
 	  "data": {
 		"resourceCreate": {
 		  "entity": {
@@ -175,24 +178,25 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 	  }
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(200, createResourceErrorJson)
-			return resp, errors.New("error_1")
-		})
-	resource := newTestResource()
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, createResourceErrorJson)
+				return resp, errors.New("error_1")
+			})
+		resource := newTestResource()
 
-	err := client.createResource(resource)
+		err := client.createResource(resource)
 
-	assert.EqualError(t, err, "failed to create resource with id : Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to create resource with id : Post \""+client.GraphqlServerURL+"\": error_1")
+	})
 }
 
 func TestClientResourceReadOk(t *testing.T) {
-	// response JSON
-	createResourceOkJson := `{
+	t.Run("Test Twingate Resource : Read Client Resource Ok", func(t *testing.T) {
+		// response JSON
+		createResourceOkJson := `{
 	  "data": {
 		"resource": {
 		  "id": "resource1",
@@ -245,27 +249,28 @@ func TestClientResourceReadOk(t *testing.T) {
 	  }
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceOkJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceOkJson))
 
-	resource, err := client.readResource("resource1")
-	tcpPorts, _ := resource.Protocols.TCP.buildPortsRnge()
-	assert.Nil(t, err)
-	assert.EqualValues(t, graphql.ID("resource1"), resource.ID)
-	assert.Contains(t, resource.stringGroups(), "group1")
-	assert.Contains(t, tcpPorts, "8080-8090")
-	assert.EqualValues(t, resource.Address, "test.com")
-	assert.EqualValues(t, resource.RemoteNetworkID, graphql.ID("network1"))
-	assert.Len(t, resource.Protocols.UDP.Ports, 0)
-	assert.EqualValues(t, resource.Name, "test resource")
+		resource, err := client.readResource("resource1")
+		tcpPorts, _ := resource.Protocols.TCP.buildPortsRnge()
+		assert.Nil(t, err)
+		assert.EqualValues(t, graphql.ID("resource1"), resource.ID)
+		assert.Contains(t, resource.stringGroups(), "group1")
+		assert.Contains(t, tcpPorts, "8080-8090")
+		assert.EqualValues(t, resource.Address, "test.com")
+		assert.EqualValues(t, resource.RemoteNetworkID, graphql.ID("network1"))
+		assert.Len(t, resource.Protocols.UDP.Ports, 0)
+		assert.EqualValues(t, resource.Name, "test resource")
+	})
 }
 
 func TestClientResourceReadTooManyGroups(t *testing.T) {
-	// response JSON
-	createResourceOkJson := `{
+	t.Run("Test Twingate Resource : Read To Many Groups", func(t *testing.T) {
+		// response JSON
+		createResourceOkJson := `{
 	  "data": {
 		"resource": {
 		  "id": "resource1",
@@ -318,75 +323,79 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 	  }
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceOkJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceOkJson))
 
-	resource, err := client.readResource("resource1")
-	assert.Nil(t, resource)
-	assert.EqualError(t, err, "failed to read resource with id resource1: provider does not support more than 50 groups per resource")
+		resource, err := client.readResource("resource1")
+		assert.Nil(t, resource)
+		assert.EqualError(t, err, "failed to read resource with id resource1: provider does not support more than 50 groups per resource")
+	})
 }
 
 func TestClientResourceReadError(t *testing.T) {
-	// response JSON
-	createResourceErrorJson := `{
+	t.Run("Test Twingate Resource : Client Resource Read Error", func(t *testing.T) {
+		// response JSON
+		createResourceErrorJson := `{
 		"data": {
 			"resource": null
 		}
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceErrorJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceErrorJson))
 
-	resource, err := client.readResource("resource1")
+		resource, err := client.readResource("resource1")
 
-	assert.Nil(t, resource)
-	assert.EqualError(t, err, "failed to read resource with id resource1")
+		assert.Nil(t, resource)
+		assert.EqualError(t, err, "failed to read resource with id resource1")
+	})
 }
 
 func TestClientResourceEmptyReadError(t *testing.T) {
-	// response JSON
-	createResourceErrorJson := `{}`
+	t.Run("Test Twingate Resource : Client Resource Empty Read Error", func(t *testing.T) {
+		// response JSON
+		createResourceErrorJson := `{}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceErrorJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceErrorJson))
 
-	resource, err := client.readResource(graphql.ID(nil))
+		resource, err := client.readResource(graphql.ID(nil))
 
-	assert.Nil(t, resource)
-	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID").Error())
+		assert.Nil(t, resource)
+		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID").Error())
+	})
 }
 
 func TestClientResourceReadRequestError(t *testing.T) {
-	// response JSON
-	createResourceErrorJson := `{}`
+	t.Run("Test Twingate Resource : Client Resource Read Request Error", func(t *testing.T) {
+		// response JSON
+		createResourceErrorJson := `{}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(200, createResourceErrorJson)
-			return resp, errors.New("error_1")
-		})
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, createResourceErrorJson)
+				return resp, errors.New("error_1")
+			})
 
-	resource, err := client.readResource(graphql.ID("id"))
+		resource, err := client.readResource(graphql.ID("id"))
 
-	assert.Nil(t, resource)
-	assert.EqualError(t, err, "failed to read remote network with id id: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.Nil(t, resource)
+		assert.EqualError(t, err, "failed to read remote network with id id: Post \""+client.GraphqlServerURL+"\": error_1")
+	})
 }
 
 func TestClientResourceUpdateOk(t *testing.T) {
-	// response JSON
-	createResourceUpdateOkJson := `{
+	t.Run("Test Twingate Resource : Client Resource Update Ok", func(t *testing.T) {
+		// response JSON
+		createResourceUpdateOkJson := `{
 		"data": {
 			"resourceUpdate": {
 				"ok" : true,
@@ -395,21 +404,22 @@ func TestClientResourceUpdateOk(t *testing.T) {
 		}
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceUpdateOkJson))
-	resource := newTestResource()
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceUpdateOkJson))
+		resource := newTestResource()
 
-	err := client.updateResource(resource)
+		err := client.updateResource(resource)
 
-	assert.Nil(t, err)
+		assert.Nil(t, err)
+	})
 }
 
 func TestClientResourceUpdateError(t *testing.T) {
-	// response JSON
-	createResourceUpdateErrorJson := `{
+	t.Run("Test Twingate Resource : RClient Resource Update Error", func(t *testing.T) {
+		// response JSON
+		createResourceUpdateErrorJson := `{
 		"data": {
 			"resourceUpdate": {
 				"ok" : false,
@@ -418,21 +428,22 @@ func TestClientResourceUpdateError(t *testing.T) {
 		}
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceUpdateErrorJson))
-	resource := newTestResource()
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceUpdateErrorJson))
+		resource := newTestResource()
 
-	err := client.updateResource(resource)
+		err := client.updateResource(resource)
 
-	assert.EqualError(t, err, "failed to update resource with id test: cant update resource")
+		assert.EqualError(t, err, "failed to update resource with id test: cant update resource")
+	})
 }
 
 func TestClientResourceUpdateRequestError(t *testing.T) {
-	// response JSON
-	createResourceUpdateErrorJson := `{
+	t.Run("Test Twingate Resource : Client Resource Update Request Error", func(t *testing.T) {
+		// response JSON
+		createResourceUpdateErrorJson := `{
 		"data": {
 			"resourceUpdate": {
 				"ok" : false,
@@ -441,24 +452,25 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 		}
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(200, createResourceUpdateErrorJson)
-			return resp, errors.New("error_1")
-		})
-	resource := newTestResource()
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, createResourceUpdateErrorJson)
+				return resp, errors.New("error_1")
+			})
+		resource := newTestResource()
 
-	err := client.updateResource(resource)
+		err := client.updateResource(resource)
 
-	assert.EqualError(t, err, "failed to update resource with id test: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to update resource with id test: Post \""+client.GraphqlServerURL+"\": error_1")
+	})
 }
 
 func TestClientResourceDeleteOk(t *testing.T) {
-	// response JSON
-	createResourceDeleteOkJson := `{
+	t.Run("Test Twingate Resource : Client Resource Delete Ok", func(t *testing.T) {
+		// response JSON
+		createResourceDeleteOkJson := `{
 		"data": {
 			"resourceDelete": {
 				"ok" : true,
@@ -467,20 +479,21 @@ func TestClientResourceDeleteOk(t *testing.T) {
 		}
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceDeleteOkJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceDeleteOkJson))
 
-	err := client.deleteResource("resource1")
+		err := client.deleteResource("resource1")
 
-	assert.Nil(t, err)
+		assert.Nil(t, err)
+	})
 }
 
 func TestClientResourceDeleteError(t *testing.T) {
-	// response JSON
-	createResourceDeleteErrorJson := `{
+	t.Run("Test Twingate Resource : Client Resource Delete Error", func(t *testing.T) {
+		// response JSON
+		createResourceDeleteErrorJson := `{
 		"data": {
 			"resourceDelete": {
 				"ok" : false,
@@ -489,20 +502,21 @@ func TestClientResourceDeleteError(t *testing.T) {
 		}
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
 
-	err := client.deleteResource("resource1")
+		err := client.deleteResource("resource1")
 
-	assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
+		assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
+	})
 }
 
 func TestClientResourceDeleteRequestError(t *testing.T) {
-	// response JSON
-	createResourceDeleteErrorJson := `{
+	t.Run("Test Twingate Resource : Client Resource Delete Request Error", func(t *testing.T) {
+		// response JSON
+		createResourceDeleteErrorJson := `{
 		"data": {
 			"resourceDelete": {
 				"ok" : false,
@@ -511,38 +525,40 @@ func TestClientResourceDeleteRequestError(t *testing.T) {
 		}
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(200, createResourceDeleteErrorJson)
-			return resp, errors.New("error_1")
-		})
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, createResourceDeleteErrorJson)
+				return resp, errors.New("error_1")
+			})
 
-	err := client.deleteResource("resource1")
+		err := client.deleteResource("resource1")
 
-	assert.EqualError(t, err, "failed to delete resource with id resource1: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to delete resource with id resource1: Post \""+client.GraphqlServerURL+"\": error_1")
+	})
 }
 
 func TestClientResourceEmptyDeleteError(t *testing.T) {
-	// response JSON
-	createResourceDeleteErrorJson := `{}`
+	t.Run("Test Twingate Resource : Client Resource Empty Delete Error", func(t *testing.T) {
+		// response JSON
+		createResourceDeleteErrorJson := `{}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
 
-	err := client.deleteResource(graphql.ID(nil))
+		err := client.deleteResource(graphql.ID(nil))
 
-	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "resourceID").Error())
+		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "resourceID").Error())
+	})
 }
 
 func TestClientResourcesReadAllOk(t *testing.T) {
-	// response JSON
-	readResourcesOkJson := `{
+	t.Run("Test Twingate Resource : Client Resource Read All Ok", func(t *testing.T) {
+		// response JSON
+		readResourcesOkJson := `{
 	  "data": {
 		"resources": {
 		  "edges": [
@@ -569,53 +585,30 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 	  }
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewStringResponder(200, readResourcesOkJson))
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, readResourcesOkJson))
 
-	resources, err := client.readResources()
-	assert.NoError(t, err)
-	// Resources return dynamic and not ordered object
-	// See gabs Children() method.
+		edges, err := client.readResources()
+		assert.NoError(t, err)
 
-	r0 := &IDName{
-		ID:   "resource1",
-		Name: "tf-acc-resource1",
-	}
-	r1 := &IDName{
-		ID:   "resource2",
-		Name: "resource2",
-	}
-	r2 := &IDName{
-		ID:   "resource3",
-		Name: "tf-acc-resource3",
-	}
-	mockMap := make(map[int]*IDName)
+		mockMap := make(map[graphql.ID]graphql.String)
+		mockMap["resource1"] = "tf-acc-resource1"
+		mockMap["resource2"] = "resource2"
+		mockMap["resource3"] = "tf-acc-resource3"
 
-	mockMap[0] = r0
-	mockMap[1] = r1
-	mockMap[2] = r2
-
-	counter := 0
-	for _, elem := range resources {
-		for _, i := range mockMap {
-			if elem.Node.Name == i.Name && elem.Node.ID == i.ID {
-				counter++
-			}
+		for _, elem := range edges {
+			name := mockMap[elem.Node.ID]
+			assert.Equal(t, name, elem.Node.Name)
 		}
-	}
-
-	if len(mockMap) != counter {
-		t.Errorf("Expected map not equal to origin!")
-	}
-	assert.EqualValues(t, len(mockMap), counter)
+	})
 }
 
 func TestClientResourcesReadRequestError(t *testing.T) {
-	// response JSON
-	readResourcesOkJson := `{
+	t.Run("Test Twingate Resource : Client Resources Read Request Error", func(t *testing.T) {
+		// response JSON
+		readResourcesOkJson := `{
 	  "data": {
 		"resources": {
 		  "edges": [
@@ -630,18 +623,17 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 	  }
 	}`
 
-	client := newTestClient()
-	httpmock.ActivateNonDefault(client.httpClient)
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(200, readResourcesOkJson)
-			return resp, errors.New("error_1")
-		})
+		client := newTestClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, readResourcesOkJson)
+				return resp, errors.New("error_1")
+			})
 
-	resources, err := client.readResources()
+		resources, err := client.readResources()
 
-	assert.Nil(t, resources)
-	assert.EqualError(t, err, "failed to read resource with id All: Post \""+client.GraphqlServerURL+"\": error_1")
-
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, "failed to read resource with id All: Post \""+client.GraphqlServerURL+"\": error_1")
+	})
 }

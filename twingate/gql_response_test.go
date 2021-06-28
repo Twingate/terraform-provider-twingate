@@ -26,12 +26,11 @@ func TestProtocolsInput(t *testing.T) {
 		assert.EqualValues(t, "ALLOW_ALL", tcpPolicy)
 		assert.EqualValues(t, "1-18000", tcpPorts[0])
 		assert.EqualValues(t, "1-18000", udpPorts[0])
-
 	})
 }
 
-func TestIdNameStringify(t *testing.T) {
-	t.Run("Test Twingate Resource : ID Name Stringify", func(t *testing.T) {
+func TestConvertIDNameToString(t *testing.T) {
+	t.Run("Test Twingate Resource : Convert ID Name To String", func(t *testing.T) {
 		in := &IDName{ID: graphql.ID("id"), Name: graphql.String("name")}
 		id := in.StringID()
 		name := in.StringName()
