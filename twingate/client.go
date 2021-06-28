@@ -1,7 +1,6 @@
 package twingate
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -95,18 +94,14 @@ func (e *MutationError) Error() string {
 	return string(e.Message)
 }
 
-type HTTPClient interface {
-	Do(req *retryablehttp.Request) (*http.Response, error)
-}
-
 type Client struct {
 	GraphqlClient    *graphql.Client
-	HTTPClient       HTTPClient
+	RetryableClient  *retryablehttp.Client
 	ServerURL        string
 	GraphqlServerURL string
 	APIServerURL     string
 	APIToken         string
-	httpClient       *http.Client
+	// httpClient       *http.Client
 }
 
 type transport struct {
@@ -146,26 +141,21 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
-//go:generate mockgen -destination=../mock/graphql.go -package=mock_twingate github.com/Twingate/terraform-provider-twingate Gql
-
 func NewClient(sURL serverURL, apiToken string) *Client {
-	c := &http.Client{Transport: newTransport(apiToken)}
-
 	rc := retryablehttp.NewClient()
 	rc.HTTPClient.Timeout = Timeout
-	rc.HTTPClient = c
+	rc.HTTPClient.Transport = newTransport(apiToken)
 	rc.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
 
 	client := Client{
-		HTTPClient:       rc,
+		RetryableClient:  rc,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), c),
-		httpClient:       c,
+		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), rc.HTTPClient),
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
@@ -173,31 +163,9 @@ func NewClient(sURL serverURL, apiToken string) *Client {
 	return &client
 }
 
-type pingQuery struct {
-	RemoteNetworks struct {
-		Edges []Edges
-	}
-}
-
-func (client *Client) ping() error {
-	r := pingQuery{}
-	variables := map[string]interface{}{}
-
-	err := client.GraphqlClient.Query(context.Background(), &r, variables)
-	if err != nil {
-		log.Printf("[ERROR] Cannot reach Graphql API Server %s", client.GraphqlServerURL)
-
-		return NewAPIError(err, "ping", "twingate")
-	}
-
-	log.Printf("[INFO] Graphql API Server at URL %s reachable", client.GraphqlServerURL)
-
-	return nil
-}
-
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
-	res, err := client.HTTPClient.Do(req)
+	res, err := client.RetryableClient.Do(req)
 
 	if err != nil {
 		return nil, fmt.Errorf("can't execute http request: %w", err)

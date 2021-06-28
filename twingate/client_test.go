@@ -14,27 +14,13 @@ import (
 	"testing"
 )
 
-func newTestClient() *Client {
+func newHTTPMockClient() *Client {
 	sURL := newServerURL("test", "dev.opstg.com")
 	client := NewClient(sURL, "xxxx")
-	httpmock.ActivateNonDefault(client.httpClient)
-
-	client.HTTPClient = &MockClient{}
+	httpmock.ActivateNonDefault(client.RetryableClient.HTTPClient)
+	client.RetryableClient.RetryMax = 0
 
 	return client
-}
-
-// MockClient is the mock client for retryablehttp
-type MockClient struct {
-	DoFunc func(req *retryablehttp.Request) (*http.Response, error)
-}
-
-var (
-	GetDoFunc func(req *retryablehttp.Request) (*http.Response, error)
-)
-
-func (m *MockClient) Do(req *retryablehttp.Request) (*http.Response, error) {
-	return GetDoFunc(req)
 }
 
 func TestClientRetriesFailedRequestsOnServerError(t *testing.T) {
@@ -124,23 +110,5 @@ func TestAPIError(t *testing.T) {
 		errString := apiErr.Error()
 
 		assert.Equal(t, "failed to operation resource with id id: test-error", errString)
-	})
-}
-
-func TestPing(t *testing.T) {
-	t.Run("Test Twingate Resource : Ping Error", func(t *testing.T) {
-		pingJson := `{}`
-
-		client := newTestClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, pingJson)
-				return resp, errors.New("error_1")
-			})
-
-		err := client.ping()
-
-		assert.EqualError(t, err, "failed to ping twingate with id : Post \""+client.GraphqlServerURL+"\": error_1")
 	})
 }

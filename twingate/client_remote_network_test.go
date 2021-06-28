@@ -25,7 +25,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createNetworkOkJson))
@@ -50,7 +50,7 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createNetworkOkJson))
@@ -75,7 +75,7 @@ func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
@@ -105,7 +105,7 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, updateNetworkOkJson))
@@ -129,7 +129,7 @@ func TestClientRemoteNetworkUpdateRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -154,7 +154,7 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
@@ -176,7 +176,7 @@ func TestClientRemoteNetworkReadRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -201,7 +201,7 @@ func TestClientCreateEmptyRemoteNetworkError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
@@ -223,7 +223,7 @@ func TestClientReadEmptyRemoteNetworkError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
@@ -245,7 +245,7 @@ func TestClientDeleteEmptyRemoteNetworkError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
@@ -287,7 +287,7 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))

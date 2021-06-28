@@ -26,7 +26,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createConnectorOkJson))
@@ -52,7 +52,7 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 		  }
 		}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, deleteConnectorOkJson))
@@ -76,7 +76,7 @@ func TestClientConnectorCreateError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createNetworkOkJson))
@@ -102,7 +102,7 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -124,7 +124,7 @@ func TestClientConnectorEmptyCreateError(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createNetworkOkJson))
@@ -150,7 +150,7 @@ func TestClientConnectorDeleteError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, deleteConnectorOkJson))
@@ -175,12 +175,11 @@ func TestClientConnectorDeleteRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, deleteConnectorOkJson)
-				return resp, errors.New("error_1")
+				return httpmock.NewStringResponse(200, deleteConnectorOkJson), errors.New("error_1")
 			})
 		connectorId := graphql.ID("test")
 
@@ -200,7 +199,7 @@ func TestClientConnectorReadError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
@@ -223,7 +222,7 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -245,7 +244,7 @@ func TestClientConnectorEmptyReadError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
@@ -263,7 +262,7 @@ func TestClientConnectorEmptyDeleteError(t *testing.T) {
 		// response JSON
 		deleteConnectorOkJson := `{}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, deleteConnectorOkJson))
@@ -306,7 +305,7 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readConnectorsOkJson))

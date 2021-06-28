@@ -28,7 +28,7 @@ type createConnectorQuery struct {
 }
 
 func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, error) {
-	if remoteNetworkID == nil || remoteNetworkID == "" {
+	if checkEmptyID(remoteNetworkID) {
 		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkID")
 	}
 
@@ -86,7 +86,7 @@ type readConnectorQuery struct {
 }
 
 func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) {
-	if connectorID == nil || connectorID == "" {
+	if checkEmptyID(connectorID) {
 		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "connectorID")
 	}
 
@@ -124,7 +124,7 @@ type deleteConnectorQuery struct {
 }
 
 func (client *Client) deleteConnector(connectorID graphql.ID) error {
-	if connectorID == nil || connectorID == "" {
+	if checkEmptyID(connectorID) {
 		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "connectorID")
 	}
 

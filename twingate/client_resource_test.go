@@ -123,7 +123,7 @@ func TestClientResourceCreateOk(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceOkJson))
@@ -151,7 +151,7 @@ func TestClientResourceCreateError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
@@ -178,7 +178,7 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -249,7 +249,7 @@ func TestClientResourceReadOk(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceOkJson))
@@ -323,7 +323,7 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceOkJson))
@@ -343,7 +343,7 @@ func TestClientResourceReadError(t *testing.T) {
 		}
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
@@ -360,7 +360,7 @@ func TestClientResourceEmptyReadError(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
@@ -377,7 +377,7 @@ func TestClientResourceReadRequestError(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -404,7 +404,7 @@ func TestClientResourceUpdateOk(t *testing.T) {
 		}
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceUpdateOkJson))
@@ -428,7 +428,7 @@ func TestClientResourceUpdateError(t *testing.T) {
 		}
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceUpdateErrorJson))
@@ -452,7 +452,7 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 		}
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -479,7 +479,7 @@ func TestClientResourceDeleteOk(t *testing.T) {
 		}
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceDeleteOkJson))
@@ -502,7 +502,7 @@ func TestClientResourceDeleteError(t *testing.T) {
 		}
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
@@ -525,7 +525,7 @@ func TestClientResourceDeleteRequestError(t *testing.T) {
 		}
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
@@ -544,7 +544,7 @@ func TestClientResourceEmptyDeleteError(t *testing.T) {
 		// response JSON
 		createResourceDeleteErrorJson := `{}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
@@ -585,7 +585,7 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readResourcesOkJson))
@@ -623,7 +623,7 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 	  }
 	}`
 
-		client := newTestClient()
+		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			func(req *http.Request) (*http.Response, error) {
