@@ -96,7 +96,7 @@ func (e *MutationError) Error() string {
 
 type Client struct {
 	GraphqlClient    *graphql.Client
-	HttpClient       *retryablehttp.Client
+	HTTPClient       *retryablehttp.Client
 	ServerURL        string
 	GraphqlServerURL string
 	APIServerURL     string
@@ -149,7 +149,7 @@ func NewClient(sURL serverURL, apiToken string) *Client {
 	}
 
 	client := Client{
-		HttpClient:       rc,
+		HTTPClient:       rc,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
@@ -164,7 +164,7 @@ func NewClient(sURL serverURL, apiToken string) *Client {
 
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
-	res, err := client.HttpClient.Do(req)
+	res, err := client.HTTPClient.Do(req)
 
 	if err != nil {
 		return nil, fmt.Errorf("can't execute http request: %w", err)
