@@ -3,6 +3,7 @@ package twingate
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -48,7 +49,7 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
 			assert.Contains(t, header, accessToken)
@@ -70,7 +71,7 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
 			assert.Contains(t, header, accessToken)
@@ -92,7 +93,7 @@ func TestClientConnectorTokensRequestError(t *testing.T) {
 	refreshToken := "test2"
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
 			assert.Contains(t, header, accessToken)
@@ -100,8 +101,7 @@ func TestClientConnectorTokensRequestError(t *testing.T) {
 		})
 
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
-
-	assert.EqualError(t, err, "failed to verify connector tokens with id : can't execute http request: error")
+	assert.True(t, strings.Contains(err.Error(), "failed to verify connector tokens with id"))
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
@@ -127,24 +127,6 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	assert.EqualError(t, err, "failed to generate connector tokens with id test: error_1")
 }
 
-func TestClientConnectorCreateTokensRequestError(t *testing.T) {
-	// response JSON
-	verifyTokensOkJson := `{}`
-	connector := &Connector{ID: "test"}
-
-	client := newHTTPMockClient()
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(200, verifyTokensOkJson)
-			return resp, errors.New("error")
-		})
-
-	err := client.generateConnectorTokens(connector)
-
-	assert.EqualError(t, err, "failed to generate connector tokens with id : Post \""+client.GraphqlServerURL+"\": error")
-}
-
 func TestClientConnectorEmptyCreateTokensError(t *testing.T) {
 	// response JSON
 	createTokensOkJson := `{}`
@@ -152,7 +134,7 @@ func TestClientConnectorEmptyCreateTokensError(t *testing.T) {
 
 	client := newHTTPMockClient()
 	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
 		httpmock.NewStringResponder(200, createTokensOkJson))
 
 	err := client.generateConnectorTokens(connector)

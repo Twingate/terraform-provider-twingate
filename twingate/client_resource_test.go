@@ -13,8 +13,8 @@ import (
 
 func newTestResource() *Resource {
 	protocols := newProcolsInput()
-	protocols.TCP.Policy = graphql.String("ALLOW_ALL")
-	protocols.UDP.Policy = graphql.String("ALLOW_ALL")
+	protocols.TCP.Policy = "ALLOW_ALL"
+	protocols.UDP.Policy = "ALLOW_ALL"
 
 	groups := make([]*graphql.ID, 0)
 	group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
@@ -23,8 +23,8 @@ func newTestResource() *Resource {
 	return &Resource{
 		ID:              graphql.ID("test"),
 		RemoteNetworkID: graphql.ID("test"),
-		Address:         graphql.String("test"),
-		Name:            graphql.String("testName"),
+		Address:         "test",
+		Name:            "testName",
 		GroupsIds:       groups,
 		Protocols:       protocols,
 	}
