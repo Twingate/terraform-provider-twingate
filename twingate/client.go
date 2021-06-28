@@ -101,7 +101,6 @@ type Client struct {
 	GraphqlServerURL string
 	APIServerURL     string
 	APIToken         string
-	// httpClient       *http.Client
 }
 
 type transport struct {
