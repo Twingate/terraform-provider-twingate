@@ -81,7 +81,7 @@ type readRemoteNetworkQuery struct {
 }
 
 func (client *Client) readRemoteNetwork(remoteNetworkID graphql.ID) (*remoteNetwork, error) {
-	if checkEmptyID(remoteNetworkID) {
+	if remoteNetworkID.(string) == "" {
 		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "remoteNetworkID")
 	}
 
@@ -135,7 +135,7 @@ type deleteRemoteNetworkQuery struct {
 }
 
 func (client *Client) deleteRemoteNetwork(remoteNetworkID graphql.ID) error {
-	if checkEmptyID(remoteNetworkID) {
+	if remoteNetworkID.(string) == "" {
 		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "remoteNetworkID")
 	}
 

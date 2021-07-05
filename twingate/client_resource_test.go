@@ -159,7 +159,7 @@ func TestClientResourceCreateError(t *testing.T) {
 
 		err := client.createResource(resource)
 
-		assert.EqualError(t, err, "failed to create resource with id : something went wrong")
+		assert.EqualError(t, err, "failed to create resource: something went wrong")
 	})
 }
 
@@ -189,7 +189,7 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 
 		err := client.createResource(resource)
 
-		assert.EqualError(t, err, "failed to create resource with id : Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to create resource: Post \""+client.GraphqlServerURL+"\": error_1")
 	})
 }
 
@@ -365,7 +365,7 @@ func TestClientResourceEmptyReadError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
 
-		resource, err := client.readResource(graphql.ID(nil))
+		resource, err := client.readResource(graphql.ID(""))
 
 		assert.Nil(t, resource)
 		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID").Error())
@@ -549,7 +549,7 @@ func TestClientResourceEmptyDeleteError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
 
-		err := client.deleteResource(graphql.ID(nil))
+		err := client.deleteResource(graphql.ID(""))
 
 		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "resourceID").Error())
 	})

@@ -58,7 +58,7 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 
 		remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
-		assert.EqualError(t, err, "failed to create remote network with id : error_1")
+		assert.EqualError(t, err, "failed to create remote network: error_1")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -88,7 +88,7 @@ func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 
 		remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
-		assert.EqualError(t, err, "failed to create remote network with id : Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to create remote network: Post \""+client.GraphqlServerURL+"\": error_1")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -227,7 +227,7 @@ func TestClientReadEmptyRemoteNetworkError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
-		remoteNetworkId := graphql.ID(nil)
+		remoteNetworkId := graphql.ID("")
 
 		remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
 

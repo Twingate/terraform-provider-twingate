@@ -65,7 +65,7 @@ func (e *APIError) Error() string {
 
 	var format = "failed to %s %s"
 
-	if e.ID != 0 || e.ID != nil {
+	if e.ID.(string) != "" {
 		format += " with id %s"
 
 		a = append(a, e.ID)

@@ -3,7 +3,7 @@ package twingate
 import (
 	"errors"
 	"net/http"
-	"strings"
+	"strconv"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -80,7 +80,7 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-	assert.EqualError(t, err, "failed to verify connector tokens with id : request  failed, status 501, body {}")
+	assert.EqualError(t, err, "failed to verify connector tokens: request  failed, status 501, body {}")
 }
 
 func TestClientConnectorTokensRequestError(t *testing.T) {
@@ -92,8 +92,8 @@ func TestClientConnectorTokensRequestError(t *testing.T) {
 	accessToken := "test1"
 	refreshToken := "test2"
 	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
+	apiURL := client.APIServerURL + "/access_node/refresh"
+	httpmock.RegisterResponder("POST", apiURL,
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
 			assert.Contains(t, header, accessToken)
@@ -101,7 +101,7 @@ func TestClientConnectorTokensRequestError(t *testing.T) {
 		})
 
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
-	assert.True(t, strings.Contains(err.Error(), "failed to verify connector tokens with id"))
+	assert.EqualError(t, err, "failed to verify connector tokens: can't execute http request: POST "+apiURL+" giving up after "+strconv.Itoa((mockRetries+1))+" attempt(s): Post \""+apiURL+"\": error")
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
@@ -139,5 +139,5 @@ func TestClientConnectorEmptyCreateTokensError(t *testing.T) {
 
 	err := client.generateConnectorTokens(connector)
 
-	assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "generate", remoteNetworkResourceName, "connectorTokens").Error())
+	assert.EqualError(t, err, "failed to generate connector tokens: id is empty")
 }

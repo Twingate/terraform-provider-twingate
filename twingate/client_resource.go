@@ -230,7 +230,7 @@ type readResourceQuery struct {
 }
 
 func (client *Client) readResource(resourceID graphql.ID) (*Resource, error) {
-	if checkEmptyID(resourceID) {
+	if resourceID.(string) == "" {
 		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID")
 	}
 
@@ -323,7 +323,7 @@ type deleteResourceQuery struct {
 }
 
 func (client *Client) deleteResource(resourceID graphql.ID) error {
-	if checkEmptyID(resourceID) {
+	if resourceID.(string) == "" {
 		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "resourceID")
 	}
 

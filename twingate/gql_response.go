@@ -95,11 +95,3 @@ type PortRangeInput struct {
 	Start graphql.Int `json:"start"`
 	End   graphql.Int `json:"end"`
 }
-
-func checkEmptyID(id graphql.ID) bool {
-	if id == nil || id == "" {
-		return true
-	}
-
-	return false
-}
