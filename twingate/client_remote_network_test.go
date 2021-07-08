@@ -209,7 +209,7 @@ func TestClientCreateEmptyRemoteNetworkError(t *testing.T) {
 
 		remoteNetwork, err := client.createRemoteNetwork(remoteNetworkName)
 
-		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkName").Error())
+		assert.EqualError(t, err, "failed to create remote network: id is empty")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -231,7 +231,7 @@ func TestClientReadEmptyRemoteNetworkError(t *testing.T) {
 
 		remoteNetwork, err := client.readRemoteNetwork(remoteNetworkId)
 
-		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "remoteNetworkID").Error())
+		assert.EqualError(t, err, "failed to read remote network: id is empty")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -253,7 +253,7 @@ func TestClientDeleteEmptyRemoteNetworkError(t *testing.T) {
 
 		err := client.deleteRemoteNetwork(remoteNetworkId)
 
-		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "remoteNetworkID").Error())
+		assert.EqualError(t, err, "failed to delete remote network: id is empty")
 	})
 }
 

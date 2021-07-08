@@ -17,7 +17,7 @@ type connectorTokens struct {
 
 const connectorTokensResourceName = "connector tokens"
 
-func (client *Client) verifyConnectorTokens(refreshToken, accessToken, connectorID string) error {
+func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) error {
 	jsonValue, _ := json.Marshal(
 		map[string]string{
 			"refresh_token": refreshToken,
@@ -25,14 +25,15 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken, connector
 
 	req, err := retryablehttp.NewRequest("POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return NewAPIErrorWithID(err, "verify", connectorTokensResourceName, connectorID)
+		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
 	_, err = client.doRequest(req)
+
 	if err != nil {
-		return NewAPIErrorWithID(err, "verify", connectorTokensResourceName, connectorID)
+		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}
 
 	return nil
@@ -49,7 +50,7 @@ type generateConnectorTokensQuery struct {
 }
 
 func (client *Client) generateConnectorTokens(connector *Connector) error {
-	if connector == nil || connector.ID == nil {
+	if connector == nil || connector.ID.(string) == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, "generate", connectorTokensResourceName)
 	}
 

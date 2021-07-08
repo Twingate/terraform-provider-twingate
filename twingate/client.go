@@ -182,7 +182,7 @@ func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, NewHTTPError(req.RequestURI, res.StatusCode, body)
+		return nil, NewHTTPError(req.URL.String(), res.StatusCode, body)
 	}
 
 	return body, nil

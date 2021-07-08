@@ -253,7 +253,7 @@ func TestClientConnectorEmptyReadError(t *testing.T) {
 		connector, err := client.readConnector(connectorId)
 
 		assert.Nil(t, connector)
-		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "connectorID").Error())
+		assert.EqualError(t, err, "failed to read connector: id is empty")
 	})
 }
 func TestClientConnectorEmptyDeleteError(t *testing.T) {
@@ -270,7 +270,7 @@ func TestClientConnectorEmptyDeleteError(t *testing.T) {
 
 		err := client.deleteConnector(connectorId)
 
-		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "connectorID").Error())
+		assert.EqualError(t, err, "failed to delete connector: id is empty")
 	})
 }
 

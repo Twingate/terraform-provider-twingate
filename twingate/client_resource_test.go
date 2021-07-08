@@ -137,7 +137,7 @@ func TestClientResourceCreateOk(t *testing.T) {
 }
 
 func TestClientResourceCreateError(t *testing.T) {
-	t.Run("Test Twingate Resource : lient Resource Create Error", func(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Create Error", func(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{
 	  "data": {
@@ -368,7 +368,7 @@ func TestClientResourceEmptyReadError(t *testing.T) {
 		resource, err := client.readResource(graphql.ID(""))
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "resourceID").Error())
+		assert.EqualError(t, err, "failed to read resource: id is empty")
 	})
 }
 
@@ -385,10 +385,10 @@ func TestClientResourceReadRequestError(t *testing.T) {
 				return resp, errors.New("error_1")
 			})
 
-		resource, err := client.readResource(graphql.ID("id"))
+		resource, err := client.readResource(graphql.ID("test-id"))
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, "failed to read remote network with id id: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to read resource with id test-id: Post \""+client.GraphqlServerURL+"\": error_1")
 	})
 }
 
@@ -551,7 +551,7 @@ func TestClientResourceEmptyDeleteError(t *testing.T) {
 
 		err := client.deleteResource(graphql.ID(""))
 
-		assert.EqualError(t, err, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "resourceID").Error())
+		assert.EqualError(t, err, "failed to delete resource: id is empty")
 	})
 }
 

@@ -48,7 +48,6 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 
 	accessToken := "test1"
 	refreshToken := "test2"
-	connectorID := "testID"
 
 	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
 		func(req *http.Request) (*http.Response, error) {
@@ -57,7 +56,7 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 			return httpmock.NewStringResponse(200, verifyTokensOkJson), nil
 		})
 
-	err := client.verifyConnectorTokens(refreshToken, accessToken, connectorID)
+	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
 	assert.Nil(t, err)
 }
@@ -71,18 +70,18 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 
 	accessToken := "test1"
 	refreshToken := "test2"
-	connectorID := "testID"
 
-	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
+	apiURL := client.APIServerURL + "/access_node/refresh"
+	httpmock.RegisterResponder("POST", apiURL,
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
 			assert.Contains(t, header, accessToken)
 			return httpmock.NewStringResponse(501, verifyTokensOkJson), nil
 		})
 
-	err := client.verifyConnectorTokens(refreshToken, accessToken, connectorID)
+	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-	assert.EqualError(t, err, "failed to verify connector tokens with id testID: request  failed, status 501, body {}")
+	assert.EqualError(t, err, "failed to verify connector tokens: request "+apiURL+" failed, status 501, body {}")
 }
 
 func TestClientConnectorTokensRequestError(t *testing.T) {
@@ -93,7 +92,7 @@ func TestClientConnectorTokensRequestError(t *testing.T) {
 
 	accessToken := "test1"
 	refreshToken := "test2"
-	connectorID := "testID"
+
 	defer httpmock.DeactivateAndReset()
 	apiURL := client.APIServerURL + "/access_node/refresh"
 	httpmock.RegisterResponder("POST", apiURL,
@@ -103,8 +102,8 @@ func TestClientConnectorTokensRequestError(t *testing.T) {
 			return httpmock.NewStringResponse(501, verifyTokensOkJson), errors.New("error")
 		})
 
-	err := client.verifyConnectorTokens(refreshToken, accessToken, connectorID)
-	assert.EqualError(t, err, "failed to verify connector tokens with id testID: can't execute http request: POST "+apiURL+" giving up after "+strconv.Itoa((mockRetries+1))+" attempt(s): Post \""+apiURL+"\": error")
+	err := client.verifyConnectorTokens(refreshToken, accessToken)
+	assert.EqualError(t, err, "failed to verify connector tokens: can't execute http request: POST "+apiURL+" giving up after "+strconv.Itoa((mockRetries+1))+" attempt(s): Post \""+apiURL+"\": error")
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
@@ -133,7 +132,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 func TestClientConnectorEmptyCreateTokensError(t *testing.T) {
 	// response JSON
 	createTokensOkJson := `{}`
-	connector := &Connector{ID: nil}
+	connector := &Connector{ID: ""}
 
 	client := newHTTPMockClient()
 	defer httpmock.DeactivateAndReset()

@@ -87,7 +87,7 @@ type readConnectorQuery struct {
 
 func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) {
 	if connectorID.(string) == "" {
-		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "connectorID")
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{
@@ -125,7 +125,7 @@ type deleteConnectorQuery struct {
 
 func (client *Client) deleteConnector(connectorID graphql.ID) error {
 	if connectorID.(string) == "" {
-		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "connectorID")
+		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{

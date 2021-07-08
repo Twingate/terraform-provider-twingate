@@ -24,7 +24,7 @@ type createRemoteNetworkQuery struct {
 
 func (client *Client) createRemoteNetwork(remoteNetworkName graphql.String) (*remoteNetwork, error) {
 	if remoteNetworkName == "" {
-		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName, "remoteNetworkName")
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "create", remoteNetworkResourceName)
 	}
 
 	r := createRemoteNetworkQuery{}
@@ -82,7 +82,7 @@ type readRemoteNetworkQuery struct {
 
 func (client *Client) readRemoteNetwork(remoteNetworkID graphql.ID) (*remoteNetwork, error) {
 	if remoteNetworkID.(string) == "" {
-		return nil, NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName, "remoteNetworkID")
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", remoteNetworkResourceName)
 	}
 
 	variables := map[string]interface{}{
@@ -136,7 +136,7 @@ type deleteRemoteNetworkQuery struct {
 
 func (client *Client) deleteRemoteNetwork(remoteNetworkID graphql.ID) error {
 	if remoteNetworkID.(string) == "" {
-		return NewAPIErrorWithID(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName, "remoteNetworkID")
+		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", remoteNetworkResourceName)
 	}
 
 	variables := map[string]interface{}{
