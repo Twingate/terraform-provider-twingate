@@ -17,7 +17,7 @@ type connectorTokens struct {
 
 const connectorTokensResourceName = "connector tokens"
 
-func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) error {
+func (client *Client) verifyConnectorTokens(refreshToken, accessToken, connectorID string) error {
 	jsonValue, _ := json.Marshal(
 		map[string]string{
 			"refresh_token": refreshToken,
@@ -25,14 +25,14 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) er
 
 	req, err := retryablehttp.NewRequest("POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return NewAPIError(err, "verify", connectorTokensResourceName)
+		return NewAPIErrorWithID(err, "verify", connectorTokensResourceName, connectorID)
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
 	_, err = client.doRequest(req)
 	if err != nil {
-		return NewAPIError(err, "verify", connectorTokensResourceName)
+		return NewAPIErrorWithID(err, "verify", connectorTokensResourceName, connectorID)
 	}
 
 	return nil

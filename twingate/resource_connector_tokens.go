@@ -99,8 +99,9 @@ func resourceConnectorTokensRead(ctx context.Context, d *schema.ResourceData, m 
 
 	accessToken := d.Get("access_token").(string)
 	refreshToken := d.Get("refresh_token").(string)
+	connectorID := d.Get("connector_id").(string)
 
-	err := client.verifyConnectorTokens(refreshToken, accessToken)
+	err := client.verifyConnectorTokens(refreshToken, accessToken, connectorID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
