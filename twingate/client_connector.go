@@ -29,7 +29,7 @@ type createConnectorQuery struct {
 
 func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, error) {
 	if remoteNetworkID.(string) == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "create", connectorResourceName)
+		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "create", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{

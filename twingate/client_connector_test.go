@@ -132,7 +132,7 @@ func TestClientConnectorEmptyCreateError(t *testing.T) {
 
 		remoteNetwork, err := client.createConnector(remoteNetworkID)
 
-		assert.EqualError(t, err, "failed to create connector: id is empty")
+		assert.EqualError(t, err, "failed to create connector: network id is empty")
 		assert.Nil(t, remoteNetwork)
 	})
 }
