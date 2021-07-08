@@ -417,7 +417,7 @@ func TestClientResourceUpdateOk(t *testing.T) {
 }
 
 func TestClientResourceUpdateError(t *testing.T) {
-	t.Run("Test Twingate Resource : RClient Resource Update Error", func(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update Error", func(t *testing.T) {
 		// response JSON
 		createResourceUpdateErrorJson := `{
 		"data": {

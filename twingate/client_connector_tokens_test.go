@@ -122,24 +122,9 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		httpmock.NewStringResponder(200, createTokensOkJson))
 	connector := &Connector{
-		ID: "test",
+		ID: "test-id",
 	}
 	err := client.generateConnectorTokens(connector)
 
-	assert.EqualError(t, err, "failed to generate connector tokens with id test: error_1")
-}
-
-func TestClientConnectorEmptyCreateTokensError(t *testing.T) {
-	// response JSON
-	createTokensOkJson := `{}`
-	connector := &Connector{ID: ""}
-
-	client := newHTTPMockClient()
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
-		httpmock.NewStringResponder(200, createTokensOkJson))
-
-	err := client.generateConnectorTokens(connector)
-
-	assert.EqualError(t, err, "failed to generate connector tokens: id is empty")
+	assert.EqualError(t, err, "failed to generate connector tokens with id test-id: error_1")
 }

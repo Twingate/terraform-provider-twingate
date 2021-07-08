@@ -118,8 +118,8 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 	})
 }
 
-func TestClientConnectorEmptyCreateError(t *testing.T) {
-	t.Run("Test Twingate Resource : Client Connector Empty Create Error", func(t *testing.T) {
+func TestClientConnectorEmptyNetworkIDCreateError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Empty Network ID Create Error", func(t *testing.T) {
 
 		// response JSON
 		createNetworkOkJson := `{}`
