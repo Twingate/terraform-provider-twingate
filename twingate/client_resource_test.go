@@ -112,16 +112,16 @@ func TestClientResourceCreateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Create Ok", func(t *testing.T) {
 		// response JSON
 		createResourceOkJson := `{
-	  "data": {
-		"resourceCreate": {
-		  "entity": {
-			"id": "test-id"
-		  },
-		  "ok": true,
-		  "error": null
-		}
-	  }
-	}`
+		  "data": {
+			"resourceCreate": {
+			  "entity": {
+				"id": "test-id"
+			  },
+			  "ok": true,
+			  "error": null
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -140,16 +140,16 @@ func TestClientResourceCreateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Create Error", func(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{
-	  "data": {
-		"resourceCreate": {
-		  "entity": {
-			"id": "test-id"
-		  },
-		  "ok": false,
-		  "error": "something went wrong"
-		}
-	  }
-	}`
+		  "data": {
+			"resourceCreate": {
+			  "entity": {
+				"id": "test-id"
+			  },
+			  "ok": false,
+			  "error": "something went wrong"
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -167,16 +167,16 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Create Request Error", func(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{
-	  "data": {
-		"resourceCreate": {
-		  "entity": {
-			"id": "test-id"
-		  },
-		  "ok": false,
-		  "error": "something went wrong"
-		}
-	  }
-	}`
+		  "data": {
+			"resourceCreate": {
+			  "entity": {
+				"id": "test-id"
+			  },
+			  "ok": false,
+			  "error": "something went wrong"
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()

@@ -14,16 +14,16 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Remote Network Ok", func(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
-	  "data": {
-		"remoteNetworkCreate": {
-		  "entity": {
-			"id": "test-id"
-		  },
-		  "ok": true,
-		  "error": null
-		}
-	  }
-	}`
+		  "data": {
+			"remoteNetworkCreate": {
+			  "entity": {
+				"id": "test-id"
+			  },
+			  "ok": true,
+			  "error": null
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -42,13 +42,13 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Remote Network Error", func(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
-	  "data": {
-		"remoteNetworkCreate": {
-		  "ok": false,
-		  "error": "error_1"
-		}
-	  }
-	}`
+		  "data": {
+			"remoteNetworkCreate": {
+			  "ok": false,
+			  "error": "error_1"
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -67,13 +67,13 @@ func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Remote Network Request Error", func(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
-	  "data": {
-		"remoteNetworkCreate": {
-		  "ok": false,
-		  "error": "error_1"
-		}
-	  }
-	}`
+		  "data": {
+			"remoteNetworkCreate": {
+			  "ok": false,
+			  "error": "error_1"
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -97,13 +97,13 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Update Remote Network Error", func(t *testing.T) {
 		// response JSON
 		updateNetworkOkJson := `{
-	  "data": {
-		"remoteNetworkUpdate": {
-		  "ok": false,
-		  "error": "error_1"
-		}
-	  }
-	}`
+		  "data": {
+			"remoteNetworkUpdate": {
+			  "ok": false,
+			  "error": "error_1"
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -121,13 +121,13 @@ func TestClientRemoteNetworkUpdateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Update Remote Network Request Error", func(t *testing.T) {
 		// response JSON
 		updateNetworkOkJson := `{
-	  "data": {
-		"remoteNetworkUpdate": {
-		  "ok": false,
-		  "error": "error_1"
-		}
-	  }
-	}`
+		  "data": {
+			"remoteNetworkUpdate": {
+			  "ok": false,
+			  "error": "error_1"
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -149,10 +149,10 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Remote Network Error", func(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
-	  "data": {
-		"remoteNetwork": null
-	  }
-	}`
+		  "data": {
+			"remoteNetwork": null
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -171,10 +171,10 @@ func TestClientRemoteNetworkReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Remote Network Request Error", func(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
-	  "data": {
-		"remoteNetwork": null
-	  }
-	}`
+		  "data": {
+			"remoteNetwork": null
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -196,10 +196,10 @@ func TestClientCreateEmptyRemoteNetworkError(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Empty Remote Network Error", func(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
-	  "data": {
-		"remoteNetwork": null
-	  }
-	}`
+		  "data": {
+			"remoteNetwork": null
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -218,10 +218,10 @@ func TestClientReadEmptyRemoteNetworkError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Empty Remote Network Error", func(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
-	  "data": {
-		"remoteNetwork": null
-	  }
-	}`
+		  "data": {
+			"remoteNetwork": null
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -240,10 +240,10 @@ func TestClientDeleteEmptyRemoteNetworkError(t *testing.T) {
 	t.Run("Test Twingate Resource : Delete Empty Remote Network Error", func(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
-	  "data": {
-		"remoteNetwork": null
-	  }
-	}`
+		  "data": {
+			"remoteNetwork": null
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -261,31 +261,31 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Remote Networks", func(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
-	  "data": {
-		"remoteNetworks": {
-		  "edges": [
-			{
-			  "node": {
-				"id": "network1",
-				"name": "tf-acc-network1"
-			  }
-			},
-			{
-			  "node": {
-				"id": "network2",
-				"name": "network2"
-			  }
-			},
-			{
-			  "node": {
-				"id": "network3",
-				"name": "tf-acc-network3"
-			  }
+		  "data": {
+			"remoteNetworks": {
+			  "edges": [
+				{
+				  "node": {
+					"id": "network1",
+					"name": "tf-acc-network1"
+				  }
+				},
+				{
+				  "node": {
+					"id": "network2",
+					"name": "network2"
+				  }
+				},
+				{
+				  "node": {
+					"id": "network3",
+					"name": "tf-acc-network3"
+				  }
+				}
+			  ]
 			}
-		  ]
-		}
-	  }
-	}`
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()

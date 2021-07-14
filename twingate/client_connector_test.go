@@ -142,13 +142,13 @@ func TestClientConnectorDeleteError(t *testing.T) {
 
 		// response JSON
 		deleteConnectorOkJson := `{
-	  "data": {
-		"connectorDelete": {
-		  "ok": false,
-		  "error": "error_1"
-		}
-	  }
-	}`
+		  "data": {
+			"connectorDelete": {
+			  "ok": false,
+			  "error": "error_1"
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
