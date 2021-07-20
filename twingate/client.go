@@ -101,23 +101,26 @@ type Client struct {
 	GraphqlServerURL string
 	APIServerURL     string
 	APIToken         string
+	ProviderVersion  string
 }
 
 type transport struct {
 	underlyingTransport http.RoundTripper
 	APIToken            string
+	ProviderVersion     string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-API-KEY", t.APIToken)
-
+	req.Header.Add("User-Agent", fmt.Sprintf("x-tf-client:%s", t.ProviderVersion))
 	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
 }
 
-func newTransport(apiToken string) *transport {
+func newTransport(apiToken string, providerVersion string) *transport {
 	return &transport{
 		underlyingTransport: http.DefaultTransport,
 		APIToken:            apiToken,
+		ProviderVersion:     providerVersion,
 	}
 }
 
@@ -140,15 +143,17 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
-func NewClient(sURL serverURL, apiToken string) *Client {
+func NewClient(url string, apiToken string, network string, providerVersion string) *Client {
+	sURL := newServerURL(network, url)
 	rc := retryablehttp.NewClient()
 	rc.HTTPClient.Timeout = Timeout
-	rc.HTTPClient.Transport = newTransport(apiToken)
+	rc.HTTPClient.Transport = newTransport(apiToken, providerVersion)
 	rc.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
 
 	client := Client{
+		ProviderVersion:  providerVersion,
 		HTTPClient:       rc,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
@@ -164,6 +169,7 @@ func NewClient(sURL serverURL, apiToken string) *Client {
 
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
+	req.Header.Set("User-Agent", fmt.Sprintf("x-tf-client:%s", client.ProviderVersion))
 	res, err := client.HTTPClient.Do(req)
 
 	if err != nil {

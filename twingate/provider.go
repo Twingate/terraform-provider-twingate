@@ -3,6 +3,8 @@ package twingate
 import (
 	"context"
 
+	"terraform-provider-twingate/version"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -57,8 +59,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {
-		client := NewClient(newServerURL(network, url), apiToken)
-
+		client := NewClient(url, apiToken, network, version.ProviderVersion)
 		return client, diags
 	}
 

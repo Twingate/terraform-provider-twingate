@@ -7,8 +7,7 @@ import (
 const mockRetries = 0
 
 func newHTTPMockClient() *Client {
-	sURL := newServerURL("test", "dev.opstg.com")
-	client := NewClient(sURL, "xxxx")
+	client := NewClient("dev.opstg.com", "xxxx", "test", "test")
 	httpmock.ActivateNonDefault(client.HTTPClient.HTTPClient)
 	client.HTTPClient.RetryMax = mockRetries
 
