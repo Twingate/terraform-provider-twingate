@@ -1,14 +1,16 @@
 package twingate
 
 import (
-	"fmt"
+	"context"
+
+	"github.com/hasura/go-graphql-client"
 )
 
 type Connector struct {
-	ID              string
-	RemoteNetwork   *RemoteNetwork
-	Name            string
-	ConnectorTokens *ConnectorTokens
+	ID              graphql.ID
+	RemoteNetwork   *remoteNetwork
+	Name            graphql.String
+	ConnectorTokens *connectorTokens
 }
 
 type Connectors struct {
@@ -18,130 +20,127 @@ type Connectors struct {
 
 const connectorResourceName = "connector"
 
-func (client *Client) createConnector(remoteNetworkID string) (*Connector, error) {
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-			mutation{
-			  connectorCreate(remoteNetworkId: "%s"){
-				ok
-				error
-				entity{
-				  id
-                  name
-				}
-			  }
-			}
-        `, remoteNetworkID),
+type createConnectorQuery struct {
+	ConnectorCreate struct {
+		Entity IDName
+		OkError
+	} `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId)"`
+}
+
+func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, error) {
+	if remoteNetworkID.(string) == "" {
+		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "create", connectorResourceName)
 	}
 
-	mutationConnector, err := client.doGraphqlRequest(mutation)
+	variables := map[string]interface{}{
+		"remoteNetworkId": remoteNetworkID,
+	}
+	r := createConnectorQuery{}
+
+	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
 	if err != nil {
 		return nil, NewAPIError(err, "create", connectorResourceName)
 	}
 
-	connectorResult := mutationConnector.Path("data.connectorCreate")
-
-	status := connectorResult.Path("ok").Data().(bool)
-	if !status {
-		message := connectorResult.Path("error").Data().(string)
-
-		return nil, NewAPIError(NewMutationError(message), "create", connectorResourceName)
+	if !r.ConnectorCreate.Ok {
+		return nil, NewAPIError(NewMutationError(r.ConnectorCreate.Error), "create", connectorResourceName)
 	}
 
 	connector := Connector{
-		ID:   connectorResult.Path("entity.id").Data().(string),
-		Name: connectorResult.Path("entity.name").Data().(string),
+		ID:   r.ConnectorCreate.Entity.ID,
+		Name: r.ConnectorCreate.Entity.Name,
 	}
 
 	return &connector, nil
 }
 
-func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
-	query := map[string]string{
-		"query": "{ connectors { edges { node { id name } } } }",
+type readConnectorsQuery struct { //nolint
+	Connectors struct {
+		Edges []*Edges
 	}
+}
 
-	queryResource, err := client.doGraphqlRequest(query)
+func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
+	r := readConnectorsQuery{}
+
+	err := client.GraphqlClient.Query(context.Background(), &r, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
 	var connectors = make(map[int]*Connectors)
 
-	queryChildren := queryResource.Path("data.connectors.edges").Children()
-
-	for i, elem := range queryChildren {
-		nodeID := elem.Path("node.id").Data().(string)
-		nodeName := elem.Path("node.name").Data().(string)
-		c := &Connectors{ID: nodeID, Name: nodeName}
+	for i, elem := range r.Connectors.Edges {
+		c := &Connectors{ID: elem.Node.StringID(), Name: elem.Node.StringName()}
 		connectors[i] = c
 	}
 
 	return connectors, nil
 }
 
-func (client *Client) readConnector(connectorID string) (*Connector, error) {
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-		{
-		  connector(id: "%s") {
-			id
-			name
-			remoteNetwork {
-				name
-				id
-			}
-          }
-		}
-        `, connectorID),
+type readConnectorQuery struct {
+	Connector *struct {
+		IDName
+		RemoteNetwork IDName
+	} `graphql:"connector(id: $id)"`
+}
+
+func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) {
+	if connectorID.(string) == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", connectorResourceName)
 	}
 
-	queryConnector, err := client.doGraphqlRequest(mutation)
+	variables := map[string]interface{}{
+		"id": connectorID,
+	}
+
+	r := readConnectorQuery{}
+
+	err := client.GraphqlClient.Query(context.Background(), &r, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
 	}
 
-	connectorRead := queryConnector.Path("data.connector")
-	if connectorRead.Data() == nil {
+	if r.Connector == nil {
 		return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
 	}
 
+	rn := &remoteNetwork{
+		ID:   r.Connector.RemoteNetwork.ID,
+		Name: r.Connector.RemoteNetwork.Name,
+	}
+
 	connector := Connector{
-		ID:   connectorRead.Path("id").Data().(string),
-		Name: connectorRead.Path("name").Data().(string),
-		RemoteNetwork: &RemoteNetwork{
-			ID:   connectorRead.Path("remoteNetwork.id").Data().(string),
-			Name: connectorRead.Path("remoteNetwork.name").Data().(string),
-		},
+		ID:            r.Connector.ID,
+		Name:          r.Connector.Name,
+		RemoteNetwork: rn,
 	}
 
 	return &connector, nil
 }
 
-func (client *Client) deleteConnector(connectorID string) error {
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-		 mutation {
-		  connectorDelete(id: "%s"){
-			ok
-			error
-		  }
-		}
-		`, connectorID),
+type deleteConnectorQuery struct {
+	ConnectorDelete *OkError `graphql:"connectorDelete(id: $id)" json:"connectorDelete"`
+}
+
+func (client *Client) deleteConnector(connectorID graphql.ID) error {
+	if connectorID.(string) == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", connectorResourceName)
 	}
 
-	mutationConnector, err := client.doGraphqlRequest(mutation)
+	variables := map[string]interface{}{
+		"id": connectorID,
+	}
+
+	r := deleteConnectorQuery{}
+
+	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", connectorResourceName, connectorID)
 	}
 
-	connectorDelete := mutationConnector.Path("data.connectorDelete")
-
-	status := connectorDelete.Path("ok").Data().(bool)
-	if !status {
-		message := connectorDelete.Path("error").Data().(string)
-
-		return NewAPIErrorWithID(NewMutationError(message), "delete", connectorResourceName, connectorID)
+	if !r.ConnectorDelete.Ok {
+		return NewAPIErrorWithID(NewMutationError(r.ConnectorDelete.Error), "delete", connectorResourceName, connectorID)
 	}
 
 	return nil

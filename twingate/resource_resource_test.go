@@ -6,11 +6,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hasura/go-graphql-client"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAccTwingateResource_basic(t *testing.T) {
-
 	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
 	resourceName := acctest.RandomWithPrefix("tf-acc-resource")
 
@@ -121,4 +123,22 @@ func testAccCheckTwingateResourceExists(resourceName string) resource.TestCheckF
 
 		return nil
 	}
+}
+
+func TestResourceResourceReadDiagnosticsError(t *testing.T) {
+	t.Run("Test Twingate Resource : Resource Read Diagnostics Error", func(t *testing.T) {
+		groups := []*graphql.ID{}
+		protocols := &ProtocolsInput{}
+
+		resource := &Resource{
+			Name:            graphql.String(""),
+			RemoteNetworkID: graphql.ID(""),
+			Address:         graphql.String(""),
+			GroupsIds:       groups,
+			Protocols:       protocols,
+		}
+		d := &schema.ResourceData{}
+		diags := resourceResourceReadDiagnostics(d, resource)
+		assert.True(t, diags.HasError())
+	})
 }

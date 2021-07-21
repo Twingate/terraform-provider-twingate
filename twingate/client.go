@@ -1,27 +1,20 @@
 package twingate
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hasura/go-graphql-client"
 )
 
 const (
 	Timeout = 10 * time.Second
 )
-
-type HTTPClient interface {
-	Do(req *retryablehttp.Request) (*http.Response, error)
-}
 
 type HTTPError struct {
 	RequestURI string
@@ -41,28 +34,14 @@ func (e *HTTPError) Error() string {
 	return fmt.Sprintf("request %s failed, status %d, body %s", e.RequestURI, e.StatusCode, e.Body)
 }
 
-type GraphQLError struct {
-	Messages []string
-}
-
-func NewGraphQLError(messages []string) *GraphQLError {
-	return &GraphQLError{
-		Messages: messages,
-	}
-}
-
-func (e *GraphQLError) Error() string {
-	return fmt.Sprintf("graphql errors: %s", strings.Join(e.Messages, ","))
-}
-
 type APIError struct {
 	WrappedError error
 	Operation    string
 	Resource     string
-	ID           string
+	ID           graphql.ID
 }
 
-func NewAPIErrorWithID(wrappedError error, operation string, resource string, id string) *APIError {
+func NewAPIErrorWithID(wrappedError error, operation string, resource string, id graphql.ID) *APIError {
 	return &APIError{
 		WrappedError: wrappedError,
 		Operation:    operation,
@@ -86,7 +65,7 @@ func (e *APIError) Error() string {
 
 	var format = "failed to %s %s"
 
-	if len(e.ID) > 0 {
+	if e.ID.(string) != "" {
 		format += " with id %s"
 
 		a = append(a, e.ID)
@@ -102,73 +81,85 @@ func (e *APIError) Error() string {
 }
 
 type MutationError struct {
-	Message string
+	Message graphql.String
 }
 
-func NewMutationError(message string) *MutationError {
+func NewMutationError(message graphql.String) *MutationError {
 	return &MutationError{
 		Message: message,
 	}
 }
 
 func (e *MutationError) Error() string {
-	return e.Message
+	return string(e.Message)
 }
 
 type Client struct {
-	APIToken         string
+	GraphqlClient    *graphql.Client
+	HTTPClient       *retryablehttp.Client
 	ServerURL        string
 	GraphqlServerURL string
 	APIServerURL     string
-	HTTPClient       HTTPClient
+	APIToken         string
 }
 
-func NewClient(network, apiToken, url string) *Client {
-	serverURL := fmt.Sprintf("https://%s.%s", network, url)
+type transport struct {
+	underlyingTransport http.RoundTripper
+	APIToken            string
+}
 
-	httpClient := retryablehttp.NewClient()
-	httpClient.HTTPClient.Timeout = Timeout
-	httpClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
+func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("X-API-KEY", t.APIToken)
+
+	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
+}
+
+func newTransport(apiToken string) *transport {
+	return &transport{
+		underlyingTransport: http.DefaultTransport,
+		APIToken:            apiToken,
+	}
+}
+
+func (s *serverURL) newGraphqlServerURL() string {
+	return fmt.Sprintf("%s/api/graphql/", s.url)
+}
+
+func (s *serverURL) newAPIServerURL() string {
+	return fmt.Sprintf("%s/api/v1", s.url)
+}
+
+type serverURL struct {
+	url string
+}
+
+func newServerURL(network, url string) serverURL {
+	var s serverURL
+	s.url = fmt.Sprintf("https://%s.%s", network, url)
+
+	return s
+}
+
+func NewClient(sURL serverURL, apiToken string) *Client {
+	rc := retryablehttp.NewClient()
+	rc.HTTPClient.Timeout = Timeout
+	rc.HTTPClient.Transport = newTransport(apiToken)
+	rc.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
 
 	client := Client{
-		HTTPClient:       httpClient,
-		ServerURL:        serverURL,
-		GraphqlServerURL: fmt.Sprintf("%s/api/graphql/", serverURL),
-		APIServerURL:     fmt.Sprintf("%s/api/v1", serverURL),
+		HTTPClient:       rc,
+		ServerURL:        sURL.url,
+		GraphqlServerURL: sURL.newGraphqlServerURL(),
+		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
+		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), rc.HTTPClient),
 	}
-	log.Printf("[INFO] Using Server URL %s", client.ServerURL)
+
+	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
 
 	return &client
-}
-
-func (client *Client) ping() error {
-	jsonData := map[string]string{
-		"query": `
-			{
-			  remoteNetworks {
-				edges {
-				  node {
-					id
-				  }
-				}
-			  }
-			}
-        `,
-	}
-	_, err := client.doGraphqlRequest(jsonData)
-
-	if err != nil {
-		log.Printf("[ERROR] Cannot reach Graphql API Server %s", jsonData)
-
-		return NewAPIError(err, "ping", "twingate")
-	}
-
-	log.Printf("[INFO] Graphql API Server at URL %s reachable", client.GraphqlServerURL)
-
-	return nil
 }
 
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
@@ -191,40 +182,8 @@ func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, NewHTTPError(req.RequestURI, res.StatusCode, body)
+		return nil, NewHTTPError(req.URL.String(), res.StatusCode, body)
 	}
 
 	return body, nil
-}
-
-func (client *Client) doGraphqlRequest(query map[string]string) (*gabs.Container, error) {
-	jsonValue, _ := json.Marshal(query)
-
-	req, err := retryablehttp.NewRequest("POST", client.GraphqlServerURL, bytes.NewBuffer(jsonValue))
-	if err != nil {
-		return nil, fmt.Errorf("could not create GraphQL request : %w", err)
-	}
-
-	req.Header.Set("X-API-KEY", client.APIToken)
-
-	body, err := client.doRequest(req)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute request: %w", err)
-	}
-
-	parsedResponse, err := gabs.ParseJSON(body)
-	if err != nil {
-		return nil, fmt.Errorf("can't parse response body: %w", err)
-	}
-
-	if parsedResponse.Path("errors") != nil {
-		var messages []string
-		for _, child := range parsedResponse.Path("errors").Children() {
-			messages = append(messages, child.Path("message").Data().(string))
-		}
-
-		return nil, NewGraphQLError(messages)
-	}
-
-	return parsedResponse, nil
 }

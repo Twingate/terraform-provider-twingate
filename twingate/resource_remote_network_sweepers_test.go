@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hasura/go-graphql-client"
 )
 
 func init() {
@@ -34,10 +35,10 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 		return nil
 	}
 
-	var testNetworks = make([]string, 0)
+	var testNetworks = make([]graphql.ID, 0)
 
 	for _, elem := range networkMap {
-		if strings.HasPrefix(elem.Name, "tf-acc") {
+		if strings.HasPrefix(string(elem.Name), "tf-acc") {
 			testNetworks = append(testNetworks, elem.ID)
 		}
 	}

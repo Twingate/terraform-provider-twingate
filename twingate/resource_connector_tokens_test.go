@@ -10,22 +10,24 @@ import (
 )
 
 func TestAccRemoteConnector_withTokens(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector With Tokens", func(t *testing.T) {
 
-	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
-	connectorTokensResource := "twingate_connector_tokens.test"
+		remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+		connectorTokensResource := "twingate_connector_tokens.test"
 
-	resource.Test(t, resource.TestCase{
-		ProviderFactories: testAccProviderFactories,
-		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      testAccCheckTwingateConnectorTokensInvalidated,
-		Steps: []resource.TestStep{
-			{
-				Config: testTwingateConnectorTokensWithKeepers(remoteNetworkName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateConnectorTokensExists(connectorTokensResource),
-				),
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateConnectorTokensInvalidated,
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateConnectorTokensWithKeepers(remoteNetworkName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorTokensExists(connectorTokensResource),
+					),
+				},
 			},
-		},
+		})
 	})
 }
 
@@ -57,6 +59,7 @@ func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 		connectorId := rs.Primary.ID
 		accessToken := rs.Primary.Attributes["access_token"]
 		refreshToken := rs.Primary.Attributes["refresh_token"]
+
 		err := client.verifyConnectorTokens(refreshToken, accessToken)
 		// expecting error here , Since tokens invalidated
 		if err == nil {

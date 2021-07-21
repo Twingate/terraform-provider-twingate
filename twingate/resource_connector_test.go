@@ -10,22 +10,24 @@ import (
 )
 
 func TestAccRemoteConnector_basic(t *testing.T) {
-	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
-	connectorResource := "twingate_connector.test"
-	remoteNetworkResource := "twingate_remote_network.test"
+	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
+		remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+		connectorResource := "twingate_connector.test"
+		remoteNetworkResource := "twingate_remote_network.test"
 
-	resource.Test(t, resource.TestCase{
-		ProviderFactories: testAccProviderFactories,
-		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      testAccCheckTwingateConnectorDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testTwingateConnector(remoteNetworkName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-				),
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateConnector(remoteNetworkName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+					),
+				},
 			},
-		},
+		})
 	})
 }
 

@@ -1,13 +1,12 @@
 package twingate
 
 import (
-	"bytes"
-	"io/ioutil"
+	"errors"
 	"net/http"
+	"strconv"
 	"testing"
 
-	"github.com/hashicorp/go-retryablehttp"
-
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,15 +25,10 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 		}
 	}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
-	client := createTestClient()
-
-	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Body:       r,
-		}, nil
-	}
+	client := newHTTPMockClient()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, createTokensOkJson))
 	connector := &Connector{
 		ID: "test",
 	}
@@ -49,20 +43,19 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 	// response JSON
 	verifyTokensOkJson := `{}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
-	client := createTestClient()
+	client := newHTTPMockClient()
+	defer httpmock.DeactivateAndReset()
 
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-		header := req.Header.Get("Authorization")
-		assert.Contains(t, header, accessToken)
-		return &http.Response{
-			StatusCode: 200,
-			Body:       r,
-		}, nil
-	}
+	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
+		func(req *http.Request) (*http.Response, error) {
+			header := req.Header.Get("Authorization")
+			assert.Contains(t, header, accessToken)
+			return httpmock.NewStringResponse(200, verifyTokensOkJson), nil
+		})
+
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
 	assert.Nil(t, err)
@@ -72,23 +65,45 @@ func TestClientConnectorTokensVerifyError(t *testing.T) {
 	// response JSON
 	verifyTokensOkJson := `{}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(verifyTokensOkJson)))
-	client := createTestClient()
+	client := newHTTPMockClient()
+	defer httpmock.DeactivateAndReset()
 
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-		header := req.Header.Get("Authorization")
-		assert.Contains(t, header, accessToken)
-		return &http.Response{
-			StatusCode: 501,
-			Body:       r,
-		}, nil
-	}
+	apiURL := client.APIServerURL + "/access_node/refresh"
+	httpmock.RegisterResponder("POST", apiURL,
+		func(req *http.Request) (*http.Response, error) {
+			header := req.Header.Get("Authorization")
+			assert.Contains(t, header, accessToken)
+			return httpmock.NewStringResponse(501, verifyTokensOkJson), nil
+		})
+
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 
-	assert.EqualError(t, err, "failed to verify connector tokens: request  failed, status 501, body {}")
+	assert.EqualError(t, err, "failed to verify connector tokens: request "+apiURL+" failed, status 501, body {}")
+}
+
+func TestClientConnectorTokensRequestError(t *testing.T) {
+	// response JSON
+	verifyTokensOkJson := `{}`
+
+	client := newHTTPMockClient()
+
+	accessToken := "test1"
+	refreshToken := "test2"
+
+	defer httpmock.DeactivateAndReset()
+	apiURL := client.APIServerURL + "/access_node/refresh"
+	httpmock.RegisterResponder("POST", apiURL,
+		func(req *http.Request) (*http.Response, error) {
+			header := req.Header.Get("Authorization")
+			assert.Contains(t, header, accessToken)
+			return httpmock.NewStringResponse(501, verifyTokensOkJson), errors.New("error")
+		})
+
+	err := client.verifyConnectorTokens(refreshToken, accessToken)
+	assert.EqualError(t, err, "failed to verify connector tokens: can't execute http request: POST "+apiURL+" giving up after "+strconv.Itoa((mockRetries+1))+" attempt(s): Post \""+apiURL+"\": error")
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
@@ -102,19 +117,14 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	  }
 	}`
 
-	r := ioutil.NopCloser(bytes.NewReader([]byte(createTokensOkJson)))
-	client := createTestClient()
-
-	GetDoFunc = func(req *retryablehttp.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Body:       r,
-		}, nil
-	}
+	client := newHTTPMockClient()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewStringResponder(200, createTokensOkJson))
 	connector := &Connector{
-		ID: "test",
+		ID: "test-id",
 	}
 	err := client.generateConnectorTokens(connector)
 
-	assert.EqualError(t, err, "failed to generate connector tokens with id test: error_1")
+	assert.EqualError(t, err, "failed to generate connector tokens with id test-id: error_1")
 }

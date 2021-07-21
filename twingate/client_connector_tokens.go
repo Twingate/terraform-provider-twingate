@@ -2,13 +2,15 @@ package twingate
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hasura/go-graphql-client"
 )
 
-type ConnectorTokens struct {
+type connectorTokens struct {
 	AccessToken  string
 	RefreshToken string
 }
@@ -29,6 +31,7 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) er
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
 	_, err = client.doRequest(req)
+
 	if err != nil {
 		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}
@@ -36,39 +39,37 @@ func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) er
 	return nil
 }
 
+type generateConnectorTokensQuery struct {
+	ConnectorGenerateTokens struct {
+		ConnectorTokens struct {
+			AccessToken  graphql.String
+			RefreshToken graphql.String
+		}
+		OkError
+	} `graphql:"connectorGenerateTokens(connectorId: $connectorId)"`
+}
+
 func (client *Client) generateConnectorTokens(connector *Connector) error {
-	mutation := map[string]string{
-		"query": fmt.Sprintf(`
-			mutation{
-			  connectorGenerateTokens(connectorId: "%s"){
-				connectorTokens {
-				  accessToken
-				  refreshToken
-				}
-				ok
-				error
-			  }
-			}
-        `, connector.ID),
+	variables := map[string]interface{}{
+		"connectorId": connector.ID,
 	}
 
-	mutationConnector, err := client.doGraphqlRequest(mutation)
+	r := generateConnectorTokensQuery{}
+
+	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
 	if err != nil {
 		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}
 
-	createTokensResult := mutationConnector.Path("data.connectorGenerateTokens")
-
-	status := createTokensResult.Path("ok").Data().(bool)
-	if !status {
-		message := createTokensResult.Path("error").Data().(string)
+	if !r.ConnectorGenerateTokens.Ok {
+		message := r.ConnectorGenerateTokens.Error
 
 		return NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
 	}
 
-	connector.ConnectorTokens = &ConnectorTokens{
-		AccessToken:  createTokensResult.Path("connectorTokens.accessToken").Data().(string),
-		RefreshToken: createTokensResult.Path("connectorTokens.refreshToken").Data().(string),
+	connector.ConnectorTokens = &connectorTokens{
+		AccessToken:  string(r.ConnectorGenerateTokens.ConnectorTokens.AccessToken),
+		RefreshToken: string(r.ConnectorGenerateTokens.ConnectorTokens.RefreshToken),
 	}
 
 	return nil

@@ -26,7 +26,9 @@ func sharedClient(tenant string) (*Client, error) {
 		return nil, fmt.Errorf("must provide environment variable TWINGATE_URL")
 	}
 
-	client := NewClient(os.Getenv("TWINGATE_NETWORK"), os.Getenv("TWINGATE_API_TOKEN"), os.Getenv("TWINGATE_URL"))
+	sURL := newServerURL(os.Getenv("TWINGATE_NETWORK"), os.Getenv("TWINGATE_URL"))
+
+	client := NewClient(sURL, os.Getenv("TWINGATE_API_TOKEN"))
 
 	return client, nil
 }
