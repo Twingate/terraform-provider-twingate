@@ -58,6 +58,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	if (apiToken != "") && (network != "") {
 		client := NewClient(url, apiToken, network)
+
 		return client, diags
 	}
 

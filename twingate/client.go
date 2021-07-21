@@ -1,5 +1,6 @@
 package twingate
 
+//nolint
 import (
 	"fmt"
 	"io"
@@ -113,6 +114,7 @@ type transport struct {
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-API-KEY", t.APIToken)
 	req.Header.Add("User-Agent", fmt.Sprintf("TwingateTF/%s", version.ProviderVersion))
+
 	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
 }
 
