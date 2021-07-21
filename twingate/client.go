@@ -1,6 +1,5 @@
 package twingate
 
-//nolint
 import (
 	"fmt"
 	"io"
@@ -9,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"terraform-provider-twingate/version"
+	"terraform-provider-twingate/version" //nolint
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hasura/go-graphql-client"
