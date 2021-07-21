@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"terraform-provider-twingate/version" //nolint
+
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hasura/go-graphql-client"
 )
@@ -110,6 +112,7 @@ type transport struct {
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-API-KEY", t.APIToken)
+	req.Header.Add("User-Agent", fmt.Sprintf("TwingateTF/%s", version.ProviderVersion))
 
 	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
 }
@@ -140,7 +143,8 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
-func NewClient(sURL serverURL, apiToken string) *Client {
+func NewClient(url string, apiToken string, network string) *Client {
+	sURL := newServerURL(network, url)
 	rc := retryablehttp.NewClient()
 	rc.HTTPClient.Timeout = Timeout
 	rc.HTTPClient.Transport = newTransport(apiToken)
@@ -164,6 +168,7 @@ func NewClient(sURL serverURL, apiToken string) *Client {
 
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
+	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", version.ProviderVersion))
 	res, err := client.HTTPClient.Do(req)
 
 	if err != nil {

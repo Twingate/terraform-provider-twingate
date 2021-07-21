@@ -57,7 +57,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var diags diag.Diagnostics
 
 	if (apiToken != "") && (network != "") {
-		client := NewClient(newServerURL(network, url), apiToken)
+		client := NewClient(url, apiToken, network)
 
 		return client, diags
 	}
