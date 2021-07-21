@@ -6,8 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"terraform-provider-twingate/version"
 	"time"
+
+	"terraform-provider-twingate/version"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hasura/go-graphql-client"
