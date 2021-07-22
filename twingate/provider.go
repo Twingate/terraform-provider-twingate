@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func Provider() *schema.Provider {
-	return &schema.Provider{
+func Provider(version string) *schema.Provider {
+	p := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_token": {
 				Type:        schema.TypeString,
@@ -44,29 +44,33 @@ func Provider() *schema.Provider {
 			"twingate_connector_tokens": resourceConnectorTokens(),
 			"twingate_resource":         resourceResource(),
 		},
-		DataSourcesMap:       map[string]*schema.Resource{},
-		ConfigureContextFunc: providerConfigure,
+		DataSourcesMap: map[string]*schema.Resource{},
 	}
+	p.ConfigureContextFunc = configure(version, p)
+
+	return p
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	apiToken := d.Get("api_token").(string)
-	network := d.Get("network").(string)
-	url := d.Get("url").(string)
+func configure(version string, _ *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		apiToken := d.Get("api_token").(string)
+		network := d.Get("network").(string)
+		url := d.Get("url").(string)
 
-	var diags diag.Diagnostics
+		var diags diag.Diagnostics
 
-	if (apiToken != "") && (network != "") {
-		client := NewClient(url, apiToken, network)
+		if (apiToken != "") && (network != "") {
+			client := NewClient(url, apiToken, network, version)
 
-		return client, diags
+			return client, diags
+		}
+
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to create Twingate client",
+			Detail:   "Unable to create anonymous Twingate client , token and network have to be provided ",
+		})
+
+		return nil, diags
 	}
-
-	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  "Unable to create Twingate client",
-		Detail:   "Unable to create anonymous Twingate client , token and network have to be provided ",
-	})
-
-	return nil, diags
 }

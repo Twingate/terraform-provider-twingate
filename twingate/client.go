@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"terraform-provider-twingate/version" //nolint
-
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hasura/go-graphql-client"
 )
@@ -103,24 +101,27 @@ type Client struct {
 	GraphqlServerURL string
 	APIServerURL     string
 	APIToken         string
+	Version          string
 }
 
 type transport struct {
 	underlyingTransport http.RoundTripper
 	APIToken            string
+	Version             string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-API-KEY", t.APIToken)
-	req.Header.Add("User-Agent", fmt.Sprintf("TwingateTF/%s", version.ProviderVersion))
+	req.Header.Add("User-Agent", fmt.Sprintf("TwingateTF/%s", t.Version))
 
 	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
 }
 
-func newTransport(apiToken string) *transport {
+func newTransport(apiToken string, version string) *transport {
 	return &transport{
 		underlyingTransport: http.DefaultTransport,
 		APIToken:            apiToken,
+		Version:             version,
 	}
 }
 
@@ -143,11 +144,11 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
-func NewClient(url string, apiToken string, network string) *Client {
+func NewClient(url string, apiToken string, network string, version string) *Client {
 	sURL := newServerURL(network, url)
 	rc := retryablehttp.NewClient()
 	rc.HTTPClient.Timeout = Timeout
-	rc.HTTPClient.Transport = newTransport(apiToken)
+	rc.HTTPClient.Transport = newTransport(apiToken, version)
 	rc.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
@@ -159,6 +160,7 @@ func NewClient(url string, apiToken string, network string) *Client {
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
 		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), rc.HTTPClient),
+		Version:          version,
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
@@ -168,7 +170,7 @@ func NewClient(url string, apiToken string, network string) *Client {
 
 func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", version.ProviderVersion))
+	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", client.Version))
 	res, err := client.HTTPClient.Do(req)
 
 	if err != nil {
