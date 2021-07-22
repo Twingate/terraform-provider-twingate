@@ -17,7 +17,7 @@ var testAccProvider *schema.Provider
 var testAccProviderFactories map[string]func() (*schema.Provider, error)
 
 func init() {
-	testAccProvider = Provider()
+	testAccProvider = Provider("test")
 	testAccProviderFactories = map[string]func() (*schema.Provider, error){
 		"twingate": func() (*schema.Provider, error) {
 			return testAccProvider, nil
