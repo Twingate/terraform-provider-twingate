@@ -37,7 +37,7 @@ func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, e
 	}
 	r := createConnectorQuery{}
 
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "createConnector", &r, variables)
 	if err != nil {
 		return nil, NewAPIError(err, "create", connectorResourceName)
 	}
@@ -63,7 +63,7 @@ type readConnectorsQuery struct { //nolint
 func (client *Client) readConnectors() (map[int]*Connectors, error) { //nolint
 	r := readConnectorsQuery{}
 
-	err := client.GraphqlClient.Query(context.Background(), &r, nil)
+	err := client.GraphqlClient.NamedQuery(context.Background(), "readConnectors", &r, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
@@ -96,7 +96,7 @@ func (client *Client) readConnector(connectorID graphql.ID) (*Connector, error) 
 
 	r := readConnectorQuery{}
 
-	err := client.GraphqlClient.Query(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedQuery(context.Background(), "readConnector", &r, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
 	}
@@ -134,7 +134,7 @@ func (client *Client) deleteConnector(connectorID graphql.ID) error {
 
 	r := deleteConnectorQuery{}
 
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "deleteConnector", &r, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", connectorResourceName, connectorID)
 	}
