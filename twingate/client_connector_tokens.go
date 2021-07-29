@@ -56,7 +56,7 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 
 	r := generateConnectorTokensQuery{}
 
-	err := client.GraphqlClient.NamedMutate(context.Background(), "createConnectorTokens", &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "generateConnectorTokens", &r, variables)
 	if err != nil {
 		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}

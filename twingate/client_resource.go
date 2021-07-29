@@ -308,7 +308,7 @@ func (client *Client) updateResource(resource *Resource) error {
 
 	r := updateResourceQuery{}
 
-	err := client.GraphqlClient.NamedMutate(context.Background(), "updateResources", &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "updateResource", &r, variables)
 
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
