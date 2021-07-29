@@ -3,7 +3,7 @@ package twingate
 import (
 	"context"
 
-	"github.com/hasura/go-graphql-client"
+	"github.com/twingate/go-graphql-client"
 )
 
 type remoteNetwork struct {
@@ -33,7 +33,7 @@ func (client *Client) createRemoteNetwork(remoteNetworkName graphql.String) (*re
 		"name":     remoteNetworkName,
 		"isActive": graphql.Boolean(true),
 	}
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "createRemoteNetwork", &r, variables)
 
 	if err != nil {
 		return nil, NewAPIError(err, "create", remoteNetworkResourceName)
@@ -59,7 +59,7 @@ type readRemoteNetworksQuery struct { //nolint
 func (client *Client) readRemoteNetworks() (map[int]*remoteNetwork, error) { //nolint
 	r := readRemoteNetworksQuery{}
 
-	err := client.GraphqlClient.Query(context.Background(), &r, nil)
+	err := client.GraphqlClient.NamedQuery(context.Background(), "readRemoteNetworks", &r, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
@@ -91,7 +91,7 @@ func (client *Client) readRemoteNetwork(remoteNetworkID graphql.ID) (*remoteNetw
 
 	r := readRemoteNetworkQuery{}
 
-	err := client.GraphqlClient.Query(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedQuery(context.Background(), "readRemoteNetwork", &r, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
@@ -118,7 +118,7 @@ func (client *Client) updateRemoteNetwork(remoteNetworkID graphql.ID, remoteNetw
 
 	r := updateRemoteNetworkQuery{}
 
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "updateRemoteNetwork", &r, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
@@ -145,7 +145,7 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkID graphql.ID) error {
 
 	r := deleteRemoteNetworkQuery{}
 
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "deleteRemoteNetwork", &r, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", remoteNetworkResourceName, remoteNetworkID)
 	}

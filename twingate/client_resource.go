@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hasura/go-graphql-client"
+	"github.com/twingate/go-graphql-client"
 )
 
 const readResourceQueryGroupsSize = 50
@@ -197,7 +197,7 @@ func (client *Client) createResource(resource *Resource) error {
 	}
 
 	r := createResourceQuery{}
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "createResource", &r, variables)
 
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
@@ -243,7 +243,7 @@ func (client *Client) readResource(resourceID graphql.ID) (*Resource, error) {
 		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
-	err := client.GraphqlClient.Query(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedQuery(context.Background(), "readResource", &r, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
@@ -284,7 +284,7 @@ func (client *Client) readResources() ([]*Edges, error) { //nolint
 	r := readResourcesQuery{}
 	variables := map[string]interface{}{}
 
-	err := client.GraphqlClient.Query(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedQuery(context.Background(), "readResources", &r, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
@@ -308,7 +308,7 @@ func (client *Client) updateResource(resource *Resource) error {
 
 	r := updateResourceQuery{}
 
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "updateResources", &r, variables)
 
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
@@ -336,7 +336,7 @@ func (client *Client) deleteResource(resourceID graphql.ID) error {
 		"id": resourceID,
 	}
 
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "updateResource", &r, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", resourceResourceName, resourceID)
 	}

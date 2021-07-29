@@ -3,7 +3,7 @@ package twingate
 import (
 	"context"
 
-	"github.com/hasura/go-graphql-client"
+	"github.com/twingate/go-graphql-client"
 )
 
 type Connector struct {
