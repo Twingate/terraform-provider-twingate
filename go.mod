@@ -8,4 +8,5 @@ require (
 	github.com/hasura/go-graphql-client v0.2.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/tools v0.1.5 // indirect
 )
