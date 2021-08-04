@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hasura/go-graphql-client"
+	"github.com/twingate/go-graphql-client"
 )
 
 func init() {

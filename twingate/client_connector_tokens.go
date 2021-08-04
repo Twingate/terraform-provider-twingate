@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/hasura/go-graphql-client"
+	"github.com/twingate/go-graphql-client"
 )
 
 type connectorTokens struct {
@@ -56,7 +56,7 @@ func (client *Client) generateConnectorTokens(connector *Connector) error {
 
 	r := generateConnectorTokensQuery{}
 
-	err := client.GraphqlClient.Mutate(context.Background(), &r, variables)
+	err := client.GraphqlClient.NamedMutate(context.Background(), "generateConnectorTokens", &r, variables)
 	if err != nil {
 		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}
