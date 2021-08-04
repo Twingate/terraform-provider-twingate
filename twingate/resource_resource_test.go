@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -37,6 +38,19 @@ func TestAccTwingateResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
 				),
+			},
+			{
+				Config: testTwingateResource_fullFlowCreation(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("twingate_remote_network.test", "name", remoteNetworkName),
+					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
+					resource.TestMatchResourceAttr("twingate_connector.test_1", "name", regexp.MustCompile("tf-acc.*")),
+					resource.TestMatchResourceAttr("twingate_connector_tokens.test_1", "access_token", regexp.MustCompile(".*")),
+				),
+			},
+			{
+				Config:      testTwingateResource_errorGroupId(remoteNetworkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: failed to update resource with id"),
 			},
 			{
 				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
@@ -78,6 +92,70 @@ func testTwingateResource_withProtocolsAndGroups(networkName, resourceName strin
         tcp  {
 			policy = "RESTRICTED"
             ports = ["80", "82-83"]
+        }
+		udp {
+ 			policy = "ALLOW_ALL"
+		}
+      }
+	}
+	`, networkName, resourceName)
+}
+
+func testTwingateResource_errorGroupId(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "test" {
+	  name = "%s"
+	  address = "updated-acc-test.com"
+	  remote_network_id = twingate_remote_network.test.id
+	  group_ids = ["foo", "bar"]
+      protocols {
+		allow_icmp = true
+        tcp  {
+			policy = "RESTRICTED"
+            ports = ["80", "82-83"]
+        }
+		udp {
+ 			policy = "ALLOW_ALL"
+		}
+      }
+	}
+	`, networkName, resourceName)
+}
+
+func testTwingateResource_fullFlowCreation(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+	resource "twingate_connector" "test_1" {
+      remote_network_id = twingate_remote_network.test.id
+	}
+
+	resource "twingate_connector_tokens" "test_1" {
+      connector_id = twingate_connector.test_1.id
+	}
+
+	resource "twingate_connector" "test_2" {
+      remote_network_id = twingate_remote_network.test.id
+	}
+	
+	resource "twingate_connector_tokens" "test_2" {
+      connector_id = twingate_connector.test_2.id
+	}
+
+	resource "twingate_resource" "test" {
+	  name = "%s"
+	  address = "updated-acc-test.com"
+	  remote_network_id = twingate_remote_network.test.id
+	  group_ids = ["R3JvdXA6MjMxNTQ="]
+      protocols {
+		allow_icmp = true
+        tcp  {
+			policy = "RESTRICTED"
+            ports = ["3306"]
         }
 		udp {
  			policy = "ALLOW_ALL"
