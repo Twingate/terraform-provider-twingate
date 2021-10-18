@@ -83,20 +83,20 @@ func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckTwingateConnectorExists(connectorTFResource, remoteNetworkTFResource string) resource.TestCheckFunc {
+func testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		connector, ok := s.RootModule().Resources[connectorTFResource]
+		connector, ok := s.RootModule().Resources[connectorResource]
 
 		if !ok {
-			return fmt.Errorf("Not found: %s ", connectorTFResource)
+			return fmt.Errorf("Not found: %s ", connectorResource)
 		}
 
 		if connector.Primary.ID == "" {
 			return fmt.Errorf("No connectorID set ")
 		}
-		remoteNetwork, ok := s.RootModule().Resources[remoteNetworkTFResource]
+		remoteNetwork, ok := s.RootModule().Resources[remoteNetworkResource]
 		if !ok {
-			return fmt.Errorf("Not found: %s ", remoteNetworkTFResource)
+			return fmt.Errorf("Not found: %s ", remoteNetworkResource)
 		}
 		if connector.Primary.Attributes["remote_network_id"] != remoteNetwork.Primary.ID {
 			return fmt.Errorf("Remote Network ID not set properly in the connector ")
