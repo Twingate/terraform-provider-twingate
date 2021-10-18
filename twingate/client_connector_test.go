@@ -40,6 +40,35 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	})
 }
 
+func TestClientConnectorUpdateOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Update Ok", func(t *testing.T) {
+		// response JSON
+		updateConnectorOkJson := `{
+	  "data": {
+		"connectorUpdate": {
+		  "entity": {
+			"id": "test-id",
+			"name" : "test-name"
+		  },
+		  "ok": true,
+		  "error": null
+		}
+	  }
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, updateConnectorOkJson))
+		connectorId := graphql.ID("test-id")
+		connectorName := graphql.String("test-name")
+
+		err := client.updateConnector(connectorId, connectorName)
+
+		assert.Nil(t, err)
+	})
+}
+
 func TestClientConnectorDeleteOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Delete Ok", func(t *testing.T) {
 		// response JSON
@@ -86,6 +115,32 @@ func TestClientConnectorCreateError(t *testing.T) {
 
 		assert.EqualError(t, err, "failed to create connector: error_1")
 		assert.Nil(t, remoteNetwork)
+	})
+}
+
+func TestClientConnectorUpdateError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Update Error", func(t *testing.T) {
+
+		// response JSON
+		createNetworkOkJson := `{
+		  "data": {
+			"connectorUpdate": {
+			  "ok": false,
+			  "error": "error_1"
+			}
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createNetworkOkJson))
+		connectorId := graphql.ID("test-id")
+		connectorName := graphql.String("test-name")
+
+		err := client.updateConnector(connectorId, connectorName)
+
+		assert.EqualError(t, err, "failed to update connector: error_1")
 	})
 }
 

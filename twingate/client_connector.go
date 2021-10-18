@@ -20,11 +20,18 @@ type Connectors struct {
 
 const connectorResourceName = "connector"
 
-type createConnectorQuery struct {
+type createConnectorMutation struct {
 	ConnectorCreate struct {
 		Entity IDName
 		OkError
 	} `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId)"`
+}
+
+type updateConnectorMutation struct {
+	ConnectorUpdate struct {
+		Entity IDName
+		OkError
+	} `graphql:"connectorUpdate(id: $connectorId, name: $connectorName )"`
 }
 
 func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, error) {
@@ -35,7 +42,7 @@ func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, e
 	variables := map[string]interface{}{
 		"remoteNetworkId": remoteNetworkID,
 	}
-	r := createConnectorQuery{}
+	r := createConnectorMutation{}
 
 	err := client.GraphqlClient.NamedMutate(context.Background(), "createConnector", &r, variables)
 	if err != nil {
@@ -52,6 +59,29 @@ func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, e
 	}
 
 	return &connector, nil
+}
+
+func (client *Client) updateConnector(connectorID graphql.ID, connectorName graphql.String) error {
+	if connectorID.(string) == "" {
+		return NewAPIError(ErrGraphqlConnectorIDIsEmpty, "update", connectorResourceName)
+	}
+
+	variables := map[string]interface{}{
+		"connectorId":   connectorID,
+		"connectorName": connectorName,
+	}
+	r := updateConnectorMutation{}
+
+	err := client.GraphqlClient.NamedMutate(context.Background(), "updateConnector", &r, variables)
+	if err != nil {
+		return NewAPIError(err, "update", connectorResourceName)
+	}
+
+	if !r.ConnectorUpdate.Ok {
+		return NewAPIError(NewMutationError(r.ConnectorUpdate.Error), "update", connectorResourceName)
+	}
+
+	return nil
 }
 
 type readConnectorsQuery struct { //nolint

@@ -44,7 +44,6 @@ func TestAccTwingateResource_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("twingate_remote_network.test", "name", remoteNetworkName),
 					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
-					resource.TestMatchResourceAttr("twingate_connector.test_1", "name", regexp.MustCompile("tf-acc.*")),
 					resource.TestMatchResourceAttr("twingate_connector_tokens.test_1", "access_token", regexp.MustCompile(".*")),
 				),
 			},

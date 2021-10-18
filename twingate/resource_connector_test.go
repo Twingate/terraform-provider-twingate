@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -12,6 +13,7 @@ import (
 func TestAccRemoteConnector_basic(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
 		remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+		connectorName := acctest.RandomWithPrefix("tf-acc")
 		connectorResource := "twingate_connector.test"
 		remoteNetworkResource := "twingate_remote_network.test"
 
@@ -24,6 +26,13 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 					Config: testTwingateConnector(remoteNetworkName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+					),
+				},
+				{
+					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile("tf-acc.*")),
 					),
 				},
 			},
@@ -40,6 +49,18 @@ func testTwingateConnector(remoteNetworkName string) string {
 	  remote_network_id = twingate_remote_network.test.id
 	}
 	`, remoteNetworkName)
+}
+
+func testTwingateConnectorWithCustomName(remoteNetworkName string, connectorName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+	resource "twingate_connector" "test" {
+	  remote_network_id = twingate_remote_network.test.id
+      name  = "%s"
+	}
+	`, remoteNetworkName, connectorName)
 }
 
 func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
@@ -62,21 +83,20 @@ func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckTwingateConnectorExists(connectorName, remoteNetworkName string) resource.TestCheckFunc {
+func testAccCheckTwingateConnectorExists(connectorTFResource, remoteNetworkTFResource string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		connector, ok := s.RootModule().Resources[connectorName]
+		connector, ok := s.RootModule().Resources[connectorTFResource]
 
 		if !ok {
-			return fmt.Errorf("Not found: %s ", connectorName)
+			return fmt.Errorf("Not found: %s ", connectorTFResource)
 		}
 
 		if connector.Primary.ID == "" {
 			return fmt.Errorf("No connectorID set ")
 		}
-
-		remoteNetwork, ok := s.RootModule().Resources[remoteNetworkName]
+		remoteNetwork, ok := s.RootModule().Resources[remoteNetworkTFResource]
 		if !ok {
-			return fmt.Errorf("Not found: %s ", remoteNetworkName)
+			return fmt.Errorf("Not found: %s ", remoteNetworkTFResource)
 		}
 		if connector.Primary.Attributes["remote_network_id"] != remoteNetwork.Primary.ID {
 			return fmt.Errorf("Remote Network ID not set properly in the connector ")
