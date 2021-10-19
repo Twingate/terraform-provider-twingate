@@ -20,14 +20,14 @@ type Connectors struct {
 
 const connectorResourceName = "connector"
 
-type createConnectorMutation struct {
+type createConnectorQuery struct {
 	ConnectorCreate struct {
 		Entity IDName
 		OkError
 	} `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId)"`
 }
 
-type updateConnectorMutation struct {
+type updateConnectorQuery struct {
 	ConnectorUpdate struct {
 		Entity IDName
 		OkError
@@ -42,7 +42,7 @@ func (client *Client) createConnector(remoteNetworkID graphql.ID) (*Connector, e
 	variables := map[string]interface{}{
 		"remoteNetworkId": remoteNetworkID,
 	}
-	r := createConnectorMutation{}
+	r := createConnectorQuery{}
 
 	err := client.GraphqlClient.NamedMutate(context.Background(), "createConnector", &r, variables)
 	if err != nil {
@@ -70,15 +70,15 @@ func (client *Client) updateConnector(connectorID graphql.ID, connectorName grap
 		"connectorId":   connectorID,
 		"connectorName": connectorName,
 	}
-	r := updateConnectorMutation{}
+	r := updateConnectorQuery{}
 
 	err := client.GraphqlClient.NamedMutate(context.Background(), "updateConnector", &r, variables)
 	if err != nil {
-		return NewAPIError(err, "update", connectorResourceName)
+		return NewAPIErrorWithID(err, "update", connectorResourceName, connectorID)
 	}
 
 	if !r.ConnectorUpdate.Ok {
-		return NewAPIError(NewMutationError(r.ConnectorUpdate.Error), "update", connectorResourceName)
+		return NewAPIErrorWithID(NewMutationError(r.ConnectorUpdate.Error), "update", connectorResourceName, connectorID)
 	}
 
 	return nil
