@@ -166,7 +166,7 @@ func TestClientConnectorUpdateErrorWhenIdEmpty(t *testing.T) {
 
 		err := client.updateConnector(connectorId, connectorName)
 
-		assert.EqualError(t, err, "failed to update connector: network id is empty")
+		assert.EqualError(t, err, "failed to update connector: network id is emptyo98")
 	})
 }
 

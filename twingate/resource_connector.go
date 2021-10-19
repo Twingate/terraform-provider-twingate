@@ -57,8 +57,7 @@ func resourceConnectorCreate(ctx context.Context, d *schema.ResourceData, m inte
 
 	d.SetId(connector.ID.(string))
 	log.Printf("[INFO] Created conector %s", connector.Name)
-	connectorName := d.Get("name").(string)
-	if connectorName != "" {
+	if d.Get("name").(string) != "" {
 		return resourceConnectorUpdate(ctx, d, m)
 	}
 
