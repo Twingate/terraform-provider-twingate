@@ -144,6 +144,32 @@ func TestClientConnectorUpdateError(t *testing.T) {
 	})
 }
 
+func TestClientConnectorUpdateErrorWhenIdEmpty(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Update Error on empty ID", func(t *testing.T) {
+
+		// response JSON
+		createNetworkOkJson := `{
+		  "data": {
+			"connectorUpdate": {
+			  "ok": false,
+			  "error": "error_1"
+			}
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createNetworkOkJson))
+		connectorId := graphql.ID("")
+		connectorName := graphql.String("")
+
+		err := client.updateConnector(connectorId, connectorName)
+
+		assert.EqualError(t, err, "failed to update connector: network id is empty")
+	})
+}
+
 func TestClientConnectorCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Create Request Error", func(t *testing.T) {
 
