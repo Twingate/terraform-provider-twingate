@@ -140,7 +140,7 @@ func TestClientConnectorUpdateError(t *testing.T) {
 
 		err := client.updateConnector(connectorId, connectorName)
 
-		assert.EqualError(t, err, "failed to update connector: error_1")
+		assert.EqualError(t, err, "failed to update connector with id test-id: error_1")
 	})
 }
 
