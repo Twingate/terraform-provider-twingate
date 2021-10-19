@@ -23,12 +23,6 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnector(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-					),
-				},
-				{
 					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
@@ -38,17 +32,6 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 			},
 		})
 	})
-}
-
-func testTwingateConnector(remoteNetworkName string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
-	  name = "%s"
-	}
-	resource "twingate_connector" "test" {
-	  remote_network_id = twingate_remote_network.test.id
-	}
-	`, remoteNetworkName)
 }
 
 func testTwingateConnectorWithCustomName(remoteNetworkName string, connectorName string) string {
