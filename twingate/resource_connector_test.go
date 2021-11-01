@@ -41,6 +41,30 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 	})
 }
 
+func TestAccRemoteConnector_withName(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
+		remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+		connectorName := acctest.RandomWithPrefix("tf-acc")
+		connectorResource := "twingate_connector.test"
+		remoteNetworkResource := "twingate_remote_network.test"
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile("tf-acc.*")),
+					),
+				},
+			},
+		})
+	})
+}
+
 func testTwingateConnector(remoteNetworkName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test" {
