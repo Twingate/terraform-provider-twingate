@@ -8,7 +8,7 @@ import (
 )
 
 func Provider(version string) *schema.Provider {
-	p := &schema.Provider{
+	provider := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_token": {
 				Type:        schema.TypeString,
@@ -46,9 +46,9 @@ func Provider(version string) *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{},
 	}
-	p.ConfigureContextFunc = configure(version, p)
+	provider.ConfigureContextFunc = configure(version, provider)
 
-	return p
+	return provider
 }
 
 func configure(version string, _ *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {

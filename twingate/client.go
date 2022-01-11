@@ -146,20 +146,20 @@ func newServerURL(network, url string) serverURL {
 
 func NewClient(url string, apiToken string, network string, version string) *Client {
 	sURL := newServerURL(network, url)
-	rc := retryablehttp.NewClient()
-	rc.HTTPClient.Timeout = Timeout
-	rc.HTTPClient.Transport = newTransport(apiToken, version)
-	rc.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
+	retryableClient := retryablehttp.NewClient()
+	retryableClient.HTTPClient.Timeout = Timeout
+	retryableClient.HTTPClient.Transport = newTransport(apiToken, version)
+	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
 
 	client := Client{
-		HTTPClient:       rc,
+		HTTPClient:       retryableClient,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), rc.HTTPClient),
+		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), retryableClient.HTTPClient),
 		Version:          version,
 	}
 

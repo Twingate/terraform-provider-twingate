@@ -22,31 +22,31 @@ type createRemoteNetworkQuery struct {
 	} `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive)"`
 }
 
-func (client *Client) createRemoteNetwork(remoteNetworkName graphql.String) (*remoteNetwork, error) {
+func (client *Client) createRemoteNetwork(ctx context.Context, remoteNetworkName graphql.String) (*remoteNetwork, error) {
 	if remoteNetworkName == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkNameIsEmpty, "create", remoteNetworkResourceName)
 	}
 
-	r := createRemoteNetworkQuery{}
+	response := createRemoteNetworkQuery{}
 
 	variables := map[string]interface{}{
 		"name":     remoteNetworkName,
 		"isActive": graphql.Boolean(true),
 	}
-	err := client.GraphqlClient.NamedMutate(context.Background(), "createRemoteNetwork", &r, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "createRemoteNetwork", &response, variables)
 
 	if err != nil {
 		return nil, NewAPIError(err, "create", remoteNetworkResourceName)
 	}
 
-	if !r.RemoteNetworkCreate.Ok {
-		message := r.RemoteNetworkCreate.Error
+	if !response.RemoteNetworkCreate.Ok {
+		message := response.RemoteNetworkCreate.Error
 
 		return nil, NewAPIError(NewMutationError(message), "create", remoteNetworkResourceName)
 	}
 
 	return &remoteNetwork{
-		ID: r.RemoteNetworkCreate.Entity.ID,
+		ID: response.RemoteNetworkCreate.Entity.ID,
 	}, nil
 }
 
@@ -56,17 +56,17 @@ type readRemoteNetworksQuery struct { //nolint
 	}
 }
 
-func (client *Client) readRemoteNetworks() (map[int]*remoteNetwork, error) { //nolint
-	r := readRemoteNetworksQuery{}
+func (client *Client) readRemoteNetworks(ctx context.Context) (map[int]*remoteNetwork, error) { //nolint
+	response := readRemoteNetworksQuery{}
 
-	err := client.GraphqlClient.NamedQuery(context.Background(), "readRemoteNetworks", &r, nil)
+	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworks", &response, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
 
 	var remoteNetworks = make(map[int]*remoteNetwork)
 
-	for i, elem := range r.RemoteNetworks.Edges {
+	for i, elem := range response.RemoteNetworks.Edges {
 		c := &remoteNetwork{ID: elem.Node.StringID(), Name: elem.Node.Name}
 		remoteNetworks[i] = c
 	}
@@ -80,7 +80,7 @@ type readRemoteNetworkQuery struct {
 	} `graphql:"remoteNetwork(id: $id)"`
 }
 
-func (client *Client) readRemoteNetwork(remoteNetworkID graphql.ID) (*remoteNetwork, error) {
+func (client *Client) readRemoteNetwork(ctx context.Context, remoteNetworkID graphql.ID) (*remoteNetwork, error) {
 	if remoteNetworkID.(string) == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "read", remoteNetworkResourceName)
 	}
@@ -89,20 +89,20 @@ func (client *Client) readRemoteNetwork(remoteNetworkID graphql.ID) (*remoteNetw
 		"id": remoteNetworkID,
 	}
 
-	r := readRemoteNetworkQuery{}
+	response := readRemoteNetworkQuery{}
 
-	err := client.GraphqlClient.NamedQuery(context.Background(), "readRemoteNetwork", &r, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetwork", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	if r.RemoteNetwork == nil {
+	if response.RemoteNetwork == nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return &remoteNetwork{
 		ID:   remoteNetworkID,
-		Name: r.RemoteNetwork.Name,
+		Name: response.RemoteNetwork.Name,
 	}, nil
 }
 
@@ -110,21 +110,21 @@ type updateRemoteNetworkQuery struct {
 	RemoteNetworkUpdate *OkError `graphql:"remoteNetworkUpdate(id: $id, name: $name)"`
 }
 
-func (client *Client) updateRemoteNetwork(remoteNetworkID graphql.ID, remoteNetworkName graphql.String) error {
+func (client *Client) updateRemoteNetwork(ctx context.Context, remoteNetworkID graphql.ID, remoteNetworkName graphql.String) error {
 	variables := map[string]interface{}{
 		"id":   remoteNetworkID,
 		"name": remoteNetworkName,
 	}
 
-	r := updateRemoteNetworkQuery{}
+	response := updateRemoteNetworkQuery{}
 
-	err := client.GraphqlClient.NamedMutate(context.Background(), "updateRemoteNetwork", &r, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "updateRemoteNetwork", &response, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	if !r.RemoteNetworkUpdate.Ok {
-		return NewAPIErrorWithID(NewMutationError(r.RemoteNetworkUpdate.Error), "update", remoteNetworkResourceName, remoteNetworkID)
+	if !response.RemoteNetworkUpdate.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.RemoteNetworkUpdate.Error), "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil
@@ -134,7 +134,7 @@ type deleteRemoteNetworkQuery struct {
 	RemoteNetworkDelete *OkError `graphql:"remoteNetworkDelete(id: $id)"`
 }
 
-func (client *Client) deleteRemoteNetwork(remoteNetworkID graphql.ID) error {
+func (client *Client) deleteRemoteNetwork(ctx context.Context, remoteNetworkID graphql.ID) error {
 	if remoteNetworkID.(string) == "" {
 		return NewAPIError(ErrGraphqlNetworkIDIsEmpty, "delete", remoteNetworkResourceName)
 	}
@@ -143,15 +143,15 @@ func (client *Client) deleteRemoteNetwork(remoteNetworkID graphql.ID) error {
 		"id": remoteNetworkID,
 	}
 
-	r := deleteRemoteNetworkQuery{}
+	response := deleteRemoteNetworkQuery{}
 
-	err := client.GraphqlClient.NamedMutate(context.Background(), "deleteRemoteNetwork", &r, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "deleteRemoteNetwork", &response, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	if !r.RemoteNetworkDelete.Ok {
-		return NewAPIErrorWithID(NewMutationError(r.RemoteNetworkDelete.Error), "delete", remoteNetworkResourceName, remoteNetworkID)
+	if !response.RemoteNetworkDelete.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.RemoteNetworkDelete.Error), "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil

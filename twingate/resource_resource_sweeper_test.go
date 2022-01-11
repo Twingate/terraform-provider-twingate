@@ -1,6 +1,7 @@
 package twingate
 
 import (
+	"context"
 	"log"
 	"strings"
 
@@ -23,7 +24,9 @@ func testSweepTwingateResource(tenant string) error {
 		return err
 	}
 
-	resources, err := client.readResources()
+	ctx := context.Background()
+
+	resources, err := client.readResources(ctx)
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil
@@ -52,7 +55,7 @@ func testSweepTwingateResource(tenant string) error {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
 			return nil
 		}
-		err = client.deleteResource(i)
+		err = client.deleteResource(ctx, i)
 		if err != nil {
 			log.Printf("[INFO][SWEEPER_LOG] %s cannot be deleted, error: %s", i, err)
 			return nil

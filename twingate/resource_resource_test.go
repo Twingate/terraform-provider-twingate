@@ -1,6 +1,7 @@
 package twingate
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -176,7 +177,7 @@ func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
 
 		resourceId := rs.Primary.ID
 
-		err := client.deleteResource(resourceId)
+		err := client.deleteResource(context.Background(), resourceId)
 		// expecting error here , since the resource is already gone
 		if err == nil {
 			return fmt.Errorf("resource with ID %s still present : ", resourceId)

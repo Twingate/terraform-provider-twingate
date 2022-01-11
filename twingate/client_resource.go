@@ -80,28 +80,28 @@ type StringProtocolsInput struct {
 }
 
 func (spi *StringProtocolsInput) convertToGraphql() (*ProtocolsInput, error) {
-	pi := newEmptyProtocols()
-	pi.AllowIcmp = graphql.Boolean(spi.AllowIcmp)
+	protocols := newEmptyProtocols()
+	protocols.AllowIcmp = graphql.Boolean(spi.AllowIcmp)
 
-	pi.UDP.Policy = graphql.String(spi.UDPPolicy)
+	protocols.UDP.Policy = graphql.String(spi.UDPPolicy)
 	udp, err := convertPorts(spi.UDPPorts)
 
 	if err != nil {
 		return nil, err
 	}
 
-	pi.UDP.Ports = udp
+	protocols.UDP.Ports = udp
 
-	pi.TCP.Policy = graphql.String(spi.TCPPolicy)
+	protocols.TCP.Policy = graphql.String(spi.TCPPolicy)
 	tcp, err := convertPorts(spi.TCPPorts)
 
 	if err != nil {
 		return nil, err
 	}
 
-	pi.TCP.Ports = tcp
+	protocols.TCP.Ports = tcp
 
-	return pi, nil
+	return protocols, nil
 }
 
 const resourceResourceName = "resource"
@@ -157,17 +157,17 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 			converted = append(converted, c)
 		} else {
-			p, err := validatePort(elem)
+			port, err := validatePort(elem)
 			if err != nil {
 				return converted, err
 			}
 
-			c := &PortRangeInput{
-				Start: p,
-				End:   p,
+			portRange := &PortRangeInput{
+				Start: port,
+				End:   port,
 			}
 
-			converted = append(converted, c)
+			converted = append(converted, portRange)
 		}
 	}
 
@@ -187,7 +187,7 @@ type createResourceQuery struct {
 	} `graphql:"resourceCreate(name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) createResource(resource *Resource) error {
+func (client *Client) createResource(ctx context.Context, resource *Resource) error {
 	variables := map[string]interface{}{
 		"name":            resource.Name,
 		"address":         resource.Address,
@@ -196,18 +196,18 @@ func (client *Client) createResource(resource *Resource) error {
 		"protocols":       resource.Protocols,
 	}
 
-	r := createResourceQuery{}
-	err := client.GraphqlClient.NamedMutate(context.Background(), "createResource", &r, variables)
+	response := createResourceQuery{}
+	err := client.GraphqlClient.NamedMutate(ctx, "createResource", &response, variables)
 
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
 	}
 
-	if !r.ResourceCreate.Ok {
-		return NewAPIError(NewMutationError(r.ResourceCreate.Error), "create", resourceResourceName)
+	if !response.ResourceCreate.Ok {
+		return NewAPIError(NewMutationError(response.ResourceCreate.Error), "create", resourceResourceName)
 	}
 
-	resource.ID = r.ResourceCreate.Entity.ID
+	resource.ID = response.ResourceCreate.Entity.ID
 
 	return nil
 }
@@ -232,43 +232,43 @@ type readResourceQuery struct {
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResource(resourceID graphql.ID) (*Resource, error) {
+func (client *Client) readResource(ctx context.Context, resourceID graphql.ID) (*Resource, error) {
 	if resourceID.(string) == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
 
-	r := readResourceQuery{}
+	response := readResourceQuery{}
 	variables := map[string]interface{}{
 		"id":    resourceID,
 		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
-	err := client.GraphqlClient.NamedQuery(context.Background(), "readResource", &r, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
-	if r.Resource == nil {
+	if response.Resource == nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
 	var groups = make([]*graphql.ID, 0)
 
-	if r.Resource.Groups.PageInfo.HasNextPage {
+	if response.Resource.Groups.PageInfo.HasNextPage {
 		return nil, NewAPIErrorWithID(ErrTooManyGroupsError, "read", resourceResourceName, resourceID)
 	}
 
-	for _, elem := range r.Resource.Groups.Edges {
+	for _, elem := range response.Resource.Groups.Edges {
 		groups = append(groups, &elem.Node.ID)
 	}
 
 	resource := &Resource{
 		ID:              resourceID,
-		Name:            r.Resource.Name,
-		Address:         r.Resource.Address.Value,
-		RemoteNetworkID: r.Resource.RemoteNetwork.ID,
+		Name:            response.Resource.Name,
+		Address:         response.Resource.Address.Value,
+		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
 		GroupsIds:       groups,
-		Protocols:       r.Resource.Protocols,
+		Protocols:       response.Resource.Protocols,
 	}
 
 	return resource, nil
@@ -280,23 +280,23 @@ type readResourcesQuery struct { //nolint
 	}
 }
 
-func (client *Client) readResources() ([]*Edges, error) { //nolint
-	r := readResourcesQuery{}
+func (client *Client) readResources(ctx context.Context) ([]*Edges, error) { //nolint
+	response := readResourcesQuery{}
 	variables := map[string]interface{}{}
 
-	err := client.GraphqlClient.NamedQuery(context.Background(), "readResources", &r, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	return r.Resources.Edges, nil
+	return response.Resources.Edges, nil
 }
 
 type updateResourceQuery struct {
 	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) updateResource(resource *Resource) error {
+func (client *Client) updateResource(ctx context.Context, resource *Resource) error {
 	variables := map[string]interface{}{
 		"id":              resource.ID,
 		"name":            resource.Name,
@@ -306,16 +306,16 @@ func (client *Client) updateResource(resource *Resource) error {
 		"protocols":       resource.Protocols,
 	}
 
-	r := updateResourceQuery{}
+	response := updateResourceQuery{}
 
-	err := client.GraphqlClient.NamedMutate(context.Background(), "updateResource", &r, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
 
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
 	}
 
-	if !r.ResourceUpdate.Ok {
-		return NewAPIErrorWithID(NewMutationError(r.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
+	if !response.ResourceUpdate.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
 	}
 
 	return nil
@@ -325,24 +325,24 @@ type deleteResourceQuery struct {
 	ResourceDelete *OkError `graphql:"resourceDelete(id: $id)"`
 }
 
-func (client *Client) deleteResource(resourceID graphql.ID) error {
+func (client *Client) deleteResource(ctx context.Context, resourceID graphql.ID) error {
 	if resourceID.(string) == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", resourceResourceName)
 	}
 
-	r := deleteResourceQuery{}
+	response := deleteResourceQuery{}
 
 	variables := map[string]interface{}{
 		"id": resourceID,
 	}
 
-	err := client.GraphqlClient.NamedMutate(context.Background(), "updateResource", &r, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", resourceResourceName, resourceID)
 	}
 
-	if !r.ResourceDelete.Ok {
-		return NewAPIErrorWithID(NewMutationError(r.ResourceDelete.Error), "delete", resourceResourceName, resourceID)
+	if !response.ResourceDelete.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.ResourceDelete.Error), "delete", resourceResourceName, resourceID)
 	}
 
 	return nil

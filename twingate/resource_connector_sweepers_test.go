@@ -1,6 +1,7 @@
 package twingate
 
 import (
+	"context"
 	"log"
 	"strings"
 
@@ -23,7 +24,9 @@ func testSweepTwingateConnector(tenant string) error {
 		return err
 	}
 
-	connectorMap, err := client.readConnectors()
+	ctx := context.Background()
+
+	connectorMap, err := client.readConnectors(ctx)
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil
@@ -52,7 +55,7 @@ func testSweepTwingateConnector(tenant string) error {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
 			return nil
 		}
-		err = client.deleteConnector(i)
+		err = client.deleteConnector(ctx, i)
 		if err != nil {
 			log.Printf("[INFO][SWEEPER_LOG] %s cannot be deleted, error: %s", i, err)
 			return nil

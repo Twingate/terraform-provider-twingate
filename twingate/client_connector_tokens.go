@@ -49,27 +49,27 @@ type generateConnectorTokensQuery struct {
 	} `graphql:"connectorGenerateTokens(connectorId: $connectorId)"`
 }
 
-func (client *Client) generateConnectorTokens(connector *Connector) error {
+func (client *Client) generateConnectorTokens(ctx context.Context, connector *Connector) error {
 	variables := map[string]interface{}{
 		"connectorId": connector.ID,
 	}
 
-	r := generateConnectorTokensQuery{}
+	response := generateConnectorTokensQuery{}
 
-	err := client.GraphqlClient.NamedMutate(context.Background(), "generateConnectorTokens", &r, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "generateConnectorTokens", &response, variables)
 	if err != nil {
 		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}
 
-	if !r.ConnectorGenerateTokens.Ok {
-		message := r.ConnectorGenerateTokens.Error
+	if !response.ConnectorGenerateTokens.Ok {
+		message := response.ConnectorGenerateTokens.Error
 
 		return NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
 	}
 
 	connector.ConnectorTokens = &connectorTokens{
-		AccessToken:  string(r.ConnectorGenerateTokens.ConnectorTokens.AccessToken),
-		RefreshToken: string(r.ConnectorGenerateTokens.ConnectorTokens.RefreshToken),
+		AccessToken:  string(response.ConnectorGenerateTokens.ConnectorTokens.AccessToken),
+		RefreshToken: string(response.ConnectorGenerateTokens.ConnectorTokens.RefreshToken),
 	}
 
 	return nil
