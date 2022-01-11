@@ -48,67 +48,67 @@ func resourceConnectorTokens() *schema.Resource {
 	}
 }
 
-func resourceConnectorTokensCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
+func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
 
-	connectorID := d.Get("connector_id").(string)
+	connectorID := resourceData.Get("connector_id").(string)
 
-	d.SetId(connectorID)
+	resourceData.SetId(connectorID)
 
 	connector := Connector{ID: connectorID}
-	err := client.generateConnectorTokens(&connector)
+	err := client.generateConnectorTokens(ctx, &connector)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("access_token", connector.ConnectorTokens.AccessToken); err != nil {
+	if err := resourceData.Set("access_token", connector.ConnectorTokens.AccessToken); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting access_token: %w ", err))
 	}
 
-	if err := d.Set("refresh_token", connector.ConnectorTokens.RefreshToken); err != nil {
+	if err := resourceData.Set("refresh_token", connector.ConnectorTokens.RefreshToken); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
 	}
 
-	return resourceConnectorTokensRead(ctx, d, m)
+	return resourceConnectorTokensRead(ctx, resourceData, meta)
 }
 
-func resourceConnectorTokensDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
+func resourceConnectorTokensDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
 
 	var diags diag.Diagnostics
 
-	connector := Connector{ID: d.Id()}
+	connector := Connector{ID: resourceData.Id()}
 	// Just calling generate new tokens for the connector so the old ones are invalidated
-	err := client.generateConnectorTokens(&connector)
+	err := client.generateConnectorTokens(ctx, &connector)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Invalidating Connector Tokens id %s", d.Id())
-	d.SetId("")
+	log.Printf("[INFO] Invalidating Connector Tokens id %s", resourceData.Id())
+	resourceData.SetId("")
 
 	return diags
 }
 
-func resourceConnectorTokensRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
+func resourceConnectorTokensRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
 
 	var diags diag.Diagnostics
 
-	accessToken := d.Get("access_token").(string)
-	refreshToken := d.Get("refresh_token").(string)
+	accessToken := resourceData.Get("access_token").(string)
+	refreshToken := resourceData.Get("refresh_token").(string)
 
 	err := client.verifyConnectorTokens(refreshToken, accessToken)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
 			Summary:  "can't to verify connector tokens",
-			Detail:   fmt.Sprintf("can't verify connector %s tokens, assuming not valid and needs to be recreated", d.Id()),
+			Detail:   fmt.Sprintf("can't verify connector %s tokens, assuming not valid and needs to be recreated", resourceData.Id()),
 		})
 
-		d.SetId("")
+		resourceData.SetId("")
 
 		return diags
 	}

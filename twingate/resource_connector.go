@@ -45,71 +45,71 @@ func resourceConnector() *schema.Resource {
 	}
 }
 
-func resourceConnectorCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
+func resourceConnectorCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
 
-	remoteNetworkID := d.Get("remote_network_id").(string)
-	connector, err := client.createConnector(remoteNetworkID)
+	remoteNetworkID := resourceData.Get("remote_network_id").(string)
+	connector, err := client.createConnector(ctx, remoteNetworkID)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(connector.ID.(string))
+	resourceData.SetId(connector.ID.(string))
 	log.Printf("[INFO] Created conector %s", connector.Name)
 
-	if d.Get("name").(string) != "" {
-		return resourceConnectorUpdate(ctx, d, m)
+	if resourceData.Get("name").(string) != "" {
+		return resourceConnectorUpdate(ctx, resourceData, meta)
 	}
 
-	return resourceConnectorRead(ctx, d, m)
+	return resourceConnectorRead(ctx, resourceData, meta)
 }
-func resourceConnectorUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
+func resourceConnectorUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
 
-	connectorName := d.Get("name").(string)
+	connectorName := resourceData.Get("name").(string)
 
-	if d.HasChange("name") {
-		connectorID := d.Id()
+	if resourceData.HasChange("name") {
+		connectorID := resourceData.Id()
 		log.Printf("[INFO] Updating name of connector id %s", connectorID)
 
-		if err := client.updateConnector(graphql.ID(connectorID), graphql.String(connectorName)); err != nil {
+		if err := client.updateConnector(ctx, graphql.ID(connectorID), graphql.String(connectorName)); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	return resourceConnectorRead(ctx, d, m)
+	return resourceConnectorRead(ctx, resourceData, meta)
 }
-func resourceConnectorDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
+func resourceConnectorDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
 
 	var diags diag.Diagnostics
 
-	connectorID := d.Id()
+	connectorID := resourceData.Id()
 
-	err := client.deleteConnector(connectorID)
+	err := client.deleteConnector(ctx, connectorID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Destroyed connector id %s", d.Id())
+	log.Printf("[INFO] Destroyed connector id %s", resourceData.Id())
 
 	return diags
 }
 
-func resourceConnectorRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*Client)
+func resourceConnectorRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
 
 	var diags diag.Diagnostics
 
-	connectorID := d.Id()
-	connector, err := client.readConnector(connectorID)
+	connectorID := resourceData.Id()
+	connector, err := client.readConnector(ctx, connectorID)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("name", connector.Name); err != nil {
+	if err := resourceData.Set("name", connector.Name); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
 

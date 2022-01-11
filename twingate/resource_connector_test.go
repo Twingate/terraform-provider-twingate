@@ -1,6 +1,7 @@
 package twingate
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -98,7 +99,7 @@ func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
 
 		connectorId := rs.Primary.ID
 
-		err := client.deleteConnector(connectorId)
+		err := client.deleteConnector(context.Background(), connectorId)
 		// expecting error here , since the network is already gone
 		if err == nil {
 			return fmt.Errorf("Connector with ID %s still present : ", connectorId)

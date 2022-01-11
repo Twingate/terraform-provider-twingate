@@ -1,6 +1,7 @@
 package twingate
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -32,7 +33,7 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 	connector := &Connector{
 		ID: "test",
 	}
-	err := client.generateConnectorTokens(connector)
+	err := client.generateConnectorTokens(context.Background(), connector)
 
 	assert.Nil(t, err)
 	assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
@@ -124,7 +125,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	connector := &Connector{
 		ID: "test-id",
 	}
-	err := client.generateConnectorTokens(connector)
+	err := client.generateConnectorTokens(context.Background(), connector)
 
 	assert.EqualError(t, err, "failed to generate connector tokens with id test-id: error_1")
 }
