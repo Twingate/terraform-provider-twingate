@@ -18,7 +18,7 @@ func TestAccTwingateResource_basic(t *testing.T) {
 	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
 	resourceName := acctest.RandomWithPrefix("tf-acc-resource")
 
-		resource.Test(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
