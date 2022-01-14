@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -26,7 +27,13 @@ func sharedClient(tenant string) (*Client, error) {
 		return nil, fmt.Errorf("must provide environment variable TWINGATE_URL")
 	}
 
-	client := NewClient(os.Getenv("TWINGATE_URL"), os.Getenv("TWINGATE_API_TOKEN"), os.Getenv("TWINGATE_NETWORK"), "sweeper")
+	client := NewClient(
+		os.Getenv("TWINGATE_URL"),
+		os.Getenv("TWINGATE_API_TOKEN"),
+		os.Getenv("TWINGATE_NETWORK"),
+		10*time.Second,
+		10,
+		"sweeper")
 
 	return client, nil
 }

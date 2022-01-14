@@ -2,12 +2,18 @@ package twingate
 
 import (
 	"context"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func Provider(version string) *schema.Provider {
+const (
+	DefaultHTTPTimeout  = 10
+	DefaultHTTPRetryMax = 10
+)
+
+func Provider(version string) *schema.Provider { //nolint:funlen
 	provider := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_token": {
@@ -37,6 +43,28 @@ func Provider(version string) *schema.Provider {
 				Description: "The default is 'twingate.com'\n" +
 					"This is optional and shouldn't be changed under normal circumstances.",
 			},
+			"transport": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Description: "Transport settings",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"http_timeout": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     DefaultHTTPTimeout,
+							Description: "Specifies a time limit in seconds for the http requests made",
+						},
+						"http_retry_max": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     DefaultHTTPRetryMax,
+							Description: "Specifies a retry limit for the http requests made",
+						},
+					},
+				},
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"twingate_remote_network":   resourceRemoteNetwork(),
@@ -57,10 +85,23 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 		network := d.Get("network").(string)
 		url := d.Get("url").(string)
 
+		transportArray := d.Get("transport").([]interface{})
+
+		var (
+			httpTimeout  = DefaultHTTPTimeout
+			httpRetryMax = DefaultHTTPRetryMax
+		)
+
+		if len(transportArray) > 0 {
+			transportItem := transportArray[0].(map[string]interface{})
+			httpTimeout = transportItem["http_timeout"].(int)
+			httpRetryMax = transportItem["http_retry_max"].(int)
+		}
+
 		var diags diag.Diagnostics
 
 		if (apiToken != "") && (network != "") {
-			client := NewClient(url, apiToken, network, version)
+			client := NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpRetryMax, version)
 
 			return client, diags
 		}

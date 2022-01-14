@@ -12,10 +12,6 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
-const (
-	Timeout = 10 * time.Second
-)
-
 type HTTPError struct {
 	RequestURI string
 	StatusCode int
@@ -144,10 +140,11 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
-func NewClient(url string, apiToken string, network string, version string) *Client {
+func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
-	retryableClient.HTTPClient.Timeout = Timeout
+	retryableClient.HTTPClient.Timeout = httpTimeout
+	retryableClient.RetryMax = httpRetryMax
 	retryableClient.HTTPClient.Transport = newTransport(apiToken, version)
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
@@ -159,7 +156,7 @@ func NewClient(url string, apiToken string, network string, version string) *Cli
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), retryableClient.HTTPClient),
+		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), retryableClient.StandardClient()),
 		Version:          version,
 	}
 
