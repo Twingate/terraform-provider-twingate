@@ -91,8 +91,9 @@ func (e *MutationError) Error() string {
 }
 
 type Client struct {
+	RetryableClient  *retryablehttp.Client
 	GraphqlClient    *graphql.Client
-	HTTPClient       *retryablehttp.Client
+	HTTPClient       *http.Client
 	ServerURL        string
 	GraphqlServerURL string
 	APIServerURL     string
@@ -101,23 +102,23 @@ type Client struct {
 }
 
 type transport struct {
-	underlyingTransport http.RoundTripper
-	APIToken            string
-	Version             string
+	underlineRoundTripper http.RoundTripper
+	APIToken              string
+	Version               string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-API-KEY", t.APIToken)
 	req.Header.Add("User-Agent", fmt.Sprintf("TwingateTF/%s", t.Version))
 
-	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
+	return t.underlineRoundTripper.RoundTrip(req) //nolint:wrapcheck
 }
 
-func newTransport(apiToken string, version string) *transport {
+func newTransport(underlineRoundTripper http.RoundTripper, apiToken string, version string) *transport {
 	return &transport{
-		underlyingTransport: http.DefaultTransport,
-		APIToken:            apiToken,
-		Version:             version,
+		underlineRoundTripper: underlineRoundTripper,
+		APIToken:              apiToken,
+		Version:               version,
 	}
 }
 
@@ -143,20 +144,22 @@ func newServerURL(network, url string) serverURL {
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
-	retryableClient.HTTPClient.Timeout = httpTimeout
 	retryableClient.RetryMax = httpRetryMax
-	retryableClient.HTTPClient.Transport = newTransport(apiToken, version)
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
+	httpClient := retryableClient.StandardClient()
+	httpClient.Timeout = httpTimeout
+	httpClient.Transport = newTransport(httpClient.Transport, apiToken, version)
 
 	client := Client{
-		HTTPClient:       retryableClient,
+		RetryableClient:  retryableClient,
+		HTTPClient:       httpClient,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), retryableClient.StandardClient()),
+		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), httpClient),
 		Version:          version,
 	}
 
@@ -165,7 +168,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	return &client
 }
 
-func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
+func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", client.Version))
 	res, err := client.HTTPClient.Do(req)

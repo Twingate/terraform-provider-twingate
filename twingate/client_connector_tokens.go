@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/twingate/go-graphql-client"
 )
 
@@ -17,13 +17,17 @@ type connectorTokens struct {
 
 const connectorTokensResourceName = "connector tokens"
 
-func (client *Client) verifyConnectorTokens(refreshToken, accessToken string) error {
+func (client *Client) verifyConnectorTokens(ctx context.Context, refreshToken, accessToken string) error {
 	jsonValue, _ := json.Marshal(
 		map[string]string{
 			"refresh_token": refreshToken,
 		})
 
-	req, err := retryablehttp.NewRequest("POST", fmt.Sprintf("%s/access_node/refresh", client.APIServerURL), bytes.NewBuffer(jsonValue))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		fmt.Sprintf("%s/access_node/refresh", client.APIServerURL),
+		bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}

@@ -2,8 +2,6 @@ package twingate
 
 import (
 	"context"
-	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -97,7 +95,7 @@ func TestClientConnectorCreateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Create Error", func(t *testing.T) {
 
 		// response JSON
-		createNetworkOkJson := `{
+		createNetworkErrorJson := `{
 	  "data": {
 		"connectorCreate": {
 		  "ok": false,
@@ -109,7 +107,7 @@ func TestClientConnectorCreateError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, createNetworkOkJson))
+			httpmock.NewStringResponder(200, createNetworkErrorJson))
 		remoteNetworkID := graphql.ID("test")
 
 		remoteNetwork, err := client.createConnector(context.Background(), remoteNetworkID)
@@ -171,30 +169,11 @@ func TestClientConnectorUpdateErrorWhenIdEmpty(t *testing.T) {
 	})
 }
 
-func TestClientConnectorUpdateErrorWhenMutationWrong(t *testing.T) {
-	t.Run("Test Twingate Resource : Client Connector Update Error Mutation Wrong", func(t *testing.T) {
-
-		// response JSON
-		createNetworkOkJson := ``
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, createNetworkOkJson))
-		connectorId := graphql.ID("not-empty")
-		connectorName := graphql.String("")
-
-		err := client.updateConnector(context.Background(), connectorId, connectorName)
-
-		assert.EqualError(t, err, "failed to update connector with id not-empty: EOF")
-	})
-}
-
 func TestClientConnectorCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Create Request Error", func(t *testing.T) {
 
 		// response JSON
-		createNetworkOkJson := `{
+		createNetworkErrorJson := `{
 	  "data": {
 		"connectorCreate": {
 		  "ok": false,
@@ -206,15 +185,12 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, createNetworkOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewStringResponder(200, createNetworkErrorJson))
 		remoteNetworkID := graphql.ID("test")
 
 		remoteNetwork, err := client.createConnector(context.Background(), remoteNetworkID)
 
-		assert.EqualError(t, err, "failed to create connector: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to create connector: error_1")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -267,7 +243,7 @@ func TestClientConnectorDeleteRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Delete Request Error", func(t *testing.T) {
 
 		// response JSON
-		deleteConnectorOkJson := `{
+		deleteConnectorErrorJson := `{
 	  "data": {
 		"connectorDelete": {
 		  "ok": false,
@@ -279,14 +255,12 @@ func TestClientConnectorDeleteRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				return httpmock.NewStringResponse(200, deleteConnectorOkJson), errors.New("error_1")
-			})
+			httpmock.NewStringResponder(200, deleteConnectorErrorJson))
 		connectorId := graphql.ID("test")
 
 		err := client.deleteConnector(context.Background(), connectorId)
 
-		assert.EqualError(t, err, "failed to delete connector with id test: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to delete connector with id test: error_1")
 	})
 }
 
@@ -334,7 +308,7 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Read Request Error", func(t *testing.T) {
 
 		// response JSON
-		readConnectorOkJson := `{
+		readConnectorErrorJson := `{
 	  "data": {
 		"connector": null
 	  }
@@ -343,16 +317,13 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, readConnectorOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewStringResponder(200, readConnectorErrorJson))
 		connectorId := graphql.ID("test")
 
 		connector, err := client.readConnector(context.Background(), connectorId)
 
 		assert.Nil(t, connector)
-		assert.EqualError(t, err, "failed to read connector with id test: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, "failed to read connector with id test")
 	})
 }
 
