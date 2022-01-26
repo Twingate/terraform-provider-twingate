@@ -56,24 +56,24 @@ func NewAPIError(wrappedError error, operation string, resource string) *APIErro
 }
 
 func (e *APIError) Error() string {
-	var a = make([]interface{}, 0, 2) //nolint:gomnd
-	a = append(a, e.Operation, e.Resource)
+	var args = make([]interface{}, 0, 2) //nolint:gomnd
+	args = append(args, e.Operation, e.Resource)
 
 	var format = "failed to %s %s"
 
 	if e.ID.(string) != "" {
 		format += " with id %s"
 
-		a = append(a, e.ID)
+		args = append(args, e.ID)
 	}
 
 	if e.WrappedError != nil {
 		format += ": %s"
 
-		a = append(a, e.WrappedError)
+		args = append(args, e.WrappedError)
 	}
 
-	return fmt.Sprintf(format, a...)
+	return fmt.Sprintf(format, args...)
 }
 
 type MutationError struct {

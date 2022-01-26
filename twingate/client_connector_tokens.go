@@ -18,10 +18,13 @@ type connectorTokens struct {
 const connectorTokensResourceName = "connector tokens"
 
 func (client *Client) verifyConnectorTokens(ctx context.Context, refreshToken, accessToken string) error {
-	jsonValue, _ := json.Marshal(
+	jsonValue, err := json.Marshal(
 		map[string]string{
 			"refresh_token": refreshToken,
 		})
+	if err != nil {
+		return NewAPIError(err, "verify", connectorTokensResourceName)
+	}
 
 	req, err := http.NewRequestWithContext(
 		ctx,
