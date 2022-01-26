@@ -84,7 +84,7 @@ func TestClientConnectorTokensVerify401Error(t *testing.T) {
 	assert.EqualError(t, err, "failed to verify connector tokens: request https://test.twindev.com/api/v1/access_node/refresh failed, status 401, body {}")
 }
 
-func TestClientConnectorTokensRequestError(t *testing.T) {
+func TestClientConnectorTokensVerifyRequestError(t *testing.T) {
 	client := newHTTPMockClient()
 
 	accessToken := "test1"
@@ -124,4 +124,18 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	err := client.generateConnectorTokens(context.Background(), connector)
 
 	assert.EqualError(t, err, "failed to generate connector tokens with id test-id: error_1")
+}
+
+func TestClientConnectorTokensCreateRequestError(t *testing.T) {
+	client := newHTTPMockClient()
+
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+		httpmock.NewErrorResponder(errors.New("error_1")))
+	connector := &Connector{
+		ID: "test",
+	}
+
+	err := client.generateConnectorTokens(context.Background(), connector)
+	assert.EqualError(t, err, "failed to generate connector tokens: Post \"https://test.twindev.com/api/graphql/\": error_1")
 }
