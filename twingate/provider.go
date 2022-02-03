@@ -10,7 +10,7 @@ import (
 
 const (
 	DefaultHTTPTimeout  = "10"
-	DefaultHTTPMaxRetry = "10"
+	DefaultHTTPMaxRetry = "5"
 )
 
 func Provider(version string) *schema.Provider {
@@ -47,14 +47,14 @@ func Provider(version string) *schema.Provider {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_TIMEOUT", DefaultHTTPTimeout),
-				Description: "Specifies a time limit in seconds for the http requests made. This setting is optional.\n" +
+				Description: "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.\n" +
 					"Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable",
 			},
 			"http_max_retry": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_MAX_RETRY", DefaultHTTPMaxRetry),
-				Description: "Specifies a retry limit for the http requests made. This setting is optional.\n" +
+				Description: "Specifies a retry limit for the http requests made. This setting is 5.\n" +
 					"Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable",
 			},
 		},

@@ -31,8 +31,8 @@ func sharedClient(tenant string) (*Client, error) {
 		os.Getenv("TWINGATE_URL"),
 		os.Getenv("TWINGATE_API_TOKEN"),
 		os.Getenv("TWINGATE_NETWORK"),
-		10*time.Second,
-		10,
+		30*time.Second,
+		2,
 		"sweeper")
 
 	return client, nil
