@@ -108,8 +108,8 @@ type transport struct {
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("X-API-KEY", t.APIToken)
-	req.Header.Add("User-Agent", fmt.Sprintf("TwingateTF/%s", t.Version))
+	req.Header.Set("X-API-KEY", t.APIToken)
+	req.Header.Set("User-Agent", t.Version)
 
 	return t.underlineRoundTripper.RoundTrip(req) //nolint:wrapcheck
 }
@@ -118,7 +118,7 @@ func newTransport(underlineRoundTripper http.RoundTripper, apiToken string, vers
 	return &transport{
 		underlineRoundTripper: underlineRoundTripper,
 		APIToken:              apiToken,
-		Version:               version,
+		Version:               fmt.Sprintf("TwingateTF/%s", version),
 	}
 }
 
@@ -148,9 +148,10 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
+	retryableClient.HTTPClient.Timeout = httpTimeout
+	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, version)
+
 	httpClient := retryableClient.StandardClient()
-	httpClient.Timeout = httpTimeout
-	httpClient.Transport = newTransport(httpClient.Transport, apiToken, version)
 
 	client := Client{
 		RetryableClient:  retryableClient,

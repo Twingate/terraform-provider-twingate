@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	DefaultHTTPTimeout  = 10
-	DefaultHTTPRetryMax = 10
+	DefaultHTTPTimeout  = "10"
+	DefaultHTTPMaxRetry = "10"
 )
 
-func Provider(version string) *schema.Provider { //nolint:funlen
+func Provider(version string) *schema.Provider {
 	provider := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_token": {
@@ -43,27 +43,17 @@ func Provider(version string) *schema.Provider { //nolint:funlen
 				Description: "The default is 'twingate.com'\n" +
 					"This is optional and shouldn't be changed under normal circumstances.",
 			},
-			"transport": {
-				Type:        schema.TypeList,
+			"http_timeout": {
+				Type:        schema.TypeInt,
 				Optional:    true,
-				MaxItems:    1,
-				Description: "Transport settings",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"http_timeout": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     DefaultHTTPTimeout,
-							Description: "Specifies a time limit in seconds for the http requests made",
-						},
-						"http_retry_max": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     DefaultHTTPRetryMax,
-							Description: "Specifies a retry limit for the http requests made",
-						},
-					},
-				},
+				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_TIMEOUT", DefaultHTTPTimeout),
+				Description: "Specifies a time limit in seconds for the http requests made",
+			},
+			"http_max_retry": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_MAX_RETRY", DefaultHTTPMaxRetry),
+				Description: "Specifies a retry limit for the http requests made",
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
@@ -84,24 +74,13 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 		apiToken := d.Get("api_token").(string)
 		network := d.Get("network").(string)
 		url := d.Get("url").(string)
-
-		transportArray := d.Get("transport").([]interface{})
-
-		var (
-			httpTimeout  = DefaultHTTPTimeout
-			httpRetryMax = DefaultHTTPRetryMax
-		)
-
-		if len(transportArray) > 0 {
-			transportItem := transportArray[0].(map[string]interface{})
-			httpTimeout = transportItem["http_timeout"].(int)
-			httpRetryMax = transportItem["http_retry_max"].(int)
-		}
+		httpTimeout := d.Get("http_timeout").(int)
+		httpMaxRetry := d.Get("http_max_retry").(int)
 
 		var diags diag.Diagnostics
 
 		if (apiToken != "") && (network != "") {
-			client := NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpRetryMax, version)
+			client := NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpMaxRetry, version)
 
 			return client, diags
 		}
