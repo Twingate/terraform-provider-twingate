@@ -47,13 +47,15 @@ func Provider(version string) *schema.Provider {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_TIMEOUT", DefaultHTTPTimeout),
-				Description: "Specifies a time limit in seconds for the http requests made",
+				Description: "Specifies a time limit in seconds for the http requests made. This setting is optional.\n" +
+					"Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable",
 			},
 			"http_max_retry": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_MAX_RETRY", DefaultHTTPMaxRetry),
-				Description: "Specifies a retry limit for the http requests made",
+				Description: "Specifies a retry limit for the http requests made. This setting is optional.\n" +
+					"Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable",
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
