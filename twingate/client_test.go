@@ -2,14 +2,14 @@ package twingate
 
 import (
 	"github.com/jarcoal/httpmock"
+	"time"
 )
 
-const mockRetries = 0
-
 func newHTTPMockClient() *Client {
-	client := NewClient("dev.opstg.com", "xxxx", "test", "test")
-	httpmock.ActivateNonDefault(client.HTTPClient.HTTPClient)
-	client.HTTPClient.RetryMax = mockRetries
+
+	client := NewClient("twindev.com", "xxxx", "test",
+		time.Duration(1)*time.Second, 2, "test")
+	httpmock.ActivateNonDefault(client.HTTPClient)
 
 	return client
 }

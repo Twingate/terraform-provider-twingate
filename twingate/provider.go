@@ -2,9 +2,15 @@ package twingate
 
 import (
 	"context"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+const (
+	DefaultHTTPTimeout  = "10"
+	DefaultHTTPMaxRetry = "5"
 )
 
 func Provider(version string) *schema.Provider {
@@ -37,6 +43,20 @@ func Provider(version string) *schema.Provider {
 				Description: "The default is 'twingate.com'\n" +
 					"This is optional and shouldn't be changed under normal circumstances.",
 			},
+			"http_timeout": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_TIMEOUT", DefaultHTTPTimeout),
+				Description: "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.\n" +
+					"Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable",
+			},
+			"http_max_retry": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_MAX_RETRY", DefaultHTTPMaxRetry),
+				Description: "Specifies a retry limit for the http requests made. This setting is 5.\n" +
+					"Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable",
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"twingate_remote_network":   resourceRemoteNetwork(),
@@ -56,11 +76,13 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 		apiToken := d.Get("api_token").(string)
 		network := d.Get("network").(string)
 		url := d.Get("url").(string)
+		httpTimeout := d.Get("http_timeout").(int)
+		httpMaxRetry := d.Get("http_max_retry").(int)
 
 		var diags diag.Diagnostics
 
 		if (apiToken != "") && (network != "") {
-			client := NewClient(url, apiToken, network, version)
+			client := NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpMaxRetry, version)
 
 			return client, diags
 		}

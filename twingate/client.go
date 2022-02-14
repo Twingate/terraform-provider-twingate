@@ -12,10 +12,6 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
-const (
-	Timeout = 10 * time.Second
-)
-
 type HTTPError struct {
 	RequestURI string
 	StatusCode int
@@ -60,24 +56,24 @@ func NewAPIError(wrappedError error, operation string, resource string) *APIErro
 }
 
 func (e *APIError) Error() string {
-	var a = make([]interface{}, 0, 2) //nolint:gomnd
-	a = append(a, e.Operation, e.Resource)
+	var args = make([]interface{}, 0, 2) //nolint:gomnd
+	args = append(args, e.Operation, e.Resource)
 
 	var format = "failed to %s %s"
 
 	if e.ID.(string) != "" {
 		format += " with id %s"
 
-		a = append(a, e.ID)
+		args = append(args, e.ID)
 	}
 
 	if e.WrappedError != nil {
 		format += ": %s"
 
-		a = append(a, e.WrappedError)
+		args = append(args, e.WrappedError)
 	}
 
-	return fmt.Sprintf(format, a...)
+	return fmt.Sprintf(format, args...)
 }
 
 type MutationError struct {
@@ -95,8 +91,9 @@ func (e *MutationError) Error() string {
 }
 
 type Client struct {
+	RetryableClient  *retryablehttp.Client
 	GraphqlClient    *graphql.Client
-	HTTPClient       *retryablehttp.Client
+	HTTPClient       *http.Client
 	ServerURL        string
 	GraphqlServerURL string
 	APIServerURL     string
@@ -105,23 +102,23 @@ type Client struct {
 }
 
 type transport struct {
-	underlyingTransport http.RoundTripper
-	APIToken            string
-	Version             string
+	underlineRoundTripper http.RoundTripper
+	APIToken              string
+	Version               string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("X-API-KEY", t.APIToken)
-	req.Header.Add("User-Agent", fmt.Sprintf("TwingateTF/%s", t.Version))
+	req.Header.Set("X-API-KEY", t.APIToken)
+	req.Header.Set("User-Agent", t.Version)
 
-	return t.underlyingTransport.RoundTrip(req) //nolint:wrapcheck
+	return t.underlineRoundTripper.RoundTrip(req) //nolint:wrapcheck
 }
 
-func newTransport(apiToken string, version string) *transport {
+func newTransport(underlineRoundTripper http.RoundTripper, apiToken string, version string) *transport {
 	return &transport{
-		underlyingTransport: http.DefaultTransport,
-		APIToken:            apiToken,
-		Version:             version,
+		underlineRoundTripper: underlineRoundTripper,
+		APIToken:              apiToken,
+		Version:               fmt.Sprintf("TwingateTF/%s", version),
 	}
 }
 
@@ -144,22 +141,26 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
-func NewClient(url string, apiToken string, network string, version string) *Client {
+func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
-	retryableClient.HTTPClient.Timeout = Timeout
-	retryableClient.HTTPClient.Transport = newTransport(apiToken, version)
+	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
+	retryableClient.HTTPClient.Timeout = httpTimeout
+	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, version)
+
+	httpClient := retryableClient.StandardClient()
 
 	client := Client{
-		HTTPClient:       retryableClient,
+		RetryableClient:  retryableClient,
+		HTTPClient:       httpClient,
 		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
 		APIToken:         apiToken,
-		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), retryableClient.HTTPClient),
+		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), httpClient),
 		Version:          version,
 	}
 
@@ -168,7 +169,7 @@ func NewClient(url string, apiToken string, network string, version string) *Cli
 	return &client
 }
 
-func (client *Client) doRequest(req *retryablehttp.Request) ([]byte, error) {
+func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", client.Version))
 	res, err := client.HTTPClient.Do(req)

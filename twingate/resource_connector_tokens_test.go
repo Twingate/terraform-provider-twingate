@@ -1,6 +1,7 @@
 package twingate
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -60,7 +61,7 @@ func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 		accessToken := rs.Primary.Attributes["access_token"]
 		refreshToken := rs.Primary.Attributes["refresh_token"]
 
-		err := client.verifyConnectorTokens(refreshToken, accessToken)
+		err := client.verifyConnectorTokens(context.Background(), refreshToken, accessToken)
 		// expecting error here , Since tokens invalidated
 		if err == nil {
 			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active", connectorId)
