@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const readResourceQueryGroupsSize = 50
@@ -197,7 +197,7 @@ func (client *Client) createResource(ctx context.Context, resource *Resource) er
 	}
 
 	response := createResourceQuery{}
-	err := client.GraphqlClient.NamedMutate(ctx, "createResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createResource"))
 
 	if err != nil {
 		return NewAPIError(err, "create", resourceResourceName)
@@ -243,7 +243,7 @@ func (client *Client) readResource(ctx context.Context, resourceID graphql.ID) (
 		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
@@ -284,7 +284,7 @@ func (client *Client) readResources(ctx context.Context) ([]*Edges, error) { //n
 	response := readResourcesQuery{}
 	variables := map[string]interface{}{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResources"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
@@ -308,8 +308,7 @@ func (client *Client) updateResource(ctx context.Context, resource *Resource) er
 
 	response := updateResourceQuery{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
-
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
 	}
@@ -336,7 +335,7 @@ func (client *Client) deleteResource(ctx context.Context, resourceID graphql.ID)
 		"id": resourceID,
 	}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("deleteResource"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", resourceResourceName, resourceID)
 	}

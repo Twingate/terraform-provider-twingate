@@ -3,8 +3,8 @@ package twingate
 import (
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func TestProtocolsInput(t *testing.T) {

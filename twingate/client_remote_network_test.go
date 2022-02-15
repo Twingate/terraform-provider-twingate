@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func TestClientRemoteNetworkCreateOk(t *testing.T) {

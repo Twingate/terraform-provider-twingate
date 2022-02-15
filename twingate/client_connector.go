@@ -3,7 +3,7 @@ package twingate
 import (
 	"context"
 
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 type Connector struct {
@@ -44,7 +44,7 @@ func (client *Client) createConnector(ctx context.Context, remoteNetworkID graph
 	}
 	response := createConnectorQuery{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "createConnector", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createConnector"))
 	if err != nil {
 		return nil, NewAPIError(err, "create", connectorResourceName)
 	}
@@ -72,7 +72,7 @@ func (client *Client) updateConnector(ctx context.Context, connectorID graphql.I
 	}
 	response := updateConnectorQuery{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateConnector", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateConnector"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", connectorResourceName, connectorID)
 	}
@@ -93,7 +93,7 @@ type readConnectorsQuery struct { //nolint
 func (client *Client) readConnectors(ctx context.Context) (map[int]*Connectors, error) { //nolint
 	response := readConnectorsQuery{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, nil)
+	err := client.GraphqlClient.Query(ctx, &response, nil, graphql.OperationName("readConnectors"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
@@ -126,7 +126,7 @@ func (client *Client) readConnector(ctx context.Context, connectorID graphql.ID)
 
 	response := readConnectorQuery{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readConnector", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readConnector"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
 	}
@@ -164,7 +164,7 @@ func (client *Client) deleteConnector(ctx context.Context, connectorID graphql.I
 
 	response := deleteConnectorQuery{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "deleteConnector", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("deleteConnector"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", connectorResourceName, connectorID)
 	}

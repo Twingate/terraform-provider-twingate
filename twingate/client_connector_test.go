@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func TestClientConnectorCreateOk(t *testing.T) {

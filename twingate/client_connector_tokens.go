@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 type connectorTokens struct {
@@ -63,7 +63,7 @@ func (client *Client) generateConnectorTokens(ctx context.Context, connector *Co
 
 	response := generateConnectorTokensQuery{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "generateConnectorTokens", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("generateConnectorTokens"))
 	if err != nil {
 		return NewAPIError(err, "generate", connectorTokensResourceName)
 	}
