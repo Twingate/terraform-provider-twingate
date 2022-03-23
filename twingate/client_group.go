@@ -56,6 +56,7 @@ func (client *Client) createGroup(ctx context.Context, groupName graphql.String)
 
 	if !response.GroupCreate.Ok {
 		message := response.GroupCreate.Error
+
 		return nil, NewAPIError(NewMutationError(message), "create", groupResourceName)
 	}
 

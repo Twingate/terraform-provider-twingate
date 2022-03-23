@@ -59,10 +59,10 @@ func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData,
 func resourceGroupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	groupID := resourceData.Id()
 	groupName := resourceData.Get("name").(string)
 
 	if resourceData.HasChange("name") {
+		groupID := resourceData.Id()
 		log.Printf("[INFO] Updating group id %s", groupID)
 
 		err := client.updateGroup(ctx, graphql.ID(groupID), graphql.String(groupName))
