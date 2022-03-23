@@ -210,7 +210,7 @@ func TestClientCreateEmptyGroupError(t *testing.T) {
 
 		group, err := client.createGroup(context.Background(), groupName)
 
-		assert.EqualError(t, err, "failed to create group: group name is empty")
+		assert.EqualError(t, err, "failed to create group: name is empty")
 		assert.Nil(t, group)
 	})
 }
@@ -232,7 +232,7 @@ func TestClientReadEmptyGroupError(t *testing.T) {
 
 		group, err := client.readGroup(context.Background(), groupId)
 
-		assert.EqualError(t, err, "failed to read group: group id is empty")
+		assert.EqualError(t, err, "failed to read group: id is empty")
 		assert.Nil(t, group)
 	})
 }
@@ -254,6 +254,6 @@ func TestClientDeleteEmptyGroupError(t *testing.T) {
 
 		err := client.deleteGroup(context.Background(), groupId)
 
-		assert.EqualError(t, err, "failed to delete group: group id is empty")
+		assert.EqualError(t, err, "failed to delete group: id is empty")
 	})
 }

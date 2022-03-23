@@ -41,7 +41,7 @@ type deleteGroupQuery struct {
 
 func (client *Client) createGroup(ctx context.Context, groupName graphql.String) (*Group, error) {
 	if groupName == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "create", groupResourceName)
+		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "create", groupResourceName)
 	}
 
 	variables := map[string]interface{}{
