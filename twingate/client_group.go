@@ -21,24 +21,6 @@ type createGroupQuery struct {
 	} `graphql:"groupCreate(name: $name)"`
 }
 
-type readGroupQuery struct {
-	Group *struct {
-		IDName
-		IsActive graphql.Boolean
-	} `graphql:"group(id: $id)"`
-}
-
-type updateGroupQuery struct {
-	GroupUpdate struct {
-		Entity IDName
-		OkError
-	} `graphql:"groupUpdate(id: $id, name: $name)"`
-}
-
-type deleteGroupQuery struct {
-	GroupDelete *OkError `graphql:"groupDelete(id: $id)" json:"groupDelete"`
-}
-
 func (client *Client) createGroup(ctx context.Context, groupName graphql.String) (*Group, error) {
 	if groupName == "" {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "create", groupResourceName)
@@ -64,6 +46,13 @@ func (client *Client) createGroup(ctx context.Context, groupName graphql.String)
 		ID:   response.GroupCreate.Entity.ID,
 		Name: response.GroupCreate.Entity.Name,
 	}, nil
+}
+
+type readGroupQuery struct {
+	Group *struct {
+		IDName
+		IsActive graphql.Boolean
+	} `graphql:"group(id: $id)"`
 }
 
 func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group, error) {
@@ -94,7 +83,22 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 	return &group, nil
 }
 
+type updateGroupQuery struct {
+	GroupUpdate struct {
+		Entity IDName
+		OkError
+	} `graphql:"groupUpdate(id: $id, name: $name)"`
+}
+
 func (client *Client) updateGroup(ctx context.Context, groupID graphql.ID, groupName graphql.String) error {
+	if groupID.(string) == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, "update", groupResourceName)
+	}
+
+	if groupName == "" {
+		return NewAPIError(ErrGraphqlNameIsEmpty, "update", groupResourceName)
+	}
+
 	variables := map[string]interface{}{
 		"id":   groupID,
 		"name": groupName,
@@ -112,6 +116,10 @@ func (client *Client) updateGroup(ctx context.Context, groupID graphql.ID, group
 	}
 
 	return nil
+}
+
+type deleteGroupQuery struct {
+	GroupDelete *OkError `graphql:"groupDelete(id: $id)" json:"groupDelete"`
 }
 
 func (client *Client) deleteGroup(ctx context.Context, groupID graphql.ID) error {
