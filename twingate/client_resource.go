@@ -13,11 +13,14 @@ import (
 const readResourceQueryGroupsSize = 50
 
 var (
-	ErrTooManyGroupsError        = errors.New("provider does not support more than 50 groups per resource")
-	ErrGraphqlIDIsEmpty          = errors.New("id is empty")
-	ErrGraphqlConnectorIDIsEmpty = errors.New("network id is empty")
-	ErrGraphqlNetworkIDIsEmpty   = errors.New("network id is empty")
-	ErrGraphqlNetworkNameIsEmpty = errors.New("network name is empty")
+	ErrTooManyGroupsError              = errors.New("provider does not support more than 50 groups per resource")
+	ErrGraphqlIDIsEmpty                = errors.New("id is empty")
+	ErrGraphqlConnectorIDIsEmpty       = errors.New("connector id is empty")
+	ErrGraphqlNetworkIDIsEmpty         = errors.New("network id is empty")
+	ErrGraphqlNetworkNameIsEmpty       = errors.New("network name is empty")
+	ErrGraphqlResultIsEmpty            = errors.New("query result is empty")
+	ErrGraphqlResourceNotFound         = errors.New("not found")
+	ErrGraphqlFoundMoreThanOneResource = errors.New("found more than one")
 )
 
 type PortNotInRangeError struct {

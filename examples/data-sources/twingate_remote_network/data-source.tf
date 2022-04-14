@@ -1,11 +1,11 @@
 provider "twingate" {}
 
-# find network by id
-data "twingate_remote_network" "test" {
-  id = "UmVtb3RlTmV0d29yazozOTU5Nw=="
+# find network by name
+data "twingate_remote_network" "net" {
+  name = "tf-acc-1915686675692758735"
 }
 
-# retrieve network name
-output "my_network" {
-  value = data.twingate_remote_network.test.name
+# retrieve network id
+output "my_network_id" {
+  value = data.twingate_remote_network.net.id
 }

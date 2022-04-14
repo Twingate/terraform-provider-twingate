@@ -5,7 +5,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/twingate/go-graphql-client"
 )
 
 func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -13,18 +12,14 @@ func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resou
 
 	var diags diag.Diagnostics
 
-	networkID := resourceData.Get("id").(string)
-	remoteNetwork, err := client.readRemoteNetwork(ctx, graphql.ID(networkID))
+	networkName := resourceData.Get("name").(string)
+	remoteNetwork, err := client.readRemoteNetworkByName(ctx, networkName)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", remoteNetwork.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	resourceData.SetId(networkID)
+	resourceData.SetId(remoteNetwork.ID.(string))
 
 	return diags
 }
@@ -36,12 +31,12 @@ func datasourceRemoteNetwork() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Computed:    true,
 				Description: "The ID of the Remote Network",
 			},
 			"name": {
 				Type:        schema.TypeString,
-				Computed:    true,
+				Required:    true,
 				Description: "The name of the Remote Network",
 			},
 		},

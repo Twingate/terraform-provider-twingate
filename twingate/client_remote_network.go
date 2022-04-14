@@ -97,12 +97,53 @@ func (client *Client) readRemoteNetwork(ctx context.Context, remoteNetworkID gra
 	}
 
 	if response.RemoteNetwork == nil {
-		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return &remoteNetwork{
 		ID:   remoteNetworkID,
 		Name: response.RemoteNetwork.Name,
+	}, nil
+}
+
+type readRemoteNetworksByNameQuery struct {
+	RemoteNetworks struct {
+		Edges []*Edges
+	} `graphql:"remoteNetworks(filter: {name: {eq: $name}})"`
+}
+
+func (client *Client) readRemoteNetworkByName(ctx context.Context, remoteNetworkName string) (*remoteNetwork, error) {
+	if remoteNetworkName == "" {
+		return nil, NewAPIError(ErrGraphqlNetworkNameIsEmpty, "read", remoteNetworkResourceName)
+	}
+
+	variables := map[string]interface{}{
+		"name": graphql.String(remoteNetworkName),
+	}
+
+	response := readRemoteNetworksByNameQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworkByName", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithName(err, "read", remoteNetworkResourceName, remoteNetworkName)
+	}
+
+	if len(response.RemoteNetworks.Edges) == 0 {
+		return nil, NewAPIErrorWithName(ErrGraphqlResourceNotFound, "read", remoteNetworkResourceName, remoteNetworkName)
+	}
+
+	if len(response.RemoteNetworks.Edges) > 1 {
+		return nil, NewAPIErrorWithName(ErrGraphqlFoundMoreThanOneResource, "read", remoteNetworkResourceName, remoteNetworkName)
+	}
+
+	network := response.RemoteNetworks.Edges[0]
+	if network == nil || network.Node == nil {
+		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "read", remoteNetworkResourceName, remoteNetworkName)
+	}
+
+	return &remoteNetwork{
+		ID:   network.Node.ID,
+		Name: network.Node.Name,
 	}, nil
 }
 
