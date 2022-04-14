@@ -105,10 +105,5 @@ func resourceGroupRead(ctx context.Context, resourceData *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	err = resourceData.Set("active", group.IsActive)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	return diags
 }
