@@ -3,6 +3,7 @@ package twingate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -81,7 +82,7 @@ func TestClientConnectorTokensVerify401Error(t *testing.T) {
 
 	err := client.verifyConnectorTokens(context.Background(), refreshToken, accessToken)
 
-	assert.EqualError(t, err, "failed to verify connector tokens: request https://test.twindev.com/api/v1/access_node/refresh failed, status 401, body {}")
+	assert.EqualError(t, err, fmt.Sprintf("failed to verify connector tokens: request %s failed, status 401, body {}", apiURL))
 }
 
 func TestClientConnectorTokensVerifyRequestError(t *testing.T) {
@@ -100,7 +101,7 @@ func TestClientConnectorTokensVerifyRequestError(t *testing.T) {
 		})
 
 	err := client.verifyConnectorTokens(context.Background(), refreshToken, accessToken)
-	assert.EqualError(t, err, "failed to verify connector tokens: can't execute http request: Post \"https://test.twindev.com/api/v1/access_node/refresh\": error")
+	assert.EqualError(t, err, fmt.Sprintf(`failed to verify connector tokens: can't execute http request: Post "%s": error`, apiURL))
 }
 
 func TestClientConnectorCreateTokensError(t *testing.T) {
@@ -123,7 +124,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	}
 	err := client.generateConnectorTokens(context.Background(), connector)
 
-	assert.EqualError(t, err, "failed to generate connector tokens with id test-id: error_1")
+	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens with id %v: error_1`, connector.ID))
 }
 
 func TestClientConnectorTokensCreateRequestError(t *testing.T) {
@@ -137,5 +138,5 @@ func TestClientConnectorTokensCreateRequestError(t *testing.T) {
 	}
 
 	err := client.generateConnectorTokens(context.Background(), connector)
-	assert.EqualError(t, err, "failed to generate connector tokens: Post \"https://test.twindev.com/api/graphql/\": error_1")
+	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens: Post "%s": error_1`, client.GraphqlServerURL))
 }
