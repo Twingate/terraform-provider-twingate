@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -85,26 +86,30 @@ func TestParsePortsToGraphql(t *testing.T) {
 }
 
 func TestParseErrorPortsToGraphql(t *testing.T) {
+	errString := func(portRange, port string) string {
+		return fmt.Sprintf(`failed to parse protocols port range "%s": port is not a valid integer: strconv.ParseInt: parsing "%s": invalid syntax`, portRange, port)
+	}
+
 	t.Run("Test Twingate Resource : Client Resource Parse Ports to GraphQL Error", func(t *testing.T) {
 		vars := []string{"foo"}
 		_, err := convertPorts(vars)
-		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"foo\": invalid syntax")
+		assert.EqualError(t, err, errString("foo", "foo"))
 
 		vars = []string{"10-9"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "ports 10, 9 needs to be in a rising sequence")
+		assert.EqualError(t, err, "failed to parse protocols port range \"10-9\": ports 10, 9 needs to be in a rising sequence")
 
 		vars = []string{"abc-12345"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"abc\": invalid syntax")
+		assert.EqualError(t, err, errString("abc-12345", "abc"))
 
 		vars = []string{"12345-abc"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"abc\": invalid syntax")
+		assert.EqualError(t, err, errString("12345-abc", "abc"))
 
 		vars = []string{"1-999999"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "port 999999 not in the range of 0-65535")
+		assert.EqualError(t, err, "failed to parse protocols port range \"1-999999\": port 999999 not in the range of 0-65535")
 
 	})
 }

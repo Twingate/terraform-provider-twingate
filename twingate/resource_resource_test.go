@@ -165,7 +165,124 @@ func testTwingateResource_fullFlowCreation(networkName, resourceName string) str
 	`, networkName, resourceName)
 }
 
-// adding test when policy is restricted and ports are empty list
+func TestAccTwingateResource_restrictedPolicyWithEmptyPortsList(t *testing.T) {
+	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+	resourceName := acctest.RandomWithPrefix("tf-acc-resource")
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateResource_restrictedPolicyWithEmptyPortsList(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", "RESTRICTED"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports"),
+				),
+			},
+		},
+	})
+}
+
+func testTwingateResource_restrictedPolicyWithEmptyPortsList(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "test" {
+	  name = "%s"
+	  address = "updated-acc-test.com"
+	  remote_network_id = twingate_remote_network.test.id
+	  group_ids = ["R3JvdXA6MjMxNTQ="]
+      protocols {
+		allow_icmp = true
+        tcp  {
+			policy = "RESTRICTED"
+			ports = []
+        }
+		udp {
+ 			policy = "RESTRICTED"
+		}
+      }
+	}
+	`, networkName, resourceName)
+}
+
+func TestAccTwingateResource_withInvalidPortRange(t *testing.T) {
+	remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+	resourceName := acctest.RandomWithPrefix("tf-acc-resource")
+	expectedError := regexp.MustCompile("Error: failed to parse protocols port range")
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `""`),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `" "`),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `"foo"`),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `"80-"`),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `"-80"`),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `"80-90-100"`),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `"80-70"`),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      testTwingateResource_restrictedWithPortRange(remoteNetworkName, resourceName, `"0-65536"`),
+				ExpectError: expectedError,
+			},
+		},
+	})
+}
+
+func testTwingateResource_restrictedWithPortRange(networkName, resourceName, portRange string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "test" {
+	  name = "%s"
+	  address = "updated-acc-test.com"
+	  remote_network_id = twingate_remote_network.test.id
+	  group_ids = ["R3JvdXA6MjMxNTQ="]
+      protocols {
+		allow_icmp = true
+        tcp {
+			policy = "RESTRICTED"
+			ports = [%s]
+        }
+		udp {
+			policy = "ALLOW_ALL"
+        }
+      }
+	}
+	`, networkName, resourceName, portRange)
+}
 
 func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*Client)
