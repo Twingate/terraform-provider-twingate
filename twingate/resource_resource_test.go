@@ -118,15 +118,15 @@ func testTwingateResource_withDenyAll(networkName, resourceName string) string {
 	  address = "updated-acc-test.com"
 	  remote_network_id = twingate_remote_network.test.id
 	  group_ids = ["R3JvdXA6MjMxNTQ="]
-      protocols {
-		allow_icmp = true
-        tcp  {
-			policy = "DENY_ALL"
-        }
-		udp {
- 			policy = "ALLOW_ALL"
-		}
-      }
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "DENY_ALL"
+	    }
+	    udp {
+	      policy = "ALLOW_ALL"
+	    }
+	  }
 	}
 	`, networkName, resourceName)
 }
