@@ -141,16 +141,16 @@ func testTwingateResource_errorGroupId(networkName, resourceName string) string 
 	  address = "updated-acc-test.com"
 	  remote_network_id = twingate_remote_network.test.id
 	  group_ids = ["foo", "bar"]
-      protocols {
-		allow_icmp = true
-        tcp  {
-			policy = "RESTRICTED"
-            ports = ["80", "82-83"]
-        }
-		udp {
- 			policy = "ALLOW_ALL"
-		}
-      }
+	  protocols {
+	    allow_icmp = true
+	    tcp  {
+	      policy = "RESTRICTED"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "ALLOW_ALL"
+	    }
+	  }
 	}
 	`, networkName, resourceName)
 }
