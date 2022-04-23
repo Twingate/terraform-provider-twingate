@@ -60,6 +60,13 @@ func TestAccTwingateResource_basic(t *testing.T) {
 					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0"),
 				),
 			},
+			{
+				Config: testTwingateResource_withDenyAll(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "DENY_ALL"),
+				),
+			},
 		},
 	})
 }
@@ -92,6 +99,29 @@ func testTwingateResource_withProtocolsAndGroups(networkName, resourceName strin
         tcp  {
 			policy = "RESTRICTED"
             ports = ["80", "82-83"]
+        }
+		udp {
+ 			policy = "ALLOW_ALL"
+		}
+      }
+	}
+	`, networkName, resourceName)
+}
+
+func testTwingateResource_withDenyAll(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "test" {
+	  name = "%s"
+	  address = "updated-acc-test.com"
+	  remote_network_id = twingate_remote_network.test.id
+	  group_ids = ["R3JvdXA6MjMxNTQ="]
+      protocols {
+		allow_icmp = true
+        tcp  {
+			policy = "DENY_ALL"
         }
 		udp {
  			policy = "ALLOW_ALL"
