@@ -199,16 +199,16 @@ func testTwingateResource_restrictedPolicyWithEmptyPortsList(networkName, resour
 	  address = "updated-acc-test.com"
 	  remote_network_id = twingate_remote_network.test.id
 	  group_ids = ["R3JvdXA6MjMxNTQ="]
-      protocols {
-		allow_icmp = true
-        tcp  {
-			policy = "RESTRICTED"
-			ports = []
-        }
-		udp {
- 			policy = "RESTRICTED"
-		}
-      }
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "RESTRICTED"
+	      ports = []
+	    }
+	    udp {
+	      policy = "RESTRICTED"
+	    }
+	  }
 	}
 	`, networkName, resourceName)
 }
@@ -270,16 +270,16 @@ func testTwingateResource_restrictedWithPortRange(networkName, resourceName, por
 	  address = "updated-acc-test.com"
 	  remote_network_id = twingate_remote_network.test.id
 	  group_ids = ["R3JvdXA6MjMxNTQ="]
-      protocols {
-		allow_icmp = true
-        tcp {
-			policy = "RESTRICTED"
-			ports = [%s]
-        }
-		udp {
-			policy = "ALLOW_ALL"
-        }
-      }
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "RESTRICTED"
+	      ports = [%s]
+	    }
+	    udp {
+	      policy = "ALLOW_ALL"
+	    }
+	  }
 	}
 	`, networkName, resourceName, portRange)
 }
