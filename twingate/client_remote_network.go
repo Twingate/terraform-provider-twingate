@@ -22,7 +22,7 @@ type createRemoteNetworkQuery struct {
 	} `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive)"`
 }
 
-func (client *Client) createRemoteNetwork(ctx context.Context, remoteNetworkName graphql.String) (*remoteNetwork, error) {
+func (client *Client) createRemoteNetwork(ctx context.Context, remoteNetworkName string) (*remoteNetwork, error) {
 	if remoteNetworkName == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkNameIsEmpty, "create", remoteNetworkResourceName)
 	}
@@ -30,7 +30,7 @@ func (client *Client) createRemoteNetwork(ctx context.Context, remoteNetworkName
 	response := createRemoteNetworkQuery{}
 
 	variables := map[string]interface{}{
-		"name":     remoteNetworkName,
+		"name":     graphql.String(remoteNetworkName),
 		"isActive": graphql.Boolean(true),
 	}
 	err := client.GraphqlClient.NamedMutate(ctx, "createRemoteNetwork", &response, variables)
@@ -80,13 +80,13 @@ type readRemoteNetworkQuery struct {
 	} `graphql:"remoteNetwork(id: $id)"`
 }
 
-func (client *Client) readRemoteNetwork(ctx context.Context, remoteNetworkID graphql.ID) (*remoteNetwork, error) {
-	if remoteNetworkID.(string) == "" {
+func (client *Client) readRemoteNetwork(ctx context.Context, remoteNetworkID string) (*remoteNetwork, error) {
+	if remoteNetworkID == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "read", remoteNetworkResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"id": remoteNetworkID,
+		"id": graphql.ID(remoteNetworkID),
 	}
 
 	response := readRemoteNetworkQuery{}
@@ -110,10 +110,10 @@ type updateRemoteNetworkQuery struct {
 	RemoteNetworkUpdate *OkError `graphql:"remoteNetworkUpdate(id: $id, name: $name)"`
 }
 
-func (client *Client) updateRemoteNetwork(ctx context.Context, remoteNetworkID graphql.ID, remoteNetworkName graphql.String) error {
+func (client *Client) updateRemoteNetwork(ctx context.Context, remoteNetworkID, remoteNetworkName string) error {
 	variables := map[string]interface{}{
-		"id":   remoteNetworkID,
-		"name": remoteNetworkName,
+		"id":   graphql.ID(remoteNetworkID),
+		"name": graphql.String(remoteNetworkName),
 	}
 
 	response := updateRemoteNetworkQuery{}
@@ -134,13 +134,13 @@ type deleteRemoteNetworkQuery struct {
 	RemoteNetworkDelete *OkError `graphql:"remoteNetworkDelete(id: $id)"`
 }
 
-func (client *Client) deleteRemoteNetwork(ctx context.Context, remoteNetworkID graphql.ID) error {
-	if remoteNetworkID.(string) == "" {
+func (client *Client) deleteRemoteNetwork(ctx context.Context, remoteNetworkID string) error {
+	if remoteNetworkID == "" {
 		return NewAPIError(ErrGraphqlNetworkIDIsEmpty, "delete", remoteNetworkResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"id": remoteNetworkID,
+		"id": graphql.ID(remoteNetworkID),
 	}
 
 	response := deleteRemoteNetworkQuery{}

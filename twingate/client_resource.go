@@ -233,14 +233,14 @@ type readResourceQuery struct {
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResource(ctx context.Context, resourceID graphql.ID) (*Resource, error) {
-	if resourceID.(string) == "" {
+func (client *Client) readResource(ctx context.Context, resourceID string) (*Resource, error) {
+	if resourceID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
 
 	response := readResourceQuery{}
 	variables := map[string]interface{}{
-		"id":    resourceID,
+		"id":    graphql.ID(resourceID),
 		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
@@ -326,15 +326,15 @@ type deleteResourceQuery struct {
 	ResourceDelete *OkError `graphql:"resourceDelete(id: $id)"`
 }
 
-func (client *Client) deleteResource(ctx context.Context, resourceID graphql.ID) error {
-	if resourceID.(string) == "" {
+func (client *Client) deleteResource(ctx context.Context, resourceID string) error {
+	if resourceID == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", resourceResourceName)
 	}
 
 	response := deleteResourceQuery{}
 
 	variables := map[string]interface{}{
-		"id": resourceID,
+		"id": graphql.ID(resourceID),
 	}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
