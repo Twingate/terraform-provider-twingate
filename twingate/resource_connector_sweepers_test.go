@@ -17,7 +17,7 @@ func init() {
 
 func testSweepTwingateConnector(tenant string) error {
 	resourceName := "twingate_connector"
-	log.Printf("\"[INFO][SWEEPER_LOG] Starting sweeper for %s\"", resourceName)
+	log.Printf("[INFO][SWEEPER_LOG] Starting sweeper for %s", resourceName)
 	client, err := sharedClient(tenant)
 	if err != nil {
 		log.Printf("[ERROR][SWEEPER_LOG] error getting client: %s", err)

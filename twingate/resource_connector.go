@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/twingate/go-graphql-client"
 )
 
 func resourceConnector() *schema.Resource {
@@ -73,7 +72,7 @@ func resourceConnectorUpdate(ctx context.Context, resourceData *schema.ResourceD
 		connectorID := resourceData.Id()
 		log.Printf("[INFO] Updating name of connector id %s", connectorID)
 
-		if err := client.updateConnector(ctx, graphql.ID(connectorID), graphql.String(connectorName)); err != nil {
+		if err := client.updateConnector(ctx, connectorID, connectorName); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -92,7 +91,7 @@ func resourceConnectorDelete(ctx context.Context, resourceData *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Destroyed connector id %s", resourceData.Id())
+	log.Printf("[INFO] Destroyed connector id %s", connectorID)
 
 	return diags
 }
