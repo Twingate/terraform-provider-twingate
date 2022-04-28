@@ -5,12 +5,6 @@ const body = danger.github.pr.body.trim()
 const isUser = danger.github.pr.user.type === "User"
 
 if (isUser) {
-  // PR body has to contain the ticket from title
-  const match = regexTitle.exec(title);
-  if (match === null) {
-    process.exit()
-  }
-
   if (!body.includes("Please fill out as much as you can")) {
     fail(`Please include meaningful description.`);
   }
