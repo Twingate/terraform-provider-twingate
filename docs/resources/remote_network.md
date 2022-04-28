@@ -28,11 +28,11 @@ resource "twingate_remote_network" "aws_network" {
 
 ### Required
 
-- **name** (String) The name of the Remote Network
+- `name` (String) The name of the Remote Network
 
 ### Read-Only
 
-- **id** (String) The ID of the Remote Network
+- `id` (String) The ID of the Remote Network
 
 ## Import
 
