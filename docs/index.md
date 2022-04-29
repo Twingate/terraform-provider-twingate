@@ -33,16 +33,16 @@ provider "twingate" {
 
 ### Optional
 
-- **api_token** (String, Sensitive) The access key for API operations. You can retrieve this
+- `api_token` (String, Sensitive) The access key for API operations. You can retrieve this
 from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).
 Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
-- **http_max_retry** (Number) Specifies a retry limit for the http requests made. This setting is 5.
+- `http_max_retry` (Number) Specifies a retry limit for the http requests made. This setting is 5.
 Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable
-- **http_timeout** (Number) Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.
+- `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.
 Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable
-- **network** (String) Your Twingate network ID for API operations.
+- `network` (String) Your Twingate network ID for API operations.
 You can find it in the Admin Console URL, for example:
 `autoco.twingate.com`, where `autoco` is your network ID
 Alternatively, this can be specified using the TWINGATE_NETWORK environment variable.
-- **url** (String) The default is 'twingate.com'
+- `url` (String) The default is 'twingate.com'
 This is optional and shouldn't be changed under normal circumstances.
