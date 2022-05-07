@@ -417,3 +417,97 @@ func TestClientDeleteGroupRequestError(t *testing.T) {
 		assert.EqualError(t, err, fmt.Sprintf(`failed to delete group with id g1: Post "%s": error_2`, client.GraphqlServerURL))
 	})
 }
+
+func TestClientGroupsReadOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups Ok", func(t *testing.T) {
+		ids := []string{"R3JvdXA6MTk0MjQ=", "R3JvdXA6MjMxNTQ=", "R3JvdXA6MzQ4OTE="}
+		names := []string{"Everyone", "Test Group", "aws_group"}
+		// response JSON
+		readGroupOkJson := fmt.Sprintf(`{
+		  "data": {
+			"groups": {
+			  "edges": [
+				{
+				  "node": {
+					"id": "%s",
+					"name": "%s"
+				  }
+				},
+				{
+				  "node": {
+					"id": "%s",
+					"name": "%s"
+				  }
+				},
+				{
+				  "node": {
+					"id": "%s",
+					"name": "%s"
+				  }
+				}
+			  ]
+			}
+		  }
+		}`, ids[0], names[0], ids[1], names[1], ids[2], names[2])
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, readGroupOkJson))
+
+		groups, err := client.readGroups(context.Background())
+
+		assert.Nil(t, err)
+		assert.NotNil(t, groups)
+		assert.EqualValues(t, len(ids), len(groups))
+		for i, id := range ids {
+			assert.EqualValues(t, id, groups[i].ID)
+			assert.EqualValues(t, names[i], groups[i].Name)
+		}
+	})
+}
+
+func TestClientGroupsReadError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups Error", func(t *testing.T) {
+		// response JSON
+		readGroupOkJson := `{
+		  "data": {
+			"groups": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, readGroupOkJson))
+
+		groups, err := client.readGroups(context.Background())
+
+		assert.Nil(t, groups)
+		assert.EqualError(t, err, "failed to read group with id All")
+	})
+}
+
+func TestClientGroupsReadRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups Request Error", func(t *testing.T) {
+		// response JSON
+		readGroupOkJson := `{
+		  "data": {
+			"group": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, readGroupOkJson)
+				return resp, errors.New("error_1")
+			})
+
+		group, err := client.readGroups(context.Background())
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}

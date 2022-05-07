@@ -83,6 +83,35 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 	return &group, nil
 }
 
+type readGroupsQuery struct { //nolint
+	Groups *struct {
+		Edges []*Edges
+	}
+}
+
+func (client *Client) readGroups(ctx context.Context) ([]*Group, error) { //nolint
+	response := readGroupsQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, nil)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
+	}
+
+	if response.Groups == nil {
+		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
+	}
+
+	var groups []*Group
+	for _, g := range response.Groups.Edges {
+		groups = append(groups, &Group{
+			ID:   g.Node.ID,
+			Name: g.Node.Name,
+		})
+	}
+
+	return groups, nil
+}
+
 type updateGroupQuery struct {
 	GroupUpdate struct {
 		Entity IDName
