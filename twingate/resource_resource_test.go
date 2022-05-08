@@ -64,7 +64,7 @@ func TestAccTwingateResource_basic(t *testing.T) {
 				Config: testTwingateResource_withDenyAll(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "DENY_ALL"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
 				),
 			},
 		},

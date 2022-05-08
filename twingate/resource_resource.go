@@ -11,13 +11,32 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
+const (
+	policyRestricted = "RESTRICTED"
+	policyAllowAll   = "ALLOW_ALL"
+	policyDenyAll    = "DENY_ALL"
+)
+
+func castToStrings(a, b interface{}) (string, string) {
+	return a.(string), b.(string)
+}
+
+func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	oldPolicy, newPolicy := castToStrings(d.GetChange("protocols.0.tcp.0.policy"))
+	if oldPolicy == policyRestricted && newPolicy == policyDenyAll {
+		return true
+	}
+
+	return false
+}
+
 func resourceResource() *schema.Resource { //nolint:funlen
 	portsResource := schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"policy": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"RESTRICTED", "ALLOW_ALL", "DENY_ALL"}, false),
+				ValidateFunc: validation.StringInSlice([]string{policyRestricted, policyAllowAll, policyDenyAll}, false),
 				Description:  "Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, `DENY_ALL`",
 			},
 			"ports": {
@@ -75,16 +94,20 @@ func resourceResource() *schema.Resource { //nolint:funlen
 							Description: "Whether to allow ICMP (ping) traffic",
 						},
 						"tcp": {
-							Type:     schema.TypeList,
-							Required: true,
-							MaxItems: 1,
-							Elem:     &portsResource,
+							Type:                  schema.TypeList,
+							Required:              true,
+							MaxItems:              1,
+							Elem:                  &portsResource,
+							DiffSuppressOnRefresh: true,
+							DiffSuppressFunc:      protocolDiff,
 						},
 						"udp": {
-							Type:     schema.TypeList,
-							Required: true,
-							MaxItems: 1,
-							Elem:     &portsResource,
+							Type:                  schema.TypeList,
+							Required:              true,
+							MaxItems:              1,
+							Elem:                  &portsResource,
+							DiffSuppressOnRefresh: true,
+							DiffSuppressFunc:      protocolDiff,
 						},
 					},
 				},
@@ -115,32 +138,39 @@ func convertGroupsGraphql(a []interface{}) []*graphql.ID {
 
 func extractProtocolsFromContext(p interface{}) *StringProtocolsInput {
 	protocolsMap := p.(map[string]interface{})
-	protocolsInput := &StringProtocolsInput{}
-	protocolsInput.AllowIcmp = protocolsMap["allow_icmp"].(bool)
+	protocols := &StringProtocolsInput{}
+	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
 
 	u := protocolsMap["udp"].([]interface{})
 	if len(u) > 0 {
 		udp := u[0].(map[string]interface{})
-		protocolsInput.UDPPolicy = udp["policy"].(string)
-		p := convertPortsToSlice(udp["ports"].([]interface{}))
-
-		if len(p) > 0 {
-			protocolsInput.UDPPorts = p
-		}
+		protocols.UDPPolicy, protocols.UDPPorts = parseProtocol(udp)
 	}
 
 	t := protocolsMap["tcp"].([]interface{})
 	if len(t) > 0 {
 		tcp := t[0].(map[string]interface{})
-		protocolsInput.TCPPolicy = tcp["policy"].(string)
-		p := convertPortsToSlice(tcp["ports"].([]interface{}))
-
-		if len(p) > 0 {
-			protocolsInput.TCPPorts = p
-		}
+		protocols.TCPPolicy, protocols.TCPPorts = parseProtocol(tcp)
 	}
 
-	return protocolsInput
+	return protocols
+}
+
+func parseProtocol(input map[string]interface{}) (policy string, ports []string) {
+	policy = input["policy"].(string)
+	switch policy {
+	case policyAllowAll:
+		return
+	case policyDenyAll:
+		return policyRestricted, nil
+	}
+
+	p := convertPortsToSlice(input["ports"].([]interface{}))
+	if len(p) > 0 {
+		ports = p
+	}
+
+	return
 }
 
 func extractResource(resourceData *schema.ResourceData) *Resource {

@@ -20,8 +20,8 @@ func TestProtocolsInput(t *testing.T) {
 		pri := &PortRangeInput{Start: graphql.Int(1), End: graphql.Int(18000)}
 		pi.TCP.Ports = append(pi.TCP.Ports, pri)
 		pi.UDP.Ports = append(pi.UDP.Ports, pri)
-		udpPorts, udpPolicy := pi.UDP.buildPortsRnge()
-		tcpPorts, tcpPolicy := pi.TCP.buildPortsRnge()
+		udpPorts, udpPolicy := pi.UDP.buildPortsRange()
+		tcpPorts, tcpPolicy := pi.TCP.buildPortsRange()
 		assert.EqualValues(t, "ALLOW_ALL", udpPolicy)
 		assert.EqualValues(t, "ALLOW_ALL", tcpPolicy)
 		assert.EqualValues(t, "1-18000", tcpPorts[0])

@@ -14,7 +14,7 @@ import (
 )
 
 func newTestResource() *Resource {
-	protocols := newProcolsInput()
+	protocols := newProtocolsInput()
 	protocols.TCP.Policy = "ALLOW_ALL"
 	protocols.UDP.Policy = "ALLOW_ALL"
 
@@ -257,7 +257,7 @@ func TestClientResourceReadOk(t *testing.T) {
 			httpmock.NewStringResponder(200, createResourceOkJson))
 
 		resource, err := client.readResource(context.Background(), "resource1")
-		tcpPorts, _ := resource.Protocols.TCP.buildPortsRnge()
+		tcpPorts, _ := resource.Protocols.TCP.buildPortsRange()
 		assert.Nil(t, err)
 		assert.EqualValues(t, graphql.ID("resource1"), resource.ID)
 		assert.Contains(t, resource.stringGroups(), "group1")
