@@ -420,8 +420,8 @@ func TestClientDeleteGroupRequestError(t *testing.T) {
 
 func TestClientGroupsReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups Ok", func(t *testing.T) {
-		ids := []string{"R3JvdXA6MTk0MjQ=", "R3JvdXA6MjMxNTQ=", "R3JvdXA6MzQ4OTE="}
-		names := []string{"Everyone", "Test Group", "aws_group"}
+		ids := []string{"id1", "id2", "id3"}
+		names := []string{"group1", "group2", "group3"}
 		// response JSON
 		readGroupOkJson := fmt.Sprintf(`{
 		  "data": {
