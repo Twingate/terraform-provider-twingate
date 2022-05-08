@@ -195,9 +195,9 @@ func TestAccTwingateResource_restrictedPolicyWithEmptyPortsList(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
-					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.#"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", "RESTRICTED"),
-					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports.#"),
 				),
 			},
 		},
