@@ -26,11 +26,11 @@ resource "twingate_resource" "resource" {
   name = "network"
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
-  group_ids = ["group1"]
+  group_ids = ["R3JvdXA6MzQ4OTE="]
   protocols {
     allow_icmp = true
     tcp  {
-      policy = "RESTRICTED"
+      policy = "DENY_ALL"
       ports = ["80", "82-83"]
     }
     udp {
@@ -88,7 +88,6 @@ Optional:
 Required:
 
 - `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, `DENY_ALL`
-
 
 Optional:
 
