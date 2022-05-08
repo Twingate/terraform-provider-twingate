@@ -6,17 +6,18 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/twingate/go-graphql-client"
 )
 
 func init() {
-	resource.AddTestSweepers("twingate_resource", &resource.Sweeper{
-		Name: "twingate_resource",
-		F:    testSweepTwingateResource,
+	resource.AddTestSweepers("twingate_group", &resource.Sweeper{
+		Name: "twingate_group",
+		F:    testSweepTwingateGroup,
 	})
 }
 
-func testSweepTwingateResource(tenant string) error {
-	resourceName := "twingate_resource"
+func testSweepTwingateGroup(tenant string) error {
+	resourceName := "twingate_group"
 	log.Printf("\"[INFO][SWEEPER_LOG] Starting sweeper for %s\"", resourceName)
 	client, err := sharedClient(tenant)
 	if err != nil {
@@ -26,7 +27,7 @@ func testSweepTwingateResource(tenant string) error {
 
 	ctx := context.Background()
 
-	resources, err := client.readResources(ctx)
+	resources, err := client.readGroups(ctx)
 	if err != nil {
 		log.Printf("[INFO][SWEEPER_LOG] Nothing found in response: %s", resourceName)
 		return nil
@@ -37,11 +38,11 @@ func testSweepTwingateResource(tenant string) error {
 		return nil
 	}
 
-	var testResources = make([]string, 0)
+	var testResources = make([]graphql.ID, 0)
 
 	for _, elem := range resources {
-		if strings.HasPrefix(elem.Node.StringName(), testPrefixName) {
-			testResources = append(testResources, elem.Node.StringID())
+		if strings.HasPrefix(string(elem.Name), testPrefixName) {
+			testResources = append(testResources, elem.ID)
 		}
 	}
 
@@ -55,7 +56,7 @@ func testSweepTwingateResource(tenant string) error {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
 			return nil
 		}
-		err = client.deleteResource(ctx, i)
+		err = client.deleteGroup(ctx, i)
 		if err != nil {
 			log.Printf("[INFO][SWEEPER_LOG] %s cannot be deleted, error: %s", i, err)
 			return nil

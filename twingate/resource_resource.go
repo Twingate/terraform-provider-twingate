@@ -173,7 +173,7 @@ func parseProtocol(input map[string]interface{}) (policy string, ports []string)
 	return
 }
 
-func extractResource(resourceData *schema.ResourceData) *Resource {
+func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
 	resource := &Resource{
 		Name:            graphql.String(resourceData.Get("name").(string)),
 		RemoteNetworkID: graphql.ID(resourceData.Get("remote_network_id").(string)),
@@ -186,7 +186,7 @@ func extractResource(resourceData *schema.ResourceData) *Resource {
 	if len(p) > 0 {
 		p, err := extractProtocolsFromContext(p[0]).convertToGraphql()
 		if err != nil {
-			log.Printf("[ERROR] Cannot parse protocols value %s", err.Error())
+			return nil, err
 		}
 
 		resource.Protocols = p
@@ -194,14 +194,18 @@ func extractResource(resourceData *schema.ResourceData) *Resource {
 		resource.Protocols = newEmptyProtocols()
 	}
 
-	return resource
+	return resource, nil
 }
 
 func resourceResourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	resource := extractResource(resourceData)
-	err := client.createResource(ctx, resource)
 
+	resource, err := extractResource(resourceData)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	err = client.createResource(ctx, resource)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -216,10 +220,14 @@ func resourceResourceUpdate(ctx context.Context, resourceData *schema.ResourceDa
 	client := meta.(*Client)
 
 	if resourceData.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
-		resource := extractResource(resourceData)
+		resource, err := extractResource(resourceData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		resource.ID = resourceData.Id()
 
-		err := client.updateResource(ctx, resource)
+		err = client.updateResource(ctx, resource)
 		if err != nil {
 			return diag.FromErr(err)
 		}
