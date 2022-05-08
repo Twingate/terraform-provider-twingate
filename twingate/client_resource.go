@@ -21,6 +21,10 @@ var (
 	ErrGraphqlNetworkNameIsEmpty = errors.New("network name is empty")
 )
 
+func ErrInvalidPortRange(portRange string, err error) error {
+	return fmt.Errorf(`failed to parse protocols port range "%s": %w`, portRange, err)
+}
+
 type PortNotInRangeError struct {
 	Port int64
 }
@@ -124,6 +128,12 @@ func convertPortsToSlice(a []interface{}) []string {
 	var res = make([]string, 0)
 
 	for _, elem := range a {
+		if elem == nil {
+			res = append(res, "")
+
+			continue
+		}
+
 		res = append(res, elem.(string))
 	}
 
@@ -139,16 +149,16 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 			start, err := validatePort(split[0])
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			end, err := validatePort(split[1])
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			if end < start {
-				return converted, NewPortRangeNotRisingSequenceError(int64(start), int64(end))
+				return converted, ErrInvalidPortRange(elem, NewPortRangeNotRisingSequenceError(int64(start), int64(end)))
 			}
 
 			c := &PortRangeInput{
@@ -160,7 +170,7 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 		} else {
 			port, err := validatePort(elem)
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			portRange := &PortRangeInput{
@@ -170,10 +180,6 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 			converted = append(converted, portRange)
 		}
-	}
-
-	if len(converted) > 0 {
-		return converted, nil
 	}
 
 	return converted, nil

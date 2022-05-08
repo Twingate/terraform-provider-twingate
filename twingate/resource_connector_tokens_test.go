@@ -13,7 +13,7 @@ import (
 func TestAccRemoteConnector_withTokens(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector With Tokens", func(t *testing.T) {
 
-		remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
+		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
 		connectorTokensResource := "twingate_connector_tokens.test"
 
 		resource.Test(t, resource.TestCase{
