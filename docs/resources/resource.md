@@ -14,8 +14,8 @@ Resources in Twingate represent servers on the private network that clients can 
 
 ```terraform
 provider "twingate" {
-#  api_token = "1234567890abcdef"
-#  network   = "mynetwork"
+  api_token = "1234567890abcdef"
+  network   = "mynetwork"
 }
 
 resource "twingate_remote_network" "aws_network" {
