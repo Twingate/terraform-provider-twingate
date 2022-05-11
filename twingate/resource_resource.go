@@ -160,7 +160,7 @@ func parseProtocol(input map[string]interface{}) (policy string, ports []string)
 	policy = input["policy"].(string)
 	switch policy {
 	case policyAllowAll:
-		return
+		return policy, ports
 	case policyDenyAll:
 		return policyRestricted, nil
 	}
@@ -170,7 +170,7 @@ func parseProtocol(input map[string]interface{}) (policy string, ports []string)
 		ports = p
 	}
 
-	return
+	return policy, ports
 }
 
 func extractResource(resourceData *schema.ResourceData) (*Resource, error) {

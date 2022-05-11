@@ -50,6 +50,9 @@ linters:
     - interfacer
     - forcetypeassert
     - golint
+    - exhaustruct
+    - nonamedreturns
+    - execinquery
   disable-all: false
   fast: false
 
