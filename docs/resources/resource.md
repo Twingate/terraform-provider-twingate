@@ -14,24 +14,28 @@ Resources in Twingate represent servers on the private network that clients can 
 
 ```terraform
 provider "twingate" {
-  api_token = "1234567890abcdef"
-  network   = "mynetwork"
+#  api_token = "1234567890abcdef"
+#  network   = "mynetwork"
 }
 
 resource "twingate_remote_network" "aws_network" {
   name = "aws_remote_network"
 }
 
+resource "twingate_group" "aws" {
+  name = "aws_group"
+}
+
 resource "twingate_resource" "resource" {
   name = "network"
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
-  group_ids = ["R3JvdXA6MzQ4OTE="]
+  group_ids = [twingate_group.aws.id]
   protocols {
     allow_icmp = true
     tcp  {
       policy = "DENY_ALL"
-      ports = ["80", "82-83"]
+      ports = ["80", "82-83", "90"]
     }
     udp {
       policy = "ALLOW_ALL"
@@ -93,4 +97,12 @@ Optional:
 
 - `ports` (List of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+terraform import twingate_remote_network.network UmVtb3RlTmV0d29yazo0MDEzOQ==
+terraform import twingate_group.aws R3JvdXA6MzUxNjU=
+terraform import twingate_resource.resource UmVzb3VyY2U6MzQwNDQ3
+```

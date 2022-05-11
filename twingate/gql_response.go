@@ -31,8 +31,8 @@ type Edges struct {
 func newEmptyProtocols() *ProtocolsInput {
 	pi := newProtocolsInput()
 	pi.AllowIcmp = graphql.Boolean(true)
-	pi.UDP.Policy = graphql.String("ALLOW_ALL")
-	pi.TCP.Policy = graphql.String("ALLOW_ALL")
+	pi.UDP.Policy = graphql.String(policyAllowAll)
+	pi.TCP.Policy = graphql.String(policyAllowAll)
 
 	return pi
 }

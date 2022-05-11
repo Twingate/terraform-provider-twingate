@@ -37,7 +37,7 @@ func resourceResource() *schema.Resource { //nolint:funlen
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{policyRestricted, policyAllowAll, policyDenyAll}, false),
-				Description:  "Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, `DENY_ALL`",
+				Description:  fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, `%s`", policyRestricted, policyAllowAll, policyDenyAll),
 			},
 			"ports": {
 				Type:        schema.TypeList,

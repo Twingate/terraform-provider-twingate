@@ -11,8 +11,8 @@ func TestProtocolsInput(t *testing.T) {
 	t.Run("Test Twingate Resource : ProtocolsInput", func(t *testing.T) {
 		pi := newEmptyProtocols()
 
-		assert.EqualValues(t, "ALLOW_ALL", pi.TCP.Policy)
-		assert.EqualValues(t, "ALLOW_ALL", pi.UDP.Policy)
+		assert.EqualValues(t, policyAllowAll, pi.TCP.Policy)
+		assert.EqualValues(t, policyAllowAll, pi.UDP.Policy)
 		assert.NotNil(t, pi.UDP.Ports)
 		assert.NotNil(t, pi.TCP.Ports)
 
@@ -22,8 +22,8 @@ func TestProtocolsInput(t *testing.T) {
 		pi.UDP.Ports = append(pi.UDP.Ports, pri)
 		udpPorts, udpPolicy := pi.UDP.buildPortsRange()
 		tcpPorts, tcpPolicy := pi.TCP.buildPortsRange()
-		assert.EqualValues(t, "ALLOW_ALL", udpPolicy)
-		assert.EqualValues(t, "ALLOW_ALL", tcpPolicy)
+		assert.EqualValues(t, policyAllowAll, udpPolicy)
+		assert.EqualValues(t, policyAllowAll, tcpPolicy)
 		assert.EqualValues(t, "1-18000", tcpPorts[0])
 		assert.EqualValues(t, "1-18000", udpPorts[0])
 	})

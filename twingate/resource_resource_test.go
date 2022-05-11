@@ -38,7 +38,7 @@ func TestAccTwingateResource_basic(t *testing.T) {
 					testAccCheckTwingateResourceExists("twingate_resource.test"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "address", "updated-acc-test.com"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "group_ids.#", "2"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
 				),
 			},
@@ -63,10 +63,10 @@ func TestAccTwingateResource_basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testTwingateResource_withDenyAll(remoteNetworkName, resourceName),
+				Config: testTwingateResource_withDenyAll(remoteNetworkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
 				),
 			},
 		},
@@ -108,38 +108,43 @@ func testTwingateResource_withProtocolsAndGroups(networkName, groupName1, groupN
       protocols {
 		allow_icmp = true
         tcp  {
-			policy = "RESTRICTED"
+			policy = "%s"
             ports = ["80", "82-83"]
         }
 		udp {
- 			policy = "ALLOW_ALL"
+ 			policy = "%s"
 		}
       }
 	}
-	`, networkName, groupName1, groupName2, resourceName)
+	`, networkName, groupName1, groupName2, resourceName, policyRestricted, policyAllowAll)
 }
 
-func testTwingateResource_withDenyAll(networkName, resourceName string) string {
+func testTwingateResource_withDenyAll(networkName, groupName, resourceName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
-	  name = "%s"
-	}
-	resource "twingate_resource" "test" {
-	  name = "%s"
-	  address = "updated-acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = ["R3JvdXA6MjMxNTQ="]
-	  protocols {
-	    allow_icmp = true
-	    tcp {
-	      policy = "DENY_ALL"
-	    }
-	    udp {
-	      policy = "ALLOW_ALL"
-	    }
-	  }
-	}
-	`, networkName, resourceName)
+    resource "twingate_remote_network" "test" {
+      name = "%s"
+    }
+
+    resource "twingate_group" "g" {
+      name = "%s"
+    }
+
+    resource "twingate_resource" "test" {
+      name = "%s"
+      address = "updated-acc-test.com"
+      remote_network_id = twingate_remote_network.test.id
+      group_ids = [twingate_group.g.id]
+      protocols {
+        allow_icmp = true
+        tcp {
+          policy = "%s"
+        }
+        udp {
+          policy = "%s"
+        }
+      }
+    }
+    `, networkName, groupName, resourceName, policyDenyAll, policyAllowAll)
 }
 
 func testTwingateResource_errorGroupId(networkName, resourceName string) string {
@@ -155,59 +160,60 @@ func testTwingateResource_errorGroupId(networkName, resourceName string) string 
 	  protocols {
 	    allow_icmp = true
 	    tcp  {
-	      policy = "RESTRICTED"
+	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
 	    udp {
-	      policy = "ALLOW_ALL"
+	      policy = "%s"
 	    }
 	  }
 	}
-	`, networkName, resourceName)
+	`, networkName, resourceName, policyRestricted, policyAllowAll)
 }
 
 func testTwingateResource_fullFlowCreation(networkName, groupName, resourceName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
-	  name = "%s"
-	}
-	resource "twingate_connector" "test_1" {
-      remote_network_id = twingate_remote_network.test.id
-	}
-
-	resource "twingate_connector_tokens" "test_1" {
-      connector_id = twingate_connector.test_1.id
-	}
-
-	resource "twingate_connector" "test_2" {
-      remote_network_id = twingate_remote_network.test.id
-	}
+    resource "twingate_remote_network" "test" {
+      name = "%s"
+    }
 	
-	resource "twingate_connector_tokens" "test_2" {
+    resource "twingate_connector" "test_1" {
+      remote_network_id = twingate_remote_network.test.id
+    }
+
+    resource "twingate_connector_tokens" "test_1" {
+      connector_id = twingate_connector.test_1.id
+    }
+
+    resource "twingate_connector" "test_2" {
+      remote_network_id = twingate_remote_network.test.id
+    }
+	
+    resource "twingate_connector_tokens" "test_2" {
       connector_id = twingate_connector.test_2.id
-	}
+    }
 
     resource "twingate_group" "test_res" {
       name = "%s"
     }
 
-	resource "twingate_resource" "test" {
-	  name = "%s"
-	  address = "updated-acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = [twingate_group.test_res.id]
+    resource "twingate_resource" "test" {
+      name = "%s"
+      address = "updated-acc-test.com"
+      remote_network_id = twingate_remote_network.test.id
+      group_ids = [twingate_group.test_res.id]
       protocols {
-		allow_icmp = true
+        allow_icmp = true
         tcp  {
-			policy = "RESTRICTED"
+            policy = "%s"
             ports = ["3306"]
         }
-		udp {
- 			policy = "ALLOW_ALL"
-		}
+        udp {
+            policy = "%s"
+        }
       }
-	}
-	`, networkName, groupName, resourceName)
+    }
+	`, networkName, groupName, resourceName, policyRestricted, policyAllowAll)
 }
 
 func TestAccTwingateResource_restrictedPolicyWithEmptyPortsList(t *testing.T) {
@@ -224,9 +230,9 @@ func TestAccTwingateResource_restrictedPolicyWithEmptyPortsList(t *testing.T) {
 				Config: testTwingateResource_restrictedPolicyWithEmptyPortsList(remoteNetworkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", "RESTRICTED"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
 					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.#"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", "RESTRICTED"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", policyRestricted),
 					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports.#"),
 				),
 			},
@@ -252,15 +258,15 @@ func testTwingateResource_restrictedPolicyWithEmptyPortsList(networkName, groupN
 	  protocols {
 	    allow_icmp = true
 	    tcp {
-	      policy = "RESTRICTED"
+	      policy = "%s"
 	      ports = []
 	    }
 	    udp {
-	      policy = "RESTRICTED"
+	      policy = "%s"
 	    }
 	  }
 	}
-	`, networkName, groupName, resourceName)
+	`, networkName, groupName, resourceName, policyRestricted, policyRestricted)
 }
 
 func TestAccTwingateResource_withInvalidPortRange(t *testing.T) {
@@ -332,15 +338,15 @@ func testTwingateResource_restrictedWithPortRange(networkName, groupName, resour
 	  protocols {
 	    allow_icmp = true
 	    tcp {
-	      policy = "RESTRICTED"
+	      policy = "%s"
 	      ports = [%s]
 	    }
 	    udp {
-	      policy = "ALLOW_ALL"
+	      policy = "%s"
 	    }
 	  }
 	}
-	`, networkName, groupName, resourceName, portRange)
+	`, networkName, groupName, resourceName, policyRestricted, portRange, policyAllowAll)
 }
 
 func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
