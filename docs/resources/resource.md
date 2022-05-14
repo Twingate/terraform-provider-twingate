@@ -34,7 +34,7 @@ resource "twingate_resource" "resource" {
   protocols {
     allow_icmp = true
     tcp  {
-      policy = "DENY_ALL"
+      policy = "RESTRICTED"
       ports = ["80", "82-83", "90"]
     }
     udp {
