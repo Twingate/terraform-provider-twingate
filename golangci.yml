@@ -50,6 +50,7 @@ linters:
     - interfacer
     - forcetypeassert
     - golint
+    - exhaustruct
   disable-all: false
   fast: false
 
