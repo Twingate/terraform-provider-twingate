@@ -156,8 +156,11 @@ func extractProtocolsFromContext(p interface{}) *StringProtocolsInput {
 	return protocols
 }
 
-func parseProtocol(input map[string]interface{}) (policy string, ports []string) {
-	policy = input["policy"].(string)
+func parseProtocol(input map[string]interface{}) (string, []string) {
+	var ports []string
+
+	policy := input["policy"].(string)
+
 	switch policy {
 	case policyAllowAll:
 		return policy, ports

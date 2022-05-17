@@ -77,7 +77,9 @@ type ProtocolInput struct {
 	Policy graphql.String    `json:"policy"`
 }
 
-func (pi *ProtocolInput) buildPortsRange() (ports []string, policy string) {
+func (pi *ProtocolInput) buildPortsRange() ([]string, string) {
+	var ports []string
+
 	for _, port := range pi.Ports {
 		if port.Start == port.End {
 			ports = append(ports, strconv.Itoa(int(port.Start)))
