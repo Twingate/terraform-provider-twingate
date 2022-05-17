@@ -6,7 +6,7 @@ jobs:
     environment:
       TEST_RESULTS: /tmp/test-results
     docker:
-      - image: cimg/go:1.16.5
+      - image: cimg/go:1.18.2
 
     steps:
       - checkout
@@ -46,7 +46,7 @@ jobs:
   build:
 
     docker:
-      - image: cimg/go:1.16.5
+      - image: cimg/go:1.18.2
 
     steps:
       - checkout
