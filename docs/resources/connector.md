@@ -47,5 +47,6 @@ resource "twingate_connector" "aws_connector" {
 Import is supported using the following syntax:
 
 ```shell
+terraform import twingate_remote_network.aws_network UmVtb3RlTmV0d29yazozOTkwNw==
 terraform import twingate_connector.connector Q29ubmVjdG1b0qe0
 ```
