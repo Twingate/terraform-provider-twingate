@@ -92,7 +92,7 @@ type readGroupsQuery struct { //nolint
 func (client *Client) readGroups(ctx context.Context) (groups []*Group, err error) { //nolint
 	response := readGroupsQuery{}
 
-	err = client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, nil)
+	err = client.GraphqlClient.Query(ctx, &response, nil, graphql.OperationName("readGroups"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
 	}
