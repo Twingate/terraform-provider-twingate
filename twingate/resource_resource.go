@@ -4,12 +4,41 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/twingate/go-graphql-client"
 )
+
+func equalPorts(a, b interface{}) bool {
+	oldPorts, newPorts := convertPortsToSlice(a.([]interface{})), convertPortsToSlice(b.([]interface{}))
+	if len(oldPorts) != len(newPorts) {
+		return false
+	}
+
+	sort.Strings(oldPorts)
+	sort.Strings(newPorts)
+
+	for i, val := range oldPorts {
+		if newPorts[i] != val {
+			return false
+		}
+	}
+
+	return true
+}
+
+func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	const key = "protocols.0.tcp.0.ports"
+	if strings.HasPrefix(k, key) {
+		return equalPorts(d.GetChange(key))
+	}
+
+	return false
+}
 
 func resourceResource() *schema.Resource { //nolint:funlen
 	portsResource := schema.Resource{
@@ -27,6 +56,8 @@ func resourceResource() *schema.Resource { //nolint:funlen
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				DiffSuppressOnRefresh: true,
+				DiffSuppressFunc:      portsNotChanged,
 			},
 		},
 	}
