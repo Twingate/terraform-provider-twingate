@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,9 +23,14 @@ func castToStrings(a, b interface{}) (string, string) {
 }
 
 func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
-	oldPolicy, newPolicy := castToStrings(d.GetChange("protocols.0.tcp.0.policy"))
-	if oldPolicy == policyRestricted && newPolicy == policyDenyAll {
-		return true
+	keys := []string{"protocols.0.tcp.0.policy", "protocols.0.udp.0.policy"}
+	for _, key := range keys {
+		if strings.HasPrefix(k, key) {
+			oldPolicy, newPolicy := castToStrings(d.GetChange(key))
+			if oldPolicy == policyRestricted && newPolicy == policyDenyAll {
+				return true
+			}
+		}
 	}
 
 	return false

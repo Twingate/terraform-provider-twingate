@@ -63,11 +63,28 @@ func TestAccTwingateResource_basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testTwingateResource_withDenyAll(remoteNetworkName, groupName, resourceName),
+				Config: testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test"),
 					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
 				),
+			},
+			// expecting no changes - empty plan
+			{
+				Config:   testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				PlanOnly: true,
+			},
+			{
+				Config: testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", policyRestricted),
+				),
+			},
+			// expecting no changes - empty plan
+			{
+				Config:   testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				PlanOnly: true,
 			},
 		},
 	})
@@ -119,7 +136,7 @@ func testTwingateResource_withProtocolsAndGroups(networkName, groupName1, groupN
 	`, networkName, groupName1, groupName2, resourceName, policyRestricted, policyAllowAll)
 }
 
-func testTwingateResource_withDenyAll(networkName, groupName, resourceName string) string {
+func testTwingateResource_withTcpDenyAllPolicy(networkName, groupName, resourceName string) string {
 	return fmt.Sprintf(`
     resource "twingate_remote_network" "test" {
       name = "%s"
@@ -145,6 +162,34 @@ func testTwingateResource_withDenyAll(networkName, groupName, resourceName strin
       }
     }
     `, networkName, groupName, resourceName, policyDenyAll, policyAllowAll)
+}
+
+func testTwingateResource_withUdpDenyAllPolicy(networkName, groupName, resourceName string) string {
+	return fmt.Sprintf(`
+    resource "twingate_remote_network" "test" {
+      name = "%s"
+    }
+
+    resource "twingate_group" "g" {
+      name = "%s"
+    }
+
+    resource "twingate_resource" "test" {
+      name = "%s"
+      address = "updated-acc-test.com"
+      remote_network_id = twingate_remote_network.test.id
+      group_ids = [twingate_group.g.id]
+      protocols {
+        allow_icmp = true
+        tcp {
+          policy = "%s"
+        }
+        udp {
+          policy = "%s"
+        }
+      }
+    }
+    `, networkName, groupName, resourceName, policyAllowAll, policyDenyAll)
 }
 
 func testTwingateResource_errorGroupId(networkName, resourceName string) string {
