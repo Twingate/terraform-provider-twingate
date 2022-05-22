@@ -32,9 +32,11 @@ func equalPorts(a, b interface{}) bool {
 }
 
 func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool {
-	const key = "protocols.0.tcp.0.ports"
-	if strings.HasPrefix(k, key) {
-		return equalPorts(d.GetChange(key))
+	keys := []string{"protocols.0.tcp.0.ports", "protocols.0.udp.0.ports"}
+	for _, key := range keys {
+		if strings.HasPrefix(k, key) {
+			return equalPorts(d.GetChange(key))
+		}
 	}
 
 	return false
