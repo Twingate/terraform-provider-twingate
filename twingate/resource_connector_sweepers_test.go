@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+const testPrefixName = "tf-acc"
+
 func init() {
 	resource.AddTestSweepers("twingate_connector", &resource.Sweeper{
 		Name: "twingate_connector",
@@ -40,7 +42,7 @@ func testSweepTwingateConnector(tenant string) error {
 	var testConnectors = make([]string, 0)
 
 	for _, elem := range connectorMap {
-		if strings.HasPrefix(elem.Name, "tf-acc") {
+		if strings.HasPrefix(elem.Name, testPrefixName) {
 			testConnectors = append(testConnectors, elem.ID)
 		}
 	}

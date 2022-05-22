@@ -13,8 +13,8 @@ import (
 func TestAccTwingateGroup_basic(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Basic", func(t *testing.T) {
 
-		groupNameBefore := acctest.RandomWithPrefix("tf-acc")
-		groupNameAfter := acctest.RandomWithPrefix("tf-acc")
+		groupNameBefore := acctest.RandomWithPrefix(testPrefixName)
+		groupNameAfter := acctest.RandomWithPrefix(testPrefixName)
 		resourceName := "twingate_group.test"
 
 		resource.Test(t, resource.TestCase{
@@ -44,7 +44,7 @@ func TestAccTwingateGroup_basic(t *testing.T) {
 func TestAccTwingateGroup_deleteNonExisting(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Delete NonExisting", func(t *testing.T) {
 
-		groupNameBefore := acctest.RandomWithPrefix("tf-acc")
+		groupNameBefore := acctest.RandomWithPrefix(testPrefixName)
 		resourceName := "twingate_group.test"
 
 		resource.Test(t, resource.TestCase{
