@@ -162,7 +162,7 @@ func TestAccRemoteConnector_notAllowedToChangeRemoteNetworkId(t *testing.T) {
 				},
 				{
 					Config:      testTwingateConnectorWithAnotherNetwork(remoteNetworkName1),
-					ExpectError: regexp.MustCompile("not allowed to change remote_network_id"),
+					ExpectError: regexp.MustCompile(ErrNotAllowChangeRemoteNetworkID.Error()),
 				},
 			},
 		})

@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+var ErrNotAllowChangeRemoteNetworkID = errors.New("not allowed to change remote_network_id")
+
 func resourceConnector() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
@@ -22,7 +24,7 @@ func resourceConnector() *schema.Resource {
 			oldVal, _ := d.GetChange(key)
 			old := oldVal.(string)
 			if old != "" && d.HasChange(key) {
-				return errors.New("not allowed to change remote_network_id")
+				return ErrNotAllowChangeRemoteNetworkID
 			}
 
 			return nil
