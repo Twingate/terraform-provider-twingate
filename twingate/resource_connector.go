@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -16,6 +17,16 @@ func resourceConnector() *schema.Resource {
 		ReadContext:   resourceConnectorRead,
 		DeleteContext: resourceConnectorDelete,
 		UpdateContext: resourceConnectorUpdate,
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+			const key = "remote_network_id"
+			oldVal, _ := d.GetChange(key)
+			old := oldVal.(string)
+			if old != "" && d.HasChange(key) {
+				return errors.New("not allowed to change remote_network_id")
+			}
+
+			return nil
+		},
 
 		Schema: map[string]*schema.Schema{
 			// required
