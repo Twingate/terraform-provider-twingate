@@ -125,5 +125,11 @@ func resourceConnectorRead(ctx context.Context, resourceData *schema.ResourceDat
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
 
+	if connector.RemoteNetwork != nil {
+		if err := resourceData.Set("remote_network_id", connector.RemoteNetwork.ID); err != nil {
+			return diag.FromErr(fmt.Errorf("error setting remote_network_id: %w ", err))
+		}
+	}
+
 	return diags
 }

@@ -142,6 +142,35 @@ func testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResourc
 	}
 }
 
+func TestAccRemoteConnector_import(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector - Import", func(t *testing.T) {
+		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+		connectorName := acctest.RandomWithPrefix(testPrefixName)
+		connectorResource := "twingate_connector.test"
+		remoteNetworkResource := "twingate_remote_network.test"
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile("tf-acc.*")),
+					),
+				},
+				{
+					ResourceName:      connectorResource,
+					ImportState:       true,
+					ImportStateVerify: true,
+				},
+			},
+		})
+	})
+}
+
 func TestAccRemoteConnector_notAllowedToChangeRemoteNetworkId(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector - should fail on remote_network_id update", func(t *testing.T) {
 		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
