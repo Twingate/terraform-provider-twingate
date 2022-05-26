@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var ErrNotAllowChangeRemoteNetworkID = errors.New("Connectors cannot be moved between Remote Networks. You must either create a new Connector or destroy and recreate the existing one.")
+var ErrNotAllowChangeRemoteNetworkID = errors.New("connectors cannot be moved between Remote Networks: you must either create a new Connector or destroy and recreate the existing one")
 
 func resourceConnector() *schema.Resource {
 	return &schema.Resource{
