@@ -79,7 +79,7 @@ Optional:
 
 Required:
 
-- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, `DENY_ALL`
+- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, or `DENY_ALL`
 
 Optional:
 
@@ -91,7 +91,7 @@ Optional:
 
 Required:
 
-- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, `DENY_ALL`
+- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, or `DENY_ALL`
 
 Optional:
 
