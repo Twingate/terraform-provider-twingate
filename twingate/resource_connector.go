@@ -2,12 +2,15 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+var ErrNotAllowChangeRemoteNetworkID = errors.New("connectors cannot be moved between Remote Networks: you must either create a new Connector or destroy and recreate the existing one")
 
 func resourceConnector() *schema.Resource {
 	return &schema.Resource{
@@ -16,6 +19,16 @@ func resourceConnector() *schema.Resource {
 		ReadContext:   resourceConnectorRead,
 		DeleteContext: resourceConnectorDelete,
 		UpdateContext: resourceConnectorUpdate,
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+			const key = "remote_network_id"
+			oldVal, _ := d.GetChange(key)
+			old := oldVal.(string)
+			if old != "" && d.HasChange(key) {
+				return ErrNotAllowChangeRemoteNetworkID
+			}
+
+			return nil
+		},
 
 		Schema: map[string]*schema.Schema{
 			// required
