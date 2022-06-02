@@ -7,8 +7,9 @@ Twingate Terraform Provider
 Requirements
 ------------
 
--	[Terraform](https://www.terraform.io/downloads.html) 0.15.x
+-   Bash
 -	[Go](https://golang.org/doc/install) 1.16.3 (to build the provider plugin)
+-	[Terraform](https://www.terraform.io/downloads.html) 1.x
 
 ## Build: 
 
