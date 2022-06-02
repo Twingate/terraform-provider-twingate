@@ -447,3 +447,63 @@ func TestResourceResourceReadDiagnosticsError(t *testing.T) {
 		assert.True(t, diags.HasError())
 	})
 }
+
+func TestAccTwingateResource_portReorderingCreatesNoChanges(t *testing.T) {
+	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports.0", "80"),
+				),
+			},
+			// no changes
+			{
+				Config:   testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
+				PlanOnly: true,
+			},
+			// new changes applied
+			{
+				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "70"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports.0", "70"),
+				),
+			},
+		},
+	})
+}
+
+func testTwingateResource_withPortRange(networkName, resourceName, portRange string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "test" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.test.id
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "RESTRICTED"
+	      ports = [%s]
+	    }
+	    udp {
+	      policy = "RESTRICTED"
+	      ports = [%s]
+	    }
+	  }
+	}
+	`, networkName, resourceName, portRange, portRange)
+}
