@@ -30,7 +30,7 @@ variable "network" {
 ```
 
 
-## External Provider requirements
+## Provider requirements
 
 provider versions are excluded from the example below
 
@@ -87,7 +87,8 @@ data "docker_registry_image" "connector" {
 ```
 ## Creating the Remote Network and Connectors in Twingate
 
-Next, we'll create the objects in Twingate that correspond to the GCP network that we're deploying Twingate into: A Remote Network to represent the AWS VPC, and a Connector to be deployed in that VPC. We'll use these objects when we're deploying the Connector image and creating Resources to access through Twingate.
+Next, we'll create the objects in Twingate that correspond to the GCP network that we're deploying Twingate into
+A Remote Network to represent the GKE subnet, and a Connector to be deployed in that subnet. We'll use these objects when we're deploying the Connector helm chart.
 
 ```terraform
 resource "twingate_remote_network" "gcp_network" {
