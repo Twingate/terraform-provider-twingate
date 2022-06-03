@@ -1,3 +1,1 @@
-terraform import twingate_remote_network.network UmVtb3RlTmV0d29yazo0MDEzOQ==
-terraform import twingate_group.aws R3JvdXA6MzUxNjU=
 terraform import twingate_resource.resource UmVzb3VyY2U6MzQwNDQ3
