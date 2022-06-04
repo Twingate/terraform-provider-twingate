@@ -7,11 +7,11 @@ This document walks you through a basic deployment using Twingate's Terraform pr
 
 # Deployment Guide
 
-This deployment guide walks you through a Twingate connector helm deployment in a GKE cluster.
+This deployment guide walks you through a Twingate Connector Helm deployment in a GKE cluster.
 
 ## Before you begin
 
-* Sign up for an account on the [Twingate website](https://www.twingate.com). You will need the Twingate Enterprise tier to use Terraform with Twingate.
+* Sign up for an account on the [Twingate website](https://www.twingate.com).
 * Create a Twingate [API key](https://docs.twingate.com/docs/api-overview). The key will need to have full permissions to Read, Write, & Provision, in order to deploy Connectors through Terraform.
 
 ## Setting up the Provider
@@ -29,10 +29,11 @@ variable "network" {
 }
 ```
 
+In general, we recommend that you use [environment variables](https://www.terraform.io/language/values/variables#environment-variables) to set sensitive variables such as the API key and mark such variables as [`sensitive`](https://www.terraform.io/language/values/variables#suppressing-values-in-cli-output).
 
-## Provider requirements
+## Provider Requirements
 
-provider versions are excluded from the example below
+Minimum provider versions are excluded for the purposes of the example below.
 
 ```terraform
 terraform {
@@ -66,7 +67,7 @@ provider "google" {
 data "google_client_config" "provider" {}
 
 data "google_container_cluster" "cluster" {
-  name     = "you-cluster"
+  name     = "your-cluster"
   location = var.cluster_location
 }
 
@@ -87,8 +88,7 @@ data "docker_registry_image" "connector" {
 ```
 ## Creating the Remote Network and Connectors in Twingate
 
-Next, we'll create the objects in Twingate that correspond to the GCP network that we're deploying Twingate into
-A Remote Network to represent the GKE subnet, and a Connector to be deployed in that subnet. We'll use these objects when we're deploying the Connector helm chart.
+Next, we'll create the objects in Twingate that correspond to the GCP network that we're deploying Twingate into: a Remote Network to represent the GKE subnet, and a Connector to be deployed in that subnet. We'll use these objects when we're deploying the Connector Helm chart.
 
 ```terraform
 resource "twingate_remote_network" "gcp_network" {
@@ -122,8 +122,8 @@ resource "helm_release" "connector" {
     value = var.network
   }
 
-  # connector image updates are not tied to helm chart updates, so in order to keep the connector up to date we are using its image sha256 as helm property
-  # every time a new version of the connector is pushed and the terraform build runs, the connector will be updated and restarted
+  # Connector image updates are not tied to Helm chart updates, so in order to keep the Connector up to date we are using its image sha256 as a Helm property.
+  # Every time a new version of the Connector is pushed and the Terraform build runs, the Connector will be updated and restarted.
   set {
     name  = "sha256"
     value = data.docker_registry_image.connector.sha256_digest
