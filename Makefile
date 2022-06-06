@@ -4,7 +4,7 @@ HOSTNAME=registry.terraform.io
 PKG_NAME=twingate
 BINARY=terraform-provider-${PKG_NAME}
 VERSION=0.1
-OS_ARCH ?= darwin_amd64
+OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate
@@ -51,8 +51,8 @@ build-release:
 
 .PHONY: install
 install: build
-	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/hashicorp/${PKG_NAME}/${VERSION}/${OS_ARCH}
-	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/hashicorp/${PKG_NAME}/${VERSION}/${OS_ARCH}
+	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
+	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/twingate/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
 .PHONY: test
 test:
