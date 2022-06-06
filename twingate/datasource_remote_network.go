@@ -19,7 +19,9 @@ func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	resourceData.Set("name", string(remoteNetwork.Name))
+	if err := resourceData.Set("name", string(remoteNetwork.Name)); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return diags
 }
