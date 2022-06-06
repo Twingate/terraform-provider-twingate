@@ -12,14 +12,14 @@ func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resou
 
 	var diags diag.Diagnostics
 
-	networkName := resourceData.Get("name").(string)
-	remoteNetwork, err := client.readRemoteNetworkByName(ctx, networkName)
+	networkNameID := resourceData.Id()
+	remoteNetwork, err := client.readRemoteNetwork(ctx, networkNameID)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(remoteNetwork.ID.(string))
+	resourceData.Set("name", string(remoteNetwork.Name))
 
 	return diags
 }
@@ -31,12 +31,12 @@ func datasourceRemoteNetwork() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
-				Computed:    true,
+				Required:    true,
 				Description: "The ID of the Remote Network",
 			},
 			"name": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Computed:    true,
 				Description: "The name of the Remote Network",
 			},
 		},
