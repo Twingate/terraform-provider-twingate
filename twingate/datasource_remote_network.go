@@ -12,16 +12,18 @@ func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resou
 
 	var diags diag.Diagnostics
 
-	networkNameID := resourceData.Get("id").(string)
-	remoteNetwork, err := client.readRemoteNetwork(ctx, networkNameID)
+	networkID := resourceData.Get("id").(string)
+	network, err := client.readRemoteNetwork(ctx, networkID)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", string(remoteNetwork.Name)); err != nil {
+	if err := resourceData.Set("name", string(network.Name)); err != nil {
 		return diag.FromErr(err)
 	}
+
+	resourceData.SetId(networkID)
 
 	return diags
 }

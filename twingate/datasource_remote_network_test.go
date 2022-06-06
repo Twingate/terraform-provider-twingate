@@ -1,7 +1,6 @@
 package twingate
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"regexp"
@@ -56,7 +55,6 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 			ProviderFactories: testAccProviderFactories,
 			PreCheck: func() {
 				testAccPreCheck(t)
-				checkNetworkDoesNotExists(t, networkID)
 			},
 			Steps: []resource.TestStep{
 				{
@@ -66,14 +64,6 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 			},
 		})
 	})
-}
-
-func checkNetworkDoesNotExists(t *testing.T, networkID string) {
-	client := testAccProvider.Meta().(*Client)
-	_, err := client.readRemoteNetwork(context.TODO(), networkID)
-	if err == nil {
-		t.Fatalf("Expected that network with ID %s does not exists, but it does", networkID)
-	}
 }
 
 func testTwingateRemoteNetworkDoesNotExists(id string) string {
