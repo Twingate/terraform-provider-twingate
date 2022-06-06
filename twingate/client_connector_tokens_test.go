@@ -138,5 +138,5 @@ func TestClientConnectorTokensCreateRequestError(t *testing.T) {
 	}
 
 	err := client.generateConnectorTokens(context.Background(), connector)
-	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens: Post "%s": error_1`, client.GraphqlServerURL))
+	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 }

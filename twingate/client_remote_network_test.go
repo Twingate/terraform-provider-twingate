@@ -85,7 +85,7 @@ func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 
 		remoteNetwork, err := client.createRemoteNetwork(context.Background(), "test")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create remote network: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create remote network: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -135,7 +135,7 @@ func TestClientRemoteNetworkUpdateRequestError(t *testing.T) {
 
 		err := client.updateRemoteNetwork(context.Background(), "id", "test")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update remote network with id id: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update remote network with id id: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 	})
 }
 
@@ -180,7 +180,7 @@ func TestClientRemoteNetworkReadRequestError(t *testing.T) {
 		remoteNetwork, err := client.readRemoteNetwork(context.Background(), "id")
 
 		assert.Nil(t, remoteNetwork)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read remote network with id id: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read remote network with id id: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 	})
 }
 

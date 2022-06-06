@@ -92,7 +92,7 @@ func TestClientGroupCreateRequestError(t *testing.T) {
 
 		group, err := client.createGroup(context.Background(), "test")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create group: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create group: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 		assert.Nil(t, group)
 	})
 }
@@ -197,7 +197,7 @@ func TestClientGroupUpdateRequestError(t *testing.T) {
 		const groupId = "g1"
 		err := client.updateGroup(context.Background(), groupId, "test")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id %s: Post "%s": error_1`, groupId, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id %s: Message: Post "%s": error_1, Locations: []`, groupId, client.GraphqlServerURL))
 	})
 }
 
@@ -297,7 +297,7 @@ func TestClientGroupReadRequestError(t *testing.T) {
 		group, err := client.readGroup(context.Background(), groupId)
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id %s: Post "%s": error_1`, groupId, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id %s: Message: Post "%s": error_1, Locations: []`, groupId, client.GraphqlServerURL))
 	})
 }
 
@@ -413,7 +413,7 @@ func TestClientDeleteGroupRequestError(t *testing.T) {
 
 		err := client.deleteGroup(context.Background(), groupID)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete group with id %s: Post "%s": error_2`, groupID, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to delete group with id %s: Message: Post "%s": error_2, Locations: []`, groupID, client.GraphqlServerURL))
 	})
 }
 
@@ -507,6 +507,6 @@ func TestClientGroupsReadRequestError(t *testing.T) {
 		group, err := client.readGroups(context.Background())
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 	})
 }
