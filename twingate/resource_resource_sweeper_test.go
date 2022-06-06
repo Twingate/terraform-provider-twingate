@@ -50,17 +50,22 @@ func testSweepTwingateResource(tenant string) error {
 		return nil
 	}
 
+	deleted := 0
 	for _, i := range testResources {
 		if i == "" {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
-			return nil
+			continue
 		}
 		err = client.deleteResource(ctx, i)
 		if err != nil {
 			log.Printf("[INFO][SWEEPER_LOG] %s cannot be deleted, error: %s", i, err)
-			return nil
+			continue
 		}
+
+		deleted += 1
 	}
+
+	log.Printf("[INFO][SWEEPER_LOG] %s: successfully deleted %d/%d", resourceName, deleted, len(testResources))
 
 	return nil
 }
