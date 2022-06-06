@@ -1,7 +1,7 @@
 package main
 
 import (
-	"terraform-provider-twingate/twingate"
+	"github.com/Twingate/terraform-provider-twingate/twingate"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"

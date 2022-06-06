@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -85,26 +86,30 @@ func TestParsePortsToGraphql(t *testing.T) {
 }
 
 func TestParseErrorPortsToGraphql(t *testing.T) {
+	errString := func(portRange, port string) string {
+		return fmt.Sprintf(`failed to parse protocols port range "%s": port is not a valid integer: strconv.ParseInt: parsing "%s": invalid syntax`, portRange, port)
+	}
+
 	t.Run("Test Twingate Resource : Client Resource Parse Ports to GraphQL Error", func(t *testing.T) {
 		vars := []string{"foo"}
 		_, err := convertPorts(vars)
-		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"foo\": invalid syntax")
+		assert.EqualError(t, err, errString("foo", "foo"))
 
 		vars = []string{"10-9"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "ports 10, 9 needs to be in a rising sequence")
+		assert.EqualError(t, err, "failed to parse protocols port range \"10-9\": ports 10, 9 needs to be in a rising sequence")
 
 		vars = []string{"abc-12345"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"abc\": invalid syntax")
+		assert.EqualError(t, err, errString("abc-12345", "abc"))
 
 		vars = []string{"12345-abc"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "port is not a valid integer: strconv.ParseInt: parsing \"abc\": invalid syntax")
+		assert.EqualError(t, err, errString("12345-abc", "abc"))
 
 		vars = []string{"1-999999"}
 		_, err = convertPorts(vars)
-		assert.EqualError(t, err, "port 999999 not in the range of 0-65535")
+		assert.EqualError(t, err, "failed to parse protocols port range \"1-999999\": port 999999 not in the range of 0-65535")
 
 	})
 }
@@ -190,7 +195,7 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 
 		err := client.createResource(context.Background(), resource)
 
-		assert.EqualError(t, err, "failed to create resource: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create resource: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }
 
@@ -328,10 +333,11 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceOkJson))
+		resourceID := "resource1"
 
-		resource, err := client.readResource(context.Background(), "resource1")
+		resource, err := client.readResource(context.Background(), resourceID)
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, "failed to read resource with id resource1: provider does not support more than 50 groups per resource")
+		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s: provider does not support more than 50 groups per resource", resourceID))
 	})
 }
 
@@ -348,11 +354,12 @@ func TestClientResourceReadError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
+		resourceID := "resource1"
 
-		resource, err := client.readResource(context.Background(), "resource1")
+		resource, err := client.readResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, "failed to read resource with id resource1")
+		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s", resourceID))
 	})
 }
 
@@ -366,7 +373,7 @@ func TestClientResourceEmptyReadError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
 
-		resource, err := client.readResource(context.Background(), graphql.ID(""))
+		resource, err := client.readResource(context.Background(), "")
 
 		assert.Nil(t, resource)
 		assert.EqualError(t, err, "failed to read resource: id is empty")
@@ -380,11 +387,12 @@ func TestClientResourceReadRequestError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errors.New("error_1")))
+		resourceID := "test-id"
 
-		resource, err := client.readResource(context.Background(), graphql.ID("test-id"))
+		resource, err := client.readResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, "failed to read resource with id test-id: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
 	})
 }
 
@@ -447,7 +455,7 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 
 		err := client.updateResource(context.Background(), resource)
 
-		assert.EqualError(t, err, "failed to update resource with id test: Post \"https://test.twindev.com/api/graphql/\": error_1")
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Post "%s": error_1`, resource.ID, client.GraphqlServerURL))
 	})
 }
 
@@ -490,10 +498,11 @@ func TestClientResourceDeleteError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
+		resourceID := "resource1"
 
-		err := client.deleteResource(context.Background(), "resource1")
+		err := client.deleteResource(context.Background(), resourceID)
 
-		assert.EqualError(t, err, "failed to delete resource with id resource1: cant delete resource")
+		assert.EqualError(t, err, fmt.Sprintf("failed to delete resource with id %s: cant delete resource", resourceID))
 	})
 }
 
@@ -516,10 +525,11 @@ func TestClientResourceDeleteRequestError(t *testing.T) {
 				resp := httpmock.NewStringResponse(200, createResourceDeleteErrorJson)
 				return resp, errors.New("error_1")
 			})
+		resourceID := "resource1"
 
-		err := client.deleteResource(context.Background(), "resource1")
+		err := client.deleteResource(context.Background(), resourceID)
 
-		assert.EqualError(t, err, "failed to delete resource with id resource1: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, fmt.Sprintf(`failed to delete resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
 	})
 }
 
@@ -533,7 +543,7 @@ func TestClientResourceEmptyDeleteError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
 
-		err := client.deleteResource(context.Background(), graphql.ID(""))
+		err := client.deleteResource(context.Background(), "")
 
 		assert.EqualError(t, err, "failed to delete resource: id is empty")
 	})
@@ -618,6 +628,6 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 		resources, err := client.readResources(context.Background())
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, "failed to read resource with id All: Post \""+client.GraphqlServerURL+"\": error_1")
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }

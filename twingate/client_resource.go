@@ -21,7 +21,12 @@ var (
 	ErrGraphqlResultIsEmpty            = errors.New("query result is empty")
 	ErrGraphqlResourceNotFound         = errors.New("not found")
 	ErrGraphqlFoundMoreThanOneResource = errors.New("found more than one")
+	ErrGraphqlNameIsEmpty              = errors.New("name is empty")
 )
+
+func ErrInvalidPortRange(portRange string, err error) error {
+	return fmt.Errorf(`failed to parse protocols port range "%s": %w`, portRange, err)
+}
 
 type PortNotInRangeError struct {
 	Port int64
@@ -126,6 +131,12 @@ func convertPortsToSlice(a []interface{}) []string {
 	var res = make([]string, 0)
 
 	for _, elem := range a {
+		if elem == nil {
+			res = append(res, "")
+
+			continue
+		}
+
 		res = append(res, elem.(string))
 	}
 
@@ -141,16 +152,16 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 			start, err := validatePort(split[0])
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			end, err := validatePort(split[1])
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			if end < start {
-				return converted, NewPortRangeNotRisingSequenceError(int64(start), int64(end))
+				return converted, ErrInvalidPortRange(elem, NewPortRangeNotRisingSequenceError(int64(start), int64(end)))
 			}
 
 			c := &PortRangeInput{
@@ -162,7 +173,7 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 		} else {
 			port, err := validatePort(elem)
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			portRange := &PortRangeInput{
@@ -172,10 +183,6 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 			converted = append(converted, portRange)
 		}
-	}
-
-	if len(converted) > 0 {
-		return converted, nil
 	}
 
 	return converted, nil
@@ -235,14 +242,14 @@ type readResourceQuery struct {
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResource(ctx context.Context, resourceID graphql.ID) (*Resource, error) {
-	if resourceID.(string) == "" {
+func (client *Client) readResource(ctx context.Context, resourceID string) (*Resource, error) {
+	if resourceID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
 
 	response := readResourceQuery{}
 	variables := map[string]interface{}{
-		"id":    resourceID,
+		"id":    graphql.ID(resourceID),
 		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
@@ -328,15 +335,15 @@ type deleteResourceQuery struct {
 	ResourceDelete *OkError `graphql:"resourceDelete(id: $id)"`
 }
 
-func (client *Client) deleteResource(ctx context.Context, resourceID graphql.ID) error {
-	if resourceID.(string) == "" {
+func (client *Client) deleteResource(ctx context.Context, resourceID string) error {
+	if resourceID == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", resourceResourceName)
 	}
 
 	response := deleteResourceQuery{}
 
 	variables := map[string]interface{}{
-		"id": resourceID,
+		"id": graphql.ID(resourceID),
 	}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)

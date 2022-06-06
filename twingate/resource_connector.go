@@ -2,13 +2,15 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/twingate/go-graphql-client"
 )
+
+var ErrNotAllowChangeRemoteNetworkID = errors.New("connectors cannot be moved between Remote Networks: you must either create a new Connector or destroy and recreate the existing one")
 
 func resourceConnector() *schema.Resource {
 	return &schema.Resource{
@@ -17,6 +19,16 @@ func resourceConnector() *schema.Resource {
 		ReadContext:   resourceConnectorRead,
 		DeleteContext: resourceConnectorDelete,
 		UpdateContext: resourceConnectorUpdate,
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+			const key = "remote_network_id"
+			oldVal, _ := d.GetChange(key)
+			old := oldVal.(string)
+			if old != "" && d.HasChange(key) {
+				return ErrNotAllowChangeRemoteNetworkID
+			}
+
+			return nil
+		},
 
 		Schema: map[string]*schema.Schema{
 			// required
@@ -73,7 +85,7 @@ func resourceConnectorUpdate(ctx context.Context, resourceData *schema.ResourceD
 		connectorID := resourceData.Id()
 		log.Printf("[INFO] Updating name of connector id %s", connectorID)
 
-		if err := client.updateConnector(ctx, graphql.ID(connectorID), graphql.String(connectorName)); err != nil {
+		if err := client.updateConnector(ctx, connectorID, connectorName); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -92,7 +104,7 @@ func resourceConnectorDelete(ctx context.Context, resourceData *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Destroyed connector id %s", resourceData.Id())
+	log.Printf("[INFO] Destroyed connector id %s", connectorID)
 
 	return diags
 }
@@ -111,6 +123,12 @@ func resourceConnectorRead(ctx context.Context, resourceData *schema.ResourceDat
 
 	if err := resourceData.Set("name", connector.Name); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
+	}
+
+	if connector.RemoteNetwork != nil {
+		if err := resourceData.Set("remote_network_id", connector.RemoteNetwork.ID); err != nil {
+			return diag.FromErr(fmt.Errorf("error setting remote_network_id: %w ", err))
+		}
 	}
 
 	return diags
