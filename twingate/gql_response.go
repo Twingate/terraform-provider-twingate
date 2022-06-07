@@ -29,10 +29,10 @@ type Edges struct {
 }
 
 func newEmptyProtocols() *ProtocolsInput {
-	pi := newProcolsInput()
+	pi := newProtocolsInput()
 	pi.AllowIcmp = graphql.Boolean(true)
-	pi.UDP.Policy = graphql.String("ALLOW_ALL")
-	pi.TCP.Policy = graphql.String("ALLOW_ALL")
+	pi.UDP.Policy = graphql.String(policyAllowAll)
+	pi.TCP.Policy = graphql.String(policyAllowAll)
 
 	return pi
 }
@@ -60,12 +60,12 @@ func (pi *ProtocolsInput) flattenProtocols() []interface{} {
 
 func (pi *ProtocolInput) flattenPorts() []interface{} {
 	c := make(map[string]interface{})
-	c["ports"], c["policy"] = pi.buildPortsRnge()
+	c["ports"], c["policy"] = pi.buildPortsRange()
 
 	return []interface{}{c}
 }
 
-func newProcolsInput() *ProtocolsInput {
+func newProtocolsInput() *ProtocolsInput {
 	return &ProtocolsInput{
 		TCP: &ProtocolInput{Ports: []*PortRangeInput{}},
 		UDP: &ProtocolInput{Ports: []*PortRangeInput{}},
@@ -77,13 +77,13 @@ type ProtocolInput struct {
 	Policy graphql.String    `json:"policy"`
 }
 
-func (pi *ProtocolInput) buildPortsRnge() ([]string, string) {
-	ports := []string{}
+func (pi *ProtocolInput) buildPortsRange() ([]string, string) {
+	var ports []string
 
 	for _, port := range pi.Ports {
 		if port.Start == port.End {
 			ports = append(ports, strconv.Itoa(int(port.Start)))
-		} else if port.Start != port.End {
+		} else {
 			ports = append(ports, strconv.Itoa(int(port.Start))+"-"+strconv.Itoa(int(port.End)))
 		}
 	}
