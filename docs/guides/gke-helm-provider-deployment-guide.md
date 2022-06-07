@@ -14,18 +14,25 @@ This deployment guide walks you through a Twingate Connector Helm deployment in 
 * Sign up for an account on the [Twingate website](https://www.twingate.com).
 * Create a Twingate [API key](https://docs.twingate.com/docs/api-overview). The key will need to have full permissions to Read, Write, & Provision, in order to deploy Connectors through Terraform.
 
+## Setting up variables 
+
+```terraform
+variable "twingate_network" {
+  default = "autoco"
+}
+
+variable "twingate_api_token" {
+}
+
+```
 ## Setting up the Provider
 
 First, we need to set up the Twingate Terraform provider by providing your network ID and the API key you provisioned earlier.
 
 ```terraform
 provider "twingate" {
-  api_token = "1234567890abcdef"
-  network   = "autoco"
-}
-
-variable "network" {
-  default = "autoco"
+  api_token = var.twingate_token
+  network   = var.twingate_network
 }
 ```
 
@@ -59,16 +66,15 @@ terraform {
 ```terraform
 
 provider "google" {
-  project     = var.project_id
-  region      = var.region
-  zone        = var.zone
+  project     = "my-project-id"
+  region      = "us-central1"
 }
 
 data "google_client_config" "provider" {}
 
 data "google_container_cluster" "cluster" {
-  name     = "your-cluster"
-  location = var.cluster_location
+  name     = "my-cluster"
+  location = "us-central1"
 }
 
 provider "helm" {
@@ -119,7 +125,7 @@ resource "helm_release" "connector" {
 
   set {
     name  = "connector.network"
-    value = var.network
+    value = var.twingate_network
   }
 
   # Connector image updates are not tied to Helm chart updates, so in order to keep the Connector up to date we are using its image sha256 as a Helm property.
@@ -127,11 +133,6 @@ resource "helm_release" "connector" {
   set {
     name  = "sha256"
     value = data.docker_registry_image.connector.sha256_digest
-  }
-
-  set {
-    name  = "icmpSupport.enabled"
-    value = true
   }
 
   set {
