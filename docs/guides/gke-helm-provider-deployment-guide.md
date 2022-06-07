@@ -14,7 +14,7 @@ This deployment guide walks you through a Twingate Connector Helm deployment in 
 * Sign up for an account on the [Twingate website](https://www.twingate.com).
 * Create a Twingate [API key](https://docs.twingate.com/docs/api-overview). The key will need to have full permissions to Read, Write, & Provision, in order to deploy Connectors through Terraform.
 
-## Setting up variables 
+## Setting up variables
 
 ```terraform
 variable "twingate_network" {
@@ -22,21 +22,22 @@ variable "twingate_network" {
 }
 
 variable "twingate_api_token" {
+  sensitive = true
 }
-
 ```
+
+In general, we recommend that you use [environment variables](https://www.terraform.io/language/values/variables#environment-variables) to set sensitive variables such as the API key and mark such variables as [`sensitive`](https://www.terraform.io/language/values/variables#suppressing-values-in-cli-output).
+
 ## Setting up the Provider
 
 First, we need to set up the Twingate Terraform provider by providing your network ID and the API key you provisioned earlier.
 
 ```terraform
 provider "twingate" {
-  api_token = var.twingate_token
+  api_token = var.twingate_api_token
   network   = var.twingate_network
 }
 ```
-
-In general, we recommend that you use [environment variables](https://www.terraform.io/language/values/variables#environment-variables) to set sensitive variables such as the API key and mark such variables as [`sensitive`](https://www.terraform.io/language/values/variables#suppressing-values-in-cli-output).
 
 ## Provider Requirements
 
@@ -147,4 +148,3 @@ resource "helm_release" "connector" {
 
 }
 ```
-
