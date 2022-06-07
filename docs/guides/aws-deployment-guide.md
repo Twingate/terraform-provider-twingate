@@ -11,7 +11,7 @@ This deployment guide walks you through a basic AWS deployment of Twingate. For 
 
 ## Before you begin
 
-* Sign up for an account on the [Twingate website](https://www.twingate.com). You will need the Twingate Enterprise tier to use Terraform with Twingate.
+* Sign up for an account on the [Twingate website](https://www.twingate.com).
 * Create a Twingate [API key](https://docs.twingate.com/docs/api-overview). The key will need to have full permissions to Read, Write, & Provision, in order to deploy Connectors through Terraform.
 
 ## Setting up the Provider
@@ -29,9 +29,11 @@ variable "network" {
 }
 ```
 
+In general, we recommend that you use [environment variables](https://www.terraform.io/language/values/variables#environment-variables) to set sensitive variables such as the API key and mark such variables as [`sensitive`](https://www.terraform.io/language/values/variables#suppressing-values-in-cli-output).
+
 ## Creating the Remote Network and Connectors in Twingate
 
-Next, we'll create the objects in Twingate that correspond to the AWS network that we're deploying Twingate into: A Remote Network to represent the AWS VPC, and a Connector to be deployed in that VPC. We'll use these objects when we're deploying the Connector image and creating Resources to access through Twingate.
+Next, we'll create the objects in Twingate that correspond to the AWS network that we're deploying Twingate into: a Remote Network to represent the AWS VPC, and a Connector to be deployed in that VPC. We'll use these objects when we're deploying the Connector image and creating Resources to access through Twingate.
 
 ```terraform
 resource "twingate_remote_network" "aws_network" {
