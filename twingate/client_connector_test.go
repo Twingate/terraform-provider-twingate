@@ -365,7 +365,7 @@ func TestClientConnectorUpdateRequestError(t *testing.T) {
 
 		err := client.updateConnector(context.Background(), connectorId, "new name")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update connector with id %s: Message: Post "%s": error_1, Locations: []`, connectorId, client.GraphqlServerURL))
 	})
 }
 
@@ -380,7 +380,7 @@ func TestClientConnectorDeleteRequestError(t *testing.T) {
 
 		err := client.deleteConnector(context.Background(), connectorId)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to delete connector with id %s: Message: Post "%s": error_1, Locations: []`, connectorId, client.GraphqlServerURL))
 	})
 }
 
@@ -394,7 +394,7 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 
 		remoteNetwork, err := client.createConnector(context.Background(), "test")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -411,6 +411,6 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 		connector, err := client.readConnector(context.Background(), connectorId)
 
 		assert.Nil(t, connector)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id %s: Message: Post "%s": error_1, Locations: []`, connectorId, client.GraphqlServerURL))
 	})
 }

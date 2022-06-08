@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/twingate/go-graphql-client"
 )
 
 func resourceGroup() *schema.Resource {
@@ -40,7 +39,7 @@ func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData,
 	client := meta.(*Client)
 
 	groupName := resourceData.Get("name").(string)
-	group, err := client.createGroup(ctx, graphql.String(groupName))
+	group, err := client.createGroup(ctx, groupName)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -60,7 +59,7 @@ func resourceGroupUpdate(ctx context.Context, resourceData *schema.ResourceData,
 	if resourceData.HasChange("name") {
 		groupID := resourceData.Id()
 
-		err := client.updateGroup(ctx, graphql.ID(groupID), graphql.String(groupName))
+		err := client.updateGroup(ctx, groupID, groupName)
 		if err != nil {
 			return diag.FromErr(err)
 		}

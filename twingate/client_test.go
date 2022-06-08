@@ -1,8 +1,9 @@
 package twingate
 
 import (
-	"github.com/jarcoal/httpmock"
 	"time"
+
+	"github.com/jarcoal/httpmock"
 )
 
 func newHTTPMockClient() *Client {

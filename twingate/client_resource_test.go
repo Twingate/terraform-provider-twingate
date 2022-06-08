@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func newTestResource() *Resource {
@@ -195,7 +195,7 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 
 		err := client.createResource(context.Background(), resource)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create resource: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create resource: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 	})
 }
 
@@ -392,7 +392,7 @@ func TestClientResourceReadRequestError(t *testing.T) {
 		resource, err := client.readResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id %s: Message: Post "%s": error_1, Locations: []`, resourceID, client.GraphqlServerURL))
 	})
 }
 
@@ -455,7 +455,7 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 
 		err := client.updateResource(context.Background(), resource)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Post "%s": error_1`, resource.ID, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Message: Post "%s": error_1, Locations: []`, resource.ID, client.GraphqlServerURL))
 	})
 }
 
@@ -529,7 +529,7 @@ func TestClientResourceDeleteRequestError(t *testing.T) {
 
 		err := client.deleteResource(context.Background(), resourceID)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to delete resource with id %s: Message: Post "%s": error_1, Locations: []`, resourceID, client.GraphqlServerURL))
 	})
 }
 
@@ -628,6 +628,6 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 		resources, err := client.readResources(context.Background())
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Message: Post "%s": error_1, Locations: []`, client.GraphqlServerURL))
 	})
 }
