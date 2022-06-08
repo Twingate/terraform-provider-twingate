@@ -40,12 +40,12 @@ resource "twingate_connector_tokens" "aws_connector_tokens" {
 
 ### Optional
 
-- `id` (String) The ID of this resource.
 - `keepers` (Map of String) Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
 
 ### Read-Only
 
 - `access_token` (String, Sensitive) The Access Token of the parent Connector
+- `id` (String) The ID of this resource.
 - `refresh_token` (String, Sensitive) The Refresh Token of the parent Connector
 
 

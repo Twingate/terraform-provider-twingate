@@ -14,9 +14,9 @@ import (
 )
 
 func newTestResource() *Resource {
-	protocols := newProcolsInput()
-	protocols.TCP.Policy = "ALLOW_ALL"
-	protocols.UDP.Policy = "ALLOW_ALL"
+	protocols := newProtocolsInput()
+	protocols.TCP.Policy = policyAllowAll
+	protocols.UDP.Policy = policyAllowAll
 
 	groups := make([]*graphql.ID, 0)
 	group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
@@ -202,7 +202,7 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 func TestClientResourceReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Client Resource Ok", func(t *testing.T) {
 		// response JSON
-		createResourceOkJson := `{
+		createResourceOkJson := fmt.Sprintf(`{
 	  "data": {
 		"resource": {
 		  "id": "resource1",
@@ -234,7 +234,7 @@ func TestClientResourceReadOk(t *testing.T) {
 		  "protocols": {
 			"udp": {
 			  "ports": [],
-			  "policy": "ALLOW_ALL"
+			  "policy": "%s"
 			},
 			"tcp": {
 			  "ports": [
@@ -247,13 +247,13 @@ func TestClientResourceReadOk(t *testing.T) {
 				  "start": 8080
 				}
 			  ],
-			  "policy": "RESTRICTED"
+			  "policy": "%s"
 			},
 			"allowIcmp": true
 		  }
 		}
 	  }
-	}`
+	}`, policyAllowAll, policyRestricted)
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -261,7 +261,7 @@ func TestClientResourceReadOk(t *testing.T) {
 			httpmock.NewStringResponder(200, createResourceOkJson))
 
 		resource, err := client.readResource(context.Background(), "resource1")
-		tcpPorts, _ := resource.Protocols.TCP.buildPortsRnge()
+		tcpPorts, _ := resource.Protocols.TCP.buildPortsRange()
 		assert.Nil(t, err)
 		assert.EqualValues(t, graphql.ID("resource1"), resource.ID)
 		assert.Contains(t, resource.stringGroups(), "group1")
@@ -276,7 +276,7 @@ func TestClientResourceReadOk(t *testing.T) {
 func TestClientResourceReadTooManyGroups(t *testing.T) {
 	t.Run("Test Twingate Resource : Read To Many Groups", func(t *testing.T) {
 		// response JSON
-		createResourceOkJson := `{
+		createResourceOkJson := fmt.Sprintf(`{
 	  "data": {
 		"resource": {
 		  "id": "resource1",
@@ -308,7 +308,7 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 		  "protocols": {
 			"udp": {
 			  "ports": [],
-			  "policy": "ALLOW_ALL"
+			  "policy": "%s"
 			},
 			"tcp": {
 			  "ports": [
@@ -321,13 +321,13 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 				  "start": 8080
 				}
 			  ],
-			  "policy": "RESTRICTED"
+			  "policy": "%s"
 			},
 			"allowIcmp": true
 		  }
 		}
 	  }
-	}`
+	}`, policyAllowAll, policyRestricted)
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
