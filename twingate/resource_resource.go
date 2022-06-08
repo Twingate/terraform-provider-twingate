@@ -13,6 +13,30 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
+const (
+	policyRestricted = "RESTRICTED"
+	policyAllowAll   = "ALLOW_ALL"
+	policyDenyAll    = "DENY_ALL"
+)
+
+func castToStrings(a, b interface{}) (string, string) {
+	return a.(string), b.(string)
+}
+
+func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	keys := []string{"protocols.0.tcp.0.policy", "protocols.0.udp.0.policy"}
+	for _, key := range keys {
+		if strings.HasPrefix(k, key) {
+			oldPolicy, newPolicy := castToStrings(d.GetChange(key))
+			if oldPolicy == policyRestricted && newPolicy == policyDenyAll {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 func equalPorts(a, b interface{}) bool {
 	oldPorts, newPorts := convertPortsToSlice(a.([]interface{})), convertPortsToSlice(b.([]interface{}))
 	if len(oldPorts) != len(newPorts) {
@@ -48,8 +72,8 @@ func resourceResource() *schema.Resource { //nolint:funlen
 			"policy": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"RESTRICTED", "ALLOW_ALL"}, false),
-				Description:  "Whether to allow all ports or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed) or `ALLOW_ALL`",
+				ValidateFunc: validation.StringInSlice([]string{policyRestricted, policyAllowAll, policyDenyAll}, false),
+				Description:  fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", policyRestricted, policyAllowAll, policyDenyAll),
 			},
 			"ports": {
 				Type:        schema.TypeList,
@@ -108,16 +132,20 @@ func resourceResource() *schema.Resource { //nolint:funlen
 							Description: "Whether to allow ICMP (ping) traffic",
 						},
 						"tcp": {
-							Type:     schema.TypeList,
-							Required: true,
-							MaxItems: 1,
-							Elem:     &portsResource,
+							Type:                  schema.TypeList,
+							Required:              true,
+							MaxItems:              1,
+							Elem:                  &portsResource,
+							DiffSuppressOnRefresh: true,
+							DiffSuppressFunc:      protocolDiff,
 						},
 						"udp": {
-							Type:     schema.TypeList,
-							Required: true,
-							MaxItems: 1,
-							Elem:     &portsResource,
+							Type:                  schema.TypeList,
+							Required:              true,
+							MaxItems:              1,
+							Elem:                  &portsResource,
+							DiffSuppressOnRefresh: true,
+							DiffSuppressFunc:      protocolDiff,
 						},
 					},
 				},
@@ -148,32 +176,42 @@ func convertGroupsGraphql(a []interface{}) []*graphql.ID {
 
 func extractProtocolsFromContext(p interface{}) *StringProtocolsInput {
 	protocolsMap := p.(map[string]interface{})
-	protocolsInput := &StringProtocolsInput{}
-	protocolsInput.AllowIcmp = protocolsMap["allow_icmp"].(bool)
+	protocols := &StringProtocolsInput{}
+	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
 
 	u := protocolsMap["udp"].([]interface{})
 	if len(u) > 0 {
 		udp := u[0].(map[string]interface{})
-		protocolsInput.UDPPolicy = udp["policy"].(string)
-		p := convertPortsToSlice(udp["ports"].([]interface{}))
-
-		if len(p) > 0 {
-			protocolsInput.UDPPorts = p
-		}
+		protocols.UDPPolicy, protocols.UDPPorts = parseProtocol(udp)
 	}
 
 	t := protocolsMap["tcp"].([]interface{})
 	if len(t) > 0 {
 		tcp := t[0].(map[string]interface{})
-		protocolsInput.TCPPolicy = tcp["policy"].(string)
-		p := convertPortsToSlice(tcp["ports"].([]interface{}))
-
-		if len(p) > 0 {
-			protocolsInput.TCPPorts = p
-		}
+		protocols.TCPPolicy, protocols.TCPPorts = parseProtocol(tcp)
 	}
 
-	return protocolsInput
+	return protocols
+}
+
+func parseProtocol(input map[string]interface{}) (string, []string) {
+	var ports []string
+
+	policy := input["policy"].(string)
+
+	switch policy {
+	case policyAllowAll:
+		return policy, ports
+	case policyDenyAll:
+		return policyRestricted, nil
+	}
+
+	p := convertPortsToSlice(input["ports"].([]interface{}))
+	if len(p) > 0 {
+		ports = p
+	}
+
+	return policy, ports
 }
 
 func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
