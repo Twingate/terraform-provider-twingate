@@ -156,7 +156,7 @@ func TestClientRemoteNetworkReadError(t *testing.T) {
 		remoteNetwork, err := client.readRemoteNetwork(context.Background(), "id")
 
 		assert.Nil(t, remoteNetwork)
-		assert.EqualError(t, err, "failed to read remote network with id id")
+		assert.EqualError(t, err, "failed to read remote network with id id: query result is empty")
 	})
 }
 

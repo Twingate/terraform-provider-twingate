@@ -35,6 +35,7 @@ type APIError struct {
 	Operation    string
 	Resource     string
 	ID           graphql.ID
+	Name         string
 }
 
 func NewAPIErrorWithID(wrappedError error, operation string, resource string, id graphql.ID) *APIError {
@@ -46,12 +47,20 @@ func NewAPIErrorWithID(wrappedError error, operation string, resource string, id
 	}
 }
 
+func NewAPIErrorWithName(wrappedError error, operation string, resource string, name string) *APIError {
+	return &APIError{
+		WrappedError: wrappedError,
+		Operation:    operation,
+		Resource:     resource,
+		Name:         name,
+	}
+}
+
 func NewAPIError(wrappedError error, operation string, resource string) *APIError {
 	return &APIError{
 		WrappedError: wrappedError,
 		Operation:    operation,
 		Resource:     resource,
-		ID:           "",
 	}
 }
 
@@ -61,10 +70,16 @@ func (e *APIError) Error() string {
 
 	var format = "failed to %s %s"
 
-	if e.ID.(string) != "" {
+	if e.ID != nil && e.ID.(string) != "" {
 		format += " with id %s"
 
 		args = append(args, e.ID)
+	}
+
+	if e.Name != "" {
+		format += " with name %s"
+
+		args = append(args, e.Name)
 	}
 
 	if e.WrappedError != nil {
