@@ -44,7 +44,7 @@ func datasourceRemoteNetworks() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the Remote Network",
+				Description: "The name of the Remote Network (case-sensitive, exact match)",
 			},
 			"remote_networks": {
 				Type:        schema.TypeList,
