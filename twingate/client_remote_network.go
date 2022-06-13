@@ -64,14 +64,20 @@ func (client *Client) readRemoteNetworks(ctx context.Context) (map[int]*remoteNe
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
 
+	return convertRemoteNetworkResults(response.RemoteNetworks.Edges), nil
+}
+
+func convertRemoteNetworkResults(edges []*Edges) map[int]*remoteNetwork {
 	var remoteNetworks = make(map[int]*remoteNetwork)
 
-	for i, elem := range response.RemoteNetworks.Edges {
-		c := &remoteNetwork{ID: elem.Node.StringID(), Name: elem.Node.Name}
-		remoteNetworks[i] = c
+	for id, elem := range edges {
+		remoteNetworks[id] = &remoteNetwork{
+			ID:   elem.Node.StringID(),
+			Name: elem.Node.Name,
+		}
 	}
 
-	return remoteNetworks, nil
+	return remoteNetworks
 }
 
 type readRemoteNetworkQuery struct {
@@ -104,6 +110,35 @@ func (client *Client) readRemoteNetwork(ctx context.Context, remoteNetworkID str
 		ID:   remoteNetworkID,
 		Name: response.RemoteNetwork.Name,
 	}, nil
+}
+
+type readRemoteNetworksByNameQuery struct {
+	RemoteNetworks struct {
+		Edges []*Edges
+	} `graphql:"remoteNetworks(filter: {name: {eq: $name}})"`
+}
+
+func (client *Client) readRemoteNetworksByName(ctx context.Context, remoteNetworkName string) (map[int]*remoteNetwork, error) {
+	if remoteNetworkName == "" {
+		return nil, NewAPIError(ErrGraphqlNetworkNameIsEmpty, "read", remoteNetworkResourceName)
+	}
+
+	variables := map[string]interface{}{
+		"name": graphql.String(remoteNetworkName),
+	}
+
+	response := readRemoteNetworksByNameQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworkByName", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithName(err, "read", remoteNetworkResourceName, remoteNetworkName)
+	}
+
+	if len(response.RemoteNetworks.Edges) == 0 {
+		return nil, NewAPIErrorWithName(ErrGraphqlResourceNotFound, "read", remoteNetworkResourceName, remoteNetworkName)
+	}
+
+	return convertRemoteNetworkResults(response.RemoteNetworks.Edges), nil
 }
 
 type updateRemoteNetworkQuery struct {

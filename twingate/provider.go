@@ -66,7 +66,8 @@ func Provider(version string) *schema.Provider {
 			"twingate_resource":         resourceResource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"twingate_remote_network": datasourceRemoteNetwork(),
+			"twingate_remote_network":  datasourceRemoteNetwork(),
+			"twingate_remote_networks": datasourceRemoteNetworks(),
 		},
 	}
 	provider.ConfigureContextFunc = configure(version, provider)
