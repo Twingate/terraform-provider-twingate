@@ -19,7 +19,7 @@ func datasourceRemoteNetworksRead(ctx context.Context, resourceData *schema.Reso
 		return diag.FromErr(err)
 	}
 
-	var data []interface{}
+	data := make([]interface{}, 0, len(networks))
 	for _, network := range networks {
 		data = append(data, map[string]interface{}{
 			"id":   network.ID.(string),
