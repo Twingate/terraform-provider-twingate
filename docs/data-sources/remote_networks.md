@@ -23,7 +23,7 @@ data "twingate_remote_networks" "foo" {
 
 ### Required
 
-- `name` (String) The name of the Remote Network
+- `name` (String) The name of the Remote Network (case-sensitive, exact match)
 
 ### Read-Only
 
