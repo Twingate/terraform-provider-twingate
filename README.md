@@ -34,3 +34,4 @@ To update the documentation edit the files in `templates/` and then run `make do
 ## Contributions:
 
 Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) under the [project's open source license](LICENSE).
+
