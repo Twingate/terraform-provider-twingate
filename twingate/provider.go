@@ -65,7 +65,9 @@ func Provider(version string) *schema.Provider {
 			"twingate_group":            resourceGroup(),
 			"twingate_resource":         resourceResource(),
 		},
-		DataSourcesMap: map[string]*schema.Resource{},
+		DataSourcesMap: map[string]*schema.Resource{
+			"twingate_groups": datasourceGroups(),
+		},
 	}
 	provider.ConfigureContextFunc = configure(version, provider)
 
