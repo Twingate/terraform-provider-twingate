@@ -12,6 +12,7 @@ var (
 	ErrGraphqlNameIsEmpty      = errors.New("name is empty")
 	ErrGraphqlResourceNotFound = errors.New("not found")
 
+	ErrGraphqlResultIsEmpty      = errors.New("query result is empty")
 	ErrGraphqlConnectorIDIsEmpty = errors.New("connector id is empty")
 	ErrGraphqlNetworkIDIsEmpty   = errors.New("network id is empty")
 	ErrGraphqlNetworkNameIsEmpty = errors.New("network name is empty")

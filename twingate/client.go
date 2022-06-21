@@ -61,7 +61,6 @@ func NewAPIError(wrappedError error, operation string, resource string) *APIErro
 		WrappedError: wrappedError,
 		Operation:    operation,
 		Resource:     resource,
-		ID:           "",
 	}
 }
 
