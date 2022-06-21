@@ -51,7 +51,6 @@ func NewAPIError(wrappedError error, operation string, resource string) *APIErro
 		WrappedError: wrappedError,
 		Operation:    operation,
 		Resource:     resource,
-		ID:           "",
 	}
 }
 
@@ -61,7 +60,7 @@ func (e *APIError) Error() string {
 
 	var format = "failed to %s %s"
 
-	if e.ID.(string) != "" {
+	if e.ID != nil && e.ID.(string) != "" {
 		format += " with id %s"
 
 		args = append(args, e.ID)

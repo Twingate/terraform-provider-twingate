@@ -54,12 +54,13 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 	for _, i := range testNetworks {
 		if i == "" {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
-			return nil
+			continue
 		}
+
 		err = client.deleteRemoteNetwork(ctx, i)
 		if err != nil {
 			log.Printf("[INFO][SWEEPER_LOG] %s cannot be deleted, error: %s", i, err)
-			return nil
+			continue
 		}
 	}
 
