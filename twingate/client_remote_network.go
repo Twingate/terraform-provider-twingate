@@ -97,7 +97,7 @@ func (client *Client) readRemoteNetwork(ctx context.Context, remoteNetworkID str
 	}
 
 	if response.RemoteNetwork == nil {
-		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return &remoteNetwork{
