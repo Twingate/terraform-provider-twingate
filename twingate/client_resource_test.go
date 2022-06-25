@@ -631,3 +631,158 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }
+
+func TestClientResourcesReadByNameOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resources By Name - Ok", func(t *testing.T) {
+		const resourceName = "resource-1"
+		ids := []string{"id-1", "id-2"}
+		jsonResponse := fmt.Sprintf(`{
+		  "data": {
+			"resources": {
+			  "edges": [
+				{
+				  "node": {
+					"id": "%s",
+					"name": "%s",
+					"address": {
+					  "value": "internal.int"
+					},
+					"protocols": {
+					  "tcp": {
+						"policy": "RESTRICTED",
+						"ports": [
+						  {
+							"start": 80,
+							"end": 80
+						  },
+						  {
+							"start": 82,
+							"end": 83
+						  }
+						]
+					  },
+					  "udp": {
+						"policy": "ALLOW_ALL",
+						"ports": []
+					  }
+					},
+					"remoteNetwork": {
+					  "id": "UmVtb3RlTmV0d29yazo0MDEzOQ=="
+					}
+				  }
+				},
+				{
+				  "node": {
+					"id": "%s",
+					"name": "%s",
+					"address": {
+					  "value": "internal.int"
+					},
+					"protocols": {
+					  "tcp": {
+						"policy": "RESTRICTED",
+						"ports": [
+						  {
+							"start": 80,
+							"end": 80
+						  },
+						  {
+							"start": 82,
+							"end": 83
+						  }
+						]
+					  },
+					  "udp": {
+						"policy": "ALLOW_ALL",
+						"ports": []
+					  }
+					},
+					"remoteNetwork": {
+					  "id": "UmVtb3RlTmV0d29yazo0MDEzOQ=="
+					}
+				  }
+				}
+			  ]
+			}
+		  }
+		}`, ids[0], resourceName, ids[1], resourceName)
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		resources, err := client.readResourcesByName(context.Background(), resourceName)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, resources)
+		assert.Len(t, resources, len(ids))
+		for i, id := range ids {
+			assert.EqualValues(t, id, resources[i].ID)
+			assert.EqualValues(t, resourceName, resources[i].Name)
+		}
+	})
+}
+
+func TestClientResourcesReadByNameEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resources By Name - Empty Result", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"resources": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		resources, err := client.readResourcesByName(context.Background(), "resource-name")
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, "failed to read resource with id All: not found")
+	})
+}
+
+func TestClientResourcesReadByNameRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resources By Name - Request Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"resources": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, jsonResponse)
+				return resp, errors.New("error_1")
+			})
+
+		groups, err := client.readResourcesByName(context.Background(), "resource-name")
+
+		assert.Nil(t, groups)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientResourcesReadByNameErrorEmptyName(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resources By Name - Error Empty Name", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"resources": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		groups, err := client.readResourcesByName(context.Background(), "")
+
+		assert.Nil(t, groups)
+		assert.EqualError(t, err, "failed to read resource with id All: not found")
+	})
+}
