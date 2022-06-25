@@ -357,3 +357,46 @@ func (client *Client) deleteResource(ctx context.Context, resourceID string) err
 
 	return nil
 }
+
+type readResourceWithoutGroupsQuery struct {
+	Resource *struct {
+		IDName
+		Address struct {
+			Value graphql.String
+		}
+		RemoteNetwork struct {
+			ID graphql.ID
+		}
+		Protocols *ProtocolsInput
+	} `graphql:"resource(id: $id)"`
+}
+
+func (client *Client) readResourceWithoutGroups(ctx context.Context, resourceID string) (*Resource, error) {
+	if resourceID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
+	}
+
+	response := readResourceWithoutGroupsQuery{}
+	variables := map[string]interface{}{
+		"id": graphql.ID(resourceID),
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	if response.Resource == nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	resource := &Resource{
+		ID:              resourceID,
+		Name:            response.Resource.Name,
+		Address:         response.Resource.Address.Value,
+		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
+		Protocols:       response.Resource.Protocols,
+	}
+
+	return resource, nil
+}
