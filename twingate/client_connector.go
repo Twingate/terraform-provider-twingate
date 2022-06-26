@@ -108,6 +108,52 @@ func (client *Client) readConnectors(ctx context.Context) (map[int]*Connectors, 
 	return connectors, nil
 }
 
+type readConnectorsWithRemoteNetworkQuery struct {
+	Connectors struct {
+		Edges []*struct {
+			Node struct {
+				IDName
+				RemoteNetwork struct {
+					ID graphql.ID
+				}
+			}
+		}
+	}
+}
+
+func (client *Client) readConnectorsWithRemoteNetwork(ctx context.Context) ([]*Connector, error) {
+	response := readConnectorsWithRemoteNetworkQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, nil)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
+	}
+
+	if response.Connectors.Edges == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
+	}
+
+	connectors := make([]*Connector, 0, len(response.Connectors.Edges))
+
+	for _, elem := range response.Connectors.Edges {
+		if elem == nil {
+			continue
+		}
+
+		conn := elem.Node
+
+		connectors = append(connectors, &Connector{
+			ID:   conn.ID,
+			Name: conn.Name,
+			RemoteNetwork: &remoteNetwork{
+				ID: conn.RemoteNetwork.ID,
+			},
+		})
+	}
+
+	return connectors, nil
+}
+
 type readConnectorQuery struct {
 	Connector *struct {
 		IDName
