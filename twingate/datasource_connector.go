@@ -46,7 +46,7 @@ func datasourceConnector() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Name of the Connector, if not provided one will be generated",
+				Description: "Name of the Connector",
 			},
 			"remote_network_id": {
 				Type:        schema.TypeString,

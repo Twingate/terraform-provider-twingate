@@ -38,7 +38,7 @@ func testDatasourceTwingateConnector(remoteNetworkName, connectorName string) st
 	}
 	resource "twingate_connector" "test" {
 	  remote_network_id = twingate_remote_network.test.id
-      name  = "%s"
+	  name  = "%s"
 	}
 
 	data "twingate_connector" "out" {
