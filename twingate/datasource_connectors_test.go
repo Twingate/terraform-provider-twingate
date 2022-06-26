@@ -3,7 +3,6 @@ package twingate
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -125,52 +124,4 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 	  value = [for conn in data.twingate_connectors.all.connectors: conn if can(regex("^tf-acc", conn.name))] 
 	}
 	`, networkName1, connectorName1, networkName2, connectorName2)
-}
-
-func TestAccDatasourceTwingateConnectors_negative(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Groups - does not exists", func(t *testing.T) {
-		groupName := acctest.RandomWithPrefix(testPrefixName)
-
-		resource.Test(t, resource.TestCase{
-			ProviderFactories: testAccProviderFactories,
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateGroupsDoesNotExists(groupName),
-					ExpectError: regexp.MustCompile("Error: failed to read group with name"),
-				},
-			},
-		})
-	})
-}
-
-func testTwingateGroupsDoesNotExists(name string) string {
-	return fmt.Sprintf(`
-	data "twingate_groups" "test" {
-	  name = "%s"
-	}
-
-	output "my_groups" {
-	  value = data.twingate_groups.test.groups
-	}
-	`, name)
-}
-
-func TestAccDatasourceTwingateGroups_emptyGroupName(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Groups - failed parse group name", func(t *testing.T) {
-		resource.Test(t, resource.TestCase{
-			ProviderFactories: testAccProviderFactories,
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateGroupsDoesNotExists(""),
-					ExpectError: regexp.MustCompile("Error: failed to read group: group name is empty"),
-				},
-			},
-		})
-	})
 }
