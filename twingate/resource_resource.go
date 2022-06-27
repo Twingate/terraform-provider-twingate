@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
+	"reflect"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -39,20 +39,39 @@ func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
 
 func equalPorts(a, b interface{}) bool {
 	oldPorts, newPorts := convertPortsToSlice(a.([]interface{})), convertPortsToSlice(b.([]interface{}))
-	if len(oldPorts) != len(newPorts) {
+
+	oldPortsRange, err := convertPorts(oldPorts)
+	if err != nil {
 		return false
 	}
 
-	sort.Strings(oldPorts)
-	sort.Strings(newPorts)
+	newPortsRange, err := convertPorts(newPorts)
+	if err != nil {
+		return false
+	}
 
-	for i, val := range oldPorts {
-		if newPorts[i] != val {
-			return false
+	oldPortsMap := convertPortsRangeToMap(oldPortsRange)
+	newPortsMap := convertPortsRangeToMap(newPortsRange)
+
+	return reflect.DeepEqual(oldPortsMap, newPortsMap)
+}
+
+func convertPortsRangeToMap(portsRange []*PortRangeInput) map[int32]struct{} {
+	out := make(map[int32]struct{})
+
+	for _, port := range portsRange {
+		if port.Start == port.End {
+			out[int32(port.Start)] = struct{}{}
+
+			continue
+		}
+
+		for i := int32(port.Start); i <= int32(port.End); i++ {
+			out[i] = struct{}{}
 		}
 	}
 
-	return true
+	return out
 }
 
 func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool {
