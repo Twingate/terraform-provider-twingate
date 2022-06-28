@@ -470,6 +470,11 @@ func TestAccTwingateResource_portReorderingCreatesNoChanges(t *testing.T) {
 				Config:   testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
 				PlanOnly: true,
 			},
+			// no changes
+			{
+				Config:   testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
+				PlanOnly: true,
+			},
 			// new changes applied
 			{
 				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
