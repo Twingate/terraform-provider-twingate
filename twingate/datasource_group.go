@@ -36,7 +36,7 @@ func datasourceGroup() *schema.Resource {
 			"id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the Group",
+				Description: "The ID of the Group. The ID for the Group must be obtained from the Admin API.",
 			},
 			"name": {
 				Type:        schema.TypeString,
