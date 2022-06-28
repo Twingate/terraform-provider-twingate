@@ -322,11 +322,17 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	// fix active resource state on terraform apply
-	_ = client.updateResourceActiveState(ctx, &Resource{
-		ID:       resourceID,
-		IsActive: true,
-	})
+	if !resource.IsActive {
+		// fix set active state for the resource on `terraform apply`
+		err = client.updateResourceActiveState(ctx, &Resource{
+			ID:       resourceID,
+			IsActive: true,
+		})
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	return resourceResourceReadDiagnostics(resourceData, resource)
 }
