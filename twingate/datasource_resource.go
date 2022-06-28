@@ -110,13 +110,13 @@ func datasourceResource() *schema.Resource { //nolint:funlen
 	}
 
 	return &schema.Resource{
-		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
+		Description: "Resources in Twingate represent any network destination address that you wish to provide private access to for users authorized via the Twingate Client application. Resources can be defined by either IP or DNS address, and all private DNS addresses will be automatically resolved with no client configuration changes. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
 		ReadContext: datasourceResourceRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the Resource",
+				Description: "The ID of the Resource. The ID for the Resource must be obtained from the Admin API.",
 			},
 			// computed
 			"name": {
@@ -127,17 +127,17 @@ func datasourceResource() *schema.Resource { //nolint:funlen
 			"address": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The Resource's IP/CIDR or FQDN/DNS zone",
+				Description: "The Resource's address, which may be an IP address, CIDR range, or DNS address",
 			},
 			"remote_network_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Remote Network ID where the Resource lives",
+				Description: "The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.",
 			},
 			"protocols": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
+				Description: "By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. See below for [nested schema](#nestedatt--protocols).",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"allow_icmp": {

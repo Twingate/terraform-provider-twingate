@@ -3,12 +3,12 @@
 page_title: "twingate_resource Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate documentation https://docs.twingate.com/docs/resources-and-access-nodes.
+  Resources in Twingate represent any network destination address that you wish to provide private access to for users authorized via the Twingate Client application. Resources can be defined by either IP or DNS address, and all private DNS addresses will be automatically resolved with no client configuration changes. For more information, see the Twingate documentation https://docs.twingate.com/docs/resources-and-access-nodes.
 ---
 
 # twingate_resource (Data Source)
 
-Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).
+Resources in Twingate represent any network destination address that you wish to provide private access to for users authorized via the Twingate Client application. Resources can be defined by either IP or DNS address, and all private DNS addresses will be automatically resolved with no client configuration changes. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).
 
 ## Example Usage
 
@@ -23,14 +23,14 @@ data "twingate_resource" "foo" {
 
 ### Required
 
-- `id` (String) The ID of the Resource
+- `id` (String) The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
 
 ### Read-Only
 
-- `address` (String) The Resource's IP/CIDR or FQDN/DNS zone
+- `address` (String) The Resource's address, which may be an IP address, CIDR range, or DNS address
 - `name` (String) The name of the Resource
-- `protocols` (List of Object) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
-- `remote_network_id` (String) Remote Network ID where the Resource lives
+- `protocols` (List of Object) By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. See below for [nested schema](#nestedatt--protocols). (see [below for nested schema](#nestedatt--protocols))
+- `remote_network_id` (String) The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
 
 <a id="nestedatt--protocols"></a>
 ### Nested Schema for `protocols`
