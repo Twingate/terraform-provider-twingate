@@ -65,6 +65,7 @@ type Resource struct {
 	Name            graphql.String
 	GroupsIds       []*graphql.ID
 	Protocols       *ProtocolsInput
+	IsActive        graphql.Boolean
 }
 
 func (r *Resource) stringGroups() []string {
@@ -239,6 +240,7 @@ type readResourceQuery struct {
 			Edges []*Edges
 		} `graphql:"groups(first: $first)"`
 		Protocols *ProtocolsInput
+		IsActive  graphql.Boolean
 	} `graphql:"resource(id: $id)"`
 }
 
@@ -279,6 +281,7 @@ func (client *Client) readResource(ctx context.Context, resourceID string) (*Res
 		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
 		GroupsIds:       groups,
 		Protocols:       response.Resource.Protocols,
+		IsActive:        response.Resource.IsActive,
 	}
 
 	return resource, nil
@@ -353,6 +356,31 @@ func (client *Client) deleteResource(ctx context.Context, resourceID string) err
 
 	if !response.ResourceDelete.Ok {
 		return NewAPIErrorWithID(NewMutationError(response.ResourceDelete.Error), "delete", resourceResourceName, resourceID)
+	}
+
+	return nil
+}
+
+type updateResourceActiveStateQuery struct {
+	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, isActive: $isActive)"`
+}
+
+func (client *Client) updateResourceActiveState(ctx context.Context, resource *Resource) error {
+	variables := map[string]interface{}{
+		"id":       resource.ID,
+		"isActive": resource.IsActive,
+	}
+
+	response := updateResourceActiveStateQuery{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+
+	if err != nil {
+		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
+	}
+
+	if !response.ResourceUpdate.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
 	}
 
 	return nil

@@ -29,6 +29,7 @@ func newTestResource() *Resource {
 		Name:            "testName",
 		GroupsIds:       groups,
 		Protocols:       protocols,
+		IsActive:        true,
 	}
 }
 
@@ -629,5 +630,66 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 
 		assert.Nil(t, resources)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientResourceUpdateActiveStateOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update Active State Ok", func(t *testing.T) {
+		jsonResponse := `{
+		"data": {
+			"resourceUpdate": {
+				"ok" : true,
+				"error" : null
+			}
+		}
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+		resource := newTestResource()
+
+		err := client.updateResourceActiveState(context.Background(), resource)
+
+		assert.Nil(t, err)
+	})
+}
+
+func TestClientResourceUpdateActiveStateError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update Active State Error", func(t *testing.T) {
+		jsonResponse := `{
+		"data": {
+			"resourceUpdate": {
+				"ok" : false,
+				"error" : "cant update resource"
+			}
+		}
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+		resource := newTestResource()
+
+		err := client.updateResourceActiveState(context.Background(), resource)
+
+		assert.EqualError(t, err, "failed to update resource with id test: cant update resource")
+	})
+}
+
+func TestClientResourceUpdateActiveStateRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update Active State Request Error", func(t *testing.T) {
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errors.New("error_1")))
+		resource := newTestResource()
+
+		err := client.updateResourceActiveState(context.Background(), resource)
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Post "%s": error_1`, resource.ID, client.GraphqlServerURL))
 	})
 }
