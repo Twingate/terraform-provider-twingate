@@ -381,3 +381,59 @@ func (client *Client) updateResourceActiveState(ctx context.Context, resource *R
 
 	return nil
 }
+
+type readResourcesByNameQuery struct {
+	Resources struct {
+		Edges []*struct {
+			Node *struct {
+				IDName
+				Address struct {
+					Value graphql.String
+				}
+				RemoteNetwork struct {
+					ID graphql.ID
+				}
+				Protocols *ProtocolsInput
+			}
+		}
+	} `graphql:"resources(filter: {name: {eq: $name}})"`
+}
+
+func (client *Client) readResourcesByName(ctx context.Context, name string) ([]*Resource, error) {
+	response := readResourcesByNameQuery{}
+	variables := map[string]interface{}{
+		"name": graphql.String(name),
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
+	}
+
+	if len(response.Resources.Edges) == 0 {
+		return nil, NewAPIErrorWithID(ErrGraphqlResourceNotFound, "read", resourceResourceName, "All")
+	}
+
+	resources := make([]*Resource, 0, len(response.Resources.Edges))
+
+	for _, item := range response.Resources.Edges {
+		if item == nil {
+			continue
+		}
+
+		res := item.Node
+		if res == nil {
+			continue
+		}
+
+		resources = append(resources, &Resource{
+			ID:              res.ID,
+			Name:            res.Name,
+			Address:         res.Address.Value,
+			RemoteNetworkID: res.RemoteNetwork.ID,
+			Protocols:       res.Protocols,
+		})
+	}
+
+	return resources, nil
+}
