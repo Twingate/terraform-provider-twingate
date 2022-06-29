@@ -32,12 +32,8 @@ ci-checks: docs
 	git diff --exit-code || echo "ERROR: Update and push the latest documentation"; exit 1
 
 
-.PHONY: vendor
-vendor:
-	go mod vendor
-
 .PHONY: build
-build: vendor fmtcheck
+build: fmtcheck
 	go build -o ${BINARY}
 
 .PHONY: build-release
@@ -85,25 +81,17 @@ lint-fix: tools
 .PHONY: sec
 sec: tools
 	@echo "==> Checking source code against security issues..."
-	@$(GOBINPATH)/gosec ./$(PKG_NAME)
+	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)
 
 
 .PHONY: doc-tools
 docs: doc-tools
-	@$(GOBINPATH)/tfplugindocs generate
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --tf-version 1.2.3
 
 .PHONY: tools
 tools:
 	@echo "==> installing required tools ..."
-	go install github.com/client9/misspell/cmd/misspell@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	go install gotest.tools/gotestsum@latest
-	go install github.com/securego/gosec/v2/cmd/gosec@latest
-
-.PHONY: doc-tools
-doc-tools:
-	@echo "==> installing required doc tools ..."
-	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
 
 .PHONY: test-compile
 test-compile:

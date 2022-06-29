@@ -511,3 +511,111 @@ func TestClientGroupsReadRequestError(t *testing.T) {
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }
+
+func TestClientGroupsReadByNameOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups By Name - Ok", func(t *testing.T) {
+		const groupName = "group-1"
+		ids := []string{"id-1", "id-2"}
+		jsonResponse := fmt.Sprintf(`{
+		  "data": {
+			"groups": {
+			  "edges": [
+				{
+				  "node": {
+					"id": "%s",
+					"name": "%s"
+				  }
+				},
+				{
+				  "node": {
+					"id": "%s",
+					"name": "%s"
+				  }
+				}
+			  ]
+			}
+		  }
+		}`, ids[0], groupName, ids[1], groupName)
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		groups, err := client.readGroupsByName(context.Background(), groupName)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, groups)
+		assert.Len(t, groups, len(ids))
+		for i, id := range ids {
+			assert.EqualValues(t, id, groups[i].ID)
+			assert.EqualValues(t, groupName, groups[i].Name)
+		}
+	})
+}
+
+func TestClientGroupsReadByNameEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups By Name - Empty Result", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"groups": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		const groupName = "group-name"
+		groups, err := client.readGroupsByName(context.Background(), groupName)
+
+		assert.Nil(t, groups)
+		assert.EqualError(t, err, fmt.Sprintf("failed to read group with name %s: not found", groupName))
+	})
+}
+
+func TestClientGroupsReadByNameRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups By Name - Request Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"groups": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, jsonResponse)
+				return resp, errors.New("error_1")
+			})
+
+		const groupName = "group-name"
+		groups, err := client.readGroupsByName(context.Background(), groupName)
+
+		assert.Nil(t, groups)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with name %s: Post "%s": error_1`, groupName, client.GraphqlServerURL))
+	})
+}
+
+func TestClientGroupsReadByNameErrorEmptyName(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups By Name - Error Empty Name", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"groups": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		const groupName = ""
+		groups, err := client.readGroupsByName(context.Background(), groupName)
+
+		assert.Nil(t, groups)
+		assert.EqualError(t, err, "failed to read group: group name is empty")
+	})
+}
