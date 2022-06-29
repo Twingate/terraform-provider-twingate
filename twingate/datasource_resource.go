@@ -137,7 +137,7 @@ func datasourceResource() *schema.Resource { //nolint:funlen
 			"protocols": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. See below for [nested schema](#nestedatt--protocols).",
+				Description: "By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"allow_icmp": {
