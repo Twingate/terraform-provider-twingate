@@ -86,17 +86,12 @@ sec: tools
 
 .PHONY: doc-tools
 docs: doc-tools
-	@$(GOBINPATH)/tfplugindocs generate
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
 
 .PHONY: tools
 tools:
 	@echo "==> installing required tools ..."
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-.PHONY: doc-tools
-doc-tools:
-	@echo "==> installing required doc tools ..."
-	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
 
 .PHONY: test-compile
 test-compile:
