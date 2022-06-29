@@ -36,7 +36,7 @@ func resourceConnector() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "The ID of the Remote Network to attach the Connector to",
+				Description: "The ID of the Remote Network the Connector is attached to",
 			},
 			"name": {
 				Type:        schema.TypeString,
