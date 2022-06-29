@@ -1,5 +1,4 @@
 TEST?=$$(go list ./...)
-WEBSITE_REPO=github.com/hashicorp/terraform-website
 HOSTNAME=registry.terraform.io
 PKG_NAME=twingate
 BINARY=terraform-provider-${PKG_NAME}
@@ -92,29 +91,3 @@ docs: doc-tools
 tools:
 	@echo "==> installing required tools ..."
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-.PHONY: test-compile
-test-compile:
-	@if [ "$(TEST)" = "./..." ]; then \
-		echo "ERROR: Set TEST to a specific package. For example,"; \
-		echo "  make test-compile TEST=./$(PKG_NAME)"; \
-		exit 1; \
-	fi
-	go test -c $(TEST) $(TESTARGS)
-
-.PHONY: website
-website:
-ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
-	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
-	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
-endif
-	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
-
-.PHONY: website-test
-website-test:
-ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
-	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
-	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
-endif
-	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
-
