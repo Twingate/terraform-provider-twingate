@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -319,9 +320,10 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 
 	resource, err := client.readResource(ctx, resourceID)
 	if err != nil {
-		if err == ErrGraphqlResourceNotFound {
+		if errors.Is(err, ErrGraphqlResourceNotFound) {
 			// clear state
 			resourceData.SetId("")
+
 			return nil
 		}
 
