@@ -34,24 +34,24 @@ func datasourceConnectorRead(ctx context.Context, resourceData *schema.ResourceD
 
 func datasourceConnector() *schema.Resource {
 	return &schema.Resource{
-		Description: "Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
+		Description: "Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
 		ReadContext: datasourceConnectorRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the Connector",
+				Description: "The ID of the Connector. The ID for the Connector must be obtained from the Admin API.",
 			},
 			// computed
 			"name": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Name of the Connector",
+				Description: "The name of the Connector",
 			},
 			"remote_network_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The ID of the Remote Network attached to the Connector",
+				Description: "The ID of the Remote Network the Connector is attached to",
 			},
 		},
 	}

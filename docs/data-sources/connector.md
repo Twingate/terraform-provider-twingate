@@ -3,12 +3,12 @@
 page_title: "twingate_connector Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's documentation https://docs.twingate.com/docs/understanding-access-nodes.
+  Connectors provide connectivity to Remote Networks. For more information, see Twingate's documentation https://docs.twingate.com/docs/understanding-access-nodes.
 ---
 
 # twingate_connector (Data Source)
 
-Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
 
 ## Example Usage
 
@@ -23,11 +23,11 @@ data "twingate_connector" "foo" {
 
 ### Required
 
-- `id` (String) The ID of the Connector
+- `id` (String) The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
 
 ### Read-Only
 
-- `name` (String) Name of the Connector, if not provided one will be generated
-- `remote_network_id` (String) The ID of the Remote Network attached to the Connector
+- `name` (String) The name of the Connector
+- `remote_network_id` (String) The ID of the Remote Network the Connector is attached to
 
 
