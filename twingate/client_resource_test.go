@@ -360,7 +360,7 @@ func TestClientResourceReadError(t *testing.T) {
 		resource, err := client.readResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s", resourceID))
+		assert.EqualError(t, err, ErrGraphqlResourceNotFound.Error())
 	})
 }
 

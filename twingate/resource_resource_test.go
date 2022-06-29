@@ -595,3 +595,56 @@ func testAccCheckTwingateResourceActiveState(resourceName string, expectedActive
 		return nil
 	}
 }
+
+func TestAccTwingateResource_createAfterDeletion(t *testing.T) {
+	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					deleteTwingateResource("twingate_resource.test"),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+				),
+			},
+		},
+	})
+}
+
+func deleteTwingateResource(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		client := testAccProvider.Meta().(*Client)
+
+		rs, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("Not found: %s ", resourceName)
+		}
+
+		resourceId := rs.Primary.ID
+
+		if resourceId == "" {
+			return fmt.Errorf("No ResourceId set ")
+		}
+
+		err := client.deleteResource(context.Background(), resourceId)
+
+		if err != nil {
+			return fmt.Errorf("resource with ID %s still active: %w", resourceId, err)
+		}
+
+		return nil
+	}
+}
