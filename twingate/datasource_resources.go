@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func datasourceResourcesRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
 	var diags diag.Diagnostics
@@ -58,55 +58,6 @@ func convertResourceToTerraform(resource *Resource) interface{} {
 	}
 }
 
-func convertProtocolsToTerraform(protocols *ProtocolsInput) []interface{} {
-	if protocols == nil {
-		return nil
-	}
-
-	out := map[string]interface{}{
-		"allow_icmp": bool(protocols.AllowIcmp),
-	}
-
-	tcp := convertProtocolToTerraform(protocols.TCP)
-	if tcp != nil {
-		out["tcp"] = tcp
-	}
-
-	udp := convertProtocolToTerraform(protocols.UDP)
-	if tcp != nil {
-		out["udp"] = udp
-	}
-
-	return []interface{}{
-		out,
-	}
-}
-
-func convertProtocolToTerraform(protocol *ProtocolInput) []interface{} {
-	if protocol == nil {
-		return nil
-	}
-
-	ports, policy := protocol.buildPortsRange()
-
-	out := make(map[string]interface{})
-	if policy != "" {
-		out["policy"] = policy
-	}
-
-	if ports != nil {
-		out["ports"] = ports
-	}
-
-	if len(out) == 0 {
-		return nil
-	}
-
-	return []interface{}{
-		out,
-	}
-}
-
 func datasourceResources() *schema.Resource { //nolint:funlen
 	portsResource := schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -128,7 +79,7 @@ func datasourceResources() *schema.Resource { //nolint:funlen
 
 	return &schema.Resource{
 		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
-		ReadContext: datasourceResourceRead,
+		ReadContext: datasourceResourcesRead,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
