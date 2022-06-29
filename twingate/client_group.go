@@ -111,6 +111,44 @@ func (client *Client) readGroups(ctx context.Context) (groups []*Group, err erro
 	return groups, nil
 }
 
+type readGroupsByNameQuery struct {
+	Groups struct {
+		Edges []*Edges
+	} `graphql:"groups(filter: {name: {eq: $name}})"`
+}
+
+func (client *Client) readGroupsByName(ctx context.Context, groupName string) ([]*Group, error) {
+	if groupName == "" {
+		return nil, NewAPIError(ErrGraphqlGroupNameIsEmpty, "read", groupResourceName)
+	}
+
+	response := readGroupsByNameQuery{}
+
+	variables := map[string]interface{}{
+		"name": graphql.String(groupName),
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithName(err, "read", groupResourceName, groupName)
+	}
+
+	if len(response.Groups.Edges) == 0 {
+		return nil, NewAPIErrorWithName(ErrGraphqlResourceNotFound, "read", groupResourceName, groupName)
+	}
+
+	groups := make([]*Group, 0, len(response.Groups.Edges))
+
+	for _, g := range response.Groups.Edges {
+		groups = append(groups, &Group{
+			ID:   g.Node.ID,
+			Name: g.Node.Name,
+		})
+	}
+
+	return groups, nil
+}
+
 type updateGroupQuery struct {
 	GroupUpdate struct {
 		Entity IDName
