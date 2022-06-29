@@ -46,7 +46,7 @@ jobs:
   build:
 
     docker:
-      - image: cimg/go:1.18.2
+      - image: cimg/go:1.17.11
 
     steps:
       - checkout
