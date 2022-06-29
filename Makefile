@@ -81,7 +81,7 @@ lint-fix: tools
 .PHONY: sec
 sec: tools
 	@echo "==> Checking source code against security issues..."
-	@$(GOBINPATH)/gosec ./$(PKG_NAME)
+	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)
 
 
 .PHONY: doc-tools
