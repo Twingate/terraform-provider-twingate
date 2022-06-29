@@ -10,7 +10,7 @@ require (
 	github.com/jarcoal/httpmock v1.1.0
 	github.com/mattn/goveralls v0.0.11
 	github.com/securego/gosec/v2 v2.12.0
-	github.com/stretchr/testify v1.7.5
+	github.com/stretchr/testify v1.8.0
 	github.com/twingate/go-graphql-client v0.2.4
 	gotest.tools/gotestsum v1.8.1
 )
