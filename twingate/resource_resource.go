@@ -320,7 +320,7 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 
 	resource, err := client.readResource(ctx, resourceID)
 	if err != nil {
-		if errors.Is(err, ErrGraphqlResourceNotFound) {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
 			// clear state
 			resourceData.SetId("")
 

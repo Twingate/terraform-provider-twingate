@@ -72,7 +72,7 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 	}
 
 	if response.Group == nil {
-		return nil, NewAPIErrorWithID(err, "read", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupID)
 	}
 
 	group := Group{

@@ -270,7 +270,7 @@ func TestClientGroupReadError(t *testing.T) {
 		group, err := client.readGroup(context.Background(), groupId)
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read group with id %s", groupId))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read group with id %s: query result is empty", groupId))
 	})
 }
 
