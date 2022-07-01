@@ -47,13 +47,13 @@ func convertConnectorToTerraform(connector *Connector) map[string]interface{} {
 
 func datasourceConnectors() *schema.Resource {
 	return &schema.Resource{
-		Description: "Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
+		Description: "Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
 		ReadContext: datasourceConnectorsRead,
 		Schema: map[string]*schema.Schema{
 			"connectors": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "List of connectors",
+				Description: "List of Connectors",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
@@ -64,7 +64,7 @@ func datasourceConnectors() *schema.Resource {
 						"name": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The name of the Connector",
+							Description: "The Name of the Connector",
 						},
 						"remote_network_id": {
 							Type:        schema.TypeString,

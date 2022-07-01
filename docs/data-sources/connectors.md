@@ -3,12 +3,12 @@
 page_title: "twingate_connectors Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's documentation https://docs.twingate.com/docs/understanding-access-nodes.
+  Connectors provide connectivity to Remote Networks. For more information, see Twingate's documentation https://docs.twingate.com/docs/understanding-access-nodes.
 ---
 
 # twingate_connectors (Data Source)
 
-Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
 
 ## Example Usage
 
@@ -21,7 +21,7 @@ data "twingate_connectors" "all" {}
 
 ### Read-Only
 
-- `connectors` (List of Object) List of connectors (see [below for nested schema](#nestedatt--connectors))
+- `connectors` (List of Object) List of Connectors (see [below for nested schema](#nestedatt--connectors))
 - `id` (String) The ID of this resource.
 
 <a id="nestedatt--connectors"></a>
