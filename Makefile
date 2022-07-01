@@ -1,5 +1,4 @@
 TEST?=$$(go list ./...)
-WEBSITE_REPO=github.com/hashicorp/terraform-website
 HOSTNAME=registry.terraform.io
 PKG_NAME=twingate
 BINARY=terraform-provider-${PKG_NAME}
@@ -32,12 +31,8 @@ ci-checks: docs
 	git diff --exit-code || echo "ERROR: Update and push the latest documentation"; exit 1
 
 
-.PHONY: vendor
-vendor:
-	go mod vendor
-
 .PHONY: build
-build: vendor fmtcheck
+build: fmtcheck
 	go build -o ${BINARY}
 
 .PHONY: build-release
@@ -85,48 +80,14 @@ lint-fix: tools
 .PHONY: sec
 sec: tools
 	@echo "==> Checking source code against security issues..."
-	@$(GOBINPATH)/gosec ./$(PKG_NAME)
+	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)
 
 
 .PHONY: doc-tools
 docs: doc-tools
-	@$(GOBINPATH)/tfplugindocs generate
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --tf-version 1.2.3
 
 .PHONY: tools
 tools:
 	@echo "==> installing required tools ..."
-	go install github.com/client9/misspell/cmd/misspell@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	go install gotest.tools/gotestsum@latest
-	go install github.com/securego/gosec/v2/cmd/gosec@latest
-
-.PHONY: doc-tools
-doc-tools:
-	@echo "==> installing required doc tools ..."
-	go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
-
-.PHONY: test-compile
-test-compile:
-	@if [ "$(TEST)" = "./..." ]; then \
-		echo "ERROR: Set TEST to a specific package. For example,"; \
-		echo "  make test-compile TEST=./$(PKG_NAME)"; \
-		exit 1; \
-	fi
-	go test -c $(TEST) $(TESTARGS)
-
-.PHONY: website
-website:
-ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
-	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
-	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
-endif
-	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
-
-.PHONY: website-test
-website-test:
-ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
-	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
-	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
-endif
-	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
-
