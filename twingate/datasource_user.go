@@ -31,7 +31,11 @@ func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("is_admin", user.IsAdmin); err != nil {
+	if err := resourceData.Set("is_admin", user.IsAdmin()); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceData.Set("role", user.Role); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -70,6 +74,11 @@ func datasourceUser() *schema.Resource {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Indicates if the User admin or not",
+			},
+			"role": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The role of the User",
 			},
 		},
 	}

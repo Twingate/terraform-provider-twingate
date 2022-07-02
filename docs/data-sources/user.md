@@ -31,5 +31,6 @@ data "twingate_user" "foo" {
 - `first_name` (String) The first name of the User
 - `is_admin` (Boolean) Indicates if the User admin or not
 - `last_name` (String) The last name of the User
+- `role` (String) The role of the User
 
 

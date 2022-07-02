@@ -12,35 +12,47 @@ import (
 )
 
 func TestClientUserReadOk(t *testing.T) {
-	t.Run("Test Twingate Resource : Read User Ok", func(t *testing.T) {
-		const (
-			userID = "id"
-			email  = "user@email"
-		)
-		jsonResponse := fmt.Sprintf(`{
+	testData := []struct {
+		role    string
+		isAdmin bool
+	}{
+		{role: "ADMIN", isAdmin: true},
+		{role: "DEVOPS", isAdmin: false},
+	}
+
+	for _, td := range testData {
+		t.Run("Test Twingate Resource : Read User Ok - "+td.role, func(t *testing.T) {
+			const (
+				userID = "id"
+				email  = "user@email"
+			)
+			jsonResponse := fmt.Sprintf(`{
 		  "data": {
 			"user": {
 			  "id": "%s",
 			  "firstName": "First",
 			  "lastName": "Last",
 			  "email": "%s",
-			  "isAdmin": true
+			  "role": "%s"
 			}
 		  }
-		}`, userID, email)
+		}`, userID, email, td.role)
 
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, jsonResponse))
+			client := newHTTPMockClient()
+			defer httpmock.DeactivateAndReset()
+			httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+				httpmock.NewStringResponder(200, jsonResponse))
 
-		user, err := client.readUser(context.Background(), userID)
+			user, err := client.readUser(context.Background(), userID)
 
-		assert.Nil(t, err)
-		assert.NotNil(t, user)
-		assert.EqualValues(t, userID, user.ID)
-		assert.EqualValues(t, email, user.Email)
-	})
+			assert.Nil(t, err)
+			assert.NotNil(t, user)
+			assert.EqualValues(t, userID, user.ID)
+			assert.EqualValues(t, email, user.Email)
+			assert.EqualValues(t, td.role, user.Role)
+			assert.EqualValues(t, td.isAdmin, user.IsAdmin())
+		})
+	}
 }
 
 func TestClientUserReadError(t *testing.T) {
@@ -60,7 +72,7 @@ func TestClientUserReadError(t *testing.T) {
 		user, err := client.readUser(context.Background(), userID)
 
 		assert.Nil(t, user)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read user with id %s", userID))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read user with id %s: query result is empty", userID))
 	})
 }
 

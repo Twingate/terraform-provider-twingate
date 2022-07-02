@@ -6,14 +6,21 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
-const userResourceName = "user"
+const (
+	userResourceName = "user"
+	adminRole        = "ADMIN"
+)
 
 type User struct {
 	ID        string
 	FirstName string
 	LastName  string
 	Email     string
-	IsAdmin   bool
+	Role      string
+}
+
+func (u User) IsAdmin() bool {
+	return u.Role == adminRole
 }
 
 type readUserQuery struct {
@@ -22,7 +29,7 @@ type readUserQuery struct {
 		FirstName graphql.String
 		LastName  graphql.String
 		Email     graphql.String
-		IsAdmin   graphql.Boolean
+		Role      graphql.String
 	} `graphql:"user(id: $id)"`
 }
 
@@ -43,7 +50,7 @@ func (client *Client) readUser(ctx context.Context, userID string) (*User, error
 	}
 
 	if response.User == nil {
-		return nil, NewAPIErrorWithID(err, "read", userResourceName, userID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", userResourceName, userID)
 	}
 
 	return &User{
@@ -51,6 +58,6 @@ func (client *Client) readUser(ctx context.Context, userID string) (*User, error
 		FirstName: string(response.User.FirstName),
 		LastName:  string(response.User.LastName),
 		Email:     string(response.User.Email),
-		IsAdmin:   bool(response.User.IsAdmin),
+		Role:      string(response.User.Role),
 	}, nil
 }
