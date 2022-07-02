@@ -6,14 +6,21 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
-const userResourceName = "user"
+const (
+	userResourceName = "user"
+	adminRole        = "ADMIN"
+)
 
 type User struct {
 	ID        string
 	FirstName string
 	LastName  string
 	Email     string
-	IsAdmin   bool
+	Role      string
+}
+
+func (u User) IsAdmin() bool {
+	return u.Role == adminRole
 }
 
 type gqlUser struct {
@@ -21,7 +28,7 @@ type gqlUser struct {
 	FirstName graphql.String
 	LastName  graphql.String
 	Email     graphql.String
-	IsAdmin   graphql.Boolean
+	Role      graphql.String
 }
 
 type readUsersQuery struct {
@@ -32,37 +39,34 @@ type readUsersQuery struct {
 	}
 }
 
-func (client *Client) readUsers(ctx context.Context) (users map[string]*User, err error) {
+func (client *Client) readUsers(ctx context.Context) ([]*User, error) {
 	response := readUsersQuery{}
 
-	err = client.GraphqlClient.NamedQuery(ctx, "readUsers", &response, nil)
+	err := client.GraphqlClient.NamedQuery(ctx, "readUsers", &response, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", userResourceName, "All")
 	}
 
 	if response.Users == nil {
-		return nil, NewAPIErrorWithID(err, "read", userResourceName, "All")
+		return nil, nil
 	}
 
-	users = make(map[string]*User)
+	users := make([]*User, 0, len(response.Users.Edges))
 
 	for _, item := range response.Users.Edges {
-		if item == nil {
+		if item == nil || item.Node == nil {
 			continue
 		}
 
 		user := item.Node
-		if user == nil {
-			continue
-		}
 
-		users[string(user.Email)] = &User{
+		users = append(users, &User{
 			ID:        user.ID.(string),
 			FirstName: string(user.FirstName),
 			LastName:  string(user.LastName),
 			Email:     string(user.Email),
-			IsAdmin:   bool(user.IsAdmin),
-		}
+			Role:      string(user.Role),
+		})
 	}
 
 	return users, nil
