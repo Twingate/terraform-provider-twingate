@@ -32,7 +32,7 @@ resource "twingate_connector" "aws_connector" {
 
 ### Required
 
-- `remote_network_id` (String) The ID of the Remote Network to attach the Connector to
+- `remote_network_id` (String) The ID of the Remote Network the Connector is attached to
 
 ### Optional
 
