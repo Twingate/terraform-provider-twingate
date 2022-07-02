@@ -42,13 +42,13 @@ func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, 
 
 func datasourceUser() *schema.Resource {
 	return &schema.Resource{
-		Description: "Twingate users. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).",
+		Description: "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's [documentation](https://docs.twingate.com/docs/users).",
 		ReadContext: datasourceUserRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the User",
+				Description: "The ID of the User. The ID for the User must be obtained from the Admin API.",
 			},
 			// computed
 			"first_name": {
