@@ -470,6 +470,11 @@ func TestAccTwingateResource_portReorderingCreatesNoChanges(t *testing.T) {
 				Config:   testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
 				PlanOnly: true,
 			},
+			// no changes
+			{
+				Config:   testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
+				PlanOnly: true,
+			},
 			// new changes applied
 			{
 				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
@@ -506,4 +511,87 @@ func testTwingateResource_withPortRange(networkName, resourceName, portRange str
 	  }
 	}
 	`, networkName, resourceName, portRange, portRange)
+}
+
+func TestAccTwingateResource_setActiveState(t *testing.T) {
+	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					deactivateTwingateResource("twingate_resource.test"),
+					testAccCheckTwingateResourceActiveState("twingate_resource.test", false),
+				),
+			},
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceActiveState("twingate_resource.test", true),
+				),
+			},
+		},
+	})
+}
+
+func deactivateTwingateResource(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		client := testAccProvider.Meta().(*Client)
+
+		rs, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("Not found: %s ", resourceName)
+		}
+
+		resourceId := rs.Primary.ID
+
+		if resourceId == "" {
+			return fmt.Errorf("No ResourceId set ")
+		}
+
+		err := client.updateResourceActiveState(context.Background(), &Resource{
+			ID:       graphql.ID(resourceId),
+			IsActive: false,
+		})
+
+		if err != nil {
+			return fmt.Errorf("resource with ID %s still active: %w", resourceId, err)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTwingateResourceActiveState(resourceName string, expectedActiveState bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		client := testAccProvider.Meta().(*Client)
+
+		rs, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("Not found: %s ", resourceName)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No ResourceId set ")
+		}
+
+		resource, err := client.readResource(context.Background(), rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if bool(resource.IsActive) != expectedActiveState {
+			return fmt.Errorf("expected active state %v, got %v", expectedActiveState, resource.IsActive)
+		}
+
+		return nil
+	}
 }

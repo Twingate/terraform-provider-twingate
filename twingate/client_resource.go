@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,52 +11,6 @@ import (
 
 const readResourceQueryGroupsSize = 50
 
-var (
-	ErrTooManyGroupsError              = errors.New("provider does not support more than 50 groups per resource")
-	ErrGraphqlIDIsEmpty                = errors.New("id is empty")
-	ErrGraphqlConnectorIDIsEmpty       = errors.New("connector id is empty")
-	ErrGraphqlNetworkIDIsEmpty         = errors.New("network id is empty")
-	ErrGraphqlNetworkNameIsEmpty       = errors.New("network name is empty")
-	ErrGraphqlResultIsEmpty            = errors.New("query result is empty")
-	ErrGraphqlResourceNotFound         = errors.New("not found")
-	ErrGraphqlFoundMoreThanOneResource = errors.New("found more than one")
-	ErrGraphqlNameIsEmpty              = errors.New("name is empty")
-)
-
-func ErrInvalidPortRange(portRange string, err error) error {
-	return fmt.Errorf(`failed to parse protocols port range "%s": %w`, portRange, err)
-}
-
-type PortNotInRangeError struct {
-	Port int64
-}
-
-func NewPortNotInRangeError(port int64) *PortNotInRangeError {
-	return &PortNotInRangeError{
-		Port: port,
-	}
-}
-
-func (e *PortNotInRangeError) Error() string {
-	return fmt.Sprintf("port %d not in the range of 0-65535", e.Port)
-}
-
-type PortRangeNotRisingSequenceError struct {
-	Start int64
-	End   int64
-}
-
-func NewPortRangeNotRisingSequenceError(start int64, end int64) *PortRangeNotRisingSequenceError {
-	return &PortRangeNotRisingSequenceError{
-		Start: start,
-		End:   end,
-	}
-}
-
-func (e *PortRangeNotRisingSequenceError) Error() string {
-	return fmt.Sprintf("ports %d, %d needs to be in a rising sequence", e.Start, e.End)
-}
-
 type Resource struct {
 	ID              graphql.ID
 	RemoteNetworkID graphql.ID
@@ -65,6 +18,7 @@ type Resource struct {
 	Name            graphql.String
 	GroupsIds       []*graphql.ID
 	Protocols       *ProtocolsInput
+	IsActive        graphql.Boolean
 }
 
 func (r *Resource) stringGroups() []string {
@@ -239,6 +193,7 @@ type readResourceQuery struct {
 			Edges []*Edges
 		} `graphql:"groups(first: $first)"`
 		Protocols *ProtocolsInput
+		IsActive  graphql.Boolean
 	} `graphql:"resource(id: $id)"`
 }
 
@@ -279,6 +234,7 @@ func (client *Client) readResource(ctx context.Context, resourceID string) (*Res
 		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
 		GroupsIds:       groups,
 		Protocols:       response.Resource.Protocols,
+		IsActive:        response.Resource.IsActive,
 	}
 
 	return resource, nil
@@ -356,4 +312,128 @@ func (client *Client) deleteResource(ctx context.Context, resourceID string) err
 	}
 
 	return nil
+}
+
+type readResourceWithoutGroupsQuery struct {
+	Resource *struct {
+		IDName
+		Address struct {
+			Value graphql.String
+		}
+		RemoteNetwork struct {
+			ID graphql.ID
+		}
+		Protocols *ProtocolsInput
+	} `graphql:"resource(id: $id)"`
+}
+
+func (client *Client) readResourceWithoutGroups(ctx context.Context, resourceID string) (*Resource, error) {
+	if resourceID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
+	}
+
+	response := readResourceWithoutGroupsQuery{}
+	variables := map[string]interface{}{
+		"id": graphql.ID(resourceID),
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	if response.Resource == nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	resource := &Resource{
+		ID:              resourceID,
+		Name:            response.Resource.Name,
+		Address:         response.Resource.Address.Value,
+		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
+		Protocols:       response.Resource.Protocols,
+	}
+
+	return resource, nil
+}
+
+type updateResourceActiveStateQuery struct {
+	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, isActive: $isActive)"`
+}
+
+func (client *Client) updateResourceActiveState(ctx context.Context, resource *Resource) error {
+	variables := map[string]interface{}{
+		"id":       resource.ID,
+		"isActive": resource.IsActive,
+	}
+
+	response := updateResourceActiveStateQuery{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+
+	if err != nil {
+		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
+	}
+
+	if !response.ResourceUpdate.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
+	}
+
+	return nil
+}
+
+type readResourcesByNameQuery struct {
+	Resources struct {
+		Edges []*struct {
+			Node *struct {
+				IDName
+				Address struct {
+					Value graphql.String
+				}
+				RemoteNetwork struct {
+					ID graphql.ID
+				}
+				Protocols *ProtocolsInput
+			}
+		}
+	} `graphql:"resources(filter: {name: {eq: $name}})"`
+}
+
+func (client *Client) readResourcesByName(ctx context.Context, name string) ([]*Resource, error) {
+	response := readResourcesByNameQuery{}
+	variables := map[string]interface{}{
+		"name": graphql.String(name),
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
+	}
+
+	if len(response.Resources.Edges) == 0 {
+		return nil, NewAPIErrorWithID(ErrGraphqlResourceNotFound, "read", resourceResourceName, "All")
+	}
+
+	resources := make([]*Resource, 0, len(response.Resources.Edges))
+
+	for _, item := range response.Resources.Edges {
+		if item == nil {
+			continue
+		}
+
+		res := item.Node
+		if res == nil {
+			continue
+		}
+
+		resources = append(resources, &Resource{
+			ID:              res.ID,
+			Name:            res.Name,
+			Address:         res.Address.Value,
+			RemoteNetworkID: res.RemoteNetwork.ID,
+			Protocols:       res.Protocols,
+		})
+	}
+
+	return resources, nil
 }
