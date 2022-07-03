@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 
 	"github.com/twingate/go-graphql-client"
 )
@@ -11,6 +12,7 @@ const groupResourceName = "group"
 type Group struct {
 	ID       graphql.ID
 	Name     graphql.String
+	Type     graphql.String
 	IsActive graphql.Boolean
 }
 
@@ -83,9 +85,16 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 	return &group, nil
 }
 
-type readGroupsQuery struct { //nolint
+type readGroupsQuery struct {
 	Groups *struct {
-		Edges []*Edges
+		Edges []*struct {
+			Node *struct {
+				ID       graphql.ID
+				Name     graphql.String
+				Type     graphql.String
+				IsActive graphql.Boolean
+			}
+		}
 	}
 }
 
@@ -98,13 +107,15 @@ func (client *Client) readGroups(ctx context.Context) (groups []*Group, err erro
 	}
 
 	if response.Groups == nil {
-		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
 	}
 
 	for _, g := range response.Groups.Edges {
 		groups = append(groups, &Group{
-			ID:   g.Node.ID,
-			Name: g.Node.Name,
+			ID:       g.Node.ID,
+			Name:     g.Node.Name,
+			Type:     g.Node.Type,
+			IsActive: g.Node.IsActive,
 		})
 	}
 
@@ -113,7 +124,14 @@ func (client *Client) readGroups(ctx context.Context) (groups []*Group, err erro
 
 type readGroupsByNameQuery struct {
 	Groups struct {
-		Edges []*Edges
+		Edges []*struct {
+			Node *struct {
+				ID       graphql.ID
+				Name     graphql.String
+				Type     graphql.String
+				IsActive graphql.Boolean
+			}
+		}
 	} `graphql:"groups(filter: {name: {eq: $name}})"`
 }
 
@@ -134,15 +152,17 @@ func (client *Client) readGroupsByName(ctx context.Context, groupName string) ([
 	}
 
 	if len(response.Groups.Edges) == 0 {
-		return nil, NewAPIErrorWithName(ErrGraphqlResourceNotFound, "read", groupResourceName, groupName)
+		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupName)
 	}
 
 	groups := make([]*Group, 0, len(response.Groups.Edges))
 
 	for _, g := range response.Groups.Edges {
 		groups = append(groups, &Group{
-			ID:   g.Node.ID,
-			Name: g.Node.Name,
+			ID:       g.Node.ID,
+			Name:     g.Node.Name,
+			Type:     g.Node.Type,
+			IsActive: g.Node.IsActive,
 		})
 	}
 
@@ -209,4 +229,66 @@ func (client *Client) deleteGroup(ctx context.Context, groupID graphql.ID) error
 	}
 
 	return nil
+}
+
+type GroupsFilter struct {
+	Name     *string
+	Type     *string
+	IsActive *bool
+}
+
+func (f GroupsFilter) Match(group *Group) bool {
+	if f.Type != nil && *f.Type != string(group.Type) {
+		return false
+	}
+
+	if f.IsActive != nil && *f.IsActive != bool(group.IsActive) {
+		return false
+	}
+
+	return true
+}
+
+func (client *Client) filterGroups(ctx context.Context, filter *GroupsFilter) ([]*Group, error) {
+	if filter == nil {
+		groups, err := client.readGroups(ctx)
+		if err != nil {
+			if errors.Is(err, ErrGraphqlResultIsEmpty) {
+				return nil, nil
+			}
+
+			return nil, err
+		}
+
+		return groups, nil
+	}
+
+	var (
+		groups []*Group
+		err    error
+	)
+
+	if filter.Name == nil || *filter.Name == "" {
+		groups, err = client.readGroups(ctx)
+	} else {
+		groups, err = client.readGroupsByName(ctx, *filter.Name)
+	}
+
+	if err != nil {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	var filtered []*Group
+
+	for _, g := range groups {
+		if filter.Match(g) {
+			filtered = append(filtered, g)
+		}
+	}
+
+	return filtered, nil
 }

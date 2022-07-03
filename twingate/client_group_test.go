@@ -484,7 +484,7 @@ func TestClientGroupsReadError(t *testing.T) {
 		groups, err := client.readGroups(context.Background())
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, "failed to read group with id All")
+		assert.EqualError(t, err, "failed to read group with id All: query result is empty")
 	})
 }
 
@@ -571,7 +571,7 @@ func TestClientGroupsReadByNameEmptyResult(t *testing.T) {
 		groups, err := client.readGroupsByName(context.Background(), groupName)
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read group with name %s: not found", groupName))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read group with name %s: query result is empty", groupName))
 	})
 }
 
@@ -617,5 +617,128 @@ func TestClientGroupsReadByNameErrorEmptyName(t *testing.T) {
 
 		assert.Nil(t, groups)
 		assert.EqualError(t, err, "failed to read group: group name is empty")
+	})
+}
+
+func TestClientFilterGroupsOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Filter Groups - Ok", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"groups": {
+			  "edges": [
+				{
+				  "node": {
+					"id": "g1",
+					"name": "Group 1",
+					"type": "MANUAL",
+					"isActive": true
+				  }
+				},
+				{
+				  "node": {
+					"id": "g2",
+					"name": "Group 2",
+					"type": "SYSTEM",
+					"isActive": false
+				  }
+				}
+			  ]
+			}
+		  }
+		}`
+
+		testData := []struct {
+			filter           *GroupsFilter
+			expectedGroupIds []string
+		}{
+			{
+				filter:           &GroupsFilter{Type: optionalString("MANUAL")},
+				expectedGroupIds: []string{"g1"},
+			},
+			{
+				filter:           &GroupsFilter{Type: optionalString("SYSTEM")},
+				expectedGroupIds: []string{"g2"},
+			},
+			{
+				filter: &GroupsFilter{Type: optionalString("SYNCED")},
+			},
+			{
+				filter:           &GroupsFilter{IsActive: optionalBool(true)},
+				expectedGroupIds: []string{"g1"},
+			},
+			{
+				filter:           &GroupsFilter{IsActive: optionalBool(false)},
+				expectedGroupIds: []string{"g2"},
+			},
+			{
+				filter:           &GroupsFilter{Type: optionalString("SYSTEM"), IsActive: optionalBool(false)},
+				expectedGroupIds: []string{"g2"},
+			},
+			{
+				filter:           &GroupsFilter{Type: optionalString("MANUAL"), IsActive: optionalBool(true)},
+				expectedGroupIds: []string{"g1"},
+			},
+			{
+				filter: &GroupsFilter{Type: optionalString("MANUAL"), IsActive: optionalBool(false)},
+			},
+			{
+				expectedGroupIds: []string{"g1", "g2"},
+			},
+		}
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		for _, td := range testData {
+			groups, err := client.filterGroups(context.Background(), td.filter)
+
+			assert.Nil(t, err)
+			assert.Len(t, groups, len(td.expectedGroupIds))
+			if td.expectedGroupIds == nil {
+				assert.Nil(t, groups)
+			} else {
+				assert.NotNil(t, groups)
+				for i, id := range td.expectedGroupIds {
+					assert.EqualValues(t, id, groups[i].ID)
+				}
+			}
+		}
+	})
+}
+
+func optionalString(val string) *string {
+	if val == "" {
+		return nil
+	}
+
+	return &val
+}
+
+func optionalBool(val bool) *bool {
+	return &val
+}
+
+func TestClientFilterGroupsRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Filter Groups - Request Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"groups": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, jsonResponse)
+				return resp, errors.New("error_1")
+			})
+
+		groups, err := client.filterGroups(context.Background(), nil)
+
+		assert.Nil(t, groups)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }
