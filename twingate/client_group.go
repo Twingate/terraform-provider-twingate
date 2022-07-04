@@ -237,7 +237,15 @@ type GroupsFilter struct {
 	IsActive *bool
 }
 
-func (f GroupsFilter) Match(group *Group) bool {
+func (f *GroupsFilter) HasName() bool {
+	return f != nil && f.Name != nil && *f.Name != ""
+}
+
+func (f *GroupsFilter) Match(group *Group) bool {
+	if f == nil {
+		return true
+	}
+
 	if f.Type != nil && *f.Type != string(group.Type) {
 		return false
 	}
@@ -250,25 +258,12 @@ func (f GroupsFilter) Match(group *Group) bool {
 }
 
 func (client *Client) filterGroups(ctx context.Context, filter *GroupsFilter) ([]*Group, error) {
-	if filter == nil {
-		groups, err := client.readGroups(ctx)
-		if err != nil {
-			if errors.Is(err, ErrGraphqlResultIsEmpty) {
-				return nil, nil
-			}
-
-			return nil, err
-		}
-
-		return groups, nil
-	}
-
 	var (
 		groups []*Group
 		err    error
 	)
 
-	if filter.Name == nil || *filter.Name == "" {
+	if !filter.HasName() {
 		groups, err = client.readGroups(ctx)
 	} else {
 		groups, err = client.readGroupsByName(ctx, *filter.Name)
