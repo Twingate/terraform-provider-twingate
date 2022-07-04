@@ -187,3 +187,60 @@ func testTwingateGroupsWithEmptyFilter() string {
 	}
 	`
 }
+
+func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
+	t.Run("Test Twingate Datasource : Acc Groups with two datasource", func(t *testing.T) {
+
+		groupName := acctest.RandomWithPrefix(testPrefixName)
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateGroupDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testDatasourceTwingateGroupsWithDatasource(groupName),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckOutput("my_group", groupName),
+						resource.TestCheckResourceAttr("data.twingate_groups.out", "groups.#", "2"),
+						resource.TestCheckResourceAttr("data.twingate_groups.all", "groups.#", "2"),
+					),
+				},
+			},
+		})
+	})
+}
+
+func testDatasourceTwingateGroupsWithDatasource(name string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "test1" {
+	  name = "%s"
+	}
+
+	resource "twingate_group" "test2" {
+	  name = "%s"
+	}
+
+	data "twingate_groups" "all" {
+	  name = "%s"
+	  is_active = true
+	  type = "MANUAL"
+
+	  depends_on = [twingate_group.test1, twingate_group.test2]
+	}
+
+	data "twingate_groups" "out" {
+	  name = "%s"
+
+	  depends_on = [twingate_group.test1, twingate_group.test2]
+	}
+
+	output "my_group" {
+	  value = data.twingate_groups.out.groups[0].name
+	}
+
+	output "all_groups" {
+	  value = data.twingate_groups.all.groups
+	}
+	`, name, name, name, name)
+}
