@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -83,17 +84,17 @@ func datasourceGroups() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The name of the Group",
+				Description: "Returns only Groups that exactly match this name.",
 			},
 			"is_active": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Description: "Indicates if the Group is active",
+				Description: "Returns only Groups matching the specified state.",
 			},
 			"type": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The type of the Group",
+				Description:  fmt.Sprintf("Returns only Groups of the specified type (valid: `%s`, `%s`, `%s`).", groupTypeManual, groupTypeSynced, groupTypeSystem),
 				ValidateFunc: validation.StringInSlice([]string{groupTypeManual, groupTypeSynced, groupTypeSystem}, false),
 			},
 			"groups": {

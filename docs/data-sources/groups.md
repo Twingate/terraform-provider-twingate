@@ -26,9 +26,9 @@ data "twingate_groups" "foo" {
 
 ### Optional
 
-- `is_active` (Boolean) Indicates if the Group is active
-- `name` (String) The name of the Group
-- `type` (String) The type of the Group
+- `is_active` (Boolean) Returns only Groups matching the specified state.
+- `name` (String) Returns only Groups that exactly match this name.
+- `type` (String) Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
 
 ### Read-Only
 
