@@ -27,6 +27,8 @@ data "twingate_group" "foo" {
 
 ### Read-Only
 
+- `is_active` (Boolean) Indicates if the Group is active
 - `name` (String) The name of the Group
+- `type` (String) The type of the Group
 
 
