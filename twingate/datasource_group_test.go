@@ -23,6 +23,8 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 					Config: testDatasourceTwingateGroup(groupName),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckOutput("my_group", groupName),
+						resource.TestCheckOutput("my_group_is_active", "true"),
+						resource.TestCheckOutput("my_group_type", "MANUAL"),
 					),
 				},
 			},
@@ -42,6 +44,14 @@ func testDatasourceTwingateGroup(name string) string {
 
 	output "my_group" {
 	  value = data.twingate_group.bar.name
+	}
+
+	output "my_group_is_active" {
+	  value = data.twingate_group.bar.is_active
+	}
+
+	output "my_group_type" {
+	  value = data.twingate_group.bar.type
 	}
 	`, name)
 }
