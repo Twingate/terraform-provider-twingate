@@ -197,3 +197,33 @@ func TestAccRemoteConnector_notAllowedToChangeRemoteNetworkId(t *testing.T) {
 		})
 	})
 }
+
+func TestAccTwingateConnector_createAfterDeletion(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector Create After Deletion", func(t *testing.T) {
+		const terraformConnectorResource = "twingate_connector.test"
+		const terraformNetworkResource = "twingate_remote_network.test"
+		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateConnector(remoteNetworkName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(terraformConnectorResource, terraformNetworkResource),
+						deleteTwingateResource(terraformConnectorResource, connectorResourceName),
+					),
+					ExpectNonEmptyPlan: true,
+				},
+				{
+					Config: testTwingateConnector(remoteNetworkName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(terraformConnectorResource, terraformNetworkResource),
+					),
+				},
+			},
+		})
+	})
+}

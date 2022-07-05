@@ -232,7 +232,9 @@ func TestClientGroupReadOk(t *testing.T) {
 		  "data": {
 			"group": {
 			  "id": "id",
-			  "name": "name"
+			  "name": "name",
+			  "type": "MANUAL",
+			  "isActive": true
 			}
 		  }
 		}`
@@ -249,6 +251,8 @@ func TestClientGroupReadOk(t *testing.T) {
 		assert.NotNil(t, group)
 		assert.EqualValues(t, groupId, group.ID)
 		assert.EqualValues(t, "name", group.Name)
+		assert.EqualValues(t, "MANUAL", group.Type)
+		assert.EqualValues(t, true, group.IsActive)
 	})
 }
 
@@ -270,7 +274,7 @@ func TestClientGroupReadError(t *testing.T) {
 		group, err := client.readGroup(context.Background(), groupId)
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read group with id %s", groupId))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read group with id %s: query result is empty", groupId))
 	})
 }
 

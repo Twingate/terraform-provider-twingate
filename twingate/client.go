@@ -91,6 +91,10 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf(format, args...)
 }
 
+func (e *APIError) Unwrap() error {
+	return e.WrappedError
+}
+
 type MutationError struct {
 	Message graphql.String
 }

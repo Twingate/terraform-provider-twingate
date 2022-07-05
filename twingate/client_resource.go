@@ -214,7 +214,7 @@ func (client *Client) readResource(ctx context.Context, resourceID string) (*Res
 	}
 
 	if response.Resource == nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
 	var groups = make([]*graphql.ID, 0)

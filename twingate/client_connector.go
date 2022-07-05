@@ -178,7 +178,7 @@ func (client *Client) readConnector(ctx context.Context, connectorID string) (*C
 	}
 
 	if response.Connector == nil {
-		return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, connectorID)
 	}
 
 	connectorRemoteNetwork := &remoteNetwork{

@@ -226,7 +226,7 @@ func TestClientConnectorReadError(t *testing.T) {
 		connector, err := client.readConnector(context.Background(), connectorId)
 
 		assert.Nil(t, connector)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read connector with id %s", connectorId))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read connector with id %s: query result is empty", connectorId))
 	})
 }
 
