@@ -119,3 +119,32 @@ func testAccCheckTwingateRemoteNetworkDoesNotExists(resourceName string) resourc
 		return fmt.Errorf("this resource should not be here: %s ", resourceName)
 	}
 }
+
+func TestAccTwingateRemoteNetwork_createAfterDeletion(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Network Create After Deletion", func(t *testing.T) {
+		const resourceName = "twingate_remote_network.test"
+		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateRemoteNetwork(remoteNetworkName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateRemoteNetworkExists(resourceName),
+						deleteTwingateResource(resourceName, remoteNetworkResourceName),
+					),
+					ExpectNonEmptyPlan: true,
+				},
+				{
+					Config: testTwingateRemoteNetwork(remoteNetworkName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateRemoteNetworkExists(resourceName),
+					),
+				},
+			},
+		})
+	})
+}

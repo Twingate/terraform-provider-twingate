@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -99,6 +100,13 @@ func resourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resourc
 	remoteNetwork, err := client.readRemoteNetwork(ctx, remoteNetworkID)
 
 	if err != nil {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+			// clear state
+			resourceData.SetId("")
+
+			return nil
+		}
+
 		return diag.FromErr(err)
 	}
 

@@ -118,3 +118,32 @@ func testAccCheckTwingateGroupDoesNotExists(resourceName string) resource.TestCh
 		return fmt.Errorf("this resource should not be here: %s ", resourceName)
 	}
 }
+
+func TestAccTwingateGroup_createAfterDeletion(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Group Create After Deletion", func(t *testing.T) {
+		const resourceName = "twingate_group.test"
+		groupName := acctest.RandomWithPrefix(testPrefixName)
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateGroupDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateGroup(groupName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(resourceName),
+						deleteTwingateResource(resourceName, groupResourceName),
+					),
+					ExpectNonEmptyPlan: true,
+				},
+				{
+					Config: testTwingateGroup(groupName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(resourceName),
+					),
+				},
+			},
+		})
+	})
+}
