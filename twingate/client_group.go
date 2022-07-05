@@ -14,7 +14,6 @@ type Group struct {
 	Name     graphql.String
 	Type     graphql.String
 	IsActive graphql.Boolean
-	Type     graphql.String
 }
 
 type createGroupQuery struct {
