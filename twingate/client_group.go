@@ -12,6 +12,7 @@ type Group struct {
 	ID       graphql.ID
 	Name     graphql.String
 	IsActive graphql.Boolean
+	Type     graphql.String
 }
 
 type createGroupQuery struct {
@@ -52,6 +53,7 @@ type readGroupQuery struct {
 	Group *struct {
 		IDName
 		IsActive graphql.Boolean
+		Type     graphql.String
 	} `graphql:"group(id: $id)"`
 }
 
@@ -76,8 +78,10 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 	}
 
 	group := Group{
-		ID:   response.Group.ID,
-		Name: response.Group.Name,
+		ID:       response.Group.ID,
+		Name:     response.Group.Name,
+		IsActive: response.Group.IsActive,
+		Type:     response.Group.Type,
 	}
 
 	return &group, nil

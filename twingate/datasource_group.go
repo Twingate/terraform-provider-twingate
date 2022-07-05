@@ -23,6 +23,14 @@ func datasourceGroupRead(ctx context.Context, resourceData *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
+	if err := resourceData.Set("type", string(group.Type)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceData.Set("is_active", bool(group.IsActive)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	resourceData.SetId(groupID)
 
 	return diags
@@ -42,6 +50,16 @@ func datasourceGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The name of the Group",
+			},
+			"is_active": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Indicates if the Group is active",
+			},
+			"type": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The type of the Group",
 			},
 		},
 	}

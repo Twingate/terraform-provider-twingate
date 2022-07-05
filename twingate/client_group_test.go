@@ -232,7 +232,9 @@ func TestClientGroupReadOk(t *testing.T) {
 		  "data": {
 			"group": {
 			  "id": "id",
-			  "name": "name"
+			  "name": "name",
+			  "type": "MANUAL",
+			  "isActive": true
 			}
 		  }
 		}`
@@ -249,6 +251,8 @@ func TestClientGroupReadOk(t *testing.T) {
 		assert.NotNil(t, group)
 		assert.EqualValues(t, groupId, group.ID)
 		assert.EqualValues(t, "name", group.Name)
+		assert.EqualValues(t, "MANUAL", group.Type)
+		assert.EqualValues(t, true, group.IsActive)
 	})
 }
 
