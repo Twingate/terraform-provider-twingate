@@ -118,6 +118,13 @@ func resourceConnectorRead(ctx context.Context, resourceData *schema.ResourceDat
 	connector, err := client.readConnector(ctx, connectorID)
 
 	if err != nil {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+			// clear state
+			resourceData.SetId("")
+
+			return nil
+		}
+
 		return diag.FromErr(err)
 	}
 

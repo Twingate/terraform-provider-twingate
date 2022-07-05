@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -97,6 +98,13 @@ func resourceGroupRead(ctx context.Context, resourceData *schema.ResourceData, m
 	group, err := client.readGroup(ctx, groupID)
 
 	if err != nil {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+			// clear state
+			resourceData.SetId("")
+
+			return nil
+		}
+
 		return diag.FromErr(err)
 	}
 

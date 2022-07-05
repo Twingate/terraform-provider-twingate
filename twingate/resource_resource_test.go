@@ -595,3 +595,69 @@ func testAccCheckTwingateResourceActiveState(resourceName string, expectedActive
 		return nil
 	}
 }
+
+func TestAccTwingateResource_createAfterDeletion(t *testing.T) {
+	const terraformResourceName = "twingate_resource.test"
+	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists(terraformResourceName),
+					deleteTwingateResource(terraformResourceName, resourceResourceName),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists(terraformResourceName),
+				),
+			},
+		},
+	})
+}
+
+func deleteTwingateResource(resourceName, resourceType string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		client := testAccProvider.Meta().(*Client)
+
+		rs, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("Not found: %s ", resourceName)
+		}
+
+		resourceId := rs.Primary.ID
+
+		if resourceId == "" {
+			return fmt.Errorf("No ResourceId set ")
+		}
+
+		var err error
+		switch resourceType {
+		case resourceResourceName:
+			err = client.deleteResource(context.Background(), resourceId)
+		case remoteNetworkResourceName:
+			err = client.deleteRemoteNetwork(context.Background(), resourceId)
+		case groupResourceName:
+			err = client.deleteGroup(context.Background(), resourceId)
+		case connectorResourceName:
+			err = client.deleteConnector(context.Background(), resourceId)
+		default:
+			return fmt.Errorf("%s unknown resource type", resourceType)
+		}
+
+		if err != nil {
+			return fmt.Errorf("%s with ID %s still active: %w", resourceType, resourceId, err)
+		}
+
+		return nil
+	}
+}
