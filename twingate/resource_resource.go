@@ -318,6 +318,8 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 	client := meta.(*Client)
 	resourceID := resourceData.Id()
 
+	log.Println(">>>>>>>>> READ")
+
 	resource, err := client.readResource(ctx, resourceID)
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
@@ -364,7 +366,7 @@ func resourceResourceReadDiagnostics(resourceData *schema.ResourceData, resource
 		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
 
-	if len(resourceData.Get("protocols").([]interface{})) > 0 {
+	if resource.Protocols != nil {
 		protocols := resource.Protocols.flattenProtocols()
 		if err := resourceData.Set("protocols", protocols); err != nil {
 			return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
