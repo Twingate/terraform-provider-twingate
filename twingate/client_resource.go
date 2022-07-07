@@ -410,8 +410,8 @@ func (client *Client) readResourcesByName(ctx context.Context, name string) ([]*
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	if len(response.Resources.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResourceNotFound, "read", resourceResourceName, "All")
+	if response.Resources.Edges == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, "All")
 	}
 
 	resources := make([]*Resource, 0, len(response.Resources.Edges))
