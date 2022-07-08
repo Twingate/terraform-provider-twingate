@@ -910,7 +910,7 @@ func TestClientResourcesReadByNameEmptyResult(t *testing.T) {
 		resources, err := client.readResourcesByName(context.Background(), "resource-name")
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, "failed to read resource with id All: not found")
+		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
 	})
 }
 
@@ -953,6 +953,6 @@ func TestClientResourcesReadByNameErrorEmptyName(t *testing.T) {
 		groups, err := client.readResourcesByName(context.Background(), "")
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, "failed to read resource with id All: not found")
+		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
 	})
 }
