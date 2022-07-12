@@ -20,27 +20,23 @@ func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData
 
 	var diags diag.Diagnostics
 
-	groups, err := client.filterGroups(ctx, buildFilter(resourceData))
+	filter := buildFilter(resourceData)
+	groups, err := client.filterGroups(ctx, filter)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	data := make([]interface{}, 0, len(groups))
-	for _, group := range groups {
-		data = append(data, map[string]interface{}{
-			"id":        group.ID.(string),
-			"name":      string(group.Name),
-			"type":      string(group.Type),
-			"is_active": bool(group.IsActive),
-		})
-	}
-
-	if err := resourceData.Set("groups", data); err != nil {
+	if err := resourceData.Set("groups", convertGroupsToTerraform(groups)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId("groups-by-filter")
+	id := "all-groups"
+	if filter.HasName() {
+		id = "groups-by-name-" + *filter.Name
+	}
+
+	resourceData.SetId(id)
 
 	return diags
 }
@@ -74,6 +70,21 @@ func buildFilter(resourceData *schema.ResourceData) *GroupsFilter {
 	}
 
 	return filter
+}
+
+func convertGroupsToTerraform(groups []*Group) []interface{} {
+	out := make([]interface{}, 0, len(groups))
+
+	for _, group := range groups {
+		out = append(out, map[string]interface{}{
+			"id":        group.ID.(string),
+			"name":      string(group.Name),
+			"type":      string(group.Type),
+			"is_active": bool(group.IsActive),
+		})
+	}
+
+	return out
 }
 
 func datasourceGroups() *schema.Resource {
