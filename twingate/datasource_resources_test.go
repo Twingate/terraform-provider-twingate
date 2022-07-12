@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -84,8 +83,8 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 	`, networkName, resourceName, resourceName, resourceName)
 }
 
-func TestAccDatasourceTwingateResources_negative(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Resources - does not exists", func(t *testing.T) {
+func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
+	t.Run("Test Twingate Datasource : Acc Resources - empty result", func(t *testing.T) {
 		resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
 
 		resource.Test(t, resource.TestCase{
@@ -95,8 +94,10 @@ func TestAccDatasourceTwingateResources_negative(t *testing.T) {
 			},
 			Steps: []resource.TestStep{
 				{
-					Config:      testTwingateResourcesDoesNotExists(resourceName),
-					ExpectError: regexp.MustCompile("Error: failed to read resource with id All"),
+					Config: testTwingateResourcesDoesNotExists(resourceName),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr("data.twingate_resources.test", "resources.#", "0"),
+					),
 				},
 			},
 		})
@@ -113,21 +114,4 @@ func testTwingateResourcesDoesNotExists(name string) string {
 	  value = data.twingate_resources.test.resources
 	}
 	`, name)
-}
-
-func TestAccDatasourceTwingateResources_emptyResourceName(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Resources - failed parse resource name", func(t *testing.T) {
-		resource.Test(t, resource.TestCase{
-			ProviderFactories: testAccProviderFactories,
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateResourcesDoesNotExists(""),
-					ExpectError: regexp.MustCompile("Error: failed to read resource with id All: not found"),
-				},
-			},
-		})
-	})
 }

@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -16,7 +17,7 @@ func datasourceResourcesRead(ctx context.Context, resourceData *schema.ResourceD
 	resourceName := resourceData.Get("name").(string)
 	resources, err := client.readResourcesByName(ctx, resourceName)
 
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
 		return diag.FromErr(err)
 	}
 
