@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -225,7 +226,7 @@ func TestClientConnectorReadError(t *testing.T) {
 		connector, err := client.readConnector(context.Background(), connectorId)
 
 		assert.Nil(t, connector)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read connector with id %s", connectorId))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read connector with id %s: query result is empty", connectorId))
 	})
 }
 
@@ -412,5 +413,104 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 
 		assert.Nil(t, connector)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
+	})
+}
+
+// readConnectorsWithRemoteNetwork
+
+func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Ok", func(t *testing.T) {
+		data := []struct {
+			id        string
+			name      string
+			networkID string
+		}{
+			{id: "connector1", name: "tf-acc-connector1", networkID: "tf-acc-network1"},
+			{id: "connector2", name: "tf-acc-connector2", networkID: "tf-acc-network2"},
+		}
+
+		jsonResponse := fmt.Sprintf(`{
+	  "data": {
+		"connectors": {
+		  "edges": [
+			{
+			  "node": {
+				"id": "%s",
+				"name": "%s",
+				"remoteNetwork": {
+				  "id": "%s"
+				}
+			  }
+			},
+			{
+			  "node": {
+				"id": "%s",
+				"name": "%s",
+				"remoteNetwork": {
+				  "id": "%s"
+				}
+			  }
+			}
+		  ]
+		}
+	  }
+	}`, data[0].id, data[0].name, data[0].networkID, data[1].id, data[1].name, data[1].networkID)
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		connectors, err := client.readConnectorsWithRemoteNetwork(context.Background())
+		assert.NoError(t, err)
+
+		for i, elem := range connectors {
+			assert.EqualValues(t, data[i].id, elem.ID)
+			assert.EqualValues(t, data[i].name, elem.Name)
+			assert.EqualValues(t, data[i].networkID, elem.RemoteNetwork.ID)
+		}
+	})
+}
+
+func TestClientReadConnectorsWithRemoteNetworkError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"connectors": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		connectors, err := client.readConnectorsWithRemoteNetwork(context.Background())
+
+		assert.Nil(t, connectors)
+		assert.EqualError(t, err, "failed to read connector with id All: query result is empty")
+	})
+}
+
+func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Request Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+			"connectors": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			func(req *http.Request) (*http.Response, error) {
+				resp := httpmock.NewStringResponse(200, jsonResponse)
+				return resp, errors.New("error_1")
+			})
+
+		connectors, err := client.readConnectorsWithRemoteNetwork(context.Background())
+
+		assert.Nil(t, connectors)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id All: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }

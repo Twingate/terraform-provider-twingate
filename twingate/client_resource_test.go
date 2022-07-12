@@ -355,12 +355,12 @@ func TestClientResourceReadError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
-		resourceID := "resource1"
+		const resourceID = "resource1"
 
 		resource, err := client.readResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s", resourceID))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s: query result is empty", resourceID))
 	})
 }
 
@@ -910,7 +910,7 @@ func TestClientResourcesReadByNameEmptyResult(t *testing.T) {
 		resources, err := client.readResourcesByName(context.Background(), "resource-name")
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, "failed to read resource with id All: not found")
+		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
 	})
 }
 
@@ -953,6 +953,6 @@ func TestClientResourcesReadByNameErrorEmptyName(t *testing.T) {
 		groups, err := client.readResourcesByName(context.Background(), "")
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, "failed to read resource with id All: not found")
+		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
 	})
 }
