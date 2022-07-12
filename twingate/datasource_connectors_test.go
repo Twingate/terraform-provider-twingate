@@ -125,3 +125,32 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 	}
 	`, networkName1, connectorName1, networkName2, connectorName2)
 }
+
+func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
+	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
+		connectorName := testPrefixName + "-conn-" + acctest.RandString(acctest.RandIntRange(5, 15))
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			Steps: []resource.TestStep{
+				{
+					Config: testTwingateConnectorsDoesNotExists(connectorName),
+					Check: resource.ComposeTestCheckFunc(
+						testOutputLength("my_connectors", 0),
+					),
+				},
+			},
+		})
+	})
+}
+
+func testTwingateConnectorsDoesNotExists(connectorName string) string {
+	return fmt.Sprintf(`
+	data "twingate_connectors" "all" {}
+
+	output "my_connectors" {
+	  value = [for conn in data.twingate_connectors.all.connectors: conn if can(regex("^%s", conn.name))] 
+	}
+	`, connectorName)
+}
