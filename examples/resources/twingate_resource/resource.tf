@@ -11,19 +11,29 @@ provider "twingate" {
 #  name = "aws_group"
 #}
 
-resource "twingate_resource" "resource" {
-  name = "network"
-  address = "internal.int"
-  remote_network_id = "UmVtb3RlTmV0d29yazo0MDEzOQ=="
-  group_ids = ["R3JvdXA6MzUxNjU="]
-  protocols {
-    allow_icmp = true
-    tcp  {
-      policy = "RESTRICTED"
-      ports = ["80", "82-83"]
-    }
-    udp {
-      policy = "ALLOW_ALL"
-    }
-  }
+#resource "twingate_resource" "resource" {
+#  name = "network"
+#  address = "internal.int"
+#  remote_network_id = "UmVtb3RlTmV0d29yazo0MDEzOQ=="
+#  group_ids = ["R3JvdXA6MzUxNjU="]
+#  protocols {
+#    allow_icmp = true
+#    tcp  {
+#      policy = "RESTRICTED"
+#      ports = ["80", "82-83"]
+#    }
+#    udp {
+#      policy = "ALLOW_ALL"
+#    }
+#  }
+#}
+
+resource "twingate_remote_network" "test" {
+  name = "my-test-net"
 }
+resource "twingate_resource" "test" {
+  name = "acc-test-resource-1"
+  address = "acc-test.com"
+  remote_network_id = twingate_remote_network.test.id
+}
+
