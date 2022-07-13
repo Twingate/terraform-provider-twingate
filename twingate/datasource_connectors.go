@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,7 +15,7 @@ func datasourceConnectorsRead(ctx context.Context, resourceData *schema.Resource
 
 	connectors, err := client.readConnectorsWithRemoteNetwork(ctx)
 
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
 		return diag.FromErr(err)
 	}
 
