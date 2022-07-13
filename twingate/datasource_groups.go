@@ -2,9 +2,17 @@ package twingate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	groupTypeManual = "MANUAL"
+	groupTypeSynced = "SYNCED"
+	groupTypeSystem = "SYSTEM"
 )
 
 func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -12,28 +20,71 @@ func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData
 
 	var diags diag.Diagnostics
 
-	groupName := resourceData.Get("name").(string)
-	groups, err := client.readGroupsByName(ctx, groupName)
+	filter := buildFilter(resourceData)
+	groups, err := client.filterGroups(ctx, filter)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	data := make([]interface{}, 0, len(groups))
-	for _, group := range groups {
-		data = append(data, map[string]interface{}{
-			"id":   group.ID.(string),
-			"name": string(group.Name),
-		})
-	}
-
-	if err := resourceData.Set("groups", data); err != nil {
+	if err := resourceData.Set("groups", convertGroupsToTerraform(groups)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(groupName)
+	id := "all-groups"
+	if filter.HasName() {
+		id = "groups-by-name-" + *filter.Name
+	}
+
+	resourceData.SetId(id)
 
 	return diags
+}
+
+func buildFilter(resourceData *schema.ResourceData) *GroupsFilter {
+	groupName, hasName := resourceData.GetOk("name")
+	groupType, hasType := resourceData.GetOk("type")
+
+	// GetOk does not provide correct value for exists flag (second output value)
+	groupIsActive, hasIsActive := resourceData.GetOkExists("is_active") // nolint:staticcheck
+
+	if !hasName && !hasType && !hasIsActive {
+		return nil
+	}
+
+	filter := &GroupsFilter{}
+
+	if hasName {
+		val := groupName.(string)
+		filter.Name = &val
+	}
+
+	if hasType {
+		val := groupType.(string)
+		filter.Type = &val
+	}
+
+	if hasIsActive {
+		val := groupIsActive.(bool)
+		filter.IsActive = &val
+	}
+
+	return filter
+}
+
+func convertGroupsToTerraform(groups []*Group) []interface{} {
+	out := make([]interface{}, 0, len(groups))
+
+	for _, group := range groups {
+		out = append(out, map[string]interface{}{
+			"id":        group.ID.(string),
+			"name":      string(group.Name),
+			"type":      string(group.Type),
+			"is_active": bool(group.IsActive),
+		})
+	}
+
+	return out
 }
 
 func datasourceGroups() *schema.Resource {
@@ -43,8 +94,19 @@ func datasourceGroups() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The name of the Group",
+				Optional:    true,
+				Description: "Returns only Groups that exactly match this name.",
+			},
+			"is_active": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Returns only Groups matching the specified state.",
+			},
+			"type": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  fmt.Sprintf("Returns only Groups of the specified type (valid: `%s`, `%s`, `%s`).", groupTypeManual, groupTypeSynced, groupTypeSystem),
+				ValidateFunc: validation.StringInSlice([]string{groupTypeManual, groupTypeSynced, groupTypeSystem}, false),
 			},
 			"groups": {
 				Type:        schema.TypeList,
@@ -61,6 +123,16 @@ func datasourceGroups() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The name of the Group",
+						},
+						"is_active": {
+							Type:        schema.TypeBool,
+							Computed:    true,
+							Description: "Indicates if the Group is active",
+						},
+						"type": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The type of the Group",
 						},
 					},
 				},
