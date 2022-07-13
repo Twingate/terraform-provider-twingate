@@ -38,23 +38,19 @@ func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
 	return false
 }
 
-func protocolsDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
-	//keys := []string{"protocols.0.tcp.0.policy", "protocols.0.udp.0.policy"}
-	//for _, key := range keys {
-	//	if strings.HasPrefix(k, key) {
-	//		oldPolicy, newPolicy := castToStrings(d.GetChange(key))
-	//		if oldPolicy == policyRestricted && newPolicy == policyDenyAll {
-	//			return true
-	//		}
-	//	}
-	//}
+func protocolsDiff(key, oldValue, newValue string, resourceData *schema.ResourceData) bool {
+	switch key {
+	case "protocols.#", "protocols.0.tcp.#", "protocols.0.udp.#":
+		return oldValue == "1" && newValue == "0"
 
-	fmt.Println(">>>>> oldValue:", oldValue)
-	fmt.Println(">>>>> newValue:", newValue)
-	fmt.Println(">>>>> k:", k)
-	fmt.Println(">>>>> ----------------------")
+	case "protocols.0.tcp.0.policy", "protocols.0.udp.0.policy":
+		oldPolicy, newPolicy := castToStrings(resourceData.GetChange(key))
 
-	return true
+		return oldPolicy == newPolicy
+
+	default:
+		return false
+	}
 }
 
 func equalPorts(a, b interface{}) bool {
@@ -339,8 +335,6 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 	client := meta.(*Client)
 	resourceID := resourceData.Id()
 
-	log.Println(">>>>>>>>> READ")
-
 	resource, err := client.readResource(ctx, resourceID)
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
@@ -351,6 +345,10 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 		}
 
 		return diag.FromErr(err)
+	}
+
+	if resource.Protocols == nil {
+		resource.Protocols = newEmptyProtocols()
 	}
 
 	if !resource.IsActive {
@@ -387,11 +385,9 @@ func resourceResourceReadDiagnostics(resourceData *schema.ResourceData, resource
 		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
 
-	if resource.Protocols != nil {
-		protocols := resource.Protocols.flattenProtocols()
-		if err := resourceData.Set("protocols", protocols); err != nil {
-			return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
-		}
+	protocols := resource.Protocols.flattenProtocols()
+	if err := resourceData.Set("protocols", protocols); err != nil {
+		return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
 	}
 
 	return diags

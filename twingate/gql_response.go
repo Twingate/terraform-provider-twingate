@@ -44,6 +44,10 @@ type ProtocolsInput struct {
 }
 
 func (pi *ProtocolsInput) flattenProtocols() []interface{} {
+	if pi == nil {
+		return nil
+	}
+
 	protocols := make(map[string]interface{})
 	protocols["allow_icmp"] = pi.AllowIcmp
 

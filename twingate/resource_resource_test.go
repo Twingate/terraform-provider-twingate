@@ -20,8 +20,6 @@ func TestAccTwingateResource_basic(t *testing.T) {
 	groupName2 := acctest.RandomWithPrefix(testPrefixName + "-group")
 	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
 
-	_, _ = groupName, groupName2
-
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -34,60 +32,59 @@ func TestAccTwingateResource_basic(t *testing.T) {
 					resource.TestCheckNoResourceAttr("twingate_resource.test", "group_ids.#"),
 				),
 			},
-			//{
-			//	Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, groupName, groupName2, resourceName),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		testAccCheckTwingateResourceExists("twingate_resource.test"),
-			//		resource.TestCheckResourceAttr("twingate_resource.test", "address", "updated-acc-test.com"),
-			//		resource.TestCheckResourceAttr("twingate_resource.test", "group_ids.#", "2"),
-			//		resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
-			//		resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
-			//	),
-			//},
-			//{
-			//	Config: testTwingateResource_fullFlowCreation(remoteNetworkName, groupName, resourceName),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		resource.TestCheckResourceAttr("twingate_remote_network.test", "name", remoteNetworkName),
-			//		resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
-			//		resource.TestMatchResourceAttr("twingate_connector_tokens.test_1", "access_token", regexp.MustCompile(".*")),
-			//	),
-			//},
-			//{
-			//	Config:      testTwingateResource_errorGroupId(remoteNetworkName, resourceName),
-			//	ExpectError: regexp.MustCompile("Error: failed to update resource with id"),
-			//},
-			//{
-			//	Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		testAccCheckTwingateResourceExists("twingate_resource.test"),
-			//		resource.TestCheckNoResourceAttr("twingate_resource.test", "group_ids.#"),
-			//		resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0"),
-			//	),
-			//},
-			//{
-			//	Config: testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		testAccCheckTwingateResourceExists("twingate_resource.test"),
-			//		resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
-			//	),
-			//},
-			//// expecting no changes - empty plan
-			//{
-			//	Config:   testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-			//	PlanOnly: true,
-			//},
-			//{
-			//	Config: testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		testAccCheckTwingateResourceExists("twingate_resource.test"),
-			//		resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", policyRestricted),
-			//	),
-			//},
-			//// expecting no changes - empty plan
-			//{
-			//	Config:   testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-			//	PlanOnly: true,
-			//},
+			{
+				Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, groupName, groupName2, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "address", "updated-acc-test.com"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "group_ids.#", "2"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
+				),
+			},
+			{
+				Config: testTwingateResource_fullFlowCreation(remoteNetworkName, groupName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("twingate_remote_network.test", "name", remoteNetworkName),
+					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
+					resource.TestMatchResourceAttr("twingate_connector_tokens.test_1", "access_token", regexp.MustCompile(".*")),
+				),
+			},
+			{
+				Config:      testTwingateResource_errorGroupId(remoteNetworkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: failed to update resource with id"),
+			},
+			{
+				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test", "group_ids.#"),
+				),
+			},
+			{
+				Config: testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
+				),
+			},
+			// expecting no changes - empty plan
+			{
+				Config:   testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				PlanOnly: true,
+			},
+			{
+				Config: testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test"),
+					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", policyRestricted),
+				),
+			},
+			// expecting no changes - empty plan
+			{
+				Config:   testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				PlanOnly: true,
+			},
 		},
 	})
 }
@@ -662,4 +659,57 @@ func deleteTwingateResource(resourceName, resourceType string) resource.TestChec
 
 		return nil
 	}
+}
+
+func TestAccTwingateResource_import(t *testing.T) {
+	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+	groupName := acctest.RandomWithPrefix(testPrefixName + "-group")
+	groupName2 := acctest.RandomWithPrefix(testPrefixName + "-group")
+	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+
+	const terraformResourceName = "twingate_resource.test"
+
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, groupName, groupName2, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists(terraformResourceName),
+				),
+			},
+			{
+				ImportState:  true,
+				ResourceName: terraformResourceName,
+				ImportStateCheck: func(data []*terraform.InstanceState) error {
+					if len(data) != 1 {
+						return fmt.Errorf("expected 1 resource, got %d", len(data))
+					}
+
+					attributes := []struct {
+						name     string
+						expected string
+					}{
+						{name: "address", expected: "updated-acc-test.com"},
+						{name: "protocols.0.tcp.0.policy", expected: policyRestricted},
+						{name: "protocols.0.tcp.0.ports.#", expected: "2"},
+						{name: "protocols.0.tcp.0.ports.0", expected: "80"},
+						{name: "protocols.0.udp.0.policy", expected: policyAllowAll},
+						{name: "protocols.0.udp.0.ports.#", expected: "0"},
+					}
+
+					res := data[0]
+					for _, attr := range attributes {
+						if res.Attributes[attr.name] != attr.expected {
+							return fmt.Errorf("attribute %s doesn't match, expected: %s, got: %s", attr.name, attr.expected, res.Attributes[attr.name])
+						}
+					}
+
+					return nil
+				},
+			},
+		},
+	})
 }
