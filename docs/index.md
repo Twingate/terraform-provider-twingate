@@ -13,7 +13,7 @@ The Twingate provider can be used with [Twingate](https://www.twingate.com) to m
 
 ## Twingate Setup
 
-To use Twingate's Terraform provider, you need an API key, which requires the Enterprise tier. See our [documentation](https://docs.twingate.com/docs/api-overview) for more details about creating an API key. You will also need your network ID, or the prefix of your Twingate URL that you use to sign into the Admin Console. For example, if your URL is `autoco.twingate.com` your network ID is `autoco`.
+You need an API key to use Twingate's Terraform provider. See our [documentation](https://docs.twingate.com/docs/api-overview) for more details about creating an API key. You will also need your network ID, or the prefix of your Twingate URL that you use to sign into the Admin Console. For example, if your URL is `autoco.twingate.com` your network ID is `autoco`.
 
 ## Guidance and documentation
 
