@@ -66,6 +66,7 @@ jobs:
           - '0.15.*'
           - '1.0.*'
           - '1.1.*'
+          - 'latest'
     steps:
 
     - name: Check out code into the Go module directory
