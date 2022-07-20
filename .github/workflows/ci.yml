@@ -6,6 +6,7 @@ on:
   pull_request:
     paths-ignore:
       - 'README.md'
+
   push:
     paths-ignore:
       - 'README.md'
@@ -121,5 +122,9 @@ jobs:
 
     - name: Acceptance tests
       timeout-minutes: 10
+      env:
+        TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+        TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+        TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
       run: |
         make testacc        
