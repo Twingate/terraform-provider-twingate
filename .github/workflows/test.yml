@@ -33,7 +33,7 @@ jobs:
 
     - name: Build
       run: |
-        go build -v .
+        make build
 
   generate:
     runs-on: ubuntu-latest
