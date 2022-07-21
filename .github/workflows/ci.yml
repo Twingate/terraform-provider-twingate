@@ -50,7 +50,8 @@ jobs:
           git diff --compact-summary --exit-code || \
             (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
 
-  test:
+
+  tests-unit:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -98,7 +99,7 @@ jobs:
         flag-name: tests
         parallel: true
 
-  acctest:
+  tests-acceptance:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
@@ -151,7 +152,7 @@ jobs:
 
   # notifies that all test jobs are finished.
   finish:
-    needs: [test, acctest]
+    needs: [tests-unit, tests-acceptance]
     runs-on: ubuntu-latest
     steps:
       - uses: shogo82148/actions-goveralls@v1
