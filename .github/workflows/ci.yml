@@ -50,9 +50,7 @@ jobs:
           git diff --compact-summary --exit-code || \
             (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
 
- 
   test:
-    name: Matrix Test
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -71,10 +69,19 @@ jobs:
       run: |
         go mod download
 
-    - name: Lint
+    - name: Check formatting
+      timeout-minutes: 10
+      run: |
+        make fmtcheck
+
+    - name: Run golangci-lint
       timeout-minutes: 10
       run: |
         make lint
+
+    - name: Run gosec
+      run: |
+        make sec
 
     - name: Tests
       timeout-minutes: 10
@@ -82,7 +89,7 @@ jobs:
         make test
 
   acctest:
-    name: Matrix Test
+    name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
