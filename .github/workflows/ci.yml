@@ -91,12 +91,12 @@ jobs:
     # - name: Publish coverage report
     #   run: |
     #     ./scripts/coveralls.sh
-
     - name: Send coverage
       uses: shogo82148/actions-goveralls@v1
       with:
         path-to-profile: "./test/out/coverage.out"
-
+        flag-name: tests
+        parallel: true
 
   acctest:
     name: Matrix Acceptance Tests
@@ -140,4 +140,20 @@ jobs:
         TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
         TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
       run: |
-        make testacc        
+        make testacc
+
+    - name: Send coverage
+      uses: shogo82148/actions-goveralls@v1
+      with:
+        path-to-profile: "./test/out/coverage.out"
+        flag-name: tests-acc-${{ matrix.terraform }}
+        parallel: true
+
+  # notifies that all test jobs are finished.
+  finish:
+    needs: [test, acctest]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shogo82148/actions-goveralls@v1
+        with:
+          parallel-finished: true
