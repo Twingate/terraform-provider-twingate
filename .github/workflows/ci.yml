@@ -88,6 +88,17 @@ jobs:
       run: |
         make test
 
+    # - name: Publish coverage report
+    #   run: |
+    #     ./scripts/coveralls.sh
+
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: "./test/out/coverage.out"        
+
+
   acctest:
     name: Matrix Acceptance Tests
     needs: build
