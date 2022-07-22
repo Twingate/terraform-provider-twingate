@@ -89,9 +89,6 @@ jobs:
       run: |
         make test
 
-    # - name: Publish coverage report
-    #   run: |
-    #     ./scripts/coveralls.sh
     - name: Send coverage
       uses: shogo82148/actions-goveralls@v1
       with:
@@ -106,9 +103,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-#      max-parallel: 1
       matrix:
-        # list whatever Terraform versions here you would like to support
         terraform:
           - '1.0.*'
           - '1.1.*'
