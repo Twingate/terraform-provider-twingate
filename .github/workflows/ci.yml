@@ -44,7 +44,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
-      - run: go generate ./...
+      - run: make docs
       - name: git diff
         run: |
           git diff --compact-summary --exit-code || \
