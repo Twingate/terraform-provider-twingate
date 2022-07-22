@@ -27,3 +27,4 @@ resource "twingate_resource" "resource" {
     }
   }
 }
+
