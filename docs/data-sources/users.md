@@ -22,18 +22,18 @@ data "twingate_users" "all" {}
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `users` (List of Object) (see [below for nested schema](#nestedatt--users))
+- `users` (Block List) (see [below for nested schema](#nestedblock--users))
 
-<a id="nestedatt--users"></a>
+<a id="nestedblock--users"></a>
 ### Nested Schema for `users`
 
 Read-Only:
 
-- `email` (String)
-- `first_name` (String)
-- `id` (String)
-- `is_admin` (Boolean)
-- `last_name` (String)
-- `role` (String)
+- `email` (String) The email of the User
+- `first_name` (String) The first name of the User
+- `id` (String) The ID of the User
+- `is_admin` (Boolean) Indicates if the User admin or not
+- `last_name` (String) The last name of the User
+- `role` (String) The role of the User
 
 

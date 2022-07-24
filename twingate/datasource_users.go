@@ -52,7 +52,7 @@ func datasourceUsers() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"users": {
 				Type:     schema.TypeList,
-				Computed: true,
+				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {

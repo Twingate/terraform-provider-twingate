@@ -1,7 +1,6 @@
 package twingate
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -18,7 +17,7 @@ func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateUsers(),
 					Check: resource.ComposeTestCheckFunc(
-						testCheckOutputNonEmptyArray("all_users"),
+						testCheckResourceAttrNotEqual("data.twingate_users.all", "users.#", "0"),
 					),
 				},
 			},
@@ -27,30 +26,27 @@ func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
 }
 
 func testDatasourceTwingateUsers() string {
-	return fmt.Sprintf(`
+	return `
 	data "twingate_users" "all" {}
-
-	output "all_users" {
-	  value = data.twingate_users.all.users
-	}
-	`)
+	`
 }
 
-func testCheckOutputNonEmptyArray(name string) resource.TestCheckFunc {
+func testCheckResourceAttrNotEqual(name, key, value string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ms := s.RootModule()
-		rs, ok := ms.Outputs[name]
-		if !ok {
-			return fmt.Errorf("not found: %s", name)
+
+		res, ok := ms.Resources[name]
+		if !ok || res == nil || res.Primary == nil {
+			return fmt.Errorf("resource '%s' not found", name)
 		}
 
-		values, ok := rs.Value.([]interface{})
+		actual, ok := res.Primary.Attributes[key]
 		if !ok {
-			return fmt.Errorf("expected array, got %T", rs.Value)
+			return fmt.Errorf("attribute '%s' not found", key)
 		}
 
-		if len(values) == 0 {
-			return errors.New("got empty array")
+		if actual == value {
+			return fmt.Errorf("expected not equal value '%s', but got equal", value)
 		}
 
 		return nil
