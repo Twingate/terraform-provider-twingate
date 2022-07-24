@@ -31,43 +31,43 @@ data "twingate_resources" "foo" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `resources` (List of Object) List of Resources (see [below for nested schema](#nestedatt--resources))
+- `resources` (Block List) List of Resources (see [below for nested schema](#nestedblock--resources))
 
-<a id="nestedatt--resources"></a>
+<a id="nestedblock--resources"></a>
 ### Nested Schema for `resources`
 
 Read-Only:
 
-- `address` (String)
-- `id` (String)
-- `name` (String)
-- `protocols` (List of Object) (see [below for nested schema](#nestedobjatt--resources--protocols))
-- `remote_network_id` (String)
+- `address` (String) The Resource's IP/CIDR or FQDN/DNS zone
+- `id` (String) The id of the Resource
+- `name` (String) The name of the Resource
+- `protocols` (Block List) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedblock--resources--protocols))
+- `remote_network_id` (String) Remote Network ID where the Resource lives
 
-<a id="nestedobjatt--resources--protocols"></a>
+<a id="nestedblock--resources--protocols"></a>
 ### Nested Schema for `resources.protocols`
 
 Read-Only:
 
-- `allow_icmp` (Boolean)
-- `tcp` (List of Object) (see [below for nested schema](#nestedobjatt--resources--protocols--tcp))
-- `udp` (List of Object) (see [below for nested schema](#nestedobjatt--resources--protocols--udp))
+- `allow_icmp` (Boolean) Whether to allow ICMP (ping) traffic
+- `tcp` (Block List) (see [below for nested schema](#nestedblock--resources--protocols--tcp))
+- `udp` (Block List) (see [below for nested schema](#nestedblock--resources--protocols--udp))
 
-<a id="nestedobjatt--resources--protocols--tcp"></a>
+<a id="nestedblock--resources--protocols--tcp"></a>
 ### Nested Schema for `resources.protocols.tcp`
 
 Read-Only:
 
-- `policy` (String)
-- `ports` (List of String)
+- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, or `DENY_ALL`
+- `ports` (List of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
 
 
-<a id="nestedobjatt--resources--protocols--udp"></a>
+<a id="nestedblock--resources--protocols--udp"></a>
 ### Nested Schema for `resources.protocols.udp`
 
 Read-Only:
 
-- `policy` (String)
-- `ports` (List of String)
+- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, or `DENY_ALL`
+- `ports` (List of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
 
 

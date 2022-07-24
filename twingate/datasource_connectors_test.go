@@ -1,13 +1,16 @@
 package twingate
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+)
+
+const (
+	connectorsDatasource = "data.twingate_connectors.all"
+	connectorsNumber     = "connectors.#"
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
@@ -25,77 +28,13 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName),
 					Check: resource.ComposeTestCheckFunc(
-						testOutputLength("my_connectors", 2),
-						testOutputItemField("my_connectors", 0, "name", connectorName),
+						resource.TestCheckResourceAttr(connectorsDatasource, connectorsNumber, "2"),
+						resource.TestCheckResourceAttr(connectorsDatasource, "connectors.0.name", connectorName),
 					),
 				},
 			},
 		})
 	})
-}
-
-func testOutputLength(name string, expectedLength int) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		ms := s.RootModule()
-		rs, ok := ms.Outputs[name]
-		if !ok {
-			return fmt.Errorf("not found: %s", name)
-		}
-
-		values, ok := rs.Value.([]interface{})
-		if !ok {
-			return errors.New("output not a list")
-		}
-
-		if len(values) != expectedLength {
-			return fmt.Errorf(
-				"output length '%d', didn't match %d",
-				len(values),
-				expectedLength)
-		}
-
-		return nil
-	}
-}
-
-func testOutputItemField(name string, itemPosition int, filedName, value string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		ms := s.RootModule()
-		rs, ok := ms.Outputs[name]
-		if !ok {
-			return fmt.Errorf("not found: %s", name)
-		}
-
-		values, ok := rs.Value.([]interface{})
-		if !ok {
-			return errors.New("output not a list")
-		}
-
-		if len(values) <= itemPosition {
-			return errors.New("item position out of the list")
-		}
-
-		item := values[itemPosition]
-
-		obj, ok := item.(map[string]interface{})
-		if !ok {
-			return errors.New("item not an object")
-		}
-
-		val, ok := obj[filedName]
-		if !ok {
-			return errors.New("field not found in the object")
-		}
-
-		if val.(string) != value {
-			return fmt.Errorf(
-				"expected %s, got %s",
-				value,
-				val.(string))
-		}
-
-		return nil
-	}
 }
 
 func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2, connectorName2 string) string {
@@ -119,25 +58,19 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 	data "twingate_connectors" "all" {
 	  depends_on = [twingate_connector.test1, twingate_connector.test2]
 	}
-
-	output "my_connectors" {
-	  value = [for conn in data.twingate_connectors.all.connectors: conn if can(regex("^tf-acc-conn", conn.name))] 
-	}
 	`, networkName1, connectorName1, networkName2, connectorName2)
 }
 
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
-		connectorName := testPrefixName + "-conn-" + acctest.RandString(acctest.RandIntRange(5, 15))
-
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck:          func() { testAccPreCheck(t) },
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnectorsDoesNotExists(connectorName),
+					Config: testTwingateConnectorsDoesNotExists(),
 					Check: resource.ComposeTestCheckFunc(
-						testOutputLength("my_connectors", 0),
+						resource.TestCheckResourceAttr(connectorsDatasource, connectorsNumber, "0"),
 					),
 				},
 			},
@@ -145,12 +78,8 @@ func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 	})
 }
 
-func testTwingateConnectorsDoesNotExists(connectorName string) string {
-	return fmt.Sprintf(`
+func testTwingateConnectorsDoesNotExists() string {
+	return `
 	data "twingate_connectors" "all" {}
-
-	output "my_connectors" {
-	  value = [for conn in data.twingate_connectors.all.connectors: conn if can(regex("^%s", conn.name))] 
-	}
-	`, connectorName)
+	`
 }

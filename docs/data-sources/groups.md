@@ -32,17 +32,17 @@ data "twingate_groups" "foo" {
 
 ### Read-Only
 
-- `groups` (List of Object) List of Groups (see [below for nested schema](#nestedatt--groups))
+- `groups` (Block List) List of Groups (see [below for nested schema](#nestedblock--groups))
 - `id` (String) The ID of this resource.
 
-<a id="nestedatt--groups"></a>
+<a id="nestedblock--groups"></a>
 ### Nested Schema for `groups`
 
 Read-Only:
 
-- `id` (String)
-- `is_active` (Boolean)
-- `name` (String)
-- `type` (String)
+- `id` (String) The ID of the Group
+- `is_active` (Boolean) Indicates if the Group is active
+- `name` (String) The name of the Group
+- `type` (String) The type of the Group
 
 

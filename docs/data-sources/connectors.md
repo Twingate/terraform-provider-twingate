@@ -21,16 +21,16 @@ data "twingate_connectors" "all" {}
 
 ### Read-Only
 
-- `connectors` (List of Object) List of Connectors (see [below for nested schema](#nestedatt--connectors))
+- `connectors` (Block List) List of Connectors (see [below for nested schema](#nestedblock--connectors))
 - `id` (String) The ID of this resource.
 
-<a id="nestedatt--connectors"></a>
+<a id="nestedblock--connectors"></a>
 ### Nested Schema for `connectors`
 
 Read-Only:
 
-- `id` (String)
-- `name` (String)
-- `remote_network_id` (String)
+- `id` (String) The ID of the Connector
+- `name` (String) The Name of the Connector
+- `remote_network_id` (String) The ID of the Remote Network attached to the Connector
 
 

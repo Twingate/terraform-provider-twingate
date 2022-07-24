@@ -29,33 +29,33 @@ data "twingate_resource" "foo" {
 
 - `address` (String) The Resource's address, which may be an IP address, CIDR range, or DNS address
 - `name` (String) The name of the Resource
-- `protocols` (List of Object) By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
+- `protocols` (Block List) By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. (see [below for nested schema](#nestedblock--protocols))
 - `remote_network_id` (String) The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
 
-<a id="nestedatt--protocols"></a>
+<a id="nestedblock--protocols"></a>
 ### Nested Schema for `protocols`
 
 Read-Only:
 
-- `allow_icmp` (Boolean)
-- `tcp` (List of Object) (see [below for nested schema](#nestedobjatt--protocols--tcp))
-- `udp` (List of Object) (see [below for nested schema](#nestedobjatt--protocols--udp))
+- `allow_icmp` (Boolean) Whether to allow ICMP (ping) traffic
+- `tcp` (Block List) (see [below for nested schema](#nestedblock--protocols--tcp))
+- `udp` (Block List) (see [below for nested schema](#nestedblock--protocols--udp))
 
-<a id="nestedobjatt--protocols--tcp"></a>
+<a id="nestedblock--protocols--tcp"></a>
 ### Nested Schema for `protocols.tcp`
 
 Read-Only:
 
-- `policy` (String)
-- `ports` (List of String)
+- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, or `DENY_ALL`
+- `ports` (List of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
 
 
-<a id="nestedobjatt--protocols--udp"></a>
+<a id="nestedblock--protocols--udp"></a>
 ### Nested Schema for `protocols.udp`
 
 Read-Only:
 
-- `policy` (String)
-- `ports` (List of String)
+- `policy` (String) Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `RESTRICTED` (only listed ports are allowed), `ALLOW_ALL`, or `DENY_ALL`
+- `ports` (List of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
 
 

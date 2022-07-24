@@ -53,7 +53,7 @@ func datasourceConnectors() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"connectors": {
 				Type:        schema.TypeList,
-				Computed:    true,
+				Optional:    true,
 				Description: "List of Connectors",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{

@@ -90,7 +90,7 @@ func datasourceResources() *schema.Resource { //nolint:funlen
 			// computed
 			"resources": {
 				Type:        schema.TypeList,
-				Computed:    true,
+				Optional:    true,
 				Description: "List of Resources",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -116,7 +116,7 @@ func datasourceResources() *schema.Resource { //nolint:funlen
 						},
 						"protocols": {
 							Type:        schema.TypeList,
-							Computed:    true,
+							Optional:    true,
 							Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -127,12 +127,12 @@ func datasourceResources() *schema.Resource { //nolint:funlen
 									},
 									"tcp": {
 										Type:     schema.TypeList,
-										Computed: true,
+										Optional: true,
 										Elem:     &portsResource,
 									},
 									"udp": {
 										Type:     schema.TypeList,
-										Computed: true,
+										Optional: true,
 										Elem:     &portsResource,
 									},
 								},

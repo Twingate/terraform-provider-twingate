@@ -110,7 +110,7 @@ func datasourceGroups() *schema.Resource {
 			},
 			"groups": {
 				Type:        schema.TypeList,
-				Computed:    true,
+				Optional:    true,
 				Description: "List of Groups",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
