@@ -149,6 +149,7 @@ jobs:
 
   # notifies that all test jobs are finished.
   finish:
+    name: "CI Finished"
     needs: [tests-unit, tests-acceptance]
     runs-on: ubuntu-latest
     steps:
