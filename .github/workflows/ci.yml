@@ -3,9 +3,9 @@
 #
 name: CI
 on:
-  # pull_request:
-  #   paths-ignore:
-  #     - 'README.md'
+  pull_request:
+     paths-ignore:
+       - 'README.md'
 
   push:
     paths-ignore:
