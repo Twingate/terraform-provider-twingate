@@ -73,6 +73,15 @@ jobs:
       run: |
         make testacc
 
+    - name: Cleanup
+      timeout-minutes: 10
+      env:
+        TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+        TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+        TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+      run: |
+        make sweep
+
     - name: Report Status
       if: always()
       uses: ravsamhq/notify-slack-action@v1
