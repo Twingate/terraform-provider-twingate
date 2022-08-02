@@ -1,159 +1,159 @@
-# This GitHub action runs your tests for each commit push and/or PR. Optionally
-# you can turn it on using a cron schedule for regular testing.
+## This GitHub action runs your tests for each commit push and/or PR. Optionally
+## you can turn it on using a cron schedule for regular testing.
+##
+#name: CI
+#permissions: read-all
+#on:
+#  pull_request:
+#     paths-ignore:
+#       - 'README.md'
 #
-name: CI
-permissions: read-all
-on:
-  pull_request:
-     paths-ignore:
-       - 'README.md'
-
-  push:
-    paths-ignore:
-      - 'README.md'
-
-jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version-file: 'go.mod'
-        cache: true
-      id: go
-
-    - name: Get dependencies
-      run: |
-        go mod download
-
-    - name: Build
-      run: |
-        make build
-
-  generate:
-    name: Test docs up-to-date
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-      - run: make docs
-      - name: git diff
-        run: |
-          git diff --compact-summary --exit-code || \
-            (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
-
-
-  tests-unit:
-    name: Unit Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version-file: 'go.mod'
-        cache: true
-      id: go
-
-    - name: Get dependencies
-      run: |
-        go mod download
-
-    - name: Check formatting
-      timeout-minutes: 10
-      run: |
-        make fmtcheck
-
-    - name: Run golangci-lint
-      timeout-minutes: 10
-      run: |
-        make lint
-
-    - name: Run gosec
-      run: |
-        make sec
-
-    - name: Tests
-      timeout-minutes: 10
-      run: |
-        make test
-
-    - name: Send coverage
-      uses: shogo82148/actions-goveralls@v1
-      with:
-        path-to-profile: "./test/out/coverage.out"
-        flag-name: tests
-        parallel: true
-
-  tests-acceptance:
-    name: Matrix Acceptance Tests
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform:
-          - '1.0.*'
-          - '1.1.*'
-          - 'latest'
-    steps:
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version-file: 'go.mod'
-        cache: true
-      id: go
-
-    - uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ matrix.terraform }}
-        terraform_wrapper: false
-
-    - name: Get dependencies
-      run: |
-        go mod download
-
-    - name: Acceptance tests
-      timeout-minutes: 10
-      env:
-        TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
-        TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
-        TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
-      run: |
-        make testacc
-
-    - name: Send coverage
-      uses: shogo82148/actions-goveralls@v1
-      with:
-        path-to-profile: "./test/out/coverage.out"
-        flag-name: tests-acc-${{ matrix.terraform }}
-        parallel: true
-
-  # notifies that all test jobs are finished.
-  finish:
-    name: "CI Finished"
-    needs: [tests-unit, tests-acceptance]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: shogo82148/actions-goveralls@v1
-        with:
-          parallel-finished: true
+#  push:
+#    paths-ignore:
+#      - 'README.md'
+#
+#jobs:
+#  build:
+#    name: Build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 5
+#    steps:
+#
+#    - name: Check out code into the Go module directory
+#      uses: actions/checkout@v3
+#
+#    - name: Set up Go
+#      uses: actions/setup-go@v3
+#      with:
+#        go-version-file: 'go.mod'
+#        cache: true
+#      id: go
+#
+#    - name: Get dependencies
+#      run: |
+#        go mod download
+#
+#    - name: Build
+#      run: |
+#        make build
+#
+#  generate:
+#    name: Test docs up-to-date
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-go@v3
+#        with:
+#          go-version-file: 'go.mod'
+#          cache: true
+#      - run: make docs
+#      - name: git diff
+#        run: |
+#          git diff --compact-summary --exit-code || \
+#            (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
+#
+#
+#  tests-unit:
+#    name: Unit Tests
+#    needs: build
+#    runs-on: ubuntu-latest
+#    steps:
+#
+#    - name: Check out code into the Go module directory
+#      uses: actions/checkout@v3
+#
+#    - name: Set up Go
+#      uses: actions/setup-go@v3
+#      with:
+#        go-version-file: 'go.mod'
+#        cache: true
+#      id: go
+#
+#    - name: Get dependencies
+#      run: |
+#        go mod download
+#
+#    - name: Check formatting
+#      timeout-minutes: 10
+#      run: |
+#        make fmtcheck
+#
+#    - name: Run golangci-lint
+#      timeout-minutes: 10
+#      run: |
+#        make lint
+#
+#    - name: Run gosec
+#      run: |
+#        make sec
+#
+#    - name: Tests
+#      timeout-minutes: 10
+#      run: |
+#        make test
+#
+#    - name: Send coverage
+#      uses: shogo82148/actions-goveralls@v1
+#      with:
+#        path-to-profile: "./test/out/coverage.out"
+#        flag-name: tests
+#        parallel: true
+#
+#  tests-acceptance:
+#    name: Matrix Acceptance Tests
+#    needs: build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 15
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        terraform:
+#          - '1.0.*'
+#          - '1.1.*'
+#          - 'latest'
+#    steps:
+#
+#    - name: Check out code into the Go module directory
+#      uses: actions/checkout@v3
+#
+#    - name: Set up Go
+#      uses: actions/setup-go@v3
+#      with:
+#        go-version-file: 'go.mod'
+#        cache: true
+#      id: go
+#
+#    - uses: hashicorp/setup-terraform@v2
+#      with:
+#        terraform_version: ${{ matrix.terraform }}
+#        terraform_wrapper: false
+#
+#    - name: Get dependencies
+#      run: |
+#        go mod download
+#
+#    - name: Acceptance tests
+#      timeout-minutes: 10
+#      env:
+#        TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+#        TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+#        TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+#      run: |
+#        make testacc
+#
+#    - name: Send coverage
+#      uses: shogo82148/actions-goveralls@v1
+#      with:
+#        path-to-profile: "./test/out/coverage.out"
+#        flag-name: tests-acc-${{ matrix.terraform }}
+#        parallel: true
+#
+#  # notifies that all test jobs are finished.
+#  finish:
+#    name: "CI Finished"
+#    needs: [tests-unit, tests-acceptance]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: shogo82148/actions-goveralls@v1
+#        with:
+#          parallel-finished: true
