@@ -124,8 +124,6 @@ func testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResourc
 	return func(s *terraform.State) error {
 		connector, ok := s.RootModule().Resources[connectorResource]
 
-		return fmt.Errorf("Blah"
-
 		if !ok {
 			return fmt.Errorf("Not found: %s ", connectorResource)
 		}
