@@ -1,0 +1,116 @@
+# This GitHub action runs your tests for each commit push and/or PR. Optionally
+# you can turn it on using a cron schedule for regular testing.
+#
+name: Smoke Tests
+permissions: read-all
+on:
+  schedule:
+    - cron: "20 * * * *"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+      id: go
+
+    - name: Get dependencies
+      run: |
+        go mod download
+
+    - name: Build
+      run: |
+        make build
+
+  tests-acceptance:
+    name: Matrix Acceptance Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform:
+          - '1.0.*'
+          - '1.1.*'
+          - 'latest'
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+      id: go
+
+    - uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ matrix.terraform }}
+        terraform_wrapper: false
+
+    - name: Get dependencies
+      run: |
+        go mod download
+
+    - name: Acceptance tests
+      timeout-minutes: 10
+      env:
+        TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+        TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+        TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+      run: |
+        make testacc
+
+    - name: Report Status
+      if: always()
+      uses: ravsamhq/notify-slack-action@v1
+      with:
+        status: ${{ job.status }}
+        notification_title: "Terraform Provider {workflow} has {status_message}"
+        message_format: "{emoji} *{workflow} (<{run_url}|{job}-${{ join(matrix.*, ' - ') }}>)* {status_message} in <{repo_url}|{repo}>"
+        footer: "Linked Repo <{repo_url}|{repo}>"
+        notify_when: 'failure'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_OPS_WEBHOOK }}
+
+  cleanup:
+    name: Cleanup
+    if: always()
+    needs: tests-acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+        id: go
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: Run sweepers
+        timeout-minutes: 10
+        env:
+          TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+          TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+          TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+        run: |
+          make sweep
