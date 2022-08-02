@@ -91,16 +91,16 @@ type readConnectorsQuery struct { //nolint
 }
 
 func (client *Client) readConnectors(ctx context.Context) (map[int]*Connectors, error) { //nolint
-	response1 := readConnectorsQuery{}
+	response11 := readConnectorsQuery{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response1, nil)
+	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response11, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
 	var connectors = make(map[int]*Connectors)
 
-	for i, elem := range response1.Connectors.Edges {
+	for i, elem := range response11.Connectors.Edges {
 		c := &Connectors{ID: elem.Node.StringID(), Name: elem.Node.StringName()}
 		connectors[i] = c
 	}
