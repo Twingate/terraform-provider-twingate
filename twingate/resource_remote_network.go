@@ -2,11 +2,11 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/twingate/go-graphql-client"
 )
 
 func resourceRemoteNetwork() *schema.Resource {
@@ -41,7 +41,7 @@ func resourceRemoteNetworkCreate(ctx context.Context, resourceData *schema.Resou
 	var diags diag.Diagnostics
 
 	remoteNetworkName := resourceData.Get("name").(string)
-	remoteNetwork, err := client.createRemoteNetwork(ctx, graphql.String(remoteNetworkName))
+	remoteNetwork, err := client.createRemoteNetwork(ctx, remoteNetworkName)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -63,7 +63,7 @@ func resourceRemoteNetworkUpdate(ctx context.Context, resourceData *schema.Resou
 		remoteNetworkID := resourceData.Id()
 		log.Printf("[INFO] Updating remote network id %s", remoteNetworkID)
 
-		if err := client.updateRemoteNetwork(ctx, graphql.ID(remoteNetworkID), graphql.String(remoteNetworkName)); err != nil {
+		if err := client.updateRemoteNetwork(ctx, remoteNetworkID, remoteNetworkName); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -83,7 +83,7 @@ func resourceRemoteNetworkDelete(ctx context.Context, resourceData *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Deleted remote network id %s", resourceData.Id())
+	log.Printf("[INFO] Deleted remote network id %s", remoteNetworkID)
 
 	return diags
 }
@@ -95,11 +95,18 @@ func resourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resourc
 
 	remoteNetworkID := resourceData.Id()
 
-	log.Printf("[INFO] Reading remote network id %s", resourceData.Id())
+	log.Printf("[INFO] Reading remote network id %s", remoteNetworkID)
 
 	remoteNetwork, err := client.readRemoteNetwork(ctx, remoteNetworkID)
 
 	if err != nil {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+			// clear state
+			resourceData.SetId("")
+
+			return nil
+		}
+
 		return diag.FromErr(err)
 	}
 

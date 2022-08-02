@@ -2,11 +2,11 @@ package twingate
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/twingate/go-graphql-client"
 )
 
 func init() {
@@ -38,11 +38,11 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 		return nil
 	}
 
-	var testNetworks = make([]graphql.ID, 0)
+	var testNetworks = make([]string, 0)
 
 	for _, elem := range networkMap {
-		if strings.HasPrefix(string(elem.Name), "tf-acc") {
-			testNetworks = append(testNetworks, elem.ID)
+		if strings.HasPrefix(string(elem.Name), testPrefixName) {
+			testNetworks = append(testNetworks, fmt.Sprintf("%v", elem.ID))
 		}
 	}
 
@@ -54,12 +54,13 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 	for _, i := range testNetworks {
 		if i == "" {
 			log.Printf("[INFO][SWEEPER_LOG] %s: %s name was empty value", resourceName, i)
-			return nil
+			continue
 		}
+
 		err = client.deleteRemoteNetwork(ctx, i)
 		if err != nil {
 			log.Printf("[INFO][SWEEPER_LOG] %s cannot be deleted, error: %s", i, err)
-			return nil
+			continue
 		}
 	}
 

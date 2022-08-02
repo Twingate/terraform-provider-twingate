@@ -7,11 +7,15 @@ resource "twingate_remote_network" "aws_network" {
   name = "aws_remote_network"
 }
 
+resource "twingate_group" "aws" {
+  name = "aws_group"
+}
+
 resource "twingate_resource" "resource" {
   name = "network"
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
-  group_ids = ["group1"]
+  group_ids = [twingate_group.aws.id]
   protocols {
     allow_icmp = true
     tcp  {
@@ -23,3 +27,4 @@ resource "twingate_resource" "resource" {
     }
   }
 }
+

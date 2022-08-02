@@ -34,13 +34,13 @@ type updateConnectorQuery struct {
 	} `graphql:"connectorUpdate(id: $connectorId, name: $connectorName )"`
 }
 
-func (client *Client) createConnector(ctx context.Context, remoteNetworkID graphql.ID) (*Connector, error) {
-	if remoteNetworkID.(string) == "" {
+func (client *Client) createConnector(ctx context.Context, remoteNetworkID string) (*Connector, error) {
+	if remoteNetworkID == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "create", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"remoteNetworkId": remoteNetworkID,
+		"remoteNetworkId": graphql.ID(remoteNetworkID),
 	}
 	response := createConnectorQuery{}
 
@@ -61,14 +61,14 @@ func (client *Client) createConnector(ctx context.Context, remoteNetworkID graph
 	return &connector, nil
 }
 
-func (client *Client) updateConnector(ctx context.Context, connectorID graphql.ID, connectorName graphql.String) error {
-	if connectorID.(string) == "" {
+func (client *Client) updateConnector(ctx context.Context, connectorID string, connectorName string) error {
+	if connectorID == "" {
 		return NewAPIError(ErrGraphqlConnectorIDIsEmpty, "update", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"connectorId":   connectorID,
-		"connectorName": connectorName,
+		"connectorId":   graphql.ID(connectorID),
+		"connectorName": graphql.String(connectorName),
 	}
 	response := updateConnectorQuery{}
 
@@ -108,6 +108,52 @@ func (client *Client) readConnectors(ctx context.Context) (map[int]*Connectors, 
 	return connectors, nil
 }
 
+type readConnectorsWithRemoteNetworkQuery struct {
+	Connectors struct {
+		Edges []*struct {
+			Node struct {
+				IDName
+				RemoteNetwork struct {
+					ID graphql.ID
+				}
+			}
+		}
+	}
+}
+
+func (client *Client) readConnectorsWithRemoteNetwork(ctx context.Context) ([]*Connector, error) {
+	response := readConnectorsWithRemoteNetworkQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, nil)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
+	}
+
+	if response.Connectors.Edges == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
+	}
+
+	connectors := make([]*Connector, 0, len(response.Connectors.Edges))
+
+	for _, elem := range response.Connectors.Edges {
+		if elem == nil {
+			continue
+		}
+
+		conn := elem.Node
+
+		connectors = append(connectors, &Connector{
+			ID:   conn.ID,
+			Name: conn.Name,
+			RemoteNetwork: &remoteNetwork{
+				ID: conn.RemoteNetwork.ID,
+			},
+		})
+	}
+
+	return connectors, nil
+}
+
 type readConnectorQuery struct {
 	Connector *struct {
 		IDName
@@ -115,13 +161,13 @@ type readConnectorQuery struct {
 	} `graphql:"connector(id: $id)"`
 }
 
-func (client *Client) readConnector(ctx context.Context, connectorID graphql.ID) (*Connector, error) {
-	if connectorID.(string) == "" {
+func (client *Client) readConnector(ctx context.Context, connectorID string) (*Connector, error) {
+	if connectorID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"id": connectorID,
+		"id": graphql.ID(connectorID),
 	}
 
 	response := readConnectorQuery{}
@@ -132,7 +178,7 @@ func (client *Client) readConnector(ctx context.Context, connectorID graphql.ID)
 	}
 
 	if response.Connector == nil {
-		return nil, NewAPIErrorWithID(nil, "read", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, connectorID)
 	}
 
 	connectorRemoteNetwork := &remoteNetwork{
@@ -153,13 +199,13 @@ type deleteConnectorQuery struct {
 	ConnectorDelete *OkError `graphql:"connectorDelete(id: $id)" json:"connectorDelete"`
 }
 
-func (client *Client) deleteConnector(ctx context.Context, connectorID graphql.ID) error {
-	if connectorID.(string) == "" {
+func (client *Client) deleteConnector(ctx context.Context, connectorID string) error {
+	if connectorID == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"id": connectorID,
+		"id": graphql.ID(connectorID),
 	}
 
 	response := deleteConnectorQuery{}

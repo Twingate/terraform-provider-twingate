@@ -2,7 +2,6 @@ package twingate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,44 +11,6 @@ import (
 
 const readResourceQueryGroupsSize = 50
 
-var (
-	ErrTooManyGroupsError        = errors.New("provider does not support more than 50 groups per resource")
-	ErrGraphqlIDIsEmpty          = errors.New("id is empty")
-	ErrGraphqlConnectorIDIsEmpty = errors.New("network id is empty")
-	ErrGraphqlNetworkIDIsEmpty   = errors.New("network id is empty")
-	ErrGraphqlNetworkNameIsEmpty = errors.New("network name is empty")
-)
-
-type PortNotInRangeError struct {
-	Port int64
-}
-
-func NewPortNotInRangeError(port int64) *PortNotInRangeError {
-	return &PortNotInRangeError{
-		Port: port,
-	}
-}
-
-func (e *PortNotInRangeError) Error() string {
-	return fmt.Sprintf("port %d not in the range of 0-65535", e.Port)
-}
-
-type PortRangeNotRisingSequenceError struct {
-	Start int64
-	End   int64
-}
-
-func NewPortRangeNotRisingSequenceError(start int64, end int64) *PortRangeNotRisingSequenceError {
-	return &PortRangeNotRisingSequenceError{
-		Start: start,
-		End:   end,
-	}
-}
-
-func (e *PortRangeNotRisingSequenceError) Error() string {
-	return fmt.Sprintf("ports %d, %d needs to be in a rising sequence", e.Start, e.End)
-}
-
 type Resource struct {
 	ID              graphql.ID
 	RemoteNetworkID graphql.ID
@@ -57,6 +18,7 @@ type Resource struct {
 	Name            graphql.String
 	GroupsIds       []*graphql.ID
 	Protocols       *ProtocolsInput
+	IsActive        graphql.Boolean
 }
 
 func (r *Resource) stringGroups() []string {
@@ -123,6 +85,12 @@ func convertPortsToSlice(a []interface{}) []string {
 	var res = make([]string, 0)
 
 	for _, elem := range a {
+		if elem == nil {
+			res = append(res, "")
+
+			continue
+		}
+
 		res = append(res, elem.(string))
 	}
 
@@ -138,16 +106,16 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 			start, err := validatePort(split[0])
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			end, err := validatePort(split[1])
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			if end < start {
-				return converted, NewPortRangeNotRisingSequenceError(int64(start), int64(end))
+				return converted, ErrInvalidPortRange(elem, NewPortRangeNotRisingSequenceError(int64(start), int64(end)))
 			}
 
 			c := &PortRangeInput{
@@ -159,7 +127,7 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 		} else {
 			port, err := validatePort(elem)
 			if err != nil {
-				return converted, err
+				return converted, ErrInvalidPortRange(elem, err)
 			}
 
 			portRange := &PortRangeInput{
@@ -169,10 +137,6 @@ func convertPorts(ports []string) ([]*PortRangeInput, error) {
 
 			converted = append(converted, portRange)
 		}
-	}
-
-	if len(converted) > 0 {
-		return converted, nil
 	}
 
 	return converted, nil
@@ -229,17 +193,18 @@ type readResourceQuery struct {
 			Edges []*Edges
 		} `graphql:"groups(first: $first)"`
 		Protocols *ProtocolsInput
+		IsActive  graphql.Boolean
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResource(ctx context.Context, resourceID graphql.ID) (*Resource, error) {
-	if resourceID.(string) == "" {
+func (client *Client) readResource(ctx context.Context, resourceID string) (*Resource, error) {
+	if resourceID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
 
 	response := readResourceQuery{}
 	variables := map[string]interface{}{
-		"id":    resourceID,
+		"id":    graphql.ID(resourceID),
 		"first": graphql.Int(readResourceQueryGroupsSize),
 	}
 
@@ -249,7 +214,7 @@ func (client *Client) readResource(ctx context.Context, resourceID graphql.ID) (
 	}
 
 	if response.Resource == nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
 	var groups = make([]*graphql.ID, 0)
@@ -269,6 +234,7 @@ func (client *Client) readResource(ctx context.Context, resourceID graphql.ID) (
 		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
 		GroupsIds:       groups,
 		Protocols:       response.Resource.Protocols,
+		IsActive:        response.Resource.IsActive,
 	}
 
 	return resource, nil
@@ -325,15 +291,15 @@ type deleteResourceQuery struct {
 	ResourceDelete *OkError `graphql:"resourceDelete(id: $id)"`
 }
 
-func (client *Client) deleteResource(ctx context.Context, resourceID graphql.ID) error {
-	if resourceID.(string) == "" {
+func (client *Client) deleteResource(ctx context.Context, resourceID string) error {
+	if resourceID == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", resourceResourceName)
 	}
 
 	response := deleteResourceQuery{}
 
 	variables := map[string]interface{}{
-		"id": resourceID,
+		"id": graphql.ID(resourceID),
 	}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
@@ -346,4 +312,128 @@ func (client *Client) deleteResource(ctx context.Context, resourceID graphql.ID)
 	}
 
 	return nil
+}
+
+type readResourceWithoutGroupsQuery struct {
+	Resource *struct {
+		IDName
+		Address struct {
+			Value graphql.String
+		}
+		RemoteNetwork struct {
+			ID graphql.ID
+		}
+		Protocols *ProtocolsInput
+	} `graphql:"resource(id: $id)"`
+}
+
+func (client *Client) readResourceWithoutGroups(ctx context.Context, resourceID string) (*Resource, error) {
+	if resourceID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
+	}
+
+	response := readResourceWithoutGroupsQuery{}
+	variables := map[string]interface{}{
+		"id": graphql.ID(resourceID),
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	if response.Resource == nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	resource := &Resource{
+		ID:              resourceID,
+		Name:            response.Resource.Name,
+		Address:         response.Resource.Address.Value,
+		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
+		Protocols:       response.Resource.Protocols,
+	}
+
+	return resource, nil
+}
+
+type updateResourceActiveStateQuery struct {
+	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, isActive: $isActive)"`
+}
+
+func (client *Client) updateResourceActiveState(ctx context.Context, resource *Resource) error {
+	variables := map[string]interface{}{
+		"id":       resource.ID,
+		"isActive": resource.IsActive,
+	}
+
+	response := updateResourceActiveStateQuery{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+
+	if err != nil {
+		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
+	}
+
+	if !response.ResourceUpdate.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
+	}
+
+	return nil
+}
+
+type readResourcesByNameQuery struct {
+	Resources struct {
+		Edges []*struct {
+			Node *struct {
+				IDName
+				Address struct {
+					Value graphql.String
+				}
+				RemoteNetwork struct {
+					ID graphql.ID
+				}
+				Protocols *ProtocolsInput
+			}
+		}
+	} `graphql:"resources(filter: {name: {eq: $name}})"`
+}
+
+func (client *Client) readResourcesByName(ctx context.Context, name string) ([]*Resource, error) {
+	response := readResourcesByNameQuery{}
+	variables := map[string]interface{}{
+		"name": graphql.String(name),
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
+	}
+
+	if response.Resources.Edges == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, "All")
+	}
+
+	resources := make([]*Resource, 0, len(response.Resources.Edges))
+
+	for _, item := range response.Resources.Edges {
+		if item == nil {
+			continue
+		}
+
+		res := item.Node
+		if res == nil {
+			continue
+		}
+
+		resources = append(resources, &Resource{
+			ID:              res.ID,
+			Name:            res.Name,
+			Address:         res.Address.Value,
+			RemoteNetworkID: res.RemoteNetwork.ID,
+			Protocols:       res.Protocols,
+		})
+	}
+
+	return resources, nil
 }
