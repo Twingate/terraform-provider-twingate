@@ -1,4 +1,5 @@
 name: "PR Checks"
+permissions: read-all
 on: [pull_request]
 jobs:
   verify-pr:
