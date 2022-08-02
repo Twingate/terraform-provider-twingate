@@ -6,6 +6,9 @@ permissions: read-all
 on:
   schedule:
     - cron: "20 * * * *"
+  push:
+    paths-ignore:
+      - 'README.md'
 
 jobs:
   build:
