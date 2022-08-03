@@ -2,6 +2,7 @@
 # you can turn it on using a cron schedule for regular testing.
 #
 name: CI
+permissions: read-all
 on:
   pull_request:
      paths-ignore:
@@ -102,6 +103,7 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
+    environment: acceptance-tests
     timeout-minutes: 15
     strategy:
       fail-fast: false
