@@ -1,6 +1,8 @@
 name: "PR Checks"
 permissions: read-all
-on: [pull_request]
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
 jobs:
   verify-pr:
     name: "Verify PR title and desc"
