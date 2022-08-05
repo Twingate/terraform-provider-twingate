@@ -103,8 +103,6 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    # environment: acceptance-tests   github.event.pull_request.head.repo.fork
-    environment: ${{ (github.event.pull_request.head.repo.fork && 'acceptance-tests ') || null }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
