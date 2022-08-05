@@ -3,12 +3,38 @@ package twingate
 import (
 	"context"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const testPrefixName = "tf-acc"
+const (
+	testPrefixName = "tf-acc"
+	uniqueEnvKey   = "TEST_UNIQUE_VALUE"
+)
+
+func getTestResourceName(names ...string) string {
+	keys := filterStringValues(
+		append([]string{testPrefixName, os.Getenv(uniqueEnvKey)}, names...),
+		func(val string) bool {
+			return strings.TrimSpace(val) != ""
+		},
+	)
+
+	return strings.Join(keys, "-")
+}
+
+func filterStringValues(values []string, ok func(val string) bool) []string {
+	result := make([]string, 0, len(values))
+	for _, val := range values {
+		if ok(val) {
+			result = append(result, val)
+		}
+	}
+
+	return result
+}
 
 func init() {
 	resource.AddTestSweepers("twingate_connector", &resource.Sweeper{
