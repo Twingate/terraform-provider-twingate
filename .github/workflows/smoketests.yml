@@ -39,6 +39,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         terraform:
           - '1.0.*'
