@@ -46,7 +46,7 @@ func buildFilter(resourceData *schema.ResourceData) *GroupsFilter {
 	groupType, hasType := resourceData.GetOk("type")
 
 	// GetOk does not provide correct value for exists flag (second output value)
-	groupIsActive, hasIsActive := resourceData.GetOkExists("is_active") // nolint:staticcheck
+	groupIsActive, hasIsActive := resourceData.GetOkExists("is_active") //nolint
 
 	if !hasName && !hasType && !hasIsActive {
 		return nil

@@ -103,7 +103,7 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-#    environment: acceptance-tests
+    environment: acceptance-tests
     timeout-minutes: 15
     strategy:
       fail-fast: false

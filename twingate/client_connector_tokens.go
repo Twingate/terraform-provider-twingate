@@ -28,7 +28,7 @@ func (client *Client) verifyConnectorTokens(ctx context.Context, refreshToken, a
 
 	req, err := http.NewRequestWithContext(
 		ctx,
-		"POST",
+		http.MethodPost,
 		fmt.Sprintf("%s/access_node/refresh", client.APIServerURL),
 		bytes.NewBuffer(jsonValue))
 	if err != nil {
