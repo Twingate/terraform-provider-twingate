@@ -103,6 +103,7 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
+    if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
       fail-fast: false
