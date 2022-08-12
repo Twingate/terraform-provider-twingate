@@ -5,7 +5,9 @@ name: CI
 permissions: read-all
 on:
   pull_request:
-     paths-ignore:
+    branches:
+      - main
+    paths-ignore:
        - 'README.md'
 
   push:
