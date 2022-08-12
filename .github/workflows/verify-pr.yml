@@ -3,6 +3,12 @@ permissions: read-all
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
+
+# Ensures only 1 action runs per PR and previous is canceled on new trigger
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify-pr:
     name: "Verify PR title and desc"
