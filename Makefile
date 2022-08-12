@@ -90,4 +90,4 @@ docs: doc-tools
 .PHONY: tools
 tools:
 	@echo "==> installing required tools ..."
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.47.3
