@@ -2,14 +2,24 @@
 # you can turn it on using a cron schedule for regular testing.
 #
 name: CI
+permissions: read-all
 on:
   pull_request:
-     paths-ignore:
+    branches:
+      - main
+    paths-ignore:
        - 'README.md'
 
   push:
     paths-ignore:
       - 'README.md'
+    branches:
+      - main
+
+# Ensures only 1 action runs per PR and previous is canceled on new trigger
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -102,9 +112,11 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
+    if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         terraform:
           - '1.0.*'
@@ -137,6 +149,7 @@ jobs:
         TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
         TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
         TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+        TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}-${{ matrix.terraform }}
       run: |
         make testacc
 
