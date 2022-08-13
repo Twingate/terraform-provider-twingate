@@ -46,12 +46,6 @@ jobs:
       with:
         path: ${{ env.GOCACHE }}
         key: ${{ runner.os }}-GOCACHE-${{ hashFiles('go.sum') }}-${{ hashFiles('internal/**') }}
-    - uses: actions/cache@v3
-      continue-on-error: true
-      timeout-minutes: 2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}      
 
     - name: Get dependencies
       run: |
@@ -101,12 +95,6 @@ jobs:
       with:
         path: ${{ env.GOCACHE }}
         key: ${{ runner.os }}-GOCACHE-${{ hashFiles('go.sum') }}-${{ hashFiles('internal/**') }}
-    - uses: actions/cache@v3
-      continue-on-error: true
-      timeout-minutes: 2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}      
 
     - name: Get dependencies
       run: |
@@ -177,13 +165,7 @@ jobs:
       with:
         path: ${{ env.GOCACHE }}
         key: ${{ runner.os }}-GOCACHE-${{ hashFiles('go.sum') }}-${{ hashFiles('internal/**') }}
-    - uses: actions/cache@v3
-      continue-on-error: true
-      timeout-minutes: 2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}      
-        
+
     - name: Get dependencies
       run: |
         go mod download
