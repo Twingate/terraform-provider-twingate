@@ -5,12 +5,21 @@ name: CI
 permissions: read-all
 on:
   pull_request:
-     paths-ignore:
+    branches:
+      - main
+    paths-ignore:
        - 'README.md'
 
   push:
     paths-ignore:
       - 'README.md'
+    branches:
+      - main
+
+# Ensures only 1 action runs per PR and previous is canceled on new trigger
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -103,7 +112,7 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    environment: acceptance-tests
+    if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
       fail-fast: false
