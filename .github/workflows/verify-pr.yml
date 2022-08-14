@@ -2,7 +2,7 @@ name: "PR Checks"
 permissions: read-all
 on:
   pull_request:
-    types: [ opened, reopened, synchronize, edited ]
+    types: [opened, reopened, synchronize, edited]
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
