@@ -13,8 +13,10 @@ import (
 
 func TestAccRemoteConnector_basic(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
-		remoteNetworkName := acctest.RandomWithPrefix(getTestResourceName())
-		connectorName := acctest.RandomWithPrefix(getTestResourceName())
+		prefix := getTestResourceName()
+
+		remoteNetworkName := acctest.RandomWithPrefix(prefix)
+		connectorName := acctest.RandomWithPrefix(prefix)
 		connectorResource := "twingate_connector.test"
 		remoteNetworkResource := "twingate_remote_network.test"
 
@@ -34,7 +36,7 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile("tf-acc.*")),
+						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile(prefix+".*")),
 					),
 				},
 			},

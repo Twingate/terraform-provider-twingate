@@ -15,8 +15,12 @@ const (
 )
 
 func getTestResourceName(names ...string) string {
+	uniqueVal := os.Getenv(uniqueEnvKey)
+	uniqueVal = strings.ReplaceAll(uniqueVal, ".", "")
+	uniqueVal = strings.ReplaceAll(uniqueVal, "*", "")
+
 	keys := filterStringValues(
-		append([]string{testPrefixName, os.Getenv(uniqueEnvKey)}, names...),
+		append([]string{testPrefixName, uniqueVal}, names...),
 		func(val string) bool {
 			return strings.TrimSpace(val) != ""
 		},

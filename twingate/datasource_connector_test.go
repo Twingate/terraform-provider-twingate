@@ -12,8 +12,10 @@ import (
 
 func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connector Basic", func(t *testing.T) {
-		networkName := acctest.RandomWithPrefix(testPrefixName)
-		connectorName := acctest.RandomWithPrefix(testPrefixName)
+		prefix := getTestResourceName()
+
+		networkName := acctest.RandomWithPrefix(prefix)
+		connectorName := acctest.RandomWithPrefix(prefix)
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,

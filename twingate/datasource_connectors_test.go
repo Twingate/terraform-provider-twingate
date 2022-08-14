@@ -13,9 +13,15 @@ import (
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors Basic", func(t *testing.T) {
 
-		networkName1 := acctest.RandomWithPrefix(testPrefixName)
-		networkName2 := acctest.RandomWithPrefix(testPrefixName)
-		connectorName := testPrefixName + "-conn-" + acctest.RandString(acctest.RandIntRange(5, 15))
+		prefix := getTestResourceName()
+		networkName1 := acctest.RandomWithPrefix(prefix)
+		networkName2 := acctest.RandomWithPrefix(prefix)
+		connPrefix := getTestResourceName("conn")
+		connectorName := acctest.RandomWithPrefix(connPrefix)
+
+		fmt.Println(connectorName)
+
+		//connectorName := testPrefixName + "-conn-" + acctest.RandString(acctest.RandIntRange(5, 15))
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -23,7 +29,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName),
+					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName, connPrefix),
 					Check: resource.ComposeTestCheckFunc(
 						testOutputLength("my_connectors", 2),
 						testOutputItemField("my_connectors", 0, "name", connectorName),
@@ -98,7 +104,7 @@ func testOutputItemField(name string, itemPosition int, filedName, value string)
 	}
 }
 
-func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2, connectorName2 string) string {
+func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2, connectorName2, prefix string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test1" {
 	  name = "%s"
@@ -121,9 +127,9 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 	}
 
 	output "my_connectors" {
-	  value = [for conn in data.twingate_connectors.all.connectors: conn if can(regex("^tf-acc-conn", conn.name))] 
+	  value = [for conn in data.twingate_connectors.all.connectors: conn if can(regex("^%s", conn.name))] 
 	}
-	`, networkName1, connectorName1, networkName2, connectorName2)
+	`, networkName1, connectorName1, networkName2, connectorName2, prefix)
 }
 
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
