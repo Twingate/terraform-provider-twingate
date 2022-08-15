@@ -3,7 +3,6 @@ package twingate
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -203,7 +202,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 		}
 	}(res.Body)
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("can't read response body: %w", err)
 	}

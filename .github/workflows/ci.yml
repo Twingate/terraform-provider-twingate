@@ -5,12 +5,21 @@ name: CI
 permissions: read-all
 on:
   pull_request:
-     paths-ignore:
+    branches:
+      - main
+    paths-ignore:
        - 'README.md'
 
   push:
     paths-ignore:
       - 'README.md'
+    branches:
+      - main
+
+# Ensures only 1 action runs per PR and previous is canceled on new trigger
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -28,6 +37,21 @@ jobs:
         go-version-file: 'go.mod'
         cache: true
       id: go
+
+    - name: go env
+      run: echo "GOCACHE=$(go env GOCACHE)" >> $GITHUB_ENV
+    - uses: actions/cache@v3
+      continue-on-error: true
+      timeout-minutes: 2
+      with:
+        path: ${{ env.GOCACHE }}
+        key: ${{ runner.os }}-GOCACHE-${{ hashFiles('go.sum') }}-${{ hashFiles('internal/**') }}
+    - uses: actions/cache@v3
+      continue-on-error: true
+      timeout-minutes: 2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}      
 
     - name: Get dependencies
       run: |
@@ -69,6 +93,21 @@ jobs:
         cache: true
       id: go
 
+    - name: go env
+      run: echo "GOCACHE=$(go env GOCACHE)" >> $GITHUB_ENV
+    - uses: actions/cache@v3
+      continue-on-error: true
+      timeout-minutes: 2
+      with:
+        path: ${{ env.GOCACHE }}
+        key: ${{ runner.os }}-GOCACHE-${{ hashFiles('go.sum') }}-${{ hashFiles('internal/**') }}
+    - uses: actions/cache@v3
+      continue-on-error: true
+      timeout-minutes: 2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}      
+
     - name: Get dependencies
       run: |
         go mod download
@@ -103,7 +142,7 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    environment: acceptance-tests
+    if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -123,13 +162,28 @@ jobs:
       with:
         go-version-file: 'go.mod'
         cache: true
-      id: go
+      id: go      
 
     - uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: ${{ matrix.terraform }}
-        terraform_wrapper: false
+        terraform_wrapper: false        
 
+    - name: go env
+      run: echo "GOCACHE=$(go env GOCACHE)" >> $GITHUB_ENV
+    - uses: actions/cache@v3
+      continue-on-error: true
+      timeout-minutes: 2
+      with:
+        path: ${{ env.GOCACHE }}
+        key: ${{ runner.os }}-GOCACHE-${{ hashFiles('go.sum') }}-${{ hashFiles('internal/**') }}
+    - uses: actions/cache@v3
+      continue-on-error: true
+      timeout-minutes: 2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}      
+        
     - name: Get dependencies
       run: |
         go mod download
