@@ -73,17 +73,17 @@ func datasourceUsers() *schema.Resource {
 						"email": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The email of the User",
+							Description: "The email address of the User",
 						},
 						"is_admin": {
 							Type:        schema.TypeBool,
 							Computed:    true,
-							Description: "Indicates if the User admin or not",
+							Description: "Indicates whether the User is an admin",
 						},
 						"role": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The role of the User",
+							Description: "Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.",
 						},
 					},
 				},
