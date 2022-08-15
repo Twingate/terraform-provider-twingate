@@ -40,8 +40,9 @@ func testSweepTwingateRemoteNetwork(tenant string) error {
 
 	var testNetworks = make([]string, 0)
 
+	testPrefix := getTestPrefix()
 	for _, elem := range networkMap {
-		if strings.HasPrefix(string(elem.Name), testPrefixName) {
+		if strings.HasPrefix(string(elem.Name), testPrefix) {
 			testNetworks = append(testNetworks, fmt.Sprintf("%v", elem.ID))
 		}
 	}

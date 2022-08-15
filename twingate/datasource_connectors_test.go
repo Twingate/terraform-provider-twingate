@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 const (
 	connectorsDatasource = "data.twingate_connectors.all"
 	connectorsNumber     = "connectors.#"
+	firstConnectorName   = "connectors.0.name"
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors Basic", func(t *testing.T) {
-		prefix := getTestResourceName()
-		networkName1 := acctest.RandomWithPrefix(prefix)
-		networkName2 := acctest.RandomWithPrefix(prefix)
-		connectorName := getTestResourceName(acctest.RandString(4))
+		networkName1 := getRandomName()
+		networkName2 := getRandomName()
+		connectorName := getRandomConnectorName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -29,7 +28,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(connectorsDatasource, connectorsNumber, "2"),
-						resource.TestCheckResourceAttr(connectorsDatasource, "connectors.0.name", connectorName),
+						resource.TestCheckResourceAttr(connectorsDatasource, firstConnectorName, connectorName),
 					),
 				},
 			},

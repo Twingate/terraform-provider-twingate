@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -14,7 +15,29 @@ const (
 	uniqueEnvKey   = "TEST_UNIQUE_VALUE"
 )
 
-func getTestResourceName(names ...string) string {
+func getRandomConnectorName() string {
+	const maxLength = 30
+	name := getTestPrefix(acctest.RandString(4))
+	if len(name) > maxLength {
+		name = name[:maxLength]
+	}
+
+	return name
+}
+
+func getRandomResourceName() string {
+	return getRandomName("resource")
+}
+
+func getRandomGroupName() string {
+	return getRandomName("group")
+}
+
+func getRandomName(names ...string) string {
+	return acctest.RandomWithPrefix(getTestPrefix(names...))
+}
+
+func getTestPrefix(names ...string) string {
 	uniqueVal := os.Getenv(uniqueEnvKey)
 	uniqueVal = strings.ReplaceAll(uniqueVal, ".", "")
 	uniqueVal = strings.ReplaceAll(uniqueVal, "*", "")
