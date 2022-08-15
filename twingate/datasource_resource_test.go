@@ -23,7 +23,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateResource(networkName, resourceName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckOutput("my_resource", resourceName),
+						resource.TestCheckResourceAttr("data.twingate_resource.out", "name", resourceName),
 					),
 				},
 			},
@@ -56,10 +56,6 @@ func testDatasourceTwingateResource(networkName, resourceName string) string {
 
 	data "twingate_resource" "out" {
 	  id = twingate_resource.test.id
-	}
-
-	output "my_resource" {
-	  value = data.twingate_resource.out.name
 	}
 	`, networkName, resourceName)
 }

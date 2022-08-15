@@ -22,8 +22,8 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateResources(networkName, resourceName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckOutput("my_resource_name", resourceName),
 						resource.TestCheckResourceAttr("data.twingate_resources.out", "resources.#", "2"),
+						resource.TestCheckResourceAttr("data.twingate_resources.out", "resources.0.name", resourceName),
 					),
 				},
 			},
@@ -75,10 +75,6 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 	  name = "%s"
 
 	  depends_on = [twingate_resource.test1, twingate_resource.test2]
-	}
-
-	output "my_resource_name" {
-	  value = data.twingate_resources.out.resources[0].name
 	}
 	`, networkName, resourceName, resourceName, resourceName)
 }
