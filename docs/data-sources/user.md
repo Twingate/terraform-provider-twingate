@@ -27,10 +27,10 @@ data "twingate_user" "foo" {
 
 ### Read-Only
 
-- `email` (String) The email of the User
+- `email` (String) The email address of the User
 - `first_name` (String) The first name of the User
-- `is_admin` (Boolean) Indicates if the User admin or not
+- `is_admin` (Boolean) Indicates whether the User is an admin
 - `last_name` (String) The last name of the User
-- `role` (String) The role of the User
+- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER
 
 
