@@ -6,17 +6,22 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+const (
+	connectorResource     = "twingate_connector.test"
+	remoteNetworkResource = "twingate_remote_network.test"
+	nameAttr              = "name"
+)
+
+var testRegexp = regexp.MustCompile(getTestPrefix() + ".*")
+
 func TestAccRemoteConnector_basic(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
-		remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
-		connectorName := acctest.RandomWithPrefix("tf-acc")
-		connectorResource := "twingate_connector.test"
-		remoteNetworkResource := "twingate_remote_network.test"
+		remoteNetworkName := getRandomName()
+		connectorName := getRandomConnectorName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -27,14 +32,14 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 					Config: testTwingateConnector(remoteNetworkName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestCheckResourceAttrSet(connectorResource, "name"),
+						resource.TestCheckResourceAttrSet(connectorResource, nameAttr),
 					),
 				},
 				{
 					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile("tf-acc.*")),
+						resource.TestMatchResourceAttr(connectorResource, nameAttr, testRegexp),
 					),
 				},
 			},
@@ -44,10 +49,8 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 
 func TestAccRemoteConnector_withName(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
-		remoteNetworkName := acctest.RandomWithPrefix("tf-acc")
-		connectorName := acctest.RandomWithPrefix("tf-acc")
-		connectorResource := "twingate_connector.test"
-		remoteNetworkResource := "twingate_remote_network.test"
+		remoteNetworkName := getRandomName()
+		connectorName := getRandomConnectorName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -58,7 +61,7 @@ func TestAccRemoteConnector_withName(t *testing.T) {
 					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile("tf-acc.*")),
+						resource.TestMatchResourceAttr(connectorResource, nameAttr, testRegexp),
 					),
 				},
 			},
@@ -144,10 +147,8 @@ func testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResourc
 
 func TestAccRemoteConnector_import(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector - Import", func(t *testing.T) {
-		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-		connectorName := acctest.RandomWithPrefix(testPrefixName)
-		connectorResource := "twingate_connector.test"
-		remoteNetworkResource := "twingate_remote_network.test"
+		remoteNetworkName := getRandomName()
+		connectorName := getRandomConnectorName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -158,7 +159,7 @@ func TestAccRemoteConnector_import(t *testing.T) {
 					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestMatchResourceAttr(connectorResource, "name", regexp.MustCompile("tf-acc.*")),
+						resource.TestMatchResourceAttr(connectorResource, nameAttr, testRegexp),
 					),
 				},
 				{
@@ -173,10 +174,8 @@ func TestAccRemoteConnector_import(t *testing.T) {
 
 func TestAccRemoteConnector_notAllowedToChangeRemoteNetworkId(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector - should fail on remote_network_id update", func(t *testing.T) {
-		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-		remoteNetworkName1 := acctest.RandomWithPrefix(testPrefixName)
-		connectorResource := "twingate_connector.test"
-		remoteNetworkResource := "twingate_remote_network.test"
+		remoteNetworkName := getRandomName()
+		remoteNetworkName1 := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -200,9 +199,7 @@ func TestAccRemoteConnector_notAllowedToChangeRemoteNetworkId(t *testing.T) {
 
 func TestAccTwingateConnector_createAfterDeletion(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector Create After Deletion", func(t *testing.T) {
-		const terraformConnectorResource = "twingate_connector.test"
-		const terraformNetworkResource = "twingate_remote_network.test"
-		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
+		remoteNetworkName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -212,15 +209,15 @@ func TestAccTwingateConnector_createAfterDeletion(t *testing.T) {
 				{
 					Config: testTwingateConnector(remoteNetworkName),
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(terraformConnectorResource, terraformNetworkResource),
-						deleteTwingateResource(terraformConnectorResource, connectorResourceName),
+						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+						deleteTwingateResource(connectorResource, connectorResourceName),
 					),
 					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: testTwingateConnector(remoteNetworkName),
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(terraformConnectorResource, terraformNetworkResource),
+						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
 					),
 				},
 			},

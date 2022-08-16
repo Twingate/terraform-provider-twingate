@@ -5,13 +5,18 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+)
+
+const (
+	groupsDatasource = "data.twingate_groups.out"
+	groupsNumber     = "groups.#"
+	firstGroupName   = "groups.0.name"
 )
 
 func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups Basic", func(t *testing.T) {
-		groupName := acctest.RandomWithPrefix(testPrefixName)
+		groupName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -21,8 +26,8 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateGroups(groupName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_groups.out", "groups.#", "2"),
-						resource.TestCheckResourceAttr("data.twingate_groups.out", "groups.0.name", groupName),
+						resource.TestCheckResourceAttr(groupsDatasource, groupsNumber, "2"),
+						resource.TestCheckResourceAttr(groupsDatasource, firstGroupName, groupName),
 					),
 				},
 			},
@@ -50,7 +55,7 @@ func testDatasourceTwingateGroups(name string) string {
 
 func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups - empty result", func(t *testing.T) {
-		groupName := acctest.RandomWithPrefix(testPrefixName)
+		groupName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -61,7 +66,7 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 				{
 					Config: testTwingateGroupsDoesNotExists(groupName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_groups.test", "groups.#", "0"),
+						resource.TestCheckResourceAttr(groupsDatasource, groupsNumber, "0"),
 					),
 				},
 			},
@@ -71,14 +76,14 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 
 func testTwingateGroupsDoesNotExists(name string) string {
 	return fmt.Sprintf(`
-	data "twingate_groups" "test" {
+	data "twingate_groups" "out" {
 	  name = "%s"
 	}
 	`, name)
 }
 
 func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
-	groupName := acctest.RandomWithPrefix(testPrefixName)
+	groupName := getRandomName()
 
 	t.Run("Test Twingate Datasource : Acc Groups with filters - basic", func(t *testing.T) {
 		resource.Test(t, resource.TestCase{
@@ -90,8 +95,8 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateGroupsWithFilters(groupName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_groups.out", "groups.#", "2"),
-						resource.TestCheckResourceAttr("data.twingate_groups.out", "groups.0.name", groupName),
+						resource.TestCheckResourceAttr(groupsDatasource, groupsNumber, "2"),
+						resource.TestCheckResourceAttr(groupsDatasource, firstGroupName, groupName),
 					),
 				},
 			},
@@ -178,7 +183,7 @@ func testTwingateGroupsWithEmptyFilter() string {
 func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups with two datasource", func(t *testing.T) {
 
-		groupName := acctest.RandomWithPrefix(testPrefixName)
+		groupName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -188,9 +193,9 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 				{
 					Config: testDatasourceTwingateGroupsWithDatasource(groupName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_groups.two", "groups.0.name", groupName),
-						resource.TestCheckResourceAttr("data.twingate_groups.one", "groups.#", "1"),
-						resource.TestCheckResourceAttr("data.twingate_groups.two", "groups.#", "2"),
+						resource.TestCheckResourceAttr("data.twingate_groups.two", firstGroupName, groupName),
+						resource.TestCheckResourceAttr("data.twingate_groups.one", groupsNumber, "1"),
+						resource.TestCheckResourceAttr("data.twingate_groups.two", groupsNumber, "2"),
 					),
 				},
 			},
