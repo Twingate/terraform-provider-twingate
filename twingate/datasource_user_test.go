@@ -13,8 +13,8 @@ import (
 func TestAccDatasourceTwingateUser_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc User Basic", func(t *testing.T) {
 		const (
-			userID    = "VXNlcjoyNjU0Mw=="
-			userEmail = "nikita@beamreachinc.com"
+			userID    = "VXNlcjoxNDEwMA=="
+			userEmail = "eran@twingate.com"
 		)
 
 		resource.Test(t, resource.TestCase{
