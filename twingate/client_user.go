@@ -71,3 +71,36 @@ func (client *Client) readUsers(ctx context.Context) ([]*User, error) {
 
 	return users, nil
 }
+
+type readUserQuery struct {
+	User *gqlUser `graphql:"user(id: $id)"`
+}
+
+func (client *Client) readUser(ctx context.Context, userID string) (*User, error) {
+	if userID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", userResourceName)
+	}
+
+	variables := map[string]interface{}{
+		"id": userID,
+	}
+
+	response := readUserQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readUser", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", userResourceName, userID)
+	}
+
+	if response.User == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", userResourceName, userID)
+	}
+
+	return &User{
+		ID:        response.User.ID.(string),
+		FirstName: string(response.User.FirstName),
+		LastName:  string(response.User.LastName),
+		Email:     string(response.User.Email),
+		Role:      string(response.User.Role),
+	}, nil
+}

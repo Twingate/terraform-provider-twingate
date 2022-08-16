@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func datasourceUsersRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
 	var diags diag.Diagnostics
@@ -48,7 +48,7 @@ func convertUsersToTerraform(users []*User) []interface{} {
 func datasourceUsers() *schema.Resource {
 	return &schema.Resource{
 		Description: "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's [documentation](https://docs.twingate.com/docs/users).",
-		ReadContext: datasourceUserRead,
+		ReadContext: datasourceUsersRead,
 		Schema: map[string]*schema.Schema{
 			"users": {
 				Type:     schema.TypeList,

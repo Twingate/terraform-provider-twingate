@@ -28,6 +28,7 @@ func Provider(version string) *schema.Provider {
 			"twingate_groups":         datasourceGroups(),
 			"twingate_remote_network": datasourceRemoteNetwork(),
 			"twingate_users":          datasourceUsers(),
+			"twingate_user":           datasourceUser(),
 			"twingate_connectors":     datasourceConnectors(),
 			"twingate_resources":      datasourceResources(),
 			"twingate_resource":       datasourceResource(),
