@@ -97,7 +97,7 @@ func resourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resourc
 
 	log.Printf("[INFO] Reading remote network id %s", remoteNetworkID)
 
-	remoteNetwork, err := client.readRemoteNetwork(ctx, remoteNetworkID)
+	remoteNetwork, err := client.readRemoteNetworkByID(ctx, remoteNetworkID)
 
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
