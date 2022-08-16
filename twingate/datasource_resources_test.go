@@ -8,11 +8,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+const (
+	resourcesDatasource = "data.twingate_resources.out"
+	resourcesNumber     = "resources.#"
+	firstResourceName   = "resources.0.name"
+)
+
 func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resources Basic", func(t *testing.T) {
 
-		networkName := acctest.RandomWithPrefix(testPrefixName)
-		resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+		networkName := acctest.RandomWithPrefix(getTestPrefix())
+		resourceName := acctest.RandomWithPrefix(getTestPrefix("resource"))
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -22,8 +28,8 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateResources(networkName, resourceName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_resources.out", "resources.#", "2"),
-						resource.TestCheckResourceAttr("data.twingate_resources.out", "resources.0.name", resourceName),
+						resource.TestCheckResourceAttr(resourcesDatasource, resourcesNumber, "2"),
+						resource.TestCheckResourceAttr(resourcesDatasource, firstResourceName, resourceName),
 					),
 				},
 			},
@@ -81,7 +87,7 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 
 func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resources - empty result", func(t *testing.T) {
-		resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+		resourceName := getRandomResourceName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -92,7 +98,7 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 				{
 					Config: testTwingateResourcesDoesNotExists(resourceName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_resources.test", "resources.#", "0"),
+						resource.TestCheckResourceAttr(resourcesDatasource, resourcesNumber, "0"),
 					),
 				},
 			},
@@ -102,12 +108,12 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 
 func testTwingateResourcesDoesNotExists(name string) string {
 	return fmt.Sprintf(`
-	data "twingate_resources" "test" {
+	data "twingate_resources" "out" {
 	  name = "%s"
 	}
 
 	output "my_resources" {
-	  value = data.twingate_resources.test.resources
+	  value = data.twingate_resources.out.resources
 	}
 	`, name)
 }

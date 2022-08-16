@@ -40,8 +40,9 @@ func testSweepTwingateGroup(tenant string) error {
 
 	var testResources = make([]graphql.ID, 0)
 
+	testPrefix := getTestPrefix()
 	for _, elem := range resources {
-		if strings.HasPrefix(string(elem.Name), testPrefixName) {
+		if strings.HasPrefix(string(elem.Name), testPrefix) {
 			testResources = append(testResources, elem.ID)
 		}
 	}

@@ -12,7 +12,7 @@ import (
 
 func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Group Basic", func(t *testing.T) {
-		groupName := acctest.RandomWithPrefix(testPrefixName)
+		groupName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
