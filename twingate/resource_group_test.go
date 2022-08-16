@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+const groupResource = "twingate_group.test"
+
 func TestAccTwingateGroup_basic(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Basic", func(t *testing.T) {
 
-		groupNameBefore := acctest.RandomWithPrefix(testPrefixName)
-		groupNameAfter := acctest.RandomWithPrefix(testPrefixName)
-		resourceName := "twingate_group.test"
+		groupNameBefore := getRandomName()
+		groupNameAfter := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -25,15 +25,15 @@ func TestAccTwingateGroup_basic(t *testing.T) {
 				{
 					Config: testTwingateGroup(groupNameBefore),
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(resourceName),
-						resource.TestCheckResourceAttr(resourceName, "name", groupNameBefore),
+						testAccCheckTwingateGroupExists(groupResource),
+						resource.TestCheckResourceAttr(groupResource, nameAttr, groupNameBefore),
 					),
 				},
 				{
 					Config: testTwingateGroup(groupNameAfter),
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(resourceName),
-						resource.TestCheckResourceAttr(resourceName, "name", groupNameAfter),
+						testAccCheckTwingateGroupExists(groupResource),
+						resource.TestCheckResourceAttr(groupResource, nameAttr, groupNameAfter),
 					),
 				},
 			},
@@ -44,8 +44,7 @@ func TestAccTwingateGroup_basic(t *testing.T) {
 func TestAccTwingateGroup_deleteNonExisting(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Delete NonExisting", func(t *testing.T) {
 
-		groupNameBefore := acctest.RandomWithPrefix(testPrefixName)
-		resourceName := "twingate_group.test"
+		groupNameBefore := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -56,7 +55,7 @@ func TestAccTwingateGroup_deleteNonExisting(t *testing.T) {
 					Config:  testTwingateGroup(groupNameBefore),
 					Destroy: true,
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupDoesNotExists(resourceName),
+						testAccCheckTwingateGroupDoesNotExists(groupResource),
 					),
 				},
 			},
@@ -121,8 +120,7 @@ func testAccCheckTwingateGroupDoesNotExists(resourceName string) resource.TestCh
 
 func TestAccTwingateGroup_createAfterDeletion(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Create After Deletion", func(t *testing.T) {
-		const resourceName = "twingate_group.test"
-		groupName := acctest.RandomWithPrefix(testPrefixName)
+		groupName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
@@ -132,15 +130,15 @@ func TestAccTwingateGroup_createAfterDeletion(t *testing.T) {
 				{
 					Config: testTwingateGroup(groupName),
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(resourceName),
-						deleteTwingateResource(resourceName, groupResourceName),
+						testAccCheckTwingateGroupExists(groupResource),
+						deleteTwingateResource(groupResource, groupResourceName),
 					),
 					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: testTwingateGroup(groupName),
 					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(resourceName),
+						testAccCheckTwingateGroupExists(groupResource),
 					),
 				},
 			},

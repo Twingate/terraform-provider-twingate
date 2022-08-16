@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -14,11 +13,22 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
+const (
+	testResource   = "twingate_resource.test"
+	groupIdsNumber = "group_ids.#"
+	tcpPolicy      = "protocols.0.tcp.0.policy"
+	udpPolicy      = "protocols.0.udp.0.policy"
+	firstTCPPort   = "protocols.0.tcp.0.ports.0"
+	firstUDPPort   = "protocols.0.udp.0.ports.0"
+	tcpPorts       = "protocols.0.tcp.0.ports.#"
+	udpPorts       = "protocols.0.udp.0.ports.#"
+)
+
 func TestAccTwingateResource_basic(t *testing.T) {
-	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-	groupName := acctest.RandomWithPrefix(testPrefixName + "-group")
-	groupName2 := acctest.RandomWithPrefix(testPrefixName + "-group")
-	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+	remoteNetworkName := getRandomName()
+	groupName := getRandomGroupName()
+	groupName2 := getRandomGroupName()
+	resourceName := getRandomResourceName()
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -28,25 +38,25 @@ func TestAccTwingateResource_basic(t *testing.T) {
 			{
 				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckNoResourceAttr("twingate_resource.test", "group_ids.#"),
+					testAccCheckTwingateResourceExists(testResource),
+					resource.TestCheckNoResourceAttr(testResource, groupIdsNumber),
 				),
 			},
 			{
 				Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, groupName, groupName2, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "address", "updated-acc-test.com"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "group_ids.#", "2"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
+					testAccCheckTwingateResourceExists(testResource),
+					resource.TestCheckResourceAttr(testResource, "address", "updated-acc-test.com"),
+					resource.TestCheckResourceAttr(testResource, groupIdsNumber, "2"),
+					resource.TestCheckResourceAttr(testResource, tcpPolicy, policyRestricted),
+					resource.TestCheckResourceAttr(testResource, firstTCPPort, "80"),
 				),
 			},
 			{
 				Config: testTwingateResource_fullFlowCreation(remoteNetworkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("twingate_remote_network.test", "name", remoteNetworkName),
-					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
+					resource.TestCheckResourceAttr(remoteNetworkResource, nameAttr, remoteNetworkName),
+					resource.TestCheckResourceAttr(testResource, nameAttr, resourceName),
 					resource.TestMatchResourceAttr("twingate_connector_tokens.test_1", "access_token", regexp.MustCompile(".*")),
 				),
 			},
@@ -57,15 +67,15 @@ func TestAccTwingateResource_basic(t *testing.T) {
 			{
 				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckNoResourceAttr("twingate_resource.test", "group_ids.#"),
+					testAccCheckTwingateResourceExists(testResource),
+					resource.TestCheckNoResourceAttr(testResource, groupIdsNumber),
 				),
 			},
 			{
 				Config: testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
+					testAccCheckTwingateResourceExists(testResource),
+					resource.TestCheckResourceAttr(testResource, tcpPolicy, policyRestricted),
 				),
 			},
 			// expecting no changes - empty plan
@@ -76,8 +86,8 @@ func TestAccTwingateResource_basic(t *testing.T) {
 			{
 				Config: testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", policyRestricted),
+					testAccCheckTwingateResourceExists(testResource),
+					resource.TestCheckResourceAttr(testResource, udpPolicy, policyRestricted),
 				),
 			},
 			// expecting no changes - empty plan
@@ -261,9 +271,9 @@ func testTwingateResource_fullFlowCreation(networkName, groupName, resourceName 
 }
 
 func TestAccTwingateResource_restrictedPolicyWithEmptyPortsList(t *testing.T) {
-	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-	groupName := acctest.RandomWithPrefix(testPrefixName + "-group")
-	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+	remoteNetworkName := getRandomName()
+	groupName := getRandomGroupName()
+	resourceName := getRandomResourceName()
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -273,11 +283,11 @@ func TestAccTwingateResource_restrictedPolicyWithEmptyPortsList(t *testing.T) {
 			{
 				Config: testTwingateResource_restrictedPolicyWithEmptyPortsList(remoteNetworkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("twingate_resource.test", "name", resourceName),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.policy", policyRestricted),
-					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.#"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.policy", policyRestricted),
-					resource.TestCheckNoResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports.#"),
+					resource.TestCheckResourceAttr(testResource, nameAttr, resourceName),
+					resource.TestCheckResourceAttr(testResource, tcpPolicy, policyRestricted),
+					resource.TestCheckNoResourceAttr(testResource, tcpPorts),
+					resource.TestCheckResourceAttr(testResource, udpPolicy, policyRestricted),
+					resource.TestCheckNoResourceAttr(testResource, udpPorts),
 				),
 			},
 		},
@@ -314,9 +324,9 @@ func testTwingateResource_restrictedPolicyWithEmptyPortsList(networkName, groupN
 }
 
 func TestAccTwingateResource_withInvalidPortRange(t *testing.T) {
-	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-	groupName := acctest.RandomWithPrefix(testPrefixName + "-group")
-	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+	remoteNetworkName := getRandomName()
+	groupName := getRandomGroupName()
+	resourceName := getRandomResourceName()
 	expectedError := regexp.MustCompile("Error: failed to parse protocols port range")
 
 	genConfig := func(portRange string) string {
@@ -448,8 +458,8 @@ func TestResourceResourceReadDiagnosticsError(t *testing.T) {
 }
 
 func TestAccTwingateResource_portReorderingCreatesNoChanges(t *testing.T) {
-	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+	remoteNetworkName := getRandomName()
+	resourceName := getRandomResourceName()
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -459,9 +469,9 @@ func TestAccTwingateResource_portReorderingCreatesNoChanges(t *testing.T) {
 			{
 				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "80"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports.0", "80"),
+					testAccCheckTwingateResourceExists(testResource),
+					resource.TestCheckResourceAttr(testResource, firstTCPPort, "80"),
+					resource.TestCheckResourceAttr(testResource, firstUDPPort, "80"),
 				),
 			},
 			// no changes
@@ -478,9 +488,9 @@ func TestAccTwingateResource_portReorderingCreatesNoChanges(t *testing.T) {
 			{
 				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.tcp.0.ports.0", "70"),
-					resource.TestCheckResourceAttr("twingate_resource.test", "protocols.0.udp.0.ports.0", "70"),
+					testAccCheckTwingateResourceExists(testResource),
+					resource.TestCheckResourceAttr(testResource, "protocols.0.tcp.0.ports.0", "70"),
+					resource.TestCheckResourceAttr(testResource, "protocols.0.udp.0.ports.0", "70"),
 				),
 			},
 		},
@@ -513,8 +523,8 @@ func testTwingateResource_withPortRange(networkName, resourceName, portRange str
 }
 
 func TestAccTwingateResource_setActiveState(t *testing.T) {
-	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+	remoteNetworkName := getRandomName()
+	resourceName := getRandomResourceName()
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -524,15 +534,15 @@ func TestAccTwingateResource_setActiveState(t *testing.T) {
 			{
 				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists("twingate_resource.test"),
-					deactivateTwingateResource("twingate_resource.test"),
-					testAccCheckTwingateResourceActiveState("twingate_resource.test", false),
+					testAccCheckTwingateResourceExists(testResource),
+					deactivateTwingateResource(testResource),
+					testAccCheckTwingateResourceActiveState(testResource, false),
 				),
 			},
 			{
 				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceActiveState("twingate_resource.test", true),
+					testAccCheckTwingateResourceActiveState(testResource, true),
 				),
 			},
 		},
@@ -596,9 +606,9 @@ func testAccCheckTwingateResourceActiveState(resourceName string, expectedActive
 }
 
 func TestAccTwingateResource_createAfterDeletion(t *testing.T) {
-	const terraformResourceName = "twingate_resource.test"
-	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
+	const terraformResourceName = testResource
+	remoteNetworkName := getRandomName()
+	resourceName := getRandomResourceName()
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -662,12 +672,10 @@ func deleteTwingateResource(resourceName, resourceType string) resource.TestChec
 }
 
 func TestAccTwingateResource_import(t *testing.T) {
-	remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-	groupName := acctest.RandomWithPrefix(testPrefixName + "-group")
-	groupName2 := acctest.RandomWithPrefix(testPrefixName + "-group")
-	resourceName := acctest.RandomWithPrefix(testPrefixName + "-resource")
-
-	const terraformResourceName = "twingate_resource.test"
+	remoteNetworkName := getRandomName()
+	groupName := getRandomGroupName()
+	groupName2 := getRandomGroupName()
+	resourceName := getRandomResourceName()
 
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
@@ -677,12 +685,12 @@ func TestAccTwingateResource_import(t *testing.T) {
 			{
 				Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, groupName, groupName2, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(terraformResourceName),
+					testAccCheckTwingateResourceExists(testResource),
 				),
 			},
 			{
 				ImportState:  true,
-				ResourceName: terraformResourceName,
+				ResourceName: testResource,
 				ImportStateCheck: func(data []*terraform.InstanceState) error {
 					if len(data) != 1 {
 						return fmt.Errorf("expected 1 resource, got %d", len(data))

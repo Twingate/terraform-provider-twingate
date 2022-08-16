@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -13,8 +12,8 @@ import (
 func TestAccRemoteConnector_withTokens(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector With Tokens", func(t *testing.T) {
 
-		remoteNetworkName := acctest.RandomWithPrefix(testPrefixName)
-		connectorTokensResource := "twingate_connector_tokens.test"
+		const connectorTokensResource = "twingate_connector_tokens.test"
+		remoteNetworkName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
