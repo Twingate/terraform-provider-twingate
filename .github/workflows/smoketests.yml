@@ -144,5 +144,6 @@ jobs:
           TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
           TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
           TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+          TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}
         run: |
           make sweep
