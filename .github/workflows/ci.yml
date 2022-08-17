@@ -5,18 +5,18 @@ name: CI
 permissions: read-all
 on:
   pull_request:
-    branches:
-      - main
-      - fix-unstable-acctest
+#    branches:
+#      - main
+#      - fix-unstable-acctest
     paths-ignore:
        - 'README.md'
 
   push:
     paths-ignore:
       - 'README.md'
-    branches:
-      - main
-      - fix-unstable-acctest
+#    branches:
+#      - main
+#      - fix-unstable-acctest
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
@@ -145,7 +145,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: acceptance-tests
-    #if: "!github.event.pull_request.head.repo.fork"
+    if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
       fail-fast: false
