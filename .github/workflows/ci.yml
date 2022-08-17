@@ -146,7 +146,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 1
+#      max-parallel: 1
       matrix:
         terraform:
           - '1.0.*'
@@ -204,6 +204,38 @@ jobs:
         path-to-profile: "./test/out/coverage.out"
         flag-name: tests-acc-${{ matrix.terraform }}
         parallel: true
+
+  cleanup:
+    name: Cleanup
+    if: always()
+    needs: tests-acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+        id: go
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: Run sweepers
+        timeout-minutes: 10
+        env:
+          TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+          TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+          TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+          TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}
+        run: |
+          make sweep
+
 
   # notifies that all test jobs are finished.
   finish:

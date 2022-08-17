@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -17,8 +16,8 @@ const (
 func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resources Basic", func(t *testing.T) {
 
-		networkName := acctest.RandomWithPrefix(getTestPrefix())
-		resourceName := acctest.RandomWithPrefix(getTestPrefix("resource"))
+		networkName := getRandomName()
+		resourceName := getRandomResourceName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
