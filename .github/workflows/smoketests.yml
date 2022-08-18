@@ -37,7 +37,7 @@ jobs:
       timeout-minutes: 2
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}          
+        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}
 
     - name: Get dependencies
       run: |
@@ -54,7 +54,6 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-#      max-parallel: 1
       matrix:
         terraform:
           - '1.0.*'
@@ -89,7 +88,7 @@ jobs:
       timeout-minutes: 2
       with:
         path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}            
+        key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}
 
     - name: Get dependencies
       run: |
@@ -133,6 +132,21 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
         id: go
+
+      - name: go env
+        run: echo "GOCACHE=$(go env GOCACHE)" >> $GITHUB_ENV
+      - uses: actions/cache@v3
+        continue-on-error: true
+        timeout-minutes: 2
+        with:
+          path: ${{ env.GOCACHE }}
+          key: ${{ runner.os }}-GOCACHE-${{ hashFiles('go.sum') }}-${{ hashFiles('internal/**') }}
+      - uses: actions/cache@v3
+        continue-on-error: true
+        timeout-minutes: 2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-pkg-mod-${{ hashFiles('go.sum') }}
 
       - name: Get dependencies
         run: |
