@@ -4,6 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -17,22 +20,22 @@ func Provider(version string) *schema.Provider {
 	provider := &schema.Provider{
 		Schema: providerOptions(),
 		ResourcesMap: map[string]*schema.Resource{
-			"twingate_remote_network":   resourceRemoteNetwork(),
-			"twingate_connector":        resourceConnector(),
-			"twingate_connector_tokens": resourceConnectorTokens(),
-			"twingate_group":            resourceGroup(),
-			"twingate_resource":         resourceResource(),
+			"twingate_remote_network":   resource.RemoteNetwork(),
+			"twingate_connector":        resource.Connector(),
+			"twingate_connector_tokens": resource.ConnectorTokens(),
+			"twingate_group":            resource.Group(),
+			"twingate_resource":         resource.Resource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"twingate_group":          datasourceGroup(),
-			"twingate_groups":         datasourceGroups(),
-			"twingate_remote_network": datasourceRemoteNetwork(),
-			"twingate_users":          datasourceUsers(),
-			"twingate_user":           datasourceUser(),
-			"twingate_connectors":     datasourceConnectors(),
-			"twingate_resources":      datasourceResources(),
-			"twingate_resource":       datasourceResource(),
-			"twingate_connector":      datasourceConnector(),
+			"twingate_group":          datasource.Group(),
+			"twingate_groups":         datasource.Groups(),
+			"twingate_remote_network": datasource.RemoteNetwork(),
+			"twingate_users":          datasource.Users(),
+			"twingate_user":           datasource.User(),
+			"twingate_connectors":     datasource.Connectors(),
+			"twingate_resources":      datasource.Resources(),
+			"twingate_resource":       datasource.Resource(),
+			"twingate_connector":      datasource.Connector(),
 		},
 	}
 	provider.ConfigureContextFunc = configure(version, provider)
@@ -97,7 +100,7 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 		var diags diag.Diagnostics
 
 		if (apiToken != "") && (network != "") {
-			client := NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpMaxRetry, version)
+			client := transport.NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpMaxRetry, version)
 
 			return client, diags
 		}
