@@ -17,7 +17,7 @@ const (
 	DefaultHTTPMaxRetry = "5"
 	DefaultURL          = "twingate.com"
 
-	EnvAPIToken     = "TWINGATE_API_TOKEN"
+	EnvAPIToken     = "TWINGATE_API_TOKEN" //nolint
 	EnvNetwork      = "TWINGATE_NETWORK"
 	EnvURL          = "TWINGATE_URL"
 	EnvHTTPTimeout  = "TWINGATE_HTTP_TIMEOUT"
