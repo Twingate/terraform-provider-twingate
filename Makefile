@@ -6,7 +6,7 @@ VERSION=0.1
 OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
-SWEEP_FOLDER=./twingate/internal/provider/tests/sweepers
+SWEEP_FOLDER=./twingate/internal/test/sweepers
 
 
 check_defined = \

@@ -21,7 +21,7 @@ type Resource struct {
 	IsActive        graphql.Boolean
 }
 
-func (r *Resource) stringGroups() []string {
+func (r *Resource) StringGroups() []string {
 	var groups []string
 
 	if len(r.GroupsIds) > 0 {
@@ -41,12 +41,12 @@ type StringProtocolsInput struct {
 	TCPPorts  []string
 }
 
-func (spi *StringProtocolsInput) convertToGraphql() (*ProtocolsInput, error) {
-	protocols := newEmptyProtocols()
+func (spi *StringProtocolsInput) ConvertToGraphql() (*ProtocolsInput, error) {
+	protocols := NewEmptyProtocols()
 	protocols.AllowIcmp = graphql.Boolean(spi.AllowIcmp)
 
 	protocols.UDP.Policy = graphql.String(spi.UDPPolicy)
-	udp, err := convertPorts(spi.UDPPorts)
+	udp, err := ConvertPorts(spi.UDPPorts)
 
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (spi *StringProtocolsInput) convertToGraphql() (*ProtocolsInput, error) {
 	protocols.UDP.Ports = udp
 
 	protocols.TCP.Policy = graphql.String(spi.TCPPolicy)
-	tcp, err := convertPorts(spi.TCPPorts)
+	tcp, err := ConvertPorts(spi.TCPPorts)
 
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func validatePort(port string) (graphql.Int, error) {
 	return graphql.Int(parsed), nil
 }
 
-func convertPortsToSlice(a []interface{}) []string {
+func ConvertPortsToSlice(a []interface{}) []string {
 	var res = make([]string, 0)
 
 	for _, elem := range a {
@@ -97,7 +97,7 @@ func convertPortsToSlice(a []interface{}) []string {
 	return res
 }
 
-func convertPorts(ports []string) ([]*PortRangeInput, error) {
+func ConvertPorts(ports []string) ([]*PortRangeInput, error) {
 	converted := []*PortRangeInput{}
 
 	for _, elem := range ports {
@@ -151,7 +151,7 @@ type createResourceQuery struct {
 	} `graphql:"resourceCreate(name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) createResource(ctx context.Context, resource *Resource) error {
+func (client *Client) CreateResource(ctx context.Context, resource *Resource) error {
 	variables := map[string]interface{}{
 		"name":            resource.Name,
 		"address":         resource.Address,
@@ -197,7 +197,7 @@ type readResourceQuery struct {
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResource(ctx context.Context, resourceID string) (*Resource, error) {
+func (client *Client) ReadResource(ctx context.Context, resourceID string) (*Resource, error) {
 	if resourceID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
@@ -246,7 +246,7 @@ type readResourcesQuery struct { //nolint
 	}
 }
 
-func (client *Client) readResources(ctx context.Context) ([]*Edges, error) { //nolint
+func (client *Client) ReadResources(ctx context.Context) ([]*Edges, error) { //nolint
 	response := readResourcesQuery{}
 	variables := map[string]interface{}{}
 
@@ -262,7 +262,7 @@ type updateResourceQuery struct {
 	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) updateResource(ctx context.Context, resource *Resource) error {
+func (client *Client) UpdateResource(ctx context.Context, resource *Resource) error {
 	variables := map[string]interface{}{
 		"id":              resource.ID,
 		"name":            resource.Name,
@@ -291,7 +291,7 @@ type deleteResourceQuery struct {
 	ResourceDelete *OkError `graphql:"resourceDelete(id: $id)"`
 }
 
-func (client *Client) deleteResource(ctx context.Context, resourceID string) error {
+func (client *Client) DeleteResource(ctx context.Context, resourceID string) error {
 	if resourceID == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", resourceResourceName)
 	}
@@ -327,7 +327,7 @@ type readResourceWithoutGroupsQuery struct {
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResourceWithoutGroups(ctx context.Context, resourceID string) (*Resource, error) {
+func (client *Client) ReadResourceWithoutGroups(ctx context.Context, resourceID string) (*Resource, error) {
 	if resourceID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
@@ -361,7 +361,7 @@ type updateResourceActiveStateQuery struct {
 	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, isActive: $isActive)"`
 }
 
-func (client *Client) updateResourceActiveState(ctx context.Context, resource *Resource) error {
+func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *Resource) error {
 	variables := map[string]interface{}{
 		"id":       resource.ID,
 		"isActive": resource.IsActive,
@@ -399,7 +399,7 @@ type readResourcesByNameQuery struct {
 	} `graphql:"resources(filter: {name: {eq: $name}})"`
 }
 
-func (client *Client) readResourcesByName(ctx context.Context, name string) ([]*Resource, error) {
+func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*Resource, error) {
 	response := readResourcesByNameQuery{}
 	variables := map[string]interface{}{
 		"name": graphql.String(name),

@@ -3,17 +3,18 @@ package datasource
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	var diags diag.Diagnostics
 
 	userID := resourceData.Get("id").(string)
-	user, err := client.readUser(ctx, userID)
+	user, err := client.ReadUser(ctx, userID)
 
 	if err != nil {
 		return diag.FromErr(err)

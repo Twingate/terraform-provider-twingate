@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
@@ -14,6 +15,13 @@ import (
 const (
 	DefaultHTTPTimeout  = "10"
 	DefaultHTTPMaxRetry = "5"
+	DefaultURL          = "twingate.com"
+
+	EnvAPIToken     = "TWINGATE_API_TOKEN"
+	EnvNetwork      = "TWINGATE_NETWORK"
+	EnvURL          = "TWINGATE_URL"
+	EnvHTTPTimeout  = "TWINGATE_HTTP_TIMEOUT"
+	EnvHTTPMaxRetry = "TWINGATE_HTTP_MAX_RETRY"
 )
 
 func Provider(version string) *schema.Provider {
@@ -49,42 +57,42 @@ func providerOptions() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   true,
-			DefaultFunc: schema.EnvDefaultFunc("TWINGATE_API_TOKEN", nil),
-			Description: "The access key for API operations. You can retrieve this\n" +
-				"from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).\n" +
-				"Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.",
+			DefaultFunc: schema.EnvDefaultFunc(EnvAPIToken, nil),
+			Description: fmt.Sprintf("The access key for API operations. You can retrieve this\n"+
+				"from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).\n"+
+				"Alternatively, this can be specified using the %s environment variable.", EnvAPIToken),
 		},
 		"network": {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   false,
-			DefaultFunc: schema.EnvDefaultFunc("TWINGATE_NETWORK", nil),
-			Description: "Your Twingate network ID for API operations.\n" +
-				"You can find it in the Admin Console URL, for example:\n" +
-				"`autoco.twingate.com`, where `autoco` is your network ID\n" +
-				"Alternatively, this can be specified using the TWINGATE_NETWORK environment variable.",
+			DefaultFunc: schema.EnvDefaultFunc(EnvNetwork, nil),
+			Description: fmt.Sprintf("Your Twingate network ID for API operations.\n"+
+				"You can find it in the Admin Console URL, for example:\n"+
+				"`autoco.twingate.com`, where `autoco` is your network ID\n"+
+				"Alternatively, this can be specified using the %s environment variable.", EnvNetwork),
 		},
 		"url": {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   false,
-			DefaultFunc: schema.EnvDefaultFunc("TWINGATE_URL", "twingate.com"),
-			Description: "The default is 'twingate.com'\n" +
-				"This is optional and shouldn't be changed under normal circumstances.",
+			DefaultFunc: schema.EnvDefaultFunc(EnvURL, DefaultURL),
+			Description: fmt.Sprintf("The default is '%s'\n"+
+				"This is optional and shouldn't be changed under normal circumstances.", DefaultURL),
 		},
 		"http_timeout": {
 			Type:        schema.TypeInt,
 			Optional:    true,
-			DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_TIMEOUT", DefaultHTTPTimeout),
-			Description: "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.\n" +
-				"Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable",
+			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPTimeout, DefaultHTTPTimeout),
+			Description: fmt.Sprintf("Specifies a time limit in seconds for the http requests made. The default value is %s seconds.\n"+
+				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPTimeout, EnvHTTPTimeout),
 		},
 		"http_max_retry": {
 			Type:        schema.TypeInt,
 			Optional:    true,
-			DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_MAX_RETRY", DefaultHTTPMaxRetry),
-			Description: "Specifies a retry limit for the http requests made. This setting is 5.\n" +
-				"Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable",
+			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPMaxRetry, DefaultHTTPMaxRetry),
+			Description: fmt.Sprintf("Specifies a retry limit for the http requests made. This setting is %s.\n"+
+				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPMaxRetry, EnvHTTPMaxRetry),
 		},
 	}
 }

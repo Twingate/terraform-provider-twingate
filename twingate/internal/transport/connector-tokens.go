@@ -17,7 +17,7 @@ type connectorTokens struct {
 
 const connectorTokensResourceName = "connector tokens"
 
-func (client *Client) verifyConnectorTokens(ctx context.Context, refreshToken, accessToken string) error {
+func (client *Client) VerifyConnectorTokens(ctx context.Context, refreshToken, accessToken string) error {
 	jsonValue, err := json.Marshal(
 		map[string]string{
 			"refresh_token": refreshToken,
@@ -56,7 +56,7 @@ type generateConnectorTokensQuery struct {
 	} `graphql:"connectorGenerateTokens(connectorId: $connectorId)"`
 }
 
-func (client *Client) generateConnectorTokens(ctx context.Context, connector *Connector) error {
+func (client *Client) GenerateConnectorTokens(ctx context.Context, connector *Connector) error {
 	variables := map[string]interface{}{
 		"connectorId": connector.ID,
 	}

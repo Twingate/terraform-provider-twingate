@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	var diags diag.Diagnostics
 
 	resourceID := resourceData.Get("id").(string)
-	resource, err := client.readResourceWithoutGroups(ctx, resourceID)
+	resource, err := client.ReadResourceWithoutGroups(ctx, resourceID)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -41,7 +43,7 @@ func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceDa
 	return diags
 }
 
-func convertProtocolsToTerraform(protocols *ProtocolsInput) []interface{} {
+func convertProtocolsToTerraform(protocols *transport.ProtocolsInput) []interface{} {
 	if protocols == nil {
 		return nil
 	}
@@ -65,12 +67,12 @@ func convertProtocolsToTerraform(protocols *ProtocolsInput) []interface{} {
 	}
 }
 
-func convertProtocolToTerraform(protocol *ProtocolInput) []interface{} {
+func convertProtocolToTerraform(protocol *transport.ProtocolInput) []interface{} {
 	if protocol == nil {
 		return nil
 	}
 
-	ports, policy := protocol.buildPortsRange()
+	ports, policy := protocol.BuildPortsRange()
 
 	out := make(map[string]interface{})
 	if policy != "" {
@@ -96,7 +98,7 @@ func Resource() *schema.Resource { //nolint:funlen
 			"policy": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", policyRestricted, policyAllowAll, policyDenyAll),
+				Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
 			},
 			"ports": {
 				Type:        schema.TypeList,

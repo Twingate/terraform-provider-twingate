@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -16,12 +17,12 @@ const (
 )
 
 func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	var diags diag.Diagnostics
 
 	filter := buildFilter(resourceData)
-	groups, err := client.filterGroups(ctx, filter)
+	groups, err := client.FilterGroups(ctx, filter)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -41,7 +42,7 @@ func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData
 	return diags
 }
 
-func buildFilter(resourceData *schema.ResourceData) *GroupsFilter {
+func buildFilter(resourceData *schema.ResourceData) *transport.GroupsFilter {
 	groupName, hasName := resourceData.GetOk("name")
 	groupType, hasType := resourceData.GetOk("type")
 
@@ -52,7 +53,7 @@ func buildFilter(resourceData *schema.ResourceData) *GroupsFilter {
 		return nil
 	}
 
-	filter := &GroupsFilter{}
+	filter := &transport.GroupsFilter{}
 
 	if hasName {
 		val := groupName.(string)
@@ -72,7 +73,7 @@ func buildFilter(resourceData *schema.ResourceData) *GroupsFilter {
 	return filter
 }
 
-func convertGroupsToTerraform(groups []*Group) []interface{} {
+func convertGroupsToTerraform(groups []*transport.Group) []interface{} {
 	out := make([]interface{}, 0, len(groups))
 
 	for _, group := range groups {

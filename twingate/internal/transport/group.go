@@ -16,6 +16,14 @@ type Group struct {
 	IsActive graphql.Boolean
 }
 
+func (g Group) GetName() string {
+	return string(g.Name)
+}
+
+func (g Group) GetID() string {
+	return g.ID.(string)
+}
+
 type createGroupQuery struct {
 	GroupCreate struct {
 		Entity IDName

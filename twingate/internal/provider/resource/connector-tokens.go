@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -49,14 +50,14 @@ func ConnectorTokens() *schema.Resource {
 }
 
 func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	connectorID := resourceData.Get("connector_id").(string)
 
 	resourceData.SetId(connectorID)
 
-	connector := Connector{ID: connectorID}
-	err := client.generateConnectorTokens(ctx, &connector)
+	connector := transport.Connector{ID: connectorID}
+	err := client.GenerateConnectorTokens(ctx, &connector)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -74,13 +75,13 @@ func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.Res
 }
 
 func resourceConnectorTokensDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	var diags diag.Diagnostics
 
-	connector := Connector{ID: resourceData.Id()}
+	connector := transport.Connector{ID: resourceData.Id()}
 	// Just calling generate new tokens for the connector so the old ones are invalidated
-	err := client.generateConnectorTokens(ctx, &connector)
+	err := client.GenerateConnectorTokens(ctx, &connector)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -93,14 +94,14 @@ func resourceConnectorTokensDelete(ctx context.Context, resourceData *schema.Res
 }
 
 func resourceConnectorTokensRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	var diags diag.Diagnostics
 
 	accessToken := resourceData.Get("access_token").(string)
 	refreshToken := resourceData.Get("refresh_token").(string)
 
-	err := client.verifyConnectorTokens(ctx, refreshToken, accessToken)
+	err := client.VerifyConnectorTokens(ctx, refreshToken, accessToken)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,

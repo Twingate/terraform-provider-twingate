@@ -3,6 +3,7 @@ package transport
 import (
 	"strconv"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
 
@@ -28,11 +29,19 @@ type Edges struct {
 	Node *IDName `json:"node"`
 }
 
-func newEmptyProtocols() *ProtocolsInput {
-	pi := newProtocolsInput()
+func (e Edges) GetName() string {
+	return e.Node.StringName()
+}
+
+func (e Edges) GetID() string {
+	return e.Node.StringID()
+}
+
+func NewEmptyProtocols() *ProtocolsInput {
+	pi := NewProtocolsInput()
 	pi.AllowIcmp = graphql.Boolean(true)
-	pi.UDP.Policy = graphql.String(policyAllowAll)
-	pi.TCP.Policy = graphql.String(policyAllowAll)
+	pi.UDP.Policy = graphql.String(model.PolicyAllowAll)
+	pi.TCP.Policy = graphql.String(model.PolicyAllowAll)
 
 	return pi
 }
@@ -43,7 +52,7 @@ type ProtocolsInput struct {
 	AllowIcmp graphql.Boolean `json:"allowIcmp"`
 }
 
-func (pi *ProtocolsInput) flattenProtocols() []interface{} {
+func (pi *ProtocolsInput) FlattenProtocols() []interface{} {
 	if pi == nil {
 		return nil
 	}
@@ -64,12 +73,12 @@ func (pi *ProtocolsInput) flattenProtocols() []interface{} {
 
 func (pi *ProtocolInput) flattenPorts() []interface{} {
 	c := make(map[string]interface{})
-	c["ports"], c["policy"] = pi.buildPortsRange()
+	c["ports"], c["policy"] = pi.BuildPortsRange()
 
 	return []interface{}{c}
 }
 
-func newProtocolsInput() *ProtocolsInput {
+func NewProtocolsInput() *ProtocolsInput {
 	return &ProtocolsInput{
 		TCP: &ProtocolInput{Ports: []*PortRangeInput{}},
 		UDP: &ProtocolInput{Ports: []*PortRangeInput{}},
@@ -81,7 +90,7 @@ type ProtocolInput struct {
 	Policy graphql.String    `json:"policy"`
 }
 
-func (pi *ProtocolInput) buildPortsRange() ([]string, string) {
+func (pi *ProtocolInput) BuildPortsRange() ([]string, string) {
 	var ports []string
 
 	for _, port := range pi.Ports {

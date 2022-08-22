@@ -18,6 +18,14 @@ type Connectors struct {
 	Name string
 }
 
+func (c Connectors) GetName() string {
+	return c.Name
+}
+
+func (c Connectors) GetID() string {
+	return c.ID
+}
+
 const connectorResourceName = "connector"
 
 type createConnectorQuery struct {

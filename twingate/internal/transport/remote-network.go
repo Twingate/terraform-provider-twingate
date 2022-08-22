@@ -11,6 +11,14 @@ type remoteNetwork struct {
 	Name graphql.String
 }
 
+func (r remoteNetwork) GetName() string {
+	return string(r.Name)
+}
+
+func (r remoteNetwork) GetID() string {
+	return r.ID.(string)
+}
+
 const remoteNetworkResourceName = "remote network"
 
 type createRemoteNetworkQuery struct {

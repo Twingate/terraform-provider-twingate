@@ -8,16 +8,12 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/twingate/go-graphql-client"
-)
-
-const (
-	policyRestricted = "RESTRICTED"
-	policyAllowAll   = "ALLOW_ALL"
-	policyDenyAll    = "DENY_ALL"
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -26,8 +22,8 @@ func Resource() *schema.Resource { //nolint:funlen
 			"policy": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{policyRestricted, policyAllowAll, policyDenyAll}, false),
-				Description:  fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", policyRestricted, policyAllowAll, policyDenyAll),
+				ValidateFunc: validation.StringInSlice(model.Policies, false),
+				Description:  fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
 			},
 			"ports": {
 				Type:        schema.TypeList,
@@ -128,7 +124,7 @@ func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
 	for _, key := range keys {
 		if strings.HasPrefix(k, key) {
 			oldPolicy, newPolicy := castToStrings(d.GetChange(key))
-			if oldPolicy == policyRestricted && newPolicy == policyDenyAll {
+			if oldPolicy == model.PolicyRestricted && newPolicy == model.PolicyDenyAll {
 				return true
 			}
 		}
@@ -153,14 +149,14 @@ func protocolsDiff(key, oldValue, newValue string, resourceData *schema.Resource
 }
 
 func equalPorts(a, b interface{}) bool {
-	oldPorts, newPorts := convertPortsToSlice(a.([]interface{})), convertPortsToSlice(b.([]interface{}))
+	oldPorts, newPorts := transport.ConvertPortsToSlice(a.([]interface{})), transport.ConvertPortsToSlice(b.([]interface{}))
 
-	oldPortsRange, err := convertPorts(oldPorts)
+	oldPortsRange, err := transport.ConvertPorts(oldPorts)
 	if err != nil {
 		return false
 	}
 
-	newPortsRange, err := convertPorts(newPorts)
+	newPortsRange, err := transport.ConvertPorts(newPorts)
 	if err != nil {
 		return false
 	}
@@ -171,7 +167,7 @@ func equalPorts(a, b interface{}) bool {
 	return reflect.DeepEqual(oldPortsMap, newPortsMap)
 }
 
-func convertPortsRangeToMap(portsRange []*PortRangeInput) map[int32]struct{} {
+func convertPortsRangeToMap(portsRange []*transport.PortRangeInput) map[int32]struct{} {
 	out := make(map[int32]struct{})
 
 	for _, port := range portsRange {
@@ -211,9 +207,9 @@ func convertGroupsGraphql(a []interface{}) []*graphql.ID {
 	return res
 }
 
-func extractProtocolsFromContext(p interface{}) *StringProtocolsInput {
+func extractProtocolsFromContext(p interface{}) *transport.StringProtocolsInput {
 	protocolsMap := p.(map[string]interface{})
-	protocols := &StringProtocolsInput{}
+	protocols := &transport.StringProtocolsInput{}
 	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
 
 	u := protocolsMap["udp"].([]interface{})
@@ -237,13 +233,13 @@ func parseProtocol(input map[string]interface{}) (string, []string) {
 	policy := input["policy"].(string)
 
 	switch policy {
-	case policyAllowAll:
+	case model.PolicyAllowAll:
 		return policy, ports
-	case policyDenyAll:
-		return policyRestricted, nil
+	case model.PolicyDenyAll:
+		return model.PolicyRestricted, nil
 	}
 
-	p := convertPortsToSlice(input["ports"].([]interface{}))
+	p := transport.ConvertPortsToSlice(input["ports"].([]interface{}))
 	if len(p) > 0 {
 		ports = p
 	}
@@ -251,8 +247,8 @@ func parseProtocol(input map[string]interface{}) (string, []string) {
 	return policy, ports
 }
 
-func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
-	resource := &Resource{
+func extractResource(resourceData *schema.ResourceData) (*transport.Resource, error) {
+	resource := &transport.Resource{
 		Name:            graphql.String(resourceData.Get("name").(string)),
 		RemoteNetworkID: graphql.ID(resourceData.Get("remote_network_id").(string)),
 		Address:         graphql.String(resourceData.Get("address").(string)),
@@ -262,28 +258,28 @@ func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
 	p := resourceData.Get("protocols").([]interface{})
 
 	if len(p) > 0 {
-		p, err := extractProtocolsFromContext(p[0]).convertToGraphql()
+		p, err := extractProtocolsFromContext(p[0]).ConvertToGraphql()
 		if err != nil {
 			return nil, err
 		}
 
 		resource.Protocols = p
 	} else {
-		resource.Protocols = newEmptyProtocols()
+		resource.Protocols = transport.NewEmptyProtocols()
 	}
 
 	return resource, nil
 }
 
 func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	resource, err := extractResource(resourceData)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.createResource(ctx, resource)
+	err = client.CreateResource(ctx, resource)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -295,7 +291,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	if resourceData.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
 		resource, err := extractResource(resourceData)
@@ -305,7 +301,7 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 
 		resource.ID = resourceData.Id()
 
-		err = client.updateResource(ctx, resource)
+		err = client.UpdateResource(ctx, resource)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -315,13 +311,13 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 
 	var diags diag.Diagnostics
 
 	resourceID := resourceData.Id()
 
-	err := client.deleteResource(ctx, resourceID)
+	err := client.DeleteResource(ctx, resourceID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -332,12 +328,12 @@ func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
+	client := meta.(*transport.Client)
 	resourceID := resourceData.Id()
 
-	resource, err := client.readResource(ctx, resourceID)
+	resource, err := client.ReadResource(ctx, resourceID)
 	if err != nil {
-		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+		if errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
 			// clear state
 			resourceData.SetId("")
 
@@ -348,12 +344,12 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 	}
 
 	if resource.Protocols == nil {
-		resource.Protocols = newEmptyProtocols()
+		resource.Protocols = transport.NewEmptyProtocols()
 	}
 
 	if !resource.IsActive {
 		// fix set active state for the resource on `terraform apply`
-		err = client.updateResourceActiveState(ctx, &Resource{
+		err = client.UpdateResourceActiveState(ctx, &transport.Resource{
 			ID:       resourceID,
 			IsActive: true,
 		})
@@ -363,10 +359,10 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 		}
 	}
 
-	return resourceResourceReadDiagnostics(resourceData, resource)
+	return ResourceReadDiagnostics(resourceData, resource)
 }
 
-func resourceResourceReadDiagnostics(resourceData *schema.ResourceData, resource *Resource) diag.Diagnostics {
+func ResourceReadDiagnostics(resourceData *schema.ResourceData, resource *transport.Resource) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	if err := resourceData.Set("name", resource.Name); err != nil {
@@ -381,11 +377,11 @@ func resourceResourceReadDiagnostics(resourceData *schema.ResourceData, resource
 		return diag.FromErr(fmt.Errorf("error setting address: %w ", err))
 	}
 
-	if err := resourceData.Set("group_ids", resource.stringGroups()); err != nil {
+	if err := resourceData.Set("group_ids", resource.StringGroups()); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
 
-	protocols := resource.Protocols.flattenProtocols()
+	protocols := resource.Protocols.FlattenProtocols()
 	if err := resourceData.Set("protocols", protocols); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
 	}

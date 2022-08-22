@@ -3,14 +3,14 @@
 set -o errexit
 set -o nounset
 
-PACKAGE_NAMES=$(go list ./twingate/...)
+PACKAGE_NAME=./twingate/...
 TEST_RESULTS=${TEST_RESULTS:-"./out"}
 
 mkdir -p "${TEST_RESULTS}"
 
-echo PACKAGE_NAMES: "$PACKAGE_NAMES"
+echo PACKAGE_NAME: "$PACKAGE_NAME"
 echo "Running tests:"
-go run gotest.tools/gotestsum --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg=./twingate/... -coverprofile="${TEST_RESULTS}"/coverage.out.tmp "${PACKAGE_NAMES}"
+go run gotest.tools/gotestsum --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg="${PACKAGE_NAME}" -coverprofile="${TEST_RESULTS}"/coverage.out.tmp "${PACKAGE_NAME}"
 echo
 
 echo "Generating coverage report (removing generated **/api/gen/** and *.pb.go files)"
