@@ -10,7 +10,7 @@ import (
 
 const (
 	DefaultHTTPTimeout  = "10"
-	DefaultHTTPMaxRetry = "5"
+	DefaultHTTPMaxRetry = "10"
 )
 
 func Provider(version string) *schema.Provider {
