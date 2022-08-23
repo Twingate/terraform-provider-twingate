@@ -50,7 +50,7 @@ func testDatasourceTwingateRemoteNetwork(name string) string {
 func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Remote Network Basic", func(t *testing.T) {
 
-		networkName := acctest.RandomWithPrefix("tf-acc")
+		networkName := getRandomName()
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
