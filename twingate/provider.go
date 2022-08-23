@@ -80,7 +80,7 @@ func providerOptions() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc("TWINGATE_HTTP_MAX_RETRY", DefaultHTTPMaxRetry),
-			Description: "Specifies a retry limit for the http requests made. This setting is 5.\n" +
+			Description: "Specifies a retry limit for the http requests made. This default value is 10.\n" +
 				"Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable",
 		},
 	}
