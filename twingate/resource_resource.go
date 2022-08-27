@@ -7,6 +7,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -291,6 +292,8 @@ func resourceResourceCreate(ctx context.Context, resourceData *schema.ResourceDa
 	resourceData.SetId(resource.ID.(string))
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
+	waitForResourceAvailability()
+
 	return resourceResourceRead(ctx, resourceData, meta)
 }
 
@@ -391,4 +394,8 @@ func resourceResourceReadDiagnostics(resourceData *schema.ResourceData, resource
 	}
 
 	return diags
+}
+
+func waitForResourceAvailability() {
+	time.Sleep(time.Second)
 }
