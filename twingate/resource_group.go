@@ -50,6 +50,8 @@ func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData,
 	resourceData.SetId(group.ID.(string))
 	log.Printf("[INFO] Group %s created with id %s", groupName, resourceData.Id())
 
+	waitForResourceAvailability()
+
 	return resourceGroupRead(ctx, resourceData, meta)
 }
 
