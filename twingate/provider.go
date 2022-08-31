@@ -14,7 +14,7 @@ import (
 
 const (
 	DefaultHTTPTimeout  = "10"
-	DefaultHTTPMaxRetry = "5"
+	DefaultHTTPMaxRetry = "10"
 	DefaultURL          = "twingate.com"
 
 	EnvAPIToken     = "TWINGATE_API_TOKEN" //#nosec

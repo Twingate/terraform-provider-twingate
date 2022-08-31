@@ -7,6 +7,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
@@ -287,6 +288,8 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 	resourceData.SetId(resource.ID.(string))
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
+	waitForResourceAvailability()
+
 	return resourceRead(ctx, resourceData, meta)
 }
 
@@ -387,4 +390,8 @@ func ResourceReadDiagnostics(resourceData *schema.ResourceData, resource *transp
 	}
 
 	return diags
+}
+
+func waitForResourceAvailability() {
+	time.Sleep(time.Second)
 }

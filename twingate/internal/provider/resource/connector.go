@@ -75,6 +75,8 @@ func connectorCreate(ctx context.Context, resourceData *schema.ResourceData, met
 		return connectorUpdate(ctx, resourceData, meta)
 	}
 
+	waitForResourceAvailability()
+
 	return connectorRead(ctx, resourceData, meta)
 }
 func connectorUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
