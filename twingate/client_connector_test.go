@@ -32,7 +32,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createConnectorOkJson))
 
-		connector, err := client.createConnector(context.Background(), "test")
+		connector, err := client.createConnector(context.Background(), "test", "")
 
 		assert.Nil(t, err)
 		assert.EqualValues(t, "test-id", connector.ID)
@@ -108,7 +108,7 @@ func TestClientConnectorCreateError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createNetworkErrorJson))
 
-		remoteNetwork, err := client.createConnector(context.Background(), "test")
+		remoteNetwork, err := client.createConnector(context.Background(), "test", "")
 
 		assert.EqualError(t, err, "failed to create connector: error_1")
 		assert.Nil(t, remoteNetwork)
@@ -175,7 +175,7 @@ func TestClientConnectorEmptyNetworkIDCreateError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createNetworkOkJson))
 
-		remoteNetwork, err := client.createConnector(context.Background(), "")
+		remoteNetwork, err := client.createConnector(context.Background(), "", "")
 
 		assert.EqualError(t, err, "failed to create connector: network id is empty")
 		assert.Nil(t, remoteNetwork)
@@ -393,7 +393,7 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errors.New("error_1")))
 
-		remoteNetwork, err := client.createConnector(context.Background(), "test")
+		remoteNetwork, err := client.createConnector(context.Background(), "test", "")
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector: Post "%s": error_1`, client.GraphqlServerURL))
 		assert.Nil(t, remoteNetwork)
