@@ -1,3 +1,4 @@
+// Package twingate is a Terraform provider for Twingate platform
 package twingate
 
 import (
