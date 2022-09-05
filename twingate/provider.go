@@ -1,3 +1,4 @@
+// Package twingate is a Terraform provider for Twingate platform
 package twingate
 
 import (
@@ -17,6 +18,7 @@ const (
 	DefaultHTTPMaxRetry = "10"
 	DefaultURL          = "twingate.com"
 
+	// EnvAPIToken env var for Token.
 	EnvAPIToken     = "TWINGATE_API_TOKEN" //#nosec
 	EnvNetwork      = "TWINGATE_NETWORK"
 	EnvURL          = "TWINGATE_URL"
