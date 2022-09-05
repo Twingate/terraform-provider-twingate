@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -37,13 +38,13 @@ func TestAccDatasourceTwingateUser_basic(t *testing.T) {
 	})
 }
 
-func getTestUser() (*User, error) {
-	if testAccProvider.Meta() == nil {
+func getTestUser() (*transport.User, error) {
+	if acctests.Provider.Meta() == nil {
 		return nil, errors.New("meta client not inited")
 	}
 
-	client := testAccProvider.Meta().(*Client)
-	users, err := client.readUsers(context.Background())
+	client := acctests.Provider.Meta().(*transport.Client)
+	users, err := client.ReadUsers(context.Background())
 	if err != nil {
 		return nil, err
 	}
