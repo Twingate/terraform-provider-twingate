@@ -13,7 +13,7 @@ type IDName struct {
 }
 
 func (in *IDName) StringID() string {
-	return in.ID.(string)
+	return idToString(in.ID)
 }
 
 func (in *IDName) StringName() string {

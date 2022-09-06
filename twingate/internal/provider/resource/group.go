@@ -8,7 +8,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/twingate/go-graphql-client"
 )
 
 func Group() *schema.Resource {
@@ -42,13 +41,13 @@ func groupCreate(ctx context.Context, resourceData *schema.ResourceData, meta in
 	client := meta.(*transport.Client)
 
 	groupName := resourceData.Get("name").(string)
-	group, err := client.CreateGroup(ctx, graphql.String(groupName))
+	group, err := client.CreateGroup(ctx, groupName)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(group.ID.(string))
+	resourceData.SetId(group.ID)
 	log.Printf("[INFO] Group %s created with id %s", groupName, resourceData.Id())
 
 	waitForResourceAvailability()
@@ -64,7 +63,7 @@ func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta in
 	if resourceData.HasChange("name") {
 		groupID := resourceData.Id()
 
-		err := client.UpdateGroup(ctx, graphql.ID(groupID), graphql.String(groupName))
+		err := client.UpdateGroup(ctx, groupID, groupName)
 		if err != nil {
 			return diag.FromErr(err)
 		}

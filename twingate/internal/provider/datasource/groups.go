@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -73,15 +74,15 @@ func buildFilter(resourceData *schema.ResourceData) *transport.GroupsFilter {
 	return filter
 }
 
-func convertGroupsToTerraform(groups []*transport.Group) []interface{} {
+func convertGroupsToTerraform(groups []*model.Group) []interface{} {
 	out := make([]interface{}, 0, len(groups))
 
 	for _, group := range groups {
 		out = append(out, map[string]interface{}{
-			"id":        group.ID.(string),
-			"name":      string(group.Name),
-			"type":      string(group.Type),
-			"is_active": bool(group.IsActive),
+			"id":        group.ID,
+			"name":      group.Name,
+			"type":      group.Type,
+			"is_active": group.IsActive,
 		})
 	}
 

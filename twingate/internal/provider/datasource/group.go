@@ -20,15 +20,15 @@ func datasourceGroupRead(ctx context.Context, resourceData *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", string(group.Name)); err != nil {
+	if err := resourceData.Set("name", group.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("type", string(group.Type)); err != nil {
+	if err := resourceData.Set("type", group.Type); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("is_active", bool(group.IsActive)); err != nil {
+	if err := resourceData.Set("is_active", group.IsActive); err != nil {
 		return diag.FromErr(err)
 	}
 

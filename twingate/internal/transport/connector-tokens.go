@@ -40,7 +40,7 @@ type generateConnectorTokensQuery struct {
 }
 
 func (client *Client) GenerateConnectorTokens(ctx context.Context, connectorID string) (*model.ConnectorTokens, error) {
-	variables := newVariables().withID(connectorID, "connectorId").value()
+	variables := newVars(gqlID(connectorID, "connectorId"))
 	response := generateConnectorTokensQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "generateConnectorTokens", &response, variables)

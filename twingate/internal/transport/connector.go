@@ -28,9 +28,7 @@ func (client *Client) CreateConnector(ctx context.Context, remoteNetworkID strin
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "create", connectorResourceName)
 	}
 
-	variables := newVariables().
-		withID(remoteNetworkID, "remoteNetworkId").value()
-
+	variables := newVars(gqlID(remoteNetworkID, "remoteNetworkId"))
 	response := createConnectorQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createConnector", &response, variables)
@@ -57,9 +55,10 @@ func (client *Client) UpdateConnector(ctx context.Context, connectorID string, c
 		return NewAPIError(ErrGraphqlConnectorIDIsEmpty, "update", connectorResourceName)
 	}
 
-	variables := newVariables().
-		withID(connectorID, "connectorId").
-		withField(connectorName, "connectorName").value()
+	variables := newVars(
+		gqlID(connectorID, "connectorId"),
+		gqlField(connectorName, "connectorName"),
+	)
 
 	response := updateConnectorQuery{}
 
@@ -91,7 +90,7 @@ func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, e
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
-	if response.Connectors.Edges == nil {
+	if len(response.Connectors.Edges) == 0 {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 
@@ -107,7 +106,7 @@ func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*m
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", connectorResourceName)
 	}
 
-	variables := newVariables().withID(connectorID).value()
+	variables := newVars(gqlID(connectorID))
 	response := readConnectorQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readConnector", &response, variables)
@@ -131,7 +130,7 @@ func (client *Client) DeleteConnector(ctx context.Context, connectorID string) e
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", connectorResourceName)
 	}
 
-	variables := newVariables().withID(connectorID).value()
+	variables := newVars(gqlID(connectorID))
 	response := deleteConnectorQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "deleteConnector", &response, variables)

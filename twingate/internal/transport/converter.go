@@ -67,3 +67,53 @@ func (t gqlConnectorTokens) ToModel() *model.ConnectorTokens {
 func (q generateConnectorTokensQuery) ToModel() *model.ConnectorTokens {
 	return q.ConnectorGenerateTokens.ConnectorTokens.ToModel()
 }
+
+func (q createGroupQuery) ToModel() *model.Group {
+	return &model.Group{
+		ID:   q.GroupCreate.Entity.StringID(),
+		Name: q.GroupCreate.Entity.StringName(),
+	}
+}
+
+func (g gqlGroup) ToModel() *model.Group {
+	return &model.Group{
+		ID:       g.StringID(),
+		Name:     g.StringName(),
+		Type:     string(g.Type),
+		IsActive: bool(g.IsActive),
+	}
+}
+
+func (gg gqlGroups) ToModel() []*model.Group {
+	groups := make([]*model.Group, 0, len(gg.Edges))
+
+	for _, g := range gg.Edges {
+		if g == nil || g.Node == nil {
+			continue
+		}
+
+		groups = append(groups, g.Node.ToModel())
+	}
+
+	if cap(groups) > len(groups) {
+		groups = groups[:len(groups):len(groups)]
+	}
+
+	return groups
+}
+
+func (q readGroupQuery) ToModel() *model.Group {
+	if q.Group == nil {
+		return nil
+	}
+
+	return q.Group.ToModel()
+}
+
+func (q readGroupsQuery) ToModel() []*model.Group {
+	return q.Groups.ToModel()
+}
+
+func (q readGroupsByNameQuery) ToModel() []*model.Group {
+	return q.Groups.ToModel()
+}

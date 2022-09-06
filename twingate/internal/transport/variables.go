@@ -2,31 +2,33 @@ package transport
 
 import "github.com/twingate/go-graphql-client"
 
-type gqlVars struct {
-	values map[string]interface{}
-}
+func newVars(options ...gqlVarOption) map[string]interface{} {
+	values := make(map[string]interface{})
 
-func newVariables() *gqlVars {
-	return &gqlVars{
-		values: make(map[string]interface{}),
+	for _, opt := range options {
+		values = opt(values)
 	}
+
+	return values
 }
 
-func (v *gqlVars) withID(val string, name ...string) *gqlVars {
+type gqlVarOption func(values map[string]interface{}) map[string]interface{}
+
+func gqlID(val string, name ...string) gqlVarOption {
 	key := "id"
 	if len(name) > 0 {
 		key = name[0]
 	}
 
-	v.values[key] = graphql.ID(val)
-	return v
+	return func(values map[string]interface{}) map[string]interface{} {
+		values[key] = graphql.ID(val)
+		return values
+	}
 }
 
-func (v *gqlVars) withField(val, key string) *gqlVars {
-	v.values[key] = graphql.String(val)
-	return v
-}
-
-func (v *gqlVars) value() map[string]interface{} {
-	return v.values
+func gqlField(val, name string) gqlVarOption {
+	return func(values map[string]interface{}) map[string]interface{} {
+		values[name] = graphql.String(val)
+		return values
+	}
 }
