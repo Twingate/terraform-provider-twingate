@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,7 +15,7 @@ func datasourceConnectorsRead(ctx context.Context, resourceData *schema.Resource
 
 	var diags diag.Diagnostics
 
-	connectors, err := client.ReadConnectorsWithRemoteNetwork(ctx)
+	connectors, err := client.ReadConnectors(ctx)
 
 	if err != nil && !errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
 		return diag.FromErr(err)
@@ -29,7 +30,7 @@ func datasourceConnectorsRead(ctx context.Context, resourceData *schema.Resource
 	return diags
 }
 
-func convertConnectorsToTerraform(connectors []*transport.Connector) []interface{} {
+func convertConnectorsToTerraform(connectors []*model.Connector) []interface{} {
 	out := make([]interface{}, 0, len(connectors))
 
 	for _, connector := range connectors {
@@ -39,11 +40,11 @@ func convertConnectorsToTerraform(connectors []*transport.Connector) []interface
 	return out
 }
 
-func convertConnectorToTerraform(connector *transport.Connector) map[string]interface{} {
+func convertConnectorToTerraform(connector *model.Connector) map[string]interface{} {
 	return map[string]interface{}{
-		"id":                connector.ID.(string),
-		"name":              string(connector.Name),
-		"remote_network_id": connector.RemoteNetwork.ID.(string),
+		"id":                connector.ID,
+		"name":              connector.Name,
+		"remote_network_id": connector.NetworkID,
 	}
 }
 

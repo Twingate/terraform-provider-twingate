@@ -68,7 +68,7 @@ func connectorCreate(ctx context.Context, resourceData *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(connector.ID.(string))
+	resourceData.SetId(connector.ID)
 	log.Printf("[INFO] Created conector %s", connector.Name)
 
 	if resourceData.Get("name").(string) != "" {
@@ -135,10 +135,8 @@ func connectorRead(ctx context.Context, resourceData *schema.ResourceData, meta 
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
 
-	if connector.RemoteNetwork != nil {
-		if err := resourceData.Set("remote_network_id", connector.RemoteNetwork.ID); err != nil {
-			return diag.FromErr(fmt.Errorf("error setting remote_network_id: %w ", err))
-		}
+	if err := resourceData.Set("remote_network_id", connector.NetworkID); err != nil {
+		return diag.FromErr(fmt.Errorf("error setting remote_network_id: %w ", err))
 	}
 
 	return diags

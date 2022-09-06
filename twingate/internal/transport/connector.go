@@ -3,53 +3,34 @@ package transport
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
 
-type Connector struct {
-	ID              graphql.ID
-	RemoteNetwork   *remoteNetwork
-	Name            graphql.String
-	ConnectorTokens *connectorTokens
-}
-
-type Connectors struct {
-	ID   string
-	Name string
-}
-
-func (c Connectors) GetName() string {
-	return c.Name
-}
-
-func (c Connectors) GetID() string {
-	return c.ID
-}
-
 const connectorResourceName = "connector"
+
+type gqlConnector struct {
+	IDName
+	RemoteNetwork struct {
+		ID graphql.ID
+	}
+}
 
 type createConnectorQuery struct {
 	ConnectorCreate struct {
-		Entity IDName
+		Entity gqlConnector
 		OkError
 	} `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId)"`
 }
 
-type updateConnectorQuery struct {
-	ConnectorUpdate struct {
-		Entity IDName
-		OkError
-	} `graphql:"connectorUpdate(id: $connectorId, name: $connectorName )"`
-}
-
-func (client *Client) CreateConnector(ctx context.Context, remoteNetworkID string) (*Connector, error) {
+func (client *Client) CreateConnector(ctx context.Context, remoteNetworkID string) (*model.Connector, error) {
 	if remoteNetworkID == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "create", connectorResourceName)
 	}
 
-	variables := map[string]interface{}{
-		"remoteNetworkId": graphql.ID(remoteNetworkID),
-	}
+	variables := newVariables().
+		withID(remoteNetworkID, "remoteNetworkId").value()
+
 	response := createConnectorQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createConnector", &response, variables)
@@ -61,12 +42,14 @@ func (client *Client) CreateConnector(ctx context.Context, remoteNetworkID strin
 		return nil, NewAPIError(NewMutationError(response.ConnectorCreate.Error), "create", connectorResourceName)
 	}
 
-	connector := Connector{
-		ID:   response.ConnectorCreate.Entity.ID,
-		Name: response.ConnectorCreate.Entity.Name,
-	}
+	return response.ToModel(), nil
+}
 
-	return &connector, nil
+type updateConnectorQuery struct {
+	ConnectorUpdate struct {
+		Entity IDName
+		OkError
+	} `graphql:"connectorUpdate(id: $connectorId, name: $connectorName )"`
 }
 
 func (client *Client) UpdateConnector(ctx context.Context, connectorID string, connectorName string) error {
@@ -74,10 +57,10 @@ func (client *Client) UpdateConnector(ctx context.Context, connectorID string, c
 		return NewAPIError(ErrGraphqlConnectorIDIsEmpty, "update", connectorResourceName)
 	}
 
-	variables := map[string]interface{}{
-		"connectorId":   graphql.ID(connectorID),
-		"connectorName": graphql.String(connectorName),
-	}
+	variables := newVariables().
+		withID(connectorID, "connectorId").
+		withField(connectorName, "connectorName").value()
+
 	response := updateConnectorQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateConnector", &response, variables)
@@ -92,45 +75,16 @@ func (client *Client) UpdateConnector(ctx context.Context, connectorID string, c
 	return nil
 }
 
-type readConnectorsQuery struct { //nolint
-	Connectors struct {
-		Edges []*Edges
-	}
-}
-
-func (client *Client) ReadConnectors(ctx context.Context) (map[int]*Connectors, error) { //nolint
-	response := readConnectorsQuery{}
-
-	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, nil)
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
-	}
-
-	var connectors = make(map[int]*Connectors)
-
-	for i, elem := range response.Connectors.Edges {
-		c := &Connectors{ID: elem.Node.StringID(), Name: elem.Node.StringName()}
-		connectors[i] = c
-	}
-
-	return connectors, nil
-}
-
-type readConnectorsWithRemoteNetworkQuery struct {
+type readConnectorsQuery struct {
 	Connectors struct {
 		Edges []*struct {
-			Node struct {
-				IDName
-				RemoteNetwork struct {
-					ID graphql.ID
-				}
-			}
+			Node gqlConnector
 		}
 	}
 }
 
-func (client *Client) ReadConnectorsWithRemoteNetwork(ctx context.Context) ([]*Connector, error) {
-	response := readConnectorsWithRemoteNetworkQuery{}
+func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, error) {
+	response := readConnectorsQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, nil)
 	if err != nil {
@@ -141,43 +95,19 @@ func (client *Client) ReadConnectorsWithRemoteNetwork(ctx context.Context) ([]*C
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 
-	connectors := make([]*Connector, 0, len(response.Connectors.Edges))
-
-	for _, elem := range response.Connectors.Edges {
-		if elem == nil {
-			continue
-		}
-
-		conn := elem.Node
-
-		connectors = append(connectors, &Connector{
-			ID:   conn.ID,
-			Name: conn.Name,
-			RemoteNetwork: &remoteNetwork{
-				ID: conn.RemoteNetwork.ID,
-			},
-		})
-	}
-
-	return connectors, nil
+	return response.ToModel(), nil
 }
 
 type readConnectorQuery struct {
-	Connector *struct {
-		IDName
-		RemoteNetwork IDName
-	} `graphql:"connector(id: $id)"`
+	Connector *gqlConnector `graphql:"connector(id: $id)"`
 }
 
-func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*Connector, error) {
+func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*model.Connector, error) {
 	if connectorID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", connectorResourceName)
 	}
 
-	variables := map[string]interface{}{
-		"id": graphql.ID(connectorID),
-	}
-
+	variables := newVariables().withID(connectorID).value()
 	response := readConnectorQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readConnector", &response, variables)
@@ -189,18 +119,7 @@ func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*C
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, connectorID)
 	}
 
-	connectorRemoteNetwork := &remoteNetwork{
-		ID:   response.Connector.RemoteNetwork.ID,
-		Name: response.Connector.RemoteNetwork.Name,
-	}
-
-	connector := Connector{
-		ID:            response.Connector.ID,
-		Name:          response.Connector.Name,
-		RemoteNetwork: connectorRemoteNetwork,
-	}
-
-	return &connector, nil
+	return response.ToModel(), nil
 }
 
 type deleteConnectorQuery struct {
@@ -212,10 +131,7 @@ func (client *Client) DeleteConnector(ctx context.Context, connectorID string) e
 		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", connectorResourceName)
 	}
 
-	variables := map[string]interface{}{
-		"id": graphql.ID(connectorID),
-	}
-
+	variables := newVariables().withID(connectorID).value()
 	response := deleteConnectorQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "deleteConnector", &response, variables)

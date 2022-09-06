@@ -20,11 +20,11 @@ func datasourceConnectorRead(ctx context.Context, resourceData *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", string(connector.Name)); err != nil {
+	if err := resourceData.Set("name", connector.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("remote_network_id", connector.RemoteNetwork.ID.(string)); err != nil {
+	if err := resourceData.Set("remote_network_id", connector.NetworkID); err != nil {
 		return diag.FromErr(err)
 	}
 

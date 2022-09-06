@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -283,79 +282,6 @@ func TestClientConnectorEmptyDeleteError(t *testing.T) {
 	})
 }
 
-func TestClientConnectorReadAllOk(t *testing.T) {
-	t.Run("Test Twingate Resource : Read All Client Connectors", func(t *testing.T) {
-
-		// response JSON
-		readConnectorsOkJson := `{
-	  "data": {
-		"connectors": {
-		  "edges": [
-			{
-			  "node": {
-				"id": "connector1",
-				"name": "tf-acc-connector1"
-			  }
-			},
-			{
-			  "node": {
-				"id": "connector2",
-				"name": "connector2"
-			  }
-			},
-			{
-			  "node": {
-				"id": "connector3",
-				"name": "tf-acc-connector3"
-			  }
-			}
-		  ]
-		}
-	  }
-	}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, readConnectorsOkJson))
-
-		connector, err := client.ReadConnectors(context.Background())
-		assert.NoError(t, err)
-
-		r0 := &transport.Connectors{
-			ID:   "connector1",
-			Name: "tf-acc-connector1",
-		}
-		r1 := &transport.Connectors{
-			ID:   "connector2",
-			Name: "connector2",
-		}
-		r2 := &transport.Connectors{
-			ID:   "connector3",
-			Name: "tf-acc-connector3",
-		}
-		mockMap := make(map[int]*transport.Connectors)
-
-		mockMap[0] = r0
-		mockMap[1] = r1
-		mockMap[2] = r2
-
-		counter := 0
-		for _, elem := range connector {
-			for _, i := range mockMap {
-				if elem.Name == i.Name && elem.ID == i.ID {
-					counter++
-				}
-			}
-		}
-
-		if len(mockMap) != counter {
-			t.Errorf("Expected map not equal to origin!")
-		}
-		assert.EqualValues(t, len(mockMap), counter)
-	})
-}
-
 func TestClientConnectorUpdateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Update Request Error", func(t *testing.T) {
 
@@ -462,13 +388,13 @@ func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connectors, err := client.ReadConnectorsWithRemoteNetwork(context.Background())
+		connectors, err := client.ReadConnectors(context.Background())
 		assert.NoError(t, err)
 
 		for i, elem := range connectors {
 			assert.EqualValues(t, data[i].id, elem.ID)
 			assert.EqualValues(t, data[i].name, elem.Name)
-			assert.EqualValues(t, data[i].networkID, elem.RemoteNetwork.ID)
+			assert.EqualValues(t, data[i].networkID, elem.NetworkID)
 		}
 	})
 }
@@ -486,7 +412,7 @@ func TestClientReadConnectorsWithRemoteNetworkError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connectors, err := client.ReadConnectorsWithRemoteNetwork(context.Background())
+		connectors, err := client.ReadConnectors(context.Background())
 
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, "failed to read connector with id All: query result is empty")
@@ -509,7 +435,7 @@ func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
 				return resp, errors.New("error_1")
 			})
 
-		connectors, err := client.ReadConnectorsWithRemoteNetwork(context.Background())
+		connectors, err := client.ReadConnectors(context.Background())
 
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id All: Post "%s": error_1`, client.GraphqlServerURL))

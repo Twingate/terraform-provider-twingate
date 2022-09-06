@@ -15,6 +15,13 @@ type connectorTokens struct {
 	RefreshToken string
 }
 
+type Connector struct {
+	ID              graphql.ID
+	RemoteNetwork   *remoteNetwork
+	Name            graphql.String
+	ConnectorTokens *connectorTokens
+}
+
 const connectorTokensResourceName = "connector tokens"
 
 func (client *Client) VerifyConnectorTokens(ctx context.Context, refreshToken, accessToken string) error {
