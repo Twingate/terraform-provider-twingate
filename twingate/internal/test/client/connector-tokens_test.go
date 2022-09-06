@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,14 +30,12 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		httpmock.NewStringResponder(200, createTokensOkJson))
-	connector := &transport.Connector{
-		ID: "test",
-	}
-	err := client.GenerateConnectorTokens(context.Background(), connector)
+
+	tokens, err := client.GenerateConnectorTokens(context.Background(), "connector-id")
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
-	assert.EqualValues(t, "token2", connector.ConnectorTokens.RefreshToken)
+	assert.EqualValues(t, "token1", tokens.AccessToken)
+	assert.EqualValues(t, "token2", tokens.RefreshToken)
 }
 
 func TestClientConnectorTokensVerifyOK(t *testing.T) {
@@ -120,12 +117,11 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		httpmock.NewStringResponder(200, createTokensOkJson))
-	connector := &transport.Connector{
-		ID: "test-id",
-	}
-	err := client.GenerateConnectorTokens(context.Background(), connector)
 
-	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens with id %v: error_1`, connector.ID))
+	const connectorID = "test-id"
+	_, err := client.GenerateConnectorTokens(context.Background(), connectorID)
+
+	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens with id %v: error_1`, connectorID))
 }
 
 func TestClientConnectorTokensCreateRequestError(t *testing.T) {
@@ -134,10 +130,7 @@ func TestClientConnectorTokensCreateRequestError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 		httpmock.NewErrorResponder(errors.New("error_1")))
-	connector := &transport.Connector{
-		ID: "test",
-	}
 
-	err := client.GenerateConnectorTokens(context.Background(), connector)
+	_, err := client.GenerateConnectorTokens(context.Background(), "connector-id")
 	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens: Post "%s": error_1`, client.GraphqlServerURL))
 }

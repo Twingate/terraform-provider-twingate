@@ -1,51 +1,30 @@
 package transport
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
 
-type connectorTokens struct {
-	AccessToken  string
-	RefreshToken string
-}
-
-type Connector struct {
-	ID              graphql.ID
-	RemoteNetwork   *remoteNetwork
-	Name            graphql.String
-	ConnectorTokens *connectorTokens
-}
-
 const connectorTokensResourceName = "connector tokens"
 
+type gqlConnectorTokens struct {
+	AccessToken  graphql.String
+	RefreshToken graphql.String
+}
+
 func (client *Client) VerifyConnectorTokens(ctx context.Context, refreshToken, accessToken string) error {
-	jsonValue, err := json.Marshal(
-		map[string]string{
-			"refresh_token": refreshToken,
-		})
-	if err != nil {
-		return NewAPIError(err, "verify", connectorTokensResourceName)
+	payload := map[string]string{
+		"refresh_token": refreshToken,
 	}
 
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		fmt.Sprintf("%s/access_node/refresh", client.APIServerURL),
-		bytes.NewBuffer(jsonValue))
-	if err != nil {
-		return NewAPIError(err, "verify", connectorTokensResourceName)
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", accessToken),
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-
-	_, err = client.doRequest(req)
-
+	_, err := client.post(ctx, "/access_node/refresh", payload, headers)
 	if err != nil {
 		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}
@@ -55,36 +34,25 @@ func (client *Client) VerifyConnectorTokens(ctx context.Context, refreshToken, a
 
 type generateConnectorTokensQuery struct {
 	ConnectorGenerateTokens struct {
-		ConnectorTokens struct {
-			AccessToken  graphql.String
-			RefreshToken graphql.String
-		}
+		ConnectorTokens gqlConnectorTokens
 		OkError
 	} `graphql:"connectorGenerateTokens(connectorId: $connectorId)"`
 }
 
-func (client *Client) GenerateConnectorTokens(ctx context.Context, connector *Connector) error {
-	variables := map[string]interface{}{
-		"connectorId": connector.ID,
-	}
-
+func (client *Client) GenerateConnectorTokens(ctx context.Context, connectorID string) (*model.ConnectorTokens, error) {
+	variables := newVariables().withID(connectorID, "connectorId").value()
 	response := generateConnectorTokensQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "generateConnectorTokens", &response, variables)
 	if err != nil {
-		return NewAPIError(err, "generate", connectorTokensResourceName)
+		return nil, NewAPIError(err, "generate", connectorTokensResourceName)
 	}
 
 	if !response.ConnectorGenerateTokens.Ok {
 		message := response.ConnectorGenerateTokens.Error
 
-		return NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
+		return nil, NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connectorID)
 	}
 
-	connector.ConnectorTokens = &connectorTokens{
-		AccessToken:  string(response.ConnectorGenerateTokens.ConnectorTokens.AccessToken),
-		RefreshToken: string(response.ConnectorGenerateTokens.ConnectorTokens.RefreshToken),
-	}
-
-	return nil
+	return response.ToModel(), nil
 }

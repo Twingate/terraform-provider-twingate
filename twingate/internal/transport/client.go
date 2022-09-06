@@ -1,6 +1,9 @@
 package transport
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -88,6 +91,34 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
 
 	return &client
+}
+
+func (client *Client) post(ctx context.Context, url string, payload interface{}, headers map[string]string) ([]byte, error) {
+	var body io.Reader
+	if payload != nil {
+		data, err := json.Marshal(payload)
+		if err != nil {
+			return nil, err
+		}
+
+		body = bytes.NewBuffer(data)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		client.APIServerURL+url,
+		body,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, val := range headers {
+		req.Header.Set(key, val)
+	}
+
+	return client.doRequest(req)
 }
 
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {

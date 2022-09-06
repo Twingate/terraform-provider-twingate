@@ -56,18 +56,17 @@ func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.Res
 
 	resourceData.SetId(connectorID)
 
-	connector := transport.Connector{ID: connectorID}
-	err := client.GenerateConnectorTokens(ctx, &connector)
+	tokens, err := client.GenerateConnectorTokens(ctx, connectorID)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("access_token", connector.ConnectorTokens.AccessToken); err != nil {
+	if err := resourceData.Set("access_token", tokens.AccessToken); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting access_token: %w ", err))
 	}
 
-	if err := resourceData.Set("refresh_token", connector.ConnectorTokens.RefreshToken); err != nil {
+	if err := resourceData.Set("refresh_token", tokens.RefreshToken); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
 	}
 
@@ -81,9 +80,8 @@ func resourceConnectorTokensDelete(ctx context.Context, resourceData *schema.Res
 
 	var diags diag.Diagnostics
 
-	connector := transport.Connector{ID: resourceData.Id()}
 	// Just calling generate new tokens for the connector so the old ones are invalidated
-	err := client.GenerateConnectorTokens(ctx, &connector)
+	_, err := client.GenerateConnectorTokens(ctx, resourceData.Id())
 
 	if err != nil {
 		return diag.FromErr(err)

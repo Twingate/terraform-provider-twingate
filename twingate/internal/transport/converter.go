@@ -1,6 +1,8 @@
 package transport
 
 import (
+	"fmt"
+
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
@@ -18,7 +20,7 @@ func idToString(id graphql.ID) string {
 		return ""
 	}
 
-	return id.(string)
+	return fmt.Sprintf("%v", id)
 }
 
 func (q readConnectorQuery) ToModel() *model.Connector {
@@ -53,4 +55,15 @@ func (q readConnectorsQuery) ToModel() []*model.Connector {
 
 func (q createConnectorQuery) ToModel() *model.Connector {
 	return q.ConnectorCreate.Entity.ToModel()
+}
+
+func (t gqlConnectorTokens) ToModel() *model.ConnectorTokens {
+	return &model.ConnectorTokens{
+		AccessToken:  string(t.AccessToken),
+		RefreshToken: string(t.RefreshToken),
+	}
+}
+
+func (q generateConnectorTokensQuery) ToModel() *model.ConnectorTokens {
+	return q.ConnectorGenerateTokens.ConnectorTokens.ToModel()
 }
