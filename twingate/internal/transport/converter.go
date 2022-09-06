@@ -1,13 +1,24 @@
 package transport
 
-import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+import (
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/twingate/go-graphql-client"
+)
 
 func (c gqlConnector) ToModel() *model.Connector {
 	return &model.Connector{
 		ID:        c.StringID(),
 		Name:      c.StringName(),
-		NetworkID: c.RemoteNetwork.ID.(string),
+		NetworkID: idToString(c.RemoteNetwork.ID),
 	}
+}
+
+func idToString(id graphql.ID) string {
+	if id == nil {
+		return ""
+	}
+
+	return id.(string)
 }
 
 func (q readConnectorQuery) ToModel() *model.Connector {
