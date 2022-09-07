@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -348,40 +348,24 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readNetworkOkJson))
 
-		network, err := client.ReadRemoteNetworks(context.Background())
+		networks, err := client.ReadRemoteNetworks(context.Background())
 		assert.NoError(t, err)
 
-		r0 := &transport.IDName{
-			ID:   "network1",
-			Name: "tf-acc-network1",
-		}
-		r1 := &transport.IDName{
-			ID:   "network2",
-			Name: "network2",
-		}
-		r2 := &transport.IDName{
-			ID:   "network3",
-			Name: "tf-acc-network3",
-		}
-		mockMap := make(map[int]*transport.IDName)
-
-		mockMap[0] = r0
-		mockMap[1] = r1
-		mockMap[2] = r2
-
-		counter := 0
-
-		for _, elem := range network {
-			for _, i := range mockMap {
-				if elem.Name == i.Name && elem.ID == i.ID {
-					counter++
-				}
-			}
+		mockList := []*model.RemoteNetwork{
+			{
+				ID:   "network1",
+				Name: "tf-acc-network1",
+			},
+			{
+				ID:   "network2",
+				Name: "network2",
+			},
+			{
+				ID:   "network3",
+				Name: "tf-acc-network3",
+			},
 		}
 
-		if len(mockMap) != counter {
-			t.Errorf("Expected map not equal to origin!")
-		}
-		assert.EqualValues(t, len(mockMap), counter)
+		assert.EqualValues(t, mockList, networks)
 	})
 }

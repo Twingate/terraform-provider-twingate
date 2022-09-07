@@ -46,7 +46,7 @@ func remoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(remoteNetwork.ID.(string))
+	resourceData.SetId(remoteNetwork.ID)
 	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, resourceData.Id())
 
 	waitForResourceAvailability()

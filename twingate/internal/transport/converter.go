@@ -117,3 +117,36 @@ func (q readGroupsQuery) ToModel() []*model.Group {
 func (q readGroupsByNameQuery) ToModel() []*model.Group {
 	return q.Groups.ToModel()
 }
+
+func (n gqlRemoteNetwork) ToModel() *model.RemoteNetwork {
+	return &model.RemoteNetwork{
+		ID:   idToString(n.ID),
+		Name: string(n.Name),
+	}
+}
+
+func (nn gqlRemoteNetworks) ToModel() []*model.RemoteNetwork {
+	networks := make([]*model.RemoteNetwork, 0, len(nn.Edges))
+
+	for _, network := range nn.Edges {
+		if network == nil {
+			continue
+		}
+
+		networks = append(networks, network.Node.ToModel())
+	}
+
+	if cap(networks) > len(networks) {
+		networks = networks[:len(networks):len(networks)]
+	}
+
+	return networks
+}
+
+func (q createRemoteNetworkQuery) ToModel() *model.RemoteNetwork {
+	return q.RemoteNetworkCreate.Entity.ToModel()
+}
+
+func (q readRemoteNetworksQuery) ToModel() []*model.RemoteNetwork {
+	return q.RemoteNetworks.ToModel()
+}

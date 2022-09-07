@@ -25,7 +25,7 @@ func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(network.ID.(string))
+	resourceData.SetId(network.ID)
 
 	return diags
 }
