@@ -3,25 +3,11 @@ package transport
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
 
-const (
-	userResourceName = "user"
-	adminRole        = "ADMIN"
-)
-
-type User struct {
-	ID        string
-	FirstName string
-	LastName  string
-	Email     string
-	Role      string
-}
-
-func (u User) IsAdmin() bool {
-	return u.Role == adminRole
-}
+const userResourceName = "user"
 
 type gqlUser struct {
 	ID        graphql.ID
@@ -31,15 +17,17 @@ type gqlUser struct {
 	Role      graphql.String
 }
 
-type readUsersQuery struct {
-	Users *struct {
-		Edges []*struct {
-			Node *gqlUser
-		}
+type gqlUsers struct {
+	Edges []*struct {
+		Node *gqlUser
 	}
 }
 
-func (client *Client) ReadUsers(ctx context.Context) ([]*User, error) {
+type readUsersQuery struct {
+	Users gqlUsers
+}
+
+func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
 	response := readUsersQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readUsers", &response, nil)
@@ -47,44 +35,23 @@ func (client *Client) ReadUsers(ctx context.Context) ([]*User, error) {
 		return nil, NewAPIErrorWithID(err, "read", userResourceName, "All")
 	}
 
-	if response.Users == nil {
+	if len(response.Users.Edges) == 0 {
 		return nil, nil
 	}
 
-	users := make([]*User, 0, len(response.Users.Edges))
-
-	for _, item := range response.Users.Edges {
-		if item == nil || item.Node == nil {
-			continue
-		}
-
-		user := item.Node
-
-		users = append(users, &User{
-			ID:        user.ID.(string),
-			FirstName: string(user.FirstName),
-			LastName:  string(user.LastName),
-			Email:     string(user.Email),
-			Role:      string(user.Role),
-		})
-	}
-
-	return users, nil
+	return response.Users.ToModel(), nil
 }
 
 type readUserQuery struct {
 	User *gqlUser `graphql:"user(id: $id)"`
 }
 
-func (client *Client) ReadUser(ctx context.Context, userID string) (*User, error) {
+func (client *Client) ReadUser(ctx context.Context, userID string) (*model.User, error) {
 	if userID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", userResourceName)
 	}
 
-	variables := map[string]interface{}{
-		"id": userID,
-	}
-
+	variables := newVars(gqlID(userID))
 	response := readUserQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readUser", &response, variables)
@@ -96,11 +63,5 @@ func (client *Client) ReadUser(ctx context.Context, userID string) (*User, error
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", userResourceName, userID)
 	}
 
-	return &User{
-		ID:        response.User.ID.(string),
-		FirstName: string(response.User.FirstName),
-		LastName:  string(response.User.LastName),
-		Email:     string(response.User.Email),
-		Role:      string(response.User.Role),
-	}, nil
+	return response.User.ToModel(), nil
 }

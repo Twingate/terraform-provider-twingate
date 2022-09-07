@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -30,7 +31,7 @@ func datasourceUsersRead(ctx context.Context, resourceData *schema.ResourceData,
 	return diags
 }
 
-func convertUsersToTerraform(users []*transport.User) []interface{} {
+func convertUsersToTerraform(users []*model.User) []interface{} {
 	out := make([]interface{}, 0, len(users))
 	for _, user := range users {
 		out = append(out, map[string]interface{}{

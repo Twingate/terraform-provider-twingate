@@ -150,3 +150,27 @@ func (q createRemoteNetworkQuery) ToModel() *model.RemoteNetwork {
 func (q readRemoteNetworksQuery) ToModel() []*model.RemoteNetwork {
 	return q.RemoteNetworks.ToModel()
 }
+
+func (u gqlUser) ToModel() *model.User {
+	return &model.User{
+		ID:        idToString(u.ID),
+		FirstName: string(u.FirstName),
+		LastName:  string(u.LastName),
+		Email:     string(u.Email),
+		Role:      string(u.Role),
+	}
+}
+
+func (uu gqlUsers) ToModel() []*model.User {
+	users := make([]*model.User, 0, len(uu.Edges))
+
+	for _, user := range uu.Edges {
+		if user == nil || user.Node == nil {
+			continue
+		}
+
+		users = append(users, user.Node.ToModel())
+	}
+
+	return users
+}
