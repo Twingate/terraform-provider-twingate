@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/twingate/go-graphql-client"
 )
 
@@ -173,4 +174,134 @@ func (uu gqlUsers) ToModel() []*model.User {
 	}
 
 	return users
+}
+
+func newProtocolsInput(protocols *model.Protocols) *Protocols {
+	if protocols == nil {
+		return nil
+	}
+
+	return &Protocols{
+		UDP:       newProtocol(protocols.UDP),
+		TCP:       newProtocol(protocols.TCP),
+		AllowIcmp: graphql.Boolean(protocols.AllowIcmp),
+	}
+}
+
+func newProtocol(protocol *model.Protocol) *Protocol {
+	if protocol == nil {
+		return nil
+	}
+
+	return &Protocol{
+		Ports:  newPorts(protocol.Ports),
+		Policy: graphql.String(protocol.Policy),
+	}
+}
+
+func newPorts(ports []*model.PortRange) []*PortRange {
+	if len(ports) == 0 {
+		return nil
+	}
+
+	return utils.Map[*model.PortRange, *PortRange](ports, func(port *model.PortRange) *PortRange {
+		if port == nil {
+			return nil
+		}
+
+		return &PortRange{
+			Start: graphql.Int(port.Start),
+			End:   graphql.Int(port.End),
+		}
+	})
+}
+
+func (q readResourceQuery) ToModel() *model.Resource {
+	if q.Resource == nil {
+		return nil
+	}
+
+	res := q.Resource.ToModel()
+	res.Groups = utils.Map[*Edges, string](q.Resource.Groups.Edges, func(elem *Edges) string {
+		return elem.Node.StringID()
+	})
+	res.IsActive = bool(q.Resource.IsActive)
+	return res
+}
+
+func protocolsToModel(protocols *Protocols) *model.Protocols {
+	if protocols == nil {
+		return nil
+	}
+
+	return &model.Protocols{
+		UDP:       protocolToModel(protocols.UDP),
+		TCP:       protocolToModel(protocols.TCP),
+		AllowIcmp: bool(protocols.AllowIcmp),
+	}
+}
+
+func protocolToModel(protocol *Protocol) *model.Protocol {
+	if protocol == nil {
+		return nil
+	}
+
+	return &model.Protocol{
+		Ports:  portsRangeToModel(protocol.Ports),
+		Policy: string(protocol.Policy),
+	}
+}
+
+func portsRangeToModel(ports []*PortRange) []*model.PortRange {
+	return utils.Map[*PortRange, *model.PortRange](ports, func(port *PortRange) *model.PortRange {
+		if port == nil {
+			return nil
+		}
+
+		return &model.PortRange{
+			Start: int32(port.Start),
+			End:   int32(port.End),
+		}
+	})
+}
+
+func (q readResourcesQuery) ToModel() []*model.Resource {
+	return utils.Map[*Edges, *model.Resource](q.Resources.Edges, func(item *Edges) *model.Resource {
+		if item == nil || item.Node == nil {
+			return nil
+		}
+
+		return &model.Resource{
+			ID:   item.Node.StringID(),
+			Name: item.Node.StringName(),
+		}
+	})
+}
+
+func (r gqlResource) ToModel() *model.Resource {
+	return &model.Resource{
+		ID:              r.StringID(),
+		Name:            r.StringName(),
+		Address:         string(r.Address.Value),
+		RemoteNetworkID: idToString(r.RemoteNetwork.ID),
+		Protocols:       protocolsToModel(r.Protocols),
+	}
+}
+
+func (q readResourcesByNameQuery) ToModel() []*model.Resource {
+	resources := make([]*model.Resource, 0, len(q.Resources.Edges))
+
+	for _, item := range q.Resources.Edges {
+		if item == nil || item.Node == nil {
+			continue
+		}
+
+		resources = append(resources, item.Node.ToModel())
+	}
+
+	if cap(resources) > len(resources) {
+		resources = resources[:len(resources):len(resources)]
+	}
+
+	return resources
 }

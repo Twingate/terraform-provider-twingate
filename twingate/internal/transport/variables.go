@@ -1,6 +1,9 @@
 package transport
 
-import "github.com/twingate/go-graphql-client"
+import (
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/twingate/go-graphql-client"
+)
 
 func newVars(options ...gqlVarOption) map[string]interface{} {
 	values := make(map[string]interface{})
@@ -26,9 +29,21 @@ func gqlID(val string, name ...string) gqlVarOption {
 	}
 }
 
+func gqlIDs(ids []string, name string) gqlVarOption {
+	gqlValues := utils.Map[string, graphql.ID](ids,
+		func(val string) graphql.ID {
+			return graphql.ID(val)
+		})
+
+	return func(values map[string]interface{}) map[string]interface{} {
+		values[name] = gqlValues
+		return values
+	}
+}
+
 func gqlField(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
-		gqlValue := convertToGQL(val)
+		gqlValue := tryConvertToGQL(val)
 		if gqlValue != nil {
 			values[name] = gqlValue
 		}
@@ -37,8 +52,9 @@ func gqlField(val interface{}, name string) gqlVarOption {
 	}
 }
 
-func convertToGQL(val interface{}) interface{} {
+func tryConvertToGQL(val interface{}) interface{} {
 	var gqlValue interface{}
+
 	switch v := val.(type) {
 	case string:
 		gqlValue = graphql.String(v)
@@ -57,5 +73,9 @@ func convertToGQL(val interface{}) interface{} {
 		gqlValue = graphql.Float(v)
 	}
 
-	return gqlValue
+	if gqlValue != nil {
+		return gqlValue
+	}
+
+	return val
 }

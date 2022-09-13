@@ -76,7 +76,7 @@ func Test_convertToGQL(t *testing.T) {
 
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("test case #%d", i+1), func(t *testing.T) {
-			actual := convertToGQL(c.val)
+			actual := tryConvertToGQL(c.val)
 			assert.Equal(t, c.expected, actual)
 		})
 	}

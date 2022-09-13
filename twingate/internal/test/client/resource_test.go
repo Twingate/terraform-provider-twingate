@@ -9,112 +9,23 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/twingate/go-graphql-client"
 )
 
-func newTestResource() *transport.Resource {
-	protocols := transport.NewProtocolsInput()
-	protocols.TCP.Policy = model.PolicyAllowAll
-	protocols.UDP.Policy = model.PolicyAllowAll
+func newTestResource() *model.Resource {
+	groups := []string{b64.StdEncoding.EncodeToString([]byte("testgroup"))}
 
-	groups := make([]*graphql.ID, 0)
-	group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
-	groups = append(groups, &group)
-
-	return &transport.Resource{
-		ID:              graphql.ID("test"),
-		RemoteNetworkID: graphql.ID("test"),
+	return &model.Resource{
+		ID:              "test",
+		RemoteNetworkID: "test",
 		Address:         "test",
 		Name:            "testName",
-		GroupsIds:       groups,
-		Protocols:       protocols,
+		Groups:          groups,
+		Protocols:       model.DefaultProtocols(),
 		IsActive:        true,
 	}
-}
-
-func TestConvertToGraphqlUDPError(t *testing.T) {
-	t.Run("Test Twingate Resource : Convert to GraphQL UDP Error", func(t *testing.T) {
-		spi := &transport.StringProtocolsInput{
-			UDPPolicy: ".......",
-			UDPPorts:  []string{"test-me"},
-		}
-
-		pi, err := spi.ConvertToGraphql()
-		assert.Nil(t, pi)
-		assert.Error(t, err)
-	})
-}
-
-func TestConvertToGraphqlTCPError(t *testing.T) {
-	t.Run("Test Twingate Resource : Convert to GraphQL TCP Error", func(t *testing.T) {
-		spi := &transport.StringProtocolsInput{
-			TCPPolicy: ".......",
-			TCPPorts:  []string{"test-me"},
-		}
-
-		pi, err := spi.ConvertToGraphql()
-		assert.Nil(t, pi)
-		assert.Error(t, err)
-	})
-}
-
-func TestParsePortsToGraphql(t *testing.T) {
-	t.Run("Test Twingate Resource : Parse Ports to GraphQL ", func(t *testing.T) {
-		pri := []*transport.PortRangeInput{}
-
-		single := &transport.PortRangeInput{
-			Start: graphql.Int(80),
-			End:   graphql.Int(80),
-		}
-
-		multi := &transport.PortRangeInput{
-			Start: graphql.Int(81),
-			End:   graphql.Int(82),
-		}
-
-		pri = append(pri, single)
-		pri = append(pri, multi)
-
-		emptyPorts, err := transport.ConvertPorts(make([]string, 0))
-		assert.NoError(t, err)
-		assert.Len(t, emptyPorts, 0)
-		vars := []string{"80", "81-82"}
-		ports, err := transport.ConvertPorts(vars)
-		assert.Equal(t, ports, pri)
-		assert.NoError(t, err)
-	})
-}
-
-func TestParseErrorPortsToGraphql(t *testing.T) {
-	errString := func(portRange, port string) string {
-		return fmt.Sprintf(`failed to parse protocols port range "%s": port is not a valid integer: strconv.ParseInt: parsing "%s": invalid syntax`, portRange, port)
-	}
-
-	t.Run("Test Twingate Resource : Client Resource Parse Ports to GraphQL Error", func(t *testing.T) {
-		vars := []string{"foo"}
-		_, err := transport.ConvertPorts(vars)
-		assert.EqualError(t, err, errString("foo", "foo"))
-
-		vars = []string{"10-9"}
-		_, err = transport.ConvertPorts(vars)
-		assert.EqualError(t, err, "failed to parse protocols port range \"10-9\": ports 10, 9 needs to be in a rising sequence")
-
-		vars = []string{"abc-12345"}
-		_, err = transport.ConvertPorts(vars)
-		assert.EqualError(t, err, errString("abc-12345", "abc"))
-
-		vars = []string{"12345-abc"}
-		_, err = transport.ConvertPorts(vars)
-		assert.EqualError(t, err, errString("12345-abc", "abc"))
-
-		vars = []string{"1-999999"}
-		_, err = transport.ConvertPorts(vars)
-		assert.EqualError(t, err, "failed to parse protocols port range \"1-999999\": port 999999 not in the range of 0-65535")
-
-	})
 }
 
 func TestClientResourceCreateOk(t *testing.T) {
@@ -138,10 +49,10 @@ func TestClientResourceCreateOk(t *testing.T) {
 			httpmock.NewStringResponder(200, createResourceOkJson))
 		resource := newTestResource()
 
-		err := client.CreateResource(context.Background(), resource)
+		resourceID, err := client.CreateResource(context.Background(), resource)
 
 		assert.Nil(t, err)
-		assert.EqualValues(t, "test-id", resource.ID)
+		assert.EqualValues(t, "test-id", resourceID)
 	})
 }
 
@@ -166,7 +77,7 @@ func TestClientResourceCreateError(t *testing.T) {
 			httpmock.NewStringResponder(200, createResourceErrorJson))
 		resource := newTestResource()
 
-		err := client.CreateResource(context.Background(), resource)
+		_, err := client.CreateResource(context.Background(), resource)
 
 		assert.EqualError(t, err, "failed to create resource: something went wrong")
 	})
@@ -196,7 +107,7 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 			})
 		resource := newTestResource()
 
-		err := client.CreateResource(context.Background(), resource)
+		_, err := client.CreateResource(context.Background(), resource)
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to create resource: Post "%s": error_1`, client.GraphqlServerURL))
 	})
@@ -211,7 +122,6 @@ func TestClientResourceReadOk(t *testing.T) {
 		  "id": "resource1",
 		  "name": "test resource",
 		  "address": {
-			"type": "DNS",
 			"value": "test.com"
 		  },
 		  "remoteNetwork": {
@@ -264,13 +174,12 @@ func TestClientResourceReadOk(t *testing.T) {
 			httpmock.NewStringResponder(200, createResourceOkJson))
 
 		resource, err := client.ReadResource(context.Background(), "resource1")
-		tcpPorts, _ := resource.Protocols.TCP.BuildPortsRange()
 		assert.Nil(t, err)
-		assert.EqualValues(t, graphql.ID("resource1"), resource.ID)
-		assert.Contains(t, resource.StringGroups(), "group1")
-		assert.Contains(t, tcpPorts, "8080-8090")
-		assert.EqualValues(t, resource.Address, "test.com")
-		assert.EqualValues(t, resource.RemoteNetworkID, graphql.ID("network1"))
+		assert.EqualValues(t, "resource1", resource.ID)
+		assert.EqualValues(t, []string{"group1", "group2"}, resource.Groups)
+		assert.EqualValues(t, []string{"80", "8080-8090"}, resource.Protocols.TCP.PortsToString())
+		assert.EqualValues(t, "test.com", resource.Address)
+		assert.EqualValues(t, "network1", resource.RemoteNetworkID)
 		assert.Len(t, resource.Protocols.UDP.Ports, 0)
 		assert.EqualValues(t, resource.Name, "test resource")
 	})
@@ -285,7 +194,6 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 		  "id": "resource1",
 		  "name": "test resource",
 		  "address": {
-			"type": "DNS",
 			"value": "test.com"
 		  },
 		  "remoteNetwork": {
@@ -587,17 +495,17 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readResourcesOkJson))
 
-		edges, err := client.ReadResources(context.Background())
+		resources, err := client.ReadResources(context.Background())
 		assert.NoError(t, err)
 
-		mockMap := make(map[graphql.ID]graphql.String)
+		mockMap := make(map[string]string)
 		mockMap["resource1"] = "tf-acc-resource1"
 		mockMap["resource2"] = "resource2"
 		mockMap["resource3"] = "tf-acc-resource3"
 
-		for _, elem := range edges {
-			name := mockMap[elem.Node.ID]
-			assert.Equal(t, name, elem.Node.Name)
+		for _, elem := range resources {
+			name := mockMap[elem.ID]
+			assert.Equal(t, name, elem.Name)
 		}
 	})
 }
@@ -793,10 +701,9 @@ func TestClientResourceReadWithoutGroupsOk(t *testing.T) {
 			httpmock.NewStringResponder(200, responseJSON))
 
 		resource, err := client.ReadResource(context.Background(), "resource1")
-		tcpPorts, _ := resource.Protocols.TCP.BuildPortsRange()
 		assert.Nil(t, err)
-		assert.EqualValues(t, graphql.ID("resource1"), resource.ID)
-		assert.Contains(t, tcpPorts, "8080-8090")
+		assert.EqualValues(t, "resource1", resource.ID)
+		assert.EqualValues(t, []string{"80", "8080-8090"}, resource.Protocols.TCP.PortsToString())
 		assert.EqualValues(t, resource.Address, "test.com")
 		assert.EqualValues(t, resource.RemoteNetworkID, graphql.ID("network1"))
 		assert.Len(t, resource.Protocols.UDP.Ports, 0)

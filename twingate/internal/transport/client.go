@@ -15,25 +15,22 @@ import (
 )
 
 type Client struct {
-	RetryableClient  *retryablehttp.Client
 	GraphqlClient    *graphql.Client
 	HTTPClient       *http.Client
-	ServerURL        string
 	GraphqlServerURL string
 	APIServerURL     string
-	APIToken         string
-	Version          string
+	version          string
 }
 
 type transport struct {
 	underlineRoundTripper http.RoundTripper
-	APIToken              string
-	Version               string
+	apiToken              string
+	version               string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("X-API-KEY", t.APIToken)
-	req.Header.Set("User-Agent", t.Version)
+	req.Header.Set("X-API-KEY", t.apiToken)
+	req.Header.Set("User-Agent", t.version)
 
 	return t.underlineRoundTripper.RoundTrip(req) //nolint:wrapcheck
 }
@@ -41,8 +38,8 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 func newTransport(underlineRoundTripper http.RoundTripper, apiToken string, version string) *transport {
 	return &transport{
 		underlineRoundTripper: underlineRoundTripper,
-		APIToken:              apiToken,
-		Version:               fmt.Sprintf("TwingateTF/%s", version),
+		apiToken:              apiToken,
+		version:               fmt.Sprintf("TwingateTF/%s", version),
 	}
 }
 
@@ -59,10 +56,9 @@ type serverURL struct {
 }
 
 func newServerURL(network, url string) serverURL {
-	var s serverURL
-	s.url = fmt.Sprintf("https://%s.%s", network, url)
-
-	return s
+	return serverURL{
+		url: fmt.Sprintf("https://%s.%s", network, url),
+	}
 }
 
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
@@ -78,14 +74,11 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	httpClient := retryableClient.StandardClient()
 
 	client := Client{
-		RetryableClient:  retryableClient,
 		HTTPClient:       httpClient,
-		ServerURL:        sURL.url,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
-		APIToken:         apiToken,
 		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), httpClient),
-		Version:          version,
+		version:          version,
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
@@ -123,7 +116,7 @@ func (client *Client) post(ctx context.Context, url string, payload interface{},
 
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", client.Version))
+	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", client.version))
 	res, err := client.HTTPClient.Do(req)
 
 	if err != nil {

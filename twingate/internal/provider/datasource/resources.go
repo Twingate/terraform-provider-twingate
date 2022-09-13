@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,7 +33,7 @@ func datasourceResourcesRead(ctx context.Context, resourceData *schema.ResourceD
 	return diags
 }
 
-func convertResourcesToTerraform(resources []*transport.Resource) []interface{} {
+func convertResourcesToTerraform(resources []*model.Resource) []interface{} {
 	out := make([]interface{}, 0, len(resources))
 
 	for _, res := range resources {
@@ -47,17 +48,17 @@ func convertResourcesToTerraform(resources []*transport.Resource) []interface{} 
 	return out
 }
 
-func convertResourceToTerraform(resource *transport.Resource) interface{} {
+func convertResourceToTerraform(resource *model.Resource) interface{} {
 	if resource == nil {
 		return nil
 	}
 
 	return map[string]interface{}{
-		"id":                resource.ID.(string),
-		"name":              string(resource.Name),
-		"address":           string(resource.Address),
-		"remote_network_id": resource.RemoteNetworkID.(string),
-		"protocols":         convertProtocolsToTerraform(resource.Protocols),
+		"id":                resource.ID,
+		"name":              resource.Name,
+		"address":           resource.Address,
+		"remote_network_id": resource.RemoteNetworkID,
+		"protocols":         provider.ConvertProtocolsToTerraform(resource.Protocols),
 	}
 }
 

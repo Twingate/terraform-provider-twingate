@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/twingate/go-graphql-client"
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -150,14 +150,14 @@ func protocolsDiff(key, oldValue, newValue string, resourceData *schema.Resource
 }
 
 func equalPorts(a, b interface{}) bool {
-	oldPorts, newPorts := transport.ConvertPortsToSlice(a.([]interface{})), transport.ConvertPortsToSlice(b.([]interface{}))
+	oldPorts, newPorts := a.([]interface{}), b.([]interface{})
 
-	oldPortsRange, err := transport.ConvertPorts(oldPorts)
+	oldPortsRange, err := convertPorts(oldPorts)
 	if err != nil {
 		return false
 	}
 
-	newPortsRange, err := transport.ConvertPorts(newPorts)
+	newPortsRange, err := convertPorts(newPorts)
 	if err != nil {
 		return false
 	}
@@ -168,17 +168,17 @@ func equalPorts(a, b interface{}) bool {
 	return reflect.DeepEqual(oldPortsMap, newPortsMap)
 }
 
-func convertPortsRangeToMap(portsRange []*transport.PortRangeInput) map[int32]struct{} {
+func convertPortsRangeToMap(portsRange []*model.PortRange) map[int32]struct{} {
 	out := make(map[int32]struct{})
 
 	for _, port := range portsRange {
 		if port.Start == port.End {
-			out[int32(port.Start)] = struct{}{}
+			out[port.Start] = struct{}{}
 
 			continue
 		}
 
-		for i := int32(port.Start); i <= int32(port.End); i++ {
+		for i := port.Start; i <= port.End; i++ {
 			out[i] = struct{}{}
 		}
 	}
@@ -197,95 +197,51 @@ func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool 
 	return false
 }
 
-func convertGroupsGraphql(a []interface{}) []*graphql.ID {
-	res := []*graphql.ID{}
-
-	for _, elem := range a {
-		id := graphql.ID(elem.(string))
-		res = append(res, &id)
-	}
-
-	return res
-}
-
-func extractProtocolsFromContext(p interface{}) *transport.StringProtocolsInput {
-	protocolsMap := p.(map[string]interface{})
-	protocols := &transport.StringProtocolsInput{}
-	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
-
-	u := protocolsMap["udp"].([]interface{})
-	if len(u) > 0 {
-		udp := u[0].(map[string]interface{})
-		protocols.UDPPolicy, protocols.UDPPorts = parseProtocol(udp)
-	}
-
-	t := protocolsMap["tcp"].([]interface{})
-	if len(t) > 0 {
-		tcp := t[0].(map[string]interface{})
-		protocols.TCPPolicy, protocols.TCPPorts = parseProtocol(tcp)
-	}
-
-	return protocols
-}
-
-func parseProtocol(input map[string]interface{}) (string, []string) {
-	var ports []string
-
-	policy := input["policy"].(string)
-
-	switch policy {
-	case model.PolicyAllowAll:
-		return policy, ports
-	case model.PolicyDenyAll:
-		return model.PolicyRestricted, nil
-	}
-
-	p := transport.ConvertPortsToSlice(input["ports"].([]interface{}))
-	if len(p) > 0 {
-		ports = p
-	}
-
-	return policy, ports
-}
-
-func extractResource(resourceData *schema.ResourceData) (*transport.Resource, error) {
-	resource := &transport.Resource{
-		Name:            graphql.String(resourceData.Get("name").(string)),
-		RemoteNetworkID: graphql.ID(resourceData.Get("remote_network_id").(string)),
-		Address:         graphql.String(resourceData.Get("address").(string)),
-		GroupsIds:       convertGroupsGraphql(resourceData.Get("group_ids").(*schema.Set).List()),
-	}
-
-	p := resourceData.Get("protocols").([]interface{})
-
-	if len(p) > 0 {
-		p, err := extractProtocolsFromContext(p[0]).ConvertToGraphql()
-		if err != nil {
-			return nil, err
-		}
-
-		resource.Protocols = p
-	} else {
-		resource.Protocols = transport.NewEmptyProtocols()
-	}
-
-	return resource, nil
-}
+//func convertGroupsGraphql(a []interface{}) []*graphql.ID {
+//	res := []*graphql.ID{}
+//
+//	for _, elem := range a {
+//		id := graphql.ID(elem.(string))
+//		res = append(res, &id)
+//	}
+//
+//	return res
+//}
+//
+//func extractProtocolsFromContext(p interface{}) *StringProtocolsInput {
+//	protocolsMap := p.(map[string]interface{})
+//	protocols := &StringProtocolsInput{}
+//	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
+//
+//	u := protocolsMap["udp"].([]interface{})
+//	if len(u) > 0 {
+//		udp := u[0].(map[string]interface{})
+//		protocols.UDPPolicy, protocols.UDPPorts = parseProtocol(udp)
+//	}
+//
+//	t := protocolsMap["tcp"].([]interface{})
+//	if len(t) > 0 {
+//		tcp := t[0].(map[string]interface{})
+//		protocols.TCPPolicy, protocols.TCPPorts = parseProtocol(tcp)
+//	}
+//
+//	return protocols
+//}
 
 func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
 
-	resource, err := extractResource(resourceData)
+	resource, err := convertResource(resourceData)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.CreateResource(ctx, resource)
+	resourceID, err := client.CreateResource(ctx, resource)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(resource.ID.(string))
+	resourceData.SetId(resourceID)
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
 	waitForResourceAvailability()
@@ -297,7 +253,7 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 	client := meta.(*transport.Client)
 
 	if resourceData.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
-		resource, err := extractResource(resourceData)
+		resource, err := convertResource(resourceData)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -347,12 +303,12 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 	}
 
 	if resource.Protocols == nil {
-		resource.Protocols = transport.NewEmptyProtocols()
+		resource.Protocols = model.DefaultProtocols()
 	}
 
 	if !resource.IsActive {
 		// fix set active state for the resource on `terraform apply`
-		err = client.UpdateResourceActiveState(ctx, &transport.Resource{
+		err = client.UpdateResourceActiveState(ctx, &model.Resource{
 			ID:       resourceID,
 			IsActive: true,
 		})
@@ -362,10 +318,10 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 		}
 	}
 
-	return ResourceReadDiagnostics(resourceData, resource)
+	return readDiagnostics(resourceData, resource)
 }
 
-func ResourceReadDiagnostics(resourceData *schema.ResourceData, resource *transport.Resource) diag.Diagnostics {
+func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	if err := resourceData.Set("name", resource.Name); err != nil {
@@ -380,11 +336,11 @@ func ResourceReadDiagnostics(resourceData *schema.ResourceData, resource *transp
 		return diag.FromErr(fmt.Errorf("error setting address: %w ", err))
 	}
 
-	if err := resourceData.Set("group_ids", resource.StringGroups()); err != nil {
+	if err := resourceData.Set("group_ids", resource.Groups); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
 
-	protocols := resource.Protocols.FlattenProtocols()
+	protocols := provider.ConvertProtocolsToTerraform(resource.Protocols)
 	if err := resourceData.Set("protocols", protocols); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
 	}
@@ -395,3 +351,31 @@ func ResourceReadDiagnostics(resourceData *schema.ResourceData, resource *transp
 func waitForResourceAvailability() {
 	time.Sleep(time.Second)
 }
+
+//func (r *Resource) StringGroups() []string {
+//	var groups []string
+//
+//	if len(r.GroupsIds) > 0 {
+//		for _, id := range r.GroupsIds {
+//			groups = append(groups, fmt.Sprintf("%v", *id))
+//		}
+//	}
+//
+//	return groups
+//}
+
+//func ConvertPortsToSlice(a []interface{}) []string {
+//	var res = make([]string, 0)
+//
+//	for _, elem := range a {
+//		if elem == nil {
+//			res = append(res, "")
+//
+//			continue
+//		}
+//
+//		res = append(res, elem.(string))
+//	}
+//
+//	return res
+//}

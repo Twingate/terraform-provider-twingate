@@ -9,23 +9,20 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
-func TestProtocolsInput(t *testing.T) {
-	t.Run("Test Twingate Resource : ProtocolsInput", func(t *testing.T) {
-		pi := transport.NewEmptyProtocols()
+func TestProtocols(t *testing.T) {
+	t.Run("Test Twingate Resource : Protocols", func(t *testing.T) {
+		protocols := model.DefaultProtocols()
 
-		assert.EqualValues(t, model.PolicyAllowAll, pi.TCP.Policy)
-		assert.EqualValues(t, model.PolicyAllowAll, pi.UDP.Policy)
-		assert.NotNil(t, pi.UDP.Ports)
-		assert.NotNil(t, pi.TCP.Ports)
+		assert.EqualValues(t, model.PolicyAllowAll, protocols.TCP.Policy)
+		assert.EqualValues(t, model.PolicyAllowAll, protocols.UDP.Policy)
+		assert.Nil(t, protocols.UDP.Ports)
+		assert.Nil(t, protocols.TCP.Ports)
 
-		pi.AllowIcmp = graphql.Boolean(true)
-		pri := &transport.PortRangeInput{Start: graphql.Int(1), End: graphql.Int(18000)}
-		pi.TCP.Ports = append(pi.TCP.Ports, pri)
-		pi.UDP.Ports = append(pi.UDP.Ports, pri)
-		udpPorts, udpPolicy := pi.UDP.BuildPortsRange()
-		tcpPorts, tcpPolicy := pi.TCP.BuildPortsRange()
-		assert.EqualValues(t, model.PolicyAllowAll, udpPolicy)
-		assert.EqualValues(t, model.PolicyAllowAll, tcpPolicy)
+		port := &model.PortRange{Start: 1, End: 18000}
+		protocols.TCP.Ports = append(protocols.TCP.Ports, port)
+		protocols.UDP.Ports = append(protocols.UDP.Ports, port)
+		udpPorts := protocols.UDP.PortsToString()
+		tcpPorts := protocols.TCP.PortsToString()
 		assert.EqualValues(t, "1-18000", tcpPorts[0])
 		assert.EqualValues(t, "1-18000", udpPorts[0])
 	})

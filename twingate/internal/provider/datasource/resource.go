@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,19 +23,19 @@ func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", string(resource.Name)); err != nil {
+	if err := resourceData.Set("name", resource.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("address", string(resource.Address)); err != nil {
+	if err := resourceData.Set("address", resource.Address); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("remote_network_id", resource.RemoteNetworkID.(string)); err != nil {
+	if err := resourceData.Set("remote_network_id", resource.RemoteNetworkID); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("protocols", convertProtocolsToTerraform(resource.Protocols)); err != nil {
+	if err := resourceData.Set("protocols", provider.ConvertProtocolsToTerraform(resource.Protocols)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -43,54 +44,54 @@ func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceDa
 	return diags
 }
 
-func convertProtocolsToTerraform(protocols *transport.ProtocolsInput) []interface{} {
-	if protocols == nil {
-		return nil
-	}
+//func convertProtocolsToTerraform(protocols *transport.Protocols) []interface{} {
+//	if protocols == nil {
+//		return nil
+//	}
+//
+//	out := map[string]interface{}{
+//		"allow_icmp": bool(protocols.AllowIcmp),
+//	}
+//
+//	tcp := convertProtocolToTerraform(protocols.TCP)
+//	if tcp != nil {
+//		out["tcp"] = tcp
+//	}
+//
+//	udp := convertProtocolToTerraform(protocols.UDP)
+//	if tcp != nil {
+//		out["udp"] = udp
+//	}
+//
+//	return []interface{}{
+//		out,
+//	}
+//}
 
-	out := map[string]interface{}{
-		"allow_icmp": bool(protocols.AllowIcmp),
-	}
-
-	tcp := convertProtocolToTerraform(protocols.TCP)
-	if tcp != nil {
-		out["tcp"] = tcp
-	}
-
-	udp := convertProtocolToTerraform(protocols.UDP)
-	if tcp != nil {
-		out["udp"] = udp
-	}
-
-	return []interface{}{
-		out,
-	}
-}
-
-func convertProtocolToTerraform(protocol *transport.ProtocolInput) []interface{} {
-	if protocol == nil {
-		return nil
-	}
-
-	ports, policy := protocol.BuildPortsRange()
-
-	out := make(map[string]interface{})
-	if policy != "" {
-		out["policy"] = policy
-	}
-
-	if ports != nil {
-		out["ports"] = ports
-	}
-
-	if len(out) == 0 {
-		return nil
-	}
-
-	return []interface{}{
-		out,
-	}
-}
+//func convertProtocolToTerraform(protocol *transport.Protocol) []interface{} {
+//	if protocol == nil {
+//		return nil
+//	}
+//
+//	ports, policy := protocol.BuildPortsRange()
+//
+//	out := make(map[string]interface{})
+//	if policy != "" {
+//		out["policy"] = policy
+//	}
+//
+//	if ports != nil {
+//		out["ports"] = ports
+//	}
+//
+//	if len(out) == 0 {
+//		return nil
+//	}
+//
+//	return []interface{}{
+//		out,
+//	}
+//}
 
 func Resource() *schema.Resource { //nolint:funlen
 	portsResource := schema.Resource{

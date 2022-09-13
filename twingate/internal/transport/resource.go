@@ -2,14 +2,42 @@ package transport
 
 import (
 	"context"
-	"fmt"
-	"strconv"
-	"strings"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
 
-const readResourceQueryGroupsSize = 50
+const (
+	resourceResourceName        = "resource"
+	readResourceQueryGroupsSize = 50
+)
+
+type gqlResource struct {
+	IDName
+	Address struct {
+		Value graphql.String
+	}
+	RemoteNetwork struct {
+		ID graphql.ID
+	}
+	Protocols *Protocols
+}
+
+type Protocols struct {
+	UDP       *Protocol       `json:"udp"`
+	TCP       *Protocol       `json:"tcp"`
+	AllowIcmp graphql.Boolean `json:"allowIcmp"`
+}
+
+type Protocol struct {
+	Ports  []*PortRange   `json:"ports"`
+	Policy graphql.String `json:"policy"`
+}
+
+type PortRange struct {
+	Start graphql.Int `json:"start"`
+	End   graphql.Int `json:"end"`
+}
 
 type Resource struct {
 	ID              graphql.ID
@@ -17,129 +45,8 @@ type Resource struct {
 	Address         graphql.String
 	Name            graphql.String
 	GroupsIds       []*graphql.ID
-	Protocols       *ProtocolsInput
+	Protocols       *Protocols
 	IsActive        graphql.Boolean
-}
-
-func (r *Resource) StringGroups() []string {
-	var groups []string
-
-	if len(r.GroupsIds) > 0 {
-		for _, id := range r.GroupsIds {
-			groups = append(groups, fmt.Sprintf("%v", *id))
-		}
-	}
-
-	return groups
-}
-
-type StringProtocolsInput struct {
-	AllowIcmp bool
-	UDPPolicy string
-	UDPPorts  []string
-	TCPPolicy string
-	TCPPorts  []string
-}
-
-func (spi *StringProtocolsInput) ConvertToGraphql() (*ProtocolsInput, error) {
-	protocols := NewEmptyProtocols()
-	protocols.AllowIcmp = graphql.Boolean(spi.AllowIcmp)
-
-	protocols.UDP.Policy = graphql.String(spi.UDPPolicy)
-	udp, err := ConvertPorts(spi.UDPPorts)
-
-	if err != nil {
-		return nil, err
-	}
-
-	protocols.UDP.Ports = udp
-
-	protocols.TCP.Policy = graphql.String(spi.TCPPolicy)
-	tcp, err := ConvertPorts(spi.TCPPorts)
-
-	if err != nil {
-		return nil, err
-	}
-
-	protocols.TCP.Ports = tcp
-
-	return protocols, nil
-}
-
-const resourceResourceName = "resource"
-
-func validatePort(port string) (graphql.Int, error) {
-	parsed, err := strconv.ParseInt(port, 10, 64) //nolint:gomnd
-	if err != nil {
-		return 0, fmt.Errorf("port is not a valid integer: %w", err)
-	}
-
-	if parsed < 0 || parsed > 65535 {
-		return 0, NewPortNotInRangeError(parsed)
-	}
-
-	return graphql.Int(parsed), nil
-}
-
-func ConvertPortsToSlice(a []interface{}) []string {
-	var res = make([]string, 0)
-
-	for _, elem := range a {
-		if elem == nil {
-			res = append(res, "")
-
-			continue
-		}
-
-		res = append(res, elem.(string))
-	}
-
-	return res
-}
-
-func ConvertPorts(ports []string) ([]*PortRangeInput, error) {
-	converted := []*PortRangeInput{}
-
-	for _, elem := range ports {
-		if strings.Contains(elem, "-") {
-			split := strings.SplitN(elem, "-", 2) //nolint:gomnd
-
-			start, err := validatePort(split[0])
-			if err != nil {
-				return converted, ErrInvalidPortRange(elem, err)
-			}
-
-			end, err := validatePort(split[1])
-			if err != nil {
-				return converted, ErrInvalidPortRange(elem, err)
-			}
-
-			if end < start {
-				return converted, ErrInvalidPortRange(elem, NewPortRangeNotRisingSequenceError(int64(start), int64(end)))
-			}
-
-			c := &PortRangeInput{
-				Start: start,
-				End:   end,
-			}
-
-			converted = append(converted, c)
-		} else {
-			port, err := validatePort(elem)
-			if err != nil {
-				return converted, ErrInvalidPortRange(elem, err)
-			}
-
-			portRange := &PortRangeInput{
-				Start: port,
-				End:   port,
-			}
-
-			converted = append(converted, portRange)
-		}
-	}
-
-	return converted, nil
 }
 
 type createResourceQuery struct {
@@ -151,62 +58,93 @@ type createResourceQuery struct {
 	} `graphql:"resourceCreate(name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) CreateResource(ctx context.Context, resource *Resource) error {
-	variables := map[string]interface{}{
-		"name":            resource.Name,
-		"address":         resource.Address,
-		"remoteNetworkId": resource.RemoteNetworkID,
-		"groupIds":        resource.GroupsIds,
-		"protocols":       resource.Protocols,
+type ProtocolsInput struct {
+	UDP       *ProtocolInput  `json:"udp"`
+	TCP       *ProtocolInput  `json:"tcp"`
+	AllowIcmp graphql.Boolean `json:"allowIcmp"`
+}
+
+type ProtocolInput struct {
+	Ports  []*PortRangeInput `json:"ports"`
+	Policy graphql.String    `json:"policy"`
+}
+
+type PortRangeInput struct {
+	Start graphql.Int `json:"start"`
+	End   graphql.Int `json:"end"`
+}
+
+func (client *Client) CreateResource(ctx context.Context, resource *model.Resource) (string, error) {
+	protocols := &ProtocolsInput{
+		AllowIcmp: true,
+		TCP: &ProtocolInput{
+			Policy: model.PolicyRestricted,
+			Ports: []*PortRangeInput{
+				{Start: 80, End: 83},
+				{Start: 85, End: 85},
+			},
+		},
+		UDP: &ProtocolInput{
+			Policy: model.PolicyAllowAll,
+		},
 	}
+
+	variables := newVars(
+		gqlID(resource.RemoteNetworkID, "remoteNetworkId"),
+		gqlIDs(resource.Groups, "groupIds"),
+		gqlField(resource.Name, "name"),
+		gqlField(resource.Address, "address"),
+		//gqlField(newProtocolsInput(resource.Protocols), "protocols"),
+	)
+	variables["protocols"] = protocols
+	//variables["protocols"] = newProtocolsInput(resource.Protocols)
 
 	response := createResourceQuery{}
 	err := client.GraphqlClient.NamedMutate(ctx, "createResource", &response, variables)
 
 	if err != nil {
-		return NewAPIError(err, "create", resourceResourceName)
+		return "", NewAPIError(err, "create", resourceResourceName)
 	}
 
 	if !response.ResourceCreate.Ok {
-		return NewAPIError(NewMutationError(response.ResourceCreate.Error), "create", resourceResourceName)
+		return "", NewAPIError(NewMutationError(response.ResourceCreate.Error), "create", resourceResourceName)
 	}
 
-	resource.ID = response.ResourceCreate.Entity.ID
-
-	return nil
+	return idToString(response.ResourceCreate.Entity.ID), nil
 }
 
 type readResourceQuery struct {
 	Resource *struct {
-		IDName
-		Address struct {
-			Type  graphql.String
-			Value graphql.String
-		}
-		RemoteNetwork struct {
-			ID graphql.ID
-		}
+		//IDName
+		//Address struct {
+		//	//Type  graphql.String
+		//	Value graphql.String
+		//}
+		//RemoteNetwork struct {
+		//	ID graphql.ID
+		//}
+		//Protocols *Protocols
+		gqlResource
 		Groups struct {
 			PageInfo struct {
 				HasNextPage graphql.Boolean
 			}
 			Edges []*Edges
 		} `graphql:"groups(first: $first)"`
-		Protocols *ProtocolsInput
-		IsActive  graphql.Boolean
+		IsActive graphql.Boolean
 	} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) ReadResource(ctx context.Context, resourceID string) (*Resource, error) {
+func (client *Client) ReadResource(ctx context.Context, resourceID string) (*model.Resource, error) {
 	if resourceID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
 
 	response := readResourceQuery{}
-	variables := map[string]interface{}{
-		"id":    graphql.ID(resourceID),
-		"first": graphql.Int(readResourceQueryGroupsSize),
-	}
+	variables := newVars(
+		gqlID(resourceID),
+		gqlField(readResourceQueryGroupsSize, "first"),
+	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
 	if err != nil {
@@ -217,27 +155,11 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*Res
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
-	var groups = make([]*graphql.ID, 0)
-
 	if response.Resource.Groups.PageInfo.HasNextPage {
 		return nil, NewAPIErrorWithID(ErrTooManyGroupsError, "read", resourceResourceName, resourceID)
 	}
 
-	for _, elem := range response.Resource.Groups.Edges {
-		groups = append(groups, &elem.Node.ID)
-	}
-
-	resource := &Resource{
-		ID:              resourceID,
-		Name:            response.Resource.Name,
-		Address:         response.Resource.Address.Value,
-		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
-		GroupsIds:       groups,
-		Protocols:       response.Resource.Protocols,
-		IsActive:        response.Resource.IsActive,
-	}
-
-	return resource, nil
+	return response.ToModel(), nil
 }
 
 type readResourcesQuery struct { //nolint
@@ -246,31 +168,30 @@ type readResourcesQuery struct { //nolint
 	}
 }
 
-func (client *Client) ReadResources(ctx context.Context) ([]*Edges, error) { //nolint
+func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) { //nolint
 	response := readResourcesQuery{}
-	variables := map[string]interface{}{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	return response.Resources.Edges, nil
+	return response.ToModel(), nil
 }
 
 type updateResourceQuery struct {
 	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) UpdateResource(ctx context.Context, resource *Resource) error {
-	variables := map[string]interface{}{
-		"id":              resource.ID,
-		"name":            resource.Name,
-		"address":         resource.Address,
-		"remoteNetworkId": resource.RemoteNetworkID,
-		"groupIds":        resource.GroupsIds,
-		"protocols":       resource.Protocols,
-	}
+func (client *Client) UpdateResource(ctx context.Context, resource *model.Resource) error {
+	variables := newVars(
+		gqlID(resource.ID),
+		gqlID(resource.RemoteNetworkID, "remoteNetworkId"),
+		gqlIDs(resource.Groups, "groupIds"),
+		gqlField(resource.Name, "name"),
+		gqlField(resource.Address, "address"),
+		gqlField(newProtocolsInput(resource.Protocols), "protocols"),
+	)
 
 	response := updateResourceQuery{}
 
@@ -298,9 +219,7 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 
 	response := deleteResourceQuery{}
 
-	variables := map[string]interface{}{
-		"id": graphql.ID(resourceID),
-	}
+	variables := newVars(gqlID(resourceID))
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
 	if err != nil {
@@ -315,27 +234,26 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 }
 
 type readResourceWithoutGroupsQuery struct {
-	Resource *struct {
-		IDName
-		Address struct {
-			Value graphql.String
-		}
-		RemoteNetwork struct {
-			ID graphql.ID
-		}
-		Protocols *ProtocolsInput
-	} `graphql:"resource(id: $id)"`
+	Resource *gqlResource `graphql:"resource(id: $id)"`
+	//Resource *struct {
+	//	IDName
+	//	Address struct {
+	//		Value graphql.String
+	//	}
+	//	RemoteNetwork struct {
+	//		ID graphql.ID
+	//	}
+	//	Protocols *Protocols
+	//} `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) ReadResourceWithoutGroups(ctx context.Context, resourceID string) (*Resource, error) {
+func (client *Client) ReadResourceWithoutGroups(ctx context.Context, resourceID string) (*model.Resource, error) {
 	if resourceID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
 	}
 
 	response := readResourceWithoutGroupsQuery{}
-	variables := map[string]interface{}{
-		"id": graphql.ID(resourceID),
-	}
+	variables := newVars(gqlID(resourceID))
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
 	if err != nil {
@@ -346,22 +264,14 @@ func (client *Client) ReadResourceWithoutGroups(ctx context.Context, resourceID 
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
 
-	resource := &Resource{
-		ID:              resourceID,
-		Name:            response.Resource.Name,
-		Address:         response.Resource.Address.Value,
-		RemoteNetworkID: response.Resource.RemoteNetwork.ID,
-		Protocols:       response.Resource.Protocols,
-	}
-
-	return resource, nil
+	return response.Resource.ToModel(), nil
 }
 
 type updateResourceActiveStateQuery struct {
 	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, isActive: $isActive)"`
 }
 
-func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *Resource) error {
+func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *model.Resource) error {
 	variables := map[string]interface{}{
 		"id":       resource.ID,
 		"isActive": resource.IsActive,
@@ -385,55 +295,35 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *R
 type readResourcesByNameQuery struct {
 	Resources struct {
 		Edges []*struct {
-			Node *struct {
-				IDName
-				Address struct {
-					Value graphql.String
-				}
-				RemoteNetwork struct {
-					ID graphql.ID
-				}
-				Protocols *ProtocolsInput
-			}
+			Node *gqlResource
+			//Node *struct {
+			//IDName
+			//Address struct {
+			//	Value graphql.String
+			//}
+			//RemoteNetwork struct {
+			//	ID graphql.ID
+			//}
+			//Protocols *Protocols
+			//}
 		}
 	} `graphql:"resources(filter: {name: {eq: $name}})"`
 }
 
-func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*Resource, error) {
+func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*model.Resource, error) {
 	response := readResourcesByNameQuery{}
-	variables := map[string]interface{}{
-		"name": graphql.String(name),
-	}
+	variables := newVars(
+		gqlField(name, "name"),
+	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	if response.Resources.Edges == nil {
+	if len(response.Resources.Edges) == 0 {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, "All")
 	}
 
-	resources := make([]*Resource, 0, len(response.Resources.Edges))
-
-	for _, item := range response.Resources.Edges {
-		if item == nil {
-			continue
-		}
-
-		res := item.Node
-		if res == nil {
-			continue
-		}
-
-		resources = append(resources, &Resource{
-			ID:              res.ID,
-			Name:            res.Name,
-			Address:         res.Address.Value,
-			RemoteNetworkID: res.RemoteNetwork.ID,
-			Protocols:       res.Protocols,
-		})
-	}
-
-	return resources, nil
+	return response.ToModel(), nil
 }
