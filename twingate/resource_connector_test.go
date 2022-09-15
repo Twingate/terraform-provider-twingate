@@ -68,7 +68,7 @@ func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 					Config: createConnectorC2(remoteNetworkName, connectorName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c2"),
-						resource.TestMatchResourceAttr(theResource, "name", testRegexp),
+						resource.TestMatchResourceAttr(theResource, "name", regexp.MustCompile(connectorName)),
 					),
 				},
 			},
