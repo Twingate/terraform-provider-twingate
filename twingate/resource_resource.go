@@ -292,8 +292,6 @@ func resourceResourceCreate(ctx context.Context, resourceData *schema.ResourceDa
 	resourceData.SetId(resource.ID.(string))
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
-	waitForResourceAvailability()
-
 	return resourceResourceRead(ctx, resourceData, meta)
 }
 
@@ -335,6 +333,8 @@ func resourceResourceDelete(ctx context.Context, resourceData *schema.ResourceDa
 }
 
 func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	waitForResourceAvailability()
+
 	client := meta.(*Client)
 	resourceID := resourceData.Id()
 

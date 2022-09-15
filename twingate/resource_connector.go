@@ -71,10 +71,10 @@ func resourceConnectorCreate(ctx context.Context, resourceData *schema.ResourceD
 	log.Printf("[INFO] Created conector %s", connector.Name)
 
 	if resourceData.Get("name").(string) != "" {
+		waitForResourceAvailability()
+
 		return resourceConnectorUpdate(ctx, resourceData, meta)
 	}
-
-	waitForResourceAvailability()
 
 	return resourceConnectorRead(ctx, resourceData, meta)
 }
@@ -112,6 +112,8 @@ func resourceConnectorDelete(ctx context.Context, resourceData *schema.ResourceD
 }
 
 func resourceConnectorRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	waitForResourceAvailability()
+
 	client := meta.(*Client)
 
 	var diags diag.Diagnostics

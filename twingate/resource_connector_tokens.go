@@ -70,8 +70,6 @@ func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.Res
 		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
 	}
 
-	waitForResourceAvailability()
-
 	return resourceConnectorTokensRead(ctx, resourceData, meta)
 }
 
@@ -95,6 +93,8 @@ func resourceConnectorTokensDelete(ctx context.Context, resourceData *schema.Res
 }
 
 func resourceConnectorTokensRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	waitForResourceAvailability()
+
 	client := meta.(*Client)
 
 	var diags diag.Diagnostics

@@ -24,113 +24,83 @@ const (
 	udpPorts       = "protocols.0.udp.0.ports.#"
 )
 
-func TestAccTwingateResource_basic(t *testing.T) {
+func TestAccTwingateResourceCreate(t *testing.T) {
 	remoteNetworkName := getRandomName()
-	groupName := getRandomGroupName()
-	groupName2 := getRandomGroupName()
 	resourceName := getRandomResourceName()
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Config: createResourceOnlyWithNetwork(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					resource.TestCheckNoResourceAttr(testResource, groupIdsNumber),
+					testAccCheckTwingateResourceExists("twingate_resource.test1"),
+					resource.TestCheckNoResourceAttr("twingate_resource.test1", "group_ids.#"),
 				),
-			},
-			{
-				Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, groupName, groupName2, resourceName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					resource.TestCheckResourceAttr(testResource, "address", "updated-acc-test.com"),
-					resource.TestCheckResourceAttr(testResource, groupIdsNumber, "2"),
-					resource.TestCheckResourceAttr(testResource, tcpPolicy, policyRestricted),
-					resource.TestCheckResourceAttr(testResource, firstTCPPort, "80"),
-				),
-			},
-			{
-				Config: testTwingateResource_fullFlowCreation(remoteNetworkName, groupName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(remoteNetworkResource, nameAttr, remoteNetworkName),
-					resource.TestCheckResourceAttr(testResource, nameAttr, resourceName),
-					resource.TestMatchResourceAttr("twingate_connector_tokens.test_1", "access_token", regexp.MustCompile(".*")),
-				),
-			},
-			{
-				Config:      testTwingateResource_errorGroupId(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: failed to update resource with id"),
-			},
-			{
-				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					resource.TestCheckNoResourceAttr(testResource, groupIdsNumber),
-				),
-			},
-			{
-				Config: testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					resource.TestCheckResourceAttr(testResource, tcpPolicy, policyRestricted),
-				),
-			},
-			// expecting no changes - empty plan
-			{
-				Config:   testTwingateResource_withTcpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-				PlanOnly: true,
-			},
-			{
-				Config: testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					resource.TestCheckResourceAttr(testResource, udpPolicy, policyRestricted),
-				),
-			},
-			// expecting no changes - empty plan
-			{
-				Config:   testTwingateResource_withUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-				PlanOnly: true,
 			},
 		},
 	})
 }
 
-func testTwingateResource_Simple(networkName, resourceName string) string {
+func createResourceOnlyWithNetwork(networkName, resourceName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test1" {
 	  name = "%s"
 	}
-	resource "twingate_resource" "test" {
+	resource "twingate_resource" "test1" {
 	  name = "%s"
 	  address = "acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
+	  remote_network_id = twingate_remote_network.test1.id
 	}
 	`, networkName, resourceName)
 }
 
-func testTwingateResource_withProtocolsAndGroups(networkName, groupName1, groupName2, resourceName string) string {
+func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
+	remoteNetworkName := getRandomName()
+	groupName1 := getRandomGroupName()
+	groupName2 := getRandomGroupName()
+	resourceName := getRandomResourceName()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: createResourceWithProtocolsAndGroups(remoteNetworkName, groupName1, groupName2, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test2"),
+					resource.TestCheckResourceAttr("twingate_resource.test2", "address", "new-acc-test.com"),
+					resource.TestCheckResourceAttr("twingate_resource.test2", "group_ids.#", "2"),
+					resource.TestCheckResourceAttr("twingate_resource.test2", "protocols.0.tcp.0.policy", policyRestricted),
+					resource.TestCheckResourceAttr("twingate_resource.test2", "protocols.0.tcp.0.ports.0", "80"),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithProtocolsAndGroups(networkName, groupName1, groupName2, resourceName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test2" {
 	  name = "%s"
 	}
 
-    resource "twingate_group" "g1" {
+    resource "twingate_group" "g21" {
       name = "%s"
     }
 
-    resource "twingate_group" "g2" {
+    resource "twingate_group" "g22" {
       name = "%s"
     }
 
-	resource "twingate_resource" "test" {
+	resource "twingate_resource" "test2" {
 	  name = "%s"
-	  address = "updated-acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = [twingate_group.g1.id, twingate_group.g2.id]
+	  address = "new-acc-test.com"
+	  remote_network_id = twingate_remote_network.test2.id
+	  group_ids = [twingate_group.g21.id, twingate_group.g22.id]
       protocols {
 		allow_icmp = true
         tcp  {
@@ -145,117 +115,59 @@ func testTwingateResource_withProtocolsAndGroups(networkName, groupName1, groupN
 	`, networkName, groupName1, groupName2, resourceName, policyRestricted, policyAllowAll)
 }
 
-func testTwingateResource_withTcpDenyAllPolicy(networkName, groupName, resourceName string) string {
-	return fmt.Sprintf(`
-    resource "twingate_remote_network" "test" {
-      name = "%s"
-    }
+func TestAccTwingateResourceFullCreationFlow(t *testing.T) {
+	remoteNetworkName := getRandomName()
+	groupName := getRandomGroupName()
+	resourceName := getRandomResourceName()
 
-    resource "twingate_group" "g" {
-      name = "%s"
-    }
-
-    resource "twingate_resource" "test" {
-      name = "%s"
-      address = "updated-acc-test.com"
-      remote_network_id = twingate_remote_network.test.id
-      group_ids = [twingate_group.g.id]
-      protocols {
-        allow_icmp = true
-        tcp {
-          policy = "%s"
-        }
-        udp {
-          policy = "%s"
-        }
-      }
-    }
-    `, networkName, groupName, resourceName, policyDenyAll, policyAllowAll)
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: resourceFullCreationFlow(remoteNetworkName, groupName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("twingate_remote_network.test3", "name", remoteNetworkName),
+					resource.TestCheckResourceAttr("twingate_resource.test3", "name", resourceName),
+					resource.TestMatchResourceAttr("twingate_connector_tokens.test31", "access_token", regexp.MustCompile(".*")),
+				),
+			},
+		},
+	})
 }
 
-func testTwingateResource_withUdpDenyAllPolicy(networkName, groupName, resourceName string) string {
+func resourceFullCreationFlow(networkName, groupName, resourceName string) string {
 	return fmt.Sprintf(`
-    resource "twingate_remote_network" "test" {
-      name = "%s"
-    }
-
-    resource "twingate_group" "g" {
-      name = "%s"
-    }
-
-    resource "twingate_resource" "test" {
-      name = "%s"
-      address = "updated-acc-test.com"
-      remote_network_id = twingate_remote_network.test.id
-      group_ids = [twingate_group.g.id]
-      protocols {
-        allow_icmp = true
-        tcp {
-          policy = "%s"
-        }
-        udp {
-          policy = "%s"
-        }
-      }
-    }
-    `, networkName, groupName, resourceName, policyAllowAll, policyDenyAll)
-}
-
-func testTwingateResource_errorGroupId(networkName, resourceName string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
-	  name = "%s"
-	}
-	resource "twingate_resource" "test" {
-	  name = "%s"
-	  address = "updated-acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = ["foo", "bar"]
-	  protocols {
-	    allow_icmp = true
-	    tcp  {
-	      policy = "%s"
-	      ports = ["80", "82-83"]
-	    }
-	    udp {
-	      policy = "%s"
-	    }
-	  }
-	}
-	`, networkName, resourceName, policyRestricted, policyAllowAll)
-}
-
-func testTwingateResource_fullFlowCreation(networkName, groupName, resourceName string) string {
-	return fmt.Sprintf(`
-    resource "twingate_remote_network" "test" {
+    resource "twingate_remote_network" "test3" {
       name = "%s"
     }
 	
-    resource "twingate_connector" "test_1" {
-      remote_network_id = twingate_remote_network.test.id
+    resource "twingate_connector" "test31" {
+      remote_network_id = twingate_remote_network.test3.id
     }
 
-    resource "twingate_connector_tokens" "test_1" {
-      connector_id = twingate_connector.test_1.id
+    resource "twingate_connector_tokens" "test31" {
+      connector_id = twingate_connector.test31.id
     }
 
-    resource "twingate_connector" "test_2" {
-      remote_network_id = twingate_remote_network.test.id
+    resource "twingate_connector" "test32" {
+      remote_network_id = twingate_remote_network.test3.id
     }
 	
-    resource "twingate_connector_tokens" "test_2" {
-      connector_id = twingate_connector.test_2.id
+    resource "twingate_connector_tokens" "test32" {
+      connector_id = twingate_connector.test32.id
     }
 
-    resource "twingate_group" "test_res" {
+    resource "twingate_group" "test3" {
       name = "%s"
     }
 
-    resource "twingate_resource" "test" {
+    resource "twingate_resource" "test3" {
       name = "%s"
-      address = "updated-acc-test.com"
-      remote_network_id = twingate_remote_network.test.id
-      group_ids = [twingate_group.test_res.id]
+      address = "acc-test.com"
+      remote_network_id = twingate_remote_network.test3.id
+      group_ids = [twingate_group.test3.id]
       protocols {
         allow_icmp = true
         tcp  {
@@ -270,45 +182,184 @@ func testTwingateResource_fullFlowCreation(networkName, groupName, resourceName 
 	`, networkName, groupName, resourceName, policyRestricted, policyAllowAll)
 }
 
-func TestAccTwingateResource_restrictedPolicyWithEmptyPortsList(t *testing.T) {
-	remoteNetworkName := getRandomName()
-	groupName := getRandomGroupName()
+func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
 	resourceName := getRandomResourceName()
+	networkName := getRandomResourceName()
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config:      createResourceWithInvalidGroupId(networkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: failed to create resource"),
+			},
+		},
+	})
+}
+
+func createResourceWithInvalidGroupId(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test4" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "test4" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  group_ids = ["foo", "bar"]
+	  remote_network_id = twingate_remote_network.test4.id
+	}
+	`, networkName, resourceName)
+}
+
+func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
+	resourceName := getRandomResourceName()
+	networkName := getRandomResourceName()
+	groupName := getRandomResourceName()
+
+	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateResource_restrictedPolicyWithEmptyPortsList(remoteNetworkName, groupName, resourceName),
+				Config: createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(testResource, nameAttr, resourceName),
-					resource.TestCheckResourceAttr(testResource, tcpPolicy, policyRestricted),
-					resource.TestCheckNoResourceAttr(testResource, tcpPorts),
-					resource.TestCheckResourceAttr(testResource, udpPolicy, policyRestricted),
-					resource.TestCheckNoResourceAttr(testResource, udpPorts),
+					testAccCheckTwingateResourceExists("twingate_resource.test5"),
+					resource.TestCheckResourceAttr("twingate_resource.test5", "protocols.0.tcp.0.policy", policyRestricted),
+				),
+			},
+			// expecting no changes - empty plan
+			{
+				Config:   createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName string) string {
+	return fmt.Sprintf(`
+    resource "twingate_remote_network" "test5" {
+      name = "%s"
+    }
+
+    resource "twingate_group" "g5" {
+      name = "%s"
+    }
+
+    resource "twingate_resource" "test5" {
+      name = "%s"
+      address = "new-acc-test.com"
+      remote_network_id = twingate_remote_network.test5.id
+      group_ids = [twingate_group.g5.id]
+      protocols {
+        allow_icmp = true
+        tcp {
+          policy = "%s"
+        }
+        udp {
+          policy = "%s"
+        }
+      }
+    }
+    `, networkName, groupName, resourceName, policyDenyAll, policyAllowAll)
+}
+
+func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
+	remoteNetworkName := getRandomName()
+	groupName := getRandomGroupName()
+	resourceName := getRandomResourceName()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: createResourceWithUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists("twingate_resource.test6"),
+					resource.TestCheckResourceAttr("twingate_resource.test6", "protocols.0.udp.0.policy", policyRestricted),
+				),
+			},
+			// expecting no changes - empty plan
+			{
+				Config:   createResourceWithUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func createResourceWithUdpDenyAllPolicy(networkName, groupName, resourceName string) string {
+	return fmt.Sprintf(`
+    resource "twingate_remote_network" "test6" {
+      name = "%s"
+    }
+
+    resource "twingate_group" "g6" {
+      name = "%s"
+    }
+
+    resource "twingate_resource" "test6" {
+      name = "%s"
+      address = "acc-test.com"
+      remote_network_id = twingate_remote_network.test6.id
+      group_ids = [twingate_group.g6.id]
+      protocols {
+        allow_icmp = true
+        tcp {
+          policy = "%s"
+        }
+        udp {
+          policy = "%s"
+        }
+      }
+    }
+    `, networkName, groupName, resourceName, policyAllowAll, policyDenyAll)
+}
+
+func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) {
+	remoteNetworkName := getRandomName()
+	groupName := getRandomGroupName()
+	resourceName := getRandomResourceName()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: createResourceWithRestrictedPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("twingate_resource.test7", "name", resourceName),
+					resource.TestCheckResourceAttr("twingate_resource.test7", "protocols.0.tcp.0.policy", policyRestricted),
+					resource.TestCheckNoResourceAttr("twingate_resource.test7", "protocols.0.tcp.0.ports.#"),
+					resource.TestCheckResourceAttr("twingate_resource.test7", "protocols.0.udp.0.policy", policyRestricted),
+					resource.TestCheckNoResourceAttr("twingate_resource.test7", "protocols.0.udp.0.ports.#"),
 				),
 			},
 		},
 	})
 }
 
-func testTwingateResource_restrictedPolicyWithEmptyPortsList(networkName, groupName, resourceName string) string {
+func createResourceWithRestrictedPolicyAndEmptyPortsList(networkName, groupName, resourceName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test7" {
 	  name = "%s"
 	}
 
-    resource "twingate_group" "test_res" {
+    resource "twingate_group" "test7" {
       name = "%s"
     }
 
-	resource "twingate_resource" "test" {
+	resource "twingate_resource" "test7" {
 	  name = "%s"
-	  address = "updated-acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = [twingate_group.test_res.id]
+	  address = "new-acc-test.com"
+	  remote_network_id = twingate_remote_network.test7.id
+	  group_ids = [twingate_group.test7.id]
 	  protocols {
 	    allow_icmp = true
 	    tcp {
@@ -323,20 +374,18 @@ func testTwingateResource_restrictedPolicyWithEmptyPortsList(networkName, groupN
 	`, networkName, groupName, resourceName, policyRestricted, policyRestricted)
 }
 
-func TestAccTwingateResource_withInvalidPortRange(t *testing.T) {
+func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
 	remoteNetworkName := getRandomName()
-	groupName := getRandomGroupName()
 	resourceName := getRandomResourceName()
 	expectedError := regexp.MustCompile("Error: failed to parse protocols port range")
 
 	genConfig := func(portRange string) string {
-		return testTwingateResource_restrictedWithPortRange(remoteNetworkName, groupName, resourceName, portRange)
+		return createResourceWithRestrictedPolicyAndPortRange(remoteNetworkName, resourceName, portRange)
 	}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      genConfig(`""`),
@@ -374,21 +423,16 @@ func TestAccTwingateResource_withInvalidPortRange(t *testing.T) {
 	})
 }
 
-func testTwingateResource_restrictedWithPortRange(networkName, groupName, resourceName, portRange string) string {
+func createResourceWithRestrictedPolicyAndPortRange(networkName, resourceName, portRange string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test8" {
 	  name = "%s"
 	}
 
-    resource "twingate_group" "test_res" {
-      name = "%s"
-    }
-
-	resource "twingate_resource" "test" {
+	resource "twingate_resource" "test8" {
 	  name = "%s"
-	  address = "updated-acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = [twingate_group.test_res.id]
+	  address = "new-acc-test.com"
+	  remote_network_id = twingate_remote_network.test8.id
 	  protocols {
 	    allow_icmp = true
 	    tcp {
@@ -400,7 +444,7 @@ func testTwingateResource_restrictedWithPortRange(networkName, groupName, resour
 	    }
 	  }
 	}
-	`, networkName, groupName, resourceName, policyRestricted, portRange, policyAllowAll)
+	`, networkName, resourceName, policyRestricted, portRange, policyAllowAll)
 }
 
 func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
@@ -440,6 +484,7 @@ func testAccCheckTwingateResourceExists(resourceName string) resource.TestCheckF
 }
 
 func TestResourceResourceReadDiagnosticsError(t *testing.T) {
+	t.Parallel()
 	t.Run("Test Twingate Resource : Resource Read Diagnostics Error", func(t *testing.T) {
 		groups := []*graphql.ID{}
 		protocols := &ProtocolsInput{}
@@ -457,96 +502,113 @@ func TestResourceResourceReadDiagnosticsError(t *testing.T) {
 	})
 }
 
-func TestAccTwingateResource_portReorderingCreatesNoChanges(t *testing.T) {
+func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 	remoteNetworkName := getRandomName()
 	resourceName := getRandomResourceName()
 
-	resource.Test(t, resource.TestCase{
+	const theResource = "twingate_resource.test9"
+
+	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					resource.TestCheckResourceAttr(testResource, firstTCPPort, "80"),
-					resource.TestCheckResourceAttr(testResource, firstUDPPort, "80"),
+					testAccCheckTwingateResourceExists(theResource),
+					resource.TestCheckResourceAttr(theResource, "protocols.0.tcp.0.ports.0", "80"),
+					resource.TestCheckResourceAttr(theResource, "protocols.0.udp.0.ports.0", "80"),
 				),
 			},
 			// no changes
 			{
-				Config:   testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
+				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
 				PlanOnly: true,
 			},
 			// no changes
 			{
-				Config:   testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
+				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
 				PlanOnly: true,
 			},
 			// new changes applied
 			{
-				Config: testTwingateResource_withPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					resource.TestCheckResourceAttr(testResource, "protocols.0.tcp.0.ports.0", "70"),
-					resource.TestCheckResourceAttr(testResource, "protocols.0.udp.0.ports.0", "70"),
+					testAccCheckTwingateResourceExists(theResource),
+					resource.TestCheckResourceAttr(theResource, "protocols.0.tcp.0.ports.0", "70"),
+					resource.TestCheckResourceAttr(theResource, "protocols.0.udp.0.ports.0", "70"),
 				),
 			},
 		},
 	})
 }
 
-func testTwingateResource_withPortRange(networkName, resourceName, portRange string) string {
+func createResourceWithPortRange(networkName, resourceName, portRange string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test9" {
 	  name = "%s"
 	}
 
-	resource "twingate_resource" "test" {
+	resource "twingate_resource" "test9" {
 	  name = "%s"
 	  address = "acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
+	  remote_network_id = twingate_remote_network.test9.id
 	  protocols {
 	    allow_icmp = true
 	    tcp {
-	      policy = "RESTRICTED"
+	      policy = "%s"
 	      ports = [%s]
 	    }
 	    udp {
-	      policy = "RESTRICTED"
+	      policy = "%s"
 	      ports = [%s]
 	    }
 	  }
 	}
-	`, networkName, resourceName, portRange, portRange)
+	`, networkName, resourceName, policyRestricted, portRange, policyRestricted, portRange)
 }
 
-func TestAccTwingateResource_setActiveState(t *testing.T) {
+func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 	remoteNetworkName := getRandomName()
 	resourceName := getRandomResourceName()
 
-	resource.Test(t, resource.TestCase{
+	const theResource = "twingate_resource.test10"
+
+	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Config: createResource10(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
-					deactivateTwingateResource(testResource),
-					testAccCheckTwingateResourceActiveState(testResource, false),
+					testAccCheckTwingateResourceExists(theResource),
+					deactivateTwingateResource(theResource),
+					testAccCheckTwingateResourceActiveState(theResource, false),
 				),
 			},
 			{
-				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Config: createResource10(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceActiveState(testResource, true),
+					testAccCheckTwingateResourceActiveState(theResource, true),
 				),
 			},
 		},
 	})
+}
+
+func createResource10(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test10" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "test10" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.test10.id
+	}
+	`, networkName, resourceName)
 }
 
 func deactivateTwingateResource(resourceName string) resource.TestCheckFunc {
@@ -605,32 +667,45 @@ func testAccCheckTwingateResourceActiveState(resourceName string, expectedActive
 	}
 }
 
-func TestAccTwingateResource_createAfterDeletion(t *testing.T) {
-	const terraformResourceName = testResource
+func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
+	const theResource = "twingate_resource.test11"
 	remoteNetworkName := getRandomName()
 	resourceName := getRandomResourceName()
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Config: createResource11(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(terraformResourceName),
-					deleteTwingateResource(terraformResourceName, resourceResourceName),
+					testAccCheckTwingateResourceExists(theResource),
+					deleteTwingateResource(theResource, resourceResourceName),
 				),
 				ExpectNonEmptyPlan: true,
 			},
 			{
-				Config: testTwingateResource_Simple(remoteNetworkName, resourceName),
+				Config: createResource11(remoteNetworkName, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(terraformResourceName),
+					testAccCheckTwingateResourceExists(theResource),
 				),
 			},
 		},
 	})
+}
+
+func createResource11(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test11" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "test11" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.test11.id
+	}
+	`, networkName, resourceName)
 }
 
 func deleteTwingateResource(resourceName, resourceType string) resource.TestCheckFunc {
@@ -671,26 +746,28 @@ func deleteTwingateResource(resourceName, resourceType string) resource.TestChec
 	}
 }
 
-func TestAccTwingateResource_import(t *testing.T) {
+func TestAccTwingateResourceImport(t *testing.T) {
 	remoteNetworkName := getRandomName()
 	groupName := getRandomGroupName()
 	groupName2 := getRandomGroupName()
 	resourceName := getRandomResourceName()
 
-	resource.Test(t, resource.TestCase{
+	const theResource = "twingate_resource.test12"
+
+	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: testAccProviderFactories,
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testTwingateResource_withProtocolsAndGroups(remoteNetworkName, groupName, groupName2, resourceName),
+				Config: createResource12(remoteNetworkName, groupName, groupName2, resourceName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTwingateResourceExists(testResource),
+					testAccCheckTwingateResourceExists(theResource),
 				),
 			},
 			{
 				ImportState:  true,
-				ResourceName: testResource,
+				ResourceName: theResource,
 				ImportStateCheck: func(data []*terraform.InstanceState) error {
 					if len(data) != 1 {
 						return fmt.Errorf("expected 1 resource, got %d", len(data))
@@ -700,7 +777,7 @@ func TestAccTwingateResource_import(t *testing.T) {
 						name     string
 						expected string
 					}{
-						{name: "address", expected: "updated-acc-test.com"},
+						{name: "address", expected: "acc-test.com.12"},
 						{name: "protocols.0.tcp.0.policy", expected: policyRestricted},
 						{name: "protocols.0.tcp.0.ports.#", expected: "2"},
 						{name: "protocols.0.tcp.0.ports.0", expected: "80"},
@@ -720,4 +797,37 @@ func TestAccTwingateResource_import(t *testing.T) {
 			},
 		},
 	})
+}
+
+func createResource12(networkName, groupName1, groupName2, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test12" {
+	  name = "%s"
+	}
+
+    resource "twingate_group" "g121" {
+      name = "%s"
+    }
+
+    resource "twingate_group" "g122" {
+      name = "%s"
+    }
+
+	resource "twingate_resource" "test12" {
+	  name = "%s"
+	  address = "acc-test.com.12"
+	  remote_network_id = twingate_remote_network.test12.id
+	  group_ids = [twingate_group.g121.id, twingate_group.g122.id]
+      protocols {
+		allow_icmp = true
+        tcp  {
+			policy = "%s"
+            ports = ["80", "82-83"]
+        }
+		udp {
+ 			policy = "%s"
+		}
+      }
+	}
+	`, networkName, groupName1, groupName2, resourceName, policyRestricted, policyAllowAll)
 }

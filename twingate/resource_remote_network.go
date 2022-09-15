@@ -38,8 +38,6 @@ func resourceRemoteNetwork() *schema.Resource {
 func resourceRemoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	var diags diag.Diagnostics
-
 	remoteNetworkName := resourceData.Get("name").(string)
 	remoteNetwork, err := client.createRemoteNetwork(ctx, remoteNetworkName)
 
@@ -50,10 +48,7 @@ func resourceRemoteNetworkCreate(ctx context.Context, resourceData *schema.Resou
 	resourceData.SetId(remoteNetwork.ID.(string))
 	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, resourceData.Id())
 
-	waitForResourceAvailability()
-	resourceRemoteNetworkRead(ctx, resourceData, meta)
-
-	return diags
+	return resourceRemoteNetworkRead(ctx, resourceData, meta)
 }
 
 func resourceRemoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -91,6 +86,8 @@ func resourceRemoteNetworkDelete(ctx context.Context, resourceData *schema.Resou
 }
 
 func resourceRemoteNetworkRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	waitForResourceAvailability()
+
 	client := meta.(*Client)
 
 	var diags diag.Diagnostics
