@@ -16,9 +16,6 @@ on:
 #    branches:
 #      - main
 
-  schedule:
-    - cron: "*/5 * * * *"
-
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 #concurrency:
 #  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
