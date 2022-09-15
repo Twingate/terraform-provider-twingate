@@ -5,7 +5,7 @@ name: Smoke Tests
 permissions: read-all
 on:
   schedule:
-    - cron: "*/7 * * * *"
+    - cron: "20 * * * *"
 
 jobs:
   build:

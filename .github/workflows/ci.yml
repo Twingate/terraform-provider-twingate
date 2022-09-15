@@ -17,12 +17,12 @@ on:
 #      - main
 
   schedule:
-    - cron: "*/6 * * * *"
+    - cron: "*/5 * * * *"
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#  cancel-in-progress: true
 
 jobs:
   build:
