@@ -17,7 +17,7 @@ You need an API key to use Twingate's Terraform provider. See our [documentation
 
 ## Guidance and documentation
 
-Visit [Twingate Documentation](https://docs.twingate.com/docs) for more information on configuring and using Twingate. Twingate's Terraform Provider guide can be found at [Terraform - Getting Started](https://docs.twingate.com/docs/terraform-getting-started).
+Visit our [documentation](https://docs.twingate.com/docs) for more information on configuring and using Twingate. The Terraform Provider guide can be found at [Terraform - Getting Started](https://docs.twingate.com/docs/terraform-getting-started).
 
 ## Example Usage
 
