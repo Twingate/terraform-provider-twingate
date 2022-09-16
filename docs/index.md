@@ -17,7 +17,7 @@ You need an API key to use Twingate's Terraform provider. See our [documentation
 
 ## Guidance and documentation
 
-Visit our [documentation](https://docs.twingate.com/docs) for more information on configuring and using Twingate.
+Visit [Twingate Documentation](https://docs.twingate.com/docs) for more information on configuring and using Twingate. Twingate's Terraform Provider guide can be found at [Terraform - Getting Started](https://docs.twingate.com/docs/terraform-getting-started).
 
 ## Example Usage
 
@@ -37,9 +37,9 @@ provider "twingate" {
 from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).
 Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
 - `http_max_retry` (Number) Specifies a retry limit for the http requests made. This default value is 10.
-Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable
+Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable.
 - `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.
-Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable
+Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable.
 - `network` (String) Your Twingate network ID for API operations.
 You can find it in the Admin Console URL, for example:
 `autoco.twingate.com`, where `autoco` is your network ID
