@@ -71,6 +71,8 @@ func resourceGroupUpdate(ctx context.Context, resourceData *schema.ResourceData,
 		log.Printf("[INFO] Updated group id %s", groupID)
 	}
 
+	waitForResourceAvailability()
+
 	return resourceGroupRead(ctx, resourceData, meta)
 }
 

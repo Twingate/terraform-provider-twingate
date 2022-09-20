@@ -89,6 +89,8 @@ func resourceConnectorUpdate(ctx context.Context, resourceData *schema.ResourceD
 		}
 	}
 
+	waitForResourceAvailability()
+
 	return resourceConnectorRead(ctx, resourceData, meta)
 }
 func resourceConnectorDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
