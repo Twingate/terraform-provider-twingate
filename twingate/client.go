@@ -2,6 +2,8 @@
 package twingate
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +12,10 @@ import (
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/twingate/go-graphql-client"
+)
+
+var (
+	ErrEmptyResponse = errors.New("empty response")
 )
 
 type HTTPError struct {
@@ -160,9 +166,26 @@ func newServerURL(network, url string) serverURL {
 	return s
 }
 
+func anyErrorRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	if err != nil {
+		return true, err
+	}
+
+	if ctx.Err() != nil {
+		return true, ctx.Err() //nolint:wrapcheck
+	}
+
+	if resp == nil {
+		return true, ErrEmptyResponse
+	}
+
+	return false, nil
+}
+
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
+	retryableClient.CheckRetry = anyErrorRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
