@@ -70,8 +70,6 @@ func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.Res
 		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
 	}
 
-	waitForResourceAvailability()
-
 	return resourceConnectorTokensRead(ctx, resourceData, meta)
 }
 
