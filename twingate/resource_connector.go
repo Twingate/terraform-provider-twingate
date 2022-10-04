@@ -68,30 +68,40 @@ func resourceConnectorCreate(ctx context.Context, resourceData *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(connector.ID.(string))
 	log.Printf("[INFO] Created conector %s", connector.Name)
 
-	waitForResourceAvailability()
+	var connectorRemoteNetworkID string
 
-	return resourceConnectorRead(ctx, resourceData, meta)
+	if connector.RemoteNetwork != nil {
+		connectorRemoteNetworkID = connector.RemoteNetwork.ID.(string)
+	}
+
+	return resourceConnectorReadHelper(resourceData, connector.ID.(string), string(connector.Name), connectorRemoteNetworkID, nil)
 }
 func resourceConnectorUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
+	var connectorRemoteNetworkID string
+
+	connectorID := resourceData.Id()
 	connectorName := resourceData.Get("name").(string)
 
 	if resourceData.HasChange("name") {
-		connectorID := resourceData.Id()
 		log.Printf("[INFO] Updating name of connector id %s", connectorID)
 
-		if err := client.updateConnector(ctx, connectorID, connectorName); err != nil {
+		connector, err := client.updateConnector(ctx, connectorID, connectorName)
+		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		connectorName = string(connector.Name)
+
+		if connector.RemoteNetwork != nil {
+			connectorRemoteNetworkID = connector.RemoteNetwork.ID.(string)
 		}
 	}
 
-	waitForResourceAvailability()
-
-	return resourceConnectorRead(ctx, resourceData, meta)
+	return resourceConnectorReadHelper(resourceData, connectorID, connectorName, connectorRemoteNetworkID, nil)
 }
 func resourceConnectorDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
@@ -113,11 +123,27 @@ func resourceConnectorDelete(ctx context.Context, resourceData *schema.ResourceD
 func resourceConnectorRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	var diags diag.Diagnostics
+	connector, err := client.readConnector(ctx, resourceData.Id())
 
-	connectorID := resourceData.Id()
-	connector, err := client.readConnector(ctx, connectorID)
+	var (
+		connectorID              string
+		connectorName            string
+		connectorRemoteNetworkID string
+	)
 
+	if connector != nil {
+		connectorID = connector.ID.(string)
+		connectorName = string(connector.Name)
+
+		if connector.RemoteNetwork != nil {
+			connectorRemoteNetworkID = connector.RemoteNetwork.ID.(string)
+		}
+	}
+
+	return resourceConnectorReadHelper(resourceData, connectorID, connectorName, connectorRemoteNetworkID, err)
+}
+
+func resourceConnectorReadHelper(resourceData *schema.ResourceData, connectorID, connectorName, connectorRemoteNetworkID string, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -129,15 +155,17 @@ func resourceConnectorRead(ctx context.Context, resourceData *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", connector.Name); err != nil {
+	if err := resourceData.Set("name", connectorName); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
 
-	if connector.RemoteNetwork != nil {
-		if err := resourceData.Set("remote_network_id", connector.RemoteNetwork.ID); err != nil {
+	if connectorRemoteNetworkID != "" {
+		if err := resourceData.Set("remote_network_id", connectorRemoteNetworkID); err != nil {
 			return diag.FromErr(fmt.Errorf("error setting remote_network_id: %w ", err))
 		}
 	}
 
-	return diags
+	resourceData.SetId(connectorID)
+
+	return nil
 }

@@ -7,15 +7,15 @@ import (
 )
 
 type Connector struct {
-	ID              graphql.ID
-	RemoteNetwork   *remoteNetwork
-	Name            graphql.String
-	ConnectorTokens *connectorTokens
+	ID            graphql.ID
+	RemoteNetwork *remoteNetwork
+	Name          graphql.String
 }
 
 type Connectors struct {
-	ID   string
-	Name string
+	Edges []*struct {
+		Node *Connector
+	}
 }
 
 const connectorResourceName = "connector"
@@ -44,16 +44,11 @@ func (client *Client) createConnector(ctx context.Context, remoteNetworkID, conn
 		return nil, NewAPIError(NewMutationError(response.Error), "create", connectorResourceName)
 	}
 
-	connector := Connector{
-		ID:   response.Entity.ID,
-		Name: response.Entity.Name,
-	}
-
-	return &connector, nil
+	return &response.Entity, nil
 }
 
 type ConnectorCreateResponse struct {
-	Entity IDName
+	Entity Connector
 	OkError
 }
 
@@ -98,14 +93,14 @@ func (client *Client) createConnectorWithName(ctx context.Context, remoteNetwork
 
 type updateConnectorQuery struct {
 	ConnectorUpdate struct {
-		Entity IDName
+		Entity Connector
 		OkError
 	} `graphql:"connectorUpdate(id: $connectorId, name: $connectorName )"`
 }
 
-func (client *Client) updateConnector(ctx context.Context, connectorID string, connectorName string) error {
+func (client *Client) updateConnector(ctx context.Context, connectorID string, connectorName string) (*Connector, error) {
 	if connectorID == "" {
-		return NewAPIError(ErrGraphqlConnectorIDIsEmpty, "update", connectorResourceName)
+		return nil, NewAPIError(ErrGraphqlConnectorIDIsEmpty, "update", connectorResourceName)
 	}
 
 	variables := map[string]interface{}{
@@ -116,23 +111,21 @@ func (client *Client) updateConnector(ctx context.Context, connectorID string, c
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateConnector", &response, variables)
 	if err != nil {
-		return NewAPIErrorWithID(err, "update", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(err, "update", connectorResourceName, connectorID)
 	}
 
 	if !response.ConnectorUpdate.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.ConnectorUpdate.Error), "update", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.ConnectorUpdate.Error), "update", connectorResourceName, connectorID)
 	}
 
-	return nil
+	return &response.ConnectorUpdate.Entity, nil
 }
 
 type readConnectorsQuery struct { //nolint
-	Connectors struct {
-		Edges []*Edges
-	}
+	Connectors Connectors
 }
 
-func (client *Client) readConnectors(ctx context.Context) (map[int]*Connectors, error) { //nolint
+func (client *Client) readConnectors(ctx context.Context) (map[int]*Connector, error) { //nolint
 	response := readConnectorsQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, nil)
@@ -140,27 +133,16 @@ func (client *Client) readConnectors(ctx context.Context) (map[int]*Connectors, 
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
-	var connectors = make(map[int]*Connectors)
-
+	var connectors = make(map[int]*Connector)
 	for i, elem := range response.Connectors.Edges {
-		c := &Connectors{ID: elem.Node.StringID(), Name: elem.Node.StringName()}
-		connectors[i] = c
+		connectors[i] = elem.Node
 	}
 
 	return connectors, nil
 }
 
 type readConnectorsWithRemoteNetworkQuery struct {
-	Connectors struct {
-		Edges []*struct {
-			Node struct {
-				IDName
-				RemoteNetwork struct {
-					ID graphql.ID
-				}
-			}
-		}
-	}
+	Connectors Connectors
 }
 
 func (client *Client) readConnectorsWithRemoteNetwork(ctx context.Context) ([]*Connector, error) {
@@ -176,31 +158,15 @@ func (client *Client) readConnectorsWithRemoteNetwork(ctx context.Context) ([]*C
 	}
 
 	connectors := make([]*Connector, 0, len(response.Connectors.Edges))
-
 	for _, elem := range response.Connectors.Edges {
-		if elem == nil {
-			continue
-		}
-
-		conn := elem.Node
-
-		connectors = append(connectors, &Connector{
-			ID:   conn.ID,
-			Name: conn.Name,
-			RemoteNetwork: &remoteNetwork{
-				ID: conn.RemoteNetwork.ID,
-			},
-		})
+		connectors = append(connectors, elem.Node)
 	}
 
 	return connectors, nil
 }
 
 type readConnectorQuery struct {
-	Connector *struct {
-		IDName
-		RemoteNetwork IDName
-	} `graphql:"connector(id: $id)"`
+	Connector *Connector `graphql:"connector(id: $id)"`
 }
 
 func (client *Client) readConnector(ctx context.Context, connectorID string) (*Connector, error) {
@@ -223,18 +189,7 @@ func (client *Client) readConnector(ctx context.Context, connectorID string) (*C
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, connectorID)
 	}
 
-	connectorRemoteNetwork := &remoteNetwork{
-		ID:   response.Connector.RemoteNetwork.ID,
-		Name: response.Connector.RemoteNetwork.Name,
-	}
-
-	connector := Connector{
-		ID:            response.Connector.ID,
-		Name:          response.Connector.Name,
-		RemoteNetwork: connectorRemoteNetwork,
-	}
-
-	return &connector, nil
+	return response.Connector, nil
 }
 
 type deleteConnectorQuery struct {

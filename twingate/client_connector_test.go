@@ -61,7 +61,7 @@ func TestClientConnectorUpdateOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, updateConnectorOkJson))
 
-		err := client.updateConnector(context.Background(), "test-id", "test-name")
+		_, err := client.updateConnector(context.Background(), "test-id", "test-name")
 
 		assert.Nil(t, err)
 	})
@@ -134,7 +134,7 @@ func TestClientConnectorUpdateError(t *testing.T) {
 			httpmock.NewStringResponder(200, createNetworkOkJson))
 		connectorId := "test-id"
 
-		err := client.updateConnector(context.Background(), connectorId, "test-name")
+		_, err := client.updateConnector(context.Background(), connectorId, "test-name")
 
 		assert.EqualError(t, err, fmt.Sprintf("failed to update connector with id %s: error_1", connectorId))
 	})
@@ -158,7 +158,7 @@ func TestClientConnectorUpdateErrorWhenIdEmpty(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createNetworkOkJson))
 
-		err := client.updateConnector(context.Background(), "", "")
+		_, err := client.updateConnector(context.Background(), "", "")
 
 		assert.EqualError(t, err, "failed to update connector: connector id is empty")
 	})
@@ -321,19 +321,19 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 		connector, err := client.readConnectors(context.Background())
 		assert.NoError(t, err)
 
-		r0 := &Connectors{
+		r0 := &Connector{
 			ID:   "connector1",
 			Name: "tf-acc-connector1",
 		}
-		r1 := &Connectors{
+		r1 := &Connector{
 			ID:   "connector2",
 			Name: "connector2",
 		}
-		r2 := &Connectors{
+		r2 := &Connector{
 			ID:   "connector3",
 			Name: "tf-acc-connector3",
 		}
-		mockMap := make(map[int]*Connectors)
+		mockMap := make(map[int]*Connector)
 
 		mockMap[0] = r0
 		mockMap[1] = r1
@@ -364,7 +364,7 @@ func TestClientConnectorUpdateRequestError(t *testing.T) {
 			httpmock.NewErrorResponder(errors.New("error_1")))
 		connectorId := "test"
 
-		err := client.updateConnector(context.Background(), connectorId, "new name")
+		_, err := client.updateConnector(context.Background(), connectorId, "new name")
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to update connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
 	})
