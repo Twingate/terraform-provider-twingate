@@ -7,6 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const userDescription = "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's [documentation](https://docs.twingate.com/docs/users)." //nolint
+
 func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
@@ -46,7 +48,7 @@ func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, 
 
 func datasourceUser() *schema.Resource {
 	return &schema.Resource{
-		Description: "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's [documentation](https://docs.twingate.com/docs/users).",
+		Description: userDescription,
 		ReadContext: datasourceUserRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
