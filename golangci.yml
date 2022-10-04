@@ -42,15 +42,12 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-    - maligned
     - lll
-    - scopelint
     - gofumpt
     - exhaustivestruct
-    - interfacer
     - forcetypeassert
-    - golint
     - exhaustruct
+    - godox
   disable-all: false
   fast: false
 
