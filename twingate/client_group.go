@@ -179,13 +179,13 @@ type updateGroupQuery struct {
 	} `graphql:"groupUpdate(id: $id, name: $name)"`
 }
 
-func (client *Client) updateGroup(ctx context.Context, groupID graphql.ID, groupName graphql.String) error {
+func (client *Client) updateGroup(ctx context.Context, groupID graphql.ID, groupName graphql.String) (*Group, error) {
 	if groupID.(string) == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, "update", groupResourceName)
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "update", groupResourceName)
 	}
 
 	if groupName == "" {
-		return NewAPIError(ErrGraphqlNameIsEmpty, "update", groupResourceName)
+		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "update", groupResourceName)
 	}
 
 	variables := map[string]interface{}{
@@ -197,14 +197,17 @@ func (client *Client) updateGroup(ctx context.Context, groupID graphql.ID, group
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
 	if err != nil {
-		return NewAPIErrorWithID(err, "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(err, "update", groupResourceName, groupID)
 	}
 
 	if !response.GroupUpdate.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), "update", groupResourceName, groupID)
 	}
 
-	return nil
+	return &Group{
+		ID:   response.GroupUpdate.Entity.ID,
+		Name: response.GroupUpdate.Entity.Name,
+	}, nil
 }
 
 type deleteGroupQuery struct {
