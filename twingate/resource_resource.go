@@ -280,44 +280,39 @@ func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
 func resourceResourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	resource, err := extractResource(resourceData)
+	req, err := extractResource(resourceData)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.createResource(ctx, resource)
+	resource, err := client.createResource(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(resource.ID.(string))
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
-	waitForResourceAvailability()
-
-	return resourceResourceRead(ctx, resourceData, meta)
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
 func resourceResourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	resource, err := extractResource(resourceData)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	resource.ID = resourceData.Id()
 
 	if resourceData.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
-		resource, err := extractResource(resourceData)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		resource.ID = resourceData.Id()
-
-		err = client.updateResource(ctx, resource)
+		resource, err = client.updateResource(ctx, resource)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	waitForResourceAvailability()
-
-	return resourceResourceRead(ctx, resourceData, meta)
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
 func resourceResourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -339,9 +334,13 @@ func resourceResourceDelete(ctx context.Context, resourceData *schema.ResourceDa
 
 func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	resourceID := resourceData.Id()
 
-	resource, err := client.readResource(ctx, resourceID)
+	resource, err := client.readResource(ctx, resourceData.Id())
+
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
+}
+
+func resourceResourceReadHelper(ctx context.Context, client *Client, resourceData *schema.ResourceData, resource *Resource, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -360,7 +359,7 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 	if !resource.IsActive {
 		// fix set active state for the resource on `terraform apply`
 		err = client.updateResourceActiveState(ctx, &Resource{
-			ID:       resourceID,
+			ID:       resource.ID,
 			IsActive: true,
 		})
 
@@ -368,6 +367,8 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 			return diag.FromErr(err)
 		}
 	}
+
+	resourceData.SetId(resource.ID.(string))
 
 	return resourceResourceReadDiagnostics(resourceData, resource)
 }
