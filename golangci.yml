@@ -42,11 +42,20 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-    - lll
-    - gofumpt
+    - deadcode
     - exhaustivestruct
-    - forcetypeassert
     - exhaustruct
+    - forcetypeassert
+    - gofumpt
+    - golint
+    - ifshort
+    - interfacer
+    - lll
+    - maligned
+    - nosnakecase
+    - scopelint
+    - structcheck
+    - varcheck
   disable-all: false
   fast: false
 
