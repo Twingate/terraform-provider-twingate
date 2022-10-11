@@ -61,7 +61,8 @@ func resourceConnectorCreate(ctx context.Context, resourceData *schema.ResourceD
 	client := meta.(*Client)
 
 	remoteNetworkID := resourceData.Get("remote_network_id").(string)
-	connector, err := client.createConnector(ctx, remoteNetworkID)
+	connectorName := resourceData.Get("name").(string)
+	connector, err := client.createConnector(ctx, remoteNetworkID, connectorName)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -69,10 +70,6 @@ func resourceConnectorCreate(ctx context.Context, resourceData *schema.ResourceD
 
 	resourceData.SetId(connector.ID.(string))
 	log.Printf("[INFO] Created conector %s", connector.Name)
-
-	if resourceData.Get("name").(string) != "" {
-		return resourceConnectorUpdate(ctx, resourceData, meta)
-	}
 
 	waitForResourceAvailability()
 
@@ -91,6 +88,8 @@ func resourceConnectorUpdate(ctx context.Context, resourceData *schema.ResourceD
 			return diag.FromErr(err)
 		}
 	}
+
+	waitForResourceAvailability()
 
 	return resourceConnectorRead(ctx, resourceData, meta)
 }

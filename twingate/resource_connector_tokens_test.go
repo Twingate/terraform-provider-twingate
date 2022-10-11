@@ -9,19 +9,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccRemoteConnector_withTokens(t *testing.T) {
+func TestAccRemoteConnectorWithTokens(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector With Tokens", func(t *testing.T) {
 
-		const connectorTokensResource = "twingate_connector_tokens.test"
+		const connectorTokensResource = "twingate_connector_tokens.test_t1"
 		remoteNetworkName := getRandomName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck:          func() { testAccPreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorTokensInvalidated,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnectorTokensWithKeepers(remoteNetworkName),
+					Config: createConnectorTokensWithKeepers(remoteNetworkName),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorTokensExists(connectorTokensResource),
 					),
@@ -31,16 +31,16 @@ func TestAccRemoteConnector_withTokens(t *testing.T) {
 	})
 }
 
-func testTwingateConnectorTokensWithKeepers(remoteNetworkName string) string {
+func createConnectorTokensWithKeepers(remoteNetworkName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test_t1" {
 	  name = "%s"
 	}
-	resource "twingate_connector" "test" {
-	  remote_network_id = twingate_remote_network.test.id
+	resource "twingate_connector" "test_t1" {
+	  remote_network_id = twingate_remote_network.test_t1.id
 	}
-	resource "twingate_connector_tokens" "test" {
-	  connector_id = twingate_connector.test.id
+	resource "twingate_connector_tokens" "test_t1" {
+	  connector_id = twingate_connector.test_t1.id
       keepers = {
          foo = "bar"
       }

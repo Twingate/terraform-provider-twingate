@@ -18,8 +18,9 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 
 		networkName := getRandomName()
 		resourceName := getRandomResourceName()
+		const theDatasource = "data.twingate_resources.out_drs1"
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck:          func() { testAccPreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -27,8 +28,8 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateResources(networkName, resourceName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(resourcesDatasource, resourcesNumber, "2"),
-						resource.TestCheckResourceAttr(resourcesDatasource, firstResourceName, resourceName),
+						resource.TestCheckResourceAttr(theDatasource, resourcesNumber, "2"),
+						resource.TestCheckResourceAttr(theDatasource, firstResourceName, resourceName),
 					),
 				},
 			},
@@ -38,14 +39,14 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 
 func testDatasourceTwingateResources(networkName, resourceName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test_drs1" {
 	  name = "%s"
 	}
 
-	resource "twingate_resource" "test1" {
+	resource "twingate_resource" "test_drs1_1" {
 	  name = "%s"
 	  address = "acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
+	  remote_network_id = twingate_remote_network.test_drs1.id
 	  protocols {
 	    allow_icmp = true
 	    tcp {
@@ -59,10 +60,10 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 	  }
 	}
 
-	resource "twingate_resource" "test2" {
+	resource "twingate_resource" "test_drs1_2" {
 	  name = "%s"
 	  address = "acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
+	  remote_network_id = twingate_remote_network.test_drs1.id
 	  protocols {
 	    allow_icmp = true
 	    tcp {
@@ -76,10 +77,10 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 	  }
 	}
 
-	data "twingate_resources" "out" {
+	data "twingate_resources" "out_drs1" {
 	  name = "%s"
 
-	  depends_on = [twingate_resource.test1, twingate_resource.test2]
+	  depends_on = [twingate_resource.test_drs1_1, twingate_resource.test_drs1_2]
 	}
 	`, networkName, resourceName, resourceName, resourceName)
 }
@@ -88,7 +89,7 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resources - empty result", func(t *testing.T) {
 		resourceName := getRandomResourceName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck: func() {
 				testAccPreCheck(t)
@@ -97,7 +98,7 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 				{
 					Config: testTwingateResourcesDoesNotExists(resourceName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(resourcesDatasource, resourcesNumber, "0"),
+						resource.TestCheckResourceAttr("data.twingate_resources.out_drs2", resourcesNumber, "0"),
 					),
 				},
 			},
@@ -107,12 +108,12 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 
 func testTwingateResourcesDoesNotExists(name string) string {
 	return fmt.Sprintf(`
-	data "twingate_resources" "out" {
+	data "twingate_resources" "out_drs2" {
 	  name = "%s"
 	}
 
-	output "my_resources" {
-	  value = data.twingate_resources.out.resources
+	output "my_resources_drs2" {
+	  value = data.twingate_resources.out_drs2.resources
 	}
 	`, name)
 }
