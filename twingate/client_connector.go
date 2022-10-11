@@ -93,7 +93,7 @@ func (client *Client) createConnectorWithName(ctx context.Context, remoteNetwork
 
 type updateConnectorQuery struct {
 	ConnectorUpdate struct {
-		Entity Connector
+		Entity *Connector
 		OkError
 	} `graphql:"connectorUpdate(id: $connectorId, name: $connectorName )"`
 }
@@ -118,7 +118,11 @@ func (client *Client) updateConnector(ctx context.Context, connectorID string, c
 		return nil, NewAPIErrorWithID(NewMutationError(response.ConnectorUpdate.Error), "update", connectorResourceName, connectorID)
 	}
 
-	return &response.ConnectorUpdate.Entity, nil
+	if response.ConnectorUpdate.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", connectorResourceName, connectorID)
+	}
+
+	return response.ConnectorUpdate.Entity, nil
 }
 
 type readConnectorsQuery struct { //nolint
@@ -131,6 +135,10 @@ func (client *Client) readConnectors(ctx context.Context) (map[int]*Connector, e
 	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
+	}
+
+	if response.Connectors.Edges == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 
 	var connectors = make(map[int]*Connector)
