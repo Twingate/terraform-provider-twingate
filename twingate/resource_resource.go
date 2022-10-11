@@ -19,6 +19,7 @@ const (
 	policyRestricted = "RESTRICTED"
 	policyAllowAll   = "ALLOW_ALL"
 	policyDenyAll    = "DENY_ALL"
+	waitInterval     = 500 * time.Millisecond
 )
 
 func castToStrings(a, b interface{}) (string, string) {
@@ -314,6 +315,8 @@ func resourceResourceUpdate(ctx context.Context, resourceData *schema.ResourceDa
 		}
 	}
 
+	waitForResourceAvailability()
+
 	return resourceResourceRead(ctx, resourceData, meta)
 }
 
@@ -397,5 +400,5 @@ func resourceResourceReadDiagnostics(resourceData *schema.ResourceData, resource
 }
 
 func waitForResourceAvailability() {
-	time.Sleep(time.Second)
+	time.Sleep(waitInterval)
 }

@@ -16,7 +16,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 		networkName2 := getRandomName()
 		connectorName := getRandomConnectorName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck:          func() { testAccPreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
@@ -35,22 +35,22 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 
 func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2, connectorName2, prefix string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test1" {
+	resource "twingate_remote_network" "test_dcs1" {
 		name = "%s"
 	}
-	resource "twingate_connector" "test1" {
-		remote_network_id = twingate_remote_network.test1.id
+	resource "twingate_connector" "test_dcs1" {
+		remote_network_id = twingate_remote_network.test_dcs1.id
 		name = "%s"
 	}
-	resource "twingate_remote_network" "test2" {
+	resource "twingate_remote_network" "test_dcs2" {
 		name = "%s"
 	}
-	resource "twingate_connector" "test2" {
-		remote_network_id = twingate_remote_network.test2.id
+	resource "twingate_connector" "test_dcs2" {
+		remote_network_id = twingate_remote_network.test_dcs2.id
 		name = "%s"
 	}
 	data "twingate_connectors" "all" {
-		depends_on = [twingate_connector.test1, twingate_connector.test2]
+		depends_on = [twingate_connector.test_dcs1, twingate_connector.test_dcs2]
 	}
 
 	output "my_connectors" {
@@ -63,14 +63,14 @@ func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
 		prefix := acctest.RandString(10)
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck:          func() { testAccPreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config: testTwingateConnectorsDoesNotExists(prefix),
 					Check: resource.ComposeTestCheckFunc(
-						testCheckOutputLength("my_connectors", 0),
+						testCheckOutputLength("my_connectors_dcs2", 0),
 					),
 				},
 			},
@@ -80,9 +80,9 @@ func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 
 func testTwingateConnectorsDoesNotExists(prefix string) string {
 	return fmt.Sprintf(`
-		data "twingate_connectors" "all" {}
-		output "my_connectors" {
-			value = [for c in [for conn in data.twingate_connectors.all : conn if can(conn.*.name)][0] : c if length(regexall("%s.*", c.name)) > 0]
+		data "twingate_connectors" "all_dcs2" {}
+		output "my_connectors_dcs2" {
+			value = [for c in [for conn in data.twingate_connectors.all_dcs2 : conn if can(conn.*.name)][0] : c if length(regexall("%s.*", c.name)) > 0]
 		}
 	`, prefix)
 }
