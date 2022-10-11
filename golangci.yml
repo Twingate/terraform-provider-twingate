@@ -19,14 +19,10 @@ linters-settings:
   govet:
     check-shadowing: true
     use-installed-packages: false
-  golint:
-    min-confidence: 0.8
   gofmt:
     simplify: true
   gocyclo:
     min-complexity: 20
-  maligned:
-    suggest-new: true
   dupl:
     threshold: 200
   goconst:
@@ -42,12 +38,20 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-    - lll
-    - gofumpt
+    - deadcode
     - exhaustivestruct
-    - forcetypeassert
     - exhaustruct
-    - godox
+    - forcetypeassert
+    - gofumpt
+    - golint
+    - ifshort
+    - interfacer
+    - lll
+    - maligned
+    - nosnakecase
+    - scopelint
+    - structcheck
+    - varcheck
   disable-all: false
   fast: false
 
