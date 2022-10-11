@@ -15,7 +15,7 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 
 		networkName := getRandomName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck:          func() { testAccPreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
@@ -23,7 +23,7 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateRemoteNetwork(networkName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_remote_network.test2", "name", networkName),
+						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn1_2", "name", networkName),
 					),
 				},
 			},
@@ -33,16 +33,16 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 
 func testDatasourceTwingateRemoteNetwork(name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test1" {
+	resource "twingate_remote_network" "test_dn1_1" {
 	  name = "%s"
 	}
 
-	data "twingate_remote_network" "test2" {
-	  id = twingate_remote_network.test1.id
+	data "twingate_remote_network" "test_dn1_2" {
+	  id = twingate_remote_network.test_dn1_1.id
 	}
 
-	output "my_network" {
-	  value = data.twingate_remote_network.test2.name
+	output "my_network_dn1_" {
+	  value = data.twingate_remote_network.test_dn1_2.name
 	}
 	`, name)
 }
@@ -52,7 +52,7 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 
 		networkName := getRandomName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck:          func() { testAccPreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
@@ -60,7 +60,7 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateRemoteNetworkByName(networkName),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_remote_network.test2", "name", networkName),
+						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn2_2", "name", networkName),
 					),
 				},
 			},
@@ -70,17 +70,17 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 
 func testDatasourceTwingateRemoteNetworkByName(name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test1" {
+	resource "twingate_remote_network" "test_dn2_1" {
 	  name = "%s"
 	}
 
-	data "twingate_remote_network" "test2" {
+	data "twingate_remote_network" "test_dn2_2" {
 	  name = "%s"
-	  depends_on = [resource.twingate_remote_network.test1]
+	  depends_on = [resource.twingate_remote_network.test_dn2_1]
 	}
 
-	output "my_network" {
-	  value = data.twingate_remote_network.test2.name
+	output "my_network_dn2" {
+	  value = data.twingate_remote_network.test_dn2_2.name
 	}
 	`, name, name)
 }
@@ -89,11 +89,9 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Remote Network - does not exists", func(t *testing.T) {
 		networkID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("RemoteNetwork:%d", acctest.RandInt())))
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
+			PreCheck:          func() { testAccPreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
@@ -106,12 +104,12 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 
 func testTwingateRemoteNetworkDoesNotExists(id string) string {
 	return fmt.Sprintf(`
-	data "twingate_remote_network" "test" {
+	data "twingate_remote_network" "test_dn3" {
 	  id = "%s"
 	}
 
-	output "my_network" {
-	  value = data.twingate_remote_network.test.name
+	output "my_network_dn3" {
+	  value = data.twingate_remote_network.test_dn3.name
 	}
 	`, id)
 }
@@ -120,11 +118,9 @@ func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Remote Network - failed parse network ID", func(t *testing.T) {
 		networkID := acctest.RandString(10)
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
-			PreCheck: func() {
-				testAccPreCheck(t)
-			},
+			PreCheck:          func() { testAccPreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
@@ -140,7 +136,7 @@ func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
 		networkID := acctest.RandString(10)
 		networkName := acctest.RandString(10)
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: testAccProviderFactories,
 			PreCheck: func() {
 				testAccPreCheck(t)
@@ -157,13 +153,13 @@ func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
 
 func testTwingateRemoteNetworkValidationFailed(id, name string) string {
 	return fmt.Sprintf(`
-	data "twingate_remote_network" "test" {
+	data "twingate_remote_network" "test_dn4" {
 	  id = "%s"
 	  name = "%s"
 	}
 
-	output "my_network" {
-	  value = data.twingate_remote_network.test.name
+	output "my_network_dn4" {
+	  value = data.twingate_remote_network.test_dn4.name
 	}
 	`, id, name)
 }
