@@ -2,7 +2,6 @@
 package twingate
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -165,36 +164,9 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.RetryMax = httpRetryMax
-
-	// TODO: revert log hooks before release
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
-		if retryNumber > 0 {
-			logger.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
-		}
-
-		body, err := io.ReadAll(req.Body)
-		if err != nil {
-			logger.Printf("[ERROR] Failed to read request body: %s", err)
-
-			return
-		}
-
-		logger.Printf("[DEBUG] Request body: %s", string(body))
-		req.Body = io.NopCloser(bytes.NewReader(body))
+		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
-
-	retryableClient.ResponseLogHook = func(logger retryablehttp.Logger, res *http.Response) {
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			logger.Printf("[ERROR] Failed to read response body: %s", err)
-
-			return
-		}
-
-		logger.Printf("[DEBUG] Response status code %d, body: %s", res.StatusCode, string(body))
-		res.Body = io.NopCloser(bytes.NewReader(body))
-	}
-
 	retryableClient.HTTPClient.Timeout = httpTimeout
 	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, version)
 

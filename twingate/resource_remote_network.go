@@ -48,6 +48,8 @@ func resourceRemoteNetworkCreate(ctx context.Context, resourceData *schema.Resou
 	resourceData.SetId(remoteNetwork.ID.(string))
 	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, resourceData.Id())
 
+	waitForResourceAvailability()
+
 	return resourceRemoteNetworkRead(ctx, resourceData, meta)
 }
 
@@ -64,6 +66,8 @@ func resourceRemoteNetworkUpdate(ctx context.Context, resourceData *schema.Resou
 			return diag.FromErr(err)
 		}
 	}
+
+	waitForResourceAvailability()
 
 	return resourceRemoteNetworkRead(ctx, resourceData, meta)
 }
