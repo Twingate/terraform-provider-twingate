@@ -60,16 +60,11 @@ func resourceGroupUpdate(ctx context.Context, resourceData *schema.ResourceData,
 		Name: graphql.String(resourceData.Get("name").(string)),
 	}
 
-	if resourceData.HasChange("name") {
-		group, err = client.updateGroup(ctx, group.ID, group.Name)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	group, err = client.updateGroup(ctx, group.ID, group.Name)
 
-		log.Printf("[INFO] Updated group id %v", group.ID)
-	}
+	log.Printf("[INFO] Updated group id %v", group.ID)
 
-	return resourceGroupReadHelper(resourceData, group, nil)
+	return resourceGroupReadHelper(resourceData, group, err)
 }
 
 func resourceGroupDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
