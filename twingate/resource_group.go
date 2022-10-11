@@ -40,40 +40,31 @@ func resourceGroup() *schema.Resource {
 func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	groupName := resourceData.Get("name").(string)
-	group, err := client.createGroup(ctx, graphql.String(groupName))
-
+	group, err := client.createGroup(ctx, graphql.String(resourceData.Get("name").(string)))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(group.ID.(string))
-	log.Printf("[INFO] Group %s created with id %s", groupName, resourceData.Id())
+	log.Printf("[INFO] Group %s created with id %v", group.Name, group.ID)
 
-	waitForResourceAvailability()
-
-	return resourceGroupRead(ctx, resourceData, meta)
+	return resourceGroupReadHelper(resourceData, group, nil)
 }
 
 func resourceGroupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	groupName := resourceData.Get("name").(string)
+	var err error
 
-	if resourceData.HasChange("name") {
-		groupID := resourceData.Id()
-
-		err := client.updateGroup(ctx, graphql.ID(groupID), graphql.String(groupName))
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		log.Printf("[INFO] Updated group id %s", groupID)
+	group := &Group{
+		ID:   graphql.ID(resourceData.Id()),
+		Name: graphql.String(resourceData.Get("name").(string)),
 	}
 
-	waitForResourceAvailability()
+	group, err = client.updateGroup(ctx, group.ID, group.Name)
 
-	return resourceGroupRead(ctx, resourceData, meta)
+	log.Printf("[INFO] Updated group id %v", group.ID)
+
+	return resourceGroupReadHelper(resourceData, group, err)
 }
 
 func resourceGroupDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -96,11 +87,12 @@ func resourceGroupDelete(ctx context.Context, resourceData *schema.ResourceData,
 func resourceGroupRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	var diags diag.Diagnostics
+	group, err := client.readGroup(ctx, resourceData.Id())
 
-	groupID := resourceData.Id()
-	group, err := client.readGroup(ctx, groupID)
+	return resourceGroupReadHelper(resourceData, group, err)
+}
 
+func resourceGroupReadHelper(resourceData *schema.ResourceData, group *Group, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -112,10 +104,11 @@ func resourceGroupRead(ctx context.Context, resourceData *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	err = resourceData.Set("name", group.Name)
-	if err != nil {
+	if err := resourceData.Set("name", group.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	return diags
+	resourceData.SetId(group.ID.(string))
+
+	return nil
 }
