@@ -3,12 +3,12 @@
 page_title: "twingate_user Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's documentation https://docs.twingate.com/docs/users.
+  Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's documentation https://docs.twingate.com/docs/users.
 ---
 
 # twingate_user (Data Source)
 
-Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's [documentation](https://docs.twingate.com/docs/users).
+Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).
 
 ## Example Usage
 
