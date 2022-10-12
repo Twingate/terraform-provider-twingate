@@ -141,7 +141,7 @@ func TestClientGroupUpdateOk(t *testing.T) {
 			httpmock.NewStringResponder(200, updateGroupOkJson))
 		groupName := graphql.String("test")
 		groupId := graphql.ID("id")
-		err := client.updateGroup(context.Background(), groupId, groupName)
+		_, err := client.updateGroup(context.Background(), groupId, groupName)
 
 		assert.Nil(t, err)
 	})
@@ -165,7 +165,7 @@ func TestClientGroupUpdateError(t *testing.T) {
 			httpmock.NewStringResponder(200, updateGroupOkJson))
 		groupName := graphql.String("test")
 		groupId := graphql.ID("g1")
-		err := client.updateGroup(context.Background(), groupId, groupName)
+		_, err := client.updateGroup(context.Background(), groupId, groupName)
 
 		assert.EqualError(t, err, fmt.Sprintf("failed to update group with id %s: error_1", groupId))
 	})
@@ -193,7 +193,7 @@ func TestClientGroupUpdateRequestError(t *testing.T) {
 
 		groupName := graphql.String("test")
 		groupId := graphql.ID("g1")
-		err := client.updateGroup(context.Background(), groupId, groupName)
+		_, err := client.updateGroup(context.Background(), groupId, groupName)
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id %s: Post "%s": error_1`, groupId, client.GraphqlServerURL))
 	})
@@ -206,7 +206,7 @@ func TestClientGroupUpdateWithEmptyName(t *testing.T) {
 
 		groupName := graphql.String("")
 		groupId := graphql.ID("id")
-		err := client.updateGroup(context.Background(), groupId, groupName)
+		_, err := client.updateGroup(context.Background(), groupId, groupName)
 
 		assert.EqualError(t, err, "failed to update group: name is empty")
 	})
@@ -219,7 +219,7 @@ func TestClientGroupUpdateWithEmptyID(t *testing.T) {
 
 		groupName := graphql.String("name")
 		groupId := graphql.ID("")
-		err := client.updateGroup(context.Background(), groupId, groupName)
+		_, err := client.updateGroup(context.Background(), groupId, groupName)
 
 		assert.EqualError(t, err, "failed to update group: id is empty")
 	})
