@@ -43,6 +43,10 @@ func (client *Client) createRemoteNetwork(ctx context.Context, remoteNetworkName
 		return nil, NewAPIError(NewMutationError(message), "create", remoteNetworkResourceName)
 	}
 
+	if response.RemoteNetworkCreate.Entity == nil {
+		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", remoteNetworkResourceName)
+	}
+
 	return response.RemoteNetworkCreate.Entity, nil
 }
 
@@ -162,6 +166,10 @@ func (client *Client) updateRemoteNetwork(ctx context.Context, remoteNetworkID, 
 
 	if !response.RemoteNetworkUpdate.Ok {
 		return nil, NewAPIErrorWithID(NewMutationError(response.RemoteNetworkUpdate.Error), "update", remoteNetworkResourceName, remoteNetworkID)
+	}
+
+	if response.RemoteNetworkUpdate.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return response.RemoteNetworkUpdate.Entity, nil
