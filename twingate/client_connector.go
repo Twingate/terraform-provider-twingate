@@ -40,15 +40,11 @@ func (client *Client) createConnector(ctx context.Context, remoteNetworkID, conn
 		return nil, err
 	}
 
-	if !response.Ok {
-		return nil, NewAPIError(NewMutationError(response.Error), "create", connectorResourceName)
-	}
-
-	return &response.Entity, nil
+	return response.Entity, nil
 }
 
 type ConnectorCreateResponse struct {
-	Entity Connector
+	Entity *Connector
 	OkError
 }
 
@@ -66,6 +62,14 @@ func (client *Client) createConnectorWithoutName(ctx context.Context, remoteNetw
 
 	if err != nil {
 		return nil, NewAPIError(err, "create", connectorResourceName)
+	}
+
+	if !response.ConnectorCreate.Ok {
+		return nil, NewAPIError(NewMutationError(response.ConnectorCreate.Error), "create", connectorResourceName)
+	}
+
+	if response.ConnectorCreate.Entity == nil {
+		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", connectorResourceName)
 	}
 
 	return response.ConnectorCreate, nil
@@ -86,6 +90,14 @@ func (client *Client) createConnectorWithName(ctx context.Context, remoteNetwork
 
 	if err != nil {
 		return nil, NewAPIError(err, "create", connectorResourceName)
+	}
+
+	if !response.ConnectorCreate.Ok {
+		return nil, NewAPIError(NewMutationError(response.ConnectorCreate.Error), "create", connectorResourceName)
+	}
+
+	if response.ConnectorCreate.Entity == nil {
+		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "create", connectorResourceName, connectorName)
 	}
 
 	return response.ConnectorCreate, nil
