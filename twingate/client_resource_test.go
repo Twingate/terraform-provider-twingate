@@ -401,7 +401,8 @@ func TestClientResourceUpdateOk(t *testing.T) {
 		"data": {
 			"resourceUpdate": {
 				"ok" : true,
-				"error" : null
+				"error" : null,
+				"entity": {}
 			}
 		}
 	}`
@@ -708,7 +709,7 @@ func TestClientResourceReadWithoutGroupsError(t *testing.T) {
 		resource, err := client.readResourceWithoutGroups(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s", resourceID))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s: query result is empty", resourceID))
 	})
 }
 

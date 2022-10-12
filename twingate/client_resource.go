@@ -210,6 +210,10 @@ func (client *Client) createResource(ctx context.Context, resource *Resource) (*
 		return nil, NewAPIError(NewMutationError(response.ResourceCreate.Error), "create", resourceResourceName)
 	}
 
+	if response.ResourceCreate.Entity == nil {
+		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", resourceResourceName)
+	}
+
 	return response.ResourceCreate.Entity.convertResource(), nil
 }
 
@@ -283,13 +287,16 @@ func (client *Client) updateResource(ctx context.Context, resource *Resource) (*
 	response := updateResourceQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
-
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
 	}
 
 	if !response.ResourceUpdate.Ok {
 		return nil, NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
+	}
+
+	if response.ResourceUpdate.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, resource.ID)
 	}
 
 	return response.ResourceUpdate.Entity.convertResource(), nil
@@ -351,7 +358,7 @@ func (client *Client) readResourceWithoutGroups(ctx context.Context, resourceID 
 	}
 
 	if response.Resource == nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
 	resource := &Resource{
