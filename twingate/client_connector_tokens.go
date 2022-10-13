@@ -22,6 +22,7 @@ func (client *Client) verifyConnectorTokens(ctx context.Context, refreshToken, a
 		map[string]string{
 			"refresh_token": refreshToken,
 		})
+
 	if err != nil {
 		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}
@@ -29,7 +30,7 @@ func (client *Client) verifyConnectorTokens(ctx context.Context, refreshToken, a
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		fmt.Sprintf("%s/access_node/refresh", client.APIServerURL),
+		fmt.Sprintf("%s/connector/validate_tokens", client.APIServerURL),
 		bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return NewAPIError(err, "verify", connectorTokensResourceName)
