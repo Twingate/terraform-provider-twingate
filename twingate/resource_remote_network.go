@@ -37,39 +37,24 @@ func resourceRemoteNetwork() *schema.Resource {
 
 func resourceRemoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-
-	remoteNetworkName := resourceData.Get("name").(string)
-	remoteNetwork, err := client.createRemoteNetwork(ctx, remoteNetworkName)
+	remoteNetwork, err := client.createRemoteNetwork(ctx, resourceData.Get("name").(string))
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(remoteNetwork.ID.(string))
-	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, resourceData.Id())
+	log.Printf("[INFO] Remote network %s created with id %s", string(remoteNetwork.Name), remoteNetwork.ID.(string))
 
-	waitForResourceAvailability()
-
-	return resourceRemoteNetworkRead(ctx, resourceData, meta)
+	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, nil)
 }
 
 func resourceRemoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[INFO] Updating remote network id %s", resourceData.Id())
+
 	client := meta.(*Client)
+	remoteNetwork, err := client.updateRemoteNetwork(ctx, resourceData.Id(), resourceData.Get("name").(string))
 
-	remoteNetworkName := resourceData.Get("name").(string)
-
-	if resourceData.HasChange("name") {
-		remoteNetworkID := resourceData.Id()
-		log.Printf("[INFO] Updating remote network id %s", remoteNetworkID)
-
-		if err := client.updateRemoteNetwork(ctx, remoteNetworkID, remoteNetworkName); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	waitForResourceAvailability()
-
-	return resourceRemoteNetworkRead(ctx, resourceData, meta)
+	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
 }
 
 func resourceRemoteNetworkDelete(ctx context.Context, resourceData *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -90,16 +75,15 @@ func resourceRemoteNetworkDelete(ctx context.Context, resourceData *schema.Resou
 }
 
 func resourceRemoteNetworkRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[INFO] Reading remote network id %s", resourceData.Id())
+
 	client := meta.(*Client)
+	remoteNetwork, err := client.readRemoteNetworkByID(ctx, resourceData.Id())
 
-	var diags diag.Diagnostics
+	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
+}
 
-	remoteNetworkID := resourceData.Id()
-
-	log.Printf("[INFO] Reading remote network id %s", remoteNetworkID)
-
-	remoteNetwork, err := client.readRemoteNetworkByID(ctx, remoteNetworkID)
-
+func resourceRemoteNetworkReadHelper(resourceData *schema.ResourceData, remoteNetwork *remoteNetwork, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -111,10 +95,12 @@ func resourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	err = resourceData.Set("name", remoteNetwork.Name)
+	err = resourceData.Set("name", string(remoteNetwork.Name))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return diags
+	resourceData.SetId(remoteNetwork.ID.(string))
+
+	return nil
 }
