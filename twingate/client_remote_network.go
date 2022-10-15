@@ -16,9 +16,7 @@ const remoteNetworkResourceName = "remote network"
 type createRemoteNetworkQuery struct {
 	RemoteNetworkCreate *struct {
 		OkError
-		Entity struct {
-			ID graphql.ID
-		}
+		Entity *remoteNetwork
 	} `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive)"`
 }
 
@@ -45,9 +43,11 @@ func (client *Client) createRemoteNetwork(ctx context.Context, remoteNetworkName
 		return nil, NewAPIError(NewMutationError(message), "create", remoteNetworkResourceName)
 	}
 
-	return &remoteNetwork{
-		ID: response.RemoteNetworkCreate.Entity.ID,
-	}, nil
+	if response.RemoteNetworkCreate.Entity == nil {
+		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", remoteNetworkResourceName)
+	}
+
+	return response.RemoteNetworkCreate.Entity, nil
 }
 
 type readRemoteNetworksQuery struct { //nolint
@@ -145,10 +145,13 @@ func (client *Client) readRemoteNetworkByName(ctx context.Context, remoteNetwork
 }
 
 type updateRemoteNetworkQuery struct {
-	RemoteNetworkUpdate *OkError `graphql:"remoteNetworkUpdate(id: $id, name: $name)"`
+	RemoteNetworkUpdate struct {
+		OkError
+		Entity *remoteNetwork
+	} `graphql:"remoteNetworkUpdate(id: $id, name: $name)"`
 }
 
-func (client *Client) updateRemoteNetwork(ctx context.Context, remoteNetworkID, remoteNetworkName string) error {
+func (client *Client) updateRemoteNetwork(ctx context.Context, remoteNetworkID, remoteNetworkName string) (*remoteNetwork, error) {
 	variables := map[string]interface{}{
 		"id":   graphql.ID(remoteNetworkID),
 		"name": graphql.String(remoteNetworkName),
@@ -158,14 +161,18 @@ func (client *Client) updateRemoteNetwork(ctx context.Context, remoteNetworkID, 
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateRemoteNetwork", &response, variables)
 	if err != nil {
-		return NewAPIErrorWithID(err, "update", remoteNetworkResourceName, remoteNetworkID)
+		return nil, NewAPIErrorWithID(err, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	if !response.RemoteNetworkUpdate.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.RemoteNetworkUpdate.Error), "update", remoteNetworkResourceName, remoteNetworkID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.RemoteNetworkUpdate.Error), "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	return nil
+	if response.RemoteNetworkUpdate.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", remoteNetworkResourceName, remoteNetworkID)
+	}
+
+	return response.RemoteNetworkUpdate.Entity, nil
 }
 
 type deleteRemoteNetworkQuery struct {
