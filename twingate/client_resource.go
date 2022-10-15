@@ -35,7 +35,7 @@ type gqlResource struct {
 			HasNextPage graphql.Boolean
 		}
 		Edges []*Edges
-	} `graphql:"groups(first: $first)"`
+	} `graphql:"groups(first: $groupsPageSize)"`
 	Protocols *ProtocolsInput
 	IsActive  graphql.Boolean
 }
@@ -196,7 +196,7 @@ func (client *Client) createResource(ctx context.Context, resource *Resource) (*
 		"remoteNetworkId": resource.RemoteNetworkID,
 		"groupIds":        resource.GroupsIds,
 		"protocols":       resource.Protocols,
-		"first":           graphql.Int(readResourceQueryGroupsSize),
+		"groupsPageSize":  graphql.Int(readResourceQueryGroupsSize),
 	}
 
 	response := createResourceQuery{}
@@ -228,8 +228,8 @@ func (client *Client) readResource(ctx context.Context, resourceID string) (*Res
 
 	response := readResourceQuery{}
 	variables := map[string]interface{}{
-		"id":    graphql.ID(resourceID),
-		"first": graphql.Int(readResourceQueryGroupsSize),
+		"id":             graphql.ID(resourceID),
+		"groupsPageSize": graphql.Int(readResourceQueryGroupsSize),
 	}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
@@ -281,7 +281,7 @@ func (client *Client) updateResource(ctx context.Context, resource *Resource) (*
 		"remoteNetworkId": resource.RemoteNetworkID,
 		"groupIds":        resource.GroupsIds,
 		"protocols":       resource.Protocols,
-		"first":           graphql.Int(readResourceQueryGroupsSize),
+		"groupsPageSize":  graphql.Int(readResourceQueryGroupsSize),
 	}
 
 	response := updateResourceQuery{}
