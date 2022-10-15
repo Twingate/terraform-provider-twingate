@@ -119,15 +119,8 @@ func resourceConnectorReadHelper(resourceData *schema.ResourceData, connector *C
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
 
-	var connectorRemoteNetworkID string
-	if connector.RemoteNetwork != nil {
-		connectorRemoteNetworkID = connector.RemoteNetwork.ID.(string)
-	}
-
-	if connectorRemoteNetworkID != "" {
-		if err := resourceData.Set("remote_network_id", connectorRemoteNetworkID); err != nil {
-			return diag.FromErr(fmt.Errorf("error setting remote_network_id: %w ", err))
-		}
+	if err := resourceData.Set("remote_network_id", connector.RemoteNetwork.ID.(string)); err != nil {
+		return diag.FromErr(fmt.Errorf("error setting remote_network_id: %w ", err))
 	}
 
 	resourceData.SetId(connector.ID.(string))
