@@ -8,29 +8,57 @@ import (
 )
 
 const groupResourceName = "group"
+const defaultPageSize = 100
 
 type Group struct {
-	ID       graphql.ID
-	Name     graphql.String
-	Type     graphql.String
-	IsActive graphql.Boolean
+	ID        graphql.ID
+	Name      graphql.String
+	Type      graphql.String
+	IsActive  graphql.Boolean
+	Users     []graphql.ID
+	Resources []graphql.ID
 }
 
 type createGroupQuery struct {
 	GroupCreate struct {
-		Entity IDName
+		Entity struct {
+			IDName
+			Users struct {
+				PageInfo struct {
+					HasNextPage graphql.Boolean
+				}
+				Edges []*Edges
+			} `graphql:"users(first: $usersPageSize)"`
+			Resources struct {
+				PageInfo struct {
+					HasNextPage graphql.Boolean
+				}
+				Edges []*Edges
+			} `graphql:"resources(first: $resourcesPageSize)"`
+		}
 		OkError
 	} `graphql:"groupCreate(name: $name)"`
 }
 
-func (client *Client) createGroup(ctx context.Context, groupName graphql.String) (*Group, error) {
+func (client *Client) createGroup(ctx context.Context, groupName graphql.String, users, resources []string) (*Group, error) {
 	if groupName == "" {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "create", groupResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"name": groupName,
+		"name":              groupName,
+		"usersPageSize":     graphql.Int(defaultPageSize),
+		"resourcesPageSize": graphql.Int(defaultPageSize),
 	}
+
+	if len(users) > 0 {
+		variables["userIds"] = convertToGraphqlIDs(users)
+	}
+
+	if len(resources) > 0 {
+		variables["resourceIds"] = convertToGraphqlIDs(resources)
+	}
+
 	response := createGroupQuery{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createGroup", &response, variables)
@@ -45,9 +73,34 @@ func (client *Client) createGroup(ctx context.Context, groupName graphql.String)
 	}
 
 	return &Group{
-		ID:   response.GroupCreate.Entity.ID,
-		Name: response.GroupCreate.Entity.Name,
+		ID:        response.GroupCreate.Entity.ID,
+		Name:      response.GroupCreate.Entity.Name,
+		Users:     collectIDs(response.GroupCreate.Entity.Users.Edges),
+		Resources: collectIDs(response.GroupCreate.Entity.Resources.Edges),
 	}, nil
+}
+
+func collectIDs(edges []*Edges) []graphql.ID {
+	if len(edges) == 0 {
+		return nil
+	}
+
+	ids := make([]graphql.ID, 0, len(edges))
+	for _, e := range edges {
+		ids = append(ids, e.Node.ID)
+	}
+
+	return ids
+}
+
+func convertToGraphqlIDs(input []string) []graphql.ID {
+	res := make([]graphql.ID, 0, len(input))
+
+	for _, elem := range input {
+		res = append(res, graphql.ID(elem))
+	}
+
+	return res
 }
 
 type readGroupQuery struct {

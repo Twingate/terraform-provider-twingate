@@ -24,6 +24,18 @@ func resourceGroup() *schema.Resource {
 				Required:    true,
 				Description: "The name of the group",
 			},
+			"users": {
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Description: "List of user IDs",
+			},
+			"resources": {
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Description: "List of resource IDs",
+			},
 			// computed
 			"id": {
 				Type:        schema.TypeString,
@@ -39,8 +51,11 @@ func resourceGroup() *schema.Resource {
 
 func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	users := convertToStrings(resourceData.Get("users").(*schema.Set).List())
+	resources := convertToStrings(resourceData.Get("resources").(*schema.Set).List())
+	name := graphql.String(resourceData.Get("name").(string))
 
-	group, err := client.createGroup(ctx, graphql.String(resourceData.Get("name").(string)))
+	group, err := client.createGroup(ctx, name, users, resources)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -48,6 +63,19 @@ func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData,
 	log.Printf("[INFO] Group %s created with id %v", group.Name, group.ID)
 
 	return resourceGroupReadHelper(resourceData, group, nil)
+}
+
+func convertToStrings(input []interface{}) []string {
+	str := make([]string, 0, len(input))
+
+	for _, v := range input {
+		s, ok := v.(string)
+		if ok {
+			str = append(str, s)
+		}
+	}
+
+	return str
 }
 
 func resourceGroupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
