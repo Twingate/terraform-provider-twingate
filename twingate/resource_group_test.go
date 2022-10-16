@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -164,4 +165,82 @@ func createGroup003(name string) string {
 	  name = "%s"
 	}
 	`, name)
+}
+
+func TestAccTwingateGroupCreateWithUsersAndResources(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Group Create With Users And Resources", func(t *testing.T) {
+		groupName := getRandomName()
+
+		user, err := getTestUser()
+		if err != nil {
+			t.Skip("can't run test:", err)
+		}
+
+		resID, err := getTestResourceID()
+		if err != nil {
+			t.Skip("can't run test:", err)
+		}
+
+		const theResource = "twingate_group.test004"
+
+		resource.ParallelTest(t, resource.TestCase{
+			ProviderFactories: testAccProviderFactories,
+			PreCheck:          func() { testAccPreCheck(t) },
+			CheckDestroy:      testAccCheckTwingateGroupDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: createGroup004WithUser(groupName, user.ID),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "users.#", "1"),
+						resource.TestCheckResourceAttr(theResource, "resources.#", "0"),
+					),
+				},
+				{
+					Config: createGroup004WithResource(groupName, resID),
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "users.#", "0"),
+						resource.TestCheckResourceAttr(theResource, "resources.#", "1"),
+					),
+				},
+			},
+		})
+	})
+}
+
+func createGroup004WithUser(name, userID string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "test004" {
+	  name = "%s"
+	  users = ["%s"]
+	}
+	`, name, userID)
+}
+
+func createGroup004WithResource(name, resourceID string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "test004" {
+	  name = "%s"
+	  resources = ["%s"]
+	}
+	`, name, resourceID)
+}
+
+func getTestResourceID() (string, error) {
+	if testAccProvider.Meta() == nil {
+		return "", errors.New("meta client not inited")
+	}
+
+	client := testAccProvider.Meta().(*Client)
+	resources, err := client.readResources(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	if len(resources) == 0 {
+		return "", errors.New("resources not found")
+	}
+
+	return resources[0].Node.ID.(string), nil
 }
