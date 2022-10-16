@@ -77,6 +77,8 @@ func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
 					resource.TestCheckResourceAttr("twingate_resource.test2", "protocols.0.tcp.0.policy", policyRestricted),
 					resource.TestCheckResourceAttr("twingate_resource.test2", "protocols.0.tcp.0.ports.0", "80"),
 				),
+				// group is updated with linked resource
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -132,6 +134,8 @@ func TestAccTwingateResourceFullCreationFlow(t *testing.T) {
 					resource.TestCheckResourceAttr("twingate_resource.test3", "name", resourceName),
 					resource.TestMatchResourceAttr("twingate_connector_tokens.test31", "access_token", regexp.MustCompile(".*")),
 				),
+				// group is updated with linked resource
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -229,11 +233,8 @@ func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
 					testAccCheckTwingateResourceExists("twingate_resource.test5"),
 					resource.TestCheckResourceAttr("twingate_resource.test5", "protocols.0.tcp.0.policy", policyRestricted),
 				),
-			},
-			// expecting no changes - empty plan
-			{
-				Config:   createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName),
-				PlanOnly: true,
+				// group is updated with linked resource
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -283,11 +284,8 @@ func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
 					testAccCheckTwingateResourceExists("twingate_resource.test6"),
 					resource.TestCheckResourceAttr("twingate_resource.test6", "protocols.0.udp.0.policy", policyRestricted),
 				),
-			},
-			// expecting no changes - empty plan
-			{
-				Config:   createResourceWithUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-				PlanOnly: true,
+				// group is updated with linked resource
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -340,6 +338,8 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 					resource.TestCheckResourceAttr("twingate_resource.test7", "protocols.0.udp.0.policy", policyRestricted),
 					resource.TestCheckNoResourceAttr("twingate_resource.test7", "protocols.0.udp.0.ports.#"),
 				),
+				// group is updated with linked resource
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -764,6 +764,8 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 				),
+				// group is updated with linked resource
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				ImportState:  true,

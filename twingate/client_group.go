@@ -3,6 +3,10 @@ package twingate
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
+	"strings"
+	"unsafe"
 
 	"github.com/twingate/go-graphql-client"
 )
@@ -19,49 +23,78 @@ type Group struct {
 	Resources []graphql.ID
 }
 
+type GroupUpdateRequest struct {
+	ID           graphql.ID
+	Name         graphql.String
+	Type         graphql.String
+	IsActive     graphql.Boolean
+	NewUsers     []graphql.ID
+	NewResources []graphql.ID
+	OldUsers     []graphql.ID
+	OldResources []graphql.ID
+}
+
+type IDNode struct {
+	Node *struct {
+		ID graphql.ID
+	}
+}
+
+type gqlGroup struct {
+	IDName
+	IsActive graphql.Boolean
+	Type     graphql.String
+	Users    struct {
+		PageInfo struct {
+			HasNextPage graphql.Boolean
+		}
+		Edges []*IDNode
+	} `graphql:"users(first: $usersPageSize)"`
+	Resources struct {
+		PageInfo struct {
+			HasNextPage graphql.Boolean
+		}
+		Edges []*IDNode
+	} `graphql:"resources(first: $resourcesPageSize)"`
+}
+
+func (g *gqlGroup) toModel() *Group {
+	return &Group{
+		ID:        g.ID,
+		Name:      g.Name,
+		IsActive:  g.IsActive,
+		Type:      g.Type,
+		Users:     collectIDs(g.Users.Edges),
+		Resources: collectIDs(g.Resources.Edges),
+	}
+}
+
 type createGroupQuery struct {
 	GroupCreate struct {
-		Entity struct {
-			IDName
-			Users struct {
-				PageInfo struct {
-					HasNextPage graphql.Boolean
-				}
-				Edges []*Edges
-			} `graphql:"users(first: $usersPageSize)"`
-			Resources struct {
-				PageInfo struct {
-					HasNextPage graphql.Boolean
-				}
-				Edges []*Edges
-			} `graphql:"resources(first: $resourcesPageSize)"`
-		}
+		Entity gqlGroup
 		OkError
 	} `graphql:"groupCreate(name: $name)"`
 }
 
-func (client *Client) createGroup(ctx context.Context, groupName graphql.String, users, resources []string) (*Group, error) {
-	if groupName == "" {
+func (client *Client) createGroup(ctx context.Context, req *Group) (*Group, error) {
+	if req.Name == "" {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "create", groupResourceName)
 	}
 
 	variables := map[string]interface{}{
-		"name":              groupName,
+		"name":              req.Name,
 		"usersPageSize":     graphql.Int(defaultPageSize),
 		"resourcesPageSize": graphql.Int(defaultPageSize),
 	}
 
-	if len(users) > 0 {
-		variables["userIds"] = convertToGraphqlIDs(users)
-	}
-
-	if len(resources) > 0 {
-		variables["resourceIds"] = convertToGraphqlIDs(resources)
-	}
+	addIDsIfNotEmpty(variables, "userIds", req.Users)
+	addIDsIfNotEmpty(variables, "resourceIds", req.Resources)
 
 	response := createGroupQuery{}
+	newTag := newQuery("groupCreate", variables, []string{"usersPageSize", "resourcesPageSize"})
+	patchedResponse := patchGraphqlResponseStruct(&response, "groupCreate", newTag)
 
-	err := client.GraphqlClient.NamedMutate(ctx, "createGroup", &response, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "createGroup", patchedResponse, variables)
 	if err != nil {
 		return nil, NewAPIError(err, "create", groupResourceName)
 	}
@@ -72,15 +105,18 @@ func (client *Client) createGroup(ctx context.Context, groupName graphql.String,
 		return nil, NewAPIError(NewMutationError(message), "create", groupResourceName)
 	}
 
-	return &Group{
-		ID:        response.GroupCreate.Entity.ID,
-		Name:      response.GroupCreate.Entity.Name,
-		Users:     collectIDs(response.GroupCreate.Entity.Users.Edges),
-		Resources: collectIDs(response.GroupCreate.Entity.Resources.Edges),
-	}, nil
+	return response.GroupCreate.Entity.toModel(), err
 }
 
-func collectIDs(edges []*Edges) []graphql.ID {
+func addIDsIfNotEmpty(variables map[string]interface{}, key string, ids []graphql.ID) {
+	if len(ids) == 0 {
+		return
+	}
+
+	variables[key] = ids
+}
+
+func collectIDs(edges []*IDNode) []graphql.ID {
 	if len(edges) == 0 {
 		return nil
 	}
@@ -94,6 +130,10 @@ func collectIDs(edges []*Edges) []graphql.ID {
 }
 
 func convertToGraphqlIDs(input []string) []graphql.ID {
+	if len(input) == 0 {
+		return nil
+	}
+
 	res := make([]graphql.ID, 0, len(input))
 
 	for _, elem := range input {
@@ -104,11 +144,7 @@ func convertToGraphqlIDs(input []string) []graphql.ID {
 }
 
 type readGroupQuery struct {
-	Group *struct {
-		IDName
-		IsActive graphql.Boolean
-		Type     graphql.String
-	} `graphql:"group(id: $id)"`
+	Group *gqlGroup `graphql:"group(id: $id)"`
 }
 
 func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group, error) {
@@ -117,7 +153,9 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 	}
 
 	variables := map[string]interface{}{
-		"id": groupID,
+		"id":                groupID,
+		"usersPageSize":     graphql.Int(defaultPageSize),
+		"resourcesPageSize": graphql.Int(defaultPageSize),
 	}
 
 	response := readGroupQuery{}
@@ -131,14 +169,7 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupID)
 	}
 
-	group := Group{
-		ID:       response.Group.ID,
-		Name:     response.Group.Name,
-		IsActive: response.Group.IsActive,
-		Type:     response.Group.Type,
-	}
-
-	return &group, nil
+	return response.Group.toModel(), nil
 }
 
 type readGroupsQuery struct {
@@ -227,40 +258,106 @@ func (client *Client) readGroupsByName(ctx context.Context, groupName string) ([
 
 type updateGroupQuery struct {
 	GroupUpdate struct {
-		Entity IDName
+		Entity gqlGroup
 		OkError
 	} `graphql:"groupUpdate(id: $id, name: $name)"`
 }
 
-func (client *Client) updateGroup(ctx context.Context, groupID graphql.ID, groupName graphql.String) (*Group, error) {
-	if groupID.(string) == "" {
+func patchGraphqlResponseStruct(req interface{}, prefix, newTag string) interface{} {
+	ptr := reflect.ValueOf(req)
+	v := reflect.Indirect(ptr)
+	st := v.Type()
+
+	fields := make([]reflect.StructField, 0, v.NumField())
+	for i := 0; i < v.NumField(); i++ {
+		sf := st.Field(i)
+		if strings.HasPrefix(sf.Tag.Get("graphql"), prefix) {
+			sf.Tag = reflect.StructTag(fmt.Sprintf(`graphql:"%s"`, newTag))
+		}
+		fields = append(fields, sf)
+	}
+
+	newType := reflect.StructOf(fields)
+	newPtrVal := reflect.NewAt(newType, unsafe.Pointer(ptr.Pointer()))
+	return newPtrVal.Interface()
+}
+
+func (client *Client) updateGroup(ctx context.Context, req *GroupUpdateRequest) (*Group, error) {
+	if req.ID.(string) == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "update", groupResourceName)
 	}
 
-	if groupName == "" {
+	if req.Name == "" {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "update", groupResourceName)
 	}
 
+	addedUsers, removedUsers := getDelta(req.OldUsers, req.NewUsers)
+	addedResources, removedResources := getDelta(req.OldResources, req.NewResources)
+
 	variables := map[string]interface{}{
-		"id":   groupID,
-		"name": groupName,
+		"id":                req.ID,
+		"name":              req.Name,
+		"usersPageSize":     graphql.Int(defaultPageSize),
+		"resourcesPageSize": graphql.Int(defaultPageSize),
 	}
+	addIDsIfNotEmpty(variables, "addedUserIds", addedUsers)
+	addIDsIfNotEmpty(variables, "removedUserIds", removedUsers)
+	addIDsIfNotEmpty(variables, "addedResourceIds", addedResources)
+	addIDsIfNotEmpty(variables, "removedResourceIds", removedResources)
 
 	response := updateGroupQuery{}
+	newTag := newQuery("groupUpdate", variables, []string{"usersPageSize", "resourcesPageSize"})
+	patchedResponse := patchGraphqlResponseStruct(&response, "groupUpdate", newTag)
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
+	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", patchedResponse, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(err, "update", groupResourceName, req.ID)
 	}
 
 	if !response.GroupUpdate.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), "update", groupResourceName, req.ID)
 	}
 
-	return &Group{
-		ID:   response.GroupUpdate.Entity.ID,
-		Name: response.GroupUpdate.Entity.Name,
-	}, nil
+	return response.GroupUpdate.Entity.toModel(), nil
+}
+
+func newQuery(queryName string, variables map[string]interface{}, ignoredVariables []string) string {
+	vars := make([]string, 0, len(variables))
+
+	ignored := make(map[string]bool, len(ignoredVariables))
+	for _, v := range ignoredVariables {
+		ignored[v] = true
+	}
+
+	for key := range variables {
+		if !ignored[key] {
+			vars = append(vars, fmt.Sprintf("%s: $%s", key, key))
+		}
+	}
+
+	return fmt.Sprintf("%s(%s)", queryName, strings.Join(vars, ", "))
+}
+
+func getDelta(oldList, newList []graphql.ID) ([]graphql.ID, []graphql.ID) {
+	added := getNewIDs(oldList, newList)
+	deleted := getNewIDs(newList, oldList)
+	return added, deleted
+}
+
+func getNewIDs(oldList, newList []graphql.ID) []graphql.ID {
+	current := make(map[graphql.ID]bool)
+	for _, item := range oldList {
+		current[item] = true
+	}
+
+	var added []graphql.ID
+	for _, item := range newList {
+		if !current[item] {
+			added = append(added, item)
+		}
+	}
+
+	return added
 }
 
 type deleteGroupQuery struct {

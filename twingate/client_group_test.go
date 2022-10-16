@@ -32,9 +32,8 @@ func TestClientGroupCreateOk(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createGroupOkJson))
-		groupName := graphql.String("test")
 
-		group, err := client.createGroup(context.Background(), groupName)
+		group, err := client.createGroup(context.Background(), &Group{Name: "test"})
 
 		assert.Nil(t, err)
 		assert.EqualValues(t, "test-id", group.ID)
@@ -58,9 +57,8 @@ func TestClientGroupCreateError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createGroupOkJson))
-		groupName := graphql.String("test")
 
-		group, err := client.createGroup(context.Background(), groupName)
+		group, err := client.createGroup(context.Background(), &Group{Name: "test"})
 
 		assert.EqualError(t, err, "failed to create group: error_1")
 		assert.Nil(t, group)
@@ -88,9 +86,7 @@ func TestClientGroupCreateRequestError(t *testing.T) {
 				return resp, errors.New("error_1")
 			})
 
-		groupName := graphql.String("test")
-
-		group, err := client.createGroup(context.Background(), groupName)
+		group, err := client.createGroup(context.Background(), &Group{Name: "test"})
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to create group: Post "%s": error_1`, client.GraphqlServerURL))
 		assert.Nil(t, group)
@@ -110,9 +106,8 @@ func TestClientCreateEmptyGroupError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, readGroupOkJson))
-		groupName := graphql.String("")
 
-		group, err := client.createGroup(context.Background(), groupName)
+		group, err := client.createGroup(context.Background(), &Group{})
 
 		assert.EqualError(t, err, "failed to create group: name is empty")
 		assert.Nil(t, group)
@@ -139,9 +134,12 @@ func TestClientGroupUpdateOk(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, updateGroupOkJson))
-		groupName := graphql.String("test")
-		groupId := graphql.ID("id")
-		_, err := client.updateGroup(context.Background(), groupId, groupName)
+
+		req := &GroupUpdateRequest{
+			ID:   graphql.ID("id"),
+			Name: graphql.String("test"),
+		}
+		_, err := client.updateGroup(context.Background(), req)
 
 		assert.Nil(t, err)
 	})
@@ -163,11 +161,13 @@ func TestClientGroupUpdateError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, updateGroupOkJson))
-		groupName := graphql.String("test")
-		groupId := graphql.ID("g1")
-		_, err := client.updateGroup(context.Background(), groupId, groupName)
+		req := &GroupUpdateRequest{
+			ID:   graphql.ID("g1"),
+			Name: graphql.String("test"),
+		}
+		_, err := client.updateGroup(context.Background(), req)
 
-		assert.EqualError(t, err, fmt.Sprintf("failed to update group with id %s: error_1", groupId))
+		assert.EqualError(t, err, fmt.Sprintf("failed to update group with id %s: error_1", req.ID))
 	})
 }
 
@@ -191,11 +191,13 @@ func TestClientGroupUpdateRequestError(t *testing.T) {
 				return resp, errors.New("error_1")
 			})
 
-		groupName := graphql.String("test")
-		groupId := graphql.ID("g1")
-		_, err := client.updateGroup(context.Background(), groupId, groupName)
+		req := &GroupUpdateRequest{
+			ID:   graphql.ID("g1"),
+			Name: graphql.String("test"),
+		}
+		_, err := client.updateGroup(context.Background(), req)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id %s: Post "%s": error_1`, groupId, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id %s: Post "%s": error_1`, req.ID, client.GraphqlServerURL))
 	})
 }
 
@@ -204,9 +206,11 @@ func TestClientGroupUpdateWithEmptyName(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 
-		groupName := graphql.String("")
-		groupId := graphql.ID("id")
-		_, err := client.updateGroup(context.Background(), groupId, groupName)
+		req := &GroupUpdateRequest{
+			ID:   graphql.ID("id"),
+			Name: graphql.String(""),
+		}
+		_, err := client.updateGroup(context.Background(), req)
 
 		assert.EqualError(t, err, "failed to update group: name is empty")
 	})
@@ -217,9 +221,11 @@ func TestClientGroupUpdateWithEmptyID(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 
-		groupName := graphql.String("name")
-		groupId := graphql.ID("")
-		_, err := client.updateGroup(context.Background(), groupId, groupName)
+		req := &GroupUpdateRequest{
+			ID:   graphql.ID(""),
+			Name: graphql.String("name"),
+		}
+		_, err := client.updateGroup(context.Background(), req)
 
 		assert.EqualError(t, err, "failed to update group: id is empty")
 	})

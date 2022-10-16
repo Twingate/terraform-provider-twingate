@@ -3,6 +3,7 @@ package twingate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -51,11 +52,8 @@ func resourceGroup() *schema.Resource {
 
 func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	users := convertToStrings(resourceData.Get("users").(*schema.Set).List())
-	resources := convertToStrings(resourceData.Get("resources").(*schema.Set).List())
-	name := graphql.String(resourceData.Get("name").(string))
 
-	group, err := client.createGroup(ctx, name, users, resources)
+	group, err := client.createGroup(ctx, extractGroupFromResourceData(resourceData))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -66,6 +64,10 @@ func resourceGroupCreate(ctx context.Context, resourceData *schema.ResourceData,
 }
 
 func convertToStrings(input []interface{}) []string {
+	if len(input) == 0 {
+		return nil
+	}
+
 	str := make([]string, 0, len(input))
 
 	for _, v := range input {
@@ -81,18 +83,53 @@ func convertToStrings(input []interface{}) []string {
 func resourceGroupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	var err error
-
-	group := &Group{
-		ID:   graphql.ID(resourceData.Id()),
-		Name: graphql.String(resourceData.Get("name").(string)),
+	group, err := client.updateGroup(ctx, extractGroupUpdateFromResourceData(resourceData))
+	if err == nil {
+		log.Printf("[INFO] Updated group id %v", group.ID)
 	}
 
-	group, err = client.updateGroup(ctx, group.ID, group.Name)
-
-	log.Printf("[INFO] Updated group id %v", group.ID)
-
 	return resourceGroupReadHelper(resourceData, group, err)
+}
+
+func extractGroupFromResourceData(resourceData *schema.ResourceData) *Group {
+	return &Group{
+		ID:        graphql.ID(resourceData.Id()),
+		Name:      graphql.String(resourceData.Get("name").(string)),
+		Users:     convertTerraformListToGraphqlIDs(resourceData.Get("users")),
+		Resources: convertTerraformListToGraphqlIDs(resourceData.Get("resources")),
+	}
+}
+
+func extractGroupUpdateFromResourceData(resourceData *schema.ResourceData) *GroupUpdateRequest {
+	oldUsers, newUsers := resourceData.GetChange("users")
+	oldResources, newResources := resourceData.GetChange("resources")
+
+	return &GroupUpdateRequest{
+		ID:           graphql.ID(resourceData.Id()),
+		Name:         graphql.String(resourceData.Get("name").(string)),
+		NewUsers:     convertTerraformListToGraphqlIDs(newUsers),
+		OldUsers:     convertTerraformListToGraphqlIDs(oldUsers),
+		NewResources: convertTerraformListToGraphqlIDs(newResources),
+		OldResources: convertTerraformListToGraphqlIDs(oldResources),
+	}
+}
+
+func convertTerraformListToGraphqlIDs(value interface{}) []graphql.ID {
+	if value == nil {
+		return nil
+	}
+
+	set, ok := value.(*schema.Set)
+	if !ok || set == nil {
+		return nil
+	}
+
+	list := set.List()
+	if len(list) == 0 {
+		return nil
+	}
+
+	return convertToGraphqlIDs(convertToStrings(list))
 }
 
 func resourceGroupDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -136,7 +173,25 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *Group, er
 		return diag.FromErr(err)
 	}
 
+	if err := resourceData.Set("users", toStringIDs(group.Users)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceData.Set("resources", toStringIDs(group.Resources)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	resourceData.SetId(group.ID.(string))
 
 	return nil
+}
+
+func toStringIDs(input []graphql.ID) []string {
+	ids := make([]string, 0, len(input))
+
+	for _, id := range input {
+		ids = append(ids, fmt.Sprintf("%v", id))
+	}
+
+	return ids
 }
