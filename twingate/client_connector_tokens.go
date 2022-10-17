@@ -10,7 +10,7 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
-type connectorTokens struct {
+type ConnectorTokens struct {
 	AccessToken  string
 	RefreshToken string
 }
@@ -57,7 +57,7 @@ type generateConnectorTokensQuery struct {
 	} `graphql:"connectorGenerateTokens(connectorId: $connectorId)"`
 }
 
-func (client *Client) generateConnectorTokens(ctx context.Context, connector *Connector) error {
+func (client *Client) generateConnectorTokens(ctx context.Context, connector *Connector) (*ConnectorTokens, error) {
 	variables := map[string]interface{}{
 		"connectorId": connector.ID,
 	}
@@ -66,19 +66,17 @@ func (client *Client) generateConnectorTokens(ctx context.Context, connector *Co
 
 	err := client.GraphqlClient.NamedMutate(ctx, "generateConnectorTokens", &response, variables)
 	if err != nil {
-		return NewAPIError(err, "generate", connectorTokensResourceName)
+		return nil, NewAPIError(err, "generate", connectorTokensResourceName)
 	}
 
 	if !response.ConnectorGenerateTokens.Ok {
 		message := response.ConnectorGenerateTokens.Error
 
-		return NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
+		return nil, NewAPIErrorWithID(NewMutationError(message), "generate", connectorTokensResourceName, connector.ID)
 	}
 
-	connector.ConnectorTokens = &connectorTokens{
+	return &ConnectorTokens{
 		AccessToken:  string(response.ConnectorGenerateTokens.ConnectorTokens.AccessToken),
 		RefreshToken: string(response.ConnectorGenerateTokens.ConnectorTokens.RefreshToken),
-	}
-
-	return nil
+	}, nil
 }

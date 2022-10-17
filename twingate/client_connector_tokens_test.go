@@ -33,11 +33,11 @@ func TestClientConnectorCreateTokensOK(t *testing.T) {
 	connector := &Connector{
 		ID: "test",
 	}
-	err := client.generateConnectorTokens(context.Background(), connector)
+	connectorTokens, err := client.generateConnectorTokens(context.Background(), connector)
 
 	assert.Nil(t, err)
-	assert.EqualValues(t, "token1", connector.ConnectorTokens.AccessToken)
-	assert.EqualValues(t, "token2", connector.ConnectorTokens.RefreshToken)
+	assert.EqualValues(t, "token1", connectorTokens.AccessToken)
+	assert.EqualValues(t, "token2", connectorTokens.RefreshToken)
 }
 
 func TestClientConnectorTokensVerifyOK(t *testing.T) {
@@ -122,7 +122,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	connector := &Connector{
 		ID: "test-id",
 	}
-	err := client.generateConnectorTokens(context.Background(), connector)
+	_, err := client.generateConnectorTokens(context.Background(), connector)
 
 	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens with id %v: error_1`, connector.ID))
 }
@@ -137,6 +137,6 @@ func TestClientConnectorTokensCreateRequestError(t *testing.T) {
 		ID: "test",
 	}
 
-	err := client.generateConnectorTokens(context.Background(), connector)
+	_, err := client.generateConnectorTokens(context.Background(), connector)
 	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens: Post "%s": error_1`, client.GraphqlServerURL))
 }
