@@ -269,16 +269,19 @@ func patchGraphqlResponseStruct(req interface{}, prefix, newTag string) interfac
 	st := v.Type()
 
 	fields := make([]reflect.StructField, 0, v.NumField())
+
 	for i := 0; i < v.NumField(); i++ {
 		sf := st.Field(i)
 		if strings.HasPrefix(sf.Tag.Get("graphql"), prefix) {
 			sf.Tag = reflect.StructTag(fmt.Sprintf(`graphql:"%s"`, newTag))
 		}
+
 		fields = append(fields, sf)
 	}
 
 	newType := reflect.StructOf(fields)
-	newPtrVal := reflect.NewAt(newType, unsafe.Pointer(ptr.Pointer()))
+	newPtrVal := reflect.NewAt(newType, unsafe.Pointer(ptr.Pointer())) //nolint
+
 	return newPtrVal.Interface()
 }
 
@@ -341,16 +344,19 @@ func newQuery(queryName string, variables map[string]interface{}, ignoredVariabl
 func getDelta(oldList, newList []graphql.ID) ([]graphql.ID, []graphql.ID) {
 	added := getNewIDs(oldList, newList)
 	deleted := getNewIDs(newList, oldList)
+
 	return added, deleted
 }
 
 func getNewIDs(oldList, newList []graphql.ID) []graphql.ID {
 	current := make(map[graphql.ID]bool)
+
 	for _, item := range oldList {
 		current[item] = true
 	}
 
 	var added []graphql.ID
+
 	for _, item := range newList {
 		if !current[item] {
 			added = append(added, item)
