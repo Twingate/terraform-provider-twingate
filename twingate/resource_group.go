@@ -115,18 +115,20 @@ func extractGroupUpdateFromResourceData(resourceData *schema.ResourceData) *Grou
 }
 
 func convertTerraformListToGraphqlIDs(value interface{}) []graphql.ID {
+	result := make([]graphql.ID, 0)
+
 	if value == nil {
-		return nil
+		return result
 	}
 
 	set, ok := value.(*schema.Set)
 	if !ok || set == nil {
-		return nil
+		return result
 	}
 
 	list := set.List()
 	if len(list) == 0 {
-		return nil
+		return result
 	}
 
 	return convertToGraphqlIDs(convertToStrings(list))
