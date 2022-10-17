@@ -192,7 +192,9 @@ func TestAccTwingateGroupCreateWithUsersAndResources(t *testing.T) {
 					Config: createGroup004WithUser(groupName, user.ID),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateGroupExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "name", groupName),
 						resource.TestCheckResourceAttr(theResource, "users.#", "1"),
+						resource.TestCheckResourceAttr(theResource, "users.0", user.ID),
 						resource.TestCheckResourceAttr(theResource, "resources.#", "0"),
 					),
 				},
@@ -200,8 +202,10 @@ func TestAccTwingateGroupCreateWithUsersAndResources(t *testing.T) {
 					Config: createGroup004WithResource(groupName, resID),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTwingateGroupExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "name", groupName),
 						resource.TestCheckResourceAttr(theResource, "users.#", "0"),
 						resource.TestCheckResourceAttr(theResource, "resources.#", "1"),
+						resource.TestCheckResourceAttr(theResource, "resources.0", resID),
 					),
 				},
 			},
