@@ -254,70 +254,69 @@ func parseProtocol(input map[string]interface{}) (string, []string) {
 }
 
 func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
+	protocols, err := extractProtocols(resourceData)
+	if err != nil {
+		return nil, err
+	}
+
 	resource := &Resource{
 		Name:            graphql.String(resourceData.Get("name").(string)),
 		RemoteNetworkID: graphql.ID(resourceData.Get("remote_network_id").(string)),
 		Address:         graphql.String(resourceData.Get("address").(string)),
 		GroupsIds:       convertGroupsGraphql(resourceData.Get("group_ids").(*schema.Set).List()),
+		Protocols:       protocols,
 	}
 
-	p := resourceData.Get("protocols").([]interface{})
-
-	if len(p) > 0 {
-		p, err := extractProtocolsFromContext(p[0]).convertToGraphql()
-		if err != nil {
-			return nil, err
-		}
-
-		resource.Protocols = p
-	} else {
-		resource.Protocols = newEmptyProtocols()
+	if resourceData.Id() != "" {
+		resource.ID = resourceData.Id()
 	}
 
 	return resource, nil
 }
 
+func extractProtocols(resourceData *schema.ResourceData) (*ProtocolsInput, error) {
+	p := resourceData.Get("protocols").([]interface{})
+	if len(p) == 0 {
+		return newEmptyProtocols(), nil
+	}
+
+	protocols, err := extractProtocolsFromContext(p[0]).convertToGraphql()
+	if err != nil {
+		return nil, err
+	}
+
+	return protocols, nil
+}
+
 func resourceResourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	resource, err := extractResource(resourceData)
+	req, err := extractResource(resourceData)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.createResource(ctx, resource)
+	resource, err := client.createResource(ctx, req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(resource.ID.(string))
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
-	waitForResourceAvailability()
-
-	return resourceResourceRead(ctx, resourceData, meta)
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
 func resourceResourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	resource, err := extractResource(resourceData)
 
-	if resourceData.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
-		resource, err := extractResource(resourceData)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		resource.ID = resourceData.Id()
-
-		err = client.updateResource(ctx, resource)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	waitForResourceAvailability()
+	resource, err = client.updateResource(ctx, resource)
 
-	return resourceResourceRead(ctx, resourceData, meta)
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
 
 func resourceResourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -339,9 +338,13 @@ func resourceResourceDelete(ctx context.Context, resourceData *schema.ResourceDa
 
 func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	resourceID := resourceData.Id()
 
-	resource, err := client.readResource(ctx, resourceID)
+	resource, err := client.readResource(ctx, resourceData.Id())
+
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
+}
+
+func resourceResourceReadHelper(ctx context.Context, client *Client, resourceData *schema.ResourceData, resource *Resource, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -360,7 +363,7 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 	if !resource.IsActive {
 		// fix set active state for the resource on `terraform apply`
 		err = client.updateResourceActiveState(ctx, &Resource{
-			ID:       resourceID,
+			ID:       resource.ID,
 			IsActive: true,
 		})
 
@@ -368,6 +371,8 @@ func resourceResourceRead(ctx context.Context, resourceData *schema.ResourceData
 			return diag.FromErr(err)
 		}
 	}
+
+	resourceData.SetId(resource.ID.(string))
 
 	return resourceResourceReadDiagnostics(resourceData, resource)
 }
