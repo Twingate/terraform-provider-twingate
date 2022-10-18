@@ -7,7 +7,10 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/assert"
+	"github.com/twingate/go-graphql-client"
 )
 
 const groupResource = "twingate_group.test"
@@ -247,4 +250,69 @@ func getTestResourceID() (string, error) {
 	}
 
 	return resources[0].Node.ID.(string), nil
+}
+
+func TestToStringID(t *testing.T) {
+	cases := []struct {
+		input    []graphql.ID
+		expected []string
+	}{
+		{
+			input:    nil,
+			expected: []string{},
+		},
+		{
+			input:    []graphql.ID{},
+			expected: []string{},
+		},
+		{
+			input:    []graphql.ID{"id"},
+			expected: []string{"id"},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case #%d", n), func(t *testing.T) {
+			actual := toStringIDs(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestConvertTerraformListToGraphqlIDs(t *testing.T) {
+	var s *schema.Set
+	cases := []struct {
+		input    interface{}
+		expected []graphql.ID
+	}{
+		{
+			input:    nil,
+			expected: []graphql.ID{},
+		},
+		{
+			input:    interface{}("hello"),
+			expected: []graphql.ID{},
+		},
+		{
+			input:    interface{}(&schema.Set{}),
+			expected: []graphql.ID{},
+		},
+		{
+			input:    interface{}(s),
+			expected: []graphql.ID{},
+		},
+		{
+			input: interface{}(schema.NewSet(schema.HashString, []interface{}{
+				"id",
+			})),
+			expected: []graphql.ID{"id"},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case #%d", n), func(t *testing.T) {
+			actual := convertTerraformListToGraphqlIDs(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
 }
