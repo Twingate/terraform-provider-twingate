@@ -7,7 +7,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -19,7 +18,6 @@ const (
 	policyRestricted = "RESTRICTED"
 	policyAllowAll   = "ALLOW_ALL"
 	policyDenyAll    = "DENY_ALL"
-	waitInterval     = 500 * time.Millisecond
 )
 
 func castToStrings(a, b interface{}) (string, string) {
@@ -402,8 +400,4 @@ func resourceResourceReadDiagnostics(resourceData *schema.ResourceData, resource
 	}
 
 	return diags
-}
-
-func waitForResourceAvailability() {
-	time.Sleep(waitInterval)
 }
