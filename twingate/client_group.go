@@ -36,22 +36,37 @@ type IDNode struct {
 	}
 }
 
+type PageInfo struct {
+	EndCursor   graphql.String
+	HasNextPage graphql.Boolean
+}
+
+type Users struct {
+	PageInfo PageInfo
+	Edges    []*IDNode
+}
+
+type Resources struct {
+	PageInfo PageInfo
+	Edges    []*IDNode
+}
+
 type gqlGroup struct {
 	IDName
-	IsActive graphql.Boolean
-	Type     graphql.String
-	Users    struct {
-		PageInfo struct {
-			HasNextPage graphql.Boolean
-		}
-		Edges []*IDNode
-	} `graphql:"users(first: $usersPageSize)"`
-	Resources struct {
-		PageInfo struct {
-			HasNextPage graphql.Boolean
-		}
-		Edges []*IDNode
-	} `graphql:"resources(first: $resourcesPageSize)"`
+	IsActive  graphql.Boolean
+	Type      graphql.String
+	Users     Users     `graphql:"users(first: $usersPageSize)"`
+	Resources Resources `graphql:"resources(first: $resourcesPageSize)"`
+}
+
+type readGroupUsersAndResourcesQuery struct {
+	Group *gqlGroupUsersAndResources `graphql:"group(id: $id)"`
+}
+
+type gqlGroupUsersAndResources struct {
+	ID        graphql.ID
+	Users     Users     `graphql:"users(first: $usersPageSize, after: $usersCursor)"`
+	Resources Resources `graphql:"resources(first: $resourcesPageSize, after: $resourcesCursor)"`
 }
 
 func (g *gqlGroup) toModel() *Group {
@@ -98,7 +113,66 @@ func (client *Client) createGroup(ctx context.Context, req *Group) (*Group, erro
 		return nil, NewAPIError(NewMutationError(message), "create", groupResourceName)
 	}
 
-	return response.GroupCreate.Entity.toModel(), err
+	group, err := client.readAllGroupUsersAndResources(ctx, &response.GroupCreate.Entity)
+	if err != nil {
+		return nil, err
+	}
+
+	return group.toModel(), err
+}
+
+func (client *Client) readAllGroupUsersAndResources(ctx context.Context, group *gqlGroup) (*gqlGroup, error) {
+	usersPage := group.Users.PageInfo
+	resourcesPage := group.Resources.PageInfo
+
+	for usersPage.HasNextPage || resourcesPage.HasNextPage {
+		resp, err := client.readGroupUsersAndResourcesAfter(ctx, group.ID, usersPage, resourcesPage)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(resp.Users.Edges) > 0 {
+			group.Users.Edges = append(group.Users.Edges, resp.Users.Edges...)
+		}
+
+		if len(resp.Resources.Edges) > 0 {
+			group.Resources.Edges = append(group.Resources.Edges, resp.Resources.Edges...)
+		}
+
+		usersPage = resp.Users.PageInfo
+		resourcesPage = resp.Resources.PageInfo
+	}
+
+	return group, nil
+}
+
+func (client *Client) readGroupUsersAndResourcesAfter(ctx context.Context, groupID graphql.ID, usersPage, resourcesPage PageInfo) (*gqlGroupUsersAndResources, error) {
+	response := readGroupUsersAndResourcesQuery{}
+	variables := map[string]interface{}{
+		"id":              groupID,
+		"groupsPageSize":  graphql.Int(readResourceQueryGroupsSize),
+		"usersCursor":     "",
+		"resourcesCursor": "",
+	}
+
+	if usersPage.HasNextPage {
+		variables["usersCursor"] = usersPage.EndCursor
+	}
+
+	if resourcesPage.HasNextPage {
+		variables["resourcesCursor"] = resourcesPage.EndCursor
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", groupResourceName, groupID)
+	}
+
+	if response.Group == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupID)
+	}
+
+	return response.Group, nil
 }
 
 func collectIDs(edges []*IDNode) []graphql.ID {
@@ -156,7 +230,12 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupID)
 	}
 
-	return response.Group.toModel(), nil
+	group, err := client.readAllGroupUsersAndResources(ctx, response.Group)
+	if err != nil {
+		return nil, err
+	}
+
+	return group.toModel(), nil
 }
 
 type readGroupsQuery struct {
@@ -284,7 +363,12 @@ func (client *Client) updateGroup(ctx context.Context, req *GroupUpdateRequest) 
 		return nil, NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), "update", groupResourceName, req.ID)
 	}
 
-	return response.GroupUpdate.Entity.toModel(), nil
+	group, err := client.readAllGroupUsersAndResources(ctx, &response.GroupUpdate.Entity)
+	if err != nil {
+		return nil, err
+	}
+
+	return group.toModel(), nil
 }
 
 func getDelta(oldList, newList []graphql.ID) ([]graphql.ID, []graphql.ID) {

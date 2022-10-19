@@ -14,13 +14,45 @@ import (
 
 func TestClientGroupCreateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Group Ok", func(t *testing.T) {
-		// response JSON
+
+		expected := &Group{
+			ID:        graphql.ID("test-id"),
+			Name:      "test",
+			IsActive:  true,
+			Type:      graphql.String("MANUAL"),
+			Users:     []graphql.ID{"u1", "u2", "u3", "u4"},
+			Resources: []graphql.ID{"r1", "r2", "r3", "r4"},
+		}
+
 		createGroupOkJson := `{
 		  "data": {
 			"groupCreate": {
 			  "entity": {
 				"id": "test-id",
-				"name": "test"
+				"name": "test",
+				"isActive": true,
+				"type": "MANUAL",
+				"users": {
+				  "pageInfo": {
+				   	"endCursor": "userCur001",
+				   	"hasNextPage": true
+				   },
+				  "edges": [
+					{"node": {"id": "u1"}},
+					{"node": {"id": "u2"}}
+				  ]
+				},
+				"resources": {
+				  "pageInfo": {
+				   	"hasNextPage": false
+				   },
+				  "edges": [
+					{"node": {"id": "r1"}},
+					{"node": {"id": "r2"}},
+					{"node": {"id": "r3"}},
+					{"node": {"id": "r4"}}
+				  ]
+				}
 			  },
 			  "ok": true,
 			  "error": null
@@ -28,16 +60,48 @@ func TestClientGroupCreateOk(t *testing.T) {
 		  }
 		}`
 
+		nextGroupPageJson := `{
+		  "data": {
+			"group": {
+				"id": "test-id",
+				"users": {
+				  "pageInfo": {
+					"hasNextPage": false
+				   },
+				  "edges": [
+					{"node": {"id": "u3"}},
+					{"node": {"id": "u4"}}
+				  ]
+				},
+				"resources": {
+				  "pageInfo": {
+					"hasNextPage": false
+				   },
+				  "edges": []
+				}
+			}
+		  }
+		}`
+
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, createGroupOkJson))
+			httpmock.ResponderFromMultipleResponses(
+				[]*http.Response{
+					httpmock.NewStringResponse(200, createGroupOkJson),
+					httpmock.NewStringResponse(200, nextGroupPageJson),
+				},
+				t.Log),
+		)
 
-		group, err := client.createGroup(context.Background(), &Group{Name: "test"})
+		group, err := client.createGroup(context.Background(), &Group{
+			Name:      "test",
+			Users:     []graphql.ID{"u1", "u2", "u3", "u4"},
+			Resources: []graphql.ID{"r1", "r2", "r3", "r4"},
+		})
 
 		assert.Nil(t, err)
-		assert.EqualValues(t, "test-id", group.ID)
-		assert.EqualValues(t, "test", group.Name)
+		assert.EqualValues(t, expected, group)
 	})
 }
 
