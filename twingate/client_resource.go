@@ -23,6 +23,7 @@ type Resource struct {
 
 type gqlResource struct {
 	IDName
+	Groups  Groups `graphql:"groups(first: $groupsPageSize)"`
 	Address struct {
 		Type  graphql.String
 		Value graphql.String
@@ -30,14 +31,21 @@ type gqlResource struct {
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
-	Groups struct {
-		PageInfo struct {
-			HasNextPage graphql.Boolean
-		}
-		Edges []*Edges
-	} `graphql:"groups(first: $groupsPageSize)"`
 	Protocols *ProtocolsInput
 	IsActive  graphql.Boolean
+}
+
+type Groups struct {
+	PageInfo struct {
+		EndCursor   graphql.String
+		HasNextPage graphql.Boolean
+	}
+	Edges []*Edges
+}
+
+type gqlResourceGroups struct {
+	ID     graphql.ID
+	Groups Groups `graphql:"groups(first: $groupsPageSize, after: $groupsEndCursor)"`
 }
 
 func (r *gqlResource) convertResource() *Resource {
@@ -189,13 +197,13 @@ type createResourceQuery struct {
 	} `graphql:"resourceCreate(name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) createResource(ctx context.Context, resource *Resource) (*Resource, error) {
+func (client *Client) createResource(ctx context.Context, input *Resource) (*Resource, error) {
 	variables := map[string]interface{}{
-		"name":            resource.Name,
-		"address":         resource.Address,
-		"remoteNetworkId": resource.RemoteNetworkID,
-		"groupIds":        resource.GroupsIds,
-		"protocols":       resource.Protocols,
+		"name":            input.Name,
+		"address":         input.Address,
+		"remoteNetworkId": input.RemoteNetworkID,
+		"groupIds":        input.GroupsIds,
+		"protocols":       input.Protocols,
 		"groupsPageSize":  graphql.Int(readResourceQueryGroupsSize),
 	}
 
@@ -214,7 +222,12 @@ func (client *Client) createResource(ctx context.Context, resource *Resource) (*
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", resourceResourceName)
 	}
 
-	return response.ResourceCreate.Entity.convertResource(), nil
+	resource, err := client.readAllResourceGroups(ctx, response.ResourceCreate.Entity)
+	if err != nil {
+		return nil, err
+	}
+
+	return resource.convertResource(), nil
 }
 
 type readResourceQuery struct {
@@ -241,11 +254,51 @@ func (client *Client) readResource(ctx context.Context, resourceID string) (*Res
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
-	if response.Resource.Groups.PageInfo.HasNextPage {
-		return nil, NewAPIErrorWithID(ErrTooManyGroupsError, "read", resourceResourceName, resourceID)
+	resource, err := client.readAllResourceGroups(ctx, response.Resource)
+	if err != nil {
+		return nil, err
 	}
 
-	return response.Resource.convertResource(), nil
+	return resource.convertResource(), nil
+}
+
+func (client *Client) readAllResourceGroups(ctx context.Context, resource *gqlResource) (*gqlResource, error) {
+	page := resource.Groups.PageInfo
+	for page.HasNextPage {
+		resp, err := client.readResourceGroupsAfter(ctx, resource.ID, page.EndCursor)
+		if err != nil {
+			return nil, err
+		}
+
+		resource.Groups.Edges = append(resource.Groups.Edges, resp.Resource.Groups.Edges...)
+		page = resp.Resource.Groups.PageInfo
+	}
+
+	return resource, nil
+}
+
+type readResourceGroupsQuery struct {
+	Resource *gqlResourceGroups `graphql:"resource(id: $id)"`
+}
+
+func (client *Client) readResourceGroupsAfter(ctx context.Context, resourceID graphql.ID, cursor graphql.String) (*readResourceGroupsQuery, error) {
+	response := readResourceGroupsQuery{}
+	variables := map[string]interface{}{
+		"id":              resourceID,
+		"groupsPageSize":  graphql.Int(readResourceQueryGroupsSize),
+		"groupsEndCursor": cursor,
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	if response.Resource == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
+	}
+
+	return &response, nil
 }
 
 type readResourcesQuery struct { //nolint
@@ -273,14 +326,14 @@ type updateResourceQuery struct {
 	} `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) updateResource(ctx context.Context, resource *Resource) (*Resource, error) {
+func (client *Client) updateResource(ctx context.Context, input *Resource) (*Resource, error) {
 	variables := map[string]interface{}{
-		"id":              resource.ID,
-		"name":            resource.Name,
-		"address":         resource.Address,
-		"remoteNetworkId": resource.RemoteNetworkID,
-		"groupIds":        resource.GroupsIds,
-		"protocols":       resource.Protocols,
+		"id":              input.ID,
+		"name":            input.Name,
+		"address":         input.Address,
+		"remoteNetworkId": input.RemoteNetworkID,
+		"groupIds":        input.GroupsIds,
+		"protocols":       input.Protocols,
 		"groupsPageSize":  graphql.Int(readResourceQueryGroupsSize),
 	}
 
@@ -288,18 +341,23 @@ func (client *Client) updateResource(ctx context.Context, resource *Resource) (*
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
+		return nil, NewAPIErrorWithID(err, "update", resourceResourceName, input.ID)
 	}
 
 	if !response.ResourceUpdate.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, input.ID)
 	}
 
 	if response.ResourceUpdate.Entity == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, resource.ID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, input.ID)
 	}
 
-	return response.ResourceUpdate.Entity.convertResource(), nil
+	resource, err := client.readAllResourceGroups(ctx, response.ResourceUpdate.Entity)
+	if err != nil {
+		return nil, err
+	}
+
+	return resource.convertResource(), nil
 }
 
 type deleteResourceQuery struct {
