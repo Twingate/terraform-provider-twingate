@@ -487,7 +487,7 @@ func testAccCheckTwingateResourceExists(resourceName string) resource.TestCheckF
 func TestResourceResourceReadDiagnosticsError(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Resource Read Diagnostics Error", func(t *testing.T) {
-		groups := []*graphql.ID{}
+		groups := make([]graphql.ID, 0)
 		protocols := &ProtocolsInput{}
 
 		res := &Resource{

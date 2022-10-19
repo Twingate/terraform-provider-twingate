@@ -16,7 +16,7 @@ type Resource struct {
 	RemoteNetworkID graphql.ID
 	Address         graphql.String
 	Name            graphql.String
-	GroupsIds       []*graphql.ID
+	GroupsIds       []graphql.ID
 	Protocols       *ProtocolsInput
 	IsActive        graphql.Boolean
 }
@@ -53,9 +53,9 @@ func (r *gqlResource) convertResource() *Resource {
 		return nil
 	}
 
-	groups := make([]*graphql.ID, 0, len(r.Groups.Edges))
+	groups := make([]graphql.ID, 0, len(r.Groups.Edges))
 	for _, elem := range r.Groups.Edges {
-		groups = append(groups, &elem.Node.ID)
+		groups = append(groups, elem.Node.ID)
 	}
 
 	return &Resource{
@@ -74,7 +74,7 @@ func (r *Resource) stringGroups() []string {
 
 	if len(r.GroupsIds) > 0 {
 		for _, id := range r.GroupsIds {
-			groups = append(groups, fmt.Sprintf("%v", *id))
+			groups = append(groups, fmt.Sprintf("%v", id))
 		}
 	}
 
