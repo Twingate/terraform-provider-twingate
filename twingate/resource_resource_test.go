@@ -870,23 +870,23 @@ func createResource13(networkName, resourceName string, groups, groupsID []strin
 	  name = "%s"
 	}
 
-    %s
+	%s
 
 	resource "twingate_resource" "test13" {
 	  name = "%s"
 	  address = "acc-test.com.13"
 	  remote_network_id = twingate_remote_network.test13.id
 	  group_ids = [%s]
-      protocols {
-		allow_icmp = true
-        tcp  {
-			policy = "%s"
-            ports = ["80", "82-83"]
-        }
-		udp {
- 			policy = "%s"
-		}
-      }
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
 	}
 	`, networkName, strings.Join(groups, "\n"), resourceName, strings.Join(groupsID, ", "), policyRestricted, policyAllowAll)
 }
