@@ -356,28 +356,28 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 
 		nextPageJson := fmt.Sprintf(`{
 	  "data": {
-		"resource": {
-		  "id": "resource1",
-		  "groups": {
-			"pageInfo": {
-			  "hasNextPage": false
-			},
-			"edges": [
-			  {
-				"node": {
-				  "id": "group3",
-				  "name": "Group3 name"
-				}
-			  },
-			  {
-				"node": {
-				  "id": "group4",
-				  "name": "Group4 name"
-				}
-			  }
-			]
-		  }
-		}
+	    "resource": {
+	      "id": "resource1",
+	      "groups": {
+	        "pageInfo": {
+	          "hasNextPage": false
+	        },
+	        "edges": [
+	          {
+	            "node": {
+	              "id": "group3",
+	              "name": "Group3 name"
+	            }
+	          },
+	          {
+	            "node": {
+	              "id": "group4",
+	              "name": "Group4 name"
+	            }
+	          }
+	        ]
+	      }
+	    }
 	  }
 	}`)
 
