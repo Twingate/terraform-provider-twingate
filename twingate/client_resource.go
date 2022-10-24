@@ -222,12 +222,10 @@ func (client *Client) createResource(ctx context.Context, input *Resource) (*Res
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", resourceResourceName)
 	}
 
-	resource, err := client.readAllResourceGroups(ctx, response.ResourceCreate.Entity)
-	if err != nil {
-		return nil, err
-	}
+	resource := response.ResourceCreate.Entity.convertResource()
+	resource.GroupsIds = input.GroupsIds
 
-	return resource.convertResource(), nil
+	return resource, nil
 }
 
 type readResourceQuery struct {
