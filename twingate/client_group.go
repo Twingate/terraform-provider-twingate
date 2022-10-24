@@ -117,7 +117,7 @@ func (client *Client) createGroup(ctx context.Context, req *Group) (*Group, erro
 	group.Users = req.Users
 	group.Resources = req.Resources
 
-	return group, err
+	return group, nil
 }
 
 func (client *Client) readAllGroupUsersAndResources(ctx context.Context, group *gqlGroup) (*gqlGroup, error) {
