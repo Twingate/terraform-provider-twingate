@@ -584,7 +584,7 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					deactivateTwingateResource(theResource),
-					wait(),
+					WaitTestFunc(),
 					testAccCheckTwingateResourceActiveState(theResource, false),
 				),
 			},

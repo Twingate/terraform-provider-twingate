@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func wait() resource.TestCheckFunc {
+func WaitTestFunc() resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Sleep between 500ms-1s
 		n := 500 + rand.Intn(500) // n will be between 0 and 10
@@ -19,7 +19,7 @@ func wait() resource.TestCheckFunc {
 
 func ComposeTestCheckFunc(fs ...resource.TestCheckFunc) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		_ = wait()(s)
+		_ = WaitTestFunc()(s)
 
 		for i, f := range fs {
 			if err := f(s); err != nil {
