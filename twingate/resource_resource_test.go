@@ -3,8 +3,10 @@ package twingate
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -23,6 +25,15 @@ const (
 	tcpPorts       = "protocols.0.tcp.0.ports.#"
 	udpPorts       = "protocols.0.udp.0.ports.#"
 )
+
+func wait() resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		// Sleep between 500ms-1s
+		n := 500 + rand.Intn(500) // n will be between 0 and 10
+		time.Sleep(time.Duration(n) * time.Millisecond)
+		return nil
+	}
+}
 
 func TestAccTwingateResourceCreate(t *testing.T) {
 	remoteNetworkName := getRandomName()
@@ -585,6 +596,7 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					deactivateTwingateResource(theResource),
+					wait(),
 					testAccCheckTwingateResourceActiveState(theResource, false),
 				),
 			},
