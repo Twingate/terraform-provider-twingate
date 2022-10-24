@@ -3,16 +3,13 @@ package twingate
 import (
 	"context"
 	"fmt"
-	"math/rand"
-	"regexp"
-	"testing"
-	"time"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/twingate/go-graphql-client"
+	"regexp"
+	"testing"
 )
 
 const (
@@ -26,15 +23,6 @@ const (
 	udpPorts       = "protocols.0.udp.0.ports.#"
 )
 
-func wait() resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		// Sleep between 500ms-1s
-		n := 500 + rand.Intn(500) // n will be between 0 and 10
-		time.Sleep(time.Duration(n) * time.Millisecond)
-		return nil
-	}
-}
-
 func TestAccTwingateResourceCreate(t *testing.T) {
 	remoteNetworkName := getRandomName()
 	resourceName := getRandomResourceName()
@@ -46,7 +34,7 @@ func TestAccTwingateResourceCreate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResourceOnlyWithNetwork(remoteNetworkName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test1"),
 					resource.TestCheckNoResourceAttr("twingate_resource.test1", "group_ids.#"),
 				),
@@ -81,7 +69,7 @@ func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResourceWithProtocolsAndGroups(remoteNetworkName, groupName1, groupName2, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test2"),
 					resource.TestCheckResourceAttr("twingate_resource.test2", "address", "new-acc-test.com"),
 					resource.TestCheckResourceAttr("twingate_resource.test2", "group_ids.#", "2"),
@@ -138,7 +126,7 @@ func TestAccTwingateResourceFullCreationFlow(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: resourceFullCreationFlow(remoteNetworkName, groupName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("twingate_remote_network.test3", "name", remoteNetworkName),
 					resource.TestCheckResourceAttr("twingate_resource.test3", "name", resourceName),
 					resource.TestMatchResourceAttr("twingate_connector_tokens.test31", "access_token", regexp.MustCompile(".*")),
@@ -236,7 +224,7 @@ func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test5"),
 					resource.TestCheckResourceAttr("twingate_resource.test5", "protocols.0.tcp.0.policy", policyRestricted),
 				),
@@ -290,7 +278,7 @@ func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResourceWithUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists("twingate_resource.test6"),
 					resource.TestCheckResourceAttr("twingate_resource.test6", "protocols.0.udp.0.policy", policyRestricted),
 				),
@@ -344,7 +332,7 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 		Steps: []resource.TestStep{
 			{
 				Config: createResourceWithRestrictedPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("twingate_resource.test7", "name", resourceName),
 					resource.TestCheckResourceAttr("twingate_resource.test7", "protocols.0.tcp.0.policy", policyRestricted),
 					resource.TestCheckNoResourceAttr("twingate_resource.test7", "protocols.0.tcp.0.ports.#"),
@@ -526,7 +514,7 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					resource.TestCheckResourceAttr(theResource, "protocols.0.tcp.0.ports.0", "80"),
 					resource.TestCheckResourceAttr(theResource, "protocols.0.udp.0.ports.0", "80"),
@@ -545,7 +533,7 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 			// new changes applied
 			{
 				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					resource.TestCheckResourceAttr(theResource, "protocols.0.tcp.0.ports.0", "70"),
 					resource.TestCheckResourceAttr(theResource, "protocols.0.udp.0.ports.0", "70"),
@@ -593,7 +581,7 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResource10(remoteNetworkName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					deactivateTwingateResource(theResource),
 					wait(),
@@ -602,7 +590,7 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 			},
 			{
 				Config: createResource10(remoteNetworkName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceActiveState(theResource, true),
 				),
 			},
@@ -691,7 +679,7 @@ func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResource11(remoteNetworkName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					deleteTwingateResource(theResource, resourceResourceName),
 				),
@@ -699,7 +687,7 @@ func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
 			},
 			{
 				Config: createResource11(remoteNetworkName, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 				),
 			},
@@ -773,7 +761,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResource12(remoteNetworkName, groupName, groupName2, resourceName),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 				),
 			},

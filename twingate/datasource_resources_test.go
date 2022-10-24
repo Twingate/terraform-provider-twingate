@@ -27,7 +27,7 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateResources(networkName, resourceName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, resourcesNumber, "2"),
 						resource.TestCheckResourceAttr(theDatasource, firstResourceName, resourceName),
 					),
@@ -97,7 +97,7 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testTwingateResourcesDoesNotExists(resourceName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_resources.out_drs2", resourcesNumber, "0"),
 					),
 				},

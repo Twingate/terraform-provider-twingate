@@ -22,7 +22,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateResource(networkName, resourceName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", "name", resourceName),
 					),
 				},

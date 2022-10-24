@@ -26,14 +26,14 @@ func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createGroup001(groupNameBefore),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateGroupExists(theResource),
 						resource.TestCheckResourceAttr(theResource, "name", groupNameBefore),
 					),
 				},
 				{
 					Config: createGroup001(groupNameAfter),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateGroupExists(theResource),
 						resource.TestCheckResourceAttr(theResource, "name", groupNameAfter),
 					),
@@ -64,7 +64,7 @@ func TestAccTwingateGroupDeleteNonExisting(t *testing.T) {
 				{
 					Config:  createGroup002(groupNameBefore),
 					Destroy: true,
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateGroupDoesNotExists("twingate_group.test002"),
 					),
 				},
@@ -141,7 +141,7 @@ func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createGroup003(groupName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateGroupExists(theResource),
 						deleteTwingateResource(theResource, groupResourceName),
 					),
@@ -149,7 +149,7 @@ func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
 				},
 				{
 					Config: createGroup003(groupName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateGroupExists(theResource),
 					),
 				},

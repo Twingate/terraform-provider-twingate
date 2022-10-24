@@ -24,14 +24,14 @@ func TestAccTwingateRemoteNetworkCreateUpdate(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createRemoteNetwork001(remoteNetworkNameBefore),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateRemoteNetworkExists(theResource),
 						resource.TestCheckResourceAttr(theResource, "name", remoteNetworkNameBefore),
 					),
 				},
 				{
 					Config: createRemoteNetwork001(remoteNetworkNameAfter),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateRemoteNetworkExists(theResource),
 						resource.TestCheckResourceAttr(theResource, "name", remoteNetworkNameAfter),
 					),
@@ -62,7 +62,7 @@ func TestAccTwingateRemoteNetworkDeleteNonExisting(t *testing.T) {
 				{
 					Config:  createRemoteNetwork002(remoteNetworkNameBefore),
 					Destroy: true,
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateRemoteNetworkDoesNotExists("twingate_remote_network.test002"),
 					),
 				},
@@ -141,7 +141,7 @@ func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createRemoteNetwork003(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateRemoteNetworkExists(theResource),
 						deleteTwingateResource(theResource, remoteNetworkResourceName),
 					),
@@ -149,7 +149,7 @@ func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
 				},
 				{
 					Config: createRemoteNetwork003(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateRemoteNetworkExists(theResource),
 					),
 				},

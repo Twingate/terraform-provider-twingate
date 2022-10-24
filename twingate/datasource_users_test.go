@@ -16,7 +16,7 @@ func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateUsers(),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testCheckResourceAttrNotEqual("data.twingate_users.all", "users.#", "0"),
 					),
 				},
