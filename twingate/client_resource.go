@@ -117,7 +117,7 @@ func (spi *StringProtocolsInput) convertToGraphql() (*ProtocolsInput, error) {
 const resourceResourceName = "resource"
 
 func validatePort(port string) (graphql.Int, error) {
-	parsed, err := strconv.ParseInt(port, 10, 64) //nolint:gomnd
+	parsed, err := strconv.ParseInt(port, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("port is not a valid integer: %w", err)
 	}
