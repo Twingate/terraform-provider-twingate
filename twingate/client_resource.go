@@ -352,12 +352,10 @@ func (client *Client) updateResource(ctx context.Context, input *Resource) (*Res
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, input.ID)
 	}
 
-	resource, err := client.readAllResourceGroups(ctx, response.ResourceUpdate.Entity)
-	if err != nil {
-		return nil, err
-	}
+	resource := response.ResourceUpdate.Entity.convertResource()
+	resource.GroupsIds = input.GroupsIds
 
-	return resource.convertResource(), nil
+	return resource, nil
 }
 
 type deleteResourceQuery struct {
