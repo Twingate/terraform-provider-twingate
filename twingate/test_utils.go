@@ -2,9 +2,10 @@ package twingate
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"time"
 )
 
 const WaitDuration = 500 * time.Millisecond
