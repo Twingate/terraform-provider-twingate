@@ -113,12 +113,11 @@ func (client *Client) createGroup(ctx context.Context, req *Group) (*Group, erro
 		return nil, NewAPIError(NewMutationError(message), "create", groupResourceName)
 	}
 
-	group, err := client.readAllGroupUsersAndResources(ctx, &response.GroupCreate.Entity)
-	if err != nil {
-		return nil, err
-	}
+	group := response.GroupCreate.Entity.toModel()
+	group.Users = req.Users
+	group.Resources = req.Resources
 
-	return group.toModel(), err
+	return group, err
 }
 
 func (client *Client) readAllGroupUsersAndResources(ctx context.Context, group *gqlGroup) (*gqlGroup, error) {
@@ -363,12 +362,11 @@ func (client *Client) updateGroup(ctx context.Context, req *GroupUpdateRequest) 
 		return nil, NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), "update", groupResourceName, req.ID)
 	}
 
-	group, err := client.readAllGroupUsersAndResources(ctx, &response.GroupUpdate.Entity)
-	if err != nil {
-		return nil, err
-	}
+	group := response.GroupUpdate.Entity.toModel()
+	group.Users = req.NewUsers
+	group.Resources = req.NewResources
 
-	return group.toModel(), nil
+	return group, nil
 }
 
 func getDelta(oldList, newList []graphql.ID) ([]graphql.ID, []graphql.ID) {
