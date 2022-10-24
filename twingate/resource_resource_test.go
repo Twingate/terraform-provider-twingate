@@ -29,7 +29,7 @@ const (
 func wait() resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Sleep between 500ms-1s
-		n := 500 + rand.Intn(500) // n will be between 0 and 10
+		n := 500 + rand.Intn(500) // n will be between 500 and 999
 		time.Sleep(time.Duration(n) * time.Millisecond)
 		return nil
 	}
