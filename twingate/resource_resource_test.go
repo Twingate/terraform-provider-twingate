@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -642,6 +643,8 @@ func deactivateTwingateResource(resourceName string) resource.TestCheckFunc {
 
 func testAccCheckTwingateResourceActiveState(resourceName string, expectedActiveState bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		time.Sleep(500 * time.Millisecond)
+
 		client := testAccProvider.Meta().(*Client)
 
 		rs, ok := s.RootModule().Resources[resourceName]
