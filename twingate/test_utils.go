@@ -11,7 +11,7 @@ import (
 const WaitDuration = 500 * time.Millisecond
 
 func WaitTestFunc() resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(state *terraform.State) error {
 		// Sleep 500 ms
 		time.Sleep(WaitDuration)
 
@@ -20,13 +20,13 @@ func WaitTestFunc() resource.TestCheckFunc {
 }
 
 func ComposeTestCheckFunc(fs ...resource.TestCheckFunc) resource.TestCheckFunc { //nolint:varnamelen
-	return func(s *terraform.State) error {
-		if err := WaitTestFunc()(s); err != nil {
+	return func(state *terraform.State) error {
+		if err := WaitTestFunc()(state); err != nil {
 			return fmt.Errorf("WaitTestFunc error: %w", err)
 		}
 
 		for i, f := range fs {
-			if err := f(s); err != nil {
+			if err := f(state); err != nil {
 				return fmt.Errorf("check %d/%d error: %w", i+1, len(fs), err)
 			}
 		}
