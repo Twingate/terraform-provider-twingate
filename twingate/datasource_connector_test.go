@@ -22,7 +22,7 @@ func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateConnector(networkName, connectorName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckOutput("my_connector", connectorName),
 					),
 				},

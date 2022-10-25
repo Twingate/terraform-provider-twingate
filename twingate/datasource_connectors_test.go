@@ -23,7 +23,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName, getTestPrefix()),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testCheckOutputLength("my_connectors", 2),
 						testCheckOutputAttr("my_connectors", 0, "name", connectorName),
 					),
@@ -69,7 +69,7 @@ func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testTwingateConnectorsDoesNotExists(prefix),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testCheckOutputLength("my_connectors_dcs2", 0),
 					),
 				},
