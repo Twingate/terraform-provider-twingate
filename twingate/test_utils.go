@@ -19,9 +19,11 @@ func WaitTestFunc() resource.TestCheckFunc {
 	}
 }
 
-func ComposeTestCheckFunc(fs ...resource.TestCheckFunc) resource.TestCheckFunc { // nolint:varnamelen
+func ComposeTestCheckFunc(fs ...resource.TestCheckFunc) resource.TestCheckFunc { //nolint:varnamelen
 	return func(s *terraform.State) error {
-		_ = WaitTestFunc()(s)
+		if err := WaitTestFunc()(s); err != nil {
+			return fmt.Errorf("WaitTestFunc error: %w", err)
+		}
 
 		for i, f := range fs {
 			if err := f(s); err != nil {
