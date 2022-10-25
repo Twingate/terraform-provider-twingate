@@ -21,7 +21,7 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroup(groupName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckOutput("my_group_dg1", groupName),
 						resource.TestCheckOutput("my_group_is_active_dg1", "true"),
 						resource.TestCheckOutput("my_group_type_dg1", "MANUAL"),

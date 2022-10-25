@@ -22,7 +22,7 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateRemoteNetwork(networkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn1_2", "name", networkName),
 					),
 				},
@@ -59,7 +59,7 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateRemoteNetworkByName(networkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn2_2", "name", networkName),
 					),
 				},
