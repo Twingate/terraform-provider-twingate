@@ -25,7 +25,7 @@ func TestAccDatasourceTwingateUser_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateUser(user.ID),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckOutput("my_user_email_du1", user.Email),
 					),
 				},

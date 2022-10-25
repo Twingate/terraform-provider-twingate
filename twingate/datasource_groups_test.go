@@ -26,7 +26,7 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroups(groupName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, groupsNumber, "2"),
 						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
 					),
@@ -64,7 +64,7 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testTwingateGroupsDoesNotExists(groupName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_groups.out_dgs2", groupsNumber, "0"),
 					),
 				},
@@ -92,7 +92,7 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroupsWithFilters(groupName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, groupsNumber, "2"),
 						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
 					),
@@ -189,7 +189,7 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroupsWithDatasource(groupName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", firstGroupName, groupName),
 						resource.TestCheckResourceAttr("data.twingate_groups.one_dgs3", groupsNumber, "1"),
 						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", groupsNumber, "2"),

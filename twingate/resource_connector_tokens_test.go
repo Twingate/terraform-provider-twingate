@@ -22,7 +22,7 @@ func TestAccRemoteConnectorWithTokens(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createConnectorTokensWithKeepers(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorTokensExists(connectorTokensResource),
 					),
 				},

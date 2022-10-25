@@ -31,7 +31,7 @@ func TestAccRemoteConnectorCreate(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createConnectorC1(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c1"),
 						resource.TestCheckResourceAttrSet(theResource, "name"),
 					),
@@ -66,7 +66,7 @@ func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createConnectorC2(remoteNetworkName, connectorName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c2"),
 						resource.TestMatchResourceAttr(theResource, "name", regexp.MustCompile(connectorName)),
 					),
@@ -143,7 +143,7 @@ func TestAccRemoteConnectorImport(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createConnectorC3(remoteNetworkName, connectorName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c3"),
 						resource.TestMatchResourceAttr(theResource, "name", testRegexp),
 					),
@@ -183,7 +183,7 @@ func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createConnectorC4(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c4_1"),
 					),
 				},
@@ -230,7 +230,7 @@ func TestAccTwingateConnectorReCreateAfterDeletion(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: createConnectorC5(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c5"),
 						deleteTwingateResource(theResource, connectorResourceName),
 					),
@@ -238,7 +238,7 @@ func TestAccTwingateConnectorReCreateAfterDeletion(t *testing.T) {
 				},
 				{
 					Config: createConnectorC5(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
+					Check: ComposeTestCheckFunc(
 						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c5"),
 					),
 				},
