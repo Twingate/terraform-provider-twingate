@@ -849,14 +849,14 @@ func TestAccTwingateResourceLoadsAllGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: createResource13(remoteNetworkName, resourceName, groups, groupsID),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					resource.TestCheckResourceAttr(theResource, "group_ids.#", "111"),
 				),
 			},
 			{
 				Config: createResource13(remoteNetworkName, resourceName, groups[:75], groupsID[:75]),
-				Check: resource.ComposeTestCheckFunc(
+				Check: ComposeTestCheckFunc(
 					testAccCheckTwingateResourceExists(theResource),
 					resource.TestCheckResourceAttr(theResource, "group_ids.#", "75"),
 				),
