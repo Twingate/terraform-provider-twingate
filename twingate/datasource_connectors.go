@@ -13,7 +13,7 @@ func datasourceConnectorsRead(ctx context.Context, resourceData *schema.Resource
 
 	var diags diag.Diagnostics
 
-	connectors, err := client.readConnectorsWithRemoteNetwork(ctx)
+	connectors, err := client.readConnectors(ctx)
 
 	if err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
 		return diag.FromErr(err)

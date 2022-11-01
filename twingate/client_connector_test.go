@@ -461,7 +461,7 @@ func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connectors, err := client.readConnectorsWithRemoteNetwork(context.Background())
+		connectors, err := client.readConnectors(context.Background())
 		assert.NoError(t, err)
 
 		for i, elem := range connectors {
@@ -485,7 +485,7 @@ func TestClientReadConnectorsWithRemoteNetworkError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connectors, err := client.readConnectorsWithRemoteNetwork(context.Background())
+		connectors, err := client.readConnectors(context.Background())
 
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, "failed to read connector with id All: query result is empty")
@@ -508,9 +508,86 @@ func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
 				return resp, errors.New("error_1")
 			})
 
-		connectors, err := client.readConnectorsWithRemoteNetwork(context.Background())
+		connectors, err := client.readConnectors(context.Background())
 
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id All: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientReadConnectorsAllPagesOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Pages - Ok", func(t *testing.T) {
+		expected := []*Connector{
+			{ID: "connector1", RemoteNetwork: &remoteNetwork{ID: "tf-acc-network1"}, Name: "tf-acc-connector1"},
+			{ID: "connector2", RemoteNetwork: &remoteNetwork{ID: "tf-acc-network2"}, Name: "tf-acc-connector2"},
+			{ID: "connector3", RemoteNetwork: &remoteNetwork{ID: "tf-acc-network3"}, Name: "tf-acc-connector3"},
+		}
+
+		jsonResponse := `{
+	  "data": {
+		"connectors": {
+		  "pageInfo": {
+			"endCursor": "cursor001",
+			"hasNextPage": true
+		  },
+		  "edges": [
+			{
+			  "node": {
+				"id": "connector1",
+				"name": "tf-acc-connector1",
+				"remoteNetwork": {
+				  "id": "tf-acc-network1"
+				}
+			  }
+			},
+			{
+			  "node": {
+				"id": "connector2",
+				"name": "tf-acc-connector2",
+				"remoteNetwork": {
+				  "id": "tf-acc-network2"
+				}
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
+		nextPage := `{
+	  "data": {
+		"connectors": {
+		  "pageInfo": {
+			"hasNextPage": false
+		  },
+		  "edges": [
+			{
+			  "node": {
+				"id": "connector3",
+				"name": "tf-acc-connector3",
+				"remoteNetwork": {
+				  "id": "tf-acc-network3"
+				}
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.ResponderFromMultipleResponses(
+				[]*http.Response{
+					httpmock.NewStringResponse(200, jsonResponse),
+					httpmock.NewStringResponse(200, nextPage),
+				},
+				t.Log),
+		)
+
+		connectors, err := client.readConnectors(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, expected, connectors)
 	})
 }
