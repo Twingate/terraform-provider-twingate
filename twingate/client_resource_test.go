@@ -18,9 +18,7 @@ func newTestResource() *Resource {
 	protocols.TCP.Policy = policyAllowAll
 	protocols.UDP.Policy = policyAllowAll
 
-	groups := make([]*graphql.ID, 0)
-	group := graphql.ID(b64.StdEncoding.EncodeToString([]byte("testgroup")))
-	groups = append(groups, &group)
+	groups := []graphql.ID{b64.StdEncoding.EncodeToString([]byte("testgroup"))}
 
 	return &Resource{
 		ID:              graphql.ID("test"),
@@ -273,6 +271,31 @@ func TestClientResourceReadOk(t *testing.T) {
 
 func TestClientResourceReadTooManyGroups(t *testing.T) {
 	t.Run("Test Twingate Resource : Read To Many Groups", func(t *testing.T) {
+		expected := &Resource{
+			ID:              graphql.ID("resource1"),
+			Name:            graphql.String("test resource"),
+			Address:         graphql.String("test.com"),
+			RemoteNetworkID: graphql.ID("network1"),
+			GroupsIds: []graphql.ID{
+				"group1", "group2", "group3", "group4",
+			},
+			IsActive: true,
+			Protocols: &ProtocolsInput{
+				UDP: &ProtocolInput{
+					Ports:  []*PortRangeInput{},
+					Policy: policyAllowAll,
+				},
+				TCP: &ProtocolInput{
+					Ports: []*PortRangeInput{
+						{Start: 80, End: 80},
+						{Start: 8080, End: 8090},
+					},
+					Policy: policyRestricted,
+				},
+				AllowIcmp: true,
+			},
+		}
+
 		// response JSON
 		createResourceOkJson := fmt.Sprintf(`{
 	  "data": {
@@ -288,21 +311,25 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 		  },
 		  "groups": {
 			"pageInfo": {
+			  "endCursor": "cur001",
 			  "hasNextPage": true
 			},
 			"edges": [
 			  {
 				"node": {
-				  "id": "group1"
+				  "id": "group1",
+				  "name": "Group1 name"
 				}
 			  },
 			  {
 				"node": {
-				  "id": "group2"
+				  "id": "group2",
+				  "name": "Group2 name"
 				}
 			  }
 			]
 		  },
+		  "isActive": true,
 		  "protocols": {
 			"udp": {
 			  "ports": [],
@@ -327,15 +354,47 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 	  }
 	}`, policyAllowAll, policyRestricted)
 
+		nextPageJson := fmt.Sprintf(`{
+	  "data": {
+	    "resource": {
+	      "id": "resource1",
+	      "groups": {
+	        "pageInfo": {
+	          "hasNextPage": false
+	        },
+	        "edges": [
+	          {
+	            "node": {
+	              "id": "group3",
+	              "name": "Group3 name"
+	            }
+	          },
+	          {
+	            "node": {
+	              "id": "group4",
+	              "name": "Group4 name"
+	            }
+	          }
+	        ]
+	      }
+	    }
+	  }
+	}`)
+
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, createResourceOkJson))
-		resourceID := "resource1"
+			httpmock.ResponderFromMultipleResponses(
+				[]*http.Response{
+					httpmock.NewStringResponse(200, createResourceOkJson),
+					httpmock.NewStringResponse(200, nextPageJson),
+				},
+				t.Log),
+		)
 
-		resource, err := client.readResource(context.Background(), resourceID)
-		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s: provider does not support more than 50 groups per resource", resourceID))
+		resource, err := client.readResource(context.Background(), "resource1")
+		assert.Nil(t, err)
+		assert.Equal(t, expected, resource)
 	})
 }
 
