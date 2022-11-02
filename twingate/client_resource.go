@@ -291,14 +291,14 @@ func (client *Client) readResourceGroupsAfter(ctx context.Context, resourceID gr
 	return &response, nil
 }
 
-type readResourcesQuery struct {
+type readResourcesQuery struct { //nolint
 	Resources struct {
 		PageInfo PageInfo
 		Edges    []*Edges
 	}
 }
 
-func (client *Client) readResources(ctx context.Context) ([]*Edges, error) {
+func (client *Client) readResources(ctx context.Context) ([]*Edges, error) { //nolint
 	response := readResourcesQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, nil)
@@ -314,9 +314,10 @@ func (client *Client) readResources(ctx context.Context) ([]*Edges, error) {
 	return edges, nil
 }
 
-func (client *Client) readAllResources(ctx context.Context, resource *readResourcesQuery) ([]*Edges, error) {
+func (client *Client) readAllResources(ctx context.Context, resource *readResourcesQuery) ([]*Edges, error) { //nolint
 	edges := resource.Resources.Edges
 	page := resource.Resources.PageInfo
+
 	for page.HasNextPage {
 		resp, err := client.readResourcesAfter(ctx, page.EndCursor)
 		if err != nil {
@@ -330,14 +331,14 @@ func (client *Client) readAllResources(ctx context.Context, resource *readResour
 	return edges, nil
 }
 
-type readResourcesAfterQuery struct {
+type readResourcesAfterQuery struct { //nolint
 	Resources struct {
 		PageInfo PageInfo
 		Edges    []*Edges
 	} `graphql:"resources(after: $resourcesEndCursor)"`
 }
 
-func (client *Client) readResourcesAfter(ctx context.Context, cursor graphql.String) (*readResourcesAfterQuery, error) {
+func (client *Client) readResourcesAfter(ctx context.Context, cursor graphql.String) (*readResourcesAfterQuery, error) { //nolint
 	response := readResourcesAfterQuery{}
 	variables := map[string]interface{}{
 		"resourcesEndCursor": cursor,
@@ -513,6 +514,7 @@ func (r *Resources) toList() []*Resource {
 	return toList[*ResourceEdge, *Resource](r.Edges,
 		func(edge *ResourceEdge) *Resource {
 			res := edge.Node
+
 			return &Resource{
 				ID:              res.ID,
 				Name:            res.Name,
