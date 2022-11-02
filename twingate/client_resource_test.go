@@ -607,10 +607,22 @@ func TestClientResourceEmptyDeleteError(t *testing.T) {
 
 func TestClientResourcesReadAllOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Read All Ok", func(t *testing.T) {
+		expected := []*Edges{
+			{Node: &IDName{ID: "resource1", Name: "tf-acc-resource1"}},
+			{Node: &IDName{ID: "resource2", Name: "resource2"}},
+			{Node: &IDName{ID: "resource3", Name: "tf-acc-resource3"}},
+			{Node: &IDName{ID: "resource4", Name: "tf-acc-resource4"}},
+			{Node: &IDName{ID: "resource5", Name: "tf-acc-resource5"}},
+		}
+
 		// response JSON
 		readResourcesOkJson := `{
 	  "data": {
 		"resources": {
+		  "pageInfo": {
+			"endCursor": "cur001",
+			"hasNextPage": true
+		  },
 		  "edges": [
 			{
 			  "node": {
@@ -635,23 +647,43 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 	  }
 	}`
 
+		nextPage := `{
+	  "data": {
+		"resources": {
+		  "pageInfo": {
+			"hasNextPage": false
+		  },
+		  "edges": [
+			{
+			  "node": {
+				"id": "resource4",
+				"name": "tf-acc-resource4"
+			  }
+			},
+			{
+			  "node": {
+				"id": "resource5",
+				"name": "tf-acc-resource5"
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, readResourcesOkJson))
+			httpmock.ResponderFromMultipleResponses(
+				[]*http.Response{
+					httpmock.NewStringResponse(200, readResourcesOkJson),
+					httpmock.NewStringResponse(200, nextPage),
+				}),
+		)
 
 		edges, err := client.readResources(context.Background())
 		assert.NoError(t, err)
-
-		mockMap := make(map[graphql.ID]graphql.String)
-		mockMap["resource1"] = "tf-acc-resource1"
-		mockMap["resource2"] = "resource2"
-		mockMap["resource3"] = "tf-acc-resource3"
-
-		for _, elem := range edges {
-			name := mockMap[elem.Node.ID]
-			assert.Equal(t, name, elem.Node.Name)
-		}
+		assert.Equal(t, expected, edges)
 	})
 }
 
@@ -859,16 +891,72 @@ func TestClientResourceReadWithoutGroupsOk(t *testing.T) {
 
 func TestClientResourcesReadByNameOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Resources By Name - Ok", func(t *testing.T) {
-		const resourceName = "resource-1"
-		ids := []string{"id-1", "id-2"}
-		jsonResponse := fmt.Sprintf(`{
+		expected := []*Resource{
+			{
+				ID: "id-1", Name: "resource-test", Address: "internal.int",
+				Protocols: &ProtocolsInput{
+					TCP: &ProtocolInput{
+						Policy: policyRestricted,
+						Ports: []*PortRangeInput{
+							{Start: 80, End: 80},
+							{Start: 82, End: 83},
+						},
+					},
+					UDP: &ProtocolInput{
+						Policy: policyAllowAll,
+						Ports:  []*PortRangeInput{},
+					},
+				},
+				RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+			},
+			{
+				ID: "id-2", Name: "resource-test", Address: "internal.int",
+				Protocols: &ProtocolsInput{
+					TCP: &ProtocolInput{
+						Policy: policyRestricted,
+						Ports: []*PortRangeInput{
+							{Start: 80, End: 80},
+							{Start: 82, End: 83},
+						},
+					},
+					UDP: &ProtocolInput{
+						Policy: policyAllowAll,
+						Ports:  []*PortRangeInput{},
+					},
+				},
+				RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+			},
+			{
+				ID: "id-3", Name: "resource-test", Address: "internal.int",
+				Protocols: &ProtocolsInput{
+					TCP: &ProtocolInput{
+						Policy: policyRestricted,
+						Ports: []*PortRangeInput{
+							{Start: 80, End: 80},
+							{Start: 82, End: 83},
+						},
+					},
+					UDP: &ProtocolInput{
+						Policy: policyAllowAll,
+						Ports:  []*PortRangeInput{},
+					},
+				},
+				RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+			},
+		}
+
+		jsonResponse := `{
 		  "data": {
 			"resources": {
+			  "pageInfo": {
+				"endCursor": "cur-01",
+				"hasNextPage": true
+			  },
 			  "edges": [
 				{
 				  "node": {
-					"id": "%s",
-					"name": "%s",
+					"id": "id-1",
+					"name": "resource-test",
 					"address": {
 					  "value": "internal.int"
 					},
@@ -898,8 +986,8 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 				},
 				{
 				  "node": {
-					"id": "%s",
-					"name": "%s",
+					"id": "id-2",
+					"name": "resource-test",
 					"address": {
 					  "value": "internal.int"
 					},
@@ -930,22 +1018,64 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 			  ]
 			}
 		  }
-		}`, ids[0], resourceName, ids[1], resourceName)
+		}`
+
+		nextPage := `{
+		  "data": {
+			"resources": {
+			  "pageInfo": {
+				"hasNextPage": false
+			  },
+			  "edges": [
+				{
+				  "node": {
+					"id": "id-3",
+					"name": "resource-test",
+					"address": {
+					  "value": "internal.int"
+					},
+					"protocols": {
+					  "tcp": {
+						"policy": "RESTRICTED",
+						"ports": [
+						  {
+							"start": 80,
+							"end": 80
+						  },
+						  {
+							"start": 82,
+							"end": 83
+						  }
+						]
+					  },
+					  "udp": {
+						"policy": "ALLOW_ALL",
+						"ports": []
+					  }
+					},
+					"remoteNetwork": {
+					  "id": "UmVtb3RlTmV0d29yazo0MDEzOQ=="
+					}
+				  }
+				}
+			  ]
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, jsonResponse))
+			httpmock.ResponderFromMultipleResponses([]*http.Response{
+				httpmock.NewStringResponse(200, jsonResponse),
+				httpmock.NewStringResponse(200, nextPage),
+			}),
+		)
 
-		resources, err := client.readResourcesByName(context.Background(), resourceName)
+		resources, err := client.readResourcesByName(context.Background(), "resource-test")
 
 		assert.Nil(t, err)
-		assert.NotNil(t, resources)
-		assert.Len(t, resources, len(ids))
-		for i, id := range ids {
-			assert.EqualValues(t, id, resources[i].ID)
-			assert.EqualValues(t, resourceName, resources[i].Name)
-		}
+		assert.Equal(t, expected, resources)
 	})
 }
 
