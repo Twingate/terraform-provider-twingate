@@ -518,43 +518,70 @@ func TestClientGroupsReadRequestError(t *testing.T) {
 
 func TestClientGroupsReadByNameOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups By Name - Ok", func(t *testing.T) {
-		const groupName = "group-1"
-		ids := []string{"id-1", "id-2"}
-		jsonResponse := fmt.Sprintf(`{
+		expected := []*Group{
+			{ID: "id-1", Name: "group-1"},
+			{ID: "id-2", Name: "group-2"},
+			{ID: "id-3", Name: "group-3"},
+		}
+
+		jsonResponse := `{
 		  "data": {
 			"groups": {
+			  "pageInfo": {
+				"endCursor": "cursor-001",
+				"hasNextPage": true
+			  },
 			  "edges": [
 				{
 				  "node": {
-					"id": "%s",
-					"name": "%s"
+					"id": "id-1",
+					"name": "group-1"
 				  }
 				},
 				{
 				  "node": {
-					"id": "%s",
-					"name": "%s"
+					"id": "id-2",
+					"name": "group-2"
 				  }
 				}
 			  ]
 			}
 		  }
-		}`, ids[0], groupName, ids[1], groupName)
+		}`
+
+		nextPage := `{
+		  "data": {
+			"groups": {
+			  "pageInfo": {
+				"hasNextPage": false
+			  },
+			  "edges": [
+				{
+				  "node": {
+					"id": "id-3",
+					"name": "group-3"
+				  }
+				}
+			  ]
+			}
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, jsonResponse))
+			httpmock.ResponderFromMultipleResponses(
+				[]*http.Response{
+					httpmock.NewStringResponse(200, jsonResponse),
+					httpmock.NewStringResponse(200, nextPage),
+				},
+				t.Log),
+		)
 
-		groups, err := client.readGroupsByName(context.Background(), groupName)
+		groups, err := client.readGroupsByName(context.Background(), "group-1-2-3")
 
 		assert.Nil(t, err)
-		assert.NotNil(t, groups)
-		assert.Len(t, groups, len(ids))
-		for i, id := range ids {
-			assert.EqualValues(t, id, groups[i].ID)
-			assert.EqualValues(t, groupName, groups[i].Name)
-		}
+		assert.Equal(t, expected, groups)
 	})
 }
 

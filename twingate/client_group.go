@@ -88,54 +88,100 @@ func (client *Client) readGroup(ctx context.Context, groupID graphql.ID) (*Group
 	return &group, nil
 }
 
-type readGroupsQuery struct {
-	Groups *struct {
-		Edges []*struct {
-			Node *struct {
-				ID       graphql.ID
-				Name     graphql.String
-				Type     graphql.String
-				IsActive graphql.Boolean
-			}
-		}
-	}
+type PageInfo struct {
+	EndCursor   graphql.String
+	HasNextPage graphql.Boolean
 }
 
-func (client *Client) readGroups(ctx context.Context) (groups []*Group, err error) { //nolint
+type GroupNode struct {
+	Node *Group
+}
+
+type Groups struct {
+	PageInfo PageInfo
+	Edges    []*GroupNode
+}
+
+func (g *Groups) toList() []*Group {
+	return toList[*GroupNode, *Group](g.Edges,
+		func(edge *GroupNode) *Group {
+			return edge.Node
+		},
+	)
+}
+
+func toList[E, O any](edges []E, getObj func(edge E) O) []O {
+	out := make([]O, 0, len(edges))
+	for _, elem := range edges {
+		out = append(out, getObj(elem))
+	}
+
+	return out
+}
+
+type readGroupsQuery struct {
+	Groups Groups
+}
+
+func (client *Client) readGroups(ctx context.Context) ([]*Group, error) {
 	response := readGroupsQuery{}
 
-	err = client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, nil)
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
 	}
 
-	if response.Groups == nil {
+	if len(response.Groups.Edges) == 0 {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
 	}
 
-	for _, g := range response.Groups.Edges {
-		groups = append(groups, &Group{
-			ID:       g.Node.ID,
-			Name:     g.Node.Name,
-			Type:     g.Node.Type,
-			IsActive: g.Node.IsActive,
-		})
+	groups, err := client.readAllGroups(ctx, &response.Groups)
+	if err != nil {
+		return nil, err
 	}
 
 	return groups, nil
 }
 
-type readGroupsByNameQuery struct {
-	Groups struct {
-		Edges []*struct {
-			Node *struct {
-				ID       graphql.ID
-				Name     graphql.String
-				Type     graphql.String
-				IsActive graphql.Boolean
-			}
+func (client *Client) readAllGroups(ctx context.Context, groups *Groups) ([]*Group, error) {
+	page := groups.PageInfo
+	for page.HasNextPage {
+		resp, err := client.readGroupsAfter(ctx, page.EndCursor)
+		if err != nil {
+			return nil, err
 		}
-	} `graphql:"groups(filter: {name: {eq: $name}})"`
+
+		groups.Edges = append(groups.Edges, resp.Edges...)
+		page = resp.PageInfo
+	}
+
+	return groups.toList(), nil
+}
+
+type readGroupsAfter struct {
+	Groups Groups `graphql:"groups(after: $groupsEndCursor)"`
+}
+
+func (client *Client) readGroupsAfter(ctx context.Context, cursor graphql.String) (*Groups, error) {
+	response := readGroupsAfter{}
+	variables := map[string]interface{}{
+		"groupsEndCursor": cursor,
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
+	}
+
+	if len(response.Groups.Edges) == 0 {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
+	}
+
+	return &response.Groups, nil
+}
+
+type readGroupsByNameQuery struct {
+	Groups Groups `graphql:"groups(filter: {name: {eq: $name}})"`
 }
 
 func (client *Client) readGroupsByName(ctx context.Context, groupName string) ([]*Group, error) {
@@ -158,18 +204,47 @@ func (client *Client) readGroupsByName(ctx context.Context, groupName string) ([
 		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupName)
 	}
 
-	groups := make([]*Group, 0, len(response.Groups.Edges))
-
-	for _, g := range response.Groups.Edges {
-		groups = append(groups, &Group{
-			ID:       g.Node.ID,
-			Name:     g.Node.Name,
-			Type:     g.Node.Type,
-			IsActive: g.Node.IsActive,
-		})
+	groups, err := client.readAllGroupsByName(ctx, &response.Groups, variables)
+	if err != nil {
+		return nil, err
 	}
 
 	return groups, nil
+}
+
+func (client *Client) readAllGroupsByName(ctx context.Context, groups *Groups, variables map[string]interface{}) ([]*Group, error) {
+	page := groups.PageInfo
+	for page.HasNextPage {
+		resp, err := client.readGroupsByNameAfter(ctx, page.EndCursor, variables)
+		if err != nil {
+			return nil, err
+		}
+
+		groups.Edges = append(groups.Edges, resp.Edges...)
+		page = resp.PageInfo
+	}
+
+	return groups.toList(), nil
+}
+
+type readGroupsByNameAfter struct {
+	Groups Groups `graphql:"groups(filter: {name: {eq: $name}}, after: $groupsEndCursor)"`
+}
+
+func (client *Client) readGroupsByNameAfter(ctx context.Context, cursor graphql.String, variables map[string]interface{}) (*Groups, error) {
+	response := readGroupsByNameAfter{}
+	variables["groupsEndCursor"] = cursor
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
+	}
+
+	if len(response.Groups.Edges) == 0 {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
+	}
+
+	return &response.Groups, nil
 }
 
 type updateGroupQuery struct {

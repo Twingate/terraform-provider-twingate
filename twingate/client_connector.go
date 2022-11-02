@@ -12,23 +12,21 @@ type Connector struct {
 	Name          graphql.String
 }
 
+type ConnectorNode struct {
+	Node *Connector
+}
+
 type Connectors struct {
-	PageInfo struct {
-		EndCursor   graphql.String
-		HasNextPage graphql.Boolean
-	}
-	Edges []*struct {
-		Node *Connector
-	}
+	PageInfo PageInfo
+	Edges    []*ConnectorNode
 }
 
 func (c *Connectors) toList() []*Connector {
-	connectors := make([]*Connector, 0, len(c.Edges))
-	for _, elem := range c.Edges {
-		connectors = append(connectors, elem.Node)
-	}
-
-	return connectors
+	return toList[*ConnectorNode, *Connector](c.Edges,
+		func(edge *ConnectorNode) *Connector {
+			return edge.Node
+		},
+	)
 }
 
 const connectorResourceName = "connector"
@@ -162,7 +160,7 @@ func (client *Client) readConnectors(ctx context.Context) ([]*Connector, error) 
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
-	if response.Connectors.Edges == nil {
+	if len(response.Connectors.Edges) == 0 {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 
@@ -171,10 +169,10 @@ func (client *Client) readConnectors(ctx context.Context) ([]*Connector, error) 
 		return nil, err
 	}
 
-	return connectors.toList(), nil
+	return connectors, nil
 }
 
-func (client *Client) readAllConnectors(ctx context.Context, connectors *Connectors) (*Connectors, error) {
+func (client *Client) readAllConnectors(ctx context.Context, connectors *Connectors) ([]*Connector, error) {
 	page := connectors.PageInfo
 	for page.HasNextPage {
 		resp, err := client.readConnectorsAfter(ctx, page.EndCursor)
@@ -186,7 +184,7 @@ func (client *Client) readAllConnectors(ctx context.Context, connectors *Connect
 		page = resp.PageInfo
 	}
 
-	return connectors, nil
+	return connectors.toList(), nil
 }
 
 type readConnectorsAfter struct {
