@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -486,7 +487,7 @@ func testAccCheckTwingateResourceExists(resourceName string) resource.TestCheckF
 func TestResourceResourceReadDiagnosticsError(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Resource Read Diagnostics Error", func(t *testing.T) {
-		groups := []*graphql.ID{}
+		groups := make([]graphql.ID, 0)
 		protocols := &ProtocolsInput{}
 
 		res := &Resource{
@@ -831,4 +832,83 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
       }
 	}
 	`, networkName, groupName1, groupName2, resourceName, policyRestricted, policyAllowAll)
+}
+
+func TestAccTwingateResourceLoadsAllGroups(t *testing.T) {
+	remoteNetworkName := getRandomName()
+	resourceName := getRandomResourceName()
+
+	const theResource = "twingate_resource.test13"
+
+	groups, groupsID := genNewGroups("g13", 111)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: testAccProviderFactories,
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      testAccCheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: createResource13(remoteNetworkName, resourceName, groups, groupsID),
+				Check: ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists(theResource),
+					resource.TestCheckResourceAttr(theResource, "group_ids.#", "111"),
+				),
+			},
+			{
+				Config: createResource13(remoteNetworkName, resourceName, groups[:75], groupsID[:75]),
+				Check: ComposeTestCheckFunc(
+					testAccCheckTwingateResourceExists(theResource),
+					resource.TestCheckResourceAttr(theResource, "group_ids.#", "75"),
+				),
+			},
+		},
+	})
+}
+
+func createResource13(networkName, resourceName string, groups, groupsID []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test13" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test13" {
+	  name = "%s"
+	  address = "acc-test.com.13"
+	  remote_network_id = twingate_remote_network.test13.id
+	  group_ids = [%s]
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+	}
+	`, networkName, strings.Join(groups, "\n"), resourceName, strings.Join(groupsID, ", "), policyRestricted, policyAllowAll)
+}
+
+func genNewGroups(resourcePrefix string, count int) ([]string, []string) {
+	groups := make([]string, 0, count)
+	groupsID := make([]string, 0, count)
+
+	for i := 0; i < count; i++ {
+		resourceName := fmt.Sprintf("%s_%d", resourcePrefix, i+1)
+		groups = append(groups, newTerraformGroup(resourceName, getRandomName()))
+		groupsID = append(groupsID, fmt.Sprintf("twingate_group.%s.id", resourceName))
+	}
+
+	return groups, groupsID
+}
+
+func newTerraformGroup(resourceName, groupName string) string {
+	return fmt.Sprintf(`
+    resource "twingate_group" "%s" {
+      name = "%s"
+    }
+	`, resourceName, groupName)
 }

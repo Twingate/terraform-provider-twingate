@@ -200,12 +200,11 @@ func resourceResource() *schema.Resource { //nolint:funlen
 	}
 }
 
-func convertGroupsGraphql(a []interface{}) []*graphql.ID {
-	res := []*graphql.ID{}
+func convertGroupsGraphql(a []interface{}) []graphql.ID {
+	res := make([]graphql.ID, 0, len(a))
 
 	for _, elem := range a {
-		id := graphql.ID(elem.(string))
-		res = append(res, &id)
+		res = append(res, graphql.ID(elem.(string)))
 	}
 
 	return res
