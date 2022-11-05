@@ -108,7 +108,7 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, updateNetworkOkJson))
 
-		err := client.UpdateRemoteNetwork(context.Background(), "id", "test")
+		_, err := client.UpdateRemoteNetwork(context.Background(), "id", "test")
 
 		assert.EqualError(t, err, "failed to update remote network with id id: error_1")
 	})
@@ -134,7 +134,7 @@ func TestClientRemoteNetworkUpdateRequestError(t *testing.T) {
 				return resp, errors.New("error_1")
 			})
 
-		err := client.UpdateRemoteNetwork(context.Background(), "id", "test")
+		_, err := client.UpdateRemoteNetwork(context.Background(), "id", "test")
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to update remote network with id id: Post "%s": error_1`, client.GraphqlServerURL))
 	})

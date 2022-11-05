@@ -47,12 +47,11 @@ func TestClientResourceCreateOk(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceOkJson))
-		resource := newTestResource()
 
-		resourceID, err := client.CreateResource(context.Background(), resource)
+		resource, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
 
 		assert.Nil(t, err)
-		assert.EqualValues(t, "test-id", resourceID)
+		assert.EqualValues(t, "test-id", resource.ID)
 	})
 }
 
@@ -75,9 +74,8 @@ func TestClientResourceCreateError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
-		resource := newTestResource()
 
-		_, err := client.CreateResource(context.Background(), resource)
+		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
 
 		assert.EqualError(t, err, "failed to create resource: something went wrong")
 	})
@@ -105,9 +103,8 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 				resp := httpmock.NewStringResponse(200, createResourceErrorJson)
 				return resp, errors.New("error_1")
 			})
-		resource := newTestResource()
 
-		_, err := client.CreateResource(context.Background(), resource)
+		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to create resource: Post "%s": error_1`, client.GraphqlServerURL))
 	})
@@ -187,6 +184,31 @@ func TestClientResourceReadOk(t *testing.T) {
 
 func TestClientResourceReadTooManyGroups(t *testing.T) {
 	t.Run("Test Twingate Resource : Read To Many Groups", func(t *testing.T) {
+		expected := &model.Resource{
+			ID:              "resource1",
+			Name:            "test resource",
+			Address:         "test.com",
+			RemoteNetworkID: "network1",
+			Groups: []string{
+				"group1", "group2", "group3", "group4",
+			},
+			IsActive: true,
+			Protocols: &model.Protocols{
+				UDP: &model.Protocol{
+					Ports:  []*model.PortRange{},
+					Policy: model.PolicyAllowAll,
+				},
+				TCP: &model.Protocol{
+					Ports: []*model.PortRange{
+						{Start: 80, End: 80},
+						{Start: 8080, End: 8090},
+					},
+					Policy: model.PolicyRestricted,
+				},
+				AllowIcmp: true,
+			},
+		}
+
 		// response JSON
 		createResourceOkJson := fmt.Sprintf(`{
 	  "data": {
@@ -201,21 +223,25 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 		  },
 		  "groups": {
 			"pageInfo": {
+			  "endCursor": "cur001",
 			  "hasNextPage": true
 			},
 			"edges": [
 			  {
 				"node": {
-				  "id": "group1"
+				  "id": "group1",
+				  "name": "Group1 name"
 				}
 			  },
 			  {
 				"node": {
-				  "id": "group2"
+				  "id": "group2",
+				  "name": "Group2 name"
 				}
 			  }
 			]
 		  },
+		  "isActive": true,
 		  "protocols": {
 			"udp": {
 			  "ports": [],
@@ -240,15 +266,47 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 	  }
 	}`, model.PolicyAllowAll, model.PolicyRestricted)
 
+		nextPageJson := fmt.Sprintf(`{
+	  "data": {
+	    "resource": {
+	      "id": "resource1",
+	      "groups": {
+	        "pageInfo": {
+	          "hasNextPage": false
+	        },
+	        "edges": [
+	          {
+	            "node": {
+	              "id": "group3",
+	              "name": "Group3 name"
+	            }
+	          },
+	          {
+	            "node": {
+	              "id": "group4",
+	              "name": "Group4 name"
+	            }
+	          }
+	        ]
+	      }
+	    }
+	  }
+	}`)
+
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, createResourceOkJson))
-		resourceID := "resource1"
+			httpmock.ResponderFromMultipleResponses(
+				[]*http.Response{
+					httpmock.NewStringResponse(200, createResourceOkJson),
+					httpmock.NewStringResponse(200, nextPageJson),
+				},
+				t.Log),
+		)
 
-		resource, err := client.ReadResource(context.Background(), resourceID)
-		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s: provider does not support more than 50 groups per resource", resourceID))
+		resource, err := client.ReadResource(context.Background(), "resource1")
+		assert.NoError(t, err)
+		assert.Equal(t, expected, resource)
 	})
 }
 
@@ -314,7 +372,8 @@ func TestClientResourceUpdateOk(t *testing.T) {
 		"data": {
 			"resourceUpdate": {
 				"ok" : true,
-				"error" : null
+				"error" : null,
+				"entity": {}
 			}
 		}
 	}`
@@ -323,11 +382,9 @@ func TestClientResourceUpdateOk(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceUpdateOkJson))
-		resource := newTestResource()
 
-		err := client.UpdateResource(context.Background(), resource)
-
-		assert.Nil(t, err)
+		_, err := client.UpdateResource(context.Background(), newTestResource())
+		assert.NoError(t, err)
 	})
 }
 
@@ -347,9 +404,8 @@ func TestClientResourceUpdateError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceUpdateErrorJson))
-		resource := newTestResource()
 
-		err := client.UpdateResource(context.Background(), resource)
+		_, err := client.UpdateResource(context.Background(), newTestResource())
 
 		assert.EqualError(t, err, "failed to update resource with id test: cant update resource")
 	})
@@ -362,11 +418,11 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errors.New("error_1")))
-		resource := newTestResource()
 
-		err := client.UpdateResource(context.Background(), resource)
+		req := newTestResource()
+		_, err := client.UpdateResource(context.Background(), req)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Post "%s": error_1`, resource.ID, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Post "%s": error_1`, req.ID, client.GraphqlServerURL))
 	})
 }
 
@@ -620,10 +676,10 @@ func TestClientResourceReadWithoutGroupsError(t *testing.T) {
 			httpmock.NewStringResponder(200, responseJSON))
 		resourceID := "resource1"
 
-		resource, err := client.ReadResourceWithoutGroups(context.Background(), resourceID)
+		resource, err := client.ReadResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s", resourceID))
+		assert.EqualError(t, err, fmt.Sprintf("failed to read resource with id %s: query result is empty", resourceID))
 	})
 }
 
@@ -636,7 +692,7 @@ func TestClientResourceEmptyReadWithoutGroupsError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, responseJSON))
 
-		resource, err := client.ReadResourceWithoutGroups(context.Background(), "")
+		resource, err := client.ReadResource(context.Background(), "")
 
 		assert.Nil(t, resource)
 		assert.EqualError(t, err, "failed to read resource: id is empty")
@@ -651,7 +707,7 @@ func TestClientResourceReadWithoutGroupsRequestError(t *testing.T) {
 			httpmock.NewErrorResponder(errors.New("error_1")))
 		resourceID := "test-id"
 
-		resource, err := client.ReadResourceWithoutGroups(context.Background(), resourceID)
+		resource, err := client.ReadResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))

@@ -17,7 +17,7 @@ func newVars(options ...gqlVarOption) map[string]interface{} {
 
 type gqlVarOption func(values map[string]interface{}) map[string]interface{}
 
-func gqlID(val string, name ...string) gqlVarOption {
+func gqlID(val interface{}, name ...string) gqlVarOption {
 	key := "id"
 	if len(name) > 0 {
 		key = name[0]
@@ -78,4 +78,54 @@ func tryConvertToGQL(val interface{}) interface{} {
 	}
 
 	return val
+}
+
+func gqlNullableField(val interface{}, name string) gqlVarOption {
+	return func(values map[string]interface{}) map[string]interface{} {
+		var gqlValue interface{}
+		if isDefaultValue(val) {
+			gqlValue = nil
+		} else {
+			gqlValue = tryConvertToGQL(val)
+		}
+
+		values[name] = gqlValue
+
+		return values
+	}
+}
+
+func isDefaultValue(val interface{}) bool {
+	if val == nil {
+		return true
+	}
+
+	var (
+		defaultString  string
+		defaultInt     int
+		defaultInt32   int32
+		defaultInt64   int64
+		defaultBool    bool
+		defaultFloat64 float64
+		defaultFloat32 float32
+	)
+
+	switch v := val.(type) {
+	case string:
+		return v == defaultString
+	case bool:
+		return v == defaultBool
+	case int:
+		return v == defaultInt
+	case int32:
+		return v == defaultInt32
+	case int64:
+		return v == defaultInt64
+	case float32:
+		return v == defaultFloat32
+	case float64:
+		return v == defaultFloat64
+	}
+
+	return false
 }

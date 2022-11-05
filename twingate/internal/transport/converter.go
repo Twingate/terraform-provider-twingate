@@ -279,12 +279,19 @@ func (q readResourcesQuery) ToModel() []*model.Resource {
 }
 
 func (r gqlResource) ToModel() *model.Resource {
+	groups := make([]string, 0, len(r.Groups.Edges))
+	for _, elem := range r.Groups.Edges {
+		groups = append(groups, idToString(elem.Node.ID))
+	}
+
 	return &model.Resource{
 		ID:              r.StringID(),
 		Name:            r.StringName(),
 		Address:         string(r.Address.Value),
 		RemoteNetworkID: idToString(r.RemoteNetwork.ID),
+		Groups:          groups,
 		Protocols:       protocolsToModel(r.Protocols),
+		IsActive:        bool(r.IsActive),
 	}
 }
 

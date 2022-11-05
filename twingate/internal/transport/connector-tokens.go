@@ -24,7 +24,7 @@ func (client *Client) VerifyConnectorTokens(ctx context.Context, refreshToken, a
 		"Authorization": fmt.Sprintf("Bearer %s", accessToken),
 	}
 
-	_, err := client.post(ctx, "/access_node/refresh", payload, headers)
+	_, err := client.post(ctx, "/connector/validate_tokens", payload, headers)
 	if err != nil {
 		return NewAPIError(err, "verify", connectorTokensResourceName)
 	}

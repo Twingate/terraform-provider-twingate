@@ -49,7 +49,7 @@ func convertUsersToTerraform(users []*model.User) []interface{} {
 
 func Users() *schema.Resource {
 	return &schema.Resource{
-		Description: "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's [documentation](https://docs.twingate.com/docs/users).",
+		Description: userDescription,
 		ReadContext: datasourceUsersRead,
 		Schema: map[string]*schema.Schema{
 			"users": {

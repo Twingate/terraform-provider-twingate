@@ -17,30 +17,32 @@ const (
 	groupResource     = "twingate_group.test"
 )
 
-func TestAccTwingateGroup_basic(t *testing.T) {
+func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 	t.Parallel()
-	t.Run("Test Twingate Resource : Acc Group Basic", func(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Group Create/Update", func(t *testing.T) {
 
 		groupNameBefore := test.RandomName()
 		groupNameAfter := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		const theResource = "twingate_group.test001"
+
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateGroup(groupNameBefore),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(groupResource),
-						resource.TestCheckResourceAttr(groupResource, nameAttr, groupNameBefore),
+					Config: createGroup001(groupNameBefore),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "name", groupNameBefore),
 					),
 				},
 				{
-					Config: testTwingateGroup(groupNameAfter),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(groupResource),
-						resource.TestCheckResourceAttr(groupResource, nameAttr, groupNameAfter),
+					Config: createGroup001(groupNameAfter),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "name", groupNameAfter),
 					),
 				},
 			},
@@ -48,22 +50,30 @@ func TestAccTwingateGroup_basic(t *testing.T) {
 	})
 }
 
-func TestAccTwingateGroup_deleteNonExisting(t *testing.T) {
+func createGroup001(name string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "test001" {
+	  name = "%s"
+	}
+	`, name)
+}
+
+func TestAccTwingateGroupDeleteNonExisting(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Group Delete NonExisting", func(t *testing.T) {
 
 		groupNameBefore := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config:  testTwingateGroup(groupNameBefore),
+					Config:  createGroup002(groupNameBefore),
 					Destroy: true,
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupDoesNotExists(groupResource),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupDoesNotExists("twingate_group.test002"),
 					),
 				},
 			},
@@ -71,9 +81,9 @@ func TestAccTwingateGroup_deleteNonExisting(t *testing.T) {
 	})
 }
 
-func testTwingateGroup(name string) string {
+func createGroup002(name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_group" "test" {
+	resource "twingate_group" "test002" {
 	  name = "%s"
 	}
 	`, name)
@@ -126,31 +136,41 @@ func testAccCheckTwingateGroupDoesNotExists(resourceName string) resource.TestCh
 	}
 }
 
-func TestAccTwingateGroup_createAfterDeletion(t *testing.T) {
+func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Group Create After Deletion", func(t *testing.T) {
 		groupName := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		const theResource = "twingate_group.test003"
+
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateGroup(groupName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(groupResource),
-						deleteTwingateResource(groupResource, groupResourceName),
+					Config: createGroup003(groupName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(theResource),
+						deleteTwingateResource(theResource, groupResourceName),
 					),
 					ExpectNonEmptyPlan: true,
 				},
 				{
-					Config: testTwingateGroup(groupName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(groupResource),
+					Config: createGroup003(groupName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateGroupExists(theResource),
 					),
 				},
 			},
 		})
 	})
+}
+
+func createGroup003(name string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "test003" {
+	  name = "%s"
+	}
+	`, name)
 }

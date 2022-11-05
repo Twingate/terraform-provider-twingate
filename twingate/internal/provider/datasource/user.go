@@ -45,9 +45,11 @@ func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, 
 	return diags
 }
 
+const userDescription = "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users)."
+
 func User() *schema.Resource {
 	return &schema.Resource{
-		Description: "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see see Twingate's [documentation](https://docs.twingate.com/docs/users).",
+		Description: userDescription,
 		ReadContext: datasourceUserRead,
 		Schema: map[string]*schema.Schema{
 			"id": {

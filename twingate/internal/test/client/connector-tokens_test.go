@@ -48,7 +48,7 @@ func TestClientConnectorTokensVerifyOK(t *testing.T) {
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	httpmock.RegisterResponder("POST", client.APIServerURL+"/access_node/refresh",
+	httpmock.RegisterResponder("POST", client.APIServerURL+"/connector/validate_tokens",
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
 			assert.Contains(t, header, accessToken)
@@ -70,7 +70,7 @@ func TestClientConnectorTokensVerify401Error(t *testing.T) {
 	accessToken := "test1"
 	refreshToken := "test2"
 
-	apiURL := client.APIServerURL + "/access_node/refresh"
+	apiURL := client.APIServerURL + "/connector/validate_tokens"
 	httpmock.RegisterResponder("POST", apiURL,
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
@@ -90,7 +90,7 @@ func TestClientConnectorTokensVerifyRequestError(t *testing.T) {
 	refreshToken := "test2"
 
 	defer httpmock.DeactivateAndReset()
-	apiURL := client.APIServerURL + "/access_node/refresh"
+	apiURL := client.APIServerURL + "/connector/validate_tokens"
 	httpmock.RegisterResponder("POST", apiURL,
 		func(req *http.Request) (*http.Response, error) {
 			header := req.Header.Get("Authorization")
@@ -132,5 +132,6 @@ func TestClientConnectorTokensCreateRequestError(t *testing.T) {
 		httpmock.NewErrorResponder(errors.New("error_1")))
 
 	_, err := client.GenerateConnectorTokens(context.Background(), "connector-id")
+
 	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens: Post "%s": error_1`, client.GraphqlServerURL))
 }

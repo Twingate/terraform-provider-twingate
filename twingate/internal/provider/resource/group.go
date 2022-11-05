@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -40,38 +41,27 @@ func Group() *schema.Resource {
 func groupCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
 
-	groupName := resourceData.Get("name").(string)
-	group, err := client.CreateGroup(ctx, groupName)
-
+	group, err := client.CreateGroup(ctx, resourceData.Get("name").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(group.ID)
-	log.Printf("[INFO] Group %s created with id %s", groupName, resourceData.Id())
+	log.Printf("[INFO] Group %s created with id %v", group.Name, group.ID)
 
-	waitForResourceAvailability()
-
-	return groupRead(ctx, resourceData, meta)
+	return resourceGroupReadHelper(resourceData, group, nil)
 }
 
 func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
 
-	groupName := resourceData.Get("name").(string)
-
-	if resourceData.HasChange("name") {
-		groupID := resourceData.Id()
-
-		err := client.UpdateGroup(ctx, groupID, groupName)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		log.Printf("[INFO] Updated group id %s", groupID)
+	group, err := client.UpdateGroup(ctx, resourceData.Id(), resourceData.Get("name").(string))
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	return groupRead(ctx, resourceData, meta)
+	log.Printf("[INFO] Updated group id %v", group.ID)
+
+	return resourceGroupReadHelper(resourceData, group, err)
 }
 
 func groupDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -94,11 +84,12 @@ func groupDelete(ctx context.Context, resourceData *schema.ResourceData, meta in
 func groupRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
 
-	var diags diag.Diagnostics
+	group, err := client.ReadGroup(ctx, resourceData.Id())
 
-	groupID := resourceData.Id()
-	group, err := client.ReadGroup(ctx, groupID)
+	return resourceGroupReadHelper(resourceData, group, err)
+}
 
+func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Group, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -110,10 +101,11 @@ func groupRead(ctx context.Context, resourceData *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	err = resourceData.Set("name", group.Name)
-	if err != nil {
+	if err := resourceData.Set("name", group.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	return diags
+	resourceData.SetId(group.ID)
+
+	return nil
 }

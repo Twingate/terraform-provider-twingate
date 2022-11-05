@@ -7,7 +7,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
@@ -134,6 +133,16 @@ func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
 	return false
 }
 
+//func convertGroupsGraphql(a []interface{}) []graphql.ID {
+//	res := make([]graphql.ID, 0, len(a))
+//
+//	for _, elem := range a {
+//		res = append(res, graphql.ID(elem.(string)))
+//	}
+//
+//	return res
+//}
+
 func protocolsDiff(key, oldValue, newValue string, resourceData *schema.ResourceData) bool {
 	switch key {
 	case "protocols.#", "protocols.0.tcp.#", "protocols.0.udp.#":
@@ -186,6 +195,41 @@ func convertPortsRangeToMap(portsRange []*model.PortRange) map[int32]struct{} {
 	return out
 }
 
+//func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
+//	protocols, err := extractProtocols(resourceData)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	resource := &Resource{
+//		Name:            graphql.String(resourceData.Get("name").(string)),
+//		RemoteNetworkID: graphql.ID(resourceData.Get("remote_network_id").(string)),
+//		Address:         graphql.String(resourceData.Get("address").(string)),
+//		GroupsIds:       convertGroupsGraphql(resourceData.Get("group_ids").(*schema.Set).List()),
+//		Protocols:       protocols,
+//	}
+//
+//	if resourceData.Id() != "" {
+//		resource.ID = resourceData.Id()
+//	}
+//
+//	return resource, nil
+//}
+//
+//func extractProtocols(resourceData *schema.ResourceData) (*ProtocolsInput, error) {
+//	p := resourceData.Get("protocols").([]interface{})
+//	if len(p) == 0 {
+//		return newEmptyProtocols(), nil
+//	}
+//
+//	protocols, err := extractProtocolsFromContext(p[0]).convertToGraphql()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return protocols, nil
+//}
+
 func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool {
 	keys := []string{"protocols.0.tcp.0.ports", "protocols.0.udp.0.ports"}
 	for _, key := range keys {
@@ -236,37 +280,34 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	resourceID, err := client.CreateResource(ctx, resource)
+	resource, err = client.CreateResource(ctx, resource)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	resourceData.SetId(resourceID)
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
-	waitForResourceAvailability()
-
-	return resourceRead(ctx, resourceData, meta)
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
 
-	if resourceData.HasChanges("protocols", "remote_network_id", "name", "address", "group_ids") {
-		resource, err := convertResource(resourceData)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		resource.ID = resourceData.Id()
-
-		err = client.UpdateResource(ctx, resource)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	resource, err := convertResource(resourceData)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	return resourceRead(ctx, resourceData, meta)
+	resource.ID = resourceData.Id()
+
+	resource, err = client.UpdateResource(ctx, resource)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf("[INFO] Created resource %s", resource.Name)
+
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
 func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -288,9 +329,13 @@ func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
-	resourceID := resourceData.Id()
 
-	resource, err := client.ReadResource(ctx, resourceID)
+	resource, err := client.ReadResource(ctx, resourceData.Id())
+
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
+}
+
+func resourceResourceReadHelper(ctx context.Context, client *transport.Client, resourceData *schema.ResourceData, resource *model.Resource, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -309,7 +354,7 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 	if !resource.IsActive {
 		// fix set active state for the resource on `terraform apply`
 		err = client.UpdateResourceActiveState(ctx, &model.Resource{
-			ID:       resourceID,
+			ID:       resource.ID,
 			IsActive: true,
 		})
 
@@ -317,6 +362,8 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 			return diag.FromErr(err)
 		}
 	}
+
+	resourceData.SetId(resource.ID)
 
 	return readDiagnostics(resourceData, resource)
 }
@@ -346,10 +393,6 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 	}
 
 	return diags
-}
-
-func waitForResourceAvailability() {
-	time.Sleep(time.Second)
 }
 
 //func (r *Resource) StringGroups() []string {

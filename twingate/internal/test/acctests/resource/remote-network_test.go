@@ -12,30 +12,30 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTwingateRemoteNetwork_basic(t *testing.T) {
+func TestAccTwingateRemoteNetworkCreateUpdate(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Network Basic", func(t *testing.T) {
-
 		remoteNetworkNameBefore := test.RandomName()
 		remoteNetworkNameAfter := test.RandomName()
+		const theResource = "twingate_remote_network.test001"
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateRemoteNetwork(remoteNetworkNameBefore),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateRemoteNetworkExists(remoteNetworkResource),
-						resource.TestCheckResourceAttr(remoteNetworkResource, nameAttr, remoteNetworkNameBefore),
+					Config: createRemoteNetwork001(remoteNetworkNameBefore),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateRemoteNetworkExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "name", remoteNetworkNameBefore),
 					),
 				},
 				{
-					Config: testTwingateRemoteNetwork(remoteNetworkNameAfter),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateRemoteNetworkExists(remoteNetworkResource),
-						resource.TestCheckResourceAttr(remoteNetworkResource, nameAttr, remoteNetworkNameAfter),
+					Config: createRemoteNetwork001(remoteNetworkNameAfter),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateRemoteNetworkExists(theResource),
+						resource.TestCheckResourceAttr(theResource, "name", remoteNetworkNameAfter),
 					),
 				},
 			},
@@ -43,22 +43,29 @@ func TestAccTwingateRemoteNetwork_basic(t *testing.T) {
 	})
 }
 
-func TestAccTwingateRemoteNetwork_deleteNonExisting(t *testing.T) {
+func createRemoteNetwork001(name string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test001" {
+	  name = "%s"
+	}
+	`, name)
+}
+
+func TestAccTwingateRemoteNetworkDeleteNonExisting(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Network Delete NonExisting", func(t *testing.T) {
-
 		remoteNetworkNameBefore := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config:  testTwingateRemoteNetwork(remoteNetworkNameBefore),
+					Config:  createRemoteNetwork002(remoteNetworkNameBefore),
 					Destroy: true,
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateRemoteNetworkDoesNotExists(remoteNetworkResource),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateRemoteNetworkDoesNotExists("twingate_remote_network.test002"),
 					),
 				},
 			},
@@ -66,9 +73,9 @@ func TestAccTwingateRemoteNetwork_deleteNonExisting(t *testing.T) {
 	})
 }
 
-func testTwingateRemoteNetwork(name string) string {
+func createRemoteNetwork002(name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test002" {
 	  name = "%s"
 	}
 	`, name)
@@ -122,32 +129,40 @@ func testAccCheckTwingateRemoteNetworkDoesNotExists(resourceName string) resourc
 	}
 }
 
-func TestAccTwingateRemoteNetwork_createAfterDeletion(t *testing.T) {
+func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
 	t.Parallel()
-	t.Run("Test Twingate Resource : Acc Remote Network Create After Deletion", func(t *testing.T) {
-
+	t.Run("Test Twingate Resource : Acc Remote Network Re Create After Deletion", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
+		const theResource = "twingate_remote_network.test003"
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateRemoteNetwork(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateRemoteNetworkExists(remoteNetworkResource),
-						deleteTwingateResource(remoteNetworkResource, remoteNetworkResourceName),
+					Config: createRemoteNetwork003(remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateRemoteNetworkExists(theResource),
+						deleteTwingateResource(theResource, remoteNetworkResourceName),
 					),
 					ExpectNonEmptyPlan: true,
 				},
 				{
-					Config: testTwingateRemoteNetwork(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateRemoteNetworkExists(remoteNetworkResource),
+					Config: createRemoteNetwork003(remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateRemoteNetworkExists(theResource),
 					),
 				},
 			},
 		})
 	})
+}
+
+func createRemoteNetwork003(name string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test003" {
+	  name = "%s"
+	}
+	`, name)
 }

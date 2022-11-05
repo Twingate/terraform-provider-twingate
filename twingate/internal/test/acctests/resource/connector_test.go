@@ -24,29 +24,23 @@ const (
 
 var testRegexp = regexp.MustCompile(test.Prefix() + ".*")
 
-func TestAccRemoteConnector_basic(t *testing.T) {
+func TestAccRemoteConnectorCreate(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
-		connectorName := test.RandomConnectorName()
 
-		resource.Test(t, resource.TestCase{
+		const theResource = "twingate_connector.test_c1"
+
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnector(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestCheckResourceAttrSet(connectorResource, nameAttr),
-					),
-				},
-				{
-					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestMatchResourceAttr(connectorResource, nameAttr, testRegexp),
+					Config: createConnectorC1(remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c1"),
+						resource.TestCheckResourceAttrSet(theResource, "name"),
 					),
 				},
 			},
@@ -54,22 +48,23 @@ func TestAccRemoteConnector_basic(t *testing.T) {
 	})
 }
 
-func TestAccRemoteConnector_withName(t *testing.T) {
+func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 	t.Parallel()
-	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector With Custom Name", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		connectorName := test.RandomConnectorName()
+		const theResource = "twingate_connector.test_c2"
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestMatchResourceAttr(connectorResource, nameAttr, testRegexp),
+					Config: createConnectorC2(remoteNetworkName, connectorName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c2"),
+						resource.TestMatchResourceAttr(theResource, "name", regexp.MustCompile(connectorName)),
 					),
 				},
 			},
@@ -77,35 +72,24 @@ func TestAccRemoteConnector_withName(t *testing.T) {
 	})
 }
 
-func testTwingateConnector(remoteNetworkName string) string {
+func createConnectorC1(remoteNetworkName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
+	resource "twingate_remote_network" "test_c1" {
 	  name = "%s"
 	}
-	resource "twingate_connector" "test" {
-	  remote_network_id = twingate_remote_network.test.id
+	resource "twingate_connector" "test_c1" {
+	  remote_network_id = twingate_remote_network.test_c1.id
 	}
 	`, remoteNetworkName)
 }
 
-func testTwingateConnectorWithAnotherNetwork(remoteNetworkName string) string {
+func createConnectorC2(remoteNetworkName string, connectorName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test1" {
+	resource "twingate_remote_network" "test_c2" {
 	  name = "%s"
 	}
-	resource "twingate_connector" "test" {
-	  remote_network_id = twingate_remote_network.test1.id
-	}
-	`, remoteNetworkName)
-}
-
-func testTwingateConnectorWithCustomName(remoteNetworkName string, connectorName string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
-	  name = "%s"
-	}
-	resource "twingate_connector" "test" {
-	  remote_network_id = twingate_remote_network.test.id
+	resource "twingate_connector" "test_c2" {
+	  remote_network_id = twingate_remote_network.test_c2.id
       name  = "%s"
 	}
 	`, remoteNetworkName, connectorName)
@@ -153,26 +137,27 @@ func testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResourc
 	}
 }
 
-func TestAccRemoteConnector_import(t *testing.T) {
+func TestAccRemoteConnectorImport(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector - Import", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		connectorName := test.RandomConnectorName()
+		const theResource = "twingate_connector.test_c3"
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnectorWithCustomName(remoteNetworkName, connectorName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						resource.TestMatchResourceAttr(connectorResource, nameAttr, testRegexp),
+					Config: createConnectorC3(remoteNetworkName, connectorName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c3"),
+						resource.TestMatchResourceAttr(theResource, "name", testRegexp),
 					),
 				},
 				{
-					ResourceName:      connectorResource,
+					ResourceName:      theResource,
 					ImportState:       true,
 					ImportStateVerify: true,
 				},
@@ -181,25 +166,38 @@ func TestAccRemoteConnector_import(t *testing.T) {
 	})
 }
 
-func TestAccRemoteConnector_notAllowedToChangeRemoteNetworkId(t *testing.T) {
+func createConnectorC3(remoteNetworkName string, connectorName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test_c3" {
+	  name = "%s"
+	}
+	resource "twingate_connector" "test_c3" {
+	  remote_network_id = twingate_remote_network.test_c3.id
+      name  = "%s"
+	}
+	`, remoteNetworkName, connectorName)
+}
+
+func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector - should fail on remote_network_id update", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
-		remoteNetworkName1 := test.RandomName()
+		newRemoteNetworkName := test.RandomName()
+		const theResource = "twingate_connector.test_c4"
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnector(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+					Config: createConnectorC4(remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c4_1"),
 					),
 				},
 				{
-					Config:      testTwingateConnectorWithAnotherNetwork(remoteNetworkName1),
+					Config:      createConnectorC4WithAnotherNetwork(newRemoteNetworkName),
 					ExpectError: regexp.MustCompile(provider_resource.ErrNotAllowChangeRemoteNetworkID.Error()),
 				},
 			},
@@ -207,31 +205,65 @@ func TestAccRemoteConnector_notAllowedToChangeRemoteNetworkId(t *testing.T) {
 	})
 }
 
-func TestAccTwingateConnector_createAfterDeletion(t *testing.T) {
+func TestAccTwingateConnectorReCreateAfterDeletion(t *testing.T) {
 	t.Parallel()
-	t.Run("Test Twingate Resource : Acc Remote Connector Create After Deletion", func(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector ReCreate After Deletion", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
+		const theResource = "twingate_connector.test_c5"
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnector(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
-						deleteTwingateResource(connectorResource, connectorResourceName),
+					Config: createConnectorC5(remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c5"),
+						deleteTwingateResource(theResource, connectorResourceName),
 					),
 					ExpectNonEmptyPlan: true,
 				},
 				{
-					Config: testTwingateConnector(remoteNetworkName),
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResource),
+					Config: createConnectorC5(remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						testAccCheckTwingateConnectorExists(theResource, "twingate_remote_network.test_c5"),
 					),
 				},
 			},
 		})
 	})
+}
+
+func createConnectorC5(remoteNetworkName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test_c5" {
+	  name = "%s"
+	}
+	resource "twingate_connector" "test_c5" {
+	  remote_network_id = twingate_remote_network.test_c5.id
+	}
+	`, remoteNetworkName)
+}
+
+func createConnectorC4(remoteNetworkName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test_c4_1" {
+	  name = "%s"
+	}
+	resource "twingate_connector" "test_c4" {
+	  remote_network_id = twingate_remote_network.test_c4_1.id
+	}
+	`, remoteNetworkName)
+}
+
+func createConnectorC4WithAnotherNetwork(remoteNetworkName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test_c4_2" {
+	  name = "%s"
+	}
+	resource "twingate_connector" "test_c4" {
+	  remote_network_id = twingate_remote_network.test_c4_2.id
+	}
+	`, remoteNetworkName)
 }

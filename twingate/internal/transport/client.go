@@ -48,7 +48,7 @@ func (s *serverURL) newGraphqlServerURL() string {
 }
 
 func (s *serverURL) newAPIServerURL() string {
-	return fmt.Sprintf("%s/api/v1", s.url)
+	return fmt.Sprintf("%s/api/v4", s.url)
 }
 
 type serverURL struct {

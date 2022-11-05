@@ -17,7 +17,7 @@ func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceDa
 	var diags diag.Diagnostics
 
 	resourceID := resourceData.Get("id").(string)
-	resource, err := client.ReadResourceWithoutGroups(ctx, resourceID)
+	resource, err := client.ReadResource(ctx, resourceID)
 
 	if err != nil {
 		return diag.FromErr(err)

@@ -12,8 +12,19 @@ const (
 	readResourceQueryGroupsSize = 50
 )
 
+type Resource struct {
+	ID              graphql.ID
+	RemoteNetworkID graphql.ID
+	Address         graphql.String
+	Name            graphql.String
+	GroupsIds       []*graphql.ID
+	Protocols       *Protocols
+	IsActive        graphql.Boolean
+}
+
 type gqlResource struct {
 	IDName
+	Groups  Groups `graphql:"groups(first: $groupsPageSize)"`
 	Address struct {
 		Value graphql.String
 	}
@@ -21,6 +32,20 @@ type gqlResource struct {
 		ID graphql.ID
 	}
 	Protocols *Protocols
+	IsActive  graphql.Boolean
+}
+
+type Groups struct {
+	PageInfo struct {
+		EndCursor   graphql.String
+		HasNextPage graphql.Boolean
+	}
+	Edges []*Edges
+}
+
+type gqlResourceGroups struct {
+	ID     graphql.ID
+	Groups Groups `graphql:"groups(first: $groupsPageSize, after: $groupsEndCursor)"`
 }
 
 type Protocols struct {
@@ -39,22 +64,10 @@ type PortRange struct {
 	End   graphql.Int `json:"end"`
 }
 
-type Resource struct {
-	ID              graphql.ID
-	RemoteNetworkID graphql.ID
-	Address         graphql.String
-	Name            graphql.String
-	GroupsIds       []*graphql.ID
-	Protocols       *Protocols
-	IsActive        graphql.Boolean
-}
-
 type createResourceQuery struct {
 	ResourceCreate struct {
 		OkError
-		Entity struct {
-			ID graphql.ID
-		}
+		Entity *gqlResource
 	} `graphql:"resourceCreate(name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
@@ -74,7 +87,8 @@ type PortRangeInput struct {
 	End   graphql.Int `json:"end"`
 }
 
-func (client *Client) CreateResource(ctx context.Context, resource *model.Resource) (string, error) {
+func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
+	// TODO: convert model to gql resource
 	protocols := &ProtocolsInput{
 		AllowIcmp: true,
 		TCP: &ProtocolInput{
@@ -90,10 +104,11 @@ func (client *Client) CreateResource(ctx context.Context, resource *model.Resour
 	}
 
 	variables := newVars(
-		gqlID(resource.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(resource.Groups, "groupIds"),
-		gqlField(resource.Name, "name"),
-		gqlField(resource.Address, "address"),
+		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
+		gqlIDs(input.Groups, "groupIds"),
+		gqlField(input.Name, "name"),
+		gqlField(input.Address, "address"),
+		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
 		//gqlField(newProtocolsInput(resource.Protocols), "protocols"),
 	)
 	variables["protocols"] = protocols
@@ -103,36 +118,21 @@ func (client *Client) CreateResource(ctx context.Context, resource *model.Resour
 	err := client.GraphqlClient.NamedMutate(ctx, "createResource", &response, variables)
 
 	if err != nil {
-		return "", NewAPIError(err, "create", resourceResourceName)
+		return nil, NewAPIError(err, "create", resourceResourceName)
 	}
 
 	if !response.ResourceCreate.Ok {
-		return "", NewAPIError(NewMutationError(response.ResourceCreate.Error), "create", resourceResourceName)
+		return nil, NewAPIError(NewMutationError(response.ResourceCreate.Error), "create", resourceResourceName)
 	}
 
-	return idToString(response.ResourceCreate.Entity.ID), nil
+	resource := response.ResourceCreate.Entity.ToModel()
+	resource.Groups = input.Groups
+
+	return resource, nil
 }
 
 type readResourceQuery struct {
-	Resource *struct {
-		//IDName
-		//Address struct {
-		//	//Type  graphql.String
-		//	Value graphql.String
-		//}
-		//RemoteNetwork struct {
-		//	ID graphql.ID
-		//}
-		//Protocols *Protocols
-		gqlResource
-		Groups struct {
-			PageInfo struct {
-				HasNextPage graphql.Boolean
-			}
-			Edges []*Edges
-		} `graphql:"groups(first: $first)"`
-		IsActive graphql.Boolean
-	} `graphql:"resource(id: $id)"`
+	Resource *gqlResource `graphql:"resource(id: $id)"`
 }
 
 func (client *Client) ReadResource(ctx context.Context, resourceID string) (*model.Resource, error) {
@@ -143,7 +143,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 	response := readResourceQuery{}
 	variables := newVars(
 		gqlID(resourceID),
-		gqlField(readResourceQueryGroupsSize, "first"),
+		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
 	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
@@ -155,11 +155,51 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
-	if response.Resource.Groups.PageInfo.HasNextPage {
-		return nil, NewAPIErrorWithID(ErrTooManyGroupsError, "read", resourceResourceName, resourceID)
+	resource, err := client.readAllResourceGroups(ctx, response.Resource)
+	if err != nil {
+		return nil, err
 	}
 
-	return response.ToModel(), nil
+	return resource.ToModel(), nil
+}
+
+func (client *Client) readAllResourceGroups(ctx context.Context, resource *gqlResource) (*gqlResource, error) {
+	page := resource.Groups.PageInfo
+	for page.HasNextPage {
+		resp, err := client.readResourceGroupsAfter(ctx, resource.ID, page.EndCursor)
+		if err != nil {
+			return nil, err
+		}
+
+		resource.Groups.Edges = append(resource.Groups.Edges, resp.Resource.Groups.Edges...)
+		page = resp.Resource.Groups.PageInfo
+	}
+
+	return resource, nil
+}
+
+type readResourceGroupsQuery struct {
+	Resource *gqlResourceGroups `graphql:"resource(id: $id)"`
+}
+
+func (client *Client) readResourceGroupsAfter(ctx context.Context, resourceID graphql.ID, cursor graphql.String) (*readResourceGroupsQuery, error) {
+	response := readResourceGroupsQuery{}
+	variables := newVars(
+		gqlID(resourceID),
+		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
+		gqlField(cursor, "groupsEndCursor"),
+	)
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	}
+
+	if response.Resource == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
+	}
+
+	return &response, nil
 }
 
 type readResourcesQuery struct { //nolint
@@ -180,17 +220,21 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 }
 
 type updateResourceQuery struct {
-	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
+	ResourceUpdate *struct {
+		OkError
+		Entity *gqlResource
+	} `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, groupIds: $groupIds, protocols: $protocols)"`
 }
 
-func (client *Client) UpdateResource(ctx context.Context, resource *model.Resource) error {
+func (client *Client) UpdateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	variables := newVars(
-		gqlID(resource.ID),
-		gqlID(resource.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(resource.Groups, "groupIds"),
-		gqlField(resource.Name, "name"),
-		gqlField(resource.Address, "address"),
-		gqlField(newProtocolsInput(resource.Protocols), "protocols"),
+		gqlID(input.ID),
+		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
+		gqlIDs(input.Groups, "groupIds"),
+		gqlField(input.Name, "name"),
+		gqlField(input.Address, "address"),
+		gqlField(newProtocolsInput(input.Protocols), "protocols"),
+		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
 	)
 
 	response := updateResourceQuery{}
@@ -198,14 +242,21 @@ func (client *Client) UpdateResource(ctx context.Context, resource *model.Resour
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
 
 	if err != nil {
-		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
+		return nil, NewAPIErrorWithID(err, "update", resourceResourceName, input.ID)
 	}
 
 	if !response.ResourceUpdate.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, resource.ID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.ResourceUpdate.Error), "update", resourceResourceName, input.ID)
 	}
 
-	return nil
+	if response.ResourceUpdate.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, input.ID)
+	}
+
+	resource := response.ResourceUpdate.Entity.ToModel()
+	resource.Groups = input.Groups
+
+	return resource, nil
 }
 
 type deleteResourceQuery struct {
@@ -233,49 +284,15 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 	return nil
 }
 
-type readResourceWithoutGroupsQuery struct {
-	Resource *gqlResource `graphql:"resource(id: $id)"`
-	//Resource *struct {
-	//	IDName
-	//	Address struct {
-	//		Value graphql.String
-	//	}
-	//	RemoteNetwork struct {
-	//		ID graphql.ID
-	//	}
-	//	Protocols *Protocols
-	//} `graphql:"resource(id: $id)"`
-}
-
-func (client *Client) ReadResourceWithoutGroups(ctx context.Context, resourceID string) (*model.Resource, error) {
-	if resourceID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
-	}
-
-	response := readResourceWithoutGroupsQuery{}
-	variables := newVars(gqlID(resourceID))
-
-	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
-	}
-
-	if response.Resource == nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
-	}
-
-	return response.Resource.ToModel(), nil
-}
-
 type updateResourceActiveStateQuery struct {
 	ResourceUpdate *OkError `graphql:"resourceUpdate(id: $id, isActive: $isActive)"`
 }
 
 func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *model.Resource) error {
-	variables := map[string]interface{}{
-		"id":       resource.ID,
-		"isActive": resource.IsActive,
-	}
+	variables := newVars(
+		gqlID(resource.ID),
+		gqlField(resource.IsActive, "isActive"),
+	)
 
 	response := updateResourceActiveStateQuery{}
 
@@ -296,16 +313,6 @@ type readResourcesByNameQuery struct {
 	Resources struct {
 		Edges []*struct {
 			Node *gqlResource
-			//Node *struct {
-			//IDName
-			//Address struct {
-			//	Value graphql.String
-			//}
-			//RemoteNetwork struct {
-			//	ID graphql.ID
-			//}
-			//Protocols *Protocols
-			//}
 		}
 	} `graphql:"resources(filter: {name: {eq: $name}})"`
 }
@@ -314,6 +321,7 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 	response := readResourcesByNameQuery{}
 	variables := newVars(
 		gqlField(name, "name"),
+		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
 	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)

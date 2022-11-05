@@ -21,16 +21,18 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups Basic", func(t *testing.T) {
 		groupName := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		const theDatasource = "data.twingate_groups.out_dgs1"
+
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroups(groupName),
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(groupsDatasource, groupsNumber, "2"),
-						resource.TestCheckResourceAttr(groupsDatasource, firstGroupName, groupName),
+					Check: acctests.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(theDatasource, groupsNumber, "2"),
+						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
 					),
 				},
 			},
@@ -40,18 +42,18 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 
 func testDatasourceTwingateGroups(name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_group" "test1" {
+	resource "twingate_group" "test_dgs1_1" {
 	  name = "%s"
 	}
 
-	resource "twingate_group" "test2" {
+	resource "twingate_group" "test_dgs1_2" {
 	  name = "%s"
 	}
 
-	data "twingate_groups" "out" {
+	data "twingate_groups" "out_dgs1" {
 	  name = "%s"
 
-	  depends_on = [twingate_group.test1, twingate_group.test2]
+	  depends_on = [twingate_group.test_dgs1_1, twingate_group.test_dgs1_2]
 	}
 	`, name, name, name)
 }
@@ -61,16 +63,14 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups - empty result", func(t *testing.T) {
 		groupName := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
-			},
+			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config: testTwingateGroupsDoesNotExists(groupName),
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(groupsDatasource, groupsNumber, "0"),
+					Check: acctests.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr("data.twingate_groups.out_dgs2", groupsNumber, "0"),
 					),
 				},
 			},
@@ -80,7 +80,7 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 
 func testTwingateGroupsDoesNotExists(name string) string {
 	return fmt.Sprintf(`
-	data "twingate_groups" "out" {
+	data "twingate_groups" "out_dgs2" {
 	  name = "%s"
 	}
 	`, name)
@@ -90,18 +90,18 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 	t.Parallel()
 	groupName := test.RandomName()
 
+	const theDatasource = "data.twingate_groups.out_dgs2"
+
 	t.Run("Test Twingate Datasource : Acc Groups with filters - basic", func(t *testing.T) {
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
-			},
+			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroupsWithFilters(groupName),
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(groupsDatasource, groupsNumber, "2"),
-						resource.TestCheckResourceAttr(groupsDatasource, firstGroupName, groupName),
+					Check: acctests.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(theDatasource, groupsNumber, "2"),
+						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
 					),
 				},
 			},
@@ -111,20 +111,20 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 
 func testDatasourceTwingateGroupsWithFilters(name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_group" "test1" {
+	resource "twingate_group" "test_dgs2_1" {
 	  name = "%s"
 	}
 
-	resource "twingate_group" "test2" {
+	resource "twingate_group" "test_dgs2_2" {
 	  name = "%s"
 	}
 
-	data "twingate_groups" "out" {
+	data "twingate_groups" "out_dgs2" {
 	  name = "%s"
 	  type = "MANUAL"
 	  is_active = true
 
-	  depends_on = [twingate_group.test1, twingate_group.test2]
+	  depends_on = [twingate_group.test_dgs2_1, twingate_group.test_dgs2_2]
 	}
 	`, name, name, name)
 }
@@ -132,7 +132,7 @@ func testDatasourceTwingateGroupsWithFilters(name string) string {
 func TestAccDatasourceTwingateGroupsWithFilters_ErrorNotSupportedTypes(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Groups with filters - error not supported types", func(t *testing.T) {
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -162,7 +162,7 @@ func testTwingateGroupsWithFilterNotSupportedType() string {
 func TestAccDatasourceTwingateGroups_WithEmptyFilters(t *testing.T) {
 	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Groups - with empty filters", func(t *testing.T) {
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -192,17 +192,17 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 
 		groupName := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroupsWithDatasource(groupName),
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_groups.two", firstGroupName, groupName),
-						resource.TestCheckResourceAttr("data.twingate_groups.one", groupsNumber, "1"),
-						resource.TestCheckResourceAttr("data.twingate_groups.two", groupsNumber, "2"),
+					Check: acctests.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", firstGroupName, groupName),
+						resource.TestCheckResourceAttr("data.twingate_groups.one_dgs3", groupsNumber, "1"),
+						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", groupsNumber, "2"),
 					),
 				},
 			},
@@ -212,28 +212,28 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 
 func testDatasourceTwingateGroupsWithDatasource(name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_group" "test1" {
+	resource "twingate_group" "test_dgs3_1" {
 	  name = "%s"
 	}
 
-	resource "twingate_group" "test2" {
+	resource "twingate_group" "test_dgs3_2" {
 	  name = "%s"
 	}
 
-	resource "twingate_group" "test3" {
+	resource "twingate_group" "test_dgs3_3" {
 	  name = "%s-1"
 	}
 
-	data "twingate_groups" "two" {
+	data "twingate_groups" "two_dgs3" {
 	  name = "%s"
 
-	  depends_on = [twingate_group.test1, twingate_group.test2, twingate_group.test3]
+	  depends_on = [twingate_group.test_dgs3_1, twingate_group.test_dgs3_2, twingate_group.test_dgs3_3]
 	}
 
-	data "twingate_groups" "one" {
+	data "twingate_groups" "one_dgs3" {
 	  name = "%s-1"
 
-	  depends_on = [twingate_group.test1, twingate_group.test2, twingate_group.test3]
+	  depends_on = [twingate_group.test_dgs3_1, twingate_group.test_dgs3_2, twingate_group.test_dgs3_3]
 	}
 	`, name, name, name, name, name)
 }

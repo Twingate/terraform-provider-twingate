@@ -53,11 +53,9 @@ func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.Res
 	client := meta.(*transport.Client)
 
 	connectorID := resourceData.Get("connector_id").(string)
-
 	resourceData.SetId(connectorID)
 
 	tokens, err := client.GenerateConnectorTokens(ctx, connectorID)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -69,8 +67,6 @@ func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.Res
 	if err := resourceData.Set("refresh_token", tokens.RefreshToken); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
 	}
-
-	waitForResourceAvailability()
 
 	return resourceConnectorTokensRead(ctx, resourceData, meta)
 }

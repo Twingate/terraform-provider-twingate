@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,66 +40,42 @@ func RemoteNetwork() *schema.Resource {
 func remoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
 
-	remoteNetworkName := resourceData.Get("name").(string)
-	remoteNetwork, err := client.CreateRemoteNetwork(ctx, remoteNetworkName)
+	remoteNetwork, err := client.CreateRemoteNetwork(ctx, resourceData.Get("name").(string))
 
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	resourceData.SetId(remoteNetwork.ID)
-	log.Printf("[INFO] Remote network %s created with id %s", remoteNetworkName, resourceData.Id())
-
-	waitForResourceAvailability()
-
-	return remoteNetworkRead(ctx, resourceData, meta)
+	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
 }
 
 func remoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[INFO] Updating remote network id %s", resourceData.Id())
 	client := meta.(*transport.Client)
 
-	remoteNetworkName := resourceData.Get("name").(string)
+	remoteNetwork, err := client.UpdateRemoteNetwork(ctx, resourceData.Id(), resourceData.Get("name").(string))
 
-	if resourceData.HasChange("name") {
-		remoteNetworkID := resourceData.Id()
-		log.Printf("[INFO] Updating remote network id %s", remoteNetworkID)
-
-		if err := client.UpdateRemoteNetwork(ctx, remoteNetworkID, remoteNetworkName); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	return remoteNetworkRead(ctx, resourceData, meta)
+	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
 }
 
 func remoteNetworkDelete(ctx context.Context, resourceData *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*transport.Client)
 
-	var diags diag.Diagnostics
-
-	remoteNetworkID := resourceData.Id()
-
-	err := client.DeleteRemoteNetwork(ctx, remoteNetworkID)
+	err := client.DeleteRemoteNetwork(ctx, resourceData.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Deleted remote network id %s", remoteNetworkID)
+	log.Printf("[INFO] Deleted remote network id %s", resourceData.Id())
 
-	return diags
+	return nil
 }
 
 func remoteNetworkRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
 
-	var diags diag.Diagnostics
+	remoteNetwork, err := client.ReadRemoteNetworkByID(ctx, resourceData.Id())
 
-	remoteNetworkID := resourceData.Id()
+	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
+}
 
-	log.Printf("[INFO] Reading remote network id %s", remoteNetworkID)
-
-	remoteNetwork, err := client.ReadRemoteNetworkByID(ctx, remoteNetworkID)
-
+func resourceRemoteNetworkReadHelper(resourceData *schema.ResourceData, remoteNetwork *model.RemoteNetwork, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -115,5 +92,7 @@ func remoteNetworkRead(ctx context.Context, resourceData *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	return diags
+	resourceData.SetId(remoteNetwork.ID)
+
+	return nil
 }
