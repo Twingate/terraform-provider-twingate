@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 
 PACKAGE_NAME=./twingate/...
-TEST_RESULTS=${TEST_RESULTS:-"./out"}
+TEST_RESULTS=${TEST_RESULTS:-"./test_results"}
 
 mkdir -p "${TEST_RESULTS}"
 
