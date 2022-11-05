@@ -138,10 +138,13 @@ func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*m
 	return response.ToModel(), nil
 }
 
+type ConnectorEdge struct {
+	Node *gqlConnector
+}
+
 type Connectors struct {
-	Edges []*struct {
-		Node *gqlConnector
-	}
+	PageInfo PageInfo
+	Edges    []*ConnectorEdge
 }
 
 type readConnectorsQuery struct {
@@ -160,5 +163,47 @@ func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, e
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 
-	return response.ToModel(), nil
+	connectors, err := client.readAllConnectors(ctx, &response.Connectors)
+	if err != nil {
+		return nil, err
+	}
+
+	return connectors.ToModel(), nil
+}
+
+func (client *Client) readAllConnectors(ctx context.Context, connectors *Connectors) (*Connectors, error) {
+	page := connectors.PageInfo
+	for page.HasNextPage {
+		resp, err := client.readConnectorsAfter(ctx, page.EndCursor)
+		if err != nil {
+			return nil, err
+		}
+
+		connectors.Edges = append(connectors.Edges, resp.Edges...)
+		page = resp.PageInfo
+	}
+
+	return connectors, nil
+}
+
+type readConnectorsAfter struct {
+	Connectors Connectors `graphql:"connectors(after: $connectorsEndCursor)"`
+}
+
+func (client *Client) readConnectorsAfter(ctx context.Context, cursor graphql.String) (*Connectors, error) {
+	response := readConnectorsAfter{}
+	variables := map[string]interface{}{
+		"connectorsEndCursor": cursor,
+	}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
+	}
+
+	if response.Connectors.Edges == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
+	}
+
+	return &response.Connectors, nil
 }

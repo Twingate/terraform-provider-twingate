@@ -54,8 +54,16 @@ func (q readConnectorsQuery) ToModel() []*model.Connector {
 	return connectors
 }
 
-func (q createConnectorQuery) ToModel() *model.Connector {
-	return q.ConnectorCreate.Entity.ToModel()
+func (c *Connectors) ToModel() []*model.Connector {
+	return utils.Map[*ConnectorEdge, *model.Connector](c.Edges, func(edge *ConnectorEdge) *model.Connector {
+		return edge.Node.ToModel()
+	})
+}
+
+func (r *Resources) ToModel() []*model.Resource {
+	return utils.Map[*ResourceEdge, *model.Resource](r.Edges, func(edge *ResourceEdge) *model.Resource {
+		return edge.Node.ToModel()
+	})
 }
 
 func (t gqlConnectorTokens) ToModel() *model.ConnectorTokens {
@@ -83,24 +91,6 @@ func (g gqlGroup) ToModel() *model.Group {
 		Type:     string(g.Type),
 		IsActive: bool(g.IsActive),
 	}
-}
-
-func (gg gqlGroups) ToModel() []*model.Group {
-	groups := make([]*model.Group, 0, len(gg.Edges))
-
-	for _, g := range gg.Edges {
-		if g == nil || g.Node == nil {
-			continue
-		}
-
-		groups = append(groups, g.Node.ToModel())
-	}
-
-	if cap(groups) > len(groups) {
-		groups = groups[:len(groups):len(groups)]
-	}
-
-	return groups
 }
 
 func (q readGroupQuery) ToModel() *model.Group {
@@ -162,18 +152,16 @@ func (u gqlUser) ToModel() *model.User {
 	}
 }
 
-func (uu gqlUsers) ToModel() []*model.User {
-	users := make([]*model.User, 0, len(uu.Edges))
+func (u *Users) ToModel() []*model.User {
+	return utils.Map[*UserEdge, *model.User](u.Edges, func(edge *UserEdge) *model.User {
+		return edge.Node.ToModel()
+	})
+}
 
-	for _, user := range uu.Edges {
-		if user == nil || user.Node == nil {
-			continue
-		}
-
-		users = append(users, user.Node.ToModel())
-	}
-
-	return users
+func (u *Groups) ToModel() []*model.Group {
+	return utils.Map[*GroupEdge, *model.Group](u.Edges, func(edge *GroupEdge) *model.Group {
+		return edge.Node.ToModel()
+	})
 }
 
 func newProtocolsInput(protocols *model.Protocols) *Protocols {
@@ -216,19 +204,6 @@ func newPorts(ports []*model.PortRange) []*PortRange {
 	})
 }
 
-func (q readResourceQuery) ToModel() *model.Resource {
-	if q.Resource == nil {
-		return nil
-	}
-
-	res := q.Resource.ToModel()
-	res.Groups = utils.Map[*Edges, string](q.Resource.Groups.Edges, func(elem *Edges) string {
-		return elem.Node.StringID()
-	})
-	res.IsActive = bool(q.Resource.IsActive)
-	return res
-}
-
 func protocolsToModel(protocols *Protocols) *model.Protocols {
 	if protocols == nil {
 		return nil
@@ -261,19 +236,6 @@ func portsRangeToModel(ports []*PortRange) []*model.PortRange {
 		return &model.PortRange{
 			Start: int32(port.Start),
 			End:   int32(port.End),
-		}
-	})
-}
-
-func (q readResourcesQuery) ToModel() []*model.Resource {
-	return utils.Map[*Edges, *model.Resource](q.Resources.Edges, func(item *Edges) *model.Resource {
-		if item == nil || item.Node == nil {
-			return nil
-		}
-
-		return &model.Resource{
-			ID:   item.Node.StringID(),
-			Name: item.Node.StringName(),
 		}
 	})
 }

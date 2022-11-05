@@ -13,9 +13,19 @@ import (
 
 func TestClientUsersReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Users - Ok", func(t *testing.T) {
+		expected := []*User{
+			{ID: "user-1", FirstName: "First", LastName: "Last", Email: "user-1@gmail.com", Role: "ADMIN"},
+			{ID: "user-2", FirstName: "Second", LastName: "Last", Email: "user-2@gmail.com", Role: "DEVOPS"},
+			{ID: "user-3", FirstName: "John", LastName: "White", Email: "user-3@gmail.com", Role: "ADMIN"},
+		}
+
 		jsonResponse := `{
 	  "data": {
 		"users": {
+		  "pageInfo": {
+			"endCursor": "cursor",
+			"hasNextPage": true
+		  },
 		  "edges": [
 			{
 			  "node": {
@@ -40,30 +50,40 @@ func TestClientUsersReadOk(t *testing.T) {
 	  }
 	}`
 
+		nextPage := `{
+	  "data": {
+		"users": {
+		  "pageInfo": {
+			"hasNextPage": false
+		  },
+		  "edges": [
+			{
+			  "node": {
+				"id": "user-3",
+				"firstName": "John",
+				"lastName": "White",
+				"email": "user-3@gmail.com",
+				"role": "ADMIN"
+			  }
+			}
+		  ]
+		}
+	  }
+	}`
+
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, jsonResponse))
+			httpmock.ResponderFromMultipleResponses([]*http.Response{
+				httpmock.NewStringResponse(200, jsonResponse),
+				httpmock.NewStringResponse(200, nextPage),
+			}),
+		)
 
 		users, err := client.ReadUsers(context.Background())
 
 		assert.Nil(t, err)
-		assert.NotNil(t, users)
-		assert.Len(t, users, 2)
-
-		assert.EqualValues(t, "user-1", users[0].ID)
-		assert.EqualValues(t, "First", users[0].FirstName)
-		assert.EqualValues(t, "Last", users[0].LastName)
-		assert.EqualValues(t, "user-1@gmail.com", users[0].Email)
-		assert.EqualValues(t, "ADMIN", users[0].Role)
-		assert.EqualValues(t, true, users[0].IsAdmin())
-
-		assert.EqualValues(t, "user-2", users[1].ID)
-		assert.EqualValues(t, "Second", users[1].FirstName)
-		assert.EqualValues(t, "Last", users[1].LastName)
-		assert.EqualValues(t, "user-2@gmail.com", users[1].Email)
-		assert.EqualValues(t, "DEVOPS", users[1].Role)
-		assert.EqualValues(t, false, users[1].IsAdmin())
+		assert.Equal(t, expected, users)
 	})
 }
 
