@@ -20,7 +20,10 @@ func TestClientConnectorCreateOk(t *testing.T) {
 		"connectorCreate": {
 		  "entity": {
 			"id": "test-id",
-			"name" : "test-name"
+			"name" : "test-name",
+			"remoteNetwork": {
+			  "id": "remote-network-id"
+			}
 		  },
 		  "ok": true,
 		  "error": null

@@ -43,7 +43,7 @@ func gqlIDs(ids []string, name string) gqlVarOption {
 
 func gqlField(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
-		gqlValue := tryConvertToGQL(val)
+		gqlValue := convertToGQL(val)
 		if gqlValue != nil {
 			values[name] = gqlValue
 		}
@@ -52,7 +52,7 @@ func gqlField(val interface{}, name string) gqlVarOption {
 	}
 }
 
-func tryConvertToGQL(val interface{}) interface{} {
+func convertToGQL(val interface{}) interface{} {
 	var gqlValue interface{}
 
 	switch v := val.(type) {
@@ -84,9 +84,9 @@ func gqlNullableField(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
 		var gqlValue interface{}
 		if isDefaultValue(val) {
-			gqlValue = nil
+			gqlValue = getDefaultGQLValue(val)
 		} else {
-			gqlValue = tryConvertToGQL(val)
+			gqlValue = convertToGQL(val)
 		}
 
 		values[name] = gqlValue
@@ -128,4 +128,30 @@ func isDefaultValue(val interface{}) bool {
 	}
 
 	return false
+}
+
+func getDefaultGQLValue(val interface{}) interface{} {
+	if val == nil {
+		return nil
+	}
+
+	var (
+		defaultString *graphql.String
+		defaultInt    *graphql.Int
+		defaultBool   *graphql.Boolean
+		defaultFloat  *graphql.Float
+	)
+
+	switch val.(type) {
+	case string:
+		return defaultString
+	case bool:
+		return defaultBool
+	case int, int32, int64:
+		return defaultInt
+	case float32, float64:
+		return defaultFloat
+	}
+
+	return nil
 }

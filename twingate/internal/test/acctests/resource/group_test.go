@@ -18,7 +18,6 @@ const (
 )
 
 func TestAccTwingateGroupCreateUpdate(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Group Create/Update", func(t *testing.T) {
 
 		groupNameBefore := test.RandomName()
@@ -59,7 +58,6 @@ func createGroup001(name string) string {
 }
 
 func TestAccTwingateGroupDeleteNonExisting(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Group Delete NonExisting", func(t *testing.T) {
 
 		groupNameBefore := test.RandomName()
@@ -137,7 +135,6 @@ func testAccCheckTwingateGroupDoesNotExists(resourceName string) resource.TestCh
 }
 
 func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Group Create After Deletion", func(t *testing.T) {
 		groupName := test.RandomName()
 

@@ -13,7 +13,6 @@ import (
 )
 
 func TestAccRemoteConnectorWithTokens(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector With Tokens", func(t *testing.T) {
 
 		const connectorTokensResource = "twingate_connector_tokens.test_t1"

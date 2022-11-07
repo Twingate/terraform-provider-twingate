@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestClientUsersReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Users - Ok", func(t *testing.T) {
-		expected := []*User{
+		expected := []*model.User{
 			{ID: "user-1", FirstName: "First", LastName: "Last", Email: "user-1@gmail.com", Role: "ADMIN"},
 			{ID: "user-2", FirstName: "Second", LastName: "Last", Email: "user-2@gmail.com", Role: "DEVOPS"},
 			{ID: "user-3", FirstName: "John", LastName: "White", Email: "user-3@gmail.com", Role: "ADMIN"},

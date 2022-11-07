@@ -13,7 +13,6 @@ import (
 )
 
 func TestAccTwingateRemoteNetworkCreateUpdate(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Network Basic", func(t *testing.T) {
 		remoteNetworkNameBefore := test.RandomName()
 		remoteNetworkNameAfter := test.RandomName()
@@ -52,7 +51,6 @@ func createRemoteNetwork001(name string) string {
 }
 
 func TestAccTwingateRemoteNetworkDeleteNonExisting(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Network Delete NonExisting", func(t *testing.T) {
 		remoteNetworkNameBefore := test.RandomName()
 
@@ -130,7 +128,6 @@ func testAccCheckTwingateRemoteNetworkDoesNotExists(resourceName string) resourc
 }
 
 func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Network Re Create After Deletion", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		const theResource = "twingate_remote_network.test003"

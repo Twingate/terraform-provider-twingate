@@ -25,7 +25,6 @@ const (
 var testRegexp = regexp.MustCompile(test.Prefix() + ".*")
 
 func TestAccRemoteConnectorCreate(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 
@@ -49,7 +48,6 @@ func TestAccRemoteConnectorCreate(t *testing.T) {
 }
 
 func TestAccRemoteConnectorWithCustomName(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector With Custom Name", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		connectorName := test.RandomConnectorName()
@@ -138,7 +136,6 @@ func testAccCheckTwingateConnectorExists(connectorResource, remoteNetworkResourc
 }
 
 func TestAccRemoteConnectorImport(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector - Import", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		connectorName := test.RandomConnectorName()
@@ -179,7 +176,6 @@ func createConnectorC3(remoteNetworkName string, connectorName string) string {
 }
 
 func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector - should fail on remote_network_id update", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		newRemoteNetworkName := test.RandomName()
@@ -206,7 +202,6 @@ func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
 }
 
 func TestAccTwingateConnectorReCreateAfterDeletion(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Remote Connector ReCreate After Deletion", func(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		const theResource = "twingate_connector.test_c5"

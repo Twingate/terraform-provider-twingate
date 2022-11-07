@@ -86,19 +86,20 @@ type PortRangeInput struct {
 
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	// TODO: convert model to gql resource
-	protocols := &ProtocolsInput{
-		AllowIcmp: true,
-		TCP: &ProtocolInput{
-			Policy: model.PolicyRestricted,
-			Ports: []*PortRangeInput{
-				{Start: 80, End: 83},
-				{Start: 85, End: 85},
-			},
-		},
-		UDP: &ProtocolInput{
-			Policy: model.PolicyAllowAll,
-		},
-	}
+	//protocols := &ProtocolsInput{
+	//	AllowIcmp: true,
+	//	TCP: &ProtocolInput{
+	//		Policy: model.PolicyAllowAll,
+	//		Ports:  []*PortRangeInput{
+	//			//		{Start: 80, End: 83},
+	//			//		{Start: 85, End: 85},
+	//		},
+	//	},
+	//	UDP: &ProtocolInput{
+	//		Policy: model.PolicyAllowAll,
+	//		Ports:  []*PortRangeInput{},
+	//	},
+	//}
 
 	variables := newVars(
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
@@ -108,8 +109,8 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
 		//gqlField(newProtocolsInput(resource.Protocols), "protocols"),
 	)
-	variables["protocols"] = protocols
-	//variables["protocols"] = newProtocolsInput(resource.Protocols)
+	//variables["protocols"] = protocols
+	variables["protocols"] = newProtocolsInput(input.Protocols)
 
 	response := createResourceQuery{}
 	err := client.GraphqlClient.NamedMutate(ctx, "createResource", &response, variables)

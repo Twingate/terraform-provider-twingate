@@ -164,40 +164,40 @@ func (u *Groups) ToModel() []*model.Group {
 	})
 }
 
-func newProtocolsInput(protocols *model.Protocols) *Protocols {
+func newProtocolsInput(protocols *model.Protocols) *ProtocolsInput {
 	if protocols == nil {
 		return nil
 	}
 
-	return &Protocols{
+	return &ProtocolsInput{
 		UDP:       newProtocol(protocols.UDP),
 		TCP:       newProtocol(protocols.TCP),
 		AllowIcmp: graphql.Boolean(protocols.AllowIcmp),
 	}
 }
 
-func newProtocol(protocol *model.Protocol) *Protocol {
+func newProtocol(protocol *model.Protocol) *ProtocolInput {
 	if protocol == nil {
 		return nil
 	}
 
-	return &Protocol{
+	return &ProtocolInput{
 		Ports:  newPorts(protocol.Ports),
 		Policy: graphql.String(protocol.Policy),
 	}
 }
 
-func newPorts(ports []*model.PortRange) []*PortRange {
-	if len(ports) == 0 {
-		return nil
-	}
+func newPorts(ports []*model.PortRange) []*PortRangeInput {
+	//if len(ports) == 0 {
+	//	return nil
+	//}
 
-	return utils.Map[*model.PortRange, *PortRange](ports, func(port *model.PortRange) *PortRange {
-		if port == nil {
-			return nil
-		}
+	return utils.Map[*model.PortRange, *PortRangeInput](ports, func(port *model.PortRange) *PortRangeInput {
+		//if port == nil {
+		//	return nil
+		//}
 
-		return &PortRange{
+		return &PortRangeInput{
 			Start: graphql.Int(port.Start),
 			End:   graphql.Int(port.End),
 		}
