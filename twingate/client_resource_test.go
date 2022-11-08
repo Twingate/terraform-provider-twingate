@@ -204,7 +204,6 @@ func TestClientResourceReadOk(t *testing.T) {
 		  "id": "resource1",
 		  "name": "test resource",
 		  "address": {
-			"type": "DNS",
 			"value": "test.com"
 		  },
 		  "remoteNetwork": {
@@ -303,7 +302,6 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 		  "id": "resource1",
 		  "name": "test resource",
 		  "address": {
-			"type": "DNS",
 			"value": "test.com"
 		  },
 		  "remoteNetwork": {
@@ -607,12 +605,12 @@ func TestClientResourceEmptyDeleteError(t *testing.T) {
 
 func TestClientResourcesReadAllOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Read All Ok", func(t *testing.T) {
-		expected := []*Edges{
-			{Node: &IDName{ID: "resource1", Name: "tf-acc-resource1"}},
-			{Node: &IDName{ID: "resource2", Name: "resource2"}},
-			{Node: &IDName{ID: "resource3", Name: "tf-acc-resource3"}},
-			{Node: &IDName{ID: "resource4", Name: "tf-acc-resource4"}},
-			{Node: &IDName{ID: "resource5", Name: "tf-acc-resource5"}},
+		expected := []*Resource{
+			{ID: "resource1", Name: "tf-acc-resource1"},
+			{ID: "resource2", Name: "resource2"},
+			{ID: "resource3", Name: "tf-acc-resource3"},
+			{ID: "resource4", Name: "tf-acc-resource4"},
+			{ID: "resource5", Name: "tf-acc-resource5"},
 		}
 
 		// response JSON
@@ -681,9 +679,9 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 				}),
 		)
 
-		edges, err := client.readResources(context.Background())
+		resources, err := client.readResources(context.Background())
 		assert.NoError(t, err)
-		assert.Equal(t, expected, edges)
+		assert.Equal(t, expected, resources)
 	})
 }
 

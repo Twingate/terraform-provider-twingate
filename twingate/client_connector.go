@@ -12,18 +12,17 @@ type Connector struct {
 	Name          graphql.String
 }
 
-type ConnectorNode struct {
+type ConnectorEdge struct {
 	Node *Connector
 }
 
 type Connectors struct {
-	PageInfo PageInfo
-	Edges    []*ConnectorNode
+	PaginatedResource[*ConnectorEdge]
 }
 
 func (c *Connectors) toList() []*Connector {
-	return toList[*ConnectorNode, *Connector](c.Edges,
-		func(edge *ConnectorNode) *Connector {
+	return toList[*ConnectorEdge, *Connector](c.Edges,
+		func(edge *ConnectorEdge) *Connector {
 			return edge.Node
 		},
 	)
@@ -164,38 +163,25 @@ func (client *Client) readConnectors(ctx context.Context) ([]*Connector, error) 
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 
-	connectors, err := client.readAllConnectors(ctx, &response.Connectors)
+	err = response.Connectors.fetchPages(ctx, client.readConnectorsAfter, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return connectors, nil
-}
-
-func (client *Client) readAllConnectors(ctx context.Context, connectors *Connectors) ([]*Connector, error) {
-	page := connectors.PageInfo
-	for page.HasNextPage {
-		resp, err := client.readConnectorsAfter(ctx, page.EndCursor)
-		if err != nil {
-			return nil, err
-		}
-
-		connectors.Edges = append(connectors.Edges, resp.Edges...)
-		page = resp.PageInfo
-	}
-
-	return connectors.toList(), nil
+	return response.Connectors.toList(), nil
 }
 
 type readConnectorsAfter struct {
 	Connectors Connectors `graphql:"connectors(after: $connectorsEndCursor)"`
 }
 
-func (client *Client) readConnectorsAfter(ctx context.Context, cursor graphql.String) (*Connectors, error) {
-	response := readConnectorsAfter{}
-	variables := map[string]interface{}{
-		"connectorsEndCursor": cursor,
+func (client *Client) readConnectorsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*ConnectorEdge], error) {
+	if variables == nil {
+		variables = make(map[string]interface{})
 	}
+
+	variables["connectorsEndCursor"] = cursor
+	response := readConnectorsAfter{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, variables)
 	if err != nil {
@@ -206,7 +192,7 @@ func (client *Client) readConnectorsAfter(ctx context.Context, cursor graphql.St
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 
-	return &response.Connectors, nil
+	return &response.Connectors.PaginatedResource, nil
 }
 
 type readConnectorQuery struct {

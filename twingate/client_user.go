@@ -32,8 +32,7 @@ type gqlUser struct {
 }
 
 type Users struct {
-	PageInfo PageInfo
-	Edges    []*UserEdge
+	PaginatedResource[*UserEdge]
 }
 
 func (u *Users) toList() []*User {
@@ -70,37 +69,25 @@ func (client *Client) readUsers(ctx context.Context) ([]*User, error) {
 		return nil, nil
 	}
 
-	users, err := client.readAllUsers(ctx, &response.Users)
+	err = response.Users.fetchPages(ctx, client.readUsersAfter, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
-}
-
-func (client *Client) readAllUsers(ctx context.Context, users *Users) ([]*User, error) {
-	page := users.PageInfo
-	for page.HasNextPage {
-		resp, err := client.readUsersAfter(ctx, page.EndCursor)
-		if err != nil {
-			return nil, err
-		}
-
-		users.Edges = append(users.Edges, resp.Edges...)
-		page = resp.PageInfo
-	}
-
-	return users.toList(), nil
+	return response.Users.toList(), nil
 }
 
 type readUsersAfter struct {
 	Users Users `graphql:"users(after: $usersEndCursor)"`
 }
 
-func (client *Client) readUsersAfter(ctx context.Context, cursor graphql.String) (*Users, error) {
+func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*UserEdge], error) {
+	if variables == nil {
+		variables = make(map[string]interface{})
+	}
+
+	variables["usersEndCursor"] = cursor
 	response := readUsersAfter{}
-	variables := make(map[string]interface{})
-	variables["resourcesEndCursor"] = cursor
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readUsers", &response, variables)
 	if err != nil {
@@ -111,7 +98,7 @@ func (client *Client) readUsersAfter(ctx context.Context, cursor graphql.String)
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", userResourceName, "All")
 	}
 
-	return &response.Users, nil
+	return &response.Users.PaginatedResource, nil
 }
 
 type readUserQuery struct {
