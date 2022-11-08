@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
@@ -143,5 +144,40 @@ func testCheckOutputAttr(name string, index int, attr string, expected interface
 		}
 
 		return fmt.Errorf("not equal: expected '%v', got '%v'", expected, actual)
+	}
+}
+
+func TestConverter(t *testing.T) {
+	cases := []struct {
+		input    []*Connector
+		expected []interface{}
+	}{
+		{
+			input:    nil,
+			expected: []interface{}{},
+		},
+		{
+			input:    []*Connector{},
+			expected: []interface{}{},
+		},
+		{
+			input: []*Connector{
+				{ID: "connector-id", Name: "connector-name", RemoteNetwork: &remoteNetwork{ID: "network-id"}},
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"id":                "connector-id",
+					"name":              "connector-name",
+					"remote_network_id": "network-id",
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := convertConnectorsToTerraform(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
 	}
 }
