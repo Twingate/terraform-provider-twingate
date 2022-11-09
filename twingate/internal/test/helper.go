@@ -14,7 +14,8 @@ const (
 
 func RandomConnectorName() string {
 	const maxLength = 30
-	name := Prefix(acctest.RandString(4))
+
+	name := Prefix(acctest.RandString(maxLength))
 	if len(name) > maxLength {
 		name = name[:maxLength]
 	}
@@ -51,6 +52,7 @@ func Prefix(names ...string) string {
 
 func filterStringValues(values []string, ok func(val string) bool) []string {
 	result := make([]string, 0, len(values))
+
 	for _, val := range values {
 		if ok(val) {
 			result = append(result, val)

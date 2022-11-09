@@ -44,6 +44,35 @@ func TestClientConnectorCreateOk(t *testing.T) {
 	})
 }
 
+func TestClientConnectorCreateWithNameOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Name Ok", func(t *testing.T) {
+		// response JSON
+		createConnectorOkJson := `{
+	  "data": {
+		"connectorCreate": {
+		  "entity": {
+			"id": "test-id",
+			"name" : "test-name"
+		  },
+		  "ok": true,
+		  "error": null
+		}
+	  }
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createConnectorOkJson))
+
+		connector, err := client.CreateConnector(context.Background(), "test", "test-name")
+
+		assert.Nil(t, err)
+		assert.EqualValues(t, "test-id", connector.ID)
+		assert.EqualValues(t, "test-name", connector.Name)
+	})
+}
+
 func TestClientConnectorUpdateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Update Ok", func(t *testing.T) {
 		// response JSON
@@ -116,6 +145,81 @@ func TestClientConnectorCreateError(t *testing.T) {
 
 		assert.EqualError(t, err, "failed to create connector: error_1")
 		assert.Nil(t, remoteNetwork)
+	})
+}
+
+func TestClientConnectorCreateWithNameError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Name Error", func(t *testing.T) {
+
+		// response JSON
+		createNetworkErrorJson := `{
+	  "data": {
+		"connectorCreate": {
+		  "ok": false,
+		  "error": "error_1"
+		}
+	  }
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createNetworkErrorJson))
+
+		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "test-name")
+
+		assert.EqualError(t, err, "failed to create connector: error_1")
+		assert.Nil(t, remoteNetwork)
+	})
+}
+
+func TestClientConnectorCreateErrorEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create Error Empty Result", func(t *testing.T) {
+
+		// response JSON
+		createNetworkErrorJson := `{
+	  "data": {
+		"connectorCreate": {
+		  "ok": true,
+		  "entity": null
+		}
+	  }
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createNetworkErrorJson))
+
+		connector, err := client.CreateConnector(context.Background(), "test", "")
+
+		assert.EqualError(t, err, "failed to create connector: query result is empty")
+		assert.Nil(t, connector)
+	})
+}
+
+func TestClientConnectorCreateWithNameErrorEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Name Error Empty Result", func(t *testing.T) {
+
+		// response JSON
+		createNetworkErrorJson := `{
+	  "data": {
+		"connectorCreate": {
+		  "ok": true,
+		  "entity": null
+		}
+	  }
+	}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, createNetworkErrorJson))
+
+		connector, err := client.CreateConnector(context.Background(), "test", "test-name")
+
+		assert.EqualError(t, err, "failed to create connector with name test-name: query result is empty")
+		assert.Nil(t, connector)
 	})
 }
 
@@ -381,6 +485,21 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "")
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.Nil(t, remoteNetwork)
+	})
+}
+
+func TestClientConnectorCreateWithNameRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Name Request Error", func(t *testing.T) {
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errors.New("error_1")))
+
+		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "test-name")
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector: Post "%s": error_1`, client.GraphqlServerURL))
 		assert.Nil(t, remoteNetwork)

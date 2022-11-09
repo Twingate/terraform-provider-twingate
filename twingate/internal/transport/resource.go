@@ -22,9 +22,8 @@ type Resource struct {
 	IsActive        graphql.Boolean
 }
 
-type gqlResource struct {
+type ResourceNode struct {
 	IDName
-	Groups  Groups `graphql:"groups(first: $groupsPageSize)"`
 	Address struct {
 		Value graphql.String
 	}
@@ -35,9 +34,17 @@ type gqlResource struct {
 	IsActive  graphql.Boolean
 }
 
-type PageInfo struct {
-	EndCursor   graphql.String
-	HasNextPage graphql.Boolean
+type ResourceEdge struct {
+	Node *ResourceNode
+}
+
+type Resources struct {
+	PaginatedResource[*ResourceEdge]
+}
+
+type gqlResource struct {
+	ResourceNode
+	Groups Groups `graphql:"groups(first: $groupsPageSize)"`
 }
 
 type gqlResourceGroups struct {
@@ -85,31 +92,13 @@ type PortRangeInput struct {
 }
 
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
-	// TODO: convert model to gql resource
-	//protocols := &ProtocolsInput{
-	//	AllowIcmp: true,
-	//	TCP: &ProtocolInput{
-	//		Policy: model.PolicyAllowAll,
-	//		Ports:  []*PortRangeInput{
-	//			//		{Start: 80, End: 83},
-	//			//		{Start: 85, End: 85},
-	//		},
-	//	},
-	//	UDP: &ProtocolInput{
-	//		Policy: model.PolicyAllowAll,
-	//		Ports:  []*PortRangeInput{},
-	//	},
-	//}
-
 	variables := newVars(
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
 		gqlIDs(input.Groups, "groupIds"),
 		gqlField(input.Name, "name"),
 		gqlField(input.Address, "address"),
 		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
-		//gqlField(newProtocolsInput(resource.Protocols), "protocols"),
 	)
-	//variables["protocols"] = protocols
 	variables["protocols"] = newProtocolsInput(input.Protocols)
 
 	response := createResourceQuery{}
@@ -153,40 +142,22 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
-	resource, err := client.readAllResourceGroups(ctx, response.Resource)
+	err = response.Resource.Groups.fetchPages(ctx, client.readResourceGroupsAfter, variables)
 	if err != nil {
 		return nil, err
 	}
 
-	return resource.ToModel(), nil
-}
-
-func (client *Client) readAllResourceGroups(ctx context.Context, resource *gqlResource) (*gqlResource, error) {
-	page := resource.Groups.PageInfo
-	for page.HasNextPage {
-		resp, err := client.readResourceGroupsAfter(ctx, resource.ID, page.EndCursor)
-		if err != nil {
-			return nil, err
-		}
-
-		resource.Groups.Edges = append(resource.Groups.Edges, resp.Resource.Groups.Edges...)
-		page = resp.Resource.Groups.PageInfo
-	}
-
-	return resource, nil
+	return response.Resource.ToModel(), nil
 }
 
 type readResourceGroupsQuery struct {
 	Resource *gqlResourceGroups `graphql:"resource(id: $id)"`
 }
 
-func (client *Client) readResourceGroupsAfter(ctx context.Context, resourceID graphql.ID, cursor graphql.String) (*readResourceGroupsQuery, error) {
+func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*GroupEdge], error) {
 	response := readResourceGroupsQuery{}
-	variables := newVars(
-		gqlID(resourceID),
-		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
-		gqlField(cursor, "groupsEndCursor"),
-	)
+	resourceID := variables["id"]
+	variables["groupsEndCursor"] = cursor
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
 	if err != nil {
@@ -197,57 +168,43 @@ func (client *Client) readResourceGroupsAfter(ctx context.Context, resourceID gr
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
 	}
 
-	return &response, nil
+	return &response.Resource.Groups.PaginatedResource, nil
 }
 
-type readResourcesQuery struct { //nolint
+type readResourcesQuery struct {
 	Resources Resources
 }
 
-func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) { //nolint
+func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) {
 	response := readResourcesQuery{}
 	variables := newVars(
 		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
 	)
+
 	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
 
-	resource, err := client.readAllResources(ctx, &response.Resources)
+	err = response.Resources.fetchPages(ctx, client.readResourcesAfter, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return resource.ToModel(), nil
+	return response.Resources.ToModel(), nil
 }
 
-func (client *Client) readAllResources(ctx context.Context, resource *Resources) (*Resources, error) { //nolint
-	page := resource.PageInfo
-
-	for page.HasNextPage {
-		resp, err := client.readResourcesAfter(ctx, page.EndCursor)
-		if err != nil {
-			return nil, err
-		}
-
-		resource.Edges = append(resource.Edges, resp.Resources.Edges...)
-		page = resp.Resources.PageInfo
-	}
-
-	return resource, nil
-}
-
-type readResourcesAfterQuery struct { //nolint
+type readResourcesAfterQuery struct {
 	Resources Resources `graphql:"resources(after: $resourcesEndCursor)"`
 }
 
-func (client *Client) readResourcesAfter(ctx context.Context, cursor graphql.String) (*readResourcesAfterQuery, error) { //nolint
+func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*ResourceEdge], error) {
+	if variables == nil {
+		variables = make(map[string]interface{})
+	}
+
+	variables["resourcesEndCursor"] = cursor
 	response := readResourcesAfterQuery{}
-	variables := newVars(
-		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
-		gqlField(cursor, "resourcesEndCursor"),
-	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
 	if err != nil {
@@ -258,7 +215,7 @@ func (client *Client) readResourcesAfter(ctx context.Context, cursor graphql.Str
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "read", resourceResourceName)
 	}
 
-	return &response, nil
+	return &response.Resources.PaginatedResource, nil
 }
 
 type updateResourceQuery struct {
@@ -351,15 +308,6 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 	return nil
 }
 
-type ResourceEdge struct {
-	Node *gqlResource
-}
-
-type Resources struct {
-	PageInfo PageInfo
-	Edges    []*ResourceEdge
-}
-
 type readResourcesByNameQuery struct {
 	Resources Resources `graphql:"resources(filter: {name: {eq: $name}})"`
 }
@@ -380,34 +328,19 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, "All")
 	}
 
-	resources, err := client.readAllResourcesByName(ctx, &response.Resources, variables)
+	err = response.Resources.fetchPages(ctx, client.readResourcesByNameAfter, variables)
 	if err != nil {
 		return nil, err
 	}
 
-	return resources.ToModel(), nil
-}
-
-func (client *Client) readAllResourcesByName(ctx context.Context, resources *Resources, variables map[string]interface{}) (*Resources, error) {
-	page := resources.PageInfo
-	for page.HasNextPage {
-		resp, err := client.readResourcesByNameAfter(ctx, page.EndCursor, variables)
-		if err != nil {
-			return nil, err
-		}
-
-		resources.Edges = append(resources.Edges, resp.Edges...)
-		page = resp.PageInfo
-	}
-
-	return resources, nil
+	return response.Resources.ToModel(), nil
 }
 
 type readResourcesByNameAfter struct {
 	Resources Resources `graphql:"resources(filter: {name: {eq: $name}}, after: $resourcesEndCursor)"`
 }
 
-func (client *Client) readResourcesByNameAfter(ctx context.Context, cursor graphql.String, variables map[string]interface{}) (*Resources, error) {
+func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*ResourceEdge], error) {
 	response := readResourcesByNameAfter{}
 	variables["resourcesEndCursor"] = cursor
 
@@ -420,5 +353,5 @@ func (client *Client) readResourcesByNameAfter(ctx context.Context, cursor graph
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, "All")
 	}
 
-	return &response.Resources, nil
+	return &response.Resources.PaginatedResource, nil
 }

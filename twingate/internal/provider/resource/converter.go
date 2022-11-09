@@ -37,6 +37,7 @@ func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {
 	}
 
 	rawMap := rawList[0].(map[string]interface{})
+
 	udp, err := convertProtocol(rawMap["udp"].([]interface{}))
 	if err != nil {
 		return nil, err
@@ -56,11 +57,12 @@ func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {
 
 func convertProtocol(rawList []interface{}) (*model.Protocol, error) {
 	if len(rawList) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	rawMap := rawList[0].(map[string]interface{})
 	policy := rawMap["policy"].(string)
+
 	ports, err := convertPorts(rawMap["ports"].([]interface{}))
 	if err != nil {
 		return nil, err
@@ -84,7 +86,7 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 
 		portRange, err := model.NewPortRange(str)
 		if err != nil {
-			return nil, err
+			return nil, err //nolint:wrapcheck
 		}
 
 		ports = append(ports, portRange)
@@ -96,18 +98,3 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 
 	return ports, nil
 }
-
-//
-//func (pi *Protocol) BuildPortsRange() ([]string, string) {
-//	var ports []string
-//
-//	for _, port := range pi.Ports {
-//		if port.Start == port.End {
-//			ports = append(ports, strconv.Itoa(int(port.Start)))
-//		} else {
-//			ports = append(ports, strconv.Itoa(int(port.Start))+"-"+strconv.Itoa(int(port.End)))
-//		}
-//	}
-//
-//	return ports, string(pi.Policy)
-//}

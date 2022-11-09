@@ -88,10 +88,11 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 
 func (client *Client) post(ctx context.Context, url string, payload interface{}, headers map[string]string) ([]byte, error) {
 	var body io.Reader
+
 	if payload != nil {
 		data, err := json.Marshal(payload)
 		if err != nil {
-			return nil, err
+			return nil, err //nolint:wrapcheck
 		}
 
 		body = bytes.NewBuffer(data)
@@ -104,7 +105,7 @@ func (client *Client) post(ctx context.Context, url string, payload interface{},
 		body,
 	)
 	if err != nil {
-		return nil, err
+		return nil, err //nolint:wrapcheck
 	}
 
 	for key, val := range headers {

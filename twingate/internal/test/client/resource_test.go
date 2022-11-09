@@ -593,7 +593,6 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		)
 
 		resources, err := client.ReadResources(context.Background())
-
 		assert.NoError(t, err)
 		assert.Equal(t, expected, resources)
 	})

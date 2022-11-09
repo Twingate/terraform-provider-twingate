@@ -47,8 +47,8 @@ func remoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData,
 
 func remoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[INFO] Updating remote network id %s", resourceData.Id())
-	client := meta.(*transport.Client)
 
+	client := meta.(*transport.Client)
 	remoteNetwork, err := client.UpdateRemoteNetwork(ctx, resourceData.Id(), resourceData.Get("name").(string))
 
 	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)

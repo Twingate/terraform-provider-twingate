@@ -25,6 +25,7 @@ func gqlID(val interface{}, name ...string) gqlVarOption {
 
 	return func(values map[string]interface{}) map[string]interface{} {
 		values[key] = graphql.ID(val)
+
 		return values
 	}
 }
@@ -37,6 +38,7 @@ func gqlIDs(ids []string, name string) gqlVarOption {
 
 	return func(values map[string]interface{}) map[string]interface{} {
 		values[name] = gqlValues
+
 		return values
 	}
 }
@@ -55,22 +57,21 @@ func gqlField(val interface{}, name string) gqlVarOption {
 func convertToGQL(val interface{}) interface{} {
 	var gqlValue interface{}
 
-	switch v := val.(type) {
+	switch value := val.(type) {
 	case string:
-		gqlValue = graphql.String(v)
+		gqlValue = graphql.String(value)
 	case bool:
-		gqlValue = graphql.Boolean(v)
+		gqlValue = graphql.Boolean(value)
 	case int:
-		gqlValue = graphql.Int(v)
+		gqlValue = graphql.Int(value)
 	case int32:
-		gqlValue = graphql.Int(v)
+		gqlValue = graphql.Int(value)
 	case int64:
-		// TODO: handle int32 overflow
-		gqlValue = graphql.Int(v)
+		gqlValue = graphql.Int(int32(value))
 	case float64:
-		gqlValue = graphql.Float(v)
+		gqlValue = graphql.Float(value)
 	case float32:
-		gqlValue = graphql.Float(v)
+		gqlValue = graphql.Float(value)
 	}
 
 	if gqlValue != nil {
@@ -110,21 +111,21 @@ func isDefaultValue(val interface{}) bool {
 		defaultFloat32 float32
 	)
 
-	switch v := val.(type) {
+	switch value := val.(type) {
 	case string:
-		return v == defaultString
+		return value == defaultString
 	case bool:
-		return v == defaultBool
+		return value == defaultBool
 	case int:
-		return v == defaultInt
+		return value == defaultInt
 	case int32:
-		return v == defaultInt32
+		return value == defaultInt32
 	case int64:
-		return v == defaultInt64
+		return value == defaultInt64
 	case float32:
-		return v == defaultFloat32
+		return value == defaultFloat32
 	case float64:
-		return v == defaultFloat64
+		return value == defaultFloat64
 	}
 
 	return false

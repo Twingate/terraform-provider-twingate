@@ -188,15 +188,7 @@ func newProtocol(protocol *model.Protocol) *ProtocolInput {
 }
 
 func newPorts(ports []*model.PortRange) []*PortRangeInput {
-	//if len(ports) == 0 {
-	//	return nil
-	//}
-
 	return utils.Map[*model.PortRange, *PortRangeInput](ports, func(port *model.PortRange) *PortRangeInput {
-		//if port == nil {
-		//	return nil
-		//}
-
 		return &PortRangeInput{
 			Start: graphql.Int(port.Start),
 			End:   graphql.Int(port.End),
@@ -246,12 +238,18 @@ func (r gqlResource) ToModel() *model.Resource {
 		groups = append(groups, idToString(elem.Node.ID))
 	}
 
+	resource := r.ResourceNode.ToModel()
+	resource.Groups = groups
+
+	return resource
+}
+
+func (r ResourceNode) ToModel() *model.Resource {
 	return &model.Resource{
 		ID:              r.StringID(),
 		Name:            r.StringName(),
 		Address:         string(r.Address.Value),
 		RemoteNetworkID: idToString(r.RemoteNetwork.ID),
-		Groups:          groups,
 		Protocols:       protocolsToModel(r.Protocols),
 		IsActive:        bool(r.IsActive),
 	}

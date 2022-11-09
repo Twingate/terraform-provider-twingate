@@ -44,55 +44,6 @@ func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceDa
 	return diags
 }
 
-//func convertProtocolsToTerraform(protocols *transport.Protocols) []interface{} {
-//	if protocols == nil {
-//		return nil
-//	}
-//
-//	out := map[string]interface{}{
-//		"allow_icmp": bool(protocols.AllowIcmp),
-//	}
-//
-//	tcp := convertProtocolToTerraform(protocols.TCP)
-//	if tcp != nil {
-//		out["tcp"] = tcp
-//	}
-//
-//	udp := convertProtocolToTerraform(protocols.UDP)
-//	if tcp != nil {
-//		out["udp"] = udp
-//	}
-//
-//	return []interface{}{
-//		out,
-//	}
-//}
-
-//func convertProtocolToTerraform(protocol *transport.Protocol) []interface{} {
-//	if protocol == nil {
-//		return nil
-//	}
-//
-//	ports, policy := protocol.BuildPortsRange()
-//
-//	out := make(map[string]interface{})
-//	if policy != "" {
-//		out["policy"] = policy
-//	}
-//
-//	if ports != nil {
-//		out["ports"] = ports
-//	}
-//
-//	if len(out) == 0 {
-//		return nil
-//	}
-//
-//	return []interface{}{
-//		out,
-//	}
-//}
-
 func Resource() *schema.Resource { //nolint:funlen
 	portsResource := schema.Resource{
 		Schema: map[string]*schema.Schema{

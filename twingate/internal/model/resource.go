@@ -15,6 +15,7 @@ const (
 	PolicyDenyAll    = "DENY_ALL"
 )
 
+//nolint:gochecknoglobals
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
 type Resource struct {
@@ -49,7 +50,7 @@ func (p PortRange) String() string {
 }
 
 func NewPortRange(str string) (*PortRange, error) {
-	ports := strings.SplitN(str, portRangeSeparator, 2)
+	ports := strings.Split(str, portRangeSeparator)
 
 	switch len(ports) {
 	case 1:

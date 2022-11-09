@@ -133,16 +133,6 @@ func protocolDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
 	return false
 }
 
-//func convertGroupsGraphql(a []interface{}) []graphql.ID {
-//	res := make([]graphql.ID, 0, len(a))
-//
-//	for _, elem := range a {
-//		res = append(res, graphql.ID(elem.(string)))
-//	}
-//
-//	return res
-//}
-
 func protocolsDiff(key, oldValue, newValue string, resourceData *schema.ResourceData) bool {
 	switch key {
 	case "protocols.#", "protocols.0.tcp.#", "protocols.0.udp.#":
@@ -195,41 +185,6 @@ func convertPortsRangeToMap(portsRange []*model.PortRange) map[int32]struct{} {
 	return out
 }
 
-//func extractResource(resourceData *schema.ResourceData) (*Resource, error) {
-//	protocols, err := extractProtocols(resourceData)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	resource := &Resource{
-//		Name:            graphql.String(resourceData.Get("name").(string)),
-//		RemoteNetworkID: graphql.ID(resourceData.Get("remote_network_id").(string)),
-//		Address:         graphql.String(resourceData.Get("address").(string)),
-//		GroupsIds:       convertGroupsGraphql(resourceData.Get("group_ids").(*schema.Set).List()),
-//		Protocols:       protocols,
-//	}
-//
-//	if resourceData.Id() != "" {
-//		resource.ID = resourceData.Id()
-//	}
-//
-//	return resource, nil
-//}
-//
-//func extractProtocols(resourceData *schema.ResourceData) (*ProtocolsInput, error) {
-//	p := resourceData.Get("protocols").([]interface{})
-//	if len(p) == 0 {
-//		return newEmptyProtocols(), nil
-//	}
-//
-//	protocols, err := extractProtocolsFromContext(p[0]).convertToGraphql()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return protocols, nil
-//}
-
 func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool {
 	keys := []string{"protocols.0.tcp.0.ports", "protocols.0.udp.0.ports"}
 	for _, key := range keys {
@@ -240,37 +195,6 @@ func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool 
 
 	return false
 }
-
-//func convertGroupsGraphql(a []interface{}) []*graphql.ID {
-//	res := []*graphql.ID{}
-//
-//	for _, elem := range a {
-//		id := graphql.ID(elem.(string))
-//		res = append(res, &id)
-//	}
-//
-//	return res
-//}
-//
-//func extractProtocolsFromContext(p interface{}) *StringProtocolsInput {
-//	protocolsMap := p.(map[string]interface{})
-//	protocols := &StringProtocolsInput{}
-//	protocols.AllowIcmp = protocolsMap["allow_icmp"].(bool)
-//
-//	u := protocolsMap["udp"].([]interface{})
-//	if len(u) > 0 {
-//		udp := u[0].(map[string]interface{})
-//		protocols.UDPPolicy, protocols.UDPPorts = parseProtocol(udp)
-//	}
-//
-//	t := protocolsMap["tcp"].([]interface{})
-//	if len(t) > 0 {
-//		tcp := t[0].(map[string]interface{})
-//		protocols.TCPPolicy, protocols.TCPPorts = parseProtocol(tcp)
-//	}
-//
-//	return protocols
-//}
 
 func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*transport.Client)
@@ -394,31 +318,3 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 
 	return diags
 }
-
-//func (r *Resource) StringGroups() []string {
-//	var groups []string
-//
-//	if len(r.GroupsIds) > 0 {
-//		for _, id := range r.GroupsIds {
-//			groups = append(groups, fmt.Sprintf("%v", *id))
-//		}
-//	}
-//
-//	return groups
-//}
-
-//func ConvertPortsToSlice(a []interface{}) []string {
-//	var res = make([]string, 0)
-//
-//	for _, elem := range a {
-//		if elem == nil {
-//			res = append(res, "")
-//
-//			continue
-//		}
-//
-//		res = append(res, elem.(string))
-//	}
-//
-//	return res
-//}

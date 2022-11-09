@@ -16,6 +16,19 @@ type gqlGroup struct {
 	Type     graphql.String
 }
 
+type PageInfo struct {
+	EndCursor   graphql.String
+	HasNextPage graphql.Boolean
+}
+
+type GroupEdge struct {
+	Node *gqlGroup
+}
+
+type Groups struct {
+	PaginatedResource[*GroupEdge]
+}
+
 type createGroupQuery struct {
 	GroupCreate struct {
 		Entity IDName
@@ -38,6 +51,7 @@ func (client *Client) CreateGroup(ctx context.Context, groupName string) (*model
 
 	if !response.GroupCreate.Ok {
 		message := response.GroupCreate.Error
+
 		return nil, NewAPIError(NewMutationError(message), "create", groupResourceName)
 	}
 
@@ -68,15 +82,6 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 	return response.ToModel(), nil
 }
 
-type GroupEdge struct {
-	Node *gqlGroup
-}
-
-type Groups struct {
-	PageInfo PageInfo
-	Edges    []*GroupEdge
-}
-
 type readGroupsQuery struct {
 	Groups Groups
 }
@@ -93,36 +98,25 @@ func (client *Client) ReadGroups(ctx context.Context) ([]*model.Group, error) {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
 	}
 
-	groups, err := client.readAllGroups(ctx, &response.Groups)
+	err = response.Groups.fetchPages(ctx, client.readGroupsAfter, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return groups.ToModel(), nil
-}
-
-func (client *Client) readAllGroups(ctx context.Context, groups *Groups) (*Groups, error) {
-	page := groups.PageInfo
-	for page.HasNextPage {
-		resp, err := client.readGroupsAfter(ctx, page.EndCursor)
-		if err != nil {
-			return nil, err
-		}
-
-		groups.Edges = append(groups.Edges, resp.Edges...)
-		page = resp.PageInfo
-	}
-
-	return groups, nil
+	return response.Groups.ToModel(), nil
 }
 
 type readGroupsAfter struct {
 	Groups Groups `graphql:"groups(after: $groupsEndCursor)"`
 }
 
-func (client *Client) readGroupsAfter(ctx context.Context, cursor graphql.String) (*Groups, error) {
+func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*GroupEdge], error) {
+	if variables == nil {
+		variables = make(map[string]interface{})
+	}
+
+	variables["groupsEndCursor"] = cursor
 	response := readGroupsAfter{}
-	variables := newVars(gqlField(cursor, "groupsEndCursor"))
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
 	if err != nil {
@@ -133,7 +127,7 @@ func (client *Client) readGroupsAfter(ctx context.Context, cursor graphql.String
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
 	}
 
-	return &response.Groups, nil
+	return &response.Groups.PaginatedResource, nil
 }
 
 type readGroupsByNameQuery struct {
@@ -157,34 +151,19 @@ func (client *Client) ReadGroupsByName(ctx context.Context, groupName string) ([
 		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupName)
 	}
 
-	groups, err := client.readAllGroupsByName(ctx, &response.Groups, variables)
+	err = response.Groups.fetchPages(ctx, client.readGroupsByNameAfter, variables)
 	if err != nil {
 		return nil, err
 	}
 
-	return groups.ToModel(), nil
-}
-
-func (client *Client) readAllGroupsByName(ctx context.Context, groups *Groups, variables map[string]interface{}) (*Groups, error) {
-	page := groups.PageInfo
-	for page.HasNextPage {
-		resp, err := client.readGroupsByNameAfter(ctx, page.EndCursor, variables)
-		if err != nil {
-			return nil, err
-		}
-
-		groups.Edges = append(groups.Edges, resp.Edges...)
-		page = resp.PageInfo
-	}
-
-	return groups, nil
+	return response.Groups.ToModel(), nil
 }
 
 type readGroupsByNameAfter struct {
 	Groups Groups `graphql:"groups(filter: {name: {eq: $name}}, after: $groupsEndCursor)"`
 }
 
-func (client *Client) readGroupsByNameAfter(ctx context.Context, cursor graphql.String, variables map[string]interface{}) (*Groups, error) {
+func (client *Client) readGroupsByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*GroupEdge], error) {
 	response := readGroupsByNameAfter{}
 	variables["groupsEndCursor"] = cursor
 
@@ -197,7 +176,7 @@ func (client *Client) readGroupsByNameAfter(ctx context.Context, cursor graphql.
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
 	}
 
-	return &response.Groups, nil
+	return &response.Groups.PaginatedResource, nil
 }
 
 type updateGroupQuery struct {
