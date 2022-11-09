@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -31,7 +31,7 @@ func getEnv(key string, duration time.Duration) time.Duration {
 }
 
 // sharedClient returns a common TwingateClient setup needed for the sweeper
-func sharedClient(tenant string) (*transport.Client, error) {
+func sharedClient(tenant string) (*client.Client, error) {
 	if os.Getenv(twingate.EnvAPIToken) == "" {
 		return nil, fmt.Errorf("must provide environment variable %s", twingate.EnvAPIToken)
 	}
@@ -44,15 +44,14 @@ func sharedClient(tenant string) (*transport.Client, error) {
 		return nil, fmt.Errorf("must provide environment variable %s", twingate.EnvURL)
 	}
 
-	client := transport.NewClient(
-		os.Getenv(twingate.EnvURL),
-		os.Getenv(twingate.EnvAPIToken),
-		os.Getenv(twingate.EnvNetwork),
-		getEnv(twingate.EnvHTTPTimeout, 30*time.Second),
-		2,
-		"sweeper")
-
-	return client, nil
+	return client.NewClient(
+			os.Getenv(twingate.EnvURL),
+			os.Getenv(twingate.EnvAPIToken),
+			os.Getenv(twingate.EnvNetwork),
+			getEnv(twingate.EnvHTTPTimeout, 30*time.Second),
+			2,
+			"sweeper"),
+		nil
 }
 
 type Resource interface {
@@ -60,9 +59,9 @@ type Resource interface {
 	GetName() string
 }
 
-type readResourcesFunc func(client *transport.Client, ctx context.Context) ([]Resource, error)
+type readResourcesFunc func(client *client.Client, ctx context.Context) ([]Resource, error)
 
-type deleteResourceFunc func(client *transport.Client, ctx context.Context, id string) error
+type deleteResourceFunc func(client *client.Client, ctx context.Context, id string) error
 
 func newTestSweeper(resourceName string, readResources readResourcesFunc, deleteResource deleteResourceFunc) func(tenant string) error {
 	return func(tenant string) error {

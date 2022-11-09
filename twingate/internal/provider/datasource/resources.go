@@ -5,22 +5,18 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceResourcesRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	resourceName := resourceData.Get("name").(string)
-	resources, err := client.ReadResourcesByName(ctx, resourceName)
 
-	if err != nil && !errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
+	resources, err := c.ReadResourcesByName(ctx, resourceName)
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		return diag.FromErr(err)
 	}
 
@@ -30,36 +26,7 @@ func datasourceResourcesRead(ctx context.Context, resourceData *schema.ResourceD
 
 	resourceData.SetId("query resources by name: " + resourceName)
 
-	return diags
-}
-
-func convertResourcesToTerraform(resources []*model.Resource) []interface{} {
-	out := make([]interface{}, 0, len(resources))
-
-	for _, res := range resources {
-		rawData := convertResourceToTerraform(res)
-		if rawData == nil {
-			continue
-		}
-
-		out = append(out, rawData)
-	}
-
-	return out
-}
-
-func convertResourceToTerraform(resource *model.Resource) interface{} {
-	if resource == nil {
-		return nil
-	}
-
-	return map[string]interface{}{
-		"id":                resource.ID,
-		"name":              resource.Name,
-		"address":           resource.Address,
-		"remote_network_id": resource.RemoteNetworkID,
-		"protocols":         provider.ConvertProtocolsToTerraform(resource.Protocols),
-	}
+	return nil
 }
 
 func Resources() *schema.Resource { //nolint:funlen

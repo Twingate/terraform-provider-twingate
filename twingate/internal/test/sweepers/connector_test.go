@@ -3,7 +3,7 @@ package sweepers
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -13,7 +13,7 @@ func init() {
 	resource.AddTestSweepers(resourceConnector, &resource.Sweeper{
 		Name: resourceConnector,
 		F: newTestSweeper(resourceConnector,
-			func(client *transport.Client, ctx context.Context) ([]Resource, error) {
+			func(client *client.Client, ctx context.Context) ([]Resource, error) {
 				resources, err := client.ReadConnectors(ctx)
 				if err != nil {
 					return nil, err
@@ -25,7 +25,7 @@ func init() {
 				}
 				return items, nil
 			},
-			func(client *transport.Client, ctx context.Context, id string) error {
+			func(client *client.Client, ctx context.Context, id string) error {
 				return client.DeleteConnector(ctx, id)
 			},
 		),

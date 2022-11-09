@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -18,13 +17,10 @@ const (
 )
 
 func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	filter := buildFilter(resourceData)
-	groups, err := client.FilterGroups(ctx, filter)
 
+	groups, err := c.FilterGroups(ctx, filter)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -40,53 +36,7 @@ func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData
 
 	resourceData.SetId(id)
 
-	return diags
-}
-
-func buildFilter(resourceData *schema.ResourceData) *transport.GroupsFilter {
-	groupName, hasName := resourceData.GetOk("name")
-	groupType, hasType := resourceData.GetOk("type")
-
-	// GetOk does not provide correct value for exists flag (second output value)
-	groupIsActive, hasIsActive := resourceData.GetOkExists("is_active") //nolint
-
-	if !hasName && !hasType && !hasIsActive {
-		return nil
-	}
-
-	filter := &transport.GroupsFilter{}
-
-	if hasName {
-		val := groupName.(string)
-		filter.Name = &val
-	}
-
-	if hasType {
-		val := groupType.(string)
-		filter.Type = &val
-	}
-
-	if hasIsActive {
-		val := groupIsActive.(bool)
-		filter.IsActive = &val
-	}
-
-	return filter
-}
-
-func convertGroupsToTerraform(groups []*model.Group) []interface{} {
-	out := make([]interface{}, 0, len(groups))
-
-	for _, group := range groups {
-		out = append(out, map[string]interface{}{
-			"id":        group.ID,
-			"name":      group.Name,
-			"type":      group.Type,
-			"is_active": group.IsActive,
-		})
-	}
-
-	return out
+	return nil
 }
 
 func Groups() *schema.Resource {
@@ -141,4 +91,35 @@ func Groups() *schema.Resource {
 			},
 		},
 	}
+}
+
+func buildFilter(resourceData *schema.ResourceData) *client.GroupsFilter {
+	groupName, hasName := resourceData.GetOk("name")
+	groupType, hasType := resourceData.GetOk("type")
+
+	// GetOk does not provide correct value for exists flag (second output value)
+	groupIsActive, hasIsActive := resourceData.GetOkExists("is_active") //nolint
+
+	if !hasName && !hasType && !hasIsActive {
+		return nil
+	}
+
+	filter := &client.GroupsFilter{}
+
+	if hasName {
+		val := groupName.(string)
+		filter.Name = &val
+	}
+
+	if hasType {
+		val := groupType.(string)
+		filter.Type = &val
+	}
+
+	if hasIsActive {
+		val := groupIsActive.(bool)
+		filter.IsActive = &val
+	}
+
+	return filter
 }

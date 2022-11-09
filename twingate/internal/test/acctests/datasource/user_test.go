@@ -8,16 +8,14 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDatasourceTwingateUser_basic(t *testing.T) {
-	t.Parallel()
-	//t.SkipNow() // fixed in other PR
 	t.Run("Test Twingate Datasource : Acc User Basic", func(t *testing.T) {
 		user, err := getTestUser()
 		if err != nil {
@@ -44,8 +42,8 @@ func getTestUser() (*model.User, error) {
 		return nil, errors.New("meta client not inited")
 	}
 
-	client := acctests.Provider.Meta().(*transport.Client)
-	users, err := client.ReadUsers(context.Background())
+	c := acctests.Provider.Meta().(*client.Client)
+	users, err := c.ReadUsers(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +68,6 @@ func testDatasourceTwingateUser(userID string) string {
 }
 
 func TestAccDatasourceTwingateUser_negative(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc User - does not exists", func(t *testing.T) {
 		userID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("User:%d", acctest.RandInt())))
 
@@ -98,7 +95,6 @@ func testTwingateUserDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateUser_invalidID(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc User - failed parse ID", func(t *testing.T) {
 		userID := acctest.RandString(10)
 

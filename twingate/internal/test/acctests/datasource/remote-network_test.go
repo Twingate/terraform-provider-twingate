@@ -7,16 +7,15 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Remote Network Basic", func(t *testing.T) {
 
 		networkName := test.RandomName()
@@ -54,7 +53,7 @@ func testDatasourceTwingateRemoteNetwork(name string) string {
 }
 
 func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_remote_network" {
@@ -63,7 +62,7 @@ func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 		remoteNetworkId := rs.Primary.ID
 
-		err := client.DeleteRemoteNetwork(context.Background(), remoteNetworkId)
+		err := c.DeleteRemoteNetwork(context.Background(), remoteNetworkId)
 		// expecting error here , since the network is already gone
 		if err == nil {
 			return fmt.Errorf("Remote network with ID %s still present : ", remoteNetworkId)
@@ -74,7 +73,6 @@ func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 }
 
 func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Remote Network Basic", func(t *testing.T) {
 
 		networkName := test.RandomName()
@@ -113,7 +111,6 @@ func testDatasourceTwingateRemoteNetworkByName(name string) string {
 }
 
 func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Remote Network - does not exists", func(t *testing.T) {
 		networkID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("RemoteNetwork:%d", acctest.RandInt())))
 
@@ -143,7 +140,6 @@ func testTwingateRemoteNetworkDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Remote Network - failed parse network ID", func(t *testing.T) {
 		networkID := acctest.RandString(10)
 
@@ -161,7 +157,6 @@ func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
 }
 
 func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Remote Network - failed passing both network ID and name", func(t *testing.T) {
 		networkID := acctest.RandString(10)
 		networkName := acctest.RandString(10)

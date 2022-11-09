@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Users Basic", func(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,

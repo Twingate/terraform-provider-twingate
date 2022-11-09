@@ -12,8 +12,6 @@ import (
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
-	t.Parallel()
-	//t.SkipNow() // fixed in other PR
 	t.Run("Test Twingate Datasource : Acc Connectors Basic", func(t *testing.T) {
 		networkName1 := test.RandomName()
 		networkName2 := test.RandomName()
@@ -63,8 +61,6 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 }
 
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
-	t.Parallel()
-	t.SkipNow() // fixed in other PR
 	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
 		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,

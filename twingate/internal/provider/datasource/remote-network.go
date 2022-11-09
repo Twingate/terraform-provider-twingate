@@ -3,20 +3,17 @@ package datasource
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	networkID := resourceData.Get("id").(string)
 	networkName := resourceData.Get("name").(string)
-	network, err := client.ReadRemoteNetwork(ctx, networkID, networkName)
 
+	network, err := c.ReadRemoteNetwork(ctx, networkID, networkName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -27,7 +24,7 @@ func datasourceRemoteNetworkRead(ctx context.Context, resourceData *schema.Resou
 
 	resourceData.SetId(network.ID)
 
-	return diags
+	return nil
 }
 
 func RemoteNetwork() *schema.Resource {

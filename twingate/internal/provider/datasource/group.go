@@ -3,19 +3,16 @@ package datasource
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceGroupRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	groupID := resourceData.Get("id").(string)
-	group, err := client.ReadGroup(ctx, groupID)
 
+	group, err := c.ReadGroup(ctx, groupID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -34,7 +31,7 @@ func datasourceGroupRead(ctx context.Context, resourceData *schema.ResourceData,
 
 	resourceData.SetId(groupID)
 
-	return diags
+	return nil
 }
 
 func Group() *schema.Resource {

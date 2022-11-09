@@ -3,8 +3,8 @@ package client
 import (
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/stretchr/testify/assert"
 	"github.com/twingate/go-graphql-client"
 )
@@ -30,7 +30,7 @@ func TestProtocols(t *testing.T) {
 
 func TestConvertIDNameToString(t *testing.T) {
 	t.Run("Test Twingate Resource : Convert ID Name To String", func(t *testing.T) {
-		in := &transport.IDName{ID: graphql.ID("id"), Name: graphql.String("name")}
+		in := &client.IDName{ID: graphql.ID("id"), Name: graphql.String("name")}
 		id := in.StringID()
 		name := in.StringName()
 		assert.Equal(t, "name", name)

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -60,11 +60,11 @@ func Connector() *schema.Resource {
 }
 
 func connectorCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
+	c := meta.(*client.Client)
 
 	remoteNetworkID := resourceData.Get("remote_network_id").(string)
 	connectorName := resourceData.Get("name").(string)
-	connector, err := client.CreateConnector(ctx, remoteNetworkID, connectorName)
+	connector, err := c.CreateConnector(ctx, remoteNetworkID, connectorName)
 
 	return resourceConnectorReadHelper(resourceData, connector, err)
 }
@@ -74,41 +74,37 @@ func connectorUpdate(ctx context.Context, resourceData *schema.ResourceData, met
 		return nil
 	}
 
-	client := meta.(*transport.Client)
+	c := meta.(*client.Client)
 
-	connector, err := client.UpdateConnector(ctx, resourceData.Id(), resourceData.Get("name").(string))
+	connector, err := c.UpdateConnector(ctx, resourceData.Id(), resourceData.Get("name").(string))
 
 	return resourceConnectorReadHelper(resourceData, connector, err)
 }
 
 func connectorDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	connectorID := resourceData.Id()
 
-	err := client.DeleteConnector(ctx, connectorID)
+	err := c.DeleteConnector(ctx, connectorID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	log.Printf("[INFO] Destroyed connector id %s", connectorID)
 
-	return diags
+	return nil
 }
 
 func connectorRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	connector, err := client.ReadConnector(ctx, resourceData.Id())
+	c := meta.(*client.Client)
+	connector, err := c.ReadConnector(ctx, resourceData.Id())
 
 	return resourceConnectorReadHelper(resourceData, connector, err)
 }
 
 func resourceConnectorReadHelper(resourceData *schema.ResourceData, connector *model.Connector, err error) diag.Diagnostics {
 	if err != nil {
-		if errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
+		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
 			resourceData.SetId("")
 

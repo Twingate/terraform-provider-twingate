@@ -1,4 +1,4 @@
-package transport
+package client
 
 import (
 	"github.com/twingate/go-graphql-client"

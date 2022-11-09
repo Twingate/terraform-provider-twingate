@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -88,7 +88,7 @@ func createGroup002(name string) string {
 }
 
 func testAccCheckTwingateGroupDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_group" {
@@ -97,7 +97,7 @@ func testAccCheckTwingateGroupDestroy(s *terraform.State) error {
 
 		groupId := rs.Primary.ID
 
-		err := client.DeleteGroup(context.Background(), groupId)
+		err := c.DeleteGroup(context.Background(), groupId)
 		if err == nil {
 			return fmt.Errorf("Group with ID %s still present : ", groupId)
 		}

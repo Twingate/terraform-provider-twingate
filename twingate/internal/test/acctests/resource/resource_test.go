@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -270,30 +270,6 @@ func createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName str
     `, networkName, groupName, resourceName, model.PolicyAllowAll, model.PolicyDenyAll)
 }
 
-func testTwingateResource_errorGroupId(networkName, resourceName string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test" {
-	  name = "%s"
-	}
-	resource "twingate_resource" "test" {
-	  name = "%s"
-	  address = "updated-acc-test.com"
-	  remote_network_id = twingate_remote_network.test.id
-	  group_ids = ["foo", "bar"]
-	  protocols {
-	    allow_icmp = true
-	    tcp  {
-	      policy = "%s"
-	      ports = ["80", "82-83"]
-	    }
-	    udp {
-	      policy = "%s"
-	    }
-	  }
-	}
-	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
-}
-
 func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
@@ -403,9 +379,6 @@ func createResourceWithRestrictedPolicyAndEmptyPortsList(networkName, groupName,
 }
 
 func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
-
-	t.Parallel()
-
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 	expectedError := regexp.MustCompile("Error: failed to parse protocols port range")
@@ -479,7 +452,7 @@ func createResourceWithRestrictedPolicyAndPortRange(networkName, resourceName, p
 }
 
 func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_resource" {
@@ -488,7 +461,7 @@ func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
 
 		resourceId := rs.Primary.ID
 
-		err := client.DeleteResource(context.Background(), resourceId)
+		err := c.DeleteResource(context.Background(), resourceId)
 		// expecting error here , since the resource is already gone
 		if err == nil {
 			return fmt.Errorf("resource with ID %s still present : ", resourceId)
@@ -534,8 +507,6 @@ func testAccCheckTwingateResourceExists(resourceName string) resource.TestCheckF
 //}
 
 func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
-	t.Parallel()
-
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 	const theResource = "twingate_resource.test9"
@@ -602,8 +573,6 @@ func createResourceWithPortRange(networkName, resourceName, portRange string) st
 }
 
 func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
-	t.Parallel()
-
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -648,7 +617,7 @@ func createResource10(networkName, resourceName string) string {
 
 func deactivateTwingateResource(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := acctests.Provider.Meta().(*transport.Client)
+		c := acctests.Provider.Meta().(*client.Client)
 
 		rs, ok := s.RootModule().Resources[resourceName]
 
@@ -662,7 +631,7 @@ func deactivateTwingateResource(resourceName string) resource.TestCheckFunc {
 			return fmt.Errorf("No ResourceId set ")
 		}
 
-		err := client.UpdateResourceActiveState(context.Background(), &model.Resource{
+		err := c.UpdateResourceActiveState(context.Background(), &model.Resource{
 			ID:       resourceId,
 			IsActive: false,
 		})
@@ -677,7 +646,7 @@ func deactivateTwingateResource(resourceName string) resource.TestCheckFunc {
 
 func testAccCheckTwingateResourceActiveState(resourceName string, expectedActiveState bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := acctests.Provider.Meta().(*transport.Client)
+		c := acctests.Provider.Meta().(*client.Client)
 
 		rs, ok := s.RootModule().Resources[resourceName]
 
@@ -689,13 +658,13 @@ func testAccCheckTwingateResourceActiveState(resourceName string, expectedActive
 			return fmt.Errorf("No ResourceId set ")
 		}
 
-		resource, err := client.ReadResource(context.Background(), rs.Primary.ID)
+		res, err := c.ReadResource(context.Background(), rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("failed to read resource: %w", err)
 		}
 
-		if bool(resource.IsActive) != expectedActiveState {
-			return fmt.Errorf("expected active state %v, got %v", expectedActiveState, resource.IsActive)
+		if res.IsActive != expectedActiveState {
+			return fmt.Errorf("expected active state %v, got %v", expectedActiveState, res.IsActive)
 		}
 
 		return nil
@@ -704,7 +673,6 @@ func testAccCheckTwingateResourceActiveState(resourceName string, expectedActive
 
 func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
 	const theResource = "twingate_resource.test11"
-	t.Parallel()
 
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -746,7 +714,7 @@ func createResource11(networkName, resourceName string) string {
 
 func deleteTwingateResource(resourceName, resourceType string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := acctests.Provider.Meta().(*transport.Client)
+		c := acctests.Provider.Meta().(*client.Client)
 
 		rs, ok := s.RootModule().Resources[resourceName]
 
@@ -763,13 +731,13 @@ func deleteTwingateResource(resourceName, resourceType string) resource.TestChec
 		var err error
 		switch resourceType {
 		case resourceResourceName:
-			err = client.DeleteResource(context.Background(), resourceId)
+			err = c.DeleteResource(context.Background(), resourceId)
 		case remoteNetworkResourceName:
-			err = client.DeleteRemoteNetwork(context.Background(), resourceId)
+			err = c.DeleteRemoteNetwork(context.Background(), resourceId)
 		case groupResourceName:
-			err = client.DeleteGroup(context.Background(), resourceId)
+			err = c.DeleteGroup(context.Background(), resourceId)
 		case connectorResourceName:
-			err = client.DeleteConnector(context.Background(), resourceId)
+			err = c.DeleteConnector(context.Background(), resourceId)
 		default:
 			return fmt.Errorf("%s unknown resource type", resourceType)
 		}
@@ -783,8 +751,6 @@ func deleteTwingateResource(resourceName, resourceType string) resource.TestChec
 }
 
 func TestAccTwingateResourceImport(t *testing.T) {
-	t.Parallel()
-
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
 	groupName2 := test.RandomGroupName()

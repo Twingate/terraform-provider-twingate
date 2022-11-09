@@ -4,21 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	resourceID := resourceData.Get("id").(string)
-	resource, err := client.ReadResource(ctx, resourceID)
 
+	resource, err := c.ReadResource(ctx, resourceID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -41,7 +38,7 @@ func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceDa
 
 	resourceData.SetId(resourceID)
 
-	return diags
+	return nil
 }
 
 func Resource() *schema.Resource { //nolint:funlen

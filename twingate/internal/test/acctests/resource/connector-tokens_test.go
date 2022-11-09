@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -52,7 +52,7 @@ func createConnectorTokensWithKeepers(remoteNetworkName string) string {
 }
 
 func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_connector_tokens" {
@@ -63,7 +63,7 @@ func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 		accessToken := rs.Primary.Attributes["access_token"]
 		refreshToken := rs.Primary.Attributes["refresh_token"]
 
-		err := client.VerifyConnectorTokens(context.Background(), refreshToken, accessToken)
+		err := c.VerifyConnectorTokens(context.Background(), refreshToken, accessToken)
 		// expecting error here , Since tokens invalidated
 		if err == nil {
 			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active", connectorId)

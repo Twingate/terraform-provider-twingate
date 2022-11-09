@@ -7,16 +7,15 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Connector Basic", func(t *testing.T) {
 		networkName := test.RandomName()
 		connectorName := test.RandomConnectorName()
@@ -58,7 +57,7 @@ func testDatasourceTwingateConnector(remoteNetworkName, connectorName string) st
 }
 
 func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_connector" {
@@ -67,7 +66,7 @@ func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
 
 		connectorId := rs.Primary.ID
 
-		err := client.DeleteConnector(context.Background(), connectorId)
+		err := c.DeleteConnector(context.Background(), connectorId)
 		// expecting error here , since the network is already gone
 		if err == nil {
 			return fmt.Errorf("Connector with ID %s still present : ", connectorId)
@@ -78,7 +77,6 @@ func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
 }
 
 func TestAccDatasourceTwingateConnector_negative(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Connector - does not exists", func(t *testing.T) {
 		connectorID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Connector:%d", acctest.RandInt())))
 
@@ -110,7 +108,6 @@ func testTwingateConnectorDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateConnector_invalidID(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Connector - failed parse ID", func(t *testing.T) {
 		connectorID := acctest.RandString(10)
 

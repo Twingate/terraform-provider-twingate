@@ -1,4 +1,3 @@
-// Package twingate is a Terraform provider for Twingate platform
 package twingate
 
 import (
@@ -6,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -110,7 +109,7 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 		var diags diag.Diagnostics
 
 		if (apiToken != "") && (network != "") {
-			client := transport.NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpMaxRetry, version)
+			client := client.NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpMaxRetry, version)
 
 			return client, diags
 		}

@@ -3,19 +3,16 @@ package datasource
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	userID := resourceData.Get("id").(string)
-	user, err := client.ReadUser(ctx, userID)
 
+	user, err := c.ReadUser(ctx, userID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -42,7 +39,7 @@ func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, 
 
 	resourceData.SetId(userID)
 
-	return diags
+	return nil
 }
 
 const userDescription = "Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users)."

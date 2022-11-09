@@ -7,16 +7,15 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Group Basic", func(t *testing.T) {
 		groupName := test.RandomName()
 
@@ -63,7 +62,7 @@ func testDatasourceTwingateGroup(name string) string {
 }
 
 func testAccCheckTwingateGroupDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_group" {
@@ -72,7 +71,7 @@ func testAccCheckTwingateGroupDestroy(s *terraform.State) error {
 
 		groupId := rs.Primary.ID
 
-		err := client.DeleteGroup(context.Background(), groupId)
+		err := c.DeleteGroup(context.Background(), groupId)
 		if err == nil {
 			return fmt.Errorf("Group with ID %s still present : ", groupId)
 		}
@@ -82,7 +81,6 @@ func testAccCheckTwingateGroupDestroy(s *terraform.State) error {
 }
 
 func TestAccDatasourceTwingateGroup_negative(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Group - does not exists", func(t *testing.T) {
 		groupID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Group:%d", acctest.RandInt())))
 
@@ -110,7 +108,6 @@ func testTwingateGroupDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateGroup_invalidGroupID(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Group - failed parse group ID", func(t *testing.T) {
 		groupID := acctest.RandString(10)
 

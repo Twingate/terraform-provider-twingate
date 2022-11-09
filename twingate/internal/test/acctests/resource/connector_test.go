@@ -6,10 +6,10 @@ import (
 	"regexp"
 	"testing"
 
-	provider_resource "github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	providerResource "github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -94,7 +94,7 @@ func createConnectorC2(remoteNetworkName string, connectorName string) string {
 }
 
 func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_connector" {
@@ -103,7 +103,7 @@ func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
 
 		connectorId := rs.Primary.ID
 
-		err := client.DeleteConnector(context.Background(), connectorId)
+		err := c.DeleteConnector(context.Background(), connectorId)
 		// expecting error here , since the network is already gone
 		if err == nil {
 			return fmt.Errorf("Connector with ID %s still present : ", connectorId)
@@ -194,7 +194,7 @@ func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
 				},
 				{
 					Config:      createConnectorC4WithAnotherNetwork(newRemoteNetworkName),
-					ExpectError: regexp.MustCompile(provider_resource.ErrNotAllowChangeRemoteNetworkID.Error()),
+					ExpectError: regexp.MustCompile(providerResource.ErrNotAllowChangeRemoteNetworkID.Error()),
 				},
 			},
 		})

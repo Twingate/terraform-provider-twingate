@@ -7,16 +7,15 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDatasourceTwingateResource_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Resource Basic", func(t *testing.T) {
 		networkName := test.RandomName()
 		resourceName := test.RandomResourceName()
@@ -67,7 +66,7 @@ func testDatasourceTwingateResource(networkName, resourceName string) string {
 }
 
 func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_resource" {
@@ -76,7 +75,7 @@ func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
 
 		resourceId := rs.Primary.ID
 
-		err := client.DeleteResource(context.Background(), resourceId)
+		err := c.DeleteResource(context.Background(), resourceId)
 		// expecting error here , since the resource is already gone
 		if err == nil {
 			return fmt.Errorf("resource with ID %s still present : ", resourceId)
@@ -87,7 +86,6 @@ func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
 }
 
 func TestAccDatasourceTwingateResource_negative(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Resource - does not exists", func(t *testing.T) {
 		resourceID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Resource:%d", acctest.RandInt())))
 
@@ -119,7 +117,6 @@ func testTwingateResourceDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateResource_invalidID(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Resource - failed parse resource ID", func(t *testing.T) {
 		networkID := acctest.RandString(10)
 

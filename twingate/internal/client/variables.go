@@ -1,4 +1,4 @@
-package transport
+package client
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"

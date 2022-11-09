@@ -3,19 +3,15 @@ package datasource
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceUsersRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
+	c := meta.(*client.Client)
 
-	var diags diag.Diagnostics
-
-	users, err := client.ReadUsers(ctx)
-
+	users, err := c.ReadUsers(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -28,23 +24,7 @@ func datasourceUsersRead(ctx context.Context, resourceData *schema.ResourceData,
 
 	resourceData.SetId("users-all")
 
-	return diags
-}
-
-func convertUsersToTerraform(users []*model.User) []interface{} {
-	out := make([]interface{}, 0, len(users))
-	for _, user := range users {
-		out = append(out, map[string]interface{}{
-			"id":         user.ID,
-			"first_name": user.FirstName,
-			"last_name":  user.LastName,
-			"email":      user.Email,
-			"is_admin":   user.IsAdmin(),
-			"role":       user.Role,
-		})
-	}
-
-	return out
+	return nil
 }
 
 func Users() *schema.Resource {

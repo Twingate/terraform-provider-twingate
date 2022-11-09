@@ -9,9 +9,7 @@ import (
 )
 
 func TestResourceResourceReadDiagnosticsError(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Resource : Resource Read Diagnostics Error", func(t *testing.T) {
-
 		res := &model.Resource{
 			Groups:    []string{},
 			Protocols: &model.Protocols{},

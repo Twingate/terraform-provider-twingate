@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -80,7 +80,7 @@ func createRemoteNetwork002(name string) string {
 }
 
 func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
-	client := acctests.Provider.Meta().(*transport.Client)
+	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "twingate_remote_network" {
@@ -89,7 +89,7 @@ func testAccCheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 		remoteNetworkId := rs.Primary.ID
 
-		err := client.DeleteRemoteNetwork(context.Background(), remoteNetworkId)
+		err := c.DeleteRemoteNetwork(context.Background(), remoteNetworkId)
 		// expecting error here , since the network is already gone
 		if err == nil {
 			return fmt.Errorf("Remote network with ID %s still present : ", remoteNetworkId)

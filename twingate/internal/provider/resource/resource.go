@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -197,7 +197,7 @@ func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool 
 }
 
 func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
+	client := meta.(*client.Client)
 
 	resource, err := convertResource(resourceData)
 	if err != nil {
@@ -215,7 +215,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
+	client := meta.(*client.Client)
 
 	resource, err := convertResource(resourceData)
 	if err != nil {
@@ -235,33 +235,29 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	resourceID := resourceData.Id()
 
-	err := client.DeleteResource(ctx, resourceID)
+	err := c.DeleteResource(ctx, resourceID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	log.Printf("[INFO] deleted resource id %s", resourceData.Id())
 
-	return diags
+	return nil
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
+	c := meta.(*client.Client)
+	resource, err := c.ReadResource(ctx, resourceData.Id())
 
-	resource, err := client.ReadResource(ctx, resourceData.Id())
-
-	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
+	return resourceResourceReadHelper(ctx, c, resourceData, resource, err)
 }
 
-func resourceResourceReadHelper(ctx context.Context, client *transport.Client, resourceData *schema.ResourceData, resource *model.Resource, err error) diag.Diagnostics {
+func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Client, resourceData *schema.ResourceData, resource *model.Resource, err error) diag.Diagnostics {
 	if err != nil {
-		if errors.Is(err, transport.ErrGraphqlResultIsEmpty) {
+		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
 			resourceData.SetId("")
 
@@ -277,7 +273,7 @@ func resourceResourceReadHelper(ctx context.Context, client *transport.Client, r
 
 	if !resource.IsActive {
 		// fix set active state for the resource on `terraform apply`
-		err = client.UpdateResourceActiveState(ctx, &model.Resource{
+		err = resourceClient.UpdateResourceActiveState(ctx, &model.Resource{
 			ID:       resource.ID,
 			IsActive: true,
 		})
@@ -293,8 +289,6 @@ func resourceResourceReadHelper(ctx context.Context, client *transport.Client, r
 }
 
 func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource) diag.Diagnostics {
-	var diags diag.Diagnostics
-
 	if err := resourceData.Set("name", resource.Name); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting name: %w ", err))
 	}
@@ -316,5 +310,5 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
 	}
 
-	return diags
+	return nil
 }

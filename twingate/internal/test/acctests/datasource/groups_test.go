@@ -17,7 +17,6 @@ const (
 )
 
 func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Groups Basic", func(t *testing.T) {
 		groupName := test.RandomName()
 
@@ -59,7 +58,6 @@ func testDatasourceTwingateGroups(name string) string {
 }
 
 func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Groups - empty result", func(t *testing.T) {
 		groupName := test.RandomName()
 
@@ -87,7 +85,6 @@ func testTwingateGroupsDoesNotExists(name string) string {
 }
 
 func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
-	t.Parallel()
 	groupName := test.RandomName()
 
 	const theDatasource = "data.twingate_groups.out_dgs2"
@@ -130,7 +127,6 @@ func testDatasourceTwingateGroupsWithFilters(name string) string {
 }
 
 func TestAccDatasourceTwingateGroupsWithFilters_ErrorNotSupportedTypes(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Groups with filters - error not supported types", func(t *testing.T) {
 		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
@@ -160,7 +156,6 @@ func testTwingateGroupsWithFilterNotSupportedType() string {
 }
 
 func TestAccDatasourceTwingateGroups_WithEmptyFilters(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Groups - with empty filters", func(t *testing.T) {
 		resource.ParallelTest(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
@@ -187,7 +182,6 @@ func testTwingateGroupsWithEmptyFilter() string {
 }
 
 func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Groups with two datasource", func(t *testing.T) {
 
 		groupName := test.RandomName()

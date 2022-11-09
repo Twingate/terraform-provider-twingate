@@ -3,19 +3,16 @@ package datasource
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/transport"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func datasourceConnectorRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*transport.Client)
-
-	var diags diag.Diagnostics
-
+	c := meta.(*client.Client)
 	connectorID := resourceData.Get("id").(string)
-	connector, err := client.ReadConnector(ctx, connectorID)
 
+	connector, err := c.ReadConnector(ctx, connectorID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -30,7 +27,7 @@ func datasourceConnectorRead(ctx context.Context, resourceData *schema.ResourceD
 
 	resourceData.SetId(connectorID)
 
-	return diags
+	return nil
 }
 
 func Connector() *schema.Resource {

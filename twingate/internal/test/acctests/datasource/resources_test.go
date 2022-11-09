@@ -16,7 +16,6 @@ const (
 )
 
 func TestAccDatasourceTwingateResources_basic(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Resources Basic", func(t *testing.T) {
 
 		networkName := test.RandomName()
@@ -89,7 +88,6 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 }
 
 func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
-	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Resources - empty result", func(t *testing.T) {
 		resourceName := test.RandomResourceName()
 
