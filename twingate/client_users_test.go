@@ -20,56 +20,56 @@ func TestClientUsersReadOk(t *testing.T) {
 		}
 
 		jsonResponse := `{
-	  "data": {
-		"users": {
-		  "pageInfo": {
-			"endCursor": "cursor",
-			"hasNextPage": true
-		  },
-		  "edges": [
-			{
-			  "node": {
-				"id": "user-1",
-				"firstName": "First",
-				"lastName": "Last",
-				"email": "user-1@gmail.com",
-				"role": "ADMIN"
-			  }
-			},
-			{
-			  "node": {
-				"id": "user-2",
-				"firstName": "Second",
-				"lastName": "Last",
-				"email": "user-2@gmail.com",
-				"role": "DEVOPS"
-			  }
-			}
-		  ]
-		}
-	  }
-	}`
+		  "data": {
+		    "users": {
+		      "pageInfo": {
+		        "endCursor": "cursor",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "user-1",
+		            "firstName": "First",
+		            "lastName": "Last",
+		            "email": "user-1@gmail.com",
+		            "role": "ADMIN"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "user-2",
+		            "firstName": "Second",
+		            "lastName": "Last",
+		            "email": "user-2@gmail.com",
+		            "role": "DEVOPS"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
 
 		nextPage := `{
-	  "data": {
-		"users": {
-		  "pageInfo": {
-			"hasNextPage": false
-		  },
-		  "edges": [
-			{
-			  "node": {
-				"id": "user-3",
-				"firstName": "John",
-				"lastName": "White",
-				"email": "user-3@gmail.com",
-				"role": "ADMIN"
-			  }
-			}
-		  ]
-		}
-	  }
-	}`
+		  "data": {
+		    "users": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "user-3",
+		            "firstName": "John",
+		            "lastName": "White",
+		            "email": "user-3@gmail.com",
+		            "role": "ADMIN"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -91,7 +91,7 @@ func TestClientUsersReadEmptyResult(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Users - Empty Result", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"users": null
+		    "users": null
 		  }
 		}`
 
@@ -112,7 +112,7 @@ func TestClientUsersReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Users - Request Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"users": null
+		    "users": null
 		  }
 		}`
 
