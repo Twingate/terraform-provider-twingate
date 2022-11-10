@@ -1,13 +1,13 @@
 package datasource
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -63,14 +63,16 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
+		prefix := acctest.RandString(10)
 		t.Log("Test prefix:", test.Prefix())
+		t.Log("prefix:", prefix)
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateConnectorsDoesNotExists(test.Prefix()),
+					Config: testTwingateConnectorsDoesNotExists(prefix),
 					Check: resource.ComposeTestCheckFunc(
 						testCheckOutputLength("my_connectors_dcs2", 0),
 					),
@@ -103,10 +105,10 @@ func testCheckOutputLength(name string, length int) resource.TestCheckFunc {
 			return fmt.Errorf("output '%s' is not a list", name)
 		}
 
-		if name == "my_connectors_dcs2" {
-			rawData, _ := json.Marshal(actual)
-			return fmt.Errorf("::testCheckOutputLength:: actual: %s\n", string(rawData))
-		}
+		//if name == "my_connectors_dcs2" {
+		//	rawData, _ := json.Marshal(actual)
+		//	return fmt.Errorf("::testCheckOutputLength:: actual: %s\n", string(rawData))
+		//}
 
 		if len(actual) != length {
 			return fmt.Errorf("expected length %d, got %d", length, len(actual))
