@@ -16,14 +16,14 @@ func TestClientConnectorCreateOk(t *testing.T) {
 		// response JSON
 		createConnectorOkJson := `{
 		  "data": {
-			"connectorCreate": {
-			  "entity": {
-				"id": "test-id",
-				"name": "test-name"
-			  },
-			  "ok": true,
-			  "error": null
-			}
+		    "connectorCreate": {
+		      "entity": {
+		        "id": "test-id",
+		        "name": "test-name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -74,14 +74,14 @@ func TestClientConnectorUpdateOk(t *testing.T) {
 		// response JSON
 		updateConnectorOkJson := `{
 		  "data": {
-			"connectorUpdate": {
-			  "entity": {
-				"id": "test-id",
-				"name": "test-name"
-			  },
-			  "ok": true,
-			  "error": null
-			}
+		    "connectorUpdate": {
+		      "entity": {
+		        "id": "test-id",
+		        "name": "test-name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -101,10 +101,10 @@ func TestClientConnectorDeleteOk(t *testing.T) {
 		// response JSON
 		deleteConnectorOkJson := `{
 		  "data": {
-			"connectorDelete": {
-			  "ok": true,
-			  "error": null
-			}
+		    "connectorDelete": {
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -125,10 +125,10 @@ func TestClientConnectorCreateError(t *testing.T) {
 		// response JSON
 		createNetworkErrorJson := `{
 		  "data": {
-			"connectorCreate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "connectorCreate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -150,10 +150,10 @@ func TestClientConnectorCreateWithNameError(t *testing.T) {
 		// response JSON
 		createNetworkErrorJson := `{
 		  "data": {
-			"connectorCreate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "connectorCreate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -175,10 +175,10 @@ func TestClientConnectorCreateErrorEmptyResult(t *testing.T) {
 		// response JSON
 		createNetworkErrorJson := `{
 		  "data": {
-			"connectorCreate": {
-			  "ok": true,
-			  "entity": null
-			}
+		    "connectorCreate": {
+		      "ok": true,
+		      "entity": null
+		    }
 		  }
 		}`
 
@@ -200,10 +200,10 @@ func TestClientConnectorCreateWithNameErrorEmptyResult(t *testing.T) {
 		// response JSON
 		createNetworkErrorJson := `{
 		  "data": {
-			"connectorCreate": {
-			  "ok": true,
-			  "entity": null
-			}
+		    "connectorCreate": {
+		      "ok": true,
+		      "entity": null
+		    }
 		  }
 		}`
 
@@ -225,10 +225,10 @@ func TestClientConnectorUpdateError(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
 		  "data": {
-			"connectorUpdate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "connectorUpdate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -250,10 +250,10 @@ func TestClientConnectorUpdateErrorWhenIdEmpty(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
 		  "data": {
-			"connectorUpdate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "connectorUpdate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -292,10 +292,10 @@ func TestClientConnectorDeleteError(t *testing.T) {
 		// response JSON
 		deleteConnectorOkJson := `{
 		  "data": {
-			"connectorDelete": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "connectorDelete": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -317,7 +317,7 @@ func TestClientConnectorReadError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"connector": null
+		    "connector": null
 		  }
 		}`
 
@@ -392,28 +392,28 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 		// response JSON
 		readConnectorsOkJson := `{
 		  "data": {
-			"connectors": {
-			  "edges": [
-				{
-				  "node": {
-					"id": "connector1",
-					"name": "tf-acc-connector1"
-				  }
-				},
-				{
-				  "node": {
-					"id": "connector2",
-					"name": "connector2"
-				  }
-				},
-				{
-				  "node": {
-					"id": "connector3",
-					"name": "tf-acc-connector3"
-				  }
-				}
-			  ]
-			}
+		    "connectors": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "connector1",
+		            "name": "tf-acc-connector1"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "connector2",
+		            "name": "connector2"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "connector3",
+		            "name": "tf-acc-connector3"
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 
@@ -550,28 +550,28 @@ func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 
 		jsonResponse := fmt.Sprintf(`{
 		  "data": {
-			"connectors": {
-			  "edges": [
-				{
-				  "node": {
-					"id": "%s",
-					"name": "%s",
-					"remoteNetwork": {
-					  "id": "%s"
-					}
-				  }
-				},
-				{
-				  "node": {
-					"id": "%s",
-					"name": "%s",
-					"remoteNetwork": {
-					  "id": "%s"
-					}
-				  }
-				}
-			  ]
-			}
+		    "connectors": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "%s",
+		            "name": "%s",
+		            "remoteNetwork": {
+		              "id": "%s"
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "%s",
+		            "name": "%s",
+		            "remoteNetwork": {
+		              "id": "%s"
+		            }
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`, data[0].id, data[0].name, data[0].networkID, data[1].id, data[1].name, data[1].networkID)
 
@@ -595,7 +595,7 @@ func TestClientReadConnectorsWithRemoteNetworkError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"connectors": null
+		    "connectors": null
 		  }
 		}`
 
@@ -615,7 +615,7 @@ func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Request Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"connectors": null
+		    "connectors": null
 		  }
 		}`
 
@@ -644,53 +644,53 @@ func TestClientReadConnectorsAllPagesOk(t *testing.T) {
 
 		jsonResponse := `{
 		  "data": {
-			"connectors": {
-			  "pageInfo": {
-				"endCursor": "cursor001",
-				"hasNextPage": true
-			  },
-			  "edges": [
-				{
-				  "node": {
-					"id": "connector1",
-					"name": "tf-acc-connector1",
-					"remoteNetwork": {
-					  "id": "tf-acc-network1"
-					}
-				  }
-				},
-				{
-				  "node": {
-					"id": "connector2",
-					"name": "tf-acc-connector2",
-					"remoteNetwork": {
-					  "id": "tf-acc-network2"
-					}
-				  }
-				}
-			  ]
-			}
+		    "connectors": {
+		      "pageInfo": {
+		        "endCursor": "cursor001",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "connector1",
+		            "name": "tf-acc-connector1",
+		            "remoteNetwork": {
+		              "id": "tf-acc-network1"
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "connector2",
+		            "name": "tf-acc-connector2",
+		            "remoteNetwork": {
+		              "id": "tf-acc-network2"
+		            }
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 
 		nextPage := `{
 		  "data": {
-			"connectors": {
-			  "pageInfo": {
-				"hasNextPage": false
-			  },
-			  "edges": [
-				{
-				  "node": {
-					"id": "connector3",
-					"name": "tf-acc-connector3",
-					"remoteNetwork": {
-					  "id": "tf-acc-network3"
-					}
-				  }
-				}
-			  ]
-			}
+		    "connectors": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "connector3",
+		            "name": "tf-acc-connector3",
+		            "remoteNetwork": {
+		              "id": "tf-acc-network3"
+		            }
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 
