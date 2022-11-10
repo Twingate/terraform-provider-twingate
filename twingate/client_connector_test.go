@@ -44,17 +44,17 @@ func TestClientConnectorCreateWithNameOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Create With Name Ok", func(t *testing.T) {
 		// response JSON
 		createConnectorOkJson := `{
-	      "data": {
-	        "connectorCreate": {
-	          "entity": {
-	            "id": "test-id",
-	            "name": "test-name"
-	          },
-	          "ok": true,
-	          "error": null
-	        }
-	      }
-	    }`
+		  "data": {
+		    "connectorCreate": {
+		      "entity": {
+		        "id": "test-id",
+		        "name": "test-name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
