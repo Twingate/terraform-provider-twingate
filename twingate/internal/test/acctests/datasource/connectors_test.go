@@ -62,7 +62,7 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{

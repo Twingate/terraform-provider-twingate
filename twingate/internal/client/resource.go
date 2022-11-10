@@ -177,11 +177,8 @@ type readResourcesQuery struct {
 
 func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) {
 	response := readResourcesQuery{}
-	variables := newVars(
-		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
-	)
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, nil)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
