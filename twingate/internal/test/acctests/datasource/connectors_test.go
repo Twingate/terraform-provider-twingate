@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -62,6 +63,8 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
+		t.Log("Test prefix:", test.Prefix())
+
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
@@ -99,6 +102,9 @@ func testCheckOutputLength(name string, length int) resource.TestCheckFunc {
 		if !ok {
 			return fmt.Errorf("output '%s' is not a list", name)
 		}
+
+		rawData, _ := json.Marshal(actual)
+		fmt.Printf("::testCheckOutputLength:: actual: %s\n", string(rawData))
 
 		if len(actual) != length {
 			return fmt.Errorf("expected length %d, got %d", length, len(actual))
