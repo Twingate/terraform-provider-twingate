@@ -1,6 +1,11 @@
 package model
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrInvalidPortRangeLen = errors.New("port range expects 2 values")
 
 func ErrInvalidPortRange(portRange string, err error) error {
 	return fmt.Errorf(`failed to parse protocols port range "%s": %w`, portRange, err)

@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	portRangeSeparator = "-"
+	portRangeSeparator    = "-"
+	expectedPortsRangeLen = 2
 
 	PolicyRestricted = "RESTRICTED"
 	PolicyAllowAll   = "ALLOW_ALL"
@@ -50,37 +51,57 @@ func (p PortRange) String() string {
 }
 
 func NewPortRange(str string) (*PortRange, error) {
-	ports := strings.Split(str, portRangeSeparator)
+	var (
+		portRange *PortRange
+		err       error
+	)
 
-	switch len(ports) {
-	case 1:
-		port, err := validatePort(ports[0])
-		if err != nil {
-			return nil, ErrInvalidPortRange(str, err)
-		}
-
-		return &PortRange{Start: port, End: port}, nil
-
-	default:
-		start, err := validatePort(ports[0])
-		if err != nil {
-			return nil, ErrInvalidPortRange(ports[0], err)
-		}
-
-		end, err := validatePort(ports[1])
-		if err != nil {
-			return nil, ErrInvalidPortRange(ports[1], err)
-		}
-
-		if end < start {
-			return nil, ErrInvalidPortRange(str, NewPortRangeNotRisingSequenceError(start, end))
-		}
-
-		return &PortRange{
-			Start: start,
-			End:   end,
-		}, nil
+	if strings.Contains(str, portRangeSeparator) {
+		portRange, err = newPortRange(str)
+	} else {
+		portRange, err = newSinglePort(str)
 	}
+
+	if err != nil {
+		return nil, ErrInvalidPortRange(str, err)
+	}
+
+	return portRange, nil
+}
+
+func newSinglePort(str string) (*PortRange, error) {
+	port, err := validatePort(str)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PortRange{Start: port, End: port}, nil
+}
+
+func newPortRange(str string) (*PortRange, error) {
+	ports := strings.Split(str, portRangeSeparator)
+	if len(ports) != expectedPortsRangeLen {
+		return nil, ErrInvalidPortRangeLen
+	}
+
+	start, err := validatePort(ports[0])
+	if err != nil {
+		return nil, err
+	}
+
+	end, err := validatePort(ports[1])
+	if err != nil {
+		return nil, err
+	}
+
+	if end < start {
+		return nil, NewPortRangeNotRisingSequenceError(start, end)
+	}
+
+	return &PortRange{
+		Start: start,
+		End:   end,
+	}, nil
 }
 
 type Protocol struct {

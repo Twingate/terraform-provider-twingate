@@ -168,7 +168,7 @@ func TestClientConnectorCreateWithNameError(t *testing.T) {
 
 		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "test-name")
 
-		assert.EqualError(t, err, "failed to create connector: error_1")
+		assert.EqualError(t, err, "failed to create connector with name test-name: error_1")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -501,7 +501,7 @@ func TestClientConnectorCreateWithNameRequestError(t *testing.T) {
 
 		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "test-name")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector with name test-name: Post "%s": error_1`, client.GraphqlServerURL))
 		assert.Nil(t, remoteNetwork)
 	})
 }

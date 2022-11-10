@@ -106,20 +106,22 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 		httpTimeout := d.Get("http_timeout").(int)
 		httpMaxRetry := d.Get("http_max_retry").(int)
 
-		var diags diag.Diagnostics
-
 		if (apiToken != "") && (network != "") {
-			client := client.NewClient(url, apiToken, network, time.Duration(httpTimeout)*time.Second, httpMaxRetry, version)
-
-			return client, diags
+			return client.NewClient(url,
+					apiToken,
+					network,
+					time.Duration(httpTimeout)*time.Second,
+					httpMaxRetry,
+					version),
+				nil
 		}
 
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Unable to create Twingate client",
-			Detail:   "Unable to create anonymous Twingate client , token and network have to be provided ",
-		})
-
-		return nil, diags
+		return nil, diag.Diagnostics{
+			diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Unable to create Twingate client",
+				Detail:   "Unable to create anonymous Twingate client , token and network have to be provided ",
+			},
+		}
 	}
 }

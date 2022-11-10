@@ -45,15 +45,15 @@ func (client *Client) CreateConnector(ctx context.Context, remoteNetworkID, conn
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createConnector", &response, variables)
 	if err != nil {
-		return nil, NewAPIError(err, "create", connectorResourceName)
+		return nil, NewAPIErrorWithName(err, "create", connectorResourceName, connectorName)
 	}
 
 	if !response.ConnectorCreate.Ok {
-		return nil, NewAPIError(NewMutationError(response.ConnectorCreate.Error), "create", connectorResourceName)
+		return nil, NewAPIErrorWithName(NewMutationError(response.ConnectorCreate.Error), "create", connectorResourceName, connectorName)
 	}
 
 	if response.ConnectorCreate.Entity == nil {
-		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", connectorResourceName)
+		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "create", connectorResourceName, connectorName)
 	}
 
 	return response.ConnectorCreate.Entity.ToModel(), nil

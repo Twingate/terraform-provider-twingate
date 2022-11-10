@@ -13,7 +13,7 @@ const (
 func validatePort(str string) (int32, error) {
 	port, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("port is not a valid integer: %w", err)
+		return 0, fmt.Errorf("port `%s` is not a valid integer: %w", str, err)
 	}
 
 	if port < minPortValue || port > maxPortValue {

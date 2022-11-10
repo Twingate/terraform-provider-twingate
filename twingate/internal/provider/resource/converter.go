@@ -75,13 +75,9 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 	var ports = make([]*model.PortRange, 0, len(rawList))
 
 	for _, port := range rawList {
-		if port == nil {
-			continue
-		}
-
-		str := port.(string)
-		if str == "" {
-			continue
+		var str string
+		if port != nil {
+			str = port.(string)
 		}
 
 		portRange, err := model.NewPortRange(str)
@@ -90,10 +86,6 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 		}
 
 		ports = append(ports, portRange)
-	}
-
-	if cap(ports) > len(ports) {
-		ports = ports[:len(ports):len(ports)]
 	}
 
 	return ports, nil

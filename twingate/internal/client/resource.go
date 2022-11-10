@@ -316,7 +316,6 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 	response := readResourcesByNameQuery{}
 	variables := newVars(
 		gqlField(name, "name"),
-		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
 	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)

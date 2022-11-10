@@ -182,7 +182,7 @@ func resourceFullCreationFlow(networkName, groupName, resourceName string) strin
         }
       }
     }
-    `, networkName, groupName, resourceName, model.PolicyDenyAll, model.PolicyAllowAll)
+    `, networkName, groupName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
 }
 
 func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
@@ -267,7 +267,7 @@ func createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName str
         }
       }
     }
-    `, networkName, groupName, resourceName, model.PolicyAllowAll, model.PolicyDenyAll)
+    `, networkName, groupName, resourceName, model.PolicyDenyAll, model.PolicyAllowAll)
 }
 
 func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
@@ -321,7 +321,7 @@ func createResourceWithUdpDenyAllPolicy(networkName, groupName, resourceName str
         }
       }
     }
-	`, networkName, groupName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
+	`, networkName, groupName, resourceName, model.PolicyAllowAll, model.PolicyDenyAll)
 }
 
 func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) {
@@ -329,7 +329,6 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 	groupName := test.RandomGroupName()
 	resourceName := test.RandomResourceName()
 
-	t.Parallel()
 	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
@@ -781,7 +780,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 						name     string
 						expected string
 					}{
-						{name: "address", expected: "updated-acc-test.com"},
+						{name: "address", expected: "acc-test.com.12"},
 						{name: "protocols.0.tcp.0.policy", expected: model.PolicyRestricted},
 						{name: "protocols.0.tcp.0.ports.#", expected: "2"},
 						{name: "protocols.0.tcp.0.ports.0", expected: "80"},

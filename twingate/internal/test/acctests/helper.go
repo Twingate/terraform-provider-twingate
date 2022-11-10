@@ -12,12 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-var requiredEnvironmentVariables = []string{ //nolint:gochecknoglobals
-	twingate.EnvAPIToken,
-	twingate.EnvNetwork,
-	twingate.EnvURL,
-}
-
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
 var ProviderFactories map[string]func() (*schema.Provider, error) //nolint:gochecknoglobals
 
@@ -43,15 +37,15 @@ func WaitTestFunc() resource.TestCheckFunc {
 	}
 }
 
-func ComposeTestCheckFunc(fs ...resource.TestCheckFunc) resource.TestCheckFunc { //nolint:varnamelen
+func ComposeTestCheckFunc(checkFuncs ...resource.TestCheckFunc) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		if err := WaitTestFunc()(state); err != nil {
 			return fmt.Errorf("WaitTestFunc error: %w", err)
 		}
 
-		for i, f := range fs {
+		for i, f := range checkFuncs {
 			if err := f(state); err != nil {
-				return fmt.Errorf("check %d/%d error: %w", i+1, len(fs), err)
+				return fmt.Errorf("check %d/%d error: %w", i+1, len(checkFuncs), err)
 			}
 		}
 
@@ -61,6 +55,13 @@ func ComposeTestCheckFunc(fs ...resource.TestCheckFunc) resource.TestCheckFunc {
 
 func PreCheck(t *testing.T) {
 	t.Helper()
+
+	var requiredEnvironmentVariables = []string{
+		twingate.EnvAPIToken,
+		twingate.EnvNetwork,
+		twingate.EnvURL,
+	}
+
 	t.Run("Test Twingate Resource : AccPreCheck", func(t *testing.T) {
 		for _, requiredEnvironmentVariable := range requiredEnvironmentVariables {
 			if value := os.Getenv(requiredEnvironmentVariable); value == "" {
