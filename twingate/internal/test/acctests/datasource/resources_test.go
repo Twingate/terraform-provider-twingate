@@ -22,7 +22,7 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 		resourceName := test.RandomResourceName()
 		const theDatasource = "data.twingate_resources.out_drs1"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -91,7 +91,7 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resources - empty result", func(t *testing.T) {
 		resourceName := test.RandomResourceName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)

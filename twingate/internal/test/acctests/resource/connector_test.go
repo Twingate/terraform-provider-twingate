@@ -30,7 +30,7 @@ func TestAccRemoteConnectorCreate(t *testing.T) {
 
 		const theResource = "twingate_connector.test_c1"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
@@ -53,7 +53,7 @@ func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 		connectorName := test.RandomConnectorName()
 		const theResource = "twingate_connector.test_c2"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
@@ -141,7 +141,7 @@ func TestAccRemoteConnectorImport(t *testing.T) {
 		connectorName := test.RandomConnectorName()
 		const theResource = "twingate_connector.test_c3"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
@@ -181,7 +181,7 @@ func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
 		newRemoteNetworkName := test.RandomName()
 		const theResource = "twingate_connector.test_c4"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
@@ -206,7 +206,7 @@ func TestAccTwingateConnectorReCreateAfterDeletion(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		const theResource = "twingate_connector.test_c5"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,

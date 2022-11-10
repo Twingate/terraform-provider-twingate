@@ -18,7 +18,7 @@ func TestAccRemoteConnectorWithTokens(t *testing.T) {
 		const connectorTokensResource = "twingate_connector_tokens.test_t1"
 		remoteNetworkName := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorTokensInvalidated,

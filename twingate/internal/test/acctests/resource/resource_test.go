@@ -31,7 +31,7 @@ func TestAccTwingateResourceCreate(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -66,7 +66,7 @@ func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
 	groupName2 := test.RandomGroupName()
 	resourceName := test.RandomResourceName()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -123,7 +123,7 @@ func TestAccTwingateResourceFullCreationFlow(t *testing.T) {
 	groupName := test.RandomGroupName()
 	resourceName := test.RandomResourceName()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -189,7 +189,7 @@ func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
 	resourceName := test.RandomResourceName()
 	networkName := test.RandomResourceName()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		Steps: []resource.TestStep{
@@ -221,7 +221,7 @@ func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
 	networkName := test.RandomResourceName()
 	groupName := test.RandomResourceName()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -275,7 +275,7 @@ func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
 	groupName := test.RandomGroupName()
 	resourceName := test.RandomResourceName()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -329,7 +329,7 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 	groupName := test.RandomGroupName()
 	resourceName := test.RandomResourceName()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -386,7 +386,7 @@ func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
 		return createResourceWithRestrictedPolicyAndPortRange(remoteNetworkName, resourceName, portRange)
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		Steps: []resource.TestStep{
@@ -510,7 +510,7 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 	resourceName := test.RandomResourceName()
 	const theResource = "twingate_resource.test9"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -577,7 +577,7 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 
 	const theResource = "twingate_resource.test10"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -675,7 +675,7 @@ func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
 
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -757,7 +757,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 
 	const theResource = "twingate_resource.test12"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -843,7 +843,7 @@ func TestAccTwingateResourceLoadsAllGroups(t *testing.T) {
 
 	groups, groupsID := genNewGroups("g13", 111)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
 		PreCheck:          func() { acctests.PreCheck(t) },
 		CheckDestroy:      testAccCheckTwingateResourceDestroy,

@@ -25,7 +25,7 @@ func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 
 		const theResource = "twingate_group.test001"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
@@ -62,7 +62,7 @@ func TestAccTwingateGroupDeleteNonExisting(t *testing.T) {
 
 		groupNameBefore := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
@@ -140,7 +140,7 @@ func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
 
 		const theResource = "twingate_group.test003"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,

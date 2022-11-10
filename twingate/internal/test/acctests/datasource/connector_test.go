@@ -20,7 +20,7 @@ func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
 		networkName := test.RandomName()
 		connectorName := test.RandomConnectorName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
@@ -80,7 +80,7 @@ func TestAccDatasourceTwingateConnector_negative(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connector - does not exists", func(t *testing.T) {
 		connectorID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Connector:%d", acctest.RandInt())))
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -111,7 +111,7 @@ func TestAccDatasourceTwingateConnector_invalidID(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connector - failed parse ID", func(t *testing.T) {
 		connectorID := acctest.RandString(10)
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)

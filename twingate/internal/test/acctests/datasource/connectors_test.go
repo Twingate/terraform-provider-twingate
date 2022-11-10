@@ -17,7 +17,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 		networkName2 := test.RandomName()
 		connectorName := test.RandomConnectorName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateConnectorDestroy,

@@ -20,7 +20,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 		networkName := test.RandomName()
 		resourceName := test.RandomResourceName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateResourceDestroy,
@@ -89,7 +89,7 @@ func TestAccDatasourceTwingateResource_negative(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resource - does not exists", func(t *testing.T) {
 		resourceID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Resource:%d", acctest.RandInt())))
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -120,7 +120,7 @@ func TestAccDatasourceTwingateResource_invalidID(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resource - failed parse resource ID", func(t *testing.T) {
 		networkID := acctest.RandString(10)
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)

@@ -20,7 +20,7 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 
 		networkName := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
@@ -77,7 +77,7 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 
 		networkName := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
@@ -114,7 +114,7 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Remote Network - does not exists", func(t *testing.T) {
 		networkID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("RemoteNetwork:%d", acctest.RandInt())))
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
@@ -143,7 +143,7 @@ func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Remote Network - failed parse network ID", func(t *testing.T) {
 		networkID := acctest.RandString(10)
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
@@ -161,7 +161,7 @@ func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
 		networkID := acctest.RandString(10)
 		networkName := acctest.RandString(10)
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)

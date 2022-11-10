@@ -22,7 +22,7 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 
 		const theDatasource = "data.twingate_groups.out_dgs1"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
@@ -61,7 +61,7 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups - empty result", func(t *testing.T) {
 		groupName := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
@@ -90,7 +90,7 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 	const theDatasource = "data.twingate_groups.out_dgs2"
 
 	t.Run("Test Twingate Datasource : Acc Groups with filters - basic", func(t *testing.T) {
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
@@ -128,7 +128,7 @@ func testDatasourceTwingateGroupsWithFilters(name string) string {
 
 func TestAccDatasourceTwingateGroupsWithFilters_ErrorNotSupportedTypes(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups with filters - error not supported types", func(t *testing.T) {
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -157,7 +157,7 @@ func testTwingateGroupsWithFilterNotSupportedType() string {
 
 func TestAccDatasourceTwingateGroups_WithEmptyFilters(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups - with empty filters", func(t *testing.T) {
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -186,7 +186,7 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 
 		groupName := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,

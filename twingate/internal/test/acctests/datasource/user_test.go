@@ -22,7 +22,7 @@ func TestAccDatasourceTwingateUser_basic(t *testing.T) {
 			t.Skip("can't run test:", err)
 		}
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
@@ -71,7 +71,7 @@ func TestAccDatasourceTwingateUser_negative(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc User - does not exists", func(t *testing.T) {
 		userID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("User:%d", acctest.RandInt())))
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -98,7 +98,7 @@ func TestAccDatasourceTwingateUser_invalidID(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc User - failed parse ID", func(t *testing.T) {
 		userID := acctest.RandString(10)
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)

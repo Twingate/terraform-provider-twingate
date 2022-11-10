@@ -18,7 +18,7 @@ func TestAccTwingateRemoteNetworkCreateUpdate(t *testing.T) {
 		remoteNetworkNameAfter := test.RandomName()
 		const theResource = "twingate_remote_network.test001"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
@@ -54,7 +54,7 @@ func TestAccTwingateRemoteNetworkDeleteNonExisting(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Network Delete NonExisting", func(t *testing.T) {
 		remoteNetworkNameBefore := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,
@@ -132,7 +132,7 @@ func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 		const theResource = "twingate_remote_network.test003"
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateRemoteNetworkDestroy,

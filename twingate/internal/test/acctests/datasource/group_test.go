@@ -19,7 +19,7 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Group Basic", func(t *testing.T) {
 		groupName := test.RandomName()
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      testAccCheckTwingateGroupDestroy,
@@ -84,7 +84,7 @@ func TestAccDatasourceTwingateGroup_negative(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Group - does not exists", func(t *testing.T) {
 		groupID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Group:%d", acctest.RandInt())))
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
@@ -111,7 +111,7 @@ func TestAccDatasourceTwingateGroup_invalidGroupID(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Group - failed parse group ID", func(t *testing.T) {
 		groupID := acctest.RandString(10)
 
-		resource.ParallelTest(t, resource.TestCase{
+		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
