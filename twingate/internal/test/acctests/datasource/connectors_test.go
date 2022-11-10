@@ -104,7 +104,7 @@ func testCheckOutputLength(name string, length int) resource.TestCheckFunc {
 		}
 
 		rawData, _ := json.Marshal(actual)
-		fmt.Printf("::testCheckOutputLength:: actual: %s\n", string(rawData))
+		return fmt.Errorf("::testCheckOutputLength:: actual: %s\n", string(rawData))
 
 		if len(actual) != length {
 			return fmt.Errorf("expected length %d, got %d", length, len(actual))
