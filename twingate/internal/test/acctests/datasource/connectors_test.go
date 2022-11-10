@@ -103,8 +103,10 @@ func testCheckOutputLength(name string, length int) resource.TestCheckFunc {
 			return fmt.Errorf("output '%s' is not a list", name)
 		}
 
-		rawData, _ := json.Marshal(actual)
-		return fmt.Errorf("::testCheckOutputLength:: actual: %s\n", string(rawData))
+		if name == "my_connectors_dcs2" {
+			rawData, _ := json.Marshal(actual)
+			return fmt.Errorf("::testCheckOutputLength:: actual: %s\n", string(rawData))
+		}
 
 		if len(actual) != length {
 			return fmt.Errorf("expected length %d, got %d", length, len(actual))
