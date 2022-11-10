@@ -124,7 +124,7 @@ func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("Invalid global ID"),
 				},
 			},
 		})

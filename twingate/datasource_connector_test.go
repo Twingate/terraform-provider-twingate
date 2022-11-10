@@ -94,7 +94,7 @@ func TestAccDatasourceTwingateConnector_invalidID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateConnectorDoesNotExists(connectorID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("Invalid global ID"),
 				},
 			},
 		})
