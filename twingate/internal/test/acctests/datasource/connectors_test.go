@@ -64,8 +64,6 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors - empty result", func(t *testing.T) {
 		prefix := acctest.RandString(10)
-		t.Log("Test prefix:", test.Prefix())
-		t.Log("prefix:", prefix)
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
@@ -104,11 +102,6 @@ func testCheckOutputLength(name string, length int) resource.TestCheckFunc {
 		if !ok {
 			return fmt.Errorf("output '%s' is not a list", name)
 		}
-
-		//if name == "my_connectors_dcs2" {
-		//	rawData, _ := json.Marshal(actual)
-		//	return fmt.Errorf("::testCheckOutputLength:: actual: %s\n", string(rawData))
-		//}
 
 		if len(actual) != length {
 			return fmt.Errorf("expected length %d, got %d", length, len(actual))
