@@ -16,13 +16,13 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
 		  "data": {
-			"remoteNetworkCreate": {
-			  "entity": {
-				"id": "test-id"
-			  },
-			  "ok": true,
-			  "error": null
-			}
+		    "remoteNetworkCreate": {
+		      "entity": {
+		        "id": "test-id"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -43,10 +43,10 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
 		  "data": {
-			"remoteNetworkCreate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "remoteNetworkCreate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -67,10 +67,10 @@ func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 		// response JSON
 		createNetworkOkJson := `{
 		  "data": {
-			"remoteNetworkCreate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "remoteNetworkCreate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -95,10 +95,10 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 		// response JSON
 		updateNetworkOkJson := `{
 		  "data": {
-			"remoteNetworkUpdate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "remoteNetworkUpdate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -118,10 +118,10 @@ func TestClientRemoteNetworkUpdateRequestError(t *testing.T) {
 		// response JSON
 		updateNetworkOkJson := `{
 		  "data": {
-			"remoteNetworkUpdate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "remoteNetworkUpdate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -144,7 +144,7 @@ func TestClientRemoteNetworkReadByIDError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetwork": null
+		    "remoteNetwork": null
 		  }
 		}`
 
@@ -165,7 +165,7 @@ func TestClientRemoteNetworkReadByIDRequestError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetwork": null
+		    "remoteNetwork": null
 		  }
 		}`
 
@@ -189,7 +189,7 @@ func TestClientRemoteNetworkReadByNameError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetworks": null
+		    "remoteNetworks": null
 		  }
 		}`
 
@@ -210,7 +210,7 @@ func TestClientRemoteNetworkReadByNameRequestError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetworks": null
+		    "remoteNetworks": null
 		  }
 		}`
 
@@ -234,7 +234,7 @@ func TestClientCreateEmptyRemoteNetworkError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetwork": null
+		    "remoteNetwork": null
 		  }
 		}`
 
@@ -255,7 +255,7 @@ func TestClientReadEmptyRemoteNetworkByIDError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetwork": null
+		    "remoteNetwork": null
 		  }
 		}`
 
@@ -276,7 +276,7 @@ func TestClientReadEmptyRemoteNetworkByNameError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetworks": null
+		    "remoteNetworks": null
 		  }
 		}`
 
@@ -297,7 +297,7 @@ func TestClientDeleteEmptyRemoteNetworkError(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetwork": null
+		    "remoteNetwork": null
 		  }
 		}`
 
@@ -317,28 +317,28 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		// response JSON
 		readNetworkOkJson := `{
 		  "data": {
-			"remoteNetworks": {
-			  "edges": [
-				{
-				  "node": {
-					"id": "network1",
-					"name": "tf-acc-network1"
-				  }
-				},
-				{
-				  "node": {
-					"id": "network2",
-					"name": "network2"
-				  }
-				},
-				{
-				  "node": {
-					"id": "network3",
-					"name": "tf-acc-network3"
-				  }
-				}
-			  ]
-			}
+		    "remoteNetworks": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "network1",
+		            "name": "tf-acc-network1"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "network2",
+		            "name": "network2"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "network3",
+		            "name": "tf-acc-network3"
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 

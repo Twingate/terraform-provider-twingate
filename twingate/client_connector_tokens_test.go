@@ -14,16 +14,16 @@ import (
 func TestClientConnectorCreateTokensOK(t *testing.T) {
 	// response JSON
 	createTokensOkJson := `{
-		"data": {
-			"connectorGenerateTokens": {
-				"connectorTokens": {
-					"accessToken": "token1",
-					"refreshToken": "token2"
-				},
-				"ok": true,
-				"error": null
-			}
-		}
+	  "data": {
+	    "connectorGenerateTokens": {
+	      "connectorTokens": {
+	        "accessToken": "token1",
+	        "refreshToken": "token2"
+	      },
+	      "ok": true,
+	      "error": null
+	    }
+	  }
 	}`
 
 	client := newHTTPMockClient()
@@ -108,10 +108,10 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	// response JSON
 	createTokensOkJson := `{
 	  "data": {
-		"connectorGenerateTokens": {
-		  "ok": false,
-		  "error": "error_1"
-		}
+	    "connectorGenerateTokens": {
+	      "ok": false,
+	      "error": "error_1"
+	    }
 	  }
 	}`
 
