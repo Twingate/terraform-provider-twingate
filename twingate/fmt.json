@@ -1,0 +1,12 @@
+{
+  "data": {
+    "connectorCreate": {
+      "entity": {
+        "id": "test-id",
+        "name": "test-name"
+      },
+      "ok": true,
+      "error": null
+    }
+  }
+}
