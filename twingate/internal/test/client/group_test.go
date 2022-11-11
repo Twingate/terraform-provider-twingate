@@ -18,14 +18,14 @@ func TestClientGroupCreateOk(t *testing.T) {
 		// response JSON
 		createGroupOkJson := `{
 		  "data": {
-			"groupCreate": {
-			  "entity": {
-				"id": "test-id",
-				"name": "test"
-			  },
-			  "ok": true,
-			  "error": null
-			}
+		    "groupCreate": {
+		      "entity": {
+		        "id": "test-id",
+		        "name": "test"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -47,10 +47,10 @@ func TestClientGroupCreateError(t *testing.T) {
 		// response JSON
 		createGroupOkJson := `{
 		  "data": {
-			"groupCreate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "groupCreate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -71,10 +71,10 @@ func TestClientGroupCreateRequestError(t *testing.T) {
 		// response JSON
 		createGroupOkJson := `{
 		  "data": {
-			"groupCreate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "groupCreate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -99,7 +99,7 @@ func TestClientCreateEmptyGroupError(t *testing.T) {
 		// response JSON
 		readGroupOkJson := `{
 		  "data": {
-			"group": null
+		    "group": null
 		  }
 		}`
 
@@ -120,14 +120,14 @@ func TestClientGroupUpdateOk(t *testing.T) {
 		// response JSON
 		updateGroupOkJson := `{
 		  "data": {
-			"groupUpdate": {
-			  "entity": {
-				"id": "id",
-				"name": "test"
-			  },
-			  "ok": true,
-			  "error": null
-			}
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id",
+		        "name": "test"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -147,10 +147,10 @@ func TestClientGroupUpdateError(t *testing.T) {
 		// response JSON
 		updateGroupOkJson := `{
 		  "data": {
-			"groupUpdate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "groupUpdate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -171,10 +171,10 @@ func TestClientGroupUpdateRequestError(t *testing.T) {
 		// response JSON
 		updateGroupOkJson := `{
 		  "data": {
-			"groupUpdate": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "groupUpdate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -220,12 +220,12 @@ func TestClientGroupReadOk(t *testing.T) {
 		// response JSON
 		readGroupOkJson := `{
 		  "data": {
-			"group": {
-			  "id": "id",
-			  "name": "name",
-			  "type": "MANUAL",
-			  "isActive": true
-			}
+		    "group": {
+		      "id": "id",
+		      "name": "name",
+		      "type": "MANUAL",
+		      "isActive": true
+		    }
 		  }
 		}`
 
@@ -251,7 +251,7 @@ func TestClientGroupReadError(t *testing.T) {
 		// response JSON
 		readGroupOkJson := `{
 		  "data": {
-			"group": null
+		    "group": null
 		  }
 		}`
 
@@ -273,7 +273,7 @@ func TestClientGroupReadRequestError(t *testing.T) {
 		// response JSON
 		readGroupOkJson := `{
 		  "data": {
-			"group": null
+		    "group": null
 		  }
 		}`
 
@@ -299,7 +299,7 @@ func TestClientReadEmptyGroupError(t *testing.T) {
 		// response JSON
 		readGroupOkJson := `{
 		  "data": {
-			"group": null
+		    "group": null
 		  }
 		}`
 
@@ -320,10 +320,10 @@ func TestClientDeleteGroupOk(t *testing.T) {
 		// response JSON
 		deleteGroupOkJson := `{
 		  "data": {
-			"groupDelete": {
-			  "ok": true,
-			  "error": null
-			}
+		    "groupDelete": {
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -343,7 +343,7 @@ func TestClientDeleteEmptyGroupError(t *testing.T) {
 		// response JSON
 		deleteGroupOkJson := `{
 		  "data": {
-			"group": null
+		    "group": null
 		  }
 		}`
 
@@ -363,10 +363,10 @@ func TestClientDeleteGroupError(t *testing.T) {
 		// response JSON
 		deleteGroupOkJson := `{
 		  "data": {
-			"groupDelete": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "groupDelete": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -386,10 +386,10 @@ func TestClientDeleteGroupRequestError(t *testing.T) {
 		// response JSON
 		deleteGroupOkJson := `{
 		  "data": {
-			"groupDelete": {
-			  "ok": false,
-			  "error": "error_1"
-			}
+		    "groupDelete": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
 		  }
 		}`
 
@@ -414,28 +414,28 @@ func TestClientGroupsReadOk(t *testing.T) {
 		// response JSON
 		readGroupOkJson := fmt.Sprintf(`{
 		  "data": {
-			"groups": {
-			  "edges": [
-				{
-				  "node": {
-					"id": "%s",
-					"name": "%s"
-				  }
-				},
-				{
-				  "node": {
-					"id": "%s",
-					"name": "%s"
-				  }
-				},
-				{
-				  "node": {
-					"id": "%s",
-					"name": "%s"
-				  }
-				}
-			  ]
-			}
+		    "groups": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "%s",
+		            "name": "%s"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "%s",
+		            "name": "%s"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "%s",
+		            "name": "%s"
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`, ids[0], names[0], ids[1], names[1], ids[2], names[2])
 
@@ -461,7 +461,7 @@ func TestClientGroupsReadError(t *testing.T) {
 		// response JSON
 		readGroupOkJson := `{
 		  "data": {
-			"groups": null
+		    "groups": null
 		  }
 		}`
 
@@ -482,7 +482,7 @@ func TestClientGroupsReadRequestError(t *testing.T) {
 		// response JSON
 		readGroupOkJson := `{
 		  "data": {
-			"group": null
+		    "groups": null
 		  }
 		}`
 
@@ -511,44 +511,44 @@ func TestClientGroupsReadByNameOk(t *testing.T) {
 
 		jsonResponse := `{
 		  "data": {
-			"groups": {
-			  "pageInfo": {
-				"endCursor": "cursor-001",
-				"hasNextPage": true
-			  },
-			  "edges": [
-				{
-				  "node": {
-					"id": "id-1",
-					"name": "group-1"
-				  }
-				},
-				{
-				  "node": {
-					"id": "id-2",
-					"name": "group-2"
-				  }
-				}
-			  ]
-			}
+		    "groups": {
+		      "pageInfo": {
+		        "endCursor": "cursor-001",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "group-1"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "group-2"
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 
 		nextPage := `{
 		  "data": {
-			"groups": {
-			  "pageInfo": {
-				"hasNextPage": false
-			  },
-			  "edges": [
-				{
-				  "node": {
-					"id": "id-3",
-					"name": "group-3"
-				  }
-				}
-			  ]
-			}
+		    "groups": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-3",
+		            "name": "group-3"
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 
@@ -574,7 +574,7 @@ func TestClientGroupsReadByNameEmptyResult(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups By Name - Empty Result", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"groups": null
+		    "groups": null
 		  }
 		}`
 
@@ -595,7 +595,7 @@ func TestClientGroupsReadByNameRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups By Name - Request Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"groups": null
+		    "groups": null
 		  }
 		}`
 
@@ -619,7 +619,7 @@ func TestClientGroupsReadByNameErrorEmptyName(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups By Name - Error Empty Name", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"groups": null
+		    "groups": null
 		  }
 		}`
 
@@ -640,26 +640,26 @@ func TestClientFilterGroupsOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Filter Groups - Ok", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"groups": {
-			  "edges": [
-				{
-				  "node": {
-					"id": "g1",
-					"name": "Group 1",
-					"type": "MANUAL",
-					"isActive": true
-				  }
-				},
-				{
-				  "node": {
-					"id": "g2",
-					"name": "Group 2",
-					"type": "SYSTEM",
-					"isActive": false
-				  }
-				}
-			  ]
-			}
+		    "groups": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "g1",
+		            "name": "Group 1",
+		            "type": "MANUAL",
+		            "isActive": true
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "g2",
+		            "name": "Group 2",
+		            "type": "SYSTEM",
+		            "isActive": false
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 
@@ -740,7 +740,7 @@ func TestClientFilterGroupsRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Filter Groups - Request Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"groups": null
+		    "groups": null
 		  }
 		}`
 

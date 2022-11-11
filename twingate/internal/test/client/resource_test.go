@@ -33,13 +33,13 @@ func TestClientResourceCreateOk(t *testing.T) {
 		// response JSON
 		createResourceOkJson := `{
 		  "data": {
-			"resourceCreate": {
-			  "entity": {
-				"id": "test-id"
-			  },
-			  "ok": true,
-			  "error": null
-			}
+		    "resourceCreate": {
+		      "entity": {
+		        "id": "test-id"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
 		  }
 		}`
 
@@ -60,13 +60,13 @@ func TestClientResourceCreateError(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{
 		  "data": {
-			"resourceCreate": {
-			  "entity": {
-				"id": "test-id"
-			  },
-			  "ok": false,
-			  "error": "something went wrong"
-			}
+		    "resourceCreate": {
+		      "entity": {
+		        "id": "test-id"
+		      },
+		      "ok": false,
+		      "error": "something went wrong"
+		    }
 		  }
 		}`
 
@@ -86,13 +86,13 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{
 		  "data": {
-			"resourceCreate": {
-			  "entity": {
-				"id": "test-id"
-			  },
-			  "ok": false,
-			  "error": "something went wrong"
-			}
+		    "resourceCreate": {
+		      "entity": {
+		        "id": "test-id"
+		      },
+		      "ok": false,
+		      "error": "something went wrong"
+		    }
 		  }
 		}`
 
@@ -114,56 +114,56 @@ func TestClientResourceReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Client Resource Ok", func(t *testing.T) {
 		// response JSON
 		createResourceOkJson := fmt.Sprintf(`{
-	  "data": {
-		"resource": {
-		  "id": "resource1",
-		  "name": "test resource",
-		  "address": {
-			"value": "test.com"
-		  },
-		  "remoteNetwork": {
-			"id": "network1"
-		  },
-		  "groups": {
-			"pageInfo": {
-			  "hasNextPage": false
-			},
-			"edges": [
-			  {
-				"node": {
-				  "id": "group1"
-				}
-			  },
-			  {
-				"node": {
-				  "id": "group2"
-				}
-			  }
-			]
-		  },
-		  "protocols": {
-			"udp": {
-			  "ports": [],
-			  "policy": "%s"
-			},
-			"tcp": {
-			  "ports": [
-				{
-				  "end": 80,
-				  "start": 80
-				},
-				{
-				  "end": 8090,
-				  "start": 8080
-				}
-			  ],
-			  "policy": "%s"
-			},
-			"allowIcmp": true
+		  "data": {
+		    "resource": {
+		      "id": "resource1",
+		      "name": "test resource",
+		      "address": {
+		        "value": "test.com"
+		      },
+		      "remoteNetwork": {
+		        "id": "network1"
+		      },
+		      "groups": {
+		        "pageInfo": {
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "group1"
+		            }
+		          },
+		          {
+		            "node": {
+		              "id": "group2"
+		            }
+		          }
+		        ]
+		      },
+		      "protocols": {
+		        "udp": {
+		          "ports": [],
+		          "policy": "%s"
+		        },
+		        "tcp": {
+		          "ports": [
+		            {
+		              "end": 80,
+		              "start": 80
+		            },
+		            {
+		              "end": 8090,
+		              "start": 8080
+		            }
+		          ],
+		          "policy": "%s"
+		        },
+		        "allowIcmp": true
+		      }
+		    }
 		  }
-		}
-	  }
-	}`, model.PolicyAllowAll, model.PolicyRestricted)
+		}`, model.PolicyAllowAll, model.PolicyRestricted)
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -211,87 +211,87 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 
 		// response JSON
 		createResourceOkJson := fmt.Sprintf(`{
-	  "data": {
-		"resource": {
-		  "id": "resource1",
-		  "name": "test resource",
-		  "address": {
-			"value": "test.com"
-		  },
-		  "remoteNetwork": {
-			"id": "network1"
-		  },
-		  "groups": {
-			"pageInfo": {
-			  "endCursor": "cur001",
-			  "hasNextPage": true
-			},
-			"edges": [
-			  {
-				"node": {
-				  "id": "group1",
-				  "name": "Group1 name"
-				}
-			  },
-			  {
-				"node": {
-				  "id": "group2",
-				  "name": "Group2 name"
-				}
-			  }
-			]
-		  },
-		  "isActive": true,
-		  "protocols": {
-			"udp": {
-			  "ports": [],
-			  "policy": "%s"
-			},
-			"tcp": {
-			  "ports": [
-				{
-				  "end": 80,
-				  "start": 80
-				},
-				{
-				  "end": 8090,
-				  "start": 8080
-				}
-			  ],
-			  "policy": "%s"
-			},
-			"allowIcmp": true
+		  "data": {
+		    "resource": {
+		      "id": "resource1",
+		      "name": "test resource",
+		      "address": {
+		        "value": "test.com"
+		      },
+		      "remoteNetwork": {
+		        "id": "network1"
+		      },
+		      "groups": {
+		        "pageInfo": {
+		          "endCursor": "cur001",
+		          "hasNextPage": true
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "group1",
+		              "name": "Group1 name"
+		            }
+		          },
+		          {
+		            "node": {
+		              "id": "group2",
+		              "name": "Group2 name"
+		            }
+		          }
+		        ]
+		      },
+		      "isActive": true,
+		      "protocols": {
+		        "udp": {
+		          "ports": [],
+		          "policy": "%s"
+		        },
+		        "tcp": {
+		          "ports": [
+		            {
+		              "end": 80,
+		              "start": 80
+		            },
+		            {
+		              "end": 8090,
+		              "start": 8080
+		            }
+		          ],
+		          "policy": "%s"
+		        },
+		        "allowIcmp": true
+		      }
+		    }
 		  }
-		}
-	  }
-	}`, model.PolicyAllowAll, model.PolicyRestricted)
+		}`, model.PolicyAllowAll, model.PolicyRestricted)
 
 		nextPageJson := fmt.Sprintf(`{
-	  "data": {
-	    "resource": {
-	      "id": "resource1",
-	      "groups": {
-	        "pageInfo": {
-	          "hasNextPage": false
-	        },
-	        "edges": [
-	          {
-	            "node": {
-	              "id": "group3",
-	              "name": "Group3 name"
-	            }
-	          },
-	          {
-	            "node": {
-	              "id": "group4",
-	              "name": "Group4 name"
-	            }
-	          }
-	        ]
-	      }
-	    }
-	  }
-	}`)
+		  "data": {
+		    "resource": {
+		      "id": "resource1",
+		      "groups": {
+		        "pageInfo": {
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "group3",
+		              "name": "Group3 name"
+		            }
+		          },
+		          {
+		            "node": {
+		              "id": "group4",
+		              "name": "Group4 name"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`)
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -314,10 +314,10 @@ func TestClientResourceReadError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Read Error", func(t *testing.T) {
 		// response JSON
 		createResourceErrorJson := `{
-		"data": {
-			"resource": null
-		}
-	}`
+		  "data": {
+		    "resource": null
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -369,14 +369,14 @@ func TestClientResourceUpdateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Update Ok", func(t *testing.T) {
 		// response JSON
 		createResourceUpdateOkJson := `{
-		"data": {
-			"resourceUpdate": {
-				"ok" : true,
-				"error" : null,
-				"entity": {}
-			}
-		}
-	}`
+		  "data": {
+		    "resourceUpdate": {
+		      "ok" : true,
+		      "error" : null,
+		      "entity": {}
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -392,13 +392,13 @@ func TestClientResourceUpdateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Update Error", func(t *testing.T) {
 		// response JSON
 		createResourceUpdateErrorJson := `{
-		"data": {
-			"resourceUpdate": {
-				"ok" : false,
-				"error" : "cant update resource"
-			}
-		}
-	}`
+		  "data": {
+		    "resourceUpdate": {
+		      "ok" : false,
+		      "error" : "cant update resource"
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -430,13 +430,13 @@ func TestClientResourceDeleteOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Delete Ok", func(t *testing.T) {
 		// response JSON
 		createResourceDeleteOkJson := `{
-		"data": {
-			"resourceDelete": {
-				"ok" : true,
-				"error" : null
-			}
-		}
-	}`
+		  "data": {
+		    "resourceDelete": {
+		      "ok" : true,
+		      "error" : null
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -453,13 +453,13 @@ func TestClientResourceDeleteError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Delete Error", func(t *testing.T) {
 		// response JSON
 		createResourceDeleteErrorJson := `{
-		"data": {
-			"resourceDelete": {
-				"ok" : false,
-				"error" : "cant delete resource"
-			}
-		}
-	}`
+		  "data": {
+		    "resourceDelete": {
+		      "ok" : false,
+		      "error" : "cant delete resource"
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -477,13 +477,13 @@ func TestClientResourceDeleteRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Delete Request Error", func(t *testing.T) {
 		// response JSON
 		createResourceDeleteErrorJson := `{
-		"data": {
-			"resourceDelete": {
-				"ok" : false,
-				"error" : "cant delete resource"
-			}
-		}
-	}`
+		  "data": {
+		    "resourceDelete": {
+		      "ok" : false,
+		      "error" : "cant delete resource"
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -528,59 +528,59 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 
 		// response JSON
 		readResourcesOkJson := `{
-	  "data": {
-		"resources": {
-		  "pageInfo": {
-			"endCursor": "cur001",
-			"hasNextPage": true
-		  },
-		  "edges": [
-			{
-			  "node": {
-				"id": "resource1",
-				"name": "tf-acc-resource1"
-			  }
-			},
-			{
-			  "node": {
-				"id": "resource2",
-				"name": "resource2"
-			  }
-			},
-			{
-			  "node": {
-				"id": "resource3",
-				"name": "tf-acc-resource3"
-			  }
-			}
-		  ]
-		}
-	  }
-	}`
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "endCursor": "cur001",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "resource1",
+		            "name": "tf-acc-resource1"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "resource2",
+		            "name": "resource2"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "resource3",
+		            "name": "tf-acc-resource3"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
 
 		nextPage := `{
-	  "data": {
-		"resources": {
-		  "pageInfo": {
-			"hasNextPage": false
-		  },
-		  "edges": [
-			{
-			  "node": {
-				"id": "resource4",
-				"name": "tf-acc-resource4"
-			  }
-			},
-			{
-			  "node": {
-				"id": "resource5",
-				"name": "tf-acc-resource5"
-			  }
-			}
-		  ]
-		}
-	  }
-	}`
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "resource4",
+		            "name": "tf-acc-resource4"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "resource5",
+		            "name": "tf-acc-resource5"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -602,19 +602,19 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resources Read Request Error", func(t *testing.T) {
 		// response JSON
 		readResourcesOkJson := `{
-	  "data": {
-		"resources": {
-		  "edges": [
-			{
-			  "node": {
-				"id": "resource1",
-				"name": "tf-acc-resource1"
-			  }
-			},
-		  ]
-		}
-	  }
-	}`
+		  "data": {
+		    "resources": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "resource1",
+		            "name": "tf-acc-resource1"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -634,13 +634,13 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 func TestClientResourceUpdateActiveStateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Update Active State Ok", func(t *testing.T) {
 		jsonResponse := `{
-		"data": {
-			"resourceUpdate": {
-				"ok" : true,
-				"error" : null
-			}
-		}
-	}`
+		  "data": {
+		    "resourceUpdate": {
+		      "ok" : true,
+		      "error" : null
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -657,13 +657,13 @@ func TestClientResourceUpdateActiveStateOk(t *testing.T) {
 func TestClientResourceUpdateActiveStateError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Update Active State Error", func(t *testing.T) {
 		jsonResponse := `{
-		"data": {
-			"resourceUpdate": {
-				"ok" : false,
-				"error" : "cant update resource"
-			}
-		}
-	}`
+		  "data": {
+		    "resourceUpdate": {
+		      "ok" : false,
+		      "error" : "cant update resource"
+		    }
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -697,10 +697,10 @@ func TestClientResourceUpdateActiveStateRequestError(t *testing.T) {
 func TestClientResourceReadWithoutGroupsError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Read Without Groups Error", func(t *testing.T) {
 		responseJSON := `{
-		"data": {
-			"resource": null
-		}
-	}`
+		  "data": {
+		    "resource": null
+		  }
+		}`
 
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
@@ -749,35 +749,37 @@ func TestClientResourceReadWithoutGroupsRequestError(t *testing.T) {
 func TestClientResourceReadWithoutGroupsOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Client Resource Resource Without Groups Ok", func(t *testing.T) {
 		responseJSON := fmt.Sprintf(`{
-	  "data": {
-		"resource": {
-		  "id": "resource1",
-		  "name": "test resource",
-		  "address": {
-			"value": "test.com"
-		  },
-		  "remoteNetwork": {
-			"id": "network1"
-		  },
-		  "protocols": {
-			"udp": {
-			  "ports": [],
-			  "policy": "%s"
-			},
-			"tcp": {
-			  "ports": [
-				{
-				  "end": 80,
-				  "start": 80
-				},
-				{
-				  "end": 8090,
-				  "start": 8080
-				}
-			  ],
-			  "policy": "%s"
-			},
-			"allowIcmp": true
+		  "data": {
+		    "resource": {
+		      "id": "resource1",
+		      "name": "test resource",
+		      "address": {
+		        "value": "test.com"
+		      },
+		      "remoteNetwork": {
+		        "id": "network1"
+		      },
+		      "protocols": {
+		        "udp": {
+		          "ports": [],
+		          "policy": "%s"
+		        },
+		        "tcp": {
+		          "ports": [
+		            {
+		              "end": 80,
+		              "start": 80
+		            },
+		            {
+		              "end": 8090,
+		              "start": 8080
+		            }
+		          ],
+		          "policy": "%s"
+		        },
+		        "allowIcmp": true
+		      }
+		    }
 		  }
 		}
 	  }
@@ -857,76 +859,76 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 
 		jsonResponse := `{
 		  "data": {
-			"resources": {
-			  "pageInfo": {
-				"endCursor": "cur-01",
-				"hasNextPage": true
-			  },
-			  "edges": [
-				{
-				  "node": {
-					"id": "id-1",
-					"name": "resource-test",
-					"address": {
-					  "value": "internal.int"
-					},
-					"protocols": {
-					  "tcp": {
-						"policy": "RESTRICTED",
-						"ports": [
-						  {
-							"start": 80,
-							"end": 80
-						  },
-						  {
-							"start": 82,
-							"end": 83
-						  }
-						]
-					  },
-					  "udp": {
-						"policy": "ALLOW_ALL",
-						"ports": []
-					  }
-					},
-					"remoteNetwork": {
-					  "id": "UmVtb3RlTmV0d29yazo0MDEzOQ=="
-					}
-				  }
-				},
-				{
-				  "node": {
-					"id": "id-2",
-					"name": "resource-test",
-					"address": {
-					  "value": "internal.int"
-					},
-					"protocols": {
-					  "tcp": {
-						"policy": "RESTRICTED",
-						"ports": [
-						  {
-							"start": 80,
-							"end": 80
-						  },
-						  {
-							"start": 82,
-							"end": 83
-						  }
-						]
-					  },
-					  "udp": {
-						"policy": "ALLOW_ALL",
-						"ports": []
-					  }
-					},
-					"remoteNetwork": {
-					  "id": "UmVtb3RlTmV0d29yazo0MDEzOQ=="
-					}
-				  }
-				}
-			  ]
-			}
+		    "resources": {
+		      "pageInfo": {
+		        "endCursor": "cur-01",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "resource-test",
+		            "address": {
+		              "value": "internal.int"
+		            },
+		            "protocols": {
+		              "tcp": {
+		                "policy": "RESTRICTED",
+		                "ports": [
+		                  {
+		                    "start": 80,
+		                    "end": 80
+		                  },
+		                  {
+		                    "start": 82,
+		                    "end": 83
+		                  }
+		                ]
+		              },
+		              "udp": {
+		                "policy": "ALLOW_ALL",
+		                "ports": []
+		              }
+		            },
+		            "remoteNetwork": {
+		              "id": "UmVtb3RlTmV0d29yazo0MDEzOQ=="
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "resource-test",
+		            "address": {
+		              "value": "internal.int"
+		            },
+		            "protocols": {
+		              "tcp": {
+		                "policy": "RESTRICTED",
+		                "ports": [
+		                  {
+		                    "start": 80,
+		                    "end": 80
+		                  },
+		                  {
+		                    "start": 82,
+		                    "end": 83
+		                  }
+		                ]
+		              },
+		              "udp": {
+		                "policy": "ALLOW_ALL",
+		                "ports": []
+		              }
+		            },
+		            "remoteNetwork": {
+		              "id": "UmVtb3RlTmV0d29yazo0MDEzOQ=="
+		            }
+		          }
+		        }
+		      ]
+		    }
 		  }
 		}`
 
@@ -993,7 +995,7 @@ func TestClientResourcesReadByNameEmptyResult(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Resources By Name - Empty Result", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"resources": null
+		    "resources": null
 		  }
 		}`
 
@@ -1013,7 +1015,7 @@ func TestClientResourcesReadByNameRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Resources By Name - Request Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"resources": null
+		    "resources": null
 		  }
 		}`
 
@@ -1036,7 +1038,7 @@ func TestClientResourcesReadByNameErrorEmptyName(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Resources By Name - Error Empty Name", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"resources": null
+		    "resources": null
 		  }
 		}`
 

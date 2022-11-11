@@ -27,16 +27,16 @@ func TestClientUserReadOk(t *testing.T) {
 				email  = "user@email"
 			)
 			jsonResponse := fmt.Sprintf(`{
-		  "data": {
-			"user": {
-			  "id": "%s",
-			  "firstName": "First",
-			  "lastName": "Last",
-			  "email": "%s",
-			  "role": "%s"
-			}
-		  }
-		}`, userID, email, td.role)
+			  "data": {
+			    "user": {
+			      "id": "%s",
+			      "firstName": "First",
+			      "lastName": "Last",
+			      "email": "%s",
+			      "role": "%s"
+			    }
+			  }
+			}`, userID, email, td.role)
 
 			client := newHTTPMockClient()
 			defer httpmock.DeactivateAndReset()
@@ -59,7 +59,7 @@ func TestClientUserReadError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read User Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"user": null
+		    "user": null
 		  }
 		}`
 
@@ -80,7 +80,7 @@ func TestClientUserReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read User Request Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"user": null
+		    "user": null
 		  }
 		}`
 
@@ -104,7 +104,7 @@ func TestClientReadEmptyUserError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Empty User Error", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-			"user": null
+		    "user": null
 		  }
 		}`
 
