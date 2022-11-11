@@ -6,7 +6,6 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -32,7 +31,7 @@ func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("protocols", provider.ConvertProtocolsToTerraform(resource.Protocols)); err != nil {
+	if err := resourceData.Set("protocols", resource.Protocols.ToTerraform()); err != nil {
 		return diag.FromErr(err)
 	}
 

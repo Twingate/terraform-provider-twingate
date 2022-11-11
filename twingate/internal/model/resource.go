@@ -37,6 +37,16 @@ func (r Resource) GetName() string {
 	return r.Name
 }
 
+func (r Resource) ToTerraform() interface{} {
+	return map[string]interface{}{
+		"id":                r.ID,
+		"name":              r.Name,
+		"address":           r.Address,
+		"remote_network_id": r.RemoteNetworkID,
+		"protocols":         r.Protocols.ToTerraform(),
+	}
+}
+
 type PortRange struct {
 	Start int32
 	End   int32
@@ -109,7 +119,7 @@ type Protocol struct {
 	Policy string
 }
 
-func (p Protocol) PortsToString() []string {
+func (p *Protocol) PortsToString() []string {
 	if len(p.Ports) == 0 {
 		return nil
 	}
@@ -147,5 +157,37 @@ func DefaultProtocols() *Protocols {
 		UDP:       DefaultProtocol(),
 		TCP:       DefaultProtocol(),
 		AllowIcmp: true,
+	}
+}
+
+func (p *Protocols) ToTerraform() []interface{} {
+	if p == nil {
+		return nil
+	}
+
+	rawMap := make(map[string]interface{})
+	rawMap["allow_icmp"] = p.AllowIcmp
+
+	if p.TCP != nil {
+		rawMap["tcp"] = p.TCP.ToTerraform()
+	}
+
+	if p.UDP != nil {
+		rawMap["udp"] = p.UDP.ToTerraform()
+	}
+
+	return []interface{}{rawMap}
+}
+
+func (p *Protocol) ToTerraform() []interface{} {
+	if p == nil {
+		return nil
+	}
+
+	return []interface{}{
+		map[string]interface{}{
+			"policy": p.Policy,
+			"ports":  p.PortsToString(),
+		},
 	}
 }

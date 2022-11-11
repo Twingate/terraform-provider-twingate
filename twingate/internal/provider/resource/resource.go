@@ -10,7 +10,6 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -305,8 +304,7 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 	}
 
-	protocols := provider.ConvertProtocolsToTerraform(resource.Protocols)
-	if err := resourceData.Set("protocols", protocols); err != nil {
+	if err := resourceData.Set("protocols", resource.Protocols.ToTerraform()); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
 	}
 
