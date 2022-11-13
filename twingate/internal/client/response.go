@@ -21,15 +21,3 @@ type OkError struct {
 	Ok    graphql.Boolean `json:"ok"`
 	Error graphql.String  `json:"error"`
 }
-
-type Edges struct {
-	Node *IDName `json:"node"`
-}
-
-func (e Edges) GetName() string {
-	return e.Node.StringName()
-}
-
-func (e Edges) GetID() string {
-	return e.Node.StringID()
-}

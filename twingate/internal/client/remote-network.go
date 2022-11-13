@@ -51,9 +51,11 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, remoteNetworkName
 }
 
 type gqlRemoteNetworks struct {
-	Edges []*struct {
-		Node gqlRemoteNetwork
-	}
+	Edges []*gqlRemoteNetworkEdge
+}
+
+type gqlRemoteNetworkEdge struct {
+	Node gqlRemoteNetwork
 }
 
 type readRemoteNetworksQuery struct {

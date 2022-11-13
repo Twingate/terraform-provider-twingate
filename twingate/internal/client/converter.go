@@ -37,21 +37,7 @@ func (q readConnectorsQuery) ToModel() []*model.Connector {
 		return nil
 	}
 
-	connectors := make([]*model.Connector, 0, len(q.Connectors.Edges))
-
-	for _, elem := range q.Connectors.Edges {
-		if elem == nil {
-			continue
-		}
-
-		connectors = append(connectors, elem.Node.ToModel())
-	}
-
-	if cap(connectors) > len(connectors) {
-		connectors = connectors[:len(connectors):len(connectors)]
-	}
-
-	return connectors
+	return q.Connectors.ToModel()
 }
 
 func (c *Connectors) ToModel() []*model.Connector {
@@ -117,21 +103,9 @@ func (n gqlRemoteNetwork) ToModel() *model.RemoteNetwork {
 }
 
 func (nn gqlRemoteNetworks) ToModel() []*model.RemoteNetwork {
-	networks := make([]*model.RemoteNetwork, 0, len(nn.Edges))
-
-	for _, network := range nn.Edges {
-		if network == nil {
-			continue
-		}
-
-		networks = append(networks, network.Node.ToModel())
-	}
-
-	if cap(networks) > len(networks) {
-		networks = networks[:len(networks):len(networks)]
-	}
-
-	return networks
+	return utils.Map[*gqlRemoteNetworkEdge, *model.RemoteNetwork](nn.Edges, func(edge *gqlRemoteNetworkEdge) *model.RemoteNetwork {
+		return edge.Node.ToModel()
+	})
 }
 
 func (q createRemoteNetworkQuery) ToModel() *model.RemoteNetwork {
@@ -256,19 +230,5 @@ func (r ResourceNode) ToModel() *model.Resource {
 }
 
 func (q readResourcesByNameQuery) ToModel() []*model.Resource {
-	resources := make([]*model.Resource, 0, len(q.Resources.Edges))
-
-	for _, item := range q.Resources.Edges {
-		if item == nil || item.Node == nil {
-			continue
-		}
-
-		resources = append(resources, item.Node.ToModel())
-	}
-
-	if cap(resources) > len(resources) {
-		resources = resources[:len(resources):len(resources)]
-	}
-
-	return resources
+	return q.Resources.ToModel()
 }
