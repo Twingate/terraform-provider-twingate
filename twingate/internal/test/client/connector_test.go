@@ -372,7 +372,7 @@ func TestClientConnectorReadEmptyError(t *testing.T) {
 		connectors, err := client.ReadConnectors(context.Background())
 
 		assert.Empty(t, connectors)
-		assert.NoError(t, err)
+		assert.EqualError(t, err, "failed to read connector with id All: query result is empty")
 	})
 }
 
