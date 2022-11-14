@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
@@ -65,12 +64,26 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 
 func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Remote Network Request Error", func(t *testing.T) {
-		// response JSON
-		createNetworkOkJson := `{
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errors.New("error_1")))
+
+		remoteNetwork, err := client.CreateRemoteNetwork(context.Background(), "test")
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to create remote network: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.Nil(t, remoteNetwork)
+	})
+}
+
+func TestClientRemoteNetworkCreateEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Create Remote Network - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
 		  "data": {
 		    "remoteNetworkCreate": {
-		      "ok": false,
-		      "error": "error_1"
+		      "ok": true,
+		      "entity": null
 		    }
 		  }
 		}`
@@ -79,14 +92,11 @@ func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, createNetworkOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewStringResponder(200, jsonResponse))
 
 		remoteNetwork, err := client.CreateRemoteNetwork(context.Background(), "test")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create remote network: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, "failed to create remote network: query result is empty")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -116,23 +126,10 @@ func TestClientRemoteNetworkUpdateError(t *testing.T) {
 
 func TestClientRemoteNetworkUpdateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Update Remote Network Request Error", func(t *testing.T) {
-		// response JSON
-		updateNetworkOkJson := `{
-		  "data": {
-		    "remoteNetworkUpdate": {
-		      "ok": false,
-		      "error": "error_1"
-		    }
-		  }
-		}`
-
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, updateNetworkOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		_, err := client.UpdateRemoteNetwork(context.Background(), "id", "test")
 
@@ -163,20 +160,10 @@ func TestClientRemoteNetworkReadByIDError(t *testing.T) {
 
 func TestClientRemoteNetworkReadByIDRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Remote Network Request Error", func(t *testing.T) {
-		// response JSON
-		readNetworkOkJson := `{
-		  "data": {
-		    "remoteNetwork": null
-		  }
-		}`
-
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, readNetworkOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "id")
 
@@ -208,20 +195,10 @@ func TestClientRemoteNetworkReadByNameError(t *testing.T) {
 
 func TestClientRemoteNetworkReadByNameRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Remote Network Request Error", func(t *testing.T) {
-		// response JSON
-		readNetworkOkJson := `{
-		  "data": {
-		    "remoteNetworks": null
-		  }
-		}`
-
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, readNetworkOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "name")
 
@@ -315,43 +292,7 @@ func TestClientDeleteEmptyRemoteNetworkError(t *testing.T) {
 
 func TestClientNetworkReadAllOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Remote Networks", func(t *testing.T) {
-		// response JSON
-		readNetworkOkJson := `{
-		  "data": {
-		    "remoteNetworks": {
-		      "edges": [
-		        {
-		          "node": {
-		            "id": "network1",
-		            "name": "tf-acc-network1"
-		          }
-		        },
-		        {
-		          "node": {
-		            "id": "network2",
-		            "name": "network2"
-		          }
-		        },
-		        {
-		          "node": {
-		            "id": "network3",
-		            "name": "tf-acc-network3"
-		          }
-		        }
-		      ]
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, readNetworkOkJson))
-
-		networks, err := client.ReadRemoteNetworks(context.Background())
-		assert.NoError(t, err)
-
-		mockList := []*model.RemoteNetwork{
+		expected := []*model.RemoteNetwork{
 			{
 				ID:   "network1",
 				Name: "tf-acc-network1",
@@ -366,6 +307,146 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 			},
 		}
 
-		assert.EqualValues(t, mockList, networks)
+		response1 := `{
+		  "data": {
+		    "remoteNetworks": {
+		      "pageInfo": {
+		        "hasNextPage": true,
+		        "endCursor": "cur-001"
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "network1",
+		            "name": "tf-acc-network1"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "network2",
+		            "name": "network2"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "remoteNetworks": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "network3",
+		            "name": "tf-acc-network3"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, response1),
+				httpmock.NewStringResponder(200, response2),
+			),
+		)
+
+		networks, err := client.ReadRemoteNetworks(context.Background())
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, expected, networks)
+	})
+}
+
+func TestClientNetworkReadAllRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Remote Networks - Request Error", func(t *testing.T) {
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errors.New("error_1")))
+
+		networks, err := client.ReadRemoteNetworks(context.Background())
+
+		assert.Nil(t, networks)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read remote network with id All: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientNetworkReadAllEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Remote Networks - Empty Response", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "remoteNetworks": {
+		      "pageInfo": {
+		        "hasNextPage": true,
+		        "endCursor": "cur-001"
+		      },
+		      "edges": [{}]
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "remoteNetworks": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": []
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, response1),
+				httpmock.NewStringResponder(200, response2),
+			),
+		)
+
+		networks, err := client.ReadRemoteNetworks(context.Background())
+
+		assert.Nil(t, networks)
+		assert.EqualError(t, err, `failed to read remote network: query result is empty`)
+	})
+}
+
+func TestClientNetworkReadAllRequestErrorOnPageFetch(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Remote Networks - Request Error", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "remoteNetworks": {
+		      "pageInfo": {
+		        "hasNextPage": true,
+		        "endCursor": "cur-001"
+		      },
+		      "edges": [{}]
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, response1),
+				httpmock.NewErrorResponder(errors.New("error_1")),
+			),
+		)
+
+		networks, err := client.ReadRemoteNetworks(context.Background())
+
+		assert.Nil(t, networks)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read remote network: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }

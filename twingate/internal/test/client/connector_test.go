@@ -600,19 +600,10 @@ func TestClientReadConnectorsWithRemoteNetworkError(t *testing.T) {
 
 func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Request Error", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "connectors": null
-		  }
-		}`
-
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, jsonResponse)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		connectors, err := client.ReadConnectors(context.Background())
 

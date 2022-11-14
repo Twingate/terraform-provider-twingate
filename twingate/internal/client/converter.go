@@ -52,6 +52,12 @@ func (r *Resources) ToModel() []*model.Resource {
 	})
 }
 
+func (r *RemoteNetworks) ToModel() []*model.RemoteNetwork {
+	return utils.Map[*gqlRemoteNetworkEdge, *model.RemoteNetwork](r.Edges, func(edge *gqlRemoteNetworkEdge) *model.RemoteNetwork {
+		return edge.Node.ToModel()
+	})
+}
+
 func (t gqlConnectorTokens) ToModel() *model.ConnectorTokens {
 	return &model.ConnectorTokens{
 		AccessToken:  string(t.AccessToken),

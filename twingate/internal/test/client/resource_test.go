@@ -83,26 +83,10 @@ func TestClientResourceCreateError(t *testing.T) {
 
 func TestClientResourceCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Create Request Error", func(t *testing.T) {
-		// response JSON
-		createResourceErrorJson := `{
-		  "data": {
-		    "resourceCreate": {
-		      "entity": {
-		        "id": "test-id"
-		      },
-		      "ok": false,
-		      "error": "something went wrong"
-		    }
-		  }
-		}`
-
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, createResourceErrorJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
 
@@ -112,8 +96,31 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 
 func TestClientResourceReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Client Resource Ok", func(t *testing.T) {
-		// response JSON
-		createResourceOkJson := fmt.Sprintf(`{
+		expected := &model.Resource{
+			ID:              "resource1",
+			Name:            "test resource",
+			Address:         "test.com",
+			RemoteNetworkID: "network1",
+			Groups: []string{
+				"group1", "group2",
+			},
+			Protocols: &model.Protocols{
+				UDP: &model.Protocol{
+					Ports:  []*model.PortRange{},
+					Policy: model.PolicyAllowAll,
+				},
+				TCP: &model.Protocol{
+					Ports: []*model.PortRange{
+						{Start: 80, End: 80},
+						{Start: 8080, End: 8090},
+					},
+					Policy: model.PolicyRestricted,
+				},
+				AllowIcmp: true,
+			},
+		}
+
+		jsonResponse := fmt.Sprintf(`{
 		  "data": {
 		    "resource": {
 		      "id": "resource1",
@@ -168,22 +175,16 @@ func TestClientResourceReadOk(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(200, createResourceOkJson))
+			httpmock.NewStringResponder(200, jsonResponse))
 
 		resource, err := client.ReadResource(context.Background(), "resource1")
 		assert.Nil(t, err)
-		assert.EqualValues(t, "resource1", resource.ID)
-		assert.EqualValues(t, []string{"group1", "group2"}, resource.Groups)
-		assert.EqualValues(t, []string{"80", "8080-8090"}, resource.Protocols.TCP.PortsToString())
-		assert.EqualValues(t, "test.com", resource.Address)
-		assert.EqualValues(t, "network1", resource.RemoteNetworkID)
-		assert.Len(t, resource.Protocols.UDP.Ports, 0)
-		assert.EqualValues(t, resource.Name, "test resource")
+		assert.EqualValues(t, expected, resource)
 	})
 }
 
-func TestClientResourceReadTooManyGroups(t *testing.T) {
-	t.Run("Test Twingate Resource : Read To Many Groups", func(t *testing.T) {
+func TestClientResourceReadAllGroups(t *testing.T) {
+	t.Run("Test Twingate Resource : Read All Groups", func(t *testing.T) {
 		expected := &model.Resource{
 			ID:              "resource1",
 			Name:            "test resource",
@@ -209,8 +210,7 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 			},
 		}
 
-		// response JSON
-		createResourceOkJson := fmt.Sprintf(`{
+		jsonResponse := fmt.Sprintf(`{
 		  "data": {
 		    "resource": {
 		      "id": "resource1",
@@ -298,10 +298,9 @@ func TestClientResourceReadTooManyGroups(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.ResponderFromMultipleResponses(
 				[]*http.Response{
-					httpmock.NewStringResponse(200, createResourceOkJson),
+					httpmock.NewStringResponse(200, jsonResponse),
 					httpmock.NewStringResponse(200, nextPageJson),
-				},
-				t.Log),
+				}),
 		)
 
 		resource, err := client.ReadResource(context.Background(), "resource1")
@@ -362,6 +361,72 @@ func TestClientResourceReadRequestError(t *testing.T) {
 
 		assert.Nil(t, resource)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
+	})
+}
+
+func TestClientResourceReadGroupsRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups - Request Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resource": {
+		      "id": "resource1",
+		      "groups": {
+		        "pageInfo": {
+		          "endCursor": "cur001",
+		          "hasNextPage": true
+		        },
+		        "edges": []
+		      }
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewErrorResponder(errors.New("error_1")),
+			),
+		)
+
+		resource, err := client.ReadResource(context.Background(), "resource1")
+		assert.Nil(t, resource)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id resource1: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientResourceReadGroupsEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Groups - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resource": {
+		      "id": "resource1",
+		      "groups": {
+		        "pageInfo": {
+		          "endCursor": "cur001",
+		          "hasNextPage": true
+		        },
+		        "edges": []
+		      }
+		    }
+		  }
+		}`
+
+		nextPage := `{}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewStringResponder(200, nextPage),
+			),
+		)
+
+		resource, err := client.ReadResource(context.Background(), "resource1")
+		assert.Nil(t, resource)
+		assert.EqualError(t, err, "failed to read resource with id resource1: query result is empty")
 	})
 }
 
@@ -426,6 +491,27 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 	})
 }
 
+func TestClientResourceUpdateEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update - Empty Response", func(t *testing.T) {
+		emptyResponse := `{
+		  "data": {
+		    "resourceUpdate": {
+		      "ok": true,
+		      "entity": []
+		    }
+		  }
+		}`
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, emptyResponse))
+
+		_, err := client.UpdateResource(context.Background(), newTestResource())
+
+		assert.EqualError(t, err, "failed to update resource with id test: query result is empty")
+	})
+}
+
 func TestClientResourceDeleteOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Delete Ok", func(t *testing.T) {
 		// response JSON
@@ -465,8 +551,8 @@ func TestClientResourceDeleteError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceDeleteErrorJson))
-		resourceID := "resource1"
 
+		resourceID := "resource1"
 		err := client.DeleteResource(context.Background(), resourceID)
 
 		assert.EqualError(t, err, fmt.Sprintf("failed to delete resource with id %s: cant delete resource", resourceID))
@@ -475,25 +561,12 @@ func TestClientResourceDeleteError(t *testing.T) {
 
 func TestClientResourceDeleteRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Delete Request Error", func(t *testing.T) {
-		// response JSON
-		createResourceDeleteErrorJson := `{
-		  "data": {
-		    "resourceDelete": {
-		      "ok" : false,
-		      "error" : "cant delete resource"
-		    }
-		  }
-		}`
-
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, createResourceDeleteErrorJson)
-				return resp, errors.New("error_1")
-			})
-		resourceID := "resource1"
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
+		resourceID := "resource1"
 		err := client.DeleteResource(context.Background(), resourceID)
 
 		assert.EqualError(t, err, fmt.Sprintf(`failed to delete resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
@@ -600,18 +673,28 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 
 func TestClientResourcesReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resources Read Request Error", func(t *testing.T) {
-		// response JSON
-		readResourcesOkJson := `{
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errors.New("error_1")))
+
+		resources, err := client.ReadResources(context.Background())
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientResourcesReadAllRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Read All - Request Error", func(t *testing.T) {
+		jsonResponse := `{
 		  "data": {
 		    "resources": {
-		      "edges": [
-		        {
-		          "node": {
-		            "id": "resource1",
-		            "name": "tf-acc-resource1"
-		          }
-		        }
-		      ]
+		      "pageInfo": {
+		        "endCursor": "cur001",
+		        "hasNextPage": true
+		      },
+		      "edges": []
 		    }
 		  }
 		}`
@@ -619,15 +702,48 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, readResourcesOkJson)
-				return resp, errors.New("error_1")
-			})
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewErrorResponder(errors.New("error_1")),
+			),
+		)
 
 		resources, err := client.ReadResources(context.Background())
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientResourcesReadAllEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Read All - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "endCursor": "cur001",
+		        "hasNextPage": true
+		      },
+		      "edges": []
+		    }
+		  }
+		}`
+
+		emptyResponse := `{}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewStringResponder(200, emptyResponse),
+			),
+		)
+
+		resources, err := client.ReadResources(context.Background())
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, `failed to read resource: query result is empty`)
 	})
 }
 
@@ -1013,19 +1129,10 @@ func TestClientResourcesReadByNameEmptyResult(t *testing.T) {
 
 func TestClientResourcesReadByNameRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Resources By Name - Request Error", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "resources": null
-		  }
-		}`
-
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, jsonResponse)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		groups, err := client.ReadResourcesByName(context.Background(), "resource-name")
 
@@ -1051,5 +1158,71 @@ func TestClientResourcesReadByNameErrorEmptyName(t *testing.T) {
 
 		assert.Nil(t, groups)
 		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
+	})
+}
+
+func TestClientResourcesReadByNameAllEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resources By Name All - Empty Result", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "endCursor": "cur-01",
+		        "hasNextPage": true
+		      },
+		      "edges": [{}]
+		    }
+		  }
+		}`
+
+		emptyResponse := `{
+		  "data": {
+		    "resources": null
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewStringResponder(200, emptyResponse),
+			),
+		)
+
+		resources, err := client.ReadResourcesByName(context.Background(), "resource-name")
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
+	})
+}
+
+func TestClientResourcesReadByNameAllRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resources By Name All - Request Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "endCursor": "cur-01",
+		        "hasNextPage": true
+		      },
+		      "edges": [{}]
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewErrorResponder(errors.New("error_1")),
+			),
+		)
+
+		resources, err := client.ReadResourcesByName(context.Background(), "resource-name")
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }

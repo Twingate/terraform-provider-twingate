@@ -111,7 +111,52 @@ func TestClientUsersReadEmptyResult(t *testing.T) {
 
 func TestClientUsersReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Users - Request Error", func(t *testing.T) {
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errors.New("error_1")))
+
+		users, err := client.ReadUsers(context.Background())
+
+		assert.Nil(t, users)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read user with id All: Post "%s": error_1`, client.GraphqlServerURL))
+	})
+}
+
+func TestClientUsersReadNextPageEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Users Next Page - Empty Response", func(t *testing.T) {
 		jsonResponse := `{
+		  "data": {
+		    "users": {
+		      "pageInfo": {
+		        "endCursor": "cursor",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "user-1",
+		            "firstName": "First",
+		            "lastName": "Last",
+		            "email": "user-1@gmail.com",
+		            "role": "ADMIN"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "user-2",
+		            "firstName": "Second",
+		            "lastName": "Last",
+		            "email": "user-2@gmail.com",
+		            "role": "DEVOPS"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		nextPage := `{
 		  "data": {
 		    "users": null
 		  }
@@ -120,10 +165,61 @@ func TestClientUsersReadRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, jsonResponse)
-				return resp, errors.New("error_1")
-			})
+			httpmock.ResponderFromMultipleResponses([]*http.Response{
+				httpmock.NewStringResponse(200, jsonResponse),
+				httpmock.NewStringResponse(200, nextPage),
+			}),
+		)
+
+		users, err := client.ReadUsers(context.Background())
+
+		assert.Nil(t, users)
+		assert.EqualError(t, err, "failed to read user with id All: query result is empty")
+	})
+}
+
+func TestClientReadUsersAfterRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Users After - Request Error", func(t *testing.T) {
+
+		jsonResponse := `{
+		  "data": {
+		    "users": {
+		      "pageInfo": {
+		        "endCursor": "cursor",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "user-1",
+		            "firstName": "First",
+		            "lastName": "Last",
+		            "email": "user-1@gmail.com",
+		            "role": "ADMIN"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "user-2",
+		            "firstName": "Second",
+		            "lastName": "Last",
+		            "email": "user-2@gmail.com",
+		            "role": "DEVOPS"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewErrorResponder(errors.New("error_1")),
+			),
+		)
 
 		users, err := client.ReadUsers(context.Background())
 

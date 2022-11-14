@@ -68,24 +68,11 @@ func TestClientGroupCreateError(t *testing.T) {
 
 func TestClientGroupCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Group Request Error", func(t *testing.T) {
-		// response JSON
-		createGroupOkJson := `{
-		  "data": {
-		    "groupCreate": {
-		      "ok": false,
-		      "error": "error_1"
-		    }
-		  }
-		}`
-
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, createGroupOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		group, err := c.CreateGroup(context.Background(), "test")
 
@@ -168,23 +155,10 @@ func TestClientGroupUpdateError(t *testing.T) {
 
 func TestClientGroupUpdateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Update Group Request Error", func(t *testing.T) {
-		// response JSON
-		updateGroupOkJson := `{
-		  "data": {
-		    "groupUpdate": {
-		      "ok": false,
-		      "error": "error_1"
-		    }
-		  }
-		}`
-
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, updateGroupOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		const groupId = "g1"
 		_, err := c.UpdateGroup(context.Background(), groupId, "test")
@@ -270,20 +244,10 @@ func TestClientGroupReadError(t *testing.T) {
 
 func TestClientGroupReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Group Request Error", func(t *testing.T) {
-		// response JSON
-		readGroupOkJson := `{
-		  "data": {
-		    "group": null
-		  }
-		}`
-
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, readGroupOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		const groupId = "g1"
 		group, err := c.ReadGroup(context.Background(), groupId)
@@ -383,23 +347,10 @@ func TestClientDeleteGroupError(t *testing.T) {
 
 func TestClientDeleteGroupRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Delete Group Request Error", func(t *testing.T) {
-		// response JSON
-		deleteGroupOkJson := `{
-		  "data": {
-		    "groupDelete": {
-		      "ok": false,
-		      "error": "error_1"
-		    }
-		  }
-		}`
-
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, deleteGroupOkJson)
-				return resp, errors.New("error_2")
-			})
+			httpmock.NewErrorResponder(errors.New("error_2")))
 
 		err := c.DeleteGroup(context.Background(), "g1")
 
@@ -479,20 +430,10 @@ func TestClientGroupsReadError(t *testing.T) {
 
 func TestClientGroupsReadRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups Request Error", func(t *testing.T) {
-		// response JSON
-		readGroupOkJson := `{
-		  "data": {
-		    "groups": null
-		  }
-		}`
-
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, readGroupOkJson)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		group, err := c.ReadGroups(context.Background())
 
@@ -559,8 +500,7 @@ func TestClientGroupsReadByNameOk(t *testing.T) {
 				[]*http.Response{
 					httpmock.NewStringResponse(200, jsonResponse),
 					httpmock.NewStringResponse(200, nextPage),
-				},
-				t.Log),
+				}),
 		)
 
 		groups, err := c.ReadGroupsByName(context.Background(), "group-1-2-3")
@@ -593,19 +533,10 @@ func TestClientGroupsReadByNameEmptyResult(t *testing.T) {
 
 func TestClientGroupsReadByNameRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups By Name - Request Error", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "groups": null
-		  }
-		}`
-
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, jsonResponse)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		const groupName = "group-name"
 		groups, err := c.ReadGroupsByName(context.Background(), groupName)
@@ -738,19 +669,10 @@ func optionalBool(val bool) *bool {
 
 func TestClientFilterGroupsRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Filter Groups - Request Error", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "groups": null
-		  }
-		}`
-
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			func(req *http.Request) (*http.Response, error) {
-				resp := httpmock.NewStringResponse(200, jsonResponse)
-				return resp, errors.New("error_1")
-			})
+			httpmock.NewErrorResponder(errors.New("error_1")))
 
 		groups, err := c.FilterGroups(context.Background(), nil)
 
