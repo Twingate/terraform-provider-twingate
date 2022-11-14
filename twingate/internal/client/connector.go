@@ -183,7 +183,7 @@ func (client *Client) readConnectorsAfter(ctx context.Context, variables map[str
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
 
-	if response.Connectors.Edges == nil {
+	if len(response.Connectors.Edges) == 0 {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", connectorResourceName, "All")
 	}
 

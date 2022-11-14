@@ -93,14 +93,6 @@ func (q readGroupQuery) ToModel() *model.Group {
 	return q.Group.ToModel()
 }
 
-func (q readGroupsQuery) ToModel() []*model.Group {
-	return q.Groups.ToModel()
-}
-
-func (q readGroupsByNameQuery) ToModel() []*model.Group {
-	return q.Groups.ToModel()
-}
-
 func (n gqlRemoteNetwork) ToModel() *model.RemoteNetwork {
 	return &model.RemoteNetwork{
 		ID:   idToString(n.ID),
