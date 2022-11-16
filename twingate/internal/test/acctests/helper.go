@@ -1,15 +1,25 @@
 package acctests
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+)
+
+var (
+	ErrIDNotSet                   = errors.New("id not set")
+	ErrResourceNotFound           = errors.New("resource not found")
+	ErrServiceAccountStillPresent = errors.New("service account still present")
+	ErrResourceFoundInState       = errors.New("this resource should not be here")
 )
 
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
@@ -69,4 +79,54 @@ func PreCheck(t *testing.T) {
 			}
 		}
 	})
+}
+
+func CheckTwingateResourceDoesNotExists(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		_, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return nil
+		}
+
+		return fmt.Errorf("%w: %s", ErrResourceFoundInState, resourceName)
+	}
+}
+
+func CheckTwingateServiceAccountDestroy(s *terraform.State) error {
+	providerClient := Provider.Meta().(*client.Client)
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "twingate_service_account" {
+			continue
+		}
+
+		serviceAccountID := rs.Primary.ID
+
+		_, err := providerClient.ReadServiceAccount(context.Background(), serviceAccountID)
+		if err == nil {
+			return fmt.Errorf("%w with id %s", ErrServiceAccountStillPresent, serviceAccountID)
+		}
+	}
+
+	return nil
+}
+
+func CheckTwingateResourceExists(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resource, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resource.Primary.ID == "" {
+			return ErrIDNotSet
+		}
+
+		return nil
+	}
+}
+
+func ResourceName(resource, name string) string {
+	return fmt.Sprintf("%s.%s", resource, name)
 }
