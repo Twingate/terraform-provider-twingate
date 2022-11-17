@@ -1,18 +1,15 @@
 package datasource
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
@@ -23,7 +20,7 @@ func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
+			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateConnector(networkName, connectorName),
@@ -54,26 +51,6 @@ func testDatasourceTwingateConnector(remoteNetworkName, connectorName string) st
 	  value = data.twingate_connector.out_dc1.name
 	}
 	`, remoteNetworkName, connectorName)
-}
-
-func testAccCheckTwingateConnectorDestroy(s *terraform.State) error {
-	c := acctests.Provider.Meta().(*client.Client)
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "twingate_connector" {
-			continue
-		}
-
-		connectorId := rs.Primary.ID
-
-		err := c.DeleteConnector(context.Background(), connectorId)
-		// expecting error here , since the network is already gone
-		if err == nil {
-			return fmt.Errorf("Connector with ID %s still present : ", connectorId)
-		}
-	}
-
-	return nil
 }
 
 func TestAccDatasourceTwingateConnector_negative(t *testing.T) {

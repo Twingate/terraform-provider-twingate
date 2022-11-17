@@ -1,18 +1,15 @@
 package datasource
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
@@ -22,7 +19,7 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateGroupDestroy,
+			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroup(groupName),
@@ -59,25 +56,6 @@ func testDatasourceTwingateGroup(name string) string {
 	  value = data.twingate_group.bar_dg1.type
 	}
 	`, name)
-}
-
-func testAccCheckTwingateGroupDestroy(s *terraform.State) error {
-	c := acctests.Provider.Meta().(*client.Client)
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "twingate_group" {
-			continue
-		}
-
-		groupId := rs.Primary.ID
-
-		err := c.DeleteGroup(context.Background(), groupId)
-		if err == nil {
-			return fmt.Errorf("Group with ID %s still present : ", groupId)
-		}
-	}
-
-	return nil
 }
 
 func TestAccDatasourceTwingateGroup_negative(t *testing.T) {

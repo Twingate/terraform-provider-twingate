@@ -1,47 +1,39 @@
 package resource
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-)
-
-const (
-	groupResourceName = "group"
-	groupResource     = "twingate_group.test"
+	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Create/Update", func(t *testing.T) {
+		const terraformResourceName = "test001"
+		theResource := acctests.TerraformGroup(terraformResourceName)
+		nameBefore := test.RandomName()
+		nameAfter := test.RandomName()
 
-		groupNameBefore := test.RandomName()
-		groupNameAfter := test.RandomName()
-
-		const theResource = "twingate_group.test001"
-
-		resource.Test(t, resource.TestCase{
+		sdk.Test(t, sdk.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateGroupDestroy,
-			Steps: []resource.TestStep{
+			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			Steps: []sdk.TestStep{
 				{
-					Config: createGroup001(groupNameBefore),
+					Config: terraformResourceTwingateGroup(terraformResourceName, nameBefore),
 					Check: acctests.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(theResource),
-						resource.TestCheckResourceAttr(theResource, "name", groupNameBefore),
+						acctests.CheckTwingateResourceExists(theResource),
+						sdk.TestCheckResourceAttr(theResource, nameAttr, nameBefore),
 					),
 				},
 				{
-					Config: createGroup001(groupNameAfter),
+					Config: terraformResourceTwingateGroup(terraformResourceName, nameAfter),
 					Check: acctests.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(theResource),
-						resource.TestCheckResourceAttr(theResource, "name", groupNameAfter),
+						acctests.CheckTwingateResourceExists(theResource),
+						sdk.TestCheckResourceAttr(theResource, nameAttr, nameAfter),
 					),
 				},
 			},
@@ -49,125 +41,63 @@ func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 	})
 }
 
-func createGroup001(name string) string {
+func terraformResourceTwingateGroup(terraformResourceName, name string) string {
 	return fmt.Sprintf(`
-	resource "twingate_group" "test001" {
+	resource "twingate_group" "%s" {
 	  name = "%s"
 	}
-	`, name)
+	`, terraformResourceName, name)
 }
 
 func TestAccTwingateGroupDeleteNonExisting(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Delete NonExisting", func(t *testing.T) {
+		const terraformResourceName = "test002"
+		theResource := acctests.TerraformGroup(terraformResourceName)
+		groupName := test.RandomName()
 
-		groupNameBefore := test.RandomName()
-
-		resource.Test(t, resource.TestCase{
+		sdk.Test(t, sdk.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateGroupDestroy,
-			Steps: []resource.TestStep{
+			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			Steps: []sdk.TestStep{
 				{
-					Config:  createGroup002(groupNameBefore),
+					Config:  terraformResourceTwingateGroup(terraformResourceName, groupName),
 					Destroy: true,
 					Check: acctests.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupDoesNotExists("twingate_group.test002"),
+						acctests.CheckTwingateResourceDoesNotExists(theResource),
 					),
 				},
 			},
 		})
 	})
-}
-
-func createGroup002(name string) string {
-	return fmt.Sprintf(`
-	resource "twingate_group" "test002" {
-	  name = "%s"
-	}
-	`, name)
-}
-
-func testAccCheckTwingateGroupDestroy(s *terraform.State) error {
-	c := acctests.Provider.Meta().(*client.Client)
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "twingate_group" {
-			continue
-		}
-
-		groupId := rs.Primary.ID
-
-		err := c.DeleteGroup(context.Background(), groupId)
-		if err == nil {
-			return fmt.Errorf("Group with ID %s still present : ", groupId)
-		}
-	}
-
-	return nil
-}
-
-func testAccCheckTwingateGroupExists(resourceName string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
-
-		if !ok {
-			return fmt.Errorf("Not found: %s ", resourceName)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No GroupID set ")
-		}
-
-		return nil
-	}
-}
-
-func testAccCheckTwingateGroupDoesNotExists(resourceName string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
-		_ = rs
-		if !ok {
-			return nil
-		}
-
-		return fmt.Errorf("this resource should not be here: %s ", resourceName)
-	}
 }
 
 func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Group Create After Deletion", func(t *testing.T) {
+		const terraformResourceName = "test003"
+		theResource := acctests.TerraformGroup(terraformResourceName)
 		groupName := test.RandomName()
 
-		const theResource = "twingate_group.test003"
-
-		resource.Test(t, resource.TestCase{
+		sdk.Test(t, sdk.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateGroupDestroy,
-			Steps: []resource.TestStep{
+			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			Steps: []sdk.TestStep{
 				{
-					Config: createGroup003(groupName),
+					Config: terraformResourceTwingateGroup(terraformResourceName, groupName),
 					Check: acctests.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(theResource),
-						deleteTwingateResource(theResource, groupResourceName),
+						acctests.CheckTwingateResourceExists(theResource),
+						acctests.DeleteTwingateResource(theResource, resource.TwingateGroup),
 					),
 					ExpectNonEmptyPlan: true,
 				},
 				{
-					Config: createGroup003(groupName),
+					Config: terraformResourceTwingateGroup(terraformResourceName, groupName),
 					Check: acctests.ComposeTestCheckFunc(
-						testAccCheckTwingateGroupExists(theResource),
+						acctests.CheckTwingateResourceExists(theResource),
 					),
 				},
 			},
 		})
 	})
-}
-
-func createGroup003(name string) string {
-	return fmt.Sprintf(`
-	resource "twingate_group" "test003" {
-	  name = "%s"
-	}
-	`, name)
 }

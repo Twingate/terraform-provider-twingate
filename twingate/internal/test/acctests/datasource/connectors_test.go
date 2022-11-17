@@ -21,7 +21,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateConnectorDestroy,
+			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName, test.Prefix()),
