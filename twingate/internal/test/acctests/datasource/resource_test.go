@@ -1,18 +1,15 @@
 package datasource
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDatasourceTwingateResource_basic(t *testing.T) {
@@ -23,7 +20,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateResourceDestroy,
+			CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateResource(networkName, resourceName),
@@ -63,26 +60,6 @@ func testDatasourceTwingateResource(networkName, resourceName string) string {
 	  id = twingate_resource.test_dr1.id
 	}
 	`, networkName, resourceName)
-}
-
-func testAccCheckTwingateResourceDestroy(s *terraform.State) error {
-	c := acctests.Provider.Meta().(*client.Client)
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "twingate_resource" {
-			continue
-		}
-
-		resourceId := rs.Primary.ID
-
-		err := c.DeleteResource(context.Background(), resourceId)
-		// expecting error here , since the resource is already gone
-		if err == nil {
-			return fmt.Errorf("resource with ID %s still present : ", resourceId)
-		}
-	}
-
-	return nil
 }
 
 func TestAccDatasourceTwingateResource_negative(t *testing.T) {

@@ -11,9 +11,8 @@ import (
 )
 
 const (
-	groupsDatasource = "data.twingate_groups.out"
-	groupsNumber     = "groups.#"
-	firstGroupName   = "groups.0.name"
+	groupsLen      = "groups.#"
+	firstGroupName = "groups.0.name"
 )
 
 func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
@@ -25,12 +24,12 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateGroupDestroy,
+			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroups(groupName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, groupsNumber, "2"),
+						resource.TestCheckResourceAttr(theDatasource, groupsLen, "2"),
 						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
 					),
 				},
@@ -68,7 +67,7 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 				{
 					Config: testTwingateGroupsDoesNotExists(groupName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_groups.out_dgs2", groupsNumber, "0"),
+						resource.TestCheckResourceAttr("data.twingate_groups.out_dgs2", groupsLen, "0"),
 					),
 				},
 			},
@@ -97,7 +96,7 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateGroupsWithFilters(groupName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, groupsNumber, "2"),
+						resource.TestCheckResourceAttr(theDatasource, groupsLen, "2"),
 						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
 					),
 				},
@@ -189,14 +188,14 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateGroupDestroy,
+			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroupsWithDatasource(groupName),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", firstGroupName, groupName),
-						resource.TestCheckResourceAttr("data.twingate_groups.one_dgs3", groupsNumber, "1"),
-						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", groupsNumber, "2"),
+						resource.TestCheckResourceAttr("data.twingate_groups.one_dgs3", groupsLen, "1"),
+						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", groupsLen, "2"),
 					),
 				},
 			},

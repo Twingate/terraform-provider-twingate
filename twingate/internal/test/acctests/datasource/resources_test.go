@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	resourcesDatasource = "data.twingate_resources.out"
-	resourcesNumber     = "resources.#"
-	firstResourceName   = "resources.0.name"
+	resourcesLen      = "resources.#"
+	firstResourceName = "resources.0.name"
 )
 
 func TestAccDatasourceTwingateResources_basic(t *testing.T) {
@@ -25,12 +24,12 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateResourceDestroy,
+			CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateResources(networkName, resourceName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, resourcesNumber, "2"),
+						resource.TestCheckResourceAttr(theDatasource, resourcesLen, "2"),
 						resource.TestCheckResourceAttr(theDatasource, firstResourceName, resourceName),
 					),
 				},
@@ -100,7 +99,7 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 				{
 					Config: testTwingateResourcesDoesNotExists(resourceName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_resources.out_drs2", resourcesNumber, "0"),
+						resource.TestCheckResourceAttr("data.twingate_resources.out_drs2", resourcesLen, "0"),
 					),
 				},
 			},

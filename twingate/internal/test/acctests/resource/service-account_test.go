@@ -20,8 +20,8 @@ func createServiceAccount(resourceName, serviceAccountName string) string {
 
 func TestAccTwingateServiceAccountCreateUpdate(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Service Account Create/Update", func(t *testing.T) {
-		const resourceName = "test01"
-		theResource := acctests.ResourceName(resource.TwingateServiceAccount, resourceName)
+		const terraformResourceName = "test01"
+		theResource := acctests.TerraformServiceAccount(terraformResourceName)
 		nameBefore := test.RandomName()
 		nameAfter := test.RandomName()
 
@@ -31,14 +31,14 @@ func TestAccTwingateServiceAccountCreateUpdate(t *testing.T) {
 			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config: createServiceAccount(resourceName, nameBefore),
+					Config: createServiceAccount(terraformResourceName, nameBefore),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						sdk.TestCheckResourceAttr(theResource, nameAttr, nameBefore),
 					),
 				},
 				{
-					Config: createServiceAccount(resourceName, nameAfter),
+					Config: createServiceAccount(terraformResourceName, nameAfter),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						sdk.TestCheckResourceAttr(theResource, nameAttr, nameAfter),
@@ -51,8 +51,8 @@ func TestAccTwingateServiceAccountCreateUpdate(t *testing.T) {
 
 func TestAccTwingateServiceAccountDeleteNonExisting(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Service Account Delete NonExisting", func(t *testing.T) {
-		const resourceName = "test02"
-		theResource := acctests.ResourceName(resource.TwingateServiceAccount, resourceName)
+		const terraformResourceName = "test02"
+		theResource := acctests.TerraformServiceAccount(terraformResourceName)
 		name := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
@@ -61,7 +61,7 @@ func TestAccTwingateServiceAccountDeleteNonExisting(t *testing.T) {
 			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config:  createServiceAccount(resourceName, name),
+					Config:  createServiceAccount(terraformResourceName, name),
 					Destroy: true,
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceDoesNotExists(theResource),
@@ -74,8 +74,8 @@ func TestAccTwingateServiceAccountDeleteNonExisting(t *testing.T) {
 
 func TestAccTwingateServiceAccountReCreateAfterDeletion(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Service Account Create After Deletion", func(t *testing.T) {
-		const resourceName = "test03"
-		theResource := acctests.ResourceName(resource.TwingateServiceAccount, resourceName)
+		const terraformResourceName = "test03"
+		theResource := acctests.TerraformServiceAccount(terraformResourceName)
 		name := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
@@ -84,15 +84,15 @@ func TestAccTwingateServiceAccountReCreateAfterDeletion(t *testing.T) {
 			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config: createServiceAccount(resourceName, name),
+					Config: createServiceAccount(terraformResourceName, name),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						deleteTwingateResource(theResource, resource.TwingateServiceAccount),
+						acctests.DeleteTwingateResource(theResource, resource.TwingateServiceAccount),
 					),
 					ExpectNonEmptyPlan: true,
 				},
 				{
-					Config: createServiceAccount(resourceName, name),
+					Config: createServiceAccount(terraformResourceName, name),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 					),

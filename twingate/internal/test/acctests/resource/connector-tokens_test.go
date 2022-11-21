@@ -6,27 +6,28 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccRemoteConnectorWithTokens(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector With Tokens", func(t *testing.T) {
-
-		const connectorTokensResource = "twingate_connector_tokens.test_t1"
+		const terraformResourceName = "test_t1"
+		theResource := acctests.TerraformConnectorTokens(terraformResourceName)
 		remoteNetworkName := test.RandomName()
 
-		resource.Test(t, resource.TestCase{
+		sdk.Test(t, sdk.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      testAccCheckTwingateConnectorTokensInvalidated,
-			Steps: []resource.TestStep{
+			CheckDestroy:      checkTwingateConnectorTokensInvalidated,
+			Steps: []sdk.TestStep{
 				{
-					Config: createConnectorTokensWithKeepers(remoteNetworkName),
+					Config: terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetworkName),
 					Check: acctests.ComposeTestCheckFunc(
-						testAccCheckTwingateConnectorTokensExists(connectorTokensResource),
+						checkTwingateConnectorTokensSet(theResource),
 					),
 				},
 			},
@@ -34,28 +35,24 @@ func TestAccRemoteConnectorWithTokens(t *testing.T) {
 	})
 }
 
-func createConnectorTokensWithKeepers(remoteNetworkName string) string {
+func terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetworkName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test_t1" {
-	  name = "%s"
-	}
-	resource "twingate_connector" "test_t1" {
-	  remote_network_id = twingate_remote_network.test_t1.id
-	}
-	resource "twingate_connector_tokens" "test_t1" {
-	  connector_id = twingate_connector.test_t1.id
+	%s
+
+	resource "twingate_connector_tokens" "%s" {
+	  connector_id = twingate_connector.%s.id
       keepers = {
          foo = "bar"
       }
 	}
-	`, remoteNetworkName)
+	`, terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName), terraformResourceName, terraformResourceName)
 }
 
-func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
+func checkTwingateConnectorTokensInvalidated(s *terraform.State) error {
 	c := acctests.Provider.Meta().(*client.Client)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "twingate_connector_tokens" {
+		if rs.Type != resource.TwingateConnectorTokens {
 			continue
 		}
 
@@ -73,7 +70,7 @@ func testAccCheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckTwingateConnectorTokensExists(connectorNameTokens string) resource.TestCheckFunc {
+func checkTwingateConnectorTokensSet(connectorNameTokens string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		connectorTokens, ok := s.RootModule().Resources[connectorNameTokens]
 
