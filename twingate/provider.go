@@ -93,7 +93,7 @@ func providerOptions() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPMaxRetry, DefaultHTTPMaxRetry),
-			Description: fmt.Sprintf("Specifies a retry limit for the http requests made. This setting is %s.\n"+
+			Description: fmt.Sprintf("Specifies a retry limit for the http requests made. The default value is %s.\n"+
 				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPMaxRetry, EnvHTTPMaxRetry),
 		},
 	}
