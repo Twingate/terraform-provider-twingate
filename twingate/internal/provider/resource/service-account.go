@@ -23,7 +23,7 @@ func ServiceAccount() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The name of the service account",
+				Description: "The name of the service account in Twingate",
 			},
 			// computed
 			"id": {
