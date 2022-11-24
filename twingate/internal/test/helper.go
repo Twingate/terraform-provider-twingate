@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -60,4 +61,8 @@ func filterStringValues(values []string, ok func(val string) bool) []string {
 	}
 
 	return result
+}
+
+func TerraformRandName(name string) string {
+	return fmt.Sprintf("%s_%02d", name, acctest.RandInt())
 }

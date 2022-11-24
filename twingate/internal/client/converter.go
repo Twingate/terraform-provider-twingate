@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
@@ -257,4 +258,50 @@ func (s *ServiceAccounts) ToModel() []*model.ServiceAccount {
 	return utils.Map[*ServiceAccountEdge, *model.ServiceAccount](s.Edges, func(edge *ServiceAccountEdge) *model.ServiceAccount {
 		return edge.Node.ToModel()
 	})
+}
+
+func (q gqlServiceAccountKey) ToModel() (*model.ServiceAccountKey, error) {
+	expirationTime, err := q.parseExpirationTime()
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.ServiceAccountKey{
+		ID:               q.StringID(),
+		Name:             q.StringName(),
+		ServiceAccountID: q.ServiceAccount.StringID(),
+		ExpirationTime:   expirationTime,
+		Status:           string(q.Status),
+	}, nil
+}
+
+func (q gqlServiceAccountKey) parseExpirationTime() (int, error) {
+	if q.ExpiresAt == "" {
+		return 0, nil
+	}
+
+	expiresAt, err := time.Parse(time.RFC3339, string(q.ExpiresAt))
+	if err != nil {
+		return -1, fmt.Errorf("failed to parse expiration time `%s`: %w", q.ExpiresAt, err)
+	}
+
+	return getDaysTillExpiration(expiresAt), nil
+}
+
+func getDaysTillExpiration(expiresAt time.Time) int {
+	const hoursInDay = 24
+
+	return int(time.Until(expiresAt).Hours()/hoursInDay) + 1
+}
+
+func (q createServiceAccountKeyQuery) ToModel() (*model.ServiceAccountKey, error) {
+	return q.ServiceAccountKeyCreate.Entity.ToModel()
+}
+
+func (q readServiceAccountKeyQuery) ToModel() (*model.ServiceAccountKey, error) {
+	return q.ServiceAccountKey.ToModel()
+}
+
+func (q updateServiceAccountKeyQuery) ToModel() (*model.ServiceAccountKey, error) {
+	return q.ServiceAccountKeyUpdate.Entity.ToModel()
 }
