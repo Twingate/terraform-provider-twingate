@@ -11,10 +11,6 @@ import (
 	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const (
-	statusAttr = "status"
-)
-
 func createServiceKey(terraformResourceName, serviceAccountName string) string {
 	return fmt.Sprintf(`
 	%s
@@ -54,7 +50,6 @@ func TestAccTwingateServiceKeyCreateUpdate(t *testing.T) {
 						acctests.CheckTwingateResourceExists(serviceAccount),
 						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttr(serviceKey, statusAttr, model.StatusActive),
 					),
 				},
 				{
@@ -63,7 +58,6 @@ func TestAccTwingateServiceKeyCreateUpdate(t *testing.T) {
 						acctests.CheckTwingateResourceExists(serviceAccount),
 						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttr(serviceKey, statusAttr, model.StatusActive),
 					),
 				},
 			},
@@ -92,7 +86,6 @@ func TestAccTwingateServiceKeyCreateUpdateWithName(t *testing.T) {
 						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
 						sdk.TestCheckResourceAttr(serviceKey, nameAttr, beforeName),
-						sdk.TestCheckResourceAttr(serviceKey, statusAttr, model.StatusActive),
 					),
 				},
 				{
@@ -102,7 +95,6 @@ func TestAccTwingateServiceKeyCreateUpdateWithName(t *testing.T) {
 						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
 						sdk.TestCheckResourceAttr(serviceKey, nameAttr, afterName),
-						sdk.TestCheckResourceAttr(serviceKey, statusAttr, model.StatusActive),
 					),
 				},
 			},
