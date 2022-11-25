@@ -158,7 +158,7 @@ func TerraformServiceAccount(name string) string {
 	return ResourceName(resource.TwingateServiceAccount, name)
 }
 
-func TerraformServiceAccountKey(name string) string {
+func TerraformServiceKey(name string) string {
 	return ResourceName(resource.TwingateServiceAccountKey, name)
 }
 
@@ -200,7 +200,7 @@ func deleteResource(resourceType, resourceID string) error {
 	case resource.TwingateServiceAccount:
 		err = providerClient.DeleteServiceAccount(context.Background(), resourceID)
 	case resource.TwingateServiceAccountKey:
-		err = providerClient.DeleteServiceAccountKey(context.Background(), resourceID)
+		err = providerClient.DeleteServiceKey(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -360,10 +360,8 @@ func CheckTwingateConnectorDestroy(s *terraform.State) error {
 	return nil
 }
 
-func RevokeTwingateServiceAccountKey(resourceName string) sdk.TestCheckFunc {
+func RevokeTwingateServiceKey(resourceName string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceState, ok := s.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
@@ -374,7 +372,9 @@ func RevokeTwingateServiceAccountKey(resourceName string) sdk.TestCheckFunc {
 			return ErrResourceIDNotSet
 		}
 
-		err := providerClient.RevokeServiceAccountKey(context.Background(), resourceID)
+		client := Provider.Meta().(*client.Client)
+
+		err := client.RevokeServiceKey(context.Background(), resourceID)
 		if err != nil {
 			return fmt.Errorf("failed to revoke service account key with ID %s: %w", resourceID, err)
 		}
@@ -383,12 +383,9 @@ func RevokeTwingateServiceAccountKey(resourceName string) sdk.TestCheckFunc {
 	}
 }
 
-func CheckTwingateServiceAccountKeyStatus(resourceName string, expectedStatus string) sdk.TestCheckFunc {
+func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceState, ok := s.RootModule().Resources[resourceName]
-
 		if !ok {
 			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
 		}
@@ -397,7 +394,9 @@ func CheckTwingateServiceAccountKeyStatus(resourceName string, expectedStatus st
 			return ErrResourceIDNotSet
 		}
 
-		serviceAccountKey, err := providerClient.ReadServiceAccountKey(context.Background(), resourceState.Primary.ID)
+		client := Provider.Meta().(*client.Client)
+
+		serviceAccountKey, err := client.ReadServiceKey(context.Background(), resourceState.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("failed to read service account key with ID %s: %w", resourceState.Primary.ID, err)
 		}

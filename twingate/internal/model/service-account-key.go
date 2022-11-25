@@ -5,22 +5,22 @@ const (
 	StatusRevoked = "REVOKED"
 )
 
-type ServiceAccountKey struct {
-	ID               string
-	Name             string
-	Status           string
-	ServiceAccountID string
-	ExpirationTime   int
+type ServiceKey struct {
+	ID             string
+	Name           string
+	Status         string
+	Service        string
+	ExpirationTime int
 }
 
-func (s ServiceAccountKey) GetName() string {
+func (s ServiceKey) GetName() string {
 	return s.Name
 }
 
-func (s ServiceAccountKey) GetID() string {
+func (s ServiceKey) GetID() string {
 	return s.ID
 }
 
-func (s ServiceAccountKey) IsActive() bool {
+func (s ServiceKey) IsActive() bool {
 	return s.Status == StatusActive
 }

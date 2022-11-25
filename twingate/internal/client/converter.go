@@ -260,22 +260,22 @@ func (s *ServiceAccounts) ToModel() []*model.ServiceAccount {
 	})
 }
 
-func (q gqlServiceAccountKey) ToModel() (*model.ServiceAccountKey, error) {
+func (q gqlServiceKey) ToModel() (*model.ServiceKey, error) {
 	expirationTime, err := q.parseExpirationTime()
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.ServiceAccountKey{
-		ID:               q.StringID(),
-		Name:             q.StringName(),
-		ServiceAccountID: q.ServiceAccount.StringID(),
-		ExpirationTime:   expirationTime,
-		Status:           string(q.Status),
+	return &model.ServiceKey{
+		ID:             q.StringID(),
+		Name:           q.StringName(),
+		Service:        q.ServiceAccount.StringID(),
+		ExpirationTime: expirationTime,
+		Status:         string(q.Status),
 	}, nil
 }
 
-func (q gqlServiceAccountKey) parseExpirationTime() (int, error) {
+func (q gqlServiceKey) parseExpirationTime() (int, error) {
 	if q.ExpiresAt == "" {
 		return 0, nil
 	}
@@ -294,14 +294,14 @@ func getDaysTillExpiration(expiresAt time.Time) int {
 	return int(time.Until(expiresAt).Hours()/hoursInDay) + 1
 }
 
-func (q createServiceAccountKeyQuery) ToModel() (*model.ServiceAccountKey, error) {
+func (q createServiceAccountKeyQuery) ToModel() (*model.ServiceKey, error) {
 	return q.ServiceAccountKeyCreate.Entity.ToModel()
 }
 
-func (q readServiceAccountKeyQuery) ToModel() (*model.ServiceAccountKey, error) {
+func (q readServiceAccountKeyQuery) ToModel() (*model.ServiceKey, error) {
 	return q.ServiceAccountKey.ToModel()
 }
 
-func (q updateServiceAccountKeyQuery) ToModel() (*model.ServiceAccountKey, error) {
+func (q updateServiceAccountKeyQuery) ToModel() (*model.ServiceKey, error) {
 	return q.ServiceAccountKeyUpdate.Entity.ToModel()
 }

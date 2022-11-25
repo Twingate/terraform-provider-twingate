@@ -7,5 +7,5 @@ const (
 	TwingateGroup             = "twingate_group"
 	TwingateResource          = "twingate_resource"
 	TwingateServiceAccount    = "twingate_service"
-	TwingateServiceAccountKey = "twingate_service_account_key"
+	TwingateServiceAccountKey = "twingate_service_key"
 )
