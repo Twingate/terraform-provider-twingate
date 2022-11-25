@@ -12,7 +12,7 @@ import (
 
 func createServiceAccount(resourceName, serviceAccountName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_service_account" "%s" {
+	resource "twingate_service" "%s" {
 	  name = "%s"
 	}
 	`, resourceName, serviceAccountName)
