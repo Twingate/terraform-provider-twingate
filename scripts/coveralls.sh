@@ -3,7 +3,7 @@
 set -o errexit
 set -o nounset
 
-TEST_RESULTS=${TEST_RESULTS:-"./test/out"}
+TEST_RESULTS=${TEST_RESULTS:-"./test_results"}
 
 go install github.com/mattn/goveralls@latest
 

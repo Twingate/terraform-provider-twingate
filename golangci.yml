@@ -52,6 +52,7 @@ linters:
     - scopelint
     - structcheck
     - varcheck
+    - revive
   disable-all: false
   fast: false
 
