@@ -184,3 +184,143 @@ func (client *Client) readServiceAccountsAfter(ctx context.Context, variables ma
 
 	return &response.ServiceAccounts.PaginatedResource, nil
 }
+
+type gqlResourceID struct {
+	ID graphql.ID
+}
+
+type gqlResourceIDEdge struct {
+	Node *gqlResourceID
+}
+
+type gqlResourceIDs struct {
+	PaginatedResource[*gqlResourceIDEdge]
+}
+
+type gqlService struct {
+	IDName
+	Resources gqlResourceIDs `graphql:"resources(after: $resourcesEndCursor)"`
+	Keys      gqlResourceIDs
+}
+
+type ServiceEdge struct {
+	Node *gqlService
+}
+
+type Services struct {
+	PaginatedResource[*ServiceEdge]
+}
+
+type readServicesByNameQuery struct {
+	Services Services `graphql:"serviceAccounts(filter: {name: {eq: $name}})"`
+}
+
+func (client *Client) ReadServicesByName(ctx context.Context, name string) ([]*model.Service, error) {
+	if name == "" {
+		return nil, NewAPIError(ErrGraphqlGroupNameIsEmpty, "read", serviceAccountResourceName)
+	}
+
+	response := readServicesByNameQuery{}
+	variables := newVars(
+		gqlField(name, "name"),
+		gqlNullableField("", "resourcesEndCursor"),
+	)
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readServices", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithName(err, "read", serviceAccountResourceName, name)
+	}
+
+	if len(response.Services.Edges) == 0 {
+		return nil, nil
+	}
+
+	err = response.Services.fetchPages(ctx, client.readServicesByNameAfter, variables)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range response.Services.Edges {
+		response.Services.Edges[i].Node.Resources.fetchPages(ctx, client.readServiceResourcesByNameAfter, variables)
+
+	}
+
+	return response.Services.ToModel(), nil
+}
+
+type readServicesByNameAfter struct {
+	Services Services `graphql:"serviceAccounts(filter: {name: {eq: $name}}, after: $servicesEndCursor)"`
+}
+
+func (client *Client) readServicesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*ServiceEdge], error) {
+	response := readServicesByNameAfter{}
+	variables["servicesEndCursor"] = cursor
+	variables["resourcesEndCursor"] = nil
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readServices", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", serviceAccountResourceName, "All")
+	}
+
+	if len(response.Services.Edges) == 0 {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", serviceAccountResourceName, "All")
+	}
+
+	return &response.Services.PaginatedResource, nil
+}
+
+func (client *Client) readServiceResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*gqlResourceIDEdge], error) {
+	response := readServicesByNameAfter{}
+	variables["servicesEndCursor"] = nil
+	variables["resourcesEndCursor"] = cursor
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readServices", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, "read", serviceAccountResourceName, "All")
+	}
+
+	if len(response.Services.Edges) == 0 {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", serviceAccountResourceName, "All")
+	}
+
+	return &response.Services.PaginatedResource.Edges[0].Node.Resources.PaginatedResource, nil
+}
+
+//type gqlServiceWithResources struct {
+//	IDName
+//	Resources gqlResourceIDs `graphql:"resources(after: $resourcesEndCursor)"`
+//	Keys      gqlResourceIDs
+//}
+//
+//type ServiceEdgeWithResources struct {
+//	Node *gqlServiceWithResources
+//}
+//
+//type ServicesWithResources struct {
+//	PaginatedResource[*ServiceEdge]
+//}
+//
+//type readServicesByNameQuery struct {
+//	Services Services `graphql:"serviceAccounts(filter: {name: {eq: $name}})"`
+//}
+//
+//// after: $servicesEndCursor
+//type readResourceServicesByNameAfter struct {
+//	Services Services `graphql:"serviceAccounts(filter: {name: {eq: $name}})"`
+//}
+//
+//func (client *Client) readResourceServicesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*ServiceEdge], error) {
+//	response := readServicesByNameAfter{}
+//	variables["servicesEndCursor"] = cursor
+//
+//	err := client.GraphqlClient.NamedQuery(ctx, "readServices", &response, variables)
+//	if err != nil {
+//		return nil, NewAPIErrorWithID(err, "read", serviceAccountResourceName, "All")
+//	}
+//
+//	if len(response.Services.Edges) == 0 {
+//		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", serviceAccountResourceName, "All")
+//	}
+//
+//	return &response.Services.PaginatedResource, nil
+//}

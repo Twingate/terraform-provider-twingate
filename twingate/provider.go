@@ -47,6 +47,7 @@ func Provider(version string) *schema.Provider {
 			datasource.TwingateConnectors:    datasource.Connectors(),
 			datasource.TwingateResource:      datasource.Resource(),
 			datasource.TwingateResources:     datasource.Resources(),
+			datasource.TwingateServices:      datasource.Services(),
 		},
 	}
 	provider.ConfigureContextFunc = configure(version, provider)

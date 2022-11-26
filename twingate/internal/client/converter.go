@@ -305,3 +305,24 @@ func (q readServiceAccountKeyQuery) ToModel() (*model.ServiceKey, error) {
 func (q updateServiceAccountKeyQuery) ToModel() (*model.ServiceKey, error) {
 	return q.ServiceAccountKeyUpdate.Entity.ToModel()
 }
+
+func (s *Services) ToModel() []*model.Service {
+	return utils.Map[*ServiceEdge, *model.Service](s.Edges, func(edge *ServiceEdge) *model.Service {
+		return edge.Node.ToModel()
+	})
+}
+
+func (s *gqlService) ToModel() *model.Service {
+	return &model.Service{
+		ID:        s.StringID(),
+		Name:      s.StringName(),
+		Resources: s.Resources.listIDs(),
+		Keys:      s.Keys.listIDs(),
+	}
+}
+
+func (q gqlResourceIDs) listIDs() []string {
+	return utils.Map[*gqlResourceIDEdge, string](q.Edges, func(edge *gqlResourceIDEdge) string {
+		return edge.Node.ID.(string)
+	})
+}
