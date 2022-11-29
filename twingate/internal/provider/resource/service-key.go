@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	fieldID      = "id"
-	fieldName    = "name"
-	fieldService = "service"
+	fieldID        = "id"
+	fieldName      = "name"
+	fieldServiceID = "service_id"
 )
 
 func ServiceKey() *schema.Resource {
@@ -26,7 +26,7 @@ func ServiceKey() *schema.Resource {
 		UpdateContext: serviceKeyUpdate,
 
 		Schema: map[string]*schema.Schema{
-			fieldService: {
+			fieldServiceID: {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The id of the service account",
@@ -55,7 +55,7 @@ func serviceKeyCreate(ctx context.Context, resourceData *schema.ResourceData, me
 	client := meta.(*client.Client)
 
 	serviceKey, err := client.CreateServiceKey(ctx, &model.ServiceKey{
-		Service: resourceData.Get(fieldService).(string),
+		Service: resourceData.Get(fieldServiceID).(string),
 		Name:    resourceData.Get(fieldName).(string),
 	})
 	if err != nil {
@@ -137,7 +137,7 @@ func serviceKeyReadHelper(ctx context.Context, resourceData *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set(fieldService, serviceKey.Service); err != nil {
+	if err := resourceData.Set(fieldServiceID, serviceKey.Service); err != nil {
 		return diag.FromErr(err)
 	}
 
