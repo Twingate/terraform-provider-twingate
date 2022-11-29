@@ -66,7 +66,7 @@ func readServices(ctx context.Context, resourceData *schema.ResourceData, meta i
 
 	name := resourceData.Get(fieldName).(string)
 
-	services, err := client.ReadServicesByName(ctx, name)
+	services, err := client.ReadServices(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}

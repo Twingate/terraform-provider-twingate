@@ -14,6 +14,13 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
+const (
+	operationCreate = "create"
+	operationRead   = "read"
+	operationUpdate = "update"
+	operationDelete = "delete"
+)
+
 type Client struct {
 	GraphqlClient    *graphql.Client
 	HTTPClient       *http.Client

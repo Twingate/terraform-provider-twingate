@@ -2,31 +2,55 @@ package datasource
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const servicesLen = "services.#"
+const (
+	idAttr       = "id"
+	servicesLen  = "services.#"
+	firstKeysLen = "services.0.keys.#"
+)
 
-func TestAccDatasourceTwingateServices_basic(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Services Basic", func(t *testing.T) {
+func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
+	t.Run("Test Twingate Datasource : Acc Services - Filter By Name", func(t *testing.T) {
 
-		//networkName := test.RandomName()
-		//resourceName := test.RandomResourceName()
-		const theDatasource = "data.twingate_services.out"
+		const (
+			name                  = "orange"
+			terraformResourceName = "dts_service"
+			theDatasource         = "data.twingate_services.out"
+		)
+
+		config := []terraformServiceConfig{
+			{
+				serviceName:           name,
+				terraformResourceName: test.TerraformRandName(terraformResourceName),
+			},
+			{
+				serviceName:           "lemon",
+				terraformResourceName: test.TerraformRandName(terraformResourceName),
+			},
+		}
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
-			//CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testDatasourceTwingateServices("hello"),
+					Config: terraformConfig(
+						createServices(config),
+						datasourceServices(name, config),
+					),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, servicesLen, "1"),
-						//resource.TestCheckResourceAttr(theDatasource, firstResourceName, resourceName),
+						resource.TestCheckResourceAttr(theDatasource, firstKeysLen, "1"),
+						resource.TestCheckResourceAttr(theDatasource, idAttr, "service-by-name-"+name),
 					),
 				},
 			},
@@ -34,10 +58,140 @@ func TestAccDatasourceTwingateServices_basic(t *testing.T) {
 	})
 }
 
-func testDatasourceTwingateServices(name string) string {
+func TestAccDatasourceTwingateServicesAll(t *testing.T) {
+	t.Run("Test Twingate Datasource : Acc Services - All", func(t *testing.T) {
+
+		const (
+			prefix                = "fruit"
+			terraformResourceName = "dts_service"
+			theDatasource         = "data.twingate_services.out"
+		)
+
+		config := []terraformServiceConfig{
+			{
+				serviceName:           prefix + "_orange",
+				terraformResourceName: test.TerraformRandName(terraformResourceName),
+			},
+			{
+				serviceName:           prefix + "_lemon",
+				terraformResourceName: test.TerraformRandName(terraformResourceName),
+			},
+		}
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: acctests.ProviderFactories,
+			PreCheck:          func() { acctests.PreCheck(t) },
+			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: filterDatasourceServices(prefix, config),
+					Check: acctests.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(theDatasource, idAttr, "all-services"),
+					),
+				},
+				{
+					Config: filterDatasourceServices(prefix, config),
+					Check: acctests.ComposeTestCheckFunc(
+						testCheckOutputLength("my_services", 2),
+					),
+				},
+			},
+		})
+	})
+}
+
+func TestAccDatasourceTwingateServicesEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Datasource : Acc Services - Empty Result", func(t *testing.T) {
+
+		const theDatasource = "data.twingate_services.out"
+
+		resource.Test(t, resource.TestCase{
+			ProviderFactories: acctests.ProviderFactories,
+			PreCheck:          func() { acctests.PreCheck(t) },
+			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: datasourceServices(test.RandomName(), nil),
+					Check: acctests.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(theDatasource, servicesLen, "0"),
+					),
+				},
+			},
+		})
+	})
+}
+
+type terraformServiceConfig struct {
+	terraformResourceName, serviceName string
+}
+
+func terraformConfig(resources ...string) string {
+	return strings.Join(resources, "\n")
+}
+
+func datasourceServices(name string, configs []terraformServiceConfig) string {
+	var dependsOn string
+	ids := getTerraformServiceKeys(configs)
+
+	if ids != "" {
+		dependsOn = fmt.Sprintf("depends_on = [%s]", ids)
+	}
+
 	return fmt.Sprintf(`
 	data "twingate_services" "out" {
 	  name = "%s"
+
+	  %s
 	}
-	`, name)
+	`, name, dependsOn)
+}
+
+func createServices(configs []terraformServiceConfig) string {
+	return strings.Join(
+		utils.Map[terraformServiceConfig, string](configs, func(cfg terraformServiceConfig) string {
+			return createServiceKey(cfg.terraformResourceName, cfg.serviceName)
+		}),
+		"\n",
+	)
+}
+
+func getTerraformServiceKeys(configs []terraformServiceConfig) string {
+	return strings.Join(
+		utils.Map[terraformServiceConfig, string](configs, func(cfg terraformServiceConfig) string {
+			return acctests.TerraformServiceKey(cfg.terraformResourceName)
+		}),
+		", ",
+	)
+}
+
+func createServiceKey(terraformResourceName, serviceName string) string {
+	return fmt.Sprintf(`
+	%s
+
+	resource "twingate_service_key" "%s" {
+	  service = twingate_service.%s.id
+	}
+	`, createServiceAccount(terraformResourceName, serviceName), terraformResourceName, terraformResourceName)
+}
+
+func createServiceAccount(terraformResourceName, serviceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_service" "%s" {
+	  name = "%s"
+	}
+	`, terraformResourceName, serviceName)
+}
+
+func filterDatasourceServices(prefix string, configs []terraformServiceConfig) string {
+	return fmt.Sprintf(`
+	%s
+
+	data "twingate_services" "out" {
+
+	}
+
+	output "my_services" {
+	  	value = [for c in data.twingate_services.out.services : c if length(regexall("^%s", c.name)) > 0]
+	}
+	`, createServices(configs), prefix)
 }
