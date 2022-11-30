@@ -6,6 +6,6 @@ const (
 	TwingateConnectorTokens   = "twingate_connector_tokens"
 	TwingateGroup             = "twingate_group"
 	TwingateResource          = "twingate_resource"
-	TwingateServiceAccount    = "twingate_service"
-	TwingateServiceAccountKey = "twingate_service_key"
+	TwingateServiceAccount    = "twingate_service_account"
+	TwingateServiceAccountKey = "twingate_service_account_key"
 )

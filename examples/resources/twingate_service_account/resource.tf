@@ -3,6 +3,6 @@ provider "twingate" {
   network   = "mynetwork"
 }
 
-resource "twingate_service" "github_actions_prod" {
+resource "twingate_service_account" "github_actions_prod" {
   name = "Github Actions PROD"
 }
