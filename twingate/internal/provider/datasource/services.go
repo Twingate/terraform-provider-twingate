@@ -12,8 +12,8 @@ const (
 	fieldID        = "id"
 	fieldName      = "name"
 	fieldServices  = "services"
-	fieldResources = "resources"
-	fieldKeys      = "keys"
+	fieldResources = "resource_ids"
+	fieldKeys      = "key_ids"
 )
 
 func Services() *schema.Resource {
@@ -52,7 +52,7 @@ func Services() *schema.Resource {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Computed:    true,
-							Description: "List of twingate_service_key IDs that are assigned to the service account.",
+							Description: "List of twingate_service_account_key IDs that are assigned to the service account.",
 						},
 					},
 				},

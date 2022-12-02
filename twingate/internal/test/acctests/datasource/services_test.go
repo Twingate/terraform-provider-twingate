@@ -14,16 +14,16 @@ import (
 const (
 	idAttr       = "id"
 	servicesLen  = "services.#"
-	firstKeysLen = "services.0.keys.#"
+	firstKeysLen = "services.0.key_ids.#"
 )
 
 func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - Filter By Name", func(t *testing.T) {
 
+		name := test.Prefix("orange")
 		const (
-			name                  = "orange"
 			terraformResourceName = "dts_service"
-			theDatasource         = "data.twingate_services.out"
+			theDatasource         = "data.twingate_service_accounts.out"
 		)
 
 		config := []terraformServiceConfig{
@@ -32,7 +32,7 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 				terraformResourceName: test.TerraformRandName(terraformResourceName),
 			},
 			{
-				serviceName:           "lemon",
+				serviceName:           test.Prefix("lemon"),
 				terraformResourceName: test.TerraformRandName(terraformResourceName),
 			},
 		}
@@ -61,10 +61,10 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - All", func(t *testing.T) {
 
+		prefix := test.Prefix()
 		const (
-			prefix                = "fruit"
 			terraformResourceName = "dts_service"
-			theDatasource         = "data.twingate_services.out"
+			theDatasource         = "data.twingate_service_accounts.out"
 		)
 
 		config := []terraformServiceConfig{
@@ -103,7 +103,7 @@ func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 func TestAccDatasourceTwingateServicesEmptyResult(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - Empty Result", func(t *testing.T) {
 
-		const theDatasource = "data.twingate_services.out"
+		const theDatasource = "data.twingate_service_accounts.out"
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
@@ -138,7 +138,7 @@ func datasourceServices(name string, configs []terraformServiceConfig) string {
 	}
 
 	return fmt.Sprintf(`
-	data "twingate_services" "out" {
+	data "twingate_service_accounts" "out" {
 	  name = "%s"
 
 	  %s
@@ -168,15 +168,15 @@ func createServiceKey(terraformResourceName, serviceName string) string {
 	return fmt.Sprintf(`
 	%s
 
-	resource "twingate_service_key" "%s" {
-	  service = twingate_service.%s.id
+	resource "twingate_service_account_key" "%s" {
+	  service_id = twingate_service_account.%s.id
 	}
 	`, createServiceAccount(terraformResourceName, serviceName), terraformResourceName, terraformResourceName)
 }
 
 func createServiceAccount(terraformResourceName, serviceName string) string {
 	return fmt.Sprintf(`
-	resource "twingate_service" "%s" {
+	resource "twingate_service_account" "%s" {
 	  name = "%s"
 	}
 	`, terraformResourceName, serviceName)
@@ -186,12 +186,12 @@ func filterDatasourceServices(prefix string, configs []terraformServiceConfig) s
 	return fmt.Sprintf(`
 	%s
 
-	data "twingate_services" "out" {
+	data "twingate_service_accounts" "out" {
 
 	}
 
 	output "my_services" {
-	  	value = [for c in data.twingate_services.out.services : c if length(regexall("^%s", c.name)) > 0]
+	  	value = [for c in data.twingate_service_accounts.out.services : c if length(regexall("^%s", c.name)) > 0]
 	}
 	`, createServices(configs), prefix)
 }

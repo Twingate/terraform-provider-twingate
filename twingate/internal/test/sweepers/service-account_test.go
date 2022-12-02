@@ -25,6 +25,25 @@ func init() {
 				return items, nil
 			},
 			func(client *client.Client, ctx context.Context, id string) error {
+				service, err := client.ReadService(ctx, id)
+				if err != nil {
+					return err
+				}
+
+				for _, keyID := range service.Keys {
+					key, err := client.ReadServiceKey(ctx, keyID)
+					if err != nil {
+						return err
+					}
+
+					if key.IsActive() {
+						err = client.RevokeServiceKey(ctx, keyID)
+						if err != nil {
+							return err
+						}
+					}
+				}
+
 				return client.DeleteServiceAccount(ctx, id)
 			},
 		),

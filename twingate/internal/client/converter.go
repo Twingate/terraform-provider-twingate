@@ -326,3 +326,9 @@ func (q gqlResourceIDs) listIDs() []string {
 		return edge.Node.ID.(string)
 	})
 }
+
+func (q gqlKeyIDs) listIDs() []string {
+	return utils.Map[*gqlKeyIDEdge, string](q.Edges, func(edge *gqlKeyIDEdge) string {
+		return edge.Node.ID.(string)
+	})
+}

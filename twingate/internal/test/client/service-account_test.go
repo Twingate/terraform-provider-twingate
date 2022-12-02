@@ -560,3 +560,1272 @@ func TestReadServiceAccountsEmptyResponseOnFetching(t *testing.T) {
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
 	})
 }
+
+func TestReadServicesOk(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Ok", func(t *testing.T) {
+		expected := []*model.Service{
+			{
+				ID:        "id-1",
+				Name:      "test-1",
+				Resources: []string{},
+				Keys:      []string{"key-1"},
+			},
+			{
+				ID:        "id-2",
+				Name:      "test-2",
+				Resources: []string{"resource-2-1", "resource-2-2"},
+				Keys:      []string{"key-2-1", "key-2-2"},
+			},
+			{
+				ID:        "id-3",
+				Name:      "test-3",
+				Resources: []string{},
+				Keys:      []string{"key-3-1", "key-3-2", "key-3-3"},
+			},
+		}
+
+		response1 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-01",
+		                "hasNextPage": false
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-1",
+		                    "status": "ACTIVE"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "test-2",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": "cursor-resource-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "resource-2-1",
+		                    "isActive": true
+		                  }
+		                }
+		              ]
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-2-1",
+		                    "status": "ACTIVE"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-2",
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-3",
+		            "name": "test-3",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-03",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-3-1",
+		                    "status": "ACTIVE"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response3 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "resources": {
+		        "pageInfo": {
+		          "endCursor": "cursor-resource-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "resource-2-2",
+		              "isActive": true
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		response4 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-2-2",
+		              "status": "ACTIVE"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		response5 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-3",
+		      "name": "test-3",
+		      "resources": {
+		        "pageInfo": {
+		          "endCursor": null,
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      },
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-03-1",
+		          "hasNextPage": true
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-3-2",
+		              "status": "ACTIVE"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		response6 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-3",
+		      "name": "test-3",
+		      "resources": {
+		        "pageInfo": {
+		          "endCursor": null,
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      },
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-03-2",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-3-3",
+		              "status": "ACTIVE"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+				httpmock.NewStringResponder(http.StatusOK, response4),
+				httpmock.NewStringResponder(http.StatusOK, response5),
+				httpmock.NewStringResponder(http.StatusOK, response6),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, expected, serviceAccounts)
+	})
+}
+
+func TestReadServicesRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Request Error", func(t *testing.T) {
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account: Post "%s": bad request`, c.GraphqlServerURL))
+	})
+}
+
+func TestReadServicesEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "edges": []
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.NoError(t, err)
+	})
+}
+
+func TestReadServicesRequestErrorOnFetchingServices(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Request Error on Fetching Services", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewErrorResponder(errBadRequest),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+	})
+}
+
+func TestReadServicesEmptyResponseOnFetchingServices(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Empty Response on Fetching Services", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		nextResponse := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": []
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewStringResponder(http.StatusOK, nextResponse),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
+	})
+}
+
+func TestReadServicesRequestErrorOnFetchingResources(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Request Error on Fetching Resources", func(t *testing.T) {
+
+		response1 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-01",
+		                "hasNextPage": false
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "test-2",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": "cursor-resource-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "resource-2-1"
+		                  }
+		                }
+		              ]
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-2-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-2",
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-3",
+		            "name": "test-3",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-03",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-3-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewErrorResponder(errBadRequest),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+	})
+}
+
+func TestReadServicesEmptyResponseOnFetchingResources(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Empty Response on Fetching Resources", func(t *testing.T) {
+
+		response1 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-01",
+		                "hasNextPage": false
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "test-2",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": "cursor-resource-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "resource-2-1"
+		                  }
+		                }
+		              ]
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-2-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-2",
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-3",
+		            "name": "test-3",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-03",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-3-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response3 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "resources": {
+		        "pageInfo": {
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      },
+		      "keys": {
+		        "pageInfo": {
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
+	})
+}
+
+func TestReadServicesRequestErrorOnFetchingKeys(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Request Error on Fetching Keys", func(t *testing.T) {
+
+		response1 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-01",
+		                "hasNextPage": false
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "test-2",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": "cursor-resource-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "resource-2-1"
+		                  }
+		                }
+		              ]
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-2-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-2",
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-3",
+		            "name": "test-3",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-03",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-3-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response3 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "resources": {
+		        "pageInfo": {
+		          "endCursor": "cursor-resource-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "resource-2-2"
+		            }
+		          }
+		        ]
+		      },
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-2-2"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+				httpmock.NewErrorResponder(errBadRequest),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+	})
+}
+
+func TestReadServicesEmptyResponseOnFetchingKeys(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - Empty Response on Fetching Keys", func(t *testing.T) {
+
+		response1 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": true
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-01",
+		                "hasNextPage": false
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "test-2",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": "cursor-resource-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "resource-2-1"
+		                  }
+		                }
+		              ]
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-02",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-2-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-2",
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-3",
+		            "name": "test-3",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": {
+		              "pageInfo": {
+		                "endCursor": "cursor-key-03",
+		                "hasNextPage": true
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "key-3-1"
+		                  }
+		                }
+		              ]
+		            }
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		response3 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "resources": {
+		        "pageInfo": {
+		          "endCursor": "cursor-resource-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "resource-2-2"
+		            }
+		          }
+		        ]
+		      },
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-2-2"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		response4 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "resources": {
+		        "pageInfo": {
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      },
+		      "keys": {
+		        "pageInfo": {
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+				httpmock.NewStringResponder(http.StatusOK, response4),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background())
+
+		assert.Nil(t, serviceAccounts)
+		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
+	})
+}
+
+func TestReadServicesByNameOk(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Services - By Name Ok", func(t *testing.T) {
+		expected := []*model.Service{
+			{
+				ID:        "id-2",
+				Name:      "test-2",
+				Resources: []string{"resource-2-2"},
+				Keys:      []string{"key-2-1"},
+			},
+		}
+
+		response1 := `{
+		 "data": {
+		   "serviceAccounts": {
+		     "pageInfo": {
+		       "endCursor": "cursor-1",
+		       "hasNextPage": false
+		     },
+		     "edges": [
+		       {
+		         "node": {
+		           "id": "id-2",
+		           "name": "test-2",
+		           "resources": {
+		             "pageInfo": {
+		               "endCursor": "cursor-resource-02",
+		               "hasNextPage": true
+		             },
+		             "edges": [
+		               {
+		                 "node": {
+		                   "id": "resource-2-1",
+		                   "isActive": false
+		                 }
+		               }
+		             ]
+		           },
+		           "keys": {
+		             "pageInfo": {
+		               "endCursor": "cursor-key-02",
+		               "hasNextPage": true
+		             },
+		             "edges": [
+		               {
+		                 "node": {
+		                   "id": "key-2-1",
+		                   "status": "ACTIVE"
+		                 }
+		               }
+		             ]
+		           }
+		         }
+		       }
+		     ]
+		   }
+		 }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "resources": {
+		        "pageInfo": {
+		          "endCursor": "cursor-resource-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "resource-2-2",
+		              "isActive": true
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		response3 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id-2",
+		      "name": "test-2",
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-2-2",
+		              "status": "REVOKED"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+			),
+		)
+
+		serviceAccounts, err := c.ReadServices(context.Background(), "test-2")
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, expected, serviceAccounts)
+	})
+}
+
+func TestReadServiceOk(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Service - Ok", func(t *testing.T) {
+		expected := &model.Service{
+			ID:        "id",
+			Name:      "test-2",
+			Resources: []string{},
+			Keys:      []string{},
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "id",
+		      "name": "test-2",
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-02-1",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-2-2",
+		              "status": "REVOKED"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		serviceAccount, err := c.ReadService(context.Background(), "id")
+
+		assert.NoError(t, err)
+		assert.EqualValues(t, expected, serviceAccount)
+	})
+}
+
+func TestReadServiceWithEmptyID(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Service - With Empty ID", func(t *testing.T) {
+		c := newHTTPMockClient()
+
+		serviceAccount, err := c.ReadService(context.Background(), "")
+
+		assert.Nil(t, serviceAccount)
+		assert.EqualError(t, err, `failed to read service account: id is empty`)
+	})
+}
+
+func TestReadServiceRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Service - Request Error", func(t *testing.T) {
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		serviceAccount, err := c.ReadService(context.Background(), "account-id")
+
+		assert.Nil(t, serviceAccount)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+	})
+}
+
+func TestReadServiceEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Service - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccount": null
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		serviceAccount, err := c.ReadService(context.Background(), "account-id")
+
+		assert.Nil(t, serviceAccount)
+		assert.EqualError(t, err, `failed to read service account with id account-id: query result is empty`)
+	})
+}
+
+func TestReadServiceRequestErrorOnFetching(t *testing.T) {
+	t.Run("Test Twingate Resource: Read Service - Request Error On Fetching", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-2",
+		      "keys": {
+		        "pageInfo": {
+		          "endCursor": "cursor-key-02-1",
+		          "hasNextPage": true
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "key-2-2",
+		              "status": "REVOKED"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewErrorResponder(errBadRequest),
+			))
+
+		serviceAccount, err := c.ReadService(context.Background(), "account-id")
+
+		assert.Nil(t, serviceAccount)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+	})
+}

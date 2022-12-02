@@ -10,5 +10,5 @@ const (
 	TwingateConnectors    = "twingate_connectors"
 	TwingateResource      = "twingate_resource"
 	TwingateResources     = "twingate_resources"
-	TwingateServices      = "twingate_services"
+	TwingateServices      = "twingate_service_accounts"
 )

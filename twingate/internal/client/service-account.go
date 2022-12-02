@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/twingate/go-graphql-client"
 )
 
@@ -201,21 +202,51 @@ func (client *Client) readServiceAccountsAfter(ctx context.Context, variables ma
 }
 
 type gqlResourceID struct {
-	ID graphql.ID
+	ID       graphql.ID
+	IsActive graphql.Boolean
+}
+
+func (r gqlResourceID) isActive() bool {
+	return bool(r.IsActive)
 }
 
 type gqlResourceIDEdge struct {
 	Node *gqlResourceID
 }
 
+func isGqlResourceActive(item *gqlResourceIDEdge) bool {
+	return item.Node.isActive()
+}
+
 type gqlResourceIDs struct {
 	PaginatedResource[*gqlResourceIDEdge]
+}
+
+type gqlKeyID struct {
+	ID     graphql.ID
+	Status graphql.String
+}
+
+func (k gqlKeyID) isActive() bool {
+	return string(k.Status) == model.StatusActive
+}
+
+type gqlKeyIDEdge struct {
+	Node *gqlKeyID
+}
+
+func isGqlKeyActive(item *gqlKeyIDEdge) bool {
+	return item.Node.isActive()
+}
+
+type gqlKeyIDs struct {
+	PaginatedResource[*gqlKeyIDEdge]
 }
 
 type gqlService struct {
 	IDName
 	Resources gqlResourceIDs `graphql:"resources(after: $resourcesEndCursor)"`
-	Keys      gqlResourceIDs `graphql:"keys(after: $keysEndCursor)"`
+	Keys      gqlKeyIDs      `graphql:"keys(after: $keysEndCursor)"`
 }
 
 type ServiceEdge struct {
@@ -250,7 +281,12 @@ func newServiceAccountFilterInput(name string) *ServiceAccountFilterInput {
 	}
 }
 
-func (client *Client) ReadServices(ctx context.Context, name string) ([]*model.Service, error) {
+func (client *Client) ReadServices(ctx context.Context, input ...string) ([]*model.Service, error) {
+	var name string
+	if len(input) > 0 {
+		name = input[0]
+	}
+
 	response := readServicesByNameQuery{}
 	variables := newVars(
 		gqlNullableField(newServiceAccountFilterInput(name), "filter"),
@@ -274,9 +310,10 @@ func (client *Client) ReadServices(ctx context.Context, name string) ([]*model.S
 	}
 
 	for i := range response.Services.Edges {
-		vars := newVars(gqlID(response.Services.Edges[i].Node.ID))
-		response.Services.Edges[i].Node.Resources.fetchPages(ctx, client.readServiceResourcesAfter, vars)
-		response.Services.Edges[i].Node.Keys.fetchPages(ctx, client.readServiceKeysAfter, vars)
+		err = response.Services.Edges[i].Node.fetchInternalResources(ctx, client)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return response.Services.ToModel(), nil
@@ -304,34 +341,89 @@ type readServiceQuery struct {
 
 func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*gqlResourceIDEdge], error) {
 	response := readServiceQuery{}
+
 	gqlNullableField("", cursorServiceKeys)(variables)
 	variables[cursorServiceResources] = cursor
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readServices", &response, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", serviceAccountResourceName, "All")
+		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
 
 	if len(response.Service.Resources.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", serviceAccountResourceName, "All")
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, "All")
 	}
 
 	return &response.Service.Resources.PaginatedResource, nil
 }
 
-func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*gqlResourceIDEdge], error) {
+func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*gqlKeyIDEdge], error) {
 	response := readServiceQuery{}
-	gqlNullableField("", "resourcesEndCursor")(variables)
-	variables["keysEndCursor"] = cursor
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readServices", &response, variables)
+	gqlNullableField("", cursorServiceResources)(variables)
+	variables[cursorServiceKeys] = cursor
+
+	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", serviceAccountResourceName, "All")
+		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
 
 	if len(response.Service.Keys.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", serviceAccountResourceName, "All")
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, "All")
 	}
 
 	return &response.Service.Keys.PaginatedResource, nil
+}
+
+type readServiceWithResourceAndKeysQuery struct {
+	ServiceAccount *gqlService `graphql:"serviceAccount(id: $id)"`
+}
+
+func (client *Client) ReadService(ctx context.Context, serviceAccountID string) (*model.Service, error) {
+	if serviceAccountID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationRead, serviceAccountResourceName)
+	}
+
+	variables := newVars(
+		gqlID(serviceAccountID),
+		gqlNullableField("", cursorServiceResources),
+		gqlNullableField("", cursorServiceKeys),
+	)
+	response := readServiceWithResourceAndKeysQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccount, &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, serviceAccountID)
+	}
+
+	if response.ServiceAccount == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, serviceAccountID)
+	}
+
+	err = response.ServiceAccount.fetchInternalResources(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.ServiceAccount.ToModel(), nil
+}
+
+func (s *gqlService) fetchInternalResources(ctx context.Context, client *Client) error {
+	vars := newVars(gqlID(s.ID))
+
+	err := s.Resources.fetchPages(ctx, client.readServiceResourcesAfter, vars)
+	if err != nil {
+		return err
+	}
+
+	s.Resources.Edges = utils.Filter[*gqlResourceIDEdge](s.Resources.Edges, isGqlResourceActive)
+
+	err = s.Keys.fetchPages(ctx, client.readServiceKeysAfter, vars)
+	if err != nil {
+		return err
+	}
+
+	s.Keys.Edges = utils.Filter[*gqlKeyIDEdge](s.Keys.Edges, isGqlKeyActive)
+
+	return nil
 }
