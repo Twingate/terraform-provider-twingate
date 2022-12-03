@@ -480,6 +480,14 @@ func TestProtocolToModel(t *testing.T) {
 		},
 		{
 			protocol: &Protocol{
+				Ports: []*PortRange{nil},
+			},
+			expected: &model.Protocol{
+				Ports: []*model.PortRange{nil},
+			},
+		},
+		{
+			protocol: &Protocol{
 				Ports: []*PortRange{
 					{Start: 80, End: 80},
 				},
