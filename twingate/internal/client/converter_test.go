@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +120,7 @@ func TestReadConnectorQueryToModel(t *testing.T) {
 	}
 
 	for n, c := range cases {
-		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, c.query.ToModel())
 		})
@@ -168,7 +169,7 @@ func TestReadConnectorsQueryToModel(t *testing.T) {
 	}
 
 	for n, c := range cases {
-		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, c.query.ToModel())
 		})
@@ -217,7 +218,7 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 	}
 
 	for n, c := range cases {
-		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, c.query.ToModel())
 		})
@@ -254,7 +255,7 @@ func TestGqlRemoteNetworksToModel(t *testing.T) {
 	}
 
 	for n, c := range cases {
-		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, c.query.ToModel())
 		})
@@ -333,7 +334,7 @@ func TestIsDefaultValue(t *testing.T) {
 	}
 
 	for n, c := range cases {
-		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, isDefaultValue(c.val))
 		})
@@ -391,9 +392,192 @@ func TestGetDefaultGQLValue(t *testing.T) {
 	}
 
 	for n, c := range cases {
-		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, getDefaultGQLValue(c.val))
+		})
+	}
+}
+
+func TestReadGroupQueryToModel(t *testing.T) {
+	cases := []struct {
+		query    readGroupQuery
+		expected *model.Group
+	}{
+		{
+			query:    readGroupQuery{},
+			expected: nil,
+		},
+		{
+			query: readGroupQuery{
+				Group: &gqlGroup{
+					IDName: IDName{
+						ID:   "group-id",
+						Name: "group-name",
+					},
+					IsActive: true,
+					Type:     "new type",
+				},
+			},
+			expected: &model.Group{
+				ID:       "group-id",
+				Name:     "group-name",
+				IsActive: true,
+				Type:     "new type",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestNewProtocolFromModel(t *testing.T) {
+	cases := []struct {
+		protocol *model.Protocol
+		expected *ProtocolInput
+	}{
+		{},
+		{
+			protocol: &model.Protocol{
+				Ports: []*model.PortRange{
+					{Start: 80, End: 80},
+				},
+				Policy: "allow",
+			},
+			expected: &ProtocolInput{
+				Ports: []*PortRangeInput{
+					{Start: 80, End: 80},
+				},
+				Policy: "allow",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+
+			assert.Equal(t, c.expected, newProtocol(c.protocol))
+		})
+	}
+}
+
+func TestProtocolToModel(t *testing.T) {
+	cases := []struct {
+		protocol *Protocol
+		expected *model.Protocol
+	}{
+		{},
+		{
+			protocol: &Protocol{},
+			expected: &model.Protocol{
+				Ports: []*model.PortRange{},
+			},
+		},
+		{
+			protocol: &Protocol{
+				Ports: []*PortRange{nil},
+			},
+			expected: &model.Protocol{
+				Ports: []*model.PortRange{nil},
+			},
+		},
+		{
+			protocol: &Protocol{
+				Ports: []*PortRange{
+					{Start: 80, End: 80},
+				},
+				Policy: "allow",
+			},
+			expected: &model.Protocol{
+				Ports: []*model.PortRange{
+					{Start: 80, End: 80},
+				},
+				Policy: "allow",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+
+			assert.Equal(t, c.expected, protocolToModel(c.protocol))
+		})
+	}
+}
+
+func TestReadServiceAccountQueryToModel(t *testing.T) {
+	cases := []struct {
+		query    readServiceAccountQuery
+		expected *model.ServiceAccount
+	}{
+		{
+			query:    readServiceAccountQuery{},
+			expected: nil,
+		},
+		{
+			query: readServiceAccountQuery{
+				ServiceAccount: &gqlServiceAccount{
+					IDName{
+						ID:   "service-id",
+						Name: "service-name",
+					},
+				},
+			},
+			expected: &model.ServiceAccount{
+				ID:   "service-id",
+				Name: "service-name",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadServiceKeyQueryToModel(t *testing.T) {
+	_, parseErr := time.Parse(time.RFC3339, "hello")
+
+	timeInHour := time.Now().Add(time.Hour).Format(time.RFC3339)
+
+	cases := []struct {
+		query       gqlServiceKey
+		expected    *model.ServiceKey
+		expectedErr error
+	}{
+		{
+			query:    gqlServiceKey{},
+			expected: &model.ServiceKey{},
+		},
+		{
+			query: gqlServiceKey{
+				ExpiresAt: "hello",
+			},
+			expectedErr: fmt.Errorf("failed to parse expiration time `hello`: %w", parseErr),
+		},
+		{
+			query: gqlServiceKey{
+				ExpiresAt: graphql.String(timeInHour),
+			},
+			expected: &model.ServiceKey{
+				ExpirationTime: 1,
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			key, err := c.query.ToModel()
+			assert.Equal(t, c.expected, key)
+			assert.Equal(t, c.expectedErr, err)
 		})
 	}
 }

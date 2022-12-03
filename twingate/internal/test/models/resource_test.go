@@ -84,8 +84,6 @@ func TestNewPortRange(t *testing.T) {
 func TestResourceModel(t *testing.T) {
 	var emptySlice []interface{}
 	var emptyStringSlice []string
-	{
-	}
 
 	cases := []struct {
 		resource model.Resource
@@ -193,6 +191,39 @@ func TestNewProtocol(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 			assert.Equal(t, c.expected, model.NewProtocol(c.policy, c.ports))
+		})
+	}
+}
+
+func TestProtocolToTerraform(t *testing.T) {
+	var emptySlice []interface{}
+	var emptyStringSlice []string
+
+	cases := []struct {
+		protocol *model.Protocol
+
+		expected interface{}
+	}{
+		{
+			protocol: nil,
+			expected: emptySlice,
+		},
+		{
+			protocol: &model.Protocol{
+				Policy: model.PolicyAllowAll,
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"policy": "ALLOW_ALL",
+					"ports":  emptyStringSlice,
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.protocol.ToTerraform())
 		})
 	}
 }
