@@ -12,19 +12,22 @@ func TestServiceAccountKeyModel(t *testing.T) {
 	cases := []struct {
 		key model.ServiceKey
 
-		expectedName string
-		expectedID   string
+		expectedName   string
+		expectedID     string
+		expectedActive bool
 	}{
 		{
 			key: model.ServiceKey{},
 		},
 		{
 			key: model.ServiceKey{
-				ID:   "id",
-				Name: "name",
+				ID:     "id",
+				Name:   "name",
+				Status: model.StatusActive,
 			},
-			expectedID:   "id",
-			expectedName: "name",
+			expectedID:     "id",
+			expectedName:   "name",
+			expectedActive: true,
 		},
 	}
 
@@ -32,6 +35,7 @@ func TestServiceAccountKeyModel(t *testing.T) {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 			assert.Equal(t, c.expectedID, c.key.GetID())
 			assert.Equal(t, c.expectedName, c.key.GetName())
+			assert.Equal(t, c.expectedActive, c.key.IsActive())
 		})
 	}
 }
