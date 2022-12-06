@@ -98,6 +98,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlField(input.Name, "name"),
 		gqlField(input.Address, "address"),
 		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
+		gqlNullableField("", cursorUsers),
 	)
 	variables["protocols"] = newProtocolsInput(input.Protocols)
 
@@ -131,6 +132,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 	variables := newVars(
 		gqlID(resourceID),
 		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
+		gqlNullableField("", cursorUsers),
 	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
@@ -231,6 +233,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlField(input.Address, "address"),
 		gqlField(newProtocolsInput(input.Protocols), "protocols"),
 		gqlField(readResourceQueryGroupsSize, "groupsPageSize"),
+		gqlNullableField("", cursorUsers),
 	)
 
 	response := updateResourceQuery{}

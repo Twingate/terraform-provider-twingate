@@ -424,6 +424,7 @@ func TestReadGroupQueryToModel(t *testing.T) {
 				Name:     "group-name",
 				IsActive: true,
 				Type:     "new type",
+				UserIDs:  []string{},
 			},
 		},
 	}

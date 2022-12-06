@@ -36,6 +36,7 @@ func Provider(version string) *schema.Provider {
 			resource.TwingateResource:          resource.Resource(),
 			resource.TwingateServiceAccount:    resource.ServiceAccount(),
 			resource.TwingateServiceAccountKey: resource.ServiceKey(),
+			resource.TwingateUsersGroupAssign:  resource.UsersGroupAssign(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			datasource.TwingateGroup:         datasource.Group(),

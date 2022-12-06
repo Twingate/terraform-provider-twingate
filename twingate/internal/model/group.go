@@ -5,6 +5,7 @@ type Group struct {
 	Name     string
 	Type     string
 	IsActive bool
+	UserIDs  []string
 }
 
 func (g Group) GetName() string {

@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var requestError = errors.New("request error")
+
 func TestClientGroupCreateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Create Group Ok", func(t *testing.T) {
 		expected := &model.Group{
@@ -218,6 +220,7 @@ func TestClientGroupReadOk(t *testing.T) {
 			Name:     "name",
 			Type:     "MANUAL",
 			IsActive: true,
+			UserIDs:  []string{},
 		}
 
 		jsonResponse := `{
@@ -297,6 +300,51 @@ func TestClientReadEmptyGroupError(t *testing.T) {
 
 		assert.EqualError(t, err, "failed to read group: id is empty")
 		assert.Nil(t, group)
+	})
+}
+
+func TestClientGroupReadRequestErrorOnFetching(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Group - Request Error On Fetching", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "group": {
+		      "id": "id",
+		      "name": "name",
+		      "type": "MANUAL",
+		      "isActive": true,
+		      "users": {
+		        "pageInfo": {
+		          "endCursor": "cursor-001",
+		          "hasNextPage": true
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "id-1",
+		              "email": "user@1",
+		              "role": "ADMIN"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewErrorResponder(requestError),
+			),
+		)
+
+		const groupId = "g1"
+		group, err := c.ReadGroup(context.Background(), groupId)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id %s: Post "%s": %v`, groupId, c.GraphqlServerURL, requestError))
 	})
 }
 
@@ -380,16 +428,19 @@ func TestClientGroupsReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups Ok", func(t *testing.T) {
 		expected := []*model.Group{
 			{
-				ID:   "id1",
-				Name: "group1",
+				ID:      "id1",
+				Name:    "group1",
+				UserIDs: []string{},
 			},
 			{
-				ID:   "id2",
-				Name: "group2",
+				ID:      "id2",
+				Name:    "group2",
+				UserIDs: []string{},
 			},
 			{
-				ID:   "id3",
-				Name: "group3",
+				ID:      "id3",
+				Name:    "group3",
+				UserIDs: []string{},
 			},
 		}
 
@@ -545,9 +596,9 @@ func TestClientGroupsReadEmptyResultOnFetching(t *testing.T) {
 func TestClientGroupsReadAllOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups All - Ok", func(t *testing.T) {
 		expected := []*model.Group{
-			{ID: "id-1", Name: "group-1"},
-			{ID: "id-2", Name: "group-2"},
-			{ID: "id-3", Name: "group-3"},
+			{ID: "id-1", Name: "group-1", UserIDs: []string{}},
+			{ID: "id-2", Name: "group-2", UserIDs: []string{}},
+			{ID: "id-3", Name: "group-3", UserIDs: []string{}},
 		}
 
 		jsonResponse := `{
@@ -613,9 +664,9 @@ func TestClientGroupsReadAllOk(t *testing.T) {
 func TestClientGroupsReadByNameOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Groups By Name - Ok", func(t *testing.T) {
 		expected := []*model.Group{
-			{ID: "id-1", Name: "group-1"},
-			{ID: "id-2", Name: "group-2"},
-			{ID: "id-3", Name: "group-3"},
+			{ID: "id-1", Name: "group-1", UserIDs: []string{}},
+			{ID: "id-2", Name: "group-2", UserIDs: []string{}},
+			{ID: "id-3", Name: "group-3", UserIDs: []string{}},
 		}
 
 		jsonResponse := `{
@@ -947,5 +998,621 @@ func TestClientFilterGroupsEmptyResponse(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Nil(t, groups)
+	})
+}
+
+func TestClientAssignGroupUsersOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - Ok", func(t *testing.T) {
+		expected := &model.Group{
+			ID:       "id-1",
+			Name:     "group-1",
+			Type:     "MANUAL",
+			IsActive: true,
+			UserIDs:  []string{"id-1", "id-2"},
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "pageInfo": {
+		            "endCursor": "cursor-001",
+		            "hasNextPage": true
+		          },
+		          "edges": [
+		            {
+		              "node": {
+		                "id": "id-1",
+		                "email": "user@1",
+		                "role": "ADMIN"
+		              }
+		            }
+		          ]
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		nextPage := `{
+		  "data": {
+		    "group": {
+		      "id": "id-1",
+		      "name": "group-1",
+		      "isActive": true,
+		      "type": "MANUAL",
+		      "users": {
+		        "pageInfo": {
+		          "endCursor": "cursor-001",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "id-2",
+		              "email": "user@2",
+		              "role": "DEVOPS"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewStringResponder(http.StatusOK, nextPage),
+			),
+		)
+
+		group, err := c.AssignGroupUsers(context.Background(), "id-1", []string{"id-1", "id-2"})
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, group)
+	})
+}
+
+func TestClientAssignGroupUsersEmptyGroupID(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - Empty Group ID", func(t *testing.T) {
+		c := newHTTPMockClient()
+		group, err := c.AssignGroupUsers(context.Background(), "", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, "failed to update group: id is empty")
+	})
+}
+
+func TestClientAssignGroupUsersWithNilUsersIDs(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - With Nil User IDs", func(t *testing.T) {
+		expected := &model.Group{
+			ID:       "id-1",
+			Name:     "group-1",
+			Type:     "MANUAL",
+			IsActive: true,
+			UserIDs:  []string{},
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "edges": []
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		group, err := c.AssignGroupUsers(context.Background(), "id-1", nil)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, group)
+	})
+}
+
+func TestClientAssignGroupUsersRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - Request Error", func(t *testing.T) {
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewErrorResponder(requestError))
+
+		group, err := c.AssignGroupUsers(context.Background(), "id-1", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id id-1: Post "%s": %v`, c.GraphqlServerURL, requestError))
+	})
+}
+
+func TestClientAssignGroupUsersResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - Response Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": null,
+		      "ok": false,
+		      "error": "response error"
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		group, err := c.AssignGroupUsers(context.Background(), "id-1", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, `failed to update group with id id-1: response error`)
+	})
+}
+
+func TestClientAssignGroupUsersEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": null,
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		group, err := c.AssignGroupUsers(context.Background(), "id-1", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, `failed to update group with id id-1: query result is empty`)
+	})
+}
+
+func TestClientAssignGroupUsersRequestErrorOnFetching(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - Request Error On Fetching", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "pageInfo": {
+		            "endCursor": "cursor-001",
+		            "hasNextPage": true
+		          },
+		          "edges": [
+		            {
+		              "node": {
+		                "id": "id-1",
+		                "email": "user@1",
+		                "role": "ADMIN"
+		              }
+		            }
+		          ]
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewErrorResponder(requestError),
+			),
+		)
+
+		group, err := c.AssignGroupUsers(context.Background(), "id-1", []string{"id-1", "id-2"})
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id id-1: Post "%s": %v`, c.GraphqlServerURL, requestError))
+	})
+}
+
+func TestClientAssignGroupUsersEmptyResponseOnFetching(t *testing.T) {
+	t.Run("Test Twingate Resource : Assign Group Users - Empty Response On Fetching", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "pageInfo": {
+		            "endCursor": "cursor-001",
+		            "hasNextPage": true
+		          },
+		          "edges": [
+		            {
+		              "node": {
+		                "id": "id-1",
+		                "email": "user@1",
+		                "role": "ADMIN"
+		              }
+		            }
+		          ]
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		nextPage := `{
+		  "data": {
+		    "group": {
+		      "id": "id-1",
+		      "name": "group-1",
+		      "isActive": true,
+		      "type": "MANUAL",
+		      "users": {
+		        "pageInfo": {
+		          "endCursor": "cursor-001",
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewStringResponder(http.StatusOK, nextPage),
+			),
+		)
+
+		group, err := c.AssignGroupUsers(context.Background(), "id-1", []string{"id-1", "id-2"})
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, `failed to read group with id id-1: query result is empty`)
+	})
+}
+
+func TestClientRemoveGroupUsersOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - Ok", func(t *testing.T) {
+		expected := &model.Group{
+			ID:       "id-1",
+			Name:     "group-1",
+			Type:     "MANUAL",
+			IsActive: true,
+			UserIDs:  []string{"id-3", "id-4"},
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "pageInfo": {
+		            "endCursor": "cursor-001",
+		            "hasNextPage": true
+		          },
+		          "edges": [
+		            {
+		              "node": {
+		                "id": "id-3",
+		                "email": "user@3",
+		                "role": "ADMIN"
+		              }
+		            }
+		          ]
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		nextPage := `{
+		  "data": {
+		    "group": {
+		      "id": "id-1",
+		      "name": "group-1",
+		      "isActive": true,
+		      "type": "MANUAL",
+		      "users": {
+		        "pageInfo": {
+		          "endCursor": "cursor-001",
+		          "hasNextPage": false
+		        },
+		        "edges": [
+		          {
+		            "node": {
+		              "id": "id-4",
+		              "email": "user@4",
+		              "role": "DEVOPS"
+		            }
+		          }
+		        ]
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewStringResponder(http.StatusOK, nextPage),
+			),
+		)
+
+		group, err := c.RemoveGroupUsers(context.Background(), "id-1", []string{"id-1", "id-2"})
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, group)
+	})
+}
+
+func TestClientRemoveGroupUsersEmptyGroupID(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - Empty Group ID", func(t *testing.T) {
+		c := newHTTPMockClient()
+		group, err := c.RemoveGroupUsers(context.Background(), "", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, "failed to update group: id is empty")
+	})
+}
+
+func TestClientRemoveGroupUsersWithNilUsersIDs(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - With Nil User IDs", func(t *testing.T) {
+		expected := &model.Group{
+			ID:       "id-1",
+			Name:     "group-1",
+			Type:     "MANUAL",
+			IsActive: true,
+			UserIDs:  []string{},
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "edges": []
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		group, err := c.RemoveGroupUsers(context.Background(), "id-1", nil)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, group)
+	})
+}
+
+func TestClientRemoveGroupUsersRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - Request Error", func(t *testing.T) {
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewErrorResponder(requestError))
+
+		group, err := c.RemoveGroupUsers(context.Background(), "id-1", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id id-1: Post "%s": %v`, c.GraphqlServerURL, requestError))
+	})
+}
+
+func TestClientRemoveGroupUsersResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - Response Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": null,
+		      "ok": false,
+		      "error": "response error"
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		group, err := c.RemoveGroupUsers(context.Background(), "id-1", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, `failed to update group with id id-1: response error`)
+	})
+}
+
+func TestClientRemoveGroupUsersEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": null,
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		group, err := c.RemoveGroupUsers(context.Background(), "id-1", nil)
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, `failed to update group with id id-1: query result is empty`)
+	})
+}
+
+func TestClientRemoveGroupUsersRequestErrorOnFetching(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - Request Error On Fetching", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "pageInfo": {
+		            "endCursor": "cursor-001",
+		            "hasNextPage": true
+		          },
+		          "edges": [
+		            {
+		              "node": {
+		                "id": "id-1",
+		                "email": "user@1",
+		                "role": "ADMIN"
+		              }
+		            }
+		          ]
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewErrorResponder(requestError),
+			),
+		)
+
+		group, err := c.RemoveGroupUsers(context.Background(), "id-1", []string{"id-1", "id-2"})
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id id-1: Post "%s": %v`, c.GraphqlServerURL, requestError))
+	})
+}
+
+func TestClientRemoveGroupUsersEmptyResponseOnFetching(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Group Users - Empty Response On Fetching", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "groupUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "group-1",
+		        "isActive": true,
+		        "type": "MANUAL",
+		        "users": {
+		          "pageInfo": {
+		            "endCursor": "cursor-001",
+		            "hasNextPage": true
+		          },
+		          "edges": [
+		            {
+		              "node": {
+		                "id": "id-1",
+		                "email": "user@1",
+		                "role": "ADMIN"
+		              }
+		            }
+		          ]
+		        }
+		      },
+		      "ok": true,
+		      "error": ""
+		    }
+		  }
+		}`
+
+		nextPage := `{
+		  "data": {
+		    "group": {
+		      "id": "id-1",
+		      "name": "group-1",
+		      "isActive": true,
+		      "type": "MANUAL",
+		      "users": {
+		        "pageInfo": {
+		          "endCursor": "cursor-001",
+		          "hasNextPage": false
+		        },
+		        "edges": []
+		      }
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+				httpmock.NewStringResponder(http.StatusOK, nextPage),
+			),
+		)
+
+		group, err := c.RemoveGroupUsers(context.Background(), "id-1", []string{"id-1", "id-2"})
+
+		assert.Nil(t, group)
+		assert.EqualError(t, err, `failed to read group with id id-1: query result is empty`)
 	})
 }

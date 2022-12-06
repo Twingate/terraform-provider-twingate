@@ -8,12 +8,17 @@ import (
 	"github.com/twingate/go-graphql-client"
 )
 
-const groupResourceName = "group"
+const (
+	groupResourceName = "group"
+
+	cursorUsers = "usersEndCursor"
+)
 
 type gqlGroup struct {
 	IDName
 	IsActive graphql.Boolean
 	Type     graphql.String
+	Users    Users `graphql:"users(after: $usersEndCursor)"`
 }
 
 type PageInfo struct {
@@ -64,22 +69,47 @@ type readGroupQuery struct {
 
 func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Group, error) {
 	if groupID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", groupResourceName)
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationRead, groupResourceName)
 	}
 
-	variables := newVars(gqlID(groupID))
+	variables := newVars(
+		gqlID(groupID),
+		gqlNullableField("", cursorUsers),
+	)
 	response := readGroupQuery{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readGroup", &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(err, operationRead, groupResourceName, groupID)
 	}
 
 	if response.Group == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, groupResourceName, groupID)
+	}
+
+	err = response.Group.Users.fetchPages(ctx, client.readGroupUsersAfter, variables)
+	if err != nil {
+		return nil, err
 	}
 
 	return response.ToModel(), nil
+}
+
+func (client *Client) readGroupUsersAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*UserEdge], error) {
+	variables[cursorUsers] = cursor
+
+	response := readGroupQuery{}
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroup", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, operationRead, groupResourceName, variables["id"])
+	}
+
+	if len(response.Group.Users.Edges) == 0 {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, groupResourceName, variables["id"])
+	}
+
+	return &response.Group.Users.PaginatedResource, nil
 }
 
 type readGroupsQuery struct {
@@ -88,8 +118,11 @@ type readGroupsQuery struct {
 
 func (client *Client) ReadGroups(ctx context.Context) ([]*model.Group, error) {
 	response := readGroupsQuery{}
+	variables := newVars(
+		gqlNullableField("", cursorUsers),
+	)
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, nil)
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
 	}
@@ -98,7 +131,7 @@ func (client *Client) ReadGroups(ctx context.Context) ([]*model.Group, error) {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
 	}
 
-	err = response.Groups.fetchPages(ctx, client.readGroupsAfter, nil)
+	err = response.Groups.fetchPages(ctx, client.readGroupsAfter, variables)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +173,10 @@ func (client *Client) ReadGroupsByName(ctx context.Context, groupName string) ([
 	}
 
 	response := readGroupsByNameQuery{}
-	variables := newVars(gqlField(groupName, "name"))
+	variables := newVars(
+		gqlField(groupName, "name"),
+		gqlNullableField("", cursorUsers),
+	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
 	if err != nil {
@@ -198,6 +234,7 @@ func (client *Client) UpdateGroup(ctx context.Context, groupID, groupName string
 	variables := newVars(
 		gqlID(groupID),
 		gqlField(groupName, "name"),
+		gqlNullableField("", cursorUsers),
 	)
 
 	response := updateGroupQuery{}
@@ -297,4 +334,86 @@ func (client *Client) FilterGroups(ctx context.Context, filter *GroupsFilter) ([
 	}
 
 	return filtered, nil
+}
+
+type assignGroupUsersQuery struct {
+	GroupUpdate struct {
+		Entity *gqlGroup
+		OkError
+	} `graphql:"groupUpdate(id: $id, userIds: $userIds)"`
+}
+
+func (client *Client) AssignGroupUsers(ctx context.Context, groupID string, userIDs []string) (*model.Group, error) {
+	if groupID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, groupResourceName)
+	}
+
+	variables := newVars(
+		gqlID(groupID),
+		gqlIDs(userIDs, "userIds"),
+		gqlNullableField("", cursorUsers),
+	)
+
+	response := assignGroupUsersQuery{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, operationUpdate, groupResourceName, groupID)
+	}
+
+	if !response.GroupUpdate.Ok {
+		return nil, NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), operationUpdate, groupResourceName, groupID)
+	}
+
+	if response.GroupUpdate.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, groupResourceName, groupID)
+	}
+
+	err = response.GroupUpdate.Entity.Users.fetchPages(ctx, client.readGroupUsersAfter, newVars(gqlID(groupID)))
+	if err != nil {
+		return nil, err
+	}
+
+	return response.GroupUpdate.Entity.ToModel(), nil
+}
+
+type removeGroupUsersQuery struct {
+	GroupUpdate struct {
+		Entity *gqlGroup
+		OkError
+	} `graphql:"groupUpdate(id: $id, removedUserIds: $userIds)"`
+}
+
+func (client *Client) RemoveGroupUsers(ctx context.Context, groupID string, userIDs []string) (*model.Group, error) {
+	if groupID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, groupResourceName)
+	}
+
+	variables := newVars(
+		gqlID(groupID),
+		gqlIDs(userIDs, "userIds"),
+		gqlNullableField("", cursorUsers),
+	)
+
+	response := removeGroupUsersQuery{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, operationUpdate, groupResourceName, groupID)
+	}
+
+	if !response.GroupUpdate.Ok {
+		return nil, NewAPIErrorWithID(NewMutationError(response.GroupUpdate.Error), operationUpdate, groupResourceName, groupID)
+	}
+
+	if response.GroupUpdate.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, groupResourceName, groupID)
+	}
+
+	err = response.GroupUpdate.Entity.Users.fetchPages(ctx, client.readGroupUsersAfter, newVars(gqlID(groupID)))
+	if err != nil {
+		return nil, err
+	}
+
+	return response.GroupUpdate.Entity.ToModel(), nil
 }

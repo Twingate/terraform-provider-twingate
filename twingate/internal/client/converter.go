@@ -83,6 +83,9 @@ func (g gqlGroup) ToModel() *model.Group {
 		Name:     g.StringName(),
 		Type:     string(g.Type),
 		IsActive: bool(g.IsActive),
+		UserIDs: utils.Map[*UserEdge, string](g.Users.Edges, func(edge *UserEdge) string {
+			return edge.Node.ID.(string)
+		}),
 	}
 }
 

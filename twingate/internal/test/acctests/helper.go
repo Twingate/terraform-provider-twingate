@@ -23,6 +23,8 @@ var (
 	ErrResourceStillPresent = errors.New("resource still present")
 	ErrResourceFoundInState = errors.New("this resource should not be here")
 	ErrUnknownResourceType  = errors.New("unknown resource type")
+	ErrClientNotInited      = errors.New("meta client not inited")
+	ErrUsersNotFound        = errors.New("users not found")
 )
 
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
@@ -160,6 +162,10 @@ func TerraformServiceAccount(name string) string {
 
 func TerraformServiceKey(name string) string {
 	return ResourceName(resource.TwingateServiceAccountKey, name)
+}
+
+func TerraformUsersGroupAssign(name string) string {
+	return ResourceName(resource.TwingateUsersGroupAssign, name)
 }
 
 func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc {
@@ -407,4 +413,23 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 
 		return nil
 	}
+}
+
+func GetTestUsers() ([]*model.User, error) {
+	if Provider.Meta() == nil {
+		return nil, ErrClientNotInited
+	}
+
+	c := Provider.Meta().(*client.Client)
+
+	users, err := c.ReadUsers(context.Background())
+	if err != nil {
+		return nil, err //nolint
+	}
+
+	if len(users) == 0 {
+		return nil, ErrUsersNotFound
+	}
+
+	return users, nil
 }

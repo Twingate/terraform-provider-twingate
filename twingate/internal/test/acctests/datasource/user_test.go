@@ -1,15 +1,11 @@
 package datasource
 
 import (
-	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -17,10 +13,12 @@ import (
 
 func TestAccDatasourceTwingateUser_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc User Basic", func(t *testing.T) {
-		user, err := getTestUser()
+		users, err := acctests.GetTestUsers()
 		if err != nil {
 			t.Skip("can't run test:", err)
 		}
+
+		user := users[0]
 
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
@@ -35,24 +33,6 @@ func TestAccDatasourceTwingateUser_basic(t *testing.T) {
 			},
 		})
 	})
-}
-
-func getTestUser() (*model.User, error) {
-	if acctests.Provider.Meta() == nil {
-		return nil, errors.New("meta client not inited")
-	}
-
-	c := acctests.Provider.Meta().(*client.Client)
-	users, err := c.ReadUsers(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	if len(users) == 0 {
-		return nil, errors.New("users not found")
-	}
-
-	return users[0], nil
 }
 
 func testDatasourceTwingateUser(userID string) string {
