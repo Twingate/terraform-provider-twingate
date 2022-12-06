@@ -8,5 +8,5 @@ const (
 	TwingateResource          = "twingate_resource"
 	TwingateServiceAccount    = "twingate_service_account"
 	TwingateServiceAccountKey = "twingate_service_account_key"
-	TwingateUsersGroupAssign  = "twingate_users_group_assign" //nolint
+	TwingateUsersGroupAssign  = "twingate_users_group_assign" //#nosec
 )
