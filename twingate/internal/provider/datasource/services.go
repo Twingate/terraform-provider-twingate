@@ -29,7 +29,7 @@ func Services() *schema.Resource {
 			fieldServices: {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "List of Services",
+				Description: "List of Service Accounts",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						fieldID: {
