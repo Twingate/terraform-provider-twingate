@@ -3,12 +3,12 @@
 page_title: "twingate_service_accounts Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Services offer a way to provide programmatic, centrally-controlled, and consistent access controls. For more information, see Twingate's documentation https://www.twingate.com/docs/services.
+  Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.
 ---
 
 # twingate_service_accounts (Data Source)
 
-Services offer a way to provide programmatic, centrally-controlled, and consistent access controls. For more information, see Twingate's [documentation](https://www.twingate.com/docs/services).
+Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.
 
 ## Example Usage
 
@@ -23,21 +23,21 @@ data "twingate_service_accounts" "foo" {
 
 ### Optional
 
-- `name` (String) Filter results by the name of the service account.
+- `name` (String) Filter results by the name of the Service Account.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `services` (Block List) List of Services (see [below for nested schema](#nestedblock--services))
+- `service_accounts` (Block List) List of Service Accounts (see [below for nested schema](#nestedblock--service_accounts))
 
-<a id="nestedblock--services"></a>
-### Nested Schema for `services`
+<a id="nestedblock--service_accounts"></a>
+### Nested Schema for `service_accounts`
 
 Read-Only:
 
-- `id` (String) ID of the service account resource
-- `key_ids` (Set of String) List of twingate_service_account_key IDs that are assigned to the service account.
-- `name` (String) Name of the service account
-- `resource_ids` (Set of String) List of twingate_resource IDs that the service account is assigned to.
+- `id` (String) ID of the Service Account resource
+- `key_ids` (Set of String) List of twingate_service_account_key IDs that are assigned to the Service Account.
+- `name` (String) Name of the Service Account
+- `resource_ids` (Set of String) List of twingate_resource IDs that the Service Account is assigned to.
 
 

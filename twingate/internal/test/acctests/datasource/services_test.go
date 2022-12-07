@@ -13,8 +13,8 @@ import (
 
 const (
 	idAttr       = "id"
-	servicesLen  = "services.#"
-	firstKeysLen = "services.0.key_ids.#"
+	servicesLen  = "service_accounts.#"
+	firstKeysLen = "service_accounts.0.key_ids.#"
 )
 
 func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
@@ -169,7 +169,7 @@ func createServiceKey(terraformResourceName, serviceName string) string {
 	%s
 
 	resource "twingate_service_account_key" "%s" {
-	  service_id = twingate_service_account.%s.id
+	  service_account_id = twingate_service_account.%s.id
 	}
 	`, createServiceAccount(terraformResourceName, serviceName), terraformResourceName, terraformResourceName)
 }
@@ -191,7 +191,7 @@ func filterDatasourceServices(prefix string, configs []terraformServiceConfig) s
 	}
 
 	output "my_services" {
-	  	value = [for c in data.twingate_service_accounts.out.services : c if length(regexall("^%s", c.name)) > 0]
+	  	value = [for c in data.twingate_service_accounts.out.service_accounts : c if length(regexall("^%s", c.name)) > 0]
 	}
 	`, createServices(configs), prefix)
 }

@@ -16,7 +16,7 @@ func createServiceKey(terraformResourceName, serviceAccountName string) string {
 	%s
 
 	resource "twingate_service_account_key" "%s" {
-	  service_id = twingate_service_account.%s.id
+	  service_account_id = twingate_service_account.%s.id
 	}
 	`, createServiceAccount(terraformResourceName, serviceAccountName), terraformResourceName, terraformResourceName)
 }
@@ -26,7 +26,7 @@ func createServiceKeyWithName(terraformResourceName, serviceAccountName, service
 	%s
 
 	resource "twingate_service_account_key" "%s" {
-	  service_id = twingate_service_account.%s.id
+	  service_account_id = twingate_service_account.%s.id
 	  name = "%s"
 	}
 	`, createServiceAccount(terraformResourceName, serviceAccountName), terraformResourceName, terraformResourceName, serviceKeyName)
