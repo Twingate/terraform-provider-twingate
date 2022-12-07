@@ -11,20 +11,20 @@ import (
 const (
 	fieldID        = "id"
 	fieldName      = "name"
-	fieldServices  = "services"
+	fieldServices  = "service_accounts"
 	fieldResources = "resource_ids"
 	fieldKeys      = "key_ids"
 )
 
 func Services() *schema.Resource {
 	return &schema.Resource{
-		Description: "Services offer a way to provide programmatic, centrally-controlled, and consistent access controls. For more information, see Twingate's [documentation](https://www.twingate.com/docs/services).",
+		Description: "Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.",
 		ReadContext: readServices,
 		Schema: map[string]*schema.Schema{
 			fieldName: {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Filter results by the name of the service account.",
+				Description: "Filter results by the name of the Service Account.",
 			},
 			fieldServices: {
 				Type:        schema.TypeList,
@@ -35,24 +35,24 @@ func Services() *schema.Resource {
 						fieldID: {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "ID of the service account resource",
+							Description: "ID of the Service Account resource",
 						},
 						fieldName: {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "Name of the service account",
+							Description: "Name of the Service Account",
 						},
 						fieldResources: {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Computed:    true,
-							Description: "List of twingate_resource IDs that the service account is assigned to.",
+							Description: "List of twingate_resource IDs that the Service Account is assigned to.",
 						},
 						fieldKeys: {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Computed:    true,
-							Description: "List of twingate_service_account_key IDs that are assigned to the service account.",
+							Description: "List of twingate_service_account_key IDs that are assigned to the Service Account.",
 						},
 					},
 				},
