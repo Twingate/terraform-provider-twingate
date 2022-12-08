@@ -15,7 +15,7 @@ const (
 
 func SecurityPolicy() *schema.Resource {
 	return &schema.Resource{
-		Description: "A Security Policy",
+		Description: "A Security Policy defined in Twingate for your Network or for individual Resources on your Network.",
 		ReadContext: readSecurityPolicy,
 		Schema: map[string]*schema.Schema{
 			fieldID: {

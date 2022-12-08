@@ -3,12 +3,12 @@
 page_title: "twingate_security_policy Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  A Security Policy
+  A Security Policy defined in Twingate for your Network or for individual Resources on your Network.
 ---
 
 # twingate_security_policy (Data Source)
 
-A Security Policy
+A Security Policy defined in Twingate for your Network or for individual Resources on your Network.
 
 ## Example Usage
 
