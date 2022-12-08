@@ -20,8 +20,8 @@ import (
 var (
 	ErrResourceIDNotSet     = errors.New("id not set")
 	ErrResourceNotFound     = errors.New("resource not found")
-	ErrResourceFoundInState = errors.New("this resource should not be here")
 	ErrResourceStillPresent = errors.New("resource still present")
+	ErrResourceFoundInState = errors.New("this resource should not be here")
 )
 
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
@@ -94,6 +94,25 @@ func CheckTwingateResourceDoesNotExists(resourceName string) sdk.TestCheckFunc {
 	}
 }
 
+func CheckTwingateServiceAccountDestroy(s *terraform.State) error {
+	providerClient := Provider.Meta().(*client.Client)
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateServiceAccount {
+			continue
+		}
+
+		serviceAccountID := rs.Primary.ID
+
+		_, err := providerClient.ReadServiceAccount(context.Background(), serviceAccountID)
+		if err == nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, serviceAccountID)
+		}
+	}
+
+	return nil
+}
+
 func CheckTwingateResourceExists(resourceName string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resource, ok := s.RootModule().Resources[resourceName]
@@ -134,6 +153,10 @@ func TerraformConnectorTokens(name string) string {
 	return ResourceName(resource.TwingateConnectorTokens, name)
 }
 
+func TerraformServiceAccount(name string) string {
+	return ResourceName(resource.TwingateServiceAccount, name)
+}
+
 func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		providerClient := Provider.Meta().(*client.Client)
@@ -161,6 +184,8 @@ func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc
 			err = providerClient.DeleteGroup(context.Background(), resourceID)
 		case resource.TwingateConnector:
 			err = providerClient.DeleteConnector(context.Background(), resourceID)
+		case resource.TwingateServiceAccount:
+			err = providerClient.DeleteServiceAccount(context.Background(), resourceID)
 		default:
 			return fmt.Errorf("%s unknown resource type", resourceType) //nolint:goerr113
 		}

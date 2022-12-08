@@ -230,3 +230,31 @@ func (r ResourceNode) ToModel() *model.Resource {
 func (q readResourcesByNameQuery) ToModel() []*model.Resource {
 	return q.Resources.ToModel()
 }
+
+func (q createServiceAccountQuery) ToModel() *model.ServiceAccount {
+	return &model.ServiceAccount{
+		ID:   q.ServiceAccountCreate.Entity.StringID(),
+		Name: q.ServiceAccountCreate.Entity.StringName(),
+	}
+}
+
+func (q readServiceAccountQuery) ToModel() *model.ServiceAccount {
+	if q.ServiceAccount == nil {
+		return nil
+	}
+
+	return q.ServiceAccount.ToModel()
+}
+
+func (q gqlServiceAccount) ToModel() *model.ServiceAccount {
+	return &model.ServiceAccount{
+		ID:   q.StringID(),
+		Name: q.StringName(),
+	}
+}
+
+func (s *ServiceAccounts) ToModel() []*model.ServiceAccount {
+	return utils.Map[*ServiceAccountEdge, *model.ServiceAccount](s.Edges, func(edge *ServiceAccountEdge) *model.ServiceAccount {
+		return edge.Node.ToModel()
+	})
+}
