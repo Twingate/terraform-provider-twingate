@@ -137,6 +137,12 @@ func (u *Groups) ToModel() []*model.Group {
 	})
 }
 
+func (u *Groups) listIDs() []string {
+	return utils.Map[*GroupEdge, string](u.Edges, func(edge *GroupEdge) string {
+		return edge.Node.StringID()
+	})
+}
+
 func newProtocolsInput(protocols *model.Protocols) *ProtocolsInput {
 	if protocols == nil {
 		return nil
@@ -331,4 +337,24 @@ func (q gqlKeyIDs) listIDs() []string {
 	return utils.Map[*gqlKeyIDEdge, string](q.Edges, func(edge *gqlKeyIDEdge) string {
 		return edge.Node.ID.(string)
 	})
+}
+
+func (q readSecurityPolicyQuery) ToModel() *model.SecurityPolicy {
+	return q.SecurityPolicy.ToModel()
+}
+
+func (q *gqlSecurityPolicy) ToModel() *model.SecurityPolicy {
+	return &model.SecurityPolicy{
+		ID:     q.StringID(),
+		Name:   q.StringName(),
+		Type:   string(q.PolicyType),
+		Groups: q.Groups.listIDs(),
+	}
+}
+
+func (q readSecurityPoliciesQuery) ToModel() []*model.SecurityPolicy {
+	return utils.Map[*SecurityPolicyEdge, *model.SecurityPolicy](q.SecurityPolicies.Edges,
+		func(edge *SecurityPolicyEdge) *model.SecurityPolicy {
+			return edge.Node.ToModel()
+		})
 }

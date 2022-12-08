@@ -471,7 +471,7 @@ func TestClientGroupsReadRequestErrorOnFetching(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
 		    "groups": {
-			"pageInfo": {
+		      "pageInfo": {
 		        "endCursor": "cursor-001",
 		        "hasNextPage": true
 		      },

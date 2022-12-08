@@ -408,3 +408,21 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 		return nil
 	}
 }
+
+func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
+	if Provider.Meta() == nil {
+		return nil, errors.New("meta client not inited")
+	}
+
+	client := Provider.Meta().(*client.Client)
+	securityPolicies, err := client.ReadSecurityPolicies(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(securityPolicies) == 0 {
+		return nil, errors.New("security policies not found")
+	}
+
+	return securityPolicies, nil
+}
