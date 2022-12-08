@@ -18,11 +18,13 @@ import (
 )
 
 var (
-	ErrResourceIDNotSet     = errors.New("id not set")
-	ErrResourceNotFound     = errors.New("resource not found")
-	ErrResourceStillPresent = errors.New("resource still present")
-	ErrResourceFoundInState = errors.New("this resource should not be here")
-	ErrUnknownResourceType  = errors.New("unknown resource type")
+	ErrResourceIDNotSet         = errors.New("id not set")
+	ErrResourceNotFound         = errors.New("resource not found")
+	ErrResourceStillPresent     = errors.New("resource still present")
+	ErrResourceFoundInState     = errors.New("this resource should not be here")
+	ErrUnknownResourceType      = errors.New("unknown resource type")
+	ErrClientNotInited          = errors.New("meta client not inited")
+	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 )
 
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
@@ -411,17 +413,18 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 
 func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 	if Provider.Meta() == nil {
-		return nil, errors.New("meta client not inited")
+		return nil, ErrClientNotInited
 	}
 
 	client := Provider.Meta().(*client.Client)
+
 	securityPolicies, err := client.ReadSecurityPolicies(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch all security policies: %w", err)
 	}
 
 	if len(securityPolicies) == 0 {
-		return nil, errors.New("security policies not found")
+		return nil, ErrSecurityPoliciesNotFound
 	}
 
 	return securityPolicies, nil
