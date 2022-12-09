@@ -4,15 +4,26 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/twingate/go-graphql-client"
 )
+
+const (
+	EnvAPIToken = "TWINGATE_API_TOKEN"
+
+	headerAPIKey = "X-API-KEY"
+	headerAgent  = "User-Agent"
+)
+
+var ErrAPITokenNoSet = errors.New("api_token not set")
 
 type Client struct {
 	GraphqlClient    *graphql.Client
@@ -29,18 +40,38 @@ type transport struct {
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("X-API-KEY", t.apiToken)
-	req.Header.Set("User-Agent", t.version)
+	if err := t.init(); err != nil {
+		return nil, err
+	}
+
+	req.Header.Set(headerAPIKey, t.apiToken)
+	req.Header.Set(headerAgent, t.version)
 
 	return t.underlineRoundTripper.RoundTrip(req) //nolint:wrapcheck
+}
+
+func (t *transport) init() error {
+	if t.apiToken == "" {
+		t.apiToken = os.Getenv(EnvAPIToken)
+	}
+
+	if t.apiToken == "" {
+		return ErrAPITokenNoSet
+	}
+
+	return nil
 }
 
 func newTransport(underlineRoundTripper http.RoundTripper, apiToken string, version string) *transport {
 	return &transport{
 		underlineRoundTripper: underlineRoundTripper,
 		apiToken:              apiToken,
-		version:               fmt.Sprintf("TwingateTF/%s", version),
+		version:               twingateAgentVersion(version),
 	}
+}
+
+func twingateAgentVersion(version string) string {
+	return fmt.Sprintf("TwingateTF/%s", version)
 }
 
 func (s *serverURL) newGraphqlServerURL() string {
@@ -117,7 +148,7 @@ func (client *Client) post(ctx context.Context, url string, payload interface{},
 
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("TwingateTF/%s", client.version))
+	req.Header.Set(headerAgent, twingateAgentVersion(client.version))
 	res, err := client.HTTPClient.Do(req)
 
 	if err != nil {
