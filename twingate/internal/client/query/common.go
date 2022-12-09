@@ -1,6 +1,8 @@
-package client
+package query
 
 import (
+	"fmt"
+
 	"github.com/twingate/go-graphql-client"
 )
 
@@ -20,4 +22,12 @@ func (in *IDName) StringName() string {
 type OkError struct {
 	Ok    graphql.Boolean `json:"ok"`
 	Error graphql.String  `json:"error"`
+}
+
+func idToString(id graphql.ID) string {
+	if id == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%v", id)
 }
