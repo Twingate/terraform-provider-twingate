@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
@@ -12,20 +13,7 @@ const (
 
 	queryReadSecurityPolicy   = "readSecurityPolicy"
 	queryReadSecurityPolicies = "readSecurityPolicies"
-
-	cursorGroups   = "groupsEndCursor"
-	cursorPolicies = "policiesEndCursor"
 )
-
-type gqlSecurityPolicy struct {
-	IDName
-	PolicyType graphql.String
-	Groups     Groups `graphql:"groups(after: $groupsEndCursor)"`
-}
-
-type readSecurityPolicyQuery struct {
-	SecurityPolicy *gqlSecurityPolicy `graphql:"securityPolicy(id: $id, name: $name)"`
-}
 
 func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, securityPolicyName string) (*model.SecurityPolicy, error) {
 	if securityPolicyID == "" && securityPolicyName == "" {
@@ -34,10 +22,10 @@ func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, 
 
 	variables := newVars(
 		gqlID(securityPolicyID),
-		gqlNullableField(securityPolicyName, "name"),
-		gqlNullableField("", cursorGroups),
+		gqlNullable(securityPolicyName, "name"),
+		gqlNullable("", query.CursorGroups),
 	)
-	response := readSecurityPolicyQuery{}
+	response := query.ReadSecurityPolicy{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicy, &response, variables)
 	if err != nil {
@@ -48,7 +36,7 @@ func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, 
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, securityPolicyResourceName, securityPolicyID)
 	}
 
-	err = response.SecurityPolicy.Groups.fetchPages(ctx, client.readSecurityPolicyGroupsAfter, variables)
+	err = response.SecurityPolicy.Groups.FetchPages(ctx, client.readSecurityPolicyGroupsAfter, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, securityPolicyResourceName, securityPolicyID)
 	}
@@ -56,9 +44,9 @@ func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, 
 	return response.ToModel(), nil
 }
 
-func (client *Client) readSecurityPolicyGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*GroupEdge], error) {
-	variables[cursorGroups] = cursor
-	response := readSecurityPolicyQuery{}
+func (client *Client) readSecurityPolicyGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
+	variables[query.CursorGroups] = cursor
+	response := query.ReadSecurityPolicy{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicy, &response, variables)
 	if err != nil {
@@ -72,47 +60,35 @@ func (client *Client) readSecurityPolicyGroupsAfter(ctx context.Context, variabl
 	return &response.SecurityPolicy.Groups.PaginatedResource, nil
 }
 
-type SecurityPolicyEdge struct {
-	Node *gqlSecurityPolicy
-}
-
-type SecurityPolicies struct {
-	PaginatedResource[*SecurityPolicyEdge]
-}
-
-type readSecurityPoliciesQuery struct {
-	SecurityPolicies SecurityPolicies `graphql:"securityPolicies(after: $policiesEndCursor)"`
-}
-
 func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.SecurityPolicy, error) {
 	variables := newVars(
-		gqlNullableField("", cursorPolicies),
-		gqlNullableField("", cursorGroups),
+		gqlNullable("", query.CursorPolicies),
+		gqlNullable("", query.CursorGroups),
 	)
-	response := readSecurityPoliciesQuery{}
+	response := query.ReadSecurityPolicies{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicies, &response, variables)
 	if err != nil {
 		return nil, NewAPIError(err, operationRead, securityPolicyResourceName)
 	}
 
-	if len(response.SecurityPolicies.Edges) == 0 {
+	if len(response.Edges) == 0 {
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, operationRead, securityPolicyResourceName)
 	}
 
-	err = response.SecurityPolicies.fetchPages(ctx, client.readSecurityPoliciesAfter, variables)
+	err = response.FetchPages(ctx, client.readSecurityPoliciesAfter, variables)
 	if err != nil {
 		return nil, NewAPIError(err, operationRead, securityPolicyResourceName)
 	}
 
-	for i, edge := range response.SecurityPolicies.Edges {
+	for i, edge := range response.Edges {
 		securityPolicyID := edge.Node.StringID()
 
-		err = response.SecurityPolicies.Edges[i].Node.Groups.fetchPages(ctx,
+		err = response.Edges[i].Node.Groups.FetchPages(ctx,
 			client.readSecurityPolicyGroupsAfter,
 			newVars(
 				gqlID(securityPolicyID),
-				gqlNullableField("", "name"),
+				gqlNullable("", "name"),
 			),
 		)
 		if err != nil {
@@ -123,18 +99,18 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 	return response.ToModel(), nil
 }
 
-func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*SecurityPolicyEdge], error) {
-	variables[cursorPolicies] = cursor
-	response := readSecurityPoliciesQuery{}
+func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.SecurityPolicyEdge], error) {
+	variables[query.CursorPolicies] = cursor
+	response := query.ReadSecurityPolicies{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicies, &response, variables)
 	if err != nil {
 		return nil, err //nolint
 	}
 
-	if len(response.SecurityPolicies.Edges) == 0 {
+	if len(response.Edges) == 0 {
 		return nil, ErrGraphqlResultIsEmpty
 	}
 
-	return &response.SecurityPolicies.PaginatedResource, nil
+	return &response.PaginatedResource, nil
 }
