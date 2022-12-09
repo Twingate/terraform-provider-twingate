@@ -3,45 +3,22 @@ package client
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/twingate/go-graphql-client"
 )
 
 const remoteNetworkResourceName = "remote network"
 
-type gqlRemoteNetwork struct {
-	ID   graphql.ID
-	Name graphql.String
-}
-
-type gqlRemoteNetworkEdge struct {
-	Node gqlRemoteNetwork
-}
-
-type gqlRemoteNetworks struct {
-	Edges []*gqlRemoteNetworkEdge
-}
-
-type RemoteNetworks struct {
-	PaginatedResource[*gqlRemoteNetworkEdge]
-}
-
-type createRemoteNetworkQuery struct {
-	RemoteNetworkCreate struct {
-		OkError
-		Entity *gqlRemoteNetwork
-	} `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive)"`
-}
-
 func (client *Client) CreateRemoteNetwork(ctx context.Context, remoteNetworkName string) (*model.RemoteNetwork, error) {
 	if remoteNetworkName == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkNameIsEmpty, "create", remoteNetworkResourceName)
 	}
 
-	response := createRemoteNetworkQuery{}
+	response := query.CreateRemoteNetwork{}
 	variables := newVars(
-		gqlField(remoteNetworkName, "name"),
-		gqlField(true, "isActive"),
+		gqlVar(remoteNetworkName, "name"),
+		gqlVar(true, "isActive"),
 	)
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createRemoteNetwork", &response, variables)
@@ -49,61 +26,49 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, remoteNetworkName
 		return nil, NewAPIError(err, "create", remoteNetworkResourceName)
 	}
 
-	if !response.RemoteNetworkCreate.Ok {
-		message := response.RemoteNetworkCreate.Error
-
-		return nil, NewAPIError(NewMutationError(message), "create", remoteNetworkResourceName)
+	if !response.Ok {
+		return nil, NewAPIError(NewMutationError(response.Error), "create", remoteNetworkResourceName)
 	}
 
-	if response.RemoteNetworkCreate.Entity == nil {
+	if response.Entity == nil {
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", remoteNetworkResourceName)
 	}
 
 	return response.ToModel(), nil
 }
 
-type readRemoteNetworksQuery struct {
-	RemoteNetworks RemoteNetworks
-}
-
 func (client *Client) ReadRemoteNetworks(ctx context.Context) ([]*model.RemoteNetwork, error) {
-	response := readRemoteNetworksQuery{}
+	response := query.ReadRemoteNetworks{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworks", &response, nil)
+	variables := newVars(gqlNullable("", query.CursorRemoteNetworks))
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworks", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
 
-	err = response.RemoteNetworks.fetchPages(ctx, client.readRemoteNetworksAfter, nil)
+	err = response.FetchPages(ctx, client.readRemoteNetworksAfter, variables)
 	if err != nil {
-		return nil, err
+		return nil, err //nolint
 	}
 
 	return response.ToModel(), nil
 }
 
-type readRemoteNetworksAfterQuery struct {
-	RemoteNetworks RemoteNetworks `graphql:"remoteNetworks(after: $remoteNetworksEndCursor)"`
-}
-
-func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[*gqlRemoteNetworkEdge], error) {
-	if variables == nil {
-		variables = make(map[string]interface{})
-	}
-
-	variables["remoteNetworksEndCursor"] = cursor
-	response := readRemoteNetworksAfterQuery{}
+func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.RemoteNetworkEdge], error) {
+	variables[query.CursorRemoteNetworks] = cursor
+	response := query.ReadRemoteNetworks{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworks", &response, variables)
 	if err != nil {
 		return nil, NewAPIError(err, "read", remoteNetworkResourceName)
 	}
 
-	if len(response.RemoteNetworks.Edges) == 0 {
+	if len(response.Edges) == 0 {
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "read", remoteNetworkResourceName)
 	}
 
-	return &response.RemoteNetworks.PaginatedResource, nil
+	return &response.PaginatedResource, nil
 }
 
 func (client *Client) ReadRemoteNetwork(ctx context.Context, remoteNetworkID, remoteNetworkName string) (*model.RemoteNetwork, error) {
@@ -115,17 +80,13 @@ func (client *Client) ReadRemoteNetwork(ctx context.Context, remoteNetworkID, re
 	}
 }
 
-type readRemoteNetworkByIDQuery struct {
-	RemoteNetwork *gqlRemoteNetwork `graphql:"remoteNetwork(id: $id)"`
-}
-
 func (client *Client) ReadRemoteNetworkByID(ctx context.Context, remoteNetworkID string) (*model.RemoteNetwork, error) {
 	if remoteNetworkID == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "read", remoteNetworkResourceName)
 	}
 
 	variables := newVars(gqlID(remoteNetworkID))
-	response := readRemoteNetworkByIDQuery{}
+	response := query.ReadRemoteNetworkByID{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworkByID", &response, variables)
 	if err != nil {
@@ -136,11 +97,7 @@ func (client *Client) ReadRemoteNetworkByID(ctx context.Context, remoteNetworkID
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	return response.RemoteNetwork.ToModel(), nil
-}
-
-type readRemoteNetworkByNameQuery struct {
-	RemoteNetworks gqlRemoteNetworks `graphql:"remoteNetworks(filter: {name: {eq: $name}})"`
+	return response.ToModel(), nil
 }
 
 func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetworkName string) (*model.RemoteNetwork, error) {
@@ -148,8 +105,8 @@ func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetwork
 		return nil, NewAPIError(ErrGraphqlNetworkNameIsEmpty, "read", remoteNetworkResourceName)
 	}
 
-	variables := newVars(gqlField(remoteNetworkName, "name"))
-	response := readRemoteNetworkByNameQuery{}
+	variables := newVars(gqlVar(remoteNetworkName, "name"))
+	response := query.ReadRemoteNetworkByName{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworkByName", &response, variables)
 	if err != nil {
@@ -163,39 +120,28 @@ func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetwork
 	return response.RemoteNetworks.Edges[0].Node.ToModel(), nil
 }
 
-type updateRemoteNetworkQuery struct {
-	RemoteNetworkUpdate struct {
-		OkError
-		Entity *gqlRemoteNetwork
-	} `graphql:"remoteNetworkUpdate(id: $id, name: $name)"`
-}
-
 func (client *Client) UpdateRemoteNetwork(ctx context.Context, remoteNetworkID, remoteNetworkName string) (*model.RemoteNetwork, error) {
 	variables := newVars(
 		gqlID(remoteNetworkID),
-		gqlField(remoteNetworkName, "name"),
+		gqlVar(remoteNetworkName, "name"),
 	)
 
-	response := updateRemoteNetworkQuery{}
+	response := query.UpdateRemoteNetwork{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateRemoteNetwork", &response, variables)
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	if !response.RemoteNetworkUpdate.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.RemoteNetworkUpdate.Error), "update", remoteNetworkResourceName, remoteNetworkID)
+	if !response.Ok {
+		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	if response.RemoteNetworkUpdate.Entity == nil {
+	if response.Entity == nil {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	return response.RemoteNetworkUpdate.Entity.ToModel(), nil
-}
-
-type deleteRemoteNetworkQuery struct {
-	RemoteNetworkDelete *OkError `graphql:"remoteNetworkDelete(id: $id)"`
+	return response.ToModel(), nil
 }
 
 func (client *Client) DeleteRemoteNetwork(ctx context.Context, remoteNetworkID string) error {
@@ -203,18 +149,16 @@ func (client *Client) DeleteRemoteNetwork(ctx context.Context, remoteNetworkID s
 		return NewAPIError(ErrGraphqlNetworkIDIsEmpty, "delete", remoteNetworkResourceName)
 	}
 
-	variables := newVars(
-		gqlID(remoteNetworkID),
-	)
-	response := deleteRemoteNetworkQuery{}
+	variables := newVars(gqlID(remoteNetworkID))
+	response := query.DeleteRemoteNetwork{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "deleteRemoteNetwork", &response, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
-	if !response.RemoteNetworkDelete.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.RemoteNetworkDelete.Error), "delete", remoteNetworkResourceName, remoteNetworkID)
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), "delete", remoteNetworkResourceName, remoteNetworkID)
 	}
 
 	return nil
