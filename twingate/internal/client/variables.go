@@ -43,7 +43,7 @@ func gqlIDs(ids []string, name string) gqlVarOption {
 	}
 }
 
-func gqlField(val interface{}, name string) gqlVarOption {
+func gqlVar(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
 		gqlValue := convertToGQL(val)
 		if gqlValue != nil {
@@ -81,7 +81,7 @@ func convertToGQL(val interface{}) interface{} {
 	return val
 }
 
-func gqlNullableField(val interface{}, name string) gqlVarOption {
+func gqlNullable(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
 		var gqlValue interface{}
 		if isDefaultValue(val) {
