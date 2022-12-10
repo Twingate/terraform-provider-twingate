@@ -8,7 +8,7 @@ const (
 	LocationOther       = "OTHER"
 )
 
-//nolint
+// nolint
 var Locations = []string{LocationAWS, LocationAzure, LocationGoogleCloud, LocationOnPremise, LocationOther}
 
 type RemoteNetwork struct {
