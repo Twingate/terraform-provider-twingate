@@ -44,6 +44,11 @@ func RemoteNetwork() *schema.Resource {
 				Description:  "The name of the Remote Network",
 				ExactlyOneOf: []string{"id"},
 			},
+			"location": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The location of the Remote Network",
+			},
 		},
 	}
 }

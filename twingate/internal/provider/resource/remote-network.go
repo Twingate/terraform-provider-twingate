@@ -9,6 +9,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func RemoteNetwork() *schema.Resource {
@@ -30,6 +31,13 @@ func RemoteNetwork() *schema.Resource {
 				Required:    true,
 				Description: "The name of the Remote Network",
 			},
+			"location": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice(model.Locations, false),
+				Description:  "The location of the Remote Network",
+				Default:      model.LocationOther,
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -39,7 +47,10 @@ func RemoteNetwork() *schema.Resource {
 
 func remoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
-	remoteNetwork, err := c.CreateRemoteNetwork(ctx, resourceData.Get("name").(string))
+	remoteNetwork, err := c.CreateRemoteNetwork(ctx, &model.RemoteNetwork{
+		Name:     resourceData.Get("name").(string),
+		Location: resourceData.Get("location").(string),
+	})
 
 	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
 }
@@ -48,7 +59,11 @@ func remoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData,
 	log.Printf("[INFO] Updating remote network id %s", resourceData.Id())
 
 	c := meta.(*client.Client)
-	remoteNetwork, err := c.UpdateRemoteNetwork(ctx, resourceData.Id(), resourceData.Get("name").(string))
+	remoteNetwork, err := c.UpdateRemoteNetwork(ctx, &model.RemoteNetwork{
+		ID:       resourceData.Id(),
+		Name:     resourceData.Get("name").(string),
+		Location: resourceData.Get("location").(string),
+	})
 
 	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
 }
@@ -85,8 +100,11 @@ func resourceRemoteNetworkReadHelper(resourceData *schema.ResourceData, remoteNe
 		return diag.FromErr(err)
 	}
 
-	err = resourceData.Set("name", remoteNetwork.Name)
-	if err != nil {
+	if err := resourceData.Set("name", remoteNetwork.Name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceData.Set("location", remoteNetwork.Location); err != nil {
 		return diag.FromErr(err)
 	}
 
