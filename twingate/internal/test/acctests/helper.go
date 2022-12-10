@@ -22,6 +22,7 @@ var (
 	ErrResourceNotFound     = errors.New("resource not found")
 	ErrResourceStillPresent = errors.New("resource still present")
 	ErrResourceFoundInState = errors.New("this resource should not be here")
+	ErrUnknownResourceType  = errors.New("unknown resource type")
 )
 
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
@@ -157,45 +158,54 @@ func TerraformServiceAccount(name string) string {
 	return ResourceName(resource.TwingateServiceAccount, name)
 }
 
+func TerraformServiceKey(name string) string {
+	return ResourceName(resource.TwingateServiceAccountKey, name)
+}
+
 func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceState, ok := s.RootModule().Resources[resourceName]
-
 		if !ok {
 			return fmt.Errorf("%w: %s ", ErrResourceNotFound, resourceName)
 		}
 
 		resourceID := resourceState.Primary.ID
-
 		if resourceID == "" {
 			return ErrResourceIDNotSet
 		}
 
-		var err error
-
-		switch resourceType {
-		case resource.TwingateResource:
-			err = providerClient.DeleteResource(context.Background(), resourceID)
-		case resource.TwingateRemoteNetwork:
-			err = providerClient.DeleteRemoteNetwork(context.Background(), resourceID)
-		case resource.TwingateGroup:
-			err = providerClient.DeleteGroup(context.Background(), resourceID)
-		case resource.TwingateConnector:
-			err = providerClient.DeleteConnector(context.Background(), resourceID)
-		case resource.TwingateServiceAccount:
-			err = providerClient.DeleteServiceAccount(context.Background(), resourceID)
-		default:
-			return fmt.Errorf("%s unknown resource type", resourceType) //nolint:goerr113
-		}
-
+		err := deleteResource(resourceType, resourceID)
 		if err != nil {
 			return fmt.Errorf("%s with ID %s still active: %w", resourceType, resourceID, err)
 		}
 
 		return nil
 	}
+}
+
+func deleteResource(resourceType, resourceID string) error {
+	var err error
+
+	providerClient := Provider.Meta().(*client.Client)
+
+	switch resourceType {
+	case resource.TwingateResource:
+		err = providerClient.DeleteResource(context.Background(), resourceID)
+	case resource.TwingateRemoteNetwork:
+		err = providerClient.DeleteRemoteNetwork(context.Background(), resourceID)
+	case resource.TwingateGroup:
+		err = providerClient.DeleteGroup(context.Background(), resourceID)
+	case resource.TwingateConnector:
+		err = providerClient.DeleteConnector(context.Background(), resourceID)
+	case resource.TwingateServiceAccount:
+		err = providerClient.DeleteServiceAccount(context.Background(), resourceID)
+	case resource.TwingateServiceAccountKey:
+		err = providerClient.DeleteServiceKey(context.Background(), resourceID)
+	default:
+		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
+	}
+
+	return err
 }
 
 func CheckTwingateResourceDestroy(s *terraform.State) error {
@@ -348,4 +358,53 @@ func CheckTwingateConnectorDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func RevokeTwingateServiceKey(resourceName string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		resourceID := resourceState.Primary.ID
+		if resourceID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		client := Provider.Meta().(*client.Client)
+
+		err := client.RevokeServiceKey(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("failed to revoke service account key with ID %s: %w", resourceID, err)
+		}
+
+		return nil
+	}
+}
+
+func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		client := Provider.Meta().(*client.Client)
+
+		serviceAccountKey, err := client.ReadServiceKey(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read service account key with ID %s: %w", resourceState.Primary.ID, err)
+		}
+
+		if serviceAccountKey.Status != expectedStatus {
+			return fmt.Errorf("expected status %v, got %v", expectedStatus, serviceAccountKey.Status) //nolint:goerr113
+		}
+
+		return nil
+	}
 }

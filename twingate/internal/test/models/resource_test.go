@@ -197,6 +197,39 @@ func TestNewProtocol(t *testing.T) {
 	}
 }
 
+func TestProtocolToTerraform(t *testing.T) {
+	var emptySlice []interface{}
+	var emptyStringSlice []string
+
+	cases := []struct {
+		protocol *model.Protocol
+
+		expected interface{}
+	}{
+		{
+			protocol: nil,
+			expected: emptySlice,
+		},
+		{
+			protocol: &model.Protocol{
+				Policy: model.PolicyAllowAll,
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"policy": "ALLOW_ALL",
+					"ports":  emptyStringSlice,
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.protocol.ToTerraform())
+		})
+	}
+}
+
 func TestProtocols(t *testing.T) {
 	t.Run("Test Twingate Resource : Protocols", func(t *testing.T) {
 		protocols := model.DefaultProtocols()
