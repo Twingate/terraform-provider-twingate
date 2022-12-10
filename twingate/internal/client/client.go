@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	EnvAPIToken = "TWINGATE_API_TOKEN"
+	EnvAPIToken = "TWINGATE_API_TOKEN" //#nosec
 
 	headerAPIKey = "X-API-KEY"
 	headerAgent  = "User-Agent"
@@ -98,7 +98,7 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 		return false, err
 	}
 
-	return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+	return retryablehttp.DefaultRetryPolicy(ctx, resp, err) //nolint
 }
 
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
