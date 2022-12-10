@@ -92,9 +92,19 @@ func newServerURL(network, url string) serverURL {
 	}
 }
 
+func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	// do not retry if API token not set
+	if errors.Is(err, ErrAPITokenNoSet) {
+		return false, err
+	}
+
+	return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+}
+
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
+	retryableClient.CheckRetry = customRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
