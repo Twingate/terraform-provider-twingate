@@ -1,6 +1,9 @@
 package query
 
-import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+import (
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/twingate/go-graphql-client"
+)
 
 type ReadRemoteNetworkByID struct {
 	RemoteNetwork *gqlRemoteNetwork `graphql:"remoteNetwork(id: $id)"`
@@ -8,12 +11,14 @@ type ReadRemoteNetworkByID struct {
 
 type gqlRemoteNetwork struct {
 	IDName
+	Location graphql.String
 }
 
 func (g gqlRemoteNetwork) ToModel() *model.RemoteNetwork {
 	return &model.RemoteNetwork{
-		ID:   g.StringID(),
-		Name: g.StringName(),
+		ID:       g.StringID(),
+		Name:     g.StringName(),
+		Location: string(g.Location),
 	}
 }
 
