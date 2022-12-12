@@ -2,8 +2,11 @@ package datasource
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -47,7 +50,7 @@ func RemoteNetwork() *schema.Resource {
 			"location": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The location of the Remote Network",
+				Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
 			},
 		},
 	}

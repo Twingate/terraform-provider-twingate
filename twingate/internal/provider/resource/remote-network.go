@@ -3,7 +3,9 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
@@ -35,7 +37,7 @@ func RemoteNetwork() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice(model.Locations, false),
-				Description:  "The location of the Remote Network",
+				Description:  fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
 				Default:      model.LocationOther,
 			},
 		},
