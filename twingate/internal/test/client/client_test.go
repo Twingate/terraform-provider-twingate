@@ -12,7 +12,7 @@ import (
 
 func newHTTPMockClient() *client.Client {
 
-	c := client.NewClient("twindev.com", "xxxx", "test",
+	c := client.NewClient("twindev.com", "xxx", "test",
 		time.Duration(1)*time.Second, 2, "test")
 	httpmock.ActivateNonDefault(c.HTTPClient)
 
