@@ -3,7 +3,7 @@ package query
 import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 
 type CreateRemoteNetwork struct {
-	RemoteNetworkEntityResponse `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive)"`
+	RemoteNetworkEntityResponse `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive, location: $location)"`
 }
 
 type RemoteNetworkEntityResponse struct {

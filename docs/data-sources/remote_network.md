@@ -32,4 +32,8 @@ data "twingate_remote_network" "foo" {
 - `id` (String) The ID of the Remote Network
 - `name` (String) The name of the Remote Network
 
+### Read-Only
+
+- `location` (String) The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+
 
