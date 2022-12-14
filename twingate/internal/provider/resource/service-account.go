@@ -84,7 +84,7 @@ func serviceAccountDelete(ctx context.Context, resourceData *schema.ResourceData
 
 func serviceAccountRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
-	serviceAccount, err := c.ReadServiceAccount(ctx, resourceData.Id())
+	serviceAccount, err := c.ReadShallowServiceAccount(ctx, resourceData.Id())
 
 	return serviceAccountReadHelper(resourceData, serviceAccount, err)
 }
