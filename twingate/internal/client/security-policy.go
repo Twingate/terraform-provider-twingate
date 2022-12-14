@@ -23,7 +23,6 @@ func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, 
 	variables := newVars(
 		gqlID(securityPolicyID),
 		gqlNullable(securityPolicyName, "name"),
-		gqlNullable("", query.CursorGroups),
 	)
 	response := query.ReadSecurityPolicy{}
 
@@ -36,34 +35,12 @@ func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, 
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, securityPolicyResourceName, securityPolicyID)
 	}
 
-	err = response.SecurityPolicy.Groups.FetchPages(ctx, client.readSecurityPolicyGroupsAfter, variables)
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, securityPolicyResourceName, securityPolicyID)
-	}
-
 	return response.ToModel(), nil
-}
-
-func (client *Client) readSecurityPolicyGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
-	variables[query.CursorGroups] = cursor
-	response := query.ReadSecurityPolicy{}
-
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicy, &response, variables)
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, groupResourceName, "All")
-	}
-
-	if response.SecurityPolicy == nil || len(response.SecurityPolicy.Groups.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, groupResourceName, "All")
-	}
-
-	return &response.SecurityPolicy.Groups.PaginatedResource, nil
 }
 
 func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.SecurityPolicy, error) {
 	variables := newVars(
 		gqlNullable("", query.CursorPolicies),
-		gqlNullable("", query.CursorGroups),
 	)
 	response := query.ReadSecurityPolicies{}
 
@@ -79,21 +56,6 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 	err = response.FetchPages(ctx, client.readSecurityPoliciesAfter, variables)
 	if err != nil {
 		return nil, NewAPIError(err, operationRead, securityPolicyResourceName)
-	}
-
-	for i, edge := range response.Edges {
-		securityPolicyID := edge.Node.StringID()
-
-		err = response.Edges[i].Node.Groups.FetchPages(ctx,
-			client.readSecurityPolicyGroupsAfter,
-			newVars(
-				gqlID(securityPolicyID),
-				gqlNullable("", "name"),
-			),
-		)
-		if err != nil {
-			return nil, NewAPIErrorWithID(err, operationRead, securityPolicyResourceName, securityPolicyID)
-		}
 	}
 
 	return response.ToModel(), nil

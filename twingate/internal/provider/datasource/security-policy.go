@@ -8,11 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	fieldGroups     = "group_ids"
-	fieldPolicyType = "policy_type"
-)
-
 func SecurityPolicy() *schema.Resource {
 	return &schema.Resource{
 		Description: "A Security Policy defined in Twingate for your Network or for individual Resources on your Network.",
@@ -30,18 +25,6 @@ func SecurityPolicy() *schema.Resource {
 				Description:  "Find a Security Policy by name.",
 				ExactlyOneOf: []string{fieldID},
 			},
-			// computed
-			fieldPolicyType: {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Policy Type of the Security Policy",
-			},
-			fieldGroups: {
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Computed:    true,
-				Description: "List of twingate_group IDs that the Security Policy is assigned to.",
-			},
 		},
 	}
 }
@@ -55,14 +38,6 @@ func readSecurityPolicy(ctx context.Context, resourceData *schema.ResourceData, 
 	}
 
 	if err := resourceData.Set(fieldName, securityPolicy.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := resourceData.Set(fieldPolicyType, securityPolicy.Type); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := resourceData.Set(fieldGroups, securityPolicy.Groups); err != nil {
 		return diag.FromErr(err)
 	}
 
