@@ -71,6 +71,10 @@ func TestClientFailedReadBody(t *testing.T) {
 }
 
 func TestClientAPITokenNotSet(t *testing.T) {
+	apiToken := os.Getenv(EnvAPIToken)
+	os.Setenv(EnvAPIToken, "")
+	defer os.Setenv(EnvAPIToken, apiToken)
+
 	client := NewClient(
 		"twindev.com", "", "test",
 		time.Duration(1)*time.Second, 0, "test",
