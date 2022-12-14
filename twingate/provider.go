@@ -122,7 +122,7 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 			diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Unable to create Twingate client",
-				Detail:   "Unable to create anonymous Twingate client, network have to be provided ",
+				Detail:   "Unable to create anonymous Twingate client, network has to be provided",
 			},
 		}
 	}
