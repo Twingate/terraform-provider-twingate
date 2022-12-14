@@ -26,9 +26,4 @@ data "twingate_security_policy" "foo" {
 - `id` (String) Find a Security Policy by id.
 - `name` (String) Find a Security Policy by name.
 
-### Read-Only
-
-- `group_ids` (Set of String) List of twingate_group IDs that the Security Policy is assigned to.
-- `policy_type` (String) Policy Type of the Security Policy
-
 
