@@ -88,6 +88,7 @@ func TestAccTwingateServiceAccountReCreateAfterDeletion(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						acctests.DeleteTwingateResource(theResource, resource.TwingateServiceAccount),
+						acctests.WaitTestFunc(),
 					),
 					ExpectNonEmptyPlan: true,
 				},
