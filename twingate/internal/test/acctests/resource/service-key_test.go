@@ -95,6 +95,7 @@ func TestAccTwingateServiceKeyCreateUpdateWithName(t *testing.T) {
 						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
 						sdk.TestCheckResourceAttr(serviceKey, nameAttr, afterName),
+						acctests.WaitTestFunc(),
 					),
 				},
 			},
