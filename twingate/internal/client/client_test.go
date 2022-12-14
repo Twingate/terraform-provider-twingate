@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -68,20 +67,4 @@ func TestClientFailedReadBody(t *testing.T) {
 	_, err := client.post(context.TODO(), "/hello", "hello", nil)
 
 	assert.ErrorContains(t, err, "can't read response body")
-}
-
-func TestClientAPITokenNotSet(t *testing.T) {
-	client := NewClient(
-		"twindev.com", "", "test",
-		time.Duration(1)*time.Second, 0, "test",
-	)
-
-	_, err := client.post(context.TODO(), "/hello", "hello", nil)
-
-	assert.ErrorContains(t, err, ErrAPITokenNoSet.Error())
-
-	os.Setenv(EnvAPIToken, "xxx")
-	_, err = client.post(context.TODO(), "/hello", "hello", nil)
-
-	assert.ErrorContains(t, err, "lookup test.twindev.com: no such host")
 }
