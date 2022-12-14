@@ -3,7 +3,7 @@ package query
 import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 
 type UpdateRemoteNetwork struct {
-	RemoteNetworkEntityResponse `graphql:"remoteNetworkUpdate(id: $id, name: $name)"`
+	RemoteNetworkEntityResponse `graphql:"remoteNetworkUpdate(id: $id, name: $name, location: $location)"`
 }
 
 func (q UpdateRemoteNetwork) ToModel() *model.RemoteNetwork {

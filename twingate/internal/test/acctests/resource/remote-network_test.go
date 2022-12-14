@@ -4,14 +4,51 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccTwingateRemoteNetworkCreateUpdate(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Remote Network Basic", func(t *testing.T) {
+const locationAttr = "location"
+
+func TestAccTwingateRemoteNetworkCreate(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Network Create", func(t *testing.T) {
+		const terraformResourceName = "test000"
+		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+		networkName := test.RandomName()
+		networkLocation := model.LocationAzure
+
+		sdk.Test(t, sdk.TestCase{
+			ProviderFactories: acctests.ProviderFactories,
+			PreCheck:          func() { acctests.PreCheck(t) },
+			CheckDestroy:      acctests.CheckTwingateRemoteNetworkDestroy,
+			Steps: []sdk.TestStep{
+				{
+					Config: createRemoteNetworkWithLocation(terraformResourceName, networkName, networkLocation),
+					Check: acctests.ComposeTestCheckFunc(
+						acctests.CheckTwingateResourceExists(theResource),
+						sdk.TestCheckResourceAttr(theResource, nameAttr, networkName),
+						sdk.TestCheckResourceAttr(theResource, locationAttr, networkLocation),
+					),
+				},
+			},
+		})
+	})
+}
+
+func createRemoteNetworkWithLocation(terraformResourceName, name, location string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	  location = "%s"
+	}
+	`, terraformResourceName, name, location)
+}
+
+func TestAccTwingateRemoteNetworkUpdate(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Network Update", func(t *testing.T) {
 		const terraformResourceName = "test001"
 		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
 		nameBefore := test.RandomName()
@@ -27,13 +64,15 @@ func TestAccTwingateRemoteNetworkCreateUpdate(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						sdk.TestCheckResourceAttr(theResource, nameAttr, nameBefore),
+						sdk.TestCheckResourceAttr(theResource, locationAttr, model.LocationOther),
 					),
 				},
 				{
-					Config: terraformResourceRemoteNetwork(terraformResourceName, nameAfter),
+					Config: createRemoteNetworkWithLocation(terraformResourceName, nameAfter, model.LocationAWS),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						sdk.TestCheckResourceAttr(theResource, nameAttr, nameAfter),
+						sdk.TestCheckResourceAttr(theResource, locationAttr, model.LocationAWS),
 					),
 				},
 			},
