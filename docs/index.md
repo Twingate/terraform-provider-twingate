@@ -36,7 +36,7 @@ provider "twingate" {
 - `api_token` (String, Sensitive) The access key for API operations. You can retrieve this
 from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).
 Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
-- `http_max_retry` (Number) Specifies a retry limit for the http requests made. This default value is 10.
+- `http_max_retry` (Number) Specifies a retry limit for the http requests made. The default value is 10.
 Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable
 - `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.
 Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable

@@ -6,7 +6,7 @@ VERSION=0.1
 OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
-SWEEP_FOLDER=./twingate
+SWEEP_FOLDER=./twingate/internal/test/sweepers
 
 
 check_defined = \
@@ -70,17 +70,17 @@ fmtcheck:
 .PHONY: lint
 lint: tools
 	@echo "==> Checking source code against linters..."
-	@$(GOBINPATH)/golangci-lint run -c golangci.yml ./$(PKG_NAME)
+	@$(GOBINPATH)/golangci-lint run -c golangci.yml ./$(PKG_NAME)/...
 
 .PHONY: lint-fix
 lint-fix: tools
 	@echo "==> Checking source code against linters with fix enabled..."
-	@$(GOBINPATH)/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)
+	@$(GOBINPATH)/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)/...
 
 .PHONY: sec
 sec: tools
 	@echo "==> Checking source code against security issues..."
-	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)
+	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)/...
 
 
 .PHONY: doc-tools

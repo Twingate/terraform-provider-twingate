@@ -30,6 +30,10 @@ resource "twingate_remote_network" "aws_network" {
 
 - `name` (String) The name of the Remote Network
 
+### Optional
+
+- `location` (String) The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+
 ### Read-Only
 
 - `id` (String) The ID of the Remote Network
