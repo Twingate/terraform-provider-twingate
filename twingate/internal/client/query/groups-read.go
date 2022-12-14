@@ -24,9 +24,3 @@ func (u Groups) ToModel() []*model.Group {
 		return edge.Node.ToModel()
 	})
 }
-
-func (u Groups) listIDs() []string {
-	return utils.Map[*GroupEdge, string](u.Edges, func(edge *GroupEdge) string {
-		return edge.Node.StringID()
-	})
-}

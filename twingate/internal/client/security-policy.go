@@ -50,7 +50,7 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 	}
 
 	if len(response.Edges) == 0 {
-		return nil, NewAPIError(ErrGraphqlResultIsEmpty, operationRead, securityPolicyResourceName)
+		return nil, nil
 	}
 
 	err = response.FetchPages(ctx, client.readSecurityPoliciesAfter, variables)

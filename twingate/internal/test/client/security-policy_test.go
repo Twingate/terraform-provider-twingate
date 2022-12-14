@@ -246,7 +246,7 @@ func TestClientSecurityPoliciesReadEmptyResponse(t *testing.T) {
 			httpmock.Reset()
 
 			assert.Nil(t, securityPolicies)
-			assert.EqualError(t, err, `failed to read security policy: query result is empty`)
+			assert.NoError(t, err)
 		}
 
 	})
