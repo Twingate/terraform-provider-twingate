@@ -60,7 +60,7 @@ testacc:
 .PHONY: fmt
 fmt:
 	@echo "==> Fixing source code with gofmt..."
-	gofmt -w -s ./$(PKG_NAME)
+	gofmt -w -s ./$(PKG_NAME) ./pulumi-twingate
 
 .PHONY: fmtcheck
 fmtcheck:
