@@ -1,0 +1,1375 @@
+{
+    "name": "twingate",
+    "displayName": "Twingate",
+    "description": "A Pulumi package for creating and managing Twingate cloud resources.",
+    "keywords": [
+        "pulumi",
+        "twingate",
+        "category/Infrastructure"
+    ],
+    "homepage": "https://www.twingate.com",
+    "license": "Apache-2.0",
+    "attribution": "This Pulumi package is based on the [`twingate` Terraform Provider](https://github.com/Twingate-Labs/terraform-provider-twingate).",
+    "repository": "https://github.com/Twingate-Labs/pulumi-twingate",
+    "pluginDownloadURL": "https://github.com/Twingate-Labs/pulumi-twingate/releases/download/v${VERSION}",
+    "publisher": "Twingate",
+    "meta": {
+        "moduleFormat": "(.*)(?:/[^/]*)"
+    },
+    "language": {
+        "csharp": {
+            "compatibility": "tfbridge20",
+            "namespaces": null,
+            "packageReferences": {
+                "Pulumi": "3.*"
+            },
+            "rootNamespace": "TwingateLabs"
+        },
+        "go": {
+            "generateExtraInputTypes": true,
+            "generateResourceContainerTypes": true,
+            "importBasePath": "github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+        },
+        "nodejs": {
+            "compatibility": "tfbridge20",
+            "dependencies": {
+                "@pulumi/pulumi": "^3.0.0"
+            },
+            "devDependencies": {
+                "@types/mime": "^2.0.0",
+                "@types/node": "^10.0.0"
+            },
+            "disableUnionOutputTypes": true,
+            "packageDescription": "A Pulumi package for creating and managing Twingate cloud resources.",
+            "packageName": "@twingate-labs/pulumi-twingate",
+            "readme": "\u003e This provider is a derived work of the [Terraform Provider](https://github.com/Twingate-Labs/terraform-provider-twingate)\n\u003e distributed under [MPL 2.0](https://www.mozilla.org/en-US/MPL/2.0/). If you encounter a bug or missing feature,\n\u003e first check the [`pulumi-twingate` repo](https://github.com/Twingate-Labs/pulumi-twingate/issues); however, if that doesn't turn up anything,\n\u003e please consult the source [`terraform-provider-twingate` repo](https://github.com/Twingate-Labs/terraform-provider-twingate/issues).",
+            "typescriptVersion": ""
+        },
+        "python": {
+            "compatibility": "tfbridge20",
+            "readme": "\u003e This provider is a derived work of the [Terraform Provider](https://github.com/Twingate-Labs/terraform-provider-twingate)\n\u003e distributed under [MPL 2.0](https://www.mozilla.org/en-US/MPL/2.0/). If you encounter a bug or missing feature,\n\u003e first check the [`pulumi-twingate` repo](https://github.com/Twingate-Labs/pulumi-twingate/issues); however, if that doesn't turn up anything,\n\u003e please consult the source [`terraform-provider-twingate` repo](https://github.com/Twingate-Labs/terraform-provider-twingate/issues).",
+            "requires": {
+                "pulumi": "\u003e=3.0.0,\u003c4.0.0"
+            }
+        }
+    },
+    "config": {
+        "variables": {
+            "apiToken": {
+                "type": "string",
+                "description": "The access key for API operations. You can retrieve this from the Twingate Admin Console\n([documentation](https://docs.twingate.com/docs/api-overview)). Alternatively, this can be specified using the\nTWINGATE_API_TOKEN environment variable.\n",
+                "secret": true
+            },
+            "httpMaxRetry": {
+                "type": "integer",
+                "description": "Specifies a retry limit for the http requests made. The default value is 10. Alternatively, this can be specified using\nthe TWINGATE_HTTP_MAX_RETRY environment variable\n",
+                "default": 5
+            },
+            "httpTimeout": {
+                "type": "integer",
+                "description": "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n",
+                "default": 10
+            },
+            "network": {
+                "type": "string",
+                "description": "Your Twingate network ID for API operations. You can find it in the Admin Console URL, for example:\n`autoco.twingate.com`, where `autoco` is your network ID Alternatively, this can be specified using the TWINGATE_NETWORK\nenvironment variable.\n"
+            },
+            "url": {
+                "type": "string",
+                "description": "The default is 'twingate.com' This is optional and shouldn't be changed under normal circumstances.\n"
+            }
+        }
+    },
+    "types": {
+        "twingate:index/TwingateResourceProtocols:TwingateResourceProtocols": {
+            "properties": {
+                "allowIcmp": {
+                    "type": "boolean",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "tcp": {
+                    "$ref": "#/types/twingate:index/TwingateResourceProtocolsTcp:TwingateResourceProtocolsTcp",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "udp": {
+                    "$ref": "#/types/twingate:index/TwingateResourceProtocolsUdp:TwingateResourceProtocolsUdp",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "tcp",
+                "udp"
+            ]
+        },
+        "twingate:index/TwingateResourceProtocolsTcp:TwingateResourceProtocolsTcp": {
+            "properties": {
+                "policy": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "policy"
+            ]
+        },
+        "twingate:index/TwingateResourceProtocolsUdp:TwingateResourceProtocolsUdp": {
+            "properties": {
+                "policy": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "policy"
+            ]
+        },
+        "twingate:index/getTwingateConnectorsConnector:getTwingateConnectorsConnector": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "remoteNetworkId": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "remoteNetworkId"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateGroupsGroup:getTwingateGroupsGroup": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "isActive": {
+                    "type": "boolean",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "type": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "id",
+                "isActive",
+                "name",
+                "type"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateResourceProtocol:getTwingateResourceProtocol": {
+            "properties": {
+                "allowIcmp": {
+                    "type": "boolean",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "tcps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/types/twingate:index/getTwingateResourceProtocolTcp:getTwingateResourceProtocolTcp"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "udps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/types/twingate:index/getTwingateResourceProtocolUdp:getTwingateResourceProtocolUdp"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "allowIcmp"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateResourceProtocolTcp:getTwingateResourceProtocolTcp": {
+            "properties": {
+                "policy": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "policy",
+                "ports"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateResourceProtocolUdp:getTwingateResourceProtocolUdp": {
+            "properties": {
+                "policy": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "policy",
+                "ports"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateResourcesResource:getTwingateResourcesResource": {
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "protocols": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocol:getTwingateResourcesResourceProtocol"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "remoteNetworkId": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "address",
+                "id",
+                "name",
+                "remoteNetworkId"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateResourcesResourceProtocol:getTwingateResourcesResourceProtocol": {
+            "properties": {
+                "allowIcmp": {
+                    "type": "boolean",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "tcps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocolTcp:getTwingateResourcesResourceProtocolTcp"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "udps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocolUdp:getTwingateResourcesResourceProtocolUdp"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "allowIcmp"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateResourcesResourceProtocolTcp:getTwingateResourcesResourceProtocolTcp": {
+            "properties": {
+                "policy": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "policy",
+                "ports"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateResourcesResourceProtocolUdp:getTwingateResourcesResourceProtocolUdp": {
+            "properties": {
+                "policy": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "policy",
+                "ports"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        },
+        "twingate:index/getTwingateUsersUser:getTwingateUsersUser": {
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "firstName": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "isAdmin": {
+                    "type": "boolean",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "lastName": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                },
+                "role": {
+                    "type": "string",
+                    "language": {
+                        "python": {
+                            "mapCase": false
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "required": [
+                "email",
+                "firstName",
+                "id",
+                "isAdmin",
+                "lastName",
+                "role"
+            ],
+            "language": {
+                "nodejs": {
+                    "requiredInputs": []
+                }
+            }
+        }
+    },
+    "provider": {
+        "description": "The provider type for the twingate package. By default, resources use package-wide configuration\nsettings, however an explicit `Provider` instance may be created and passed during resource\nconstruction to achieve fine-grained programmatic control over provider settings. See the\n[documentation](https://www.pulumi.com/docs/reference/programming-model/#providers) for more information.\n",
+        "properties": {
+            "apiToken": {
+                "type": "string",
+                "description": "The access key for API operations. You can retrieve this from the Twingate Admin Console\n([documentation](https://docs.twingate.com/docs/api-overview)). Alternatively, this can be specified using the\nTWINGATE_API_TOKEN environment variable.\n",
+                "secret": true
+            },
+            "httpMaxRetry": {
+                "type": "integer",
+                "description": "Specifies a retry limit for the http requests made. The default value is 10. Alternatively, this can be specified using\nthe TWINGATE_HTTP_MAX_RETRY environment variable\n"
+            },
+            "httpTimeout": {
+                "type": "integer",
+                "description": "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n"
+            },
+            "network": {
+                "type": "string",
+                "description": "Your Twingate network ID for API operations. You can find it in the Admin Console URL, for example:\n`autoco.twingate.com`, where `autoco` is your network ID Alternatively, this can be specified using the TWINGATE_NETWORK\nenvironment variable.\n"
+            },
+            "url": {
+                "type": "string",
+                "description": "The default is 'twingate.com' This is optional and shouldn't be changed under normal circumstances.\n"
+            }
+        },
+        "inputProperties": {
+            "apiToken": {
+                "type": "string",
+                "description": "The access key for API operations. You can retrieve this from the Twingate Admin Console\n([documentation](https://docs.twingate.com/docs/api-overview)). Alternatively, this can be specified using the\nTWINGATE_API_TOKEN environment variable.\n",
+                "secret": true
+            },
+            "httpMaxRetry": {
+                "type": "integer",
+                "description": "Specifies a retry limit for the http requests made. The default value is 10. Alternatively, this can be specified using\nthe TWINGATE_HTTP_MAX_RETRY environment variable\n",
+                "default": 5
+            },
+            "httpTimeout": {
+                "type": "integer",
+                "description": "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n",
+                "default": 10
+            },
+            "network": {
+                "type": "string",
+                "description": "Your Twingate network ID for API operations. You can find it in the Admin Console URL, for example:\n`autoco.twingate.com`, where `autoco` is your network ID Alternatively, this can be specified using the TWINGATE_NETWORK\nenvironment variable.\n"
+            },
+            "url": {
+                "type": "string",
+                "description": "The default is 'twingate.com' This is optional and shouldn't be changed under normal circumstances.\n"
+            }
+        }
+    },
+    "resources": {
+        "twingate:index/twingateConnector:TwingateConnector": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the Connector, if not provided one will be generated\n"
+                },
+                "remoteNetworkId": {
+                    "type": "string",
+                    "description": "The ID of the Remote Network the Connector is attached to\n"
+                }
+            },
+            "required": [
+                "name",
+                "remoteNetworkId"
+            ],
+            "inputProperties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the Connector, if not provided one will be generated\n"
+                },
+                "remoteNetworkId": {
+                    "type": "string",
+                    "description": "The ID of the Remote Network the Connector is attached to\n",
+                    "willReplaceOnChanges": true
+                }
+            },
+            "requiredInputs": [
+                "remoteNetworkId"
+            ],
+            "stateInputs": {
+                "description": "Input properties used for looking up and filtering TwingateConnector resources.\n",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the Connector, if not provided one will be generated\n"
+                    },
+                    "remoteNetworkId": {
+                        "type": "string",
+                        "description": "The ID of the Remote Network the Connector is attached to\n",
+                        "willReplaceOnChanges": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "twingate:index/twingateConnectorTokens:TwingateConnectorTokens": {
+            "properties": {
+                "accessToken": {
+                    "type": "string",
+                    "description": "The Access Token of the parent Connector\n",
+                    "secret": true
+                },
+                "connectorId": {
+                    "type": "string",
+                    "description": "The ID of the parent Connector\n"
+                },
+                "keepers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "pulumi.json#/Any"
+                    },
+                    "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n"
+                },
+                "refreshToken": {
+                    "type": "string",
+                    "description": "The Refresh Token of the parent Connector\n",
+                    "secret": true
+                }
+            },
+            "required": [
+                "accessToken",
+                "connectorId",
+                "refreshToken"
+            ],
+            "inputProperties": {
+                "connectorId": {
+                    "type": "string",
+                    "description": "The ID of the parent Connector\n",
+                    "willReplaceOnChanges": true
+                },
+                "keepers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "pulumi.json#/Any"
+                    },
+                    "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n",
+                    "willReplaceOnChanges": true
+                }
+            },
+            "requiredInputs": [
+                "connectorId"
+            ],
+            "stateInputs": {
+                "description": "Input properties used for looking up and filtering TwingateConnectorTokens resources.\n",
+                "properties": {
+                    "accessToken": {
+                        "type": "string",
+                        "description": "The Access Token of the parent Connector\n",
+                        "secret": true
+                    },
+                    "connectorId": {
+                        "type": "string",
+                        "description": "The ID of the parent Connector\n",
+                        "willReplaceOnChanges": true
+                    },
+                    "keepers": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "pulumi.json#/Any"
+                        },
+                        "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n",
+                        "willReplaceOnChanges": true
+                    },
+                    "refreshToken": {
+                        "type": "string",
+                        "description": "The Refresh Token of the parent Connector\n",
+                        "secret": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "twingate:index/twingateGroup:TwingateGroup": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the group\n"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "inputProperties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the group\n"
+                }
+            },
+            "requiredInputs": [
+                "name"
+            ],
+            "stateInputs": {
+                "description": "Input properties used for looking up and filtering TwingateGroup resources.\n",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the group\n"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "twingate:index/twingateRemoteNetwork:TwingateRemoteNetwork": {
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.\n"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Remote Network\n"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "inputProperties": {
+                "location": {
+                    "type": "string",
+                    "description": "The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.\n"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Remote Network\n"
+                }
+            },
+            "requiredInputs": [
+                "name"
+            ],
+            "stateInputs": {
+                "description": "Input properties used for looking up and filtering TwingateRemoteNetwork resources.\n",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.\n"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the Remote Network\n"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "twingate:index/twingateResource:TwingateResource": {
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "description": "The Resource's IP/CIDR or FQDN/DNS zone\n"
+                },
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of Group IDs that have permission to access the Resource, cannot be generated by Terraform and must be retrieved\nfrom the Twingate Admin Console or API\n"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Resource\n"
+                },
+                "protocols": {
+                    "$ref": "#/types/twingate:index/TwingateResourceProtocols:TwingateResourceProtocols",
+                    "description": "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no\nrestriction, and all protocols and ports are allowed.\n"
+                },
+                "remoteNetworkId": {
+                    "type": "string",
+                    "description": "Remote Network ID where the Resource lives\n"
+                }
+            },
+            "required": [
+                "address",
+                "name",
+                "remoteNetworkId"
+            ],
+            "inputProperties": {
+                "address": {
+                    "type": "string",
+                    "description": "The Resource's IP/CIDR or FQDN/DNS zone\n"
+                },
+                "groupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of Group IDs that have permission to access the Resource, cannot be generated by Terraform and must be retrieved\nfrom the Twingate Admin Console or API\n"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Resource\n"
+                },
+                "protocols": {
+                    "$ref": "#/types/twingate:index/TwingateResourceProtocols:TwingateResourceProtocols",
+                    "description": "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no\nrestriction, and all protocols and ports are allowed.\n"
+                },
+                "remoteNetworkId": {
+                    "type": "string",
+                    "description": "Remote Network ID where the Resource lives\n"
+                }
+            },
+            "requiredInputs": [
+                "address",
+                "name",
+                "remoteNetworkId"
+            ],
+            "stateInputs": {
+                "description": "Input properties used for looking up and filtering TwingateResource resources.\n",
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "description": "The Resource's IP/CIDR or FQDN/DNS zone\n"
+                    },
+                    "groupIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of Group IDs that have permission to access the Resource, cannot be generated by Terraform and must be retrieved\nfrom the Twingate Admin Console or API\n"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the Resource\n"
+                    },
+                    "protocols": {
+                        "$ref": "#/types/twingate:index/TwingateResourceProtocols:TwingateResourceProtocols",
+                        "description": "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no\nrestriction, and all protocols and ports are allowed.\n"
+                    },
+                    "remoteNetworkId": {
+                        "type": "string",
+                        "description": "Remote Network ID where the Resource lives\n"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "twingate:index/twingateServiceAccount:TwingateServiceAccount": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Service Account in Twingate\n"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "inputProperties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Service Account in Twingate\n"
+                }
+            },
+            "requiredInputs": [
+                "name"
+            ],
+            "stateInputs": {
+                "description": "Input properties used for looking up and filtering TwingateServiceAccount resources.\n",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the Service Account in Twingate\n"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Service Key\n"
+                },
+                "serviceAccountId": {
+                    "type": "string",
+                    "description": "The id of the Service Account\n"
+                }
+            },
+            "required": [
+                "name",
+                "serviceAccountId"
+            ],
+            "inputProperties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the Service Key\n"
+                },
+                "serviceAccountId": {
+                    "type": "string",
+                    "description": "The id of the Service Account\n"
+                }
+            },
+            "requiredInputs": [
+                "serviceAccountId"
+            ],
+            "stateInputs": {
+                "description": "Input properties used for looking up and filtering TwingateServiceAccountKey resources.\n",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the Service Key\n"
+                    },
+                    "serviceAccountId": {
+                        "type": "string",
+                        "description": "The id of the Service Account\n"
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "functions": {
+        "twingate:index/getTwingateConnector:getTwingateConnector": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateConnector.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ]
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateConnector.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "remoteNetworkId": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "remoteNetworkId"
+                ]
+            }
+        },
+        "twingate:index/getTwingateConnectors:getTwingateConnectors": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateConnectors.\n",
+                "properties": {
+                    "connectors": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateConnectorsConnector:getTwingateConnectorsConnector"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateConnectors.\n",
+                "properties": {
+                    "connectors": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateConnectorsConnector:getTwingateConnectorsConnector"
+                        }
+                    },
+                    "id": {
+                        "type": "string",
+                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ]
+            }
+        },
+        "twingate:index/getTwingateGroup:getTwingateGroup": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateGroup.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ]
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateGroup.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "isActive",
+                    "name",
+                    "type"
+                ]
+            }
+        },
+        "twingate:index/getTwingateGroups:getTwingateGroups": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateGroups.\n",
+                "properties": {
+                    "groups": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateGroupsGroup:getTwingateGroupsGroup"
+                        }
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateGroups.\n",
+                "properties": {
+                    "groups": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateGroupsGroup:getTwingateGroupsGroup"
+                        }
+                    },
+                    "id": {
+                        "type": "string",
+                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ]
+            }
+        },
+        "twingate:index/getTwingateRemoteNetwork:getTwingateRemoteNetwork": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateRemoteNetwork.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateRemoteNetwork.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "location": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "location"
+                ]
+            }
+        },
+        "twingate:index/getTwingateResource:getTwingateResource": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateResource.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "protocols": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateResourceProtocol:getTwingateResourceProtocol"
+                        }
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ]
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateResource.\n",
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "protocols": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateResourceProtocol:getTwingateResourceProtocol"
+                        }
+                    },
+                    "remoteNetworkId": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "address",
+                    "id",
+                    "name",
+                    "remoteNetworkId"
+                ]
+            }
+        },
+        "twingate:index/getTwingateResources:getTwingateResources": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateResources.\n",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "resources": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateResourcesResource:getTwingateResourcesResource"
+                        }
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name"
+                ]
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateResources.\n",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "resources": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateResourcesResource:getTwingateResourcesResource"
+                        }
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "id"
+                ]
+            }
+        },
+        "twingate:index/getTwingateUser:getTwingateUser": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateUser.\n",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ]
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateUser.\n",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "firstName": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "isAdmin": {
+                        "type": "boolean"
+                    },
+                    "lastName": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "email",
+                    "firstName",
+                    "id",
+                    "isAdmin",
+                    "lastName",
+                    "role"
+                ]
+            }
+        },
+        "twingate:index/getTwingateUsers:getTwingateUsers": {
+            "inputs": {
+                "description": "A collection of arguments for invoking getTwingateUsers.\n",
+                "properties": {
+                    "users": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateUsersUser:getTwingateUsersUser"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "outputs": {
+                "description": "A collection of values returned by getTwingateUsers.\n",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                    },
+                    "users": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/types/twingate:index/getTwingateUsersUser:getTwingateUsersUser"
+                        }
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ]
+            }
+        }
+    }
+}

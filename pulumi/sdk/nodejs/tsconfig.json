@@ -1,0 +1,39 @@
+{
+    "compilerOptions": {
+        "outDir": "bin",
+        "target": "es2016",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "declaration": true,
+        "sourceMap": true,
+        "stripInternal": true,
+        "experimentalDecorators": true,
+        "noFallthroughCasesInSwitch": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true
+    },
+    "files": [
+        "config/index.ts",
+        "config/vars.ts",
+        "getTwingateConnector.ts",
+        "getTwingateConnectors.ts",
+        "getTwingateGroup.ts",
+        "getTwingateGroups.ts",
+        "getTwingateRemoteNetwork.ts",
+        "getTwingateResource.ts",
+        "getTwingateResources.ts",
+        "getTwingateUser.ts",
+        "getTwingateUsers.ts",
+        "index.ts",
+        "provider.ts",
+        "twingateConnector.ts",
+        "twingateConnectorTokens.ts",
+        "twingateGroup.ts",
+        "twingateRemoteNetwork.ts",
+        "twingateResource.ts",
+        "types/index.ts",
+        "types/input.ts",
+        "types/output.ts",
+        "utilities.ts"
+    ]
+}
