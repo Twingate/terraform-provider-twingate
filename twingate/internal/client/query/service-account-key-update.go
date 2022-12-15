@@ -1,9 +1,16 @@
 package query
 
-import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+import (
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+)
 
 type UpdateServiceAccountKey struct {
 	ServiceAccountKeyEntityResponse `graphql:"serviceAccountKeyUpdate(id: $id, name: $name)"`
+}
+
+type ServiceAccountKeyEntityResponse struct {
+	Entity *gqlServiceKey
+	OkError
 }
 
 func (q UpdateServiceAccountKey) ToModel() (*model.ServiceKey, error) {

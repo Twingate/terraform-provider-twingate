@@ -18,6 +18,7 @@ func TestCreateServiceKeyOk(t *testing.T) {
 			Name:    "test",
 			Service: "service-id",
 			Status:  model.StatusActive,
+			Token:   "token",
 		}
 
 		jsonResponse := `{
@@ -32,6 +33,7 @@ func TestCreateServiceKeyOk(t *testing.T) {
 		          "name": "service-test"
 		        }
 		      },
+		      "token": "token",
 		      "ok": true,
 		      "error": null
 		    }
@@ -59,6 +61,7 @@ func TestCreateServiceKeyWithNameOk(t *testing.T) {
 			Name:    "new name",
 			Service: "service-account-id",
 			Status:  model.StatusActive,
+			Token:   "token",
 		}
 
 		jsonResponse := `{
@@ -73,6 +76,7 @@ func TestCreateServiceKeyWithNameOk(t *testing.T) {
 		          "name": "service-account-test"
 		        }
 		      },
+		      "token": "token",
 		      "ok": true,
 		      "error": null
 		    }

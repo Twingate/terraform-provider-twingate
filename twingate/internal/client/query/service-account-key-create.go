@@ -1,14 +1,17 @@
 package query
 
-import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+import (
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/twingate/go-graphql-client"
+)
 
 type CreateServiceAccountKey struct {
-	ServiceAccountKeyEntityResponse `graphql:"serviceAccountKeyCreate(expirationTime: $expirationTime, serviceAccountId: $serviceAccountId, name: $name)"`
+	ServiceAccountKeyEntityCreateResponse `graphql:"serviceAccountKeyCreate(expirationTime: $expirationTime, serviceAccountId: $serviceAccountId, name: $name)"`
 }
 
-type ServiceAccountKeyEntityResponse struct {
-	Entity *gqlServiceKey
-	OkError
+type ServiceAccountKeyEntityCreateResponse struct {
+	ServiceAccountKeyEntityResponse
+	Token graphql.String
 }
 
 func (q CreateServiceAccountKey) ToModel() (*model.ServiceKey, error) {
@@ -16,5 +19,12 @@ func (q CreateServiceAccountKey) ToModel() (*model.ServiceKey, error) {
 		return nil, nil //nolint
 	}
 
-	return q.Entity.ToModel()
+	serviceKey, err := q.Entity.ToModel()
+	if err != nil {
+		return nil, err
+	}
+
+	serviceKey.Token = string(q.Token)
+
+	return serviceKey, nil
 }
