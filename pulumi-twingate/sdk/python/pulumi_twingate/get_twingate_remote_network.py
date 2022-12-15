@@ -21,10 +21,13 @@ class GetTwingateRemoteNetworkResult:
     """
     A collection of values returned by getTwingateRemoteNetwork.
     """
-    def __init__(__self__, id=None, name=None):
+    def __init__(__self__, id=None, location=None, name=None):
         if id and not isinstance(id, str):
             raise TypeError("Expected argument 'id' to be a str")
         pulumi.set(__self__, "id", id)
+        if location and not isinstance(location, str):
+            raise TypeError("Expected argument 'location' to be a str")
+        pulumi.set(__self__, "location", location)
         if name and not isinstance(name, str):
             raise TypeError("Expected argument 'name' to be a str")
         pulumi.set(__self__, "name", name)
@@ -33,6 +36,11 @@ class GetTwingateRemoteNetworkResult:
     @pulumi.getter
     def id(self) -> Optional[str]:
         return pulumi.get(self, "id")
+
+    @property
+    @pulumi.getter
+    def location(self) -> str:
+        return pulumi.get(self, "location")
 
     @property
     @pulumi.getter
@@ -47,6 +55,7 @@ class AwaitableGetTwingateRemoteNetworkResult(GetTwingateRemoteNetworkResult):
             yield self
         return GetTwingateRemoteNetworkResult(
             id=self.id,
+            location=self.location,
             name=self.name)
 
 
@@ -64,6 +73,7 @@ def get_twingate_remote_network(id: Optional[str] = None,
 
     return AwaitableGetTwingateRemoteNetworkResult(
         id=__ret__.id,
+        location=__ret__.location,
         name=__ret__.name)
 
 

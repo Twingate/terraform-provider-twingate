@@ -18,7 +18,7 @@ TWINGATE_API_TOKEN environment variable.
 
 httpMaxRetry: int
 """
-Specifies a retry limit for the http requests made. This default value is 10. Alternatively, this can be specified using
+Specifies a retry limit for the http requests made. The default value is 10. Alternatively, this can be specified using
 the TWINGATE_HTTP_MAX_RETRY environment variable
 """
 

@@ -53,15 +53,19 @@ namespace TwingateLabs.Twingate
     public sealed class GetTwingateRemoteNetworkResult
     {
         public readonly string? Id;
+        public readonly string Location;
         public readonly string? Name;
 
         [OutputConstructor]
         private GetTwingateRemoteNetworkResult(
             string? id,
 
+            string location,
+
             string? name)
         {
             Id = id;
+            Location = location;
             Name = name;
         }
     }

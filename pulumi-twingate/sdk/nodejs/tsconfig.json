@@ -31,6 +31,8 @@
         "twingateGroup.ts",
         "twingateRemoteNetwork.ts",
         "twingateResource.ts",
+        "twingateServiceAccount.ts",
+        "twingateServiceAccountKey.ts",
         "types/index.ts",
         "types/input.ts",
         "types/output.ts",

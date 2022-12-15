@@ -94,6 +94,7 @@ jobs:
           uses: pulumi/action-install-pulumi-cli@v1.0.1
         - name: Run GoReleaser
           uses: goreleaser/goreleaser-action@v2
+          working-directory: pulumi-twingate
           with:
             args: -f .goreleaser.yml --rm-dist
             version: latest
@@ -131,6 +132,7 @@ jobs:
             python-version: ${{matrix.pythonversion}}
         - name: Build SDK
           run: make build_${{ matrix.language }}
+          working-directory: pulumi-twingate
         - name: Check worktree clean
           run: |
             git update-index -q --refresh
@@ -143,18 +145,21 @@ jobs:
         - if: ${{ matrix.language == 'python' && env.PUBLISH_PYPI == 'true' }}
           name: Publish package to PyPI
           uses: pypa/gh-action-pypi-publish@release/v1
+          working-directory: pulumi-twingate
           with:
             user: ${{ env.PYPI_USERNAME }}
             password: ${{ env.PYPI_API_TOKEN }}
             packages_dir: ${{github.workspace}}/sdk/python/bin/dist
         - if: ${{ matrix.language == 'nodejs' && env.PUBLISH_NPM == 'true' }}
           uses: JS-DevTools/npm-publish@v1
+          working-directory: pulumi-twingate
           with:
             access: "public"
             token: ${{ env.NPM_TOKEN }}
             package: ${{github.workspace}}/sdk/nodejs/bin/package.json
         - if: ${{ matrix.language == 'dotnet' && env.PUBLISH_NUGET == 'true' }}
           name: publish nuget package
+          working-directory: pulumi-twingate
           run: |
             dotnet nuget push ${{github.workspace}}/sdk/dotnet/bin/Debug/*.nupkg -s ${{ env.NUGET_FEED_URL }} -k ${{ env.NUGET_PUBLISH_KEY }}
             echo "done publishing packages"

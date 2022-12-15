@@ -80,6 +80,16 @@ export type TwingateResource = import("./twingateResource").TwingateResource;
 export const TwingateResource: typeof import("./twingateResource").TwingateResource = null as any;
 utilities.lazyLoad(exports, ["TwingateResource"], () => require("./twingateResource"));
 
+export { TwingateServiceAccountArgs, TwingateServiceAccountState } from "./twingateServiceAccount";
+export type TwingateServiceAccount = import("./twingateServiceAccount").TwingateServiceAccount;
+export const TwingateServiceAccount: typeof import("./twingateServiceAccount").TwingateServiceAccount = null as any;
+utilities.lazyLoad(exports, ["TwingateServiceAccount"], () => require("./twingateServiceAccount"));
+
+export { TwingateServiceAccountKeyArgs, TwingateServiceAccountKeyState } from "./twingateServiceAccountKey";
+export type TwingateServiceAccountKey = import("./twingateServiceAccountKey").TwingateServiceAccountKey;
+export const TwingateServiceAccountKey: typeof import("./twingateServiceAccountKey").TwingateServiceAccountKey = null as any;
+utilities.lazyLoad(exports, ["TwingateServiceAccountKey"], () => require("./twingateServiceAccountKey"));
+
 
 // Export sub-modules:
 import * as config from "./config";
@@ -104,6 +114,10 @@ const _module = {
                 return new TwingateRemoteNetwork(name, <any>undefined, { urn })
             case "twingate:index/twingateResource:TwingateResource":
                 return new TwingateResource(name, <any>undefined, { urn })
+            case "twingate:index/twingateServiceAccount:TwingateServiceAccount":
+                return new TwingateServiceAccount(name, <any>undefined, { urn })
+            case "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey":
+                return new TwingateServiceAccountKey(name, <any>undefined, { urn })
             default:
                 throw new Error(`unknown resource type ${type}`);
         }
@@ -114,6 +128,8 @@ pulumi.runtime.registerResourceModule("twingate", "index/twingateConnectorTokens
 pulumi.runtime.registerResourceModule("twingate", "index/twingateGroup", _module)
 pulumi.runtime.registerResourceModule("twingate", "index/twingateRemoteNetwork", _module)
 pulumi.runtime.registerResourceModule("twingate", "index/twingateResource", _module)
+pulumi.runtime.registerResourceModule("twingate", "index/twingateServiceAccount", _module)
+pulumi.runtime.registerResourceModule("twingate", "index/twingateServiceAccountKey", _module)
 pulumi.runtime.registerResourcePackage("twingate", {
     version: utilities.getVersion(),
     constructProvider: (name: string, type: string, urn: string): pulumi.ProviderResource => {

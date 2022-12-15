@@ -10,7 +10,7 @@ VERSION_PATH     := ${PROVIDER_PATH}/pkg/version.Version
 
 TFGEN           := pulumi-tfgen-${PACK}
 PROVIDER        := pulumi-resource-${PACK}
-VERSION         := $(shell pulumictl get version --repo ../ | grep -Eo '^\d+.\d+.\d+'  | sed -e 's/\ *$//g')	# grep next release version
+VERSION         := $(shell pulumictl get version --repo ../ | grep -Eo '^\d+.\d+.\d+')	# grep next release version
 
 TESTPARALLELISM := 4
 
@@ -25,12 +25,9 @@ build:: install_plugins provider build_sdks install_sdks
 only_build:: build
 
 tfgen:: install_plugins
-	echo "${VERSION}"
-	trimmed="${VERSION%% }"
-	echo "${trimmed}"
-#	(cd provider && go build -o $(WORKING_DIR)/bin/${TFGEN} -ldflags "-X ${PROJECT}/${VERSION_PATH}=${VERSION}" ${PROJECT}/${PROVIDER_PATH}/cmd/${TFGEN})
-#	$(WORKING_DIR)/bin/${TFGEN} schema --out provider/cmd/${PROVIDER}
-#	(cd provider && VERSION=$(VERSION) go generate cmd/${PROVIDER}/main.go)
+	(cd provider && go build -o $(WORKING_DIR)/bin/${TFGEN} -ldflags "-X ${PROJECT}/${VERSION_PATH}=${VERSION}" ${PROJECT}/${PROVIDER_PATH}/cmd/${TFGEN})
+	$(WORKING_DIR)/bin/${TFGEN} schema --out provider/cmd/${PROVIDER}
+	(cd provider && VERSION=$(VERSION) go generate cmd/${PROVIDER}/main.go)
 
 provider:: tfgen install_plugins # build the provider binary
 	(cd provider && go build -o $(WORKING_DIR)/bin/${PROVIDER} -ldflags "-X ${PROJECT}/${VERSION_PATH}=${VERSION}" ${PROJECT}/${PROVIDER_PATH}/cmd/${PROVIDER})
@@ -60,7 +57,7 @@ build_python:: install_plugins tfgen # build the python sdk
 
 build_dotnet:: DOTNET_VERSION := $(shell pulumictl get version --language dotnet --repo ../ | grep -Eo '^\d+.\d+.\d+')
 build_dotnet:: install_plugins tfgen # build the dotnet sdk
-	pulumictl get version --language dotnet
+	pulumictl get version --language dotnet --repo ../ | grep -Eo '^\d+.\d+.\d+'
 	$(WORKING_DIR)/bin/$(TFGEN) dotnet --overlays provider/overlays/dotnet --out sdk/dotnet/
 	cd sdk/dotnet/ && \
 		echo "${DOTNET_VERSION}" >version.txt && \

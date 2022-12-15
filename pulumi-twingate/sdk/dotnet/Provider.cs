@@ -93,7 +93,7 @@ namespace TwingateLabs.Twingate
         }
 
         /// <summary>
-        /// Specifies a retry limit for the http requests made. This default value is 10. Alternatively, this can be specified using
+        /// Specifies a retry limit for the http requests made. The default value is 10. Alternatively, this can be specified using
         /// the TWINGATE_HTTP_MAX_RETRY environment variable
         /// </summary>
         [Input("httpMaxRetry", json: true)]

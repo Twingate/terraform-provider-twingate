@@ -20,6 +20,8 @@ from .twingate_connector_tokens import *
 from .twingate_group import *
 from .twingate_remote_network import *
 from .twingate_resource import *
+from .twingate_service_account import *
+from .twingate_service_account_key import *
 from ._inputs import *
 from . import outputs
 
@@ -71,6 +73,22 @@ _utilities.register(
   "fqn": "pulumi_twingate",
   "classes": {
    "twingate:index/twingateResource:TwingateResource": "TwingateResource"
+  }
+ },
+ {
+  "pkg": "twingate",
+  "mod": "index/twingateServiceAccount",
+  "fqn": "pulumi_twingate",
+  "classes": {
+   "twingate:index/twingateServiceAccount:TwingateServiceAccount": "TwingateServiceAccount"
+  }
+ },
+ {
+  "pkg": "twingate",
+  "mod": "index/twingateServiceAccountKey",
+  "fqn": "pulumi_twingate",
+  "classes": {
+   "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey": "TwingateServiceAccountKey"
   }
  }
 ]

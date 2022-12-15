@@ -30,6 +30,7 @@ export interface GetTwingateRemoteNetworkArgs {
  */
 export interface GetTwingateRemoteNetworkResult {
     readonly id?: string;
+    readonly location: string;
     readonly name?: string;
 }
 

@@ -14,12 +14,16 @@ __all__ = ['TwingateRemoteNetworkArgs', 'TwingateRemoteNetwork']
 @pulumi.input_type
 class TwingateRemoteNetworkArgs:
     def __init__(__self__, *,
-                 name: pulumi.Input[str]):
+                 name: pulumi.Input[str],
+                 location: Optional[pulumi.Input[str]] = None):
         """
         The set of arguments for constructing a TwingateRemoteNetwork resource.
         :param pulumi.Input[str] name: The name of the Remote Network
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
         """
         pulumi.set(__self__, "name", name)
+        if location is not None:
+            pulumi.set(__self__, "location", location)
 
     @property
     @pulumi.getter
@@ -33,17 +37,45 @@ class TwingateRemoteNetworkArgs:
     def name(self, value: pulumi.Input[str]):
         pulumi.set(self, "name", value)
 
+    @property
+    @pulumi.getter
+    def location(self) -> Optional[pulumi.Input[str]]:
+        """
+        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        """
+        return pulumi.get(self, "location")
+
+    @location.setter
+    def location(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "location", value)
+
 
 @pulumi.input_type
 class _TwingateRemoteNetworkState:
     def __init__(__self__, *,
+                 location: Optional[pulumi.Input[str]] = None,
                  name: Optional[pulumi.Input[str]] = None):
         """
         Input properties used for looking up and filtering TwingateRemoteNetwork resources.
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
         :param pulumi.Input[str] name: The name of the Remote Network
         """
+        if location is not None:
+            pulumi.set(__self__, "location", location)
         if name is not None:
             pulumi.set(__self__, "name", name)
+
+    @property
+    @pulumi.getter
+    def location(self) -> Optional[pulumi.Input[str]]:
+        """
+        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        """
+        return pulumi.get(self, "location")
+
+    @location.setter
+    def location(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "location", value)
 
     @property
     @pulumi.getter
@@ -63,12 +95,14 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 location: Optional[pulumi.Input[str]] = None,
                  name: Optional[pulumi.Input[str]] = None,
                  __props__=None):
         """
         Create a TwingateRemoteNetwork resource with the given unique name, props, and options.
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
         :param pulumi.Input[str] name: The name of the Remote Network
         """
         ...
@@ -94,6 +128,7 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 location: Optional[pulumi.Input[str]] = None,
                  name: Optional[pulumi.Input[str]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
@@ -104,6 +139,7 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
                 raise TypeError('__props__ is only valid when passed in combination with a valid opts.id to get an existing resource')
             __props__ = TwingateRemoteNetworkArgs.__new__(TwingateRemoteNetworkArgs)
 
+            __props__.__dict__["location"] = location
             if name is None and not opts.urn:
                 raise TypeError("Missing required property 'name'")
             __props__.__dict__["name"] = name
@@ -117,6 +153,7 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
     def get(resource_name: str,
             id: pulumi.Input[str],
             opts: Optional[pulumi.ResourceOptions] = None,
+            location: Optional[pulumi.Input[str]] = None,
             name: Optional[pulumi.Input[str]] = None) -> 'TwingateRemoteNetwork':
         """
         Get an existing TwingateRemoteNetwork resource's state with the given name, id, and optional extra
@@ -125,14 +162,24 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
         :param str resource_name: The unique name of the resulting resource.
         :param pulumi.Input[str] id: The unique provider ID of the resource to lookup.
         :param pulumi.ResourceOptions opts: Options for the resource.
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
         :param pulumi.Input[str] name: The name of the Remote Network
         """
         opts = pulumi.ResourceOptions.merge(opts, pulumi.ResourceOptions(id=id))
 
         __props__ = _TwingateRemoteNetworkState.__new__(_TwingateRemoteNetworkState)
 
+        __props__.__dict__["location"] = location
         __props__.__dict__["name"] = name
         return TwingateRemoteNetwork(resource_name, opts=opts, __props__=__props__)
+
+    @property
+    @pulumi.getter
+    def location(self) -> pulumi.Output[Optional[str]]:
+        """
+        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        """
+        return pulumi.get(self, "location")
 
     @property
     @pulumi.getter
