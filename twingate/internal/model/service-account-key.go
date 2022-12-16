@@ -11,6 +11,7 @@ type ServiceKey struct {
 	Status         string
 	Service        string
 	ExpirationTime int
+	Token          string
 }
 
 func (s ServiceKey) GetName() string {
