@@ -126,7 +126,7 @@ func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetwork
 func (client *Client) UpdateRemoteNetwork(ctx context.Context, req *model.RemoteNetwork) (*model.RemoteNetwork, error) {
 	variables := newVars(
 		gqlID(req.ID),
-		gqlVar(req.Name, "name"),
+		gqlNullable(req.Name, "name"),
 		gqlVar(RemoteNetworkLocation(req.Location), "location"),
 	)
 
