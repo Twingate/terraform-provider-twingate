@@ -140,3 +140,35 @@ func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
 		})
 	})
 }
+
+func TestAccTwingateRemoteNetworkUpdateWithTheSameName(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Network Update With The Same Name", func(t *testing.T) {
+		const terraformResourceName = "test004"
+		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+		name := test.RandomName()
+
+		sdk.Test(t, sdk.TestCase{
+			ProviderFactories: acctests.ProviderFactories,
+			PreCheck:          func() { acctests.PreCheck(t) },
+			CheckDestroy:      acctests.CheckTwingateRemoteNetworkDestroy,
+			Steps: []sdk.TestStep{
+				{
+					Config: terraformResourceRemoteNetwork(terraformResourceName, name),
+					Check: acctests.ComposeTestCheckFunc(
+						acctests.CheckTwingateResourceExists(theResource),
+						sdk.TestCheckResourceAttr(theResource, nameAttr, name),
+						sdk.TestCheckResourceAttr(theResource, locationAttr, model.LocationOther),
+					),
+				},
+				{
+					Config: createRemoteNetworkWithLocation(terraformResourceName, name, model.LocationAWS),
+					Check: acctests.ComposeTestCheckFunc(
+						acctests.CheckTwingateResourceExists(theResource),
+						sdk.TestCheckResourceAttr(theResource, nameAttr, name),
+						sdk.TestCheckResourceAttr(theResource, locationAttr, model.LocationAWS),
+					),
+				},
+			},
+		})
+	})
+}
