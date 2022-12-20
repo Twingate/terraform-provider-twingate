@@ -60,10 +60,15 @@ func remoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData,
 func remoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[INFO] Updating remote network id %s", resourceData.Id())
 
+	var name string
+	if resourceData.HasChange("name") {
+		name = resourceData.Get("name").(string)
+	}
+
 	c := meta.(*client.Client)
 	remoteNetwork, err := c.UpdateRemoteNetwork(ctx, &model.RemoteNetwork{
 		ID:       resourceData.Id(),
-		Name:     resourceData.Get("name").(string),
+		Name:     name,
 		Location: resourceData.Get("location").(string),
 	})
 
