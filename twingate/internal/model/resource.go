@@ -27,6 +27,48 @@ type Resource struct {
 	Groups          []string
 	Protocols       *Protocols
 	IsActive        bool
+	Access          []*ResourceAccess
+}
+
+type ResourceAccess struct {
+	Groups          []string
+	ServiceAccounts []string
+}
+
+func (r Resource) CollectGroups() []string {
+	if len(r.Groups) > 0 {
+		return r.Groups
+	}
+
+	groups := make(map[string]bool)
+	for _, access := range r.Access {
+		for _, group := range access.Groups {
+			groups[group] = true
+		}
+	}
+
+	result := make([]string, 0, len(groups))
+	for group := range groups {
+		result = append(result, group)
+	}
+
+	return result
+}
+
+func (r Resource) CollectServiceAccounts() []string {
+	serviceAccounts := make(map[string]bool)
+	for _, access := range r.Access {
+		for _, account := range access.ServiceAccounts {
+			serviceAccounts[account] = true
+		}
+	}
+
+	result := make([]string, 0, len(serviceAccounts))
+	for account := range serviceAccounts {
+		result = append(result, account)
+	}
+
+	return result
 }
 
 func (r Resource) GetID() string {

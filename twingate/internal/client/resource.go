@@ -65,7 +65,7 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	variables := newVars(
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(input.Groups, "groupIds"),
+		gqlIDs(input.CollectGroups(), "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 	)
@@ -171,7 +171,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 	variables := newVars(
 		gqlID(input.ID),
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(input.Groups, "groupIds"),
+		gqlIDs(input.CollectGroups(), "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),

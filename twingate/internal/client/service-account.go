@@ -66,13 +66,14 @@ func (client *Client) UpdateServiceAccount(ctx context.Context, serviceAccount *
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, serviceAccountResourceName)
 	}
 
-	if serviceAccount.Name == "" {
+	if serviceAccount.Name == "" && len(serviceAccount.Resources) == 0 {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, operationUpdate, serviceAccountResourceName)
 	}
 
 	variables := newVars(
 		gqlID(serviceAccount.ID),
-		gqlVar(serviceAccount.Name, "name"),
+		gqlNullable(serviceAccount.Name, "name"),
+		gqlIDs(serviceAccount.Resources, "addedResourceIds"),
 	)
 
 	response := query.UpdateServiceAccount{}
