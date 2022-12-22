@@ -17,6 +17,11 @@ import (
 )
 
 const (
+	operationCreate = "create"
+	operationRead   = "read"
+	operationUpdate = "update"
+	operationDelete = "delete"
+
 	EnvAPIToken = "TWINGATE_API_TOKEN" //#nosec
 
 	headerAPIKey = "X-API-KEY"
