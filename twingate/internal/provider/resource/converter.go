@@ -16,18 +16,45 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		Name:            data.Get("name").(string),
 		RemoteNetworkID: data.Get("remote_network_id").(string),
 		Address:         data.Get("address").(string),
-		Groups:          convertGroups(data),
 		Protocols:       protocols,
+		Groups:          convertGroups(data),
+		ServiceAccounts: convertServiceAccounts(data),
 	}, nil
 }
 
 func convertGroups(data *schema.ResourceData) []string {
+	if groupIDs, ok := data.GetOk("group_ids"); ok {
+		return convertIDs(groupIDs)
+	}
+
+	groups, _ := convertAccess(data)
+	return groups
+}
+
+func convertIDs(data interface{}) []string {
 	return utils.Map[interface{}, string](
-		data.Get("group_ids").(*schema.Set).List(),
+		data.(*schema.Set).List(),
 		func(elem interface{}) string {
 			return elem.(string)
 		},
 	)
+}
+
+func convertAccess(data *schema.ResourceData) ([]string, []string) {
+	rawList := data.Get("access").([]interface{})
+	if len(rawList) == 0 {
+		return nil, nil
+	}
+
+	rawMap := rawList[0].(map[string]interface{})
+
+	return convertIDs(rawMap["group_ids"]), convertIDs(rawMap["service_account_ids"])
+}
+
+func convertServiceAccounts(data *schema.ResourceData) []string {
+	_, serviceAccounts := convertAccess(data)
+
+	return serviceAccounts
 }
 
 func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {

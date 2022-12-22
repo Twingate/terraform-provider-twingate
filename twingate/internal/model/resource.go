@@ -24,51 +24,27 @@ type Resource struct {
 	RemoteNetworkID string
 	Address         string
 	Name            string
-	Groups          []string
 	Protocols       *Protocols
 	IsActive        bool
-	Access          []*ResourceAccess
-}
-
-type ResourceAccess struct {
 	Groups          []string
 	ServiceAccounts []string
 }
 
-func (r Resource) CollectGroups() []string {
-	if len(r.Groups) > 0 {
-		return r.Groups
+func (r Resource) AccessToTerraform() []interface{} {
+	rawMap := make(map[string]interface{})
+	if len(r.Groups) != 0 {
+		rawMap["group_ids"] = r.Groups
 	}
 
-	groups := make(map[string]bool)
-	for _, access := range r.Access {
-		for _, group := range access.Groups {
-			groups[group] = true
-		}
+	if len(r.ServiceAccounts) != 0 {
+		rawMap["service_account_ids"] = r.ServiceAccounts
 	}
 
-	result := make([]string, 0, len(groups))
-	for group := range groups {
-		result = append(result, group)
+	if len(rawMap) == 0 {
+		return nil
 	}
 
-	return result
-}
-
-func (r Resource) CollectServiceAccounts() []string {
-	serviceAccounts := make(map[string]bool)
-	for _, access := range r.Access {
-		for _, account := range access.ServiceAccounts {
-			serviceAccounts[account] = true
-		}
-	}
-
-	result := make([]string, 0, len(serviceAccounts))
-	for account := range serviceAccounts {
-		result = append(result, account)
-	}
-
-	return result
+	return []interface{}{rawMap}
 }
 
 func (r Resource) GetID() string {

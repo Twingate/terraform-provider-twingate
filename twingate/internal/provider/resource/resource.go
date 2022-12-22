@@ -10,6 +10,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -61,6 +62,7 @@ func Resource() *schema.Resource { //nolint:funlen
 				Required:    true,
 				Description: "Remote Network ID where the Resource lives",
 			},
+			// optional
 			"group_ids": {
 				Type:         schema.TypeSet,
 				Elem:         &schema.Schema{Type: schema.TypeString},
@@ -105,6 +107,7 @@ func Resource() *schema.Resource { //nolint:funlen
 			"access": {
 				Type:         schema.TypeList,
 				Optional:     true,
+				MaxItems:     1,
 				ExactlyOneOf: []string{"group_ids"},
 				Description:  "Restrict access to certain groups or service accounts",
 				Elem: &schema.Resource{
@@ -122,6 +125,8 @@ func Resource() *schema.Resource { //nolint:funlen
 							Optional:     true,
 							AtLeastOneOf: []string{"access.0.group_ids"},
 							Description:  "List of Service Account IDs that have permission to access the Resource.",
+							//DiffSuppressOnRefresh: true,
+							//DiffSuppressFunc:      serviceAccountsDiff,
 						},
 					},
 				},
@@ -170,6 +175,32 @@ func protocolsDiff(key, oldValue, newValue string, resourceData *schema.Resource
 	default:
 		return false
 	}
+}
+
+func serviceAccountsDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	//log.Printf("---> serviceAccountsDiff(1):: oldValue: %v, newValue: %v\n", oldValue, newValue)
+	log.Printf("---> serviceAccountsDiff(1):: ConnInfo: %v\n", d.ConnInfo())
+
+	keys := []string{"access.0.service_account_ids"}
+	for _, key := range keys {
+		if strings.HasPrefix(k, key) {
+			oldIDs, newIDs := d.GetChange(key)
+			log.Printf("---> serviceAccountsDiff(2):: old: %v, new: %v\n", oldIDs, newIDs)
+			oldServiceAccounts := convertIDs(oldIDs)
+			newServiceAccounts := convertIDs(newIDs)
+
+			lookup := utils.MakeLookupMap(oldServiceAccounts)
+			for _, serviceAccountID := range newServiceAccounts {
+				if !lookup[serviceAccountID] {
+					return false
+				}
+			}
+
+			return true
+		}
+	}
+
+	return false
 }
 
 func equalPorts(a, b interface{}) bool {
@@ -221,6 +252,8 @@ func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool 
 }
 
 func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Println("=====> [CREATE] resource")
+
 	client := meta.(*client.Client)
 
 	resource, err := convertResource(resourceData)
@@ -233,7 +266,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if err = updateResourceServiceAccounts(ctx, resource, client); err != nil {
+	if err = addResourceServiceAccountIDs(ctx, resource, client); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -242,8 +275,8 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
-func updateResourceServiceAccounts(ctx context.Context, resource *model.Resource, client *client.Client) error {
-	for _, serviceAccountID := range resource.CollectServiceAccounts() {
+func addResourceServiceAccountIDs(ctx context.Context, resource *model.Resource, client *client.Client) error {
+	for _, serviceAccountID := range resource.ServiceAccounts {
 		_, err := client.UpdateServiceAccount(ctx, &model.ServiceAccount{
 			ID:        serviceAccountID,
 			Resources: []string{resource.ID},
@@ -257,6 +290,8 @@ func updateResourceServiceAccounts(ctx context.Context, resource *model.Resource
 }
 
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Println("=====> [UPDATE] resource")
+
 	client := meta.(*client.Client)
 
 	resource, err := convertResource(resourceData)
@@ -271,16 +306,62 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if err = updateResourceServiceAccounts(ctx, resource, client); err != nil {
+	// todo: delete service accounts
+
+	if err = deleteResourceGroupIDs(ctx, resourceData, resource, client); err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] Created resource %s", resource.Name)
+	if err = addResourceServiceAccountIDs(ctx, resource, client); err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf("[INFO] Updated resource %s", resource.Name)
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
+func deleteResourceGroupIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
+	groupIDs := getGroupIDsToDelete(resourceData, resource)
+
+	return client.DeleteResourceGroups(ctx, resource.ID, groupIDs)
+}
+
+func getGroupIDsToDelete(resourceData *schema.ResourceData, resource *model.Resource) []string {
+	oldGroups := getOldGroupIDs(resourceData)
+	if len(oldGroups) == 0 {
+		return nil
+	}
+
+	currentGroups := utils.MakeLookupMap(resource.Groups)
+
+	var deletedGroups []string
+	for _, group := range oldGroups {
+		if !currentGroups[group] {
+			deletedGroups = append(deletedGroups, group)
+		}
+	}
+
+	return deletedGroups
+}
+
+func getOldGroupIDs(resourceData *schema.ResourceData) []string {
+	if resourceData.HasChange("group_ids") {
+		old, _ := resourceData.GetChange("group_ids")
+		return convertIDs(old)
+	}
+
+	if resourceData.HasChange("access.0.group_ids") {
+		old, _ := resourceData.GetChange("access.0.group_ids")
+		return convertIDs(old)
+	}
+
+	return nil
+}
+
 func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Println("=====> [DELETE] resource")
+
 	c := meta.(*client.Client)
 	resourceID := resourceData.Id()
 
@@ -289,17 +370,20 @@ func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[INFO] deleted resource id %s", resourceData.Id())
+	log.Printf("[INFO] Deleted resource id %s", resourceData.Id())
 
 	return nil
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Println("=====> [READ] resource")
+
+	//resourceData.SetConnInfo(map[string]string{
+	//	"service_accounts": strings.Join(convertServiceAccounts(resourceData), ", "),
+	//})
+
 	c := meta.(*client.Client)
 	resource, err := c.ReadResource(ctx, resourceData.Id())
-
-	// read service accounts
-	//c.ReadServiceAccounts()
 
 	return resourceResourceReadHelper(ctx, c, resourceData, resource, err)
 }
@@ -332,6 +416,22 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 		}
 	}
 
+	//if len(resource.ServiceAccounts) == 0 {
+	serviceAccounts, err := resourceClient.ReadServiceAccounts(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	serviceAccountIDs := make(map[string]bool)
+	for _, account := range serviceAccounts {
+		if utils.Contains[string](account.Resources, resource.ID) {
+			serviceAccountIDs[account.ID] = true
+		}
+	}
+
+	resource.ServiceAccounts = utils.MapKeys[string](serviceAccountIDs)
+	//}
+
 	resourceData.SetId(resource.ID)
 
 	return readDiagnostics(resourceData, resource)
@@ -351,11 +451,13 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 	}
 
 	if _, exists := resourceData.GetOk("group_ids"); exists {
-		if err := resourceData.Set("group_ids", resource.CollectGroups()); err != nil {
+		if err := resourceData.Set("group_ids", resource.Groups); err != nil {
 			return diag.FromErr(fmt.Errorf("error setting group_ids: %w ", err))
 		}
 	} else {
-
+		if err := resourceData.Set("access", resource.AccessToTerraform()); err != nil {
+			return diag.FromErr(fmt.Errorf("error setting access: %w ", err))
+		}
 	}
 
 	if err := resourceData.Set("protocols", resource.Protocols.ToTerraform()); err != nil {
