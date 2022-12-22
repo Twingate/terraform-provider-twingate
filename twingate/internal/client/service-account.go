@@ -291,3 +291,31 @@ func (client *Client) fetchServiceInternalResources(ctx context.Context, service
 
 	return nil
 }
+
+func (client *Client) UpdateServiceAccountRemoveResources(ctx context.Context, serviceAccountID string, resourceIDsToRemove []string) error {
+	if serviceAccountID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, serviceAccountResourceName)
+	}
+
+	variables := newVars(
+		gqlID(serviceAccountID),
+		gqlIDs(resourceIDsToRemove, "removedResourceIds"),
+	)
+
+	response := query.UpdateServiceAccountRemoveResources{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, mutationUpdateServiceAccount, &response, variables)
+	if err != nil {
+		return NewAPIErrorWithID(err, operationUpdate, serviceAccountResourceName, serviceAccountID)
+	}
+
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, serviceAccountResourceName, serviceAccountID)
+	}
+
+	if response.Entity == nil {
+		return NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, serviceAccountResourceName, serviceAccountID)
+	}
+
+	return nil
+}

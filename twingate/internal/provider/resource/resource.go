@@ -252,8 +252,6 @@ func portsNotChanged(k, oldValue, newValue string, d *schema.ResourceData) bool 
 }
 
 func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("=====> [CREATE] resource")
-
 	client := meta.(*client.Client)
 
 	resource, err := convertResource(resourceData)
@@ -290,8 +288,6 @@ func addResourceServiceAccountIDs(ctx context.Context, resource *model.Resource,
 }
 
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("=====> [UPDATE] resource")
-
 	client := meta.(*client.Client)
 
 	resource, err := convertResource(resourceData)
@@ -306,7 +302,9 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	// todo: delete service accounts
+	if err = deleteResourceServiceAccountIDs(ctx, resourceData, resource, client); err != nil {
+		return diag.FromErr(err)
+	}
 
 	if err = deleteResourceGroupIDs(ctx, resourceData, resource, client); err != nil {
 		return diag.FromErr(err)
@@ -322,37 +320,43 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func deleteResourceGroupIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
-	groupIDs := getGroupIDsToDelete(resourceData, resource)
+	groupIDs := getIDsToDelete(resourceData, resource.Groups, "group_ids")
 
 	return client.DeleteResourceGroups(ctx, resource.ID, groupIDs)
 }
 
-func getGroupIDsToDelete(resourceData *schema.ResourceData, resource *model.Resource) []string {
-	oldGroups := getOldGroupIDs(resourceData)
-	if len(oldGroups) == 0 {
+func deleteResourceServiceAccountIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
+	idsToDelete := getIDsToDelete(resourceData, resource.ServiceAccounts, "service_account_ids")
+
+	return client.DeleteResourceServiceAccounts(ctx, resource.ID, idsToDelete)
+}
+
+func getIDsToDelete(resourceData *schema.ResourceData, currentIDs []string, attribute string) []string {
+	oldIDs := getOldIDs(resourceData, attribute)
+	if len(oldIDs) == 0 {
 		return nil
 	}
 
-	currentGroups := utils.MakeLookupMap(resource.Groups)
+	lookup := utils.MakeLookupMap(currentIDs)
 
-	var deletedGroups []string
-	for _, group := range oldGroups {
-		if !currentGroups[group] {
-			deletedGroups = append(deletedGroups, group)
+	var idsToDelete []string
+	for _, id := range oldIDs {
+		if !lookup[id] {
+			idsToDelete = append(idsToDelete, id)
 		}
 	}
 
-	return deletedGroups
+	return idsToDelete
 }
 
-func getOldGroupIDs(resourceData *schema.ResourceData) []string {
-	if resourceData.HasChange("group_ids") {
-		old, _ := resourceData.GetChange("group_ids")
+func getOldIDs(resourceData *schema.ResourceData, attribute string) []string {
+	if resourceData.HasChange(attribute) {
+		old, _ := resourceData.GetChange(attribute)
 		return convertIDs(old)
 	}
 
-	if resourceData.HasChange("access.0.group_ids") {
-		old, _ := resourceData.GetChange("access.0.group_ids")
+	if resourceData.HasChange("access.0." + attribute) {
+		old, _ := resourceData.GetChange("access.0." + attribute)
 		return convertIDs(old)
 	}
 
@@ -360,8 +364,6 @@ func getOldGroupIDs(resourceData *schema.ResourceData) []string {
 }
 
 func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("=====> [DELETE] resource")
-
 	c := meta.(*client.Client)
 	resourceID := resourceData.Id()
 
@@ -376,12 +378,6 @@ func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Println("=====> [READ] resource")
-
-	//resourceData.SetConnInfo(map[string]string{
-	//	"service_accounts": strings.Join(convertServiceAccounts(resourceData), ", "),
-	//})
-
 	c := meta.(*client.Client)
 	resource, err := c.ReadResource(ctx, resourceData.Id())
 
@@ -416,7 +412,6 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 		}
 	}
 
-	//if len(resource.ServiceAccounts) == 0 {
 	serviceAccounts, err := resourceClient.ReadServiceAccounts(ctx)
 	if err != nil {
 		return diag.FromErr(err)
@@ -430,7 +425,6 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 	}
 
 	resource.ServiceAccounts = utils.MapKeys[string](serviceAccountIDs)
-	//}
 
 	resourceData.SetId(resource.ID)
 

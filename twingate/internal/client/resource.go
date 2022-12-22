@@ -320,3 +320,23 @@ func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID strin
 
 	return nil
 }
+
+func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourceID string, deleteServiceAccountIDs []string) error {
+	if len(deleteServiceAccountIDs) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+	}
+
+	resourcesToDelete := []string{resourceID}
+
+	for _, serviceAccountID := range deleteServiceAccountIDs {
+		if err := client.UpdateServiceAccountRemoveResources(ctx, serviceAccountID, resourcesToDelete); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

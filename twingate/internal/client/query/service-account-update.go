@@ -13,3 +13,7 @@ func (q UpdateServiceAccount) ToModel() *model.ServiceAccount {
 
 	return q.Entity.ToModel()
 }
+
+type UpdateServiceAccountRemoveResources struct {
+	ServiceAccountEntityResponse `graphql:"serviceAccountUpdate(id: $id, removedResourceIds: $removedResourceIds)"`
+}
