@@ -1251,13 +1251,9 @@ func TestClientDeleteResourceServiceAccountsOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Delete Resource Service Accounts - Ok", func(t *testing.T) {
 		response1 := `{
 		  "data": {
-		    "serviceAccountUpdate": {
-		      "entity": {
-		        "id": "serviceAccount1",
-		        "name": "account name"
-		      },
-		      "ok": true,
-		      "error": null
+		    "serviceAccount": {
+		      "id": "serviceAccount1",
+		      "name": "test"
 		    }
 		  }
 		}`
@@ -1266,8 +1262,30 @@ func TestClientDeleteResourceServiceAccountsOk(t *testing.T) {
 		  "data": {
 		    "serviceAccountUpdate": {
 		      "entity": {
+		        "id": "serviceAccount1",
+		        "name": "tes"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		response3 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "serviceAccount2",
+		      "name": "test"
+		    }
+		  }
+		}`
+
+		response4 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": {
 		        "id": "serviceAccount2",
-		        "name": "account name"
+		        "name": "test"
 		      },
 		      "ok": true,
 		      "error": null
@@ -1281,6 +1299,8 @@ func TestClientDeleteResourceServiceAccountsOk(t *testing.T) {
 			MultipleResponders(
 				httpmock.NewStringResponder(http.StatusOK, response1),
 				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+				httpmock.NewStringResponder(http.StatusOK, response4),
 			),
 		)
 
