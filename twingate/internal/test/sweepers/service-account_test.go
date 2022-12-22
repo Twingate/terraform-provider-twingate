@@ -13,7 +13,7 @@ func init() {
 		Name: resource.TwingateServiceAccount,
 		F: newTestSweeper(resource.TwingateServiceAccount,
 			func(client *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := client.ReadServiceAccounts(ctx)
+				resources, err := client.ReadShallowServiceAccounts(ctx)
 				if err != nil {
 					return nil, err
 				}
@@ -25,7 +25,7 @@ func init() {
 				return items, nil
 			},
 			func(client *client.Client, ctx context.Context, id string) error {
-				service, err := client.ReadService(ctx, id)
+				service, err := client.ReadServiceAccount(ctx, id)
 				if err != nil {
 					return err
 				}

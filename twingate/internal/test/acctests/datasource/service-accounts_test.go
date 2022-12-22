@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	idAttr       = "id"
-	servicesLen  = "service_accounts.#"
-	firstKeysLen = "service_accounts.0.key_ids.#"
+	idAttr             = "id"
+	serviceAccountsLen = "service_accounts.#"
+	firstKeyIDsLen     = "service_accounts.0.key_ids.#"
 )
 
 func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
@@ -48,8 +48,8 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 						datasourceServices(name, config),
 					),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, servicesLen, "1"),
-						resource.TestCheckResourceAttr(theDatasource, firstKeysLen, "1"),
+						resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
+						resource.TestCheckResourceAttr(theDatasource, firstKeyIDsLen, "1"),
 						resource.TestCheckResourceAttr(theDatasource, idAttr, "service-by-name-"+name),
 					),
 				},
@@ -113,7 +113,7 @@ func TestAccDatasourceTwingateServicesEmptyResult(t *testing.T) {
 				{
 					Config: datasourceServices(test.RandomName(), nil),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, servicesLen, "0"),
+						resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "0"),
 					),
 				},
 			},

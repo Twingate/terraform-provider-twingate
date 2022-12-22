@@ -43,7 +43,7 @@ func convertUsersToTerraform(users []*model.User) []interface{} {
 	return out
 }
 
-func convertServicesToTerraform(services []*model.Service) []interface{} {
+func convertServicesToTerraform(services []*model.ServiceAccount) []interface{} {
 	out := make([]interface{}, 0, len(services))
 
 	for _, service := range services {

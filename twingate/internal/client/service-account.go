@@ -41,13 +41,13 @@ func (client *Client) CreateServiceAccount(ctx context.Context, serviceAccountNa
 	return response.ToModel(), nil
 }
 
-func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID string) (*model.ServiceAccount, error) {
+func (client *Client) ReadShallowServiceAccount(ctx context.Context, serviceAccountID string) (*model.ServiceAccount, error) {
 	if serviceAccountID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationRead, serviceAccountResourceName)
 	}
 
 	variables := newVars(gqlID(serviceAccountID))
-	response := query.ReadServiceAccount{}
+	response := query.ReadShallowServiceAccount{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccount, &response, variables)
 	if err != nil {
@@ -113,8 +113,8 @@ func (client *Client) DeleteServiceAccount(ctx context.Context, serviceAccountID
 	return nil
 }
 
-func (client *Client) ReadServiceAccounts(ctx context.Context) ([]*model.ServiceAccount, error) {
-	response := query.ReadServiceAccounts{}
+func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.ServiceAccount, error) {
+	response := query.ReadShallowServiceAccounts{}
 
 	variables := newVars(gqlNullable("", query.CursorServiceAccounts))
 
@@ -138,7 +138,7 @@ func (client *Client) ReadServiceAccounts(ctx context.Context) ([]*model.Service
 func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
 	variables[query.CursorServiceAccounts] = cursor
 
-	response := query.ReadServiceAccounts{}
+	response := query.ReadShallowServiceAccounts{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccounts, &response, variables)
 	if err != nil {
@@ -152,13 +152,13 @@ func (client *Client) readServiceAccountsAfter(ctx context.Context, variables ma
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) ReadServices(ctx context.Context, input ...string) ([]*model.Service, error) {
+func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) ([]*model.ServiceAccount, error) {
 	var name string
 	if len(input) > 0 {
 		name = input[0]
 	}
 
-	response := query.ReadServicesByName{}
+	response := query.ReadServiceAccounts{}
 	variables := newVars(
 		gqlNullable(query.NewServiceAccountFilterInput(name), "filter"),
 		gqlNullable("", query.CursorServices),
@@ -166,9 +166,9 @@ func (client *Client) ReadServices(ctx context.Context, input ...string) ([]*mod
 		gqlNullable("", query.CursorServiceKeys),
 	)
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccounts, &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithName(err, operationRead, serviceAccountResourceName, name)
+		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
 
 	if len(response.Edges) == 0 {
@@ -191,7 +191,7 @@ func (client *Client) ReadServices(ctx context.Context, input ...string) ([]*mod
 }
 
 func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ServiceEdge], error) {
-	response := query.ReadServicesByName{}
+	response := query.ReadServiceAccounts{}
 	variables[query.CursorServices] = cursor
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
@@ -207,7 +207,7 @@ func (client *Client) readServicesAfter(ctx context.Context, variables map[strin
 }
 
 func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
-	response := query.ReadService{}
+	response := query.ReadServiceAccount{}
 
 	gqlNullable("", query.CursorServiceKeys)(variables)
 	variables[query.CursorServiceResources] = cursor
@@ -225,7 +225,7 @@ func (client *Client) readServiceResourcesAfter(ctx context.Context, variables m
 }
 
 func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
-	response := query.ReadService{}
+	response := query.ReadServiceAccount{}
 
 	gqlNullable("", query.CursorServiceResources)(variables)
 	variables[query.CursorServiceKeys] = cursor
@@ -242,7 +242,7 @@ func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[st
 	return &response.Service.Keys.PaginatedResource, nil
 }
 
-func (client *Client) ReadService(ctx context.Context, serviceAccountID string) (*model.Service, error) {
+func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID string) (*model.ServiceAccount, error) {
 	if serviceAccountID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationRead, serviceAccountResourceName)
 	}
@@ -252,7 +252,8 @@ func (client *Client) ReadService(ctx context.Context, serviceAccountID string) 
 		gqlNullable("", query.CursorServiceResources),
 		gqlNullable("", query.CursorServiceKeys),
 	)
-	response := query.ReadService{}
+
+	response := query.ReadServiceAccount{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccount, &response, variables)
 	if err != nil {

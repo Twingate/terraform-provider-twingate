@@ -107,7 +107,7 @@ func CheckTwingateServiceAccountDestroy(s *terraform.State) error {
 
 		serviceAccountID := rs.Primary.ID
 
-		_, err := providerClient.ReadServiceAccount(context.Background(), serviceAccountID)
+		_, err := providerClient.ReadShallowServiceAccount(context.Background(), serviceAccountID)
 		if err == nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, serviceAccountID)
 		}

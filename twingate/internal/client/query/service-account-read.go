@@ -2,7 +2,7 @@ package query
 
 import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 
-type ReadServiceAccount struct {
+type ReadShallowServiceAccount struct {
 	ServiceAccount *gqlServiceAccount `graphql:"serviceAccount(id: $id)"`
 }
 
@@ -17,7 +17,7 @@ func (q gqlServiceAccount) ToModel() *model.ServiceAccount {
 	}
 }
 
-func (q ReadServiceAccount) ToModel() *model.ServiceAccount {
+func (q ReadShallowServiceAccount) ToModel() *model.ServiceAccount {
 	if q.ServiceAccount == nil {
 		return nil
 	}
@@ -25,6 +25,6 @@ func (q ReadServiceAccount) ToModel() *model.ServiceAccount {
 	return q.ServiceAccount.ToModel()
 }
 
-type ReadService struct {
+type ReadServiceAccount struct {
 	Service *GqlService `graphql:"serviceAccount(id: $id)"`
 }

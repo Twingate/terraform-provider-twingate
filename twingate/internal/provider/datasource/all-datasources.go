@@ -10,7 +10,7 @@ const (
 	TwingateConnectors       = "twingate_connectors"
 	TwingateResource         = "twingate_resource"
 	TwingateResources        = "twingate_resources"
-	TwingateServices         = "twingate_service_accounts"
+	TwingateServiceAccounts  = "twingate_service_accounts"
 	TwingateSecurityPolicy   = "twingate_security_policy"
 	TwingateSecurityPolicies = "twingate_security_policies"
 )

@@ -47,7 +47,7 @@ func Provider(version string) *schema.Provider {
 			datasource.TwingateConnectors:       datasource.Connectors(),
 			datasource.TwingateResource:         datasource.Resource(),
 			datasource.TwingateResources:        datasource.Resources(),
-			datasource.TwingateServices:         datasource.Services(),
+			datasource.TwingateServiceAccounts:  datasource.ServiceAccounts(),
 			datasource.TwingateSecurityPolicy:   datasource.SecurityPolicy(),
 			datasource.TwingateSecurityPolicies: datasource.SecurityPolicies(),
 		},

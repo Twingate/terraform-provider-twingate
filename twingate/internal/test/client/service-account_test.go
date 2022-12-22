@@ -115,7 +115,7 @@ func TestReadServiceAccountOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
-		serviceAccount, err := c.ReadServiceAccount(context.Background(), "id")
+		serviceAccount, err := c.ReadShallowServiceAccount(context.Background(), "id")
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, serviceAccount)
@@ -126,7 +126,7 @@ func TestReadServiceAccountWithEmptyID(t *testing.T) {
 	t.Run("Test Twingate Resource: Read Service Account - With Empty ID", func(t *testing.T) {
 		c := newHTTPMockClient()
 
-		serviceAccount, err := c.ReadServiceAccount(context.Background(), "")
+		serviceAccount, err := c.ReadShallowServiceAccount(context.Background(), "")
 
 		assert.Nil(t, serviceAccount)
 		assert.EqualError(t, err, `failed to read service account: id is empty`)
@@ -140,7 +140,7 @@ func TestReadServiceAccountRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
+		serviceAccount, err := c.ReadShallowServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
@@ -160,7 +160,7 @@ func TestReadServiceAccountEmptyResponse(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
-		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
+		serviceAccount, err := c.ReadShallowServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
 		assert.EqualError(t, err, `failed to read service account with id account-id: query result is empty`)
@@ -433,7 +433,7 @@ func TestReadServiceAccountsOk(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, serviceAccounts)
@@ -447,7 +447,7 @@ func TestReadServiceAccountsRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
@@ -469,7 +469,7 @@ func TestReadServiceAccountsEmptyResponse(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -506,7 +506,7 @@ func TestReadServiceAccountsRequestErrorOnFetching(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
@@ -554,7 +554,7 @@ func TestReadServiceAccountsEmptyResponseOnFetching(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -563,7 +563,7 @@ func TestReadServiceAccountsEmptyResponseOnFetching(t *testing.T) {
 
 func TestReadServicesOk(t *testing.T) {
 	t.Run("Test Twingate Resource: Read Services - Ok", func(t *testing.T) {
-		expected := []*model.Service{
+		expected := []*model.ServiceAccount{
 			{
 				ID:        "id-1",
 				Name:      "test-1",
@@ -817,7 +817,7 @@ func TestReadServicesOk(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, serviceAccounts)
@@ -831,10 +831,10 @@ func TestReadServicesRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
 	})
 }
 
@@ -853,7 +853,7 @@ func TestReadServicesEmptyResponse(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.NoError(t, err)
@@ -890,7 +890,7 @@ func TestReadServicesRequestErrorOnFetchingServices(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
@@ -938,7 +938,7 @@ func TestReadServicesEmptyResponseOnFetchingServices(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -1068,7 +1068,7 @@ func TestReadServicesRequestErrorOnFetchingResources(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
@@ -1219,7 +1219,7 @@ func TestReadServicesEmptyResponseOnFetchingResources(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -1385,7 +1385,7 @@ func TestReadServicesRequestErrorOnFetchingKeys(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
@@ -1572,7 +1572,7 @@ func TestReadServicesEmptyResponseOnFetchingKeys(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -1581,7 +1581,7 @@ func TestReadServicesEmptyResponseOnFetchingKeys(t *testing.T) {
 
 func TestReadServicesByNameOk(t *testing.T) {
 	t.Run("Test Twingate Resource: Read Services - By Name Ok", func(t *testing.T) {
-		expected := []*model.Service{
+		expected := []*model.ServiceAccount{
 			{
 				ID:        "id-2",
 				Name:      "test-2",
@@ -1694,7 +1694,7 @@ func TestReadServicesByNameOk(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServices(context.Background(), "test-2")
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), "test-2")
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, serviceAccounts)
@@ -1703,7 +1703,7 @@ func TestReadServicesByNameOk(t *testing.T) {
 
 func TestReadServiceOk(t *testing.T) {
 	t.Run("Test Twingate Resource: Read Service - Ok", func(t *testing.T) {
-		expected := &model.Service{
+		expected := &model.ServiceAccount{
 			ID:        "id",
 			Name:      "test-2",
 			Resources: []string{},
@@ -1738,7 +1738,7 @@ func TestReadServiceOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
-		serviceAccount, err := c.ReadService(context.Background(), "id")
+		serviceAccount, err := c.ReadServiceAccount(context.Background(), "id")
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, serviceAccount)
@@ -1749,7 +1749,7 @@ func TestReadServiceWithEmptyID(t *testing.T) {
 	t.Run("Test Twingate Resource: Read Service - With Empty ID", func(t *testing.T) {
 		c := newHTTPMockClient()
 
-		serviceAccount, err := c.ReadService(context.Background(), "")
+		serviceAccount, err := c.ReadServiceAccount(context.Background(), "")
 
 		assert.Nil(t, serviceAccount)
 		assert.EqualError(t, err, `failed to read service account: id is empty`)
@@ -1763,7 +1763,7 @@ func TestReadServiceRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		serviceAccount, err := c.ReadService(context.Background(), "account-id")
+		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
@@ -1783,7 +1783,7 @@ func TestReadServiceEmptyResponse(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
-		serviceAccount, err := c.ReadService(context.Background(), "account-id")
+		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
 		assert.EqualError(t, err, `failed to read service account with id account-id: query result is empty`)
@@ -1823,7 +1823,7 @@ func TestReadServiceRequestErrorOnFetching(t *testing.T) {
 				httpmock.NewErrorResponder(errBadRequest),
 			))
 
-		serviceAccount, err := c.ReadService(context.Background(), "account-id")
+		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))

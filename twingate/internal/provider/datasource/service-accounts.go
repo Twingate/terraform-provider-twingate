@@ -9,24 +9,24 @@ import (
 )
 
 const (
-	fieldID        = "id"
-	fieldName      = "name"
-	fieldServices  = "service_accounts"
-	fieldResources = "resource_ids"
-	fieldKeys      = "key_ids"
+	fieldID              = "id"
+	fieldName            = "name"
+	fieldServiceAccounts = "service_accounts"
+	fieldResourceIDs     = "resource_ids"
+	fieldKeyIDs          = "key_ids"
 )
 
-func Services() *schema.Resource {
+func ServiceAccounts() *schema.Resource {
 	return &schema.Resource{
 		Description: "Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.",
-		ReadContext: readServices,
+		ReadContext: readServiceAccounts,
 		Schema: map[string]*schema.Schema{
 			fieldName: {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Filter results by the name of the Service Account.",
 			},
-			fieldServices: {
+			fieldServiceAccounts: {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "List of Service Accounts",
@@ -42,13 +42,13 @@ func Services() *schema.Resource {
 							Computed:    true,
 							Description: "Name of the Service Account",
 						},
-						fieldResources: {
+						fieldResourceIDs: {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Computed:    true,
 							Description: "List of twingate_resource IDs that the Service Account is assigned to.",
 						},
-						fieldKeys: {
+						fieldKeyIDs: {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Computed:    true,
@@ -61,17 +61,17 @@ func Services() *schema.Resource {
 	}
 }
 
-func readServices(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readServiceAccounts(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
 	name := resourceData.Get(fieldName).(string)
 
-	services, err := client.ReadServices(ctx, name)
+	services, err := client.ReadServiceAccounts(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set(fieldServices, convertServicesToTerraform(services)); err != nil {
+	if err := resourceData.Set(fieldServiceAccounts, convertServicesToTerraform(services)); err != nil {
 		return diag.FromErr(err)
 	}
 
