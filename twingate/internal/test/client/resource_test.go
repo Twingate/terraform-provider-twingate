@@ -1226,3 +1226,76 @@ func TestClientResourcesReadByNameAllRequestError(t *testing.T) {
 		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
 	})
 }
+
+func TestClientDeleteResourceServiceAccountsWithEmptyServiceAccounts(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Service Accounts - With Empty Service Accounts", func(t *testing.T) {
+		client := newHTTPMockClient()
+		for _, serviceAccounts := range [][]string{nil, {}} {
+			err := client.DeleteResourceServiceAccounts(context.Background(), "resource-test", serviceAccounts)
+
+			assert.NoError(t, err)
+		}
+	})
+}
+
+func TestClientDeleteResourceServiceAccountsWithEmptyResourceID(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Service Accounts - With Empty ResourceID", func(t *testing.T) {
+		client := newHTTPMockClient()
+		err := client.DeleteResourceServiceAccounts(context.Background(), "", []string{"serviceAccounts"})
+
+		assert.EqualError(t, err, "failed to update resource: id is empty")
+	})
+}
+
+func TestClientDeleteResourceServiceAccountsOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Service Accounts - Ok", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": {
+		        "id": "serviceAccount1",
+		        "name": "account name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": {
+		        "id": "serviceAccount2",
+		        "name": "account name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			),
+		)
+
+		err := client.DeleteResourceServiceAccounts(context.Background(), "resource1", []string{"serviceAccount1", "serviceAccount2"})
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientDeleteResourceServiceAccountsWithError(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Service Accounts - With Error", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.DeleteResourceServiceAccounts(context.Background(), "resource1", []string{""})
+
+		assert.EqualError(t, err, `failed to update service account: id is empty`)
+	})
+}

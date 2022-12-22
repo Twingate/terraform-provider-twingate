@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
@@ -294,8 +295,18 @@ func (client *Client) fetchServiceInternalResources(ctx context.Context, service
 }
 
 func (client *Client) UpdateServiceAccountRemoveResources(ctx context.Context, serviceAccountID string, resourceIDsToRemove []string) error {
+	if len(resourceIDsToRemove) == 0 {
+		return nil
+	}
+
 	if serviceAccountID == "" {
 		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, serviceAccountResourceName)
+	}
+
+	_, err := client.ReadServiceAccount(ctx, serviceAccountID)
+	if errors.Is(err, ErrGraphqlResultIsEmpty) {
+		// no-op - service does not exist
+		return nil
 	}
 
 	variables := newVars(
@@ -305,7 +316,7 @@ func (client *Client) UpdateServiceAccountRemoveResources(ctx context.Context, s
 
 	response := query.UpdateServiceAccountRemoveResources{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, mutationUpdateServiceAccount, &response, variables)
+	err = client.GraphqlClient.NamedMutate(ctx, mutationUpdateServiceAccount, &response, variables)
 	if err != nil {
 		return NewAPIErrorWithID(err, operationUpdate, serviceAccountResourceName, serviceAccountID)
 	}

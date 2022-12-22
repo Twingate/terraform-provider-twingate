@@ -11,11 +11,15 @@ resource "twingate_group" "aws" {
   name = "aws_group"
 }
 
+resource "twingate_service_account" "github_actions_prod" {
+  name = "Github Actions PROD"
+}
+
 resource "twingate_resource" "resource" {
   name = "network"
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
-  group_ids = [twingate_group.aws.id]
+
   protocols {
     allow_icmp = true
     tcp  {
@@ -25,6 +29,11 @@ resource "twingate_resource" "resource" {
     udp {
       policy = "ALLOW_ALL"
     }
+  }
+
+  access {
+    group_ids = [twingate_group.aws.id]
+    service_account_ids = [twingate_service_account.github_actions_prod.id]
   }
 }
 

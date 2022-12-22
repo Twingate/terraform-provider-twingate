@@ -283,44 +283,6 @@ func (client *Client) readResourcesByNameAfter(ctx context.Context, variables ma
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID string, deleteGroupIDs []string) error {
-	if len(deleteGroupIDs) == 0 {
-		return nil
-	}
-
-	if resourceID == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
-	}
-
-	resource, err := client.ReadResource(ctx, resourceID)
-	if err != nil {
-		return err
-	}
-
-	currentGroupIDs := utils.MakeLookupMap[string](resource.Groups)
-	for _, id := range deleteGroupIDs {
-		delete(currentGroupIDs, id)
-	}
-
-	groups := utils.MapKeys[string](currentGroupIDs)
-	response := query.UpdateResourceGroups{}
-	variables := newVars(
-		gqlID(resourceID),
-		gqlIDs(groups, "groupIds"),
-	)
-
-	err = client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
-	if err != nil {
-		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resourceID)
-	}
-
-	if !response.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, resourceResourceName, resourceID)
-	}
-
-	return nil
-}
-
 func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourceID string, deleteServiceAccountIDs []string) error {
 	if len(deleteServiceAccountIDs) == 0 {
 		return nil

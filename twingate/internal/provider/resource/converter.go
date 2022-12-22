@@ -28,6 +28,7 @@ func convertGroups(data *schema.ResourceData) []string {
 	}
 
 	groups, _ := convertAccess(data)
+
 	return groups
 }
 
@@ -43,6 +44,10 @@ func convertIDs(data interface{}) []string {
 func convertAccess(data *schema.ResourceData) ([]string, []string) {
 	rawList := data.Get("access").([]interface{})
 	if len(rawList) == 0 {
+		return nil, nil
+	}
+
+	if rawList[0] == nil {
 		return nil, nil
 	}
 

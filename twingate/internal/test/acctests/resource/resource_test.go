@@ -22,6 +22,9 @@ const (
 	tcpPortsLen  = "protocols.0.tcp.0.ports.#"
 	udpPortsLen  = "protocols.0.udp.0.ports.#"
 
+	accessGroupIdsLen          = "access.0.group_ids.#"
+	accessServiceAccountIdsLen = "access.0.service_account_ids.#"
+
 	nameAttr        = "name"
 	addressAttr     = "address"
 	accessTokenAttr = "access_token"
@@ -718,10 +721,448 @@ func genNewGroups(resourcePrefix string, count int) ([]string, []string) {
 	return groups, groupsID
 }
 
+func genNewServiceAccounts(resourcePrefix string, count int) ([]string, []string) {
+	serviceAccounts := make([]string, 0, count)
+	serviceAccountIDs := make([]string, 0, count)
+
+	for i := 0; i < count; i++ {
+		resourceName := fmt.Sprintf("%s_%d", resourcePrefix, i+1)
+		serviceAccounts = append(serviceAccounts, createServiceAccount(resourceName, test.RandomName()))
+		serviceAccountIDs = append(serviceAccountIDs, acctests.TerraformServiceAccount(resourceName)+".id")
+	}
+
+	return serviceAccounts, serviceAccountIDs
+}
+
 func newTerraformGroup(resourceName, groupName string) string {
 	return fmt.Sprintf(`
     resource "twingate_group" "%s" {
       name = "%s"
     }
 	`, resourceName, groupName)
+}
+
+func TestAccTwingateResourceAddAccessGroups(t *testing.T) {
+	const theResource = "twingate_resource.test14"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	groups, groupsID := genNewGroups("g14", 2)
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource14(remoteNetworkName, resourceName, groups, groupsID),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "2"),
+				),
+			},
+		},
+	})
+}
+
+func createResource14(networkName, resourceName string, groups, groupsID []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test14" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test14" {
+	  name = "%s"
+	  address = "acc-test.com.14"
+	  remote_network_id = twingate_remote_network.test14.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    group_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
+}
+
+func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
+	const theResource = "twingate_resource.test15"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource15(remoteNetworkName, resourceName, createServiceAccount(resourceName, "s15")),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+				),
+			},
+		},
+	})
+}
+
+func createResource15(networkName, resourceName string, terraformServiceAccount string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test15" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test15" {
+	  name = "%s"
+	  address = "acc-test.com.15"
+	  remote_network_id = twingate_remote_network.test15.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    service_account_ids = [%s]
+	  }
+
+	}
+	`, networkName, terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, acctests.TerraformServiceAccount(resourceName)+".id")
+}
+
+func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
+	const theResource = "twingate_resource.test16"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	groups, groupsID := genNewGroups("g16", 1)
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource16(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, "s16")),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+				),
+			},
+		},
+	})
+}
+
+func createResource16(networkName, resourceName string, groups, groupsID []string, terraformServiceAccount string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test16" {
+	  name = "%s"
+	}
+
+	%s
+
+	%s
+
+	resource "twingate_resource" "test16" {
+	  name = "%s"
+	  address = "acc-test.com.16"
+	  remote_network_id = twingate_remote_network.test16.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    group_ids = [%s]
+	    service_account_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), acctests.TerraformServiceAccount(resourceName)+".id")
+}
+
+func TestAccTwingateResourceUpdateAccessGroupsAndServiceAccounts(t *testing.T) {
+	const theResource = "twingate_resource.test17"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	groups, groupsID := genNewGroups("g17", 3)
+	serviceAccounts, serviceAccountIDs := genNewServiceAccounts("s17", 2)
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource17(remoteNetworkName, resourceName, groups, groupsID, serviceAccounts, serviceAccountIDs),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "2"),
+				),
+			},
+			{
+				Config: createResource17(remoteNetworkName, resourceName, groups, groupsID[:1], serviceAccounts, serviceAccountIDs[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+				),
+			},
+		},
+	})
+}
+
+func createResource17(networkName, resourceName string, groups, groupsID, serviceAccounts, serviceAccountIDs []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test17" {
+	  name = "%s"
+	}
+
+	%s
+
+	%s
+
+	resource "twingate_resource" "test17" {
+	  name = "%s"
+	  address = "acc-test.com.17"
+	  remote_network_id = twingate_remote_network.test17.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    group_ids = [%s]
+	    service_account_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), strings.Join(serviceAccountIDs, ", "))
+}
+
+func TestAccTwingateResourceAccessWitEmptyGroups(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResource18(remoteNetworkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: Not enough list items"),
+			},
+		},
+	})
+}
+
+func createResource18(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test18" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "test18" {
+	  name = "%s"
+	  address = "acc-test.com.18"
+	  remote_network_id = twingate_remote_network.test18.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    group_ids = []
+	  }
+
+	}
+	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
+}
+
+func TestAccTwingateResourceAccessWitEmptyServiceAccounts(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResource19(remoteNetworkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: Not enough list items"),
+			},
+		},
+	})
+}
+
+func createResource19(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test19" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "test19" {
+	  name = "%s"
+	  address = "acc-test.com.19"
+	  remote_network_id = twingate_remote_network.test19.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    service_account_ids = []
+	  }
+
+	}
+	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
+}
+
+func TestAccTwingateResourceAccessWitEmptyBlock(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResource20(remoteNetworkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: Missing required argument"),
+			},
+		},
+	})
+}
+
+func createResource20(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test20" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "test20" {
+	  name = "%s"
+	  address = "acc-test.com.20"
+	  remote_network_id = twingate_remote_network.test20.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	  }
+
+	}
+	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
+}
+
+func TestAccTwingateResourceWithAccessBlockAndDeprecatedGroups(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	groups, groupsID := genNewGroups("g21", 2)
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResource21(remoteNetworkName, resourceName, groups, groupsID),
+				ExpectError: regexp.MustCompile("Error: Conflicting configuration arguments"),
+			},
+		},
+	})
+}
+
+func createResource21(networkName, resourceName string, groups, groupsID []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test21" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test21" {
+	  name = "%s"
+	  address = "acc-test.com.21"
+	  remote_network_id = twingate_remote_network.test21.id
+	
+	  group_ids = [%s]
+
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    group_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), resourceName, strings.Join(groupsID, ", "), model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
 }
