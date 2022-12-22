@@ -10,9 +10,10 @@ import (
 var (
 	ErrTooManyGroupsError = fmt.Errorf("provider does not support more than %d groups per resource", readResourceQueryGroupsSize)
 
-	ErrGraphqlIDIsEmpty        = errors.New("id is empty")
-	ErrGraphqlNameIsEmpty      = errors.New("name is empty")
-	ErrGraphqlResourceNotFound = errors.New("not found")
+	ErrGraphqlIDIsEmpty          = errors.New("id is empty")
+	ErrGraphqlNameIsEmpty        = errors.New("name is empty")
+	ErrGraphqlEmptyBothNameAndID = errors.New("both name and id should not be empty")
+	ErrGraphqlResourceNotFound   = errors.New("not found")
 
 	ErrGraphqlResultIsEmpty      = errors.New("query result is empty")
 	ErrGraphqlConnectorIDIsEmpty = errors.New("connector id is empty")
