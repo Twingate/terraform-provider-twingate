@@ -834,7 +834,7 @@ func TestReadServicesRequestError(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
 	})
 }
 

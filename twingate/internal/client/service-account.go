@@ -166,9 +166,9 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 		gqlNullable("", query.CursorServiceKeys),
 	)
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
+	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccounts, &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithName(err, operationRead, serviceAccountResourceName, name)
+		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
 
 	if len(response.Edges) == 0 {
@@ -252,6 +252,7 @@ func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID s
 		gqlNullable("", query.CursorServiceResources),
 		gqlNullable("", query.CursorServiceKeys),
 	)
+
 	response := query.ReadServiceAccount{}
 
 	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccount, &response, variables)

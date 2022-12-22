@@ -52,3 +52,12 @@ func convertServicesToTerraform(services []*model.ServiceAccount) []interface{} 
 
 	return out
 }
+
+func convertSecurityPoliciesToTerraform(securityPolicies []*model.SecurityPolicy) []interface{} {
+	out := make([]interface{}, 0, len(securityPolicies))
+	for _, policy := range securityPolicies {
+		out = append(out, policy.ToTerraform())
+	}
+
+	return out
+}
