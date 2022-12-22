@@ -12,7 +12,7 @@ const fieldSecurityPolicies = "security_policies"
 
 func SecurityPolicies() *schema.Resource {
 	return &schema.Resource{
-		Description: "A Security Policy defined in Twingate for your Network or for individual Resources on your Network.",
+		Description: "Security Policies are defined in the Twingate Admin Console and determine user and device authentication requirements for Resources.",
 		ReadContext: readSecurityPolicies,
 		Schema: map[string]*schema.Schema{
 			fieldSecurityPolicies: {
@@ -23,12 +23,12 @@ func SecurityPolicies() *schema.Resource {
 						fieldID: {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "Find a Security Policy by id.",
+							Description: "Return a matching Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.",
 						},
 						fieldName: {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "Find a Security Policy by name.",
+							Description: "Return a Security Policy that exactly matches this name.",
 						},
 					},
 				},
