@@ -429,3 +429,71 @@ func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 
 	return securityPolicies, nil
 }
+
+func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		groupID, err := getResourceID(state, groupName)
+		if err != nil {
+			return err
+		}
+
+		err = providerClient.AddResourceGroups(context.Background(), &model.Resource{
+			ID:     resourceID,
+			Groups: []string{groupID},
+		})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to add group with ID %s: %w", resourceID, groupID, err)
+		}
+
+		return nil
+	}
+}
+
+func getResourceID(s *terraform.State, resourceName string) (string, error) {
+	resourceState, ok := s.RootModule().Resources[resourceName]
+
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+	}
+
+	resourceID := resourceState.Primary.ID
+
+	if resourceID == "" {
+		return "", ErrResourceIDNotSet
+	}
+
+	return resourceID, nil
+}
+
+func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		serviceAccountID, err := getResourceID(state, serviceAccountName)
+		if err != nil {
+			return err
+		}
+
+		_, err = providerClient.UpdateServiceAccount(context.Background(), &model.ServiceAccount{
+			ID:        serviceAccountID,
+			Resources: []string{resourceID},
+		})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
+		}
+
+		return nil
+	}
+}

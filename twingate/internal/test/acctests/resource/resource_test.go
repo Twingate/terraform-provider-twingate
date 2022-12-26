@@ -11,6 +11,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -721,6 +722,15 @@ func genNewGroups(resourcePrefix string, count int) ([]string, []string) {
 	return groups, groupsID
 }
 
+func getResourceNameFromID(resourceID string) string {
+	idx := strings.LastIndex(resourceID, ".id")
+	if idx == -1 {
+		return ""
+	}
+
+	return resourceID[:idx]
+}
+
 func genNewServiceAccounts(resourcePrefix string, count int) ([]string, []string) {
 	serviceAccounts := make([]string, 0, count)
 	serviceAccountIDs := make([]string, 0, count)
@@ -907,12 +917,13 @@ func createResource16(networkName, resourceName string, groups, groupsID []strin
 	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), acctests.TerraformServiceAccount(resourceName)+".id")
 }
 
-func TestAccTwingateResourceUpdateAccessGroupsAndServiceAccounts(t *testing.T) {
+func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) {
 	const theResource = "twingate_resource.test17"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	groups, groupsID := genNewGroups("g17", 3)
-	serviceAccounts, serviceAccountIDs := genNewServiceAccounts("s17", 2)
+	serviceAccounts, serviceAccountIDs := genNewServiceAccounts("s17", 3)
+
+	serviceAccountResource := getResourceNameFromID(serviceAccountIDs[2])
 
 	sdk.Test(t, sdk.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
@@ -920,32 +931,51 @@ func TestAccTwingateResourceUpdateAccessGroupsAndServiceAccounts(t *testing.T) {
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResource17(remoteNetworkName, resourceName, groups, groupsID, serviceAccounts, serviceAccountIDs),
+				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					acctests.WaitTestFunc(),
+					// added new service account to the resource though API
+					acctests.AddResourceServiceAccount(theResource, serviceAccountResource),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "2"),
 				),
 			},
 			{
-				Config: createResource17(remoteNetworkName, resourceName, groups, groupsID[:1], serviceAccounts, serviceAccountIDs[:1]),
+				// added new service account to the resource though terraform
+				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:2]),
+			},
+			{
+				RefreshState: true,
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+				),
+			},
+			{
+				// remove one service account from the resource though terraform
+				// expecting no drift - empty plan
+				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
 				),
 			},
 		},
 	})
 }
 
-func createResource17(networkName, resourceName string, groups, groupsID, serviceAccounts, serviceAccountIDs []string) string {
+func createResource17(networkName, resourceName string, serviceAccounts, serviceAccountIDs []string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test17" {
 	  name = "%s"
 	}
-
-	%s
 
 	%s
 
@@ -966,12 +996,11 @@ func createResource17(networkName, resourceName string, groups, groupsID, servic
 	  }
 
 	  access {
-	    group_ids = [%s]
 	    service_account_ids = [%s]
 	  }
 
 	}
-	`, networkName, strings.Join(groups, "\n"), strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), strings.Join(serviceAccountIDs, ", "))
+	`, networkName, strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(serviceAccountIDs, ", "))
 }
 
 func TestAccTwingateResourceAccessWitEmptyGroups(t *testing.T) {
@@ -1165,4 +1194,115 @@ func createResource21(networkName, resourceName string, groups, groupsID []strin
 
 	}
 	`, networkName, strings.Join(groups, "\n"), resourceName, strings.Join(groupsID, ", "), model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
+}
+
+func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
+	const theResource = "twingate_resource.test22"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	groups, groupsID := genNewGroups("g22", 3)
+
+	groupResource := getResourceNameFromID(groupsID[2])
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource22(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					acctests.WaitTestFunc(),
+					// added new group to the resource though API
+					acctests.AddResourceGroup(theResource, groupResource),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource22(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "2"),
+				),
+			},
+			{
+				// added new group to the resource though terraform
+				Config: createResource22(remoteNetworkName, resourceName, groups, groupsID[:2]),
+			},
+			{
+				RefreshState: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
+				),
+			},
+			{
+				// remove one group from the resource though terraform
+				// expecting no drift - empty plan
+				Config:   createResource22(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
+				),
+			},
+		},
+	})
+}
+
+func createResource22(networkName, resourceName string, groups, groupsID []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test22" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test22" {
+	  name = "%s"
+	  address = "acc-test.com.22"
+	  remote_network_id = twingate_remote_network.test22.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    group_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
+}
+
+func TestGetResourceNameFromID(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "twingate_resource.test.id",
+			expected: "twingate_resource.test",
+		},
+		{
+			input:    "twingate_resource.test",
+			expected: "",
+		},
+		{
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for _, c := range cases {
+		actual := getResourceNameFromID(c.input)
+		assert.Equal(t, c.expected, actual)
+	}
 }

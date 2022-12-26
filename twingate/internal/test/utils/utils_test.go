@@ -54,7 +54,7 @@ func TestMapKeys(t *testing.T) {
 			expected: []string{},
 		},
 		{
-			lookup:   map[string]bool{"1": true, "2": true, "3": true},
+			lookup:   map[string]bool{"1": true, "3": true, "2": true},
 			expected: []string{"1", "2", "3"},
 		},
 	}
@@ -63,7 +63,7 @@ func TestMapKeys(t *testing.T) {
 		t.Run(fmt.Sprintf("case: %d", n), func(t *testing.T) {
 			actual := utils.MapKeys(c.lookup)
 
-			assert.Equal(t, c.expected, actual)
+			assert.ElementsMatch(t, c.expected, actual)
 		})
 	}
 }

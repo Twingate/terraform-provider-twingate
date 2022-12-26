@@ -86,8 +86,12 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", resourceResourceName)
 	}
 
+	err = response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(response.Entity.ID)))
+	if err != nil {
+		return nil, err //nolint
+	}
+
 	resource := response.Entity.ToModel()
-	resource.Groups = input.Groups
 	resource.ServiceAccounts = input.ServiceAccounts
 
 	return resource, nil
@@ -194,8 +198,12 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, input.ID)
 	}
 
+	err = response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(input.ID)))
+	if err != nil {
+		return nil, err //nolint
+	}
+
 	resource := response.Entity.ToModel()
-	resource.Groups = input.Groups
 	resource.ServiceAccounts = input.ServiceAccounts
 
 	return resource, nil
@@ -298,6 +306,26 @@ func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourc
 		if err := client.UpdateServiceAccountRemoveResources(ctx, serviceAccountID, resourcesToDelete); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Resource) error {
+	variables := newVars(
+		gqlID(resource.ID),
+		gqlIDs(resource.Groups, "groupIds"),
+	)
+
+	response := query.AddResourceGroups{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	if err != nil {
+		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resource.ID)
+	}
+
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, resourceResourceName, resource.ID)
 	}
 
 	return nil
