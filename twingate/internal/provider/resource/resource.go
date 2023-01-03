@@ -114,24 +114,24 @@ func Resource() *schema.Resource { //nolint:funlen
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"group_ids": {
-							Type:                  schema.TypeSet,
-							Elem:                  &schema.Schema{Type: schema.TypeString},
-							MinItems:              1,
-							Optional:              true,
-							AtLeastOneOf:          []string{"access.0.service_account_ids"},
-							Description:           "List of Group IDs that have permission to access the Resource.",
-							DiffSuppressOnRefresh: true,
-							DiffSuppressFunc:      nonAuthoritativeDiff("access.0.group_ids"),
+							Type:         schema.TypeSet,
+							Elem:         &schema.Schema{Type: schema.TypeString},
+							MinItems:     1,
+							Optional:     true,
+							AtLeastOneOf: []string{"access.0.service_account_ids"},
+							Description:  "List of Group IDs that have permission to access the Resource.",
+							//DiffSuppressOnRefresh: true,
+							//DiffSuppressFunc:      nonAuthoritativeDiff("access.0.group_ids"),
 						},
 						"service_account_ids": {
-							Type:                  schema.TypeSet,
-							Elem:                  &schema.Schema{Type: schema.TypeString},
-							MinItems:              1,
-							Optional:              true,
-							AtLeastOneOf:          []string{"access.0.group_ids"},
-							Description:           "List of Service Account IDs that have permission to access the Resource.",
-							DiffSuppressOnRefresh: true,
-							DiffSuppressFunc:      nonAuthoritativeDiff("access.0.service_account_ids"),
+							Type:         schema.TypeSet,
+							Elem:         &schema.Schema{Type: schema.TypeString},
+							MinItems:     1,
+							Optional:     true,
+							AtLeastOneOf: []string{"access.0.group_ids"},
+							Description:  "List of Service Account IDs that have permission to access the Resource.",
+							//DiffSuppressOnRefresh: true,
+							//DiffSuppressFunc:      nonAuthoritativeDiff("access.0.service_account_ids"),
 						},
 					},
 				},
@@ -305,6 +305,14 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 
 	resource.ID = resourceData.Id()
 
+	if err = deleteResourceGroupIDs(ctx, resourceData, resource, client); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err = deleteResourceServiceAccountIDs(ctx, resourceData, resource, client); err != nil {
+		return diag.FromErr(err)
+	}
+
 	resource, err = client.UpdateResource(ctx, resource)
 	if err != nil {
 		return diag.FromErr(err)
@@ -317,6 +325,53 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 	log.Printf("[INFO] Updated resource %s", resource.Name)
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
+}
+
+func deleteResourceGroupIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
+	groupIDs := getIDsToDelete(resourceData, resource.Groups, "group_ids")
+
+	return client.DeleteResourceGroups(ctx, resource.ID, groupIDs) //nolint
+}
+
+func deleteResourceServiceAccountIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
+	idsToDelete := getIDsToDelete(resourceData, resource.ServiceAccounts, "service_account_ids")
+
+	return client.DeleteResourceServiceAccounts(ctx, resource.ID, idsToDelete) //nolint
+}
+
+func getIDsToDelete(resourceData *schema.ResourceData, currentIDs []string, attribute string) []string {
+	oldIDs := getOldIDs(resourceData, attribute)
+	if len(oldIDs) == 0 {
+		return nil
+	}
+
+	lookup := utils.MakeLookupMap(currentIDs)
+
+	var idsToDelete []string
+
+	for _, id := range oldIDs {
+		if !lookup[id] {
+			idsToDelete = append(idsToDelete, id)
+		}
+	}
+
+	return idsToDelete
+}
+
+func getOldIDs(resourceData *schema.ResourceData, attribute string) []string {
+	if resourceData.HasChange(attribute) {
+		old, _ := resourceData.GetChange(attribute)
+
+		return convertIDs(old)
+	}
+
+	if resourceData.HasChange("access.0." + attribute) {
+		old, _ := resourceData.GetChange("access.0." + attribute)
+
+		return convertIDs(old)
+	}
+
+	return nil
 }
 
 func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -369,24 +424,47 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 		}
 	}
 
-	serviceAccounts, err := resourceClient.ReadServiceAccounts(ctx)
+	serviceAccounts, err := getResourceServiceAccounts(ctx, resourceClient, resource.ID)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	resource.ServiceAccounts = mergeIDs(convertServiceAccounts(resourceData), serviceAccounts)
+	resource.Groups = mergeIDs(convertGroups(resourceData), resource.Groups)
+
+	resourceData.SetId(resource.ID)
+
+	return readDiagnostics(resourceData, resource)
+}
+
+func mergeIDs(terraformIDs, existingIDs []string) []string {
+	lookup := utils.MakeLookupMap(existingIDs)
+	mergedIDs := make([]string, 0, len(terraformIDs))
+
+	for _, id := range terraformIDs {
+		if lookup[id] {
+			mergedIDs = append(mergedIDs, id)
+		}
+	}
+
+	return mergedIDs
+}
+
+func getResourceServiceAccounts(ctx context.Context, resourceClient *client.Client, resourceID string) ([]string, error) {
+	serviceAccounts, err := resourceClient.ReadServiceAccounts(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	serviceAccountIDs := make(map[string]bool)
 
 	for _, account := range serviceAccounts {
-		if utils.Contains(account.Resources, resource.ID) {
+		if utils.Contains(account.Resources, resourceID) {
 			serviceAccountIDs[account.ID] = true
 		}
 	}
 
-	resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
-
-	resourceData.SetId(resource.ID)
-
-	return readDiagnostics(resourceData, resource)
+	return utils.MapKeys(serviceAccountIDs), nil
 }
 
 func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource) diag.Diagnostics {

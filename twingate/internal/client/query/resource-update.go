@@ -7,3 +7,7 @@ type UpdateResource struct {
 type UpdateResourceActiveState struct {
 	OkError `graphql:"resourceUpdate(id: $id, isActive: $isActive)"`
 }
+
+type UpdateResourceRemoveGroups struct {
+	ResourceEntityResponse `graphql:"resourceUpdate(id: $id, removedGroupIds: $removedGroupIds)"`
+}

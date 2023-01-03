@@ -12,6 +12,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -456,6 +457,28 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 	}
 }
 
+func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		resource, err := providerClient.ReadResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		if len(resource.Groups) != expectedGroupsLen {
+			return fmt.Errorf("expected %d groups, actual - %d", expectedGroupsLen, len(resource.Groups))
+		}
+
+		return nil
+	}
+}
+
 func getResourceID(s *terraform.State, resourceName string) (string, error) {
 	resourceState, ok := s.RootModule().Resources[resourceName]
 
@@ -492,6 +515,43 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
+		}
+
+		return nil
+	}
+}
+
+func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccountsLen int) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		resource, err := providerClient.ReadResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		serviceAccounts, err := providerClient.ReadServiceAccounts(context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to read service accounts: %w", err)
+		}
+
+		serviceAccountIDs := make(map[string]bool)
+
+		for _, account := range serviceAccounts {
+			if utils.Contains(account.Resources, resource.ID) {
+				serviceAccountIDs[account.ID] = true
+			}
+		}
+
+		resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
+
+		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
+			return fmt.Errorf("expected %d service accounts, actual - %d", expectedServiceAccountsLen, len(resource.ServiceAccounts))
 		}
 
 		return nil

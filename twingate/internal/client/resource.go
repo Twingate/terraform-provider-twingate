@@ -330,3 +330,34 @@ func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Res
 
 	return nil
 }
+
+func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID string, deleteGroupIDs []string) error {
+	if len(deleteGroupIDs) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+	}
+
+	response := query.UpdateResourceRemoveGroups{}
+	variables := newVars(
+		gqlID(resourceID),
+		gqlIDs(deleteGroupIDs, "removedGroupIds"),
+	)
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	if err != nil {
+		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resourceID)
+	}
+
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, resourceResourceName, resourceID)
+	}
+
+	if response.Entity == nil {
+		return NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, resourceResourceName, resourceID)
+	}
+
+	return nil
+}
