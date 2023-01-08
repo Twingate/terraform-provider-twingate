@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
@@ -28,21 +29,24 @@ type Resource struct {
 	IsActive        bool
 	Groups          []string
 	ServiceAccounts []string
+	IsAuthoritative bool
 }
 
 func (r Resource) AccessToTerraform() []interface{} {
 	rawMap := make(map[string]interface{})
 	if len(r.Groups) != 0 {
-		rawMap["group_ids"] = r.Groups
+		rawMap[attr.GroupIDs] = r.Groups
 	}
 
 	if len(r.ServiceAccounts) != 0 {
-		rawMap["service_account_ids"] = r.ServiceAccounts
+		rawMap[attr.ServiceAccountIDs] = r.ServiceAccounts
 	}
 
 	if len(rawMap) == 0 {
 		return nil
 	}
+
+	rawMap[attr.NonAuthoritative] = !r.IsAuthoritative
 
 	return []interface{}{rawMap}
 }
@@ -57,11 +61,11 @@ func (r Resource) GetName() string {
 
 func (r Resource) ToTerraform() interface{} {
 	return map[string]interface{}{
-		"id":                r.ID,
-		"name":              r.Name,
-		"address":           r.Address,
-		"remote_network_id": r.RemoteNetworkID,
-		"protocols":         r.Protocols.ToTerraform(),
+		attr.ID:              r.ID,
+		attr.Name:            r.Name,
+		attr.Address:         r.Address,
+		attr.RemoteNetworkID: r.RemoteNetworkID,
+		attr.Protocols:       r.Protocols.ToTerraform(),
 	}
 }
 
@@ -184,14 +188,14 @@ func (p *Protocols) ToTerraform() []interface{} {
 	}
 
 	rawMap := make(map[string]interface{})
-	rawMap["allow_icmp"] = p.AllowIcmp
+	rawMap[attr.AllowIcmp] = p.AllowIcmp
 
 	if p.TCP != nil {
-		rawMap["tcp"] = p.TCP.ToTerraform()
+		rawMap[attr.TCP] = p.TCP.ToTerraform()
 	}
 
 	if p.UDP != nil {
-		rawMap["udp"] = p.UDP.ToTerraform()
+		rawMap[attr.UDP] = p.UDP.ToTerraform()
 	}
 
 	return []interface{}{rawMap}
@@ -204,8 +208,8 @@ func (p *Protocol) ToTerraform() []interface{} {
 
 	return []interface{}{
 		map[string]interface{}{
-			"policy": p.Policy,
-			"ports":  p.PortsToString(),
+			attr.Policy: p.Policy,
+			attr.Ports:  p.PortsToString(),
 		},
 	}
 }

@@ -93,6 +93,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	resource := response.Entity.ToModel()
 	resource.ServiceAccounts = input.ServiceAccounts
+	resource.IsAuthoritative = input.IsAuthoritative
 
 	return resource, nil
 }
@@ -205,6 +206,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	resource := response.Entity.ToModel()
 	resource.ServiceAccounts = input.ServiceAccounts
+	resource.IsAuthoritative = input.IsAuthoritative
 
 	return resource, nil
 }

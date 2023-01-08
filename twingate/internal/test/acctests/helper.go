@@ -28,6 +28,14 @@ var (
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 )
 
+func ErrServiceAccountsLenMismatch(expected, actual int) error {
+	return fmt.Errorf("expected %d service accounts, actual - %d", expected, actual) //nolint
+}
+
+func ErrGroupsLenMismatch(expected, actual int) error {
+	return fmt.Errorf("expected %d groups, actual - %d", expected, actual) //nolint
+}
+
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
 var ProviderFactories map[string]func() (*schema.Provider, error) //nolint:gochecknoglobals
 
@@ -457,6 +465,29 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 	}
 }
 
+func DeleteResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		groupID, err := getResourceID(state, groupName)
+		if err != nil {
+			return err
+		}
+
+		err = providerClient.DeleteResourceGroups(context.Background(), resourceID, []string{groupID})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to delete group with ID %s: %w", resourceID, groupID, err)
+		}
+
+		return nil
+	}
+}
+
 func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		providerClient := Provider.Meta().(*client.Client)
@@ -472,7 +503,7 @@ func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.Test
 		}
 
 		if len(resource.Groups) != expectedGroupsLen {
-			return fmt.Errorf("expected %d groups, actual - %d", expectedGroupsLen, len(resource.Groups))
+			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.Groups))
 		}
 
 		return nil
@@ -521,6 +552,29 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 	}
 }
 
+func DeleteResourceServiceAccount(resourceName, serviceAccountName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		serviceAccountID, err := getResourceID(state, serviceAccountName)
+		if err != nil {
+			return err
+		}
+
+		err = providerClient.DeleteResourceServiceAccounts(context.Background(), resourceID, []string{serviceAccountID})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to delete service account with ID %s: %w", resourceID, serviceAccountID, err)
+		}
+
+		return nil
+	}
+}
+
 func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccountsLen int) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		providerClient := Provider.Meta().(*client.Client)
@@ -551,7 +605,7 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 		resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
 
 		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
-			return fmt.Errorf("expected %d service accounts, actual - %d", expectedServiceAccountsLen, len(resource.ServiceAccounts))
+			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))
 		}
 
 		return nil

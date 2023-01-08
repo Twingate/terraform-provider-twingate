@@ -653,62 +653,6 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	`, networkName, groupName1, groupName2, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
 }
 
-func TestAccTwingateResourceLoadsAllGroups(t *testing.T) {
-	const theResource = "twingate_resource.test13"
-	remoteNetworkName := test.RandomName()
-	resourceName := test.RandomResourceName()
-	groups, groupsID := genNewGroups("g13", 111)
-
-	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResource13(remoteNetworkName, resourceName, groups, groupsID),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "111"),
-				),
-			},
-			{
-				Config: createResource13(remoteNetworkName, resourceName, groups[:75], groupsID[:75]),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "75"),
-				),
-			},
-		},
-	})
-}
-
-func createResource13(networkName, resourceName string, groups, groupsID []string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test13" {
-	  name = "%s"
-	}
-
-	%s
-
-	resource "twingate_resource" "test13" {
-	  name = "%s"
-	  address = "acc-test.com.13"
-	  remote_network_id = twingate_remote_network.test13.id
-	  group_ids = [%s]
-	  protocols {
-	    allow_icmp = true
-	    tcp {
-	      policy = "%s"
-	      ports = ["80", "82-83"]
-	    }
-	    udp {
-	      policy = "%s"
-	    }
-	  }
-	}
-	`, networkName, strings.Join(groups, "\n"), resourceName, strings.Join(groupsID, ", "), model.PolicyRestricted, model.PolicyAllowAll)
-}
-
 func genNewGroups(resourcePrefix string, count int) ([]string, []string) {
 	groups := make([]string, 0, count)
 	groupsID := make([]string, 0, count)
@@ -974,6 +918,19 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
+					// delete service account from the resource though API
+					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
 		},
@@ -1005,6 +962,143 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 	  }
 
 	  access {
+	    non_authoritative = true
+	    service_account_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(serviceAccountIDs, ", "))
+}
+
+func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
+	const theResource = "twingate_resource.test13"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	serviceAccounts, serviceAccountIDs := genNewServiceAccounts("s13", 3)
+
+	serviceAccountResource := getResourceNameFromID(serviceAccountIDs[2])
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					acctests.WaitTestFunc(),
+					// added new service account to the resource though API
+					acctests.AddResourceServiceAccount(theResource, serviceAccountResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceServiceAccountsLen(theResource, 2),
+				),
+				// expecting drift - terraform going to remove unknown service account
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
+				),
+			},
+			{
+				// added 2 new service accounts to the resource though terraform
+				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 3),
+				),
+			},
+			{
+				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
+				Check: acctests.ComposeTestCheckFunc(
+					// delete one service account from the resource though API
+					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceServiceAccountsLen(theResource, 2),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+				),
+				// expecting drift - terraform going to restore deleted service account
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckResourceServiceAccountsLen(theResource, 3),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+				),
+			},
+			{
+				// remove 2 service accounts from the resource though terraform
+				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+				),
+			},
+			//{
+			//	// remove one service account from the resource though terraform
+			//	Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
+			//	),
+			//},
+			//{
+			//	// expecting no drift - empty plan
+			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+			//	PlanOnly: true,
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
+			//		// delete service account from the resource though API
+			//		acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
+			//		acctests.WaitTestFunc(),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
+			//	),
+			//},
+			//{
+			//	// expecting no drift - empty plan
+			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+			//	PlanOnly: true,
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
+			//	),
+			//},
+		},
+	})
+}
+
+func createResource13(networkName, resourceName string, serviceAccounts, serviceAccountIDs []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test13" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test13" {
+	  name = "%s"
+	  address = "acc-test.com.13"
+	  remote_network_id = twingate_remote_network.test13.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    non_authoritative = false
 	    service_account_ids = [%s]
 	  }
 
@@ -1262,6 +1356,19 @@ func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
 					acctests.CheckResourceGroupsLen(theResource, 2),
+					// remove one group from the resource though API
+					acctests.DeleteResourceGroup(theResource, groupResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceGroupsLen(theResource, 1),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource22(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 1),
 				),
 			},
 		},
@@ -1293,6 +1400,113 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 	  }
 
 	  access {
+	    non_authoritative = true
+	    group_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
+}
+
+func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
+	const theResource = "twingate_resource.test23"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	groups, groupsID := genNewGroups("g23", 3)
+
+	groupResource := getResourceNameFromID(groupsID[2])
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					acctests.WaitTestFunc(),
+					// added new group to the resource though API
+					acctests.AddResourceGroup(theResource, groupResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+				),
+				// expecting drift - terraform going to remove unknown group
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 1),
+				),
+			},
+			{
+				// added 2 new groups to the resource though terraform
+				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
+					acctests.CheckResourceGroupsLen(theResource, 3),
+				),
+			},
+			{
+				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID),
+				Check: acctests.ComposeTestCheckFunc(
+					// delete one group from the resource though API
+					acctests.DeleteResourceGroup(theResource, groupResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
+				),
+				// expecting drift - terraform going to restore deleted group
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckResourceGroupsLen(theResource, 3),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
+				),
+			},
+			{
+				// remove 2 groups from the resource though terraform
+				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 1),
+				),
+			},
+		},
+	})
+}
+
+func createResource23(networkName, resourceName string, groups, groupsID []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test23" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test23" {
+	  name = "%s"
+	  address = "acc-test.com.23"
+	  remote_network_id = twingate_remote_network.test23.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    non_authoritative = false
 	    group_ids = [%s]
 	  }
 

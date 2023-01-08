@@ -78,6 +78,7 @@ resource "twingate_resource" "resource" {
 Optional:
 
 - `group_ids` (Set of String) List of Group IDs that have permission to access the Resource.
+- `non_authoritative` (Boolean) Determines authoritative behaviour for handling the Resource's groups or service accounts.
 - `service_account_ids` (Set of String) List of Service Account IDs that have permission to access the Resource.
 
 
