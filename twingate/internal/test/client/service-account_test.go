@@ -1832,7 +1832,18 @@ func TestReadServiceRequestErrorOnFetching(t *testing.T) {
 
 func TestUpdateServiceAccountRemoveResourcesOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Ok", func(t *testing.T) {
-		jsonResponse := `{
+		response1 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-1",
+		      "keys": null
+		      }
+		    }
+		  }
+		}`
+
+		response2 := `{
 		  "data": {
 		    "serviceAccountUpdate": {
 		      "entity": {
@@ -1848,11 +1859,51 @@ func TestUpdateServiceAccountRemoveResourcesOk(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			))
 
 		err := c.UpdateServiceAccountRemoveResources(context.Background(), "account-id", []string{"resource-1"})
 
 		assert.NoError(t, err)
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesOkButEmpty(t *testing.T) {
+	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Ok But Empty", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-1",
+		      "keys": null
+		      }
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": null,
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			))
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "account-id", []string{"resource-1"})
+
+		assert.EqualError(t, err, `failed to update service account with id account-id: query result is empty`)
 	})
 }
 
@@ -1891,7 +1942,18 @@ func TestUpdateServiceAccountRemoveResourcesRequestError(t *testing.T) {
 
 func TestUpdateServiceAccountRemoveResourcesResponseError(t *testing.T) {
 	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Response Error", func(t *testing.T) {
-		jsonResponse := `{
+		response1 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "service-id",
+		      "name": "test-1",
+		      "keys": null
+		      }
+		    }
+		  }
+		}`
+
+		response2 := `{
 		  "data": {
 		    "serviceAccountUpdate": {
 		      "entity": null,
@@ -1904,7 +1966,10 @@ func TestUpdateServiceAccountRemoveResourcesResponseError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			))
 
 		err := c.UpdateServiceAccountRemoveResources(context.Background(), "service-id", []string{"id1"})
 
@@ -1916,11 +1981,7 @@ func TestUpdateServiceAccountRemoveResourcesEmptyResponse(t *testing.T) {
 	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Empty Response", func(t *testing.T) {
 		jsonResponse := `{
 		  "data": {
-		    "serviceAccountUpdate": {
-		      "entity": null,
-		      "ok": true,
-		      "error": null
-		    }
+		    "serviceAccount": null
 		  }
 		}`
 
@@ -1931,6 +1992,6 @@ func TestUpdateServiceAccountRemoveResourcesEmptyResponse(t *testing.T) {
 
 		err := c.UpdateServiceAccountRemoveResources(context.Background(), "service-id", []string{"id1"})
 
-		assert.EqualError(t, err, `failed to update service account with id service-id: query result is empty`)
+		assert.NoError(t, err)
 	})
 }

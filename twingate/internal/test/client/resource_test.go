@@ -1319,3 +1319,196 @@ func TestClientDeleteResourceServiceAccountsWithError(t *testing.T) {
 		assert.EqualError(t, err, `failed to update service account: id is empty`)
 	})
 }
+
+func TestClientResourcesAddResourceGroupsOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Groups - Ok", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceUpdate": {
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := client.AddResourceGroups(context.Background(), &model.Resource{
+			ID:     "resource-id",
+			Groups: []string{"g-1"},
+		})
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientResourcesAddResourceGroupsWithEmtpyGroups(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Groups - With Empty Groups", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.AddResourceGroups(context.Background(), &model.Resource{
+			ID: "resource-id",
+		})
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientResourcesAddResourceGroupsWithEmtpyResourceID(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Groups - With Empty Resource ID", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.AddResourceGroups(context.Background(), &model.Resource{
+			Groups: []string{"g-1"},
+		})
+
+		assert.EqualError(t, err, "failed to update resource: id is empty")
+	})
+}
+
+func TestClientResourcesAddResourceGroupsRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Groups - Request Error", func(t *testing.T) {
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		err := client.AddResourceGroups(context.Background(), &model.Resource{
+			ID:     "resource-id",
+			Groups: []string{"g-1"},
+		})
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id resource-id: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+	})
+}
+
+func TestClientResourcesAddResourceGroupsResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Groups - Response Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceUpdate": {
+		      "ok": false,
+		      "error": "response error"
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := client.AddResourceGroups(context.Background(), &model.Resource{
+			ID:     "resource-id",
+			Groups: []string{"g-1"},
+		})
+
+		assert.EqualError(t, err, `failed to update resource with id resource-id: response error`)
+	})
+}
+
+func TestClientResourcesDeleteResourceGroupsOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Groups - Ok", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceUpdate": {
+		      "ok": true,
+		      "error": null,
+		      "entity": {
+		        "id": "resource-id"
+		      }
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientResourcesDeleteResourceGroupsWithEmtpyGroups(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Groups - With Empty Groups", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.DeleteResourceGroups(context.Background(), "resource-id", nil)
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientResourcesDeleteResourceGroupsWithEmtpyResourceID(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Groups - With Empty Resource ID", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.DeleteResourceGroups(context.Background(), "", []string{"g-1"})
+
+		assert.EqualError(t, err, "failed to update resource: id is empty")
+	})
+}
+
+func TestClientResourcesDeleteResourceGroupsRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Groups - Request Error", func(t *testing.T) {
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id resource-id: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+	})
+}
+
+func TestClientResourcesDeleteResourceGroupsResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Groups - Response Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceUpdate": {
+		      "ok": false,
+		      "error": "response error"
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
+
+		assert.EqualError(t, err, `failed to update resource with id resource-id: response error`)
+	})
+}
+
+func TestClientResourcesDeleteResourceGroupsEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Delete Resource Groups - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceUpdate": {
+		      "ok": true,
+		      "error": null,
+		      "entity": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
+
+		assert.EqualError(t, err, `failed to update resource with id resource-id: query result is empty`)
+	})
+}

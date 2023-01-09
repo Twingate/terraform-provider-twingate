@@ -314,6 +314,14 @@ func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourc
 }
 
 func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Resource) error {
+	if len(resource.Groups) == 0 {
+		return nil
+	}
+
+	if resource.ID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+	}
+
 	variables := newVars(
 		gqlID(resource.ID),
 		gqlIDs(resource.Groups, "groupIds"),
