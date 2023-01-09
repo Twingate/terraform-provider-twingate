@@ -86,12 +86,8 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", resourceResourceName)
 	}
 
-	err = response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(response.Entity.ID)))
-	if err != nil {
-		return nil, err //nolint
-	}
-
 	resource := response.Entity.ToModel()
+	resource.Groups = input.Groups
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
 

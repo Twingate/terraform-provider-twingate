@@ -1039,36 +1039,6 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 				),
 			},
-			//{
-			//	// remove one service account from the resource though terraform
-			//	Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
-			//	),
-			//},
-			//{
-			//	// expecting no drift - empty plan
-			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-			//	PlanOnly: true,
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
-			//		// delete service account from the resource though API
-			//		acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
-			//		acctests.WaitTestFunc(),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
-			//	),
-			//},
-			//{
-			//	// expecting no drift - empty plan
-			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-			//	PlanOnly: true,
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
-			//	),
-			//},
 		},
 	})
 }

@@ -81,6 +81,29 @@ func TestClientResourceCreateError(t *testing.T) {
 	})
 }
 
+func TestClientResourceCreateEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Create - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceCreate": {
+		      "entity": null,
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
+
+		assert.EqualError(t, err, "failed to create resource: query result is empty")
+	})
+}
+
 func TestClientResourceCreateRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Create Request Error", func(t *testing.T) {
 		client := newHTTPMockClient()
@@ -509,6 +532,47 @@ func TestClientResourceUpdateEmptyResponse(t *testing.T) {
 		_, err := client.UpdateResource(context.Background(), newTestResource())
 
 		assert.EqualError(t, err, "failed to update resource with id test: query result is empty")
+	})
+}
+
+func TestClientResourceUpdateFetchGroupsError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Update - Fetch Groups Error", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "resourceUpdate": {
+		      "ok" : true,
+		      "error" : null,
+		      "entity": {
+		        "id": "test",
+		        "groups": {
+		          "pageInfo": {
+		            "endCursor": "cur001",
+		            "hasNextPage": true
+		          },
+		          "edges": [
+		            {
+		              "node": {
+		                "id": "group-1"
+		              }
+		            }
+		          ]
+		        }
+		      }
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewErrorResponder(errBadRequest),
+			))
+
+		_, err := client.UpdateResource(context.Background(), newTestResource())
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id test: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
 	})
 }
 
