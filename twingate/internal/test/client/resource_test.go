@@ -1576,3 +1576,145 @@ func TestClientResourcesDeleteResourceGroupsEmptyResponse(t *testing.T) {
 		assert.EqualError(t, err, `failed to update resource with id resource-id: query result is empty`)
 	})
 }
+
+func TestClientReadResourceServiceAccountsOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resource Service Accounts - Ok", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccounts": {
+		      "pageInfo": {
+		        "endCursor": "cursor-1",
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id-1",
+		            "name": "test-1",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": null,
+		                "hasNextPage": false
+		              },
+		              "edges": []
+		            },
+		            "keys": null
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id-2",
+		            "name": "test-2",
+		            "resources": {
+		              "pageInfo": {
+		                "endCursor": "cursor-2",
+		                "hasNextPage": false
+		              },
+		              "edges": [
+		                {
+		                  "node": {
+		                    "id": "resource-2-1",
+		                    "isActive": true
+		                  }
+		                }
+		              ]
+		            },
+		            "keys": null
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		expected := []string{"id-2"}
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		serviceAccounts, err := client.ReadResourceServiceAccounts(context.Background(), "resource-2-1")
+
+		assert.NoError(t, err)
+		assert.ElementsMatch(t, expected, serviceAccounts)
+	})
+}
+
+func TestClientReadResourceServiceAccountsRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Resource Service Accounts - Request Error", func(t *testing.T) {
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		serviceAccounts, err := client.ReadResourceServiceAccounts(context.Background(), "resource-2-1")
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.Nil(t, serviceAccounts)
+	})
+}
+
+func TestClientAddResourceServiceAccountIDsOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Service Account IDs - Ok", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": {
+		        "id": "id-1",
+		        "name": "name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": {
+		        "id": "id-2",
+		        "name": "name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			),
+		)
+
+		err := client.AddResourceServiceAccountIDs(context.Background(), &model.Resource{
+			ID:              "resource-1",
+			ServiceAccounts: []string{"id-1", "id-2"},
+		})
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientAddResourceServiceAccountIDsRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Service Account IDs - Request Error", func(t *testing.T) {
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		err := client.AddResourceServiceAccountIDs(context.Background(), &model.Resource{
+			ID:              "resource-1",
+			ServiceAccounts: []string{"id-1", "id-2"},
+		})
+
+		assert.EqualError(t, err, fmt.Sprintf(`failed to update service account with id id-1: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+	})
+}

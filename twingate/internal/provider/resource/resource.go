@@ -169,7 +169,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if err = addResourceServiceAccountIDs(ctx, resource, client); err != nil {
+	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -201,7 +201,7 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if err = addResourceServiceAccountIDs(ctx, resource, client); err != nil {
+	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -263,7 +263,7 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 		}
 	}
 
-	serviceAccounts, err := getResourceServiceAccounts(ctx, resourceClient, resource.ID)
+	serviceAccounts, err := resourceClient.ReadResourceServiceAccounts(ctx, resource.ID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -271,8 +271,8 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 	resource.ServiceAccounts = serviceAccounts
 
 	if !resource.IsAuthoritative {
-		resource.ServiceAccounts = mergeIDs(convertServiceAccounts(resourceData), resource.ServiceAccounts)
-		resource.Groups = mergeIDs(convertGroups(resourceData), resource.Groups)
+		resource.ServiceAccounts = intersection(convertServiceAccounts(resourceData), resource.ServiceAccounts)
+		resource.Groups = intersection(convertGroups(resourceData), resource.Groups)
 	}
 
 	resourceData.SetId(resource.ID)
@@ -398,20 +398,6 @@ func portsNotChanged(attribute, oldValue, newValue string, data *schema.Resource
 	return false
 }
 
-func addResourceServiceAccountIDs(ctx context.Context, resource *model.Resource, client *client.Client) error {
-	for _, serviceAccountID := range resource.ServiceAccounts {
-		_, err := client.UpdateServiceAccount(ctx, &model.ServiceAccount{
-			ID:        serviceAccountID,
-			Resources: []string{resource.ID},
-		})
-		if err != nil {
-			return err //nolint
-		}
-	}
-
-	return nil
-}
-
 func deleteResourceGroupIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
 	groupIDs := getIDsToDelete(ctx, resourceData, resource.Groups, attr.GroupIDs, resource, client)
 
@@ -470,7 +456,7 @@ func getOldIDsNonAuthoritative(resourceData *schema.ResourceData, attribute stri
 func getOldIDsAuthoritative(ctx context.Context, resource *model.Resource, client *client.Client, attribute string) []string {
 	switch attribute {
 	case attr.ServiceAccountIDs:
-		serviceAccounts, err := getResourceServiceAccounts(ctx, client, resource.ID)
+		serviceAccounts, err := client.ReadResourceServiceAccounts(ctx, resource.ID)
 		if err != nil {
 			return nil
 		}
@@ -489,17 +475,18 @@ func getOldIDsAuthoritative(ctx context.Context, resource *model.Resource, clien
 	return nil
 }
 
-func mergeIDs(terraformIDs, existingIDs []string) []string {
-	lookup := utils.MakeLookupMap(existingIDs)
-	mergedIDs := make([]string, 0, len(terraformIDs))
+func intersection(a, b []string) []string {
+	setA := utils.MakeLookupMap(a)
+	setB := utils.MakeLookupMap(b)
+	result := make([]string, 0, len(setA))
 
-	for _, id := range terraformIDs {
-		if lookup[id] {
-			mergedIDs = append(mergedIDs, id)
+	for key := range setA {
+		if setB[key] {
+			result = append(result, key)
 		}
 	}
 
-	return mergedIDs
+	return result
 }
 
 func convertResource(data *schema.ResourceData) (*model.Resource, error) {
@@ -617,21 +604,4 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 	}
 
 	return ports, nil
-}
-
-func getResourceServiceAccounts(ctx context.Context, resourceClient *client.Client, resourceID string) ([]string, error) {
-	serviceAccounts, err := resourceClient.ReadServiceAccounts(ctx)
-	if err != nil {
-		return nil, err //nolint
-	}
-
-	serviceAccountIDs := make(map[string]bool)
-
-	for _, account := range serviceAccounts {
-		if utils.Contains(account.Resources, resourceID) {
-			serviceAccountIDs[account.ID] = true
-		}
-	}
-
-	return utils.MapKeys(serviceAccountIDs), nil
 }

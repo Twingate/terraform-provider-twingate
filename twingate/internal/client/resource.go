@@ -367,3 +367,34 @@ func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID strin
 
 	return nil
 }
+
+func (client *Client) ReadResourceServiceAccounts(ctx context.Context, resourceID string) ([]string, error) {
+	serviceAccounts, err := client.ReadServiceAccounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceAccountIDs := make(map[string]bool)
+
+	for _, account := range serviceAccounts {
+		if utils.Contains(account.Resources, resourceID) {
+			serviceAccountIDs[account.ID] = true
+		}
+	}
+
+	return utils.MapKeys(serviceAccountIDs), nil
+}
+
+func (client *Client) AddResourceServiceAccountIDs(ctx context.Context, resource *model.Resource) error {
+	for _, serviceAccountID := range resource.ServiceAccounts {
+		_, err := client.UpdateServiceAccount(ctx, &model.ServiceAccount{
+			ID:        serviceAccountID,
+			Resources: []string{resource.ID},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
