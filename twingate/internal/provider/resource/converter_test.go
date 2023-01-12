@@ -137,6 +137,16 @@ func TestEqualPorts(t *testing.T) {
 		},
 		{
 			inputA:   []interface{}{"80"},
+			inputB:   []interface{}{""},
+			expected: false,
+		},
+		{
+			inputA:   []interface{}{"80"},
+			inputB:   []interface{}{"90"},
+			expected: false,
+		},
+		{
+			inputA:   []interface{}{"80"},
 			inputB:   []interface{}{"80"},
 			expected: true,
 		},
