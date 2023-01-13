@@ -401,6 +401,38 @@ func TestCreateServiceAccountKeyToModel(t *testing.T) {
 	}
 }
 
+func TestReadShallowServiceAccount(t *testing.T) {
+	cases := []struct {
+		query    ReadShallowServiceAccount
+		expected *model.ServiceAccount
+	}{
+		{
+			query:    ReadShallowServiceAccount{},
+			expected: nil,
+		},
+		{
+			query: ReadShallowServiceAccount{
+				ServiceAccount: &gqlServiceAccount{
+					IDName{
+						ID:   "service-account-id",
+						Name: "service-account-name",
+					},
+				},
+			},
+			expected: &model.ServiceAccount{
+				ID:   "service-account-id",
+				Name: "service-account-name",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
 func TestCreateServiceAccountToModel(t *testing.T) {
 	cases := []struct {
 		query    CreateServiceAccount
@@ -458,6 +490,40 @@ func TestUpdateServiceAccountToModel(t *testing.T) {
 			expected: &model.ServiceAccount{
 				ID:   "service-account-id",
 				Name: "service-account-name",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadRemoteNetworkByIDToModel(t *testing.T) {
+	cases := []struct {
+		query    ReadRemoteNetworkByID
+		expected *model.RemoteNetwork
+	}{
+		{
+			query:    ReadRemoteNetworkByID{},
+			expected: nil,
+		},
+		{
+			query: ReadRemoteNetworkByID{
+				RemoteNetwork: &gqlRemoteNetwork{
+					IDName: IDName{
+						ID:   "network-id",
+						Name: "network-name",
+					},
+					Location: "AWS",
+				},
+			},
+			expected: &model.RemoteNetwork{
+				ID:       "network-id",
+				Name:     "network-name",
+				Location: "AWS",
 			},
 		},
 	}
@@ -575,6 +641,174 @@ func TestCreateGroupToModel(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadGroupToModel(t *testing.T) {
+	cases := []struct {
+		query    ReadGroup
+		expected *model.Group
+	}{
+		{
+			query:    ReadGroup{},
+			expected: nil,
+		},
+		{
+			query: ReadGroup{
+				Group: &gqlGroup{
+					IDName: IDName{
+						ID:   "group-id",
+						Name: "group-name",
+					},
+					IsActive: true,
+					Type:     "MANUAL",
+				},
+			},
+			expected: &model.Group{
+				ID:       "group-id",
+				Name:     "group-name",
+				IsActive: true,
+				Type:     "MANUAL",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadSecurityPolicy(t *testing.T) {
+	cases := []struct {
+		query    ReadSecurityPolicy
+		expected *model.SecurityPolicy
+	}{
+		{
+			query:    ReadSecurityPolicy{},
+			expected: nil,
+		},
+		{
+			query: ReadSecurityPolicy{
+				SecurityPolicy: &gqlSecurityPolicy{
+					IDName{
+						ID:   "policy-id",
+						Name: "policy-name",
+					},
+				},
+			},
+			expected: &model.SecurityPolicy{
+				ID:   "policy-id",
+				Name: "policy-name",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadUserToModel(t *testing.T) {
+	cases := []struct {
+		query    ReadUser
+		expected *model.User
+	}{
+		{
+			query:    ReadUser{},
+			expected: nil,
+		},
+		{
+			query: ReadUser{
+				User: &gqlUser{
+					ID:        "user-id",
+					FirstName: "First",
+					LastName:  "Last",
+					Email:     "email",
+					Role:      "ADMIN",
+				},
+			},
+			expected: &model.User{
+				ID:        "user-id",
+				FirstName: "First",
+				LastName:  "Last",
+				Email:     "email",
+				Role:      "ADMIN",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestProtocolToModel(t *testing.T) {
+	cases := []struct {
+		protocol *Protocol
+		expected *model.Protocol
+	}{
+		{
+			protocol: nil,
+			expected: nil,
+		},
+		{
+			protocol: &Protocol{
+				Ports: []*PortRange{
+					{Start: 80, End: 80},
+				},
+				Policy: "policy",
+			},
+			expected: &model.Protocol{
+				Ports: []*model.PortRange{
+					{Start: 80, End: 80},
+				},
+				Policy: "policy",
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, protocolToModel(c.protocol))
+		})
+	}
+}
+
+func TestPortsRangeToModel(t *testing.T) {
+	cases := []struct {
+		ports    []*PortRange
+		expected []*model.PortRange
+	}{
+		{
+			ports:    nil,
+			expected: []*model.PortRange{},
+		},
+		{
+			ports: []*PortRange{
+				nil,
+			},
+			expected: []*model.PortRange{nil},
+		},
+		{
+			ports: []*PortRange{
+				{Start: 80, End: 90},
+			},
+			expected: []*model.PortRange{
+				{Start: 80, End: 90},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, portsRangeToModel(c.ports))
 		})
 	}
 }
