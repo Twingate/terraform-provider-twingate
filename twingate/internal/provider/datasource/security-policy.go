@@ -10,19 +10,19 @@ import (
 
 func SecurityPolicy() *schema.Resource {
 	return &schema.Resource{
-		Description: "A Security Policy defined in Twingate for your Network or for individual Resources on your Network.",
+		Description: "Security Policies are defined in the Twingate Admin Console and determine user and device authentication requirements for Resources.",
 		ReadContext: readSecurityPolicy,
 		Schema: map[string]*schema.Schema{
 			fieldID: {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "Find a Security Policy by id.",
+				Description:  "Return a Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.",
 				ExactlyOneOf: []string{fieldName},
 			},
 			fieldName: {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "Find a Security Policy by name.",
+				Description:  "Return a Security Policy that exactly matches this name.",
 				ExactlyOneOf: []string{fieldID},
 			},
 		},

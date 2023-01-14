@@ -3,12 +3,12 @@
 page_title: "twingate_security_policy Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  A Security Policy defined in Twingate for your Network or for individual Resources on your Network.
+  Security Policies are defined in the Twingate Admin Console and determine user and device authentication requirements for Resources.
 ---
 
 # twingate_security_policy (Data Source)
 
-A Security Policy defined in Twingate for your Network or for individual Resources on your Network.
+Security Policies are defined in the Twingate Admin Console and determine user and device authentication requirements for Resources.
 
 ## Example Usage
 
@@ -23,7 +23,7 @@ data "twingate_security_policy" "foo" {
 
 ### Optional
 
-- `id` (String) Find a Security Policy by id.
-- `name` (String) Find a Security Policy by name.
+- `id` (String) Return a Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.
+- `name` (String) Return a Security Policy that exactly matches this name.
 
 
