@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/client9/misspell v0.3.4
 	github.com/google/go-cmp v0.5.9
-	github.com/hashicorp/go-retryablehttp v0.7.1
+	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.1
 	github.com/jarcoal/httpmock v1.1.0
