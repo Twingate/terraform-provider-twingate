@@ -71,6 +71,18 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	)
 	variables["protocols"] = newProtocolsInput(input.Protocols)
 
+	if input.IsVisible == nil {
+		variables = gqlNullable(false, "isVisible")(variables)
+	} else {
+		variables = gqlVar(*input.IsVisible, "isVisible")(variables)
+	}
+
+	if input.IsBrowserShortcutEnabled == nil {
+		variables = gqlNullable(false, "isBrowserShortcutEnabled")(variables)
+	} else {
+		variables = gqlVar(*input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled")(variables)
+	}
+
 	response := query.CreateResource{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createResource", &response, variables)
@@ -90,6 +102,14 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	resource.Groups = input.Groups
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
+
+	if input.IsVisible == nil {
+		resource.IsVisible = nil
+	}
+
+	if input.IsBrowserShortcutEnabled == nil {
+		resource.IsBrowserShortcutEnabled = nil
+	}
 
 	return resource, nil
 }
@@ -179,6 +199,18 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
 	)
 
+	if input.IsVisible == nil {
+		variables = gqlNullable(false, "isVisible")(variables)
+	} else {
+		variables = gqlVar(*input.IsVisible, "isVisible")(variables)
+	}
+
+	if input.IsBrowserShortcutEnabled == nil {
+		variables = gqlNullable(false, "isBrowserShortcutEnabled")(variables)
+	} else {
+		variables = gqlVar(*input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled")(variables)
+	}
+
 	response := query.UpdateResource{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
@@ -203,6 +235,14 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 	resource := response.Entity.ToModel()
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
+
+	if input.IsVisible == nil {
+		resource.IsVisible = nil
+	}
+
+	if input.IsBrowserShortcutEnabled == nil {
+		resource.IsBrowserShortcutEnabled = nil
+	}
 
 	return resource, nil
 }

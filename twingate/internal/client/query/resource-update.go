@@ -1,7 +1,7 @@
 package query
 
 type UpdateResource struct {
-	ResourceEntityResponse `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, addedGroupIds: $groupIds, protocols: $protocols)"`
+	ResourceEntityResponse `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, addedGroupIds: $groupIds, protocols: $protocols, isVisible: $isVisible, isBrowserShortcutEnabled: $isBrowserShortcutEnabled)"`
 }
 
 type UpdateResourceActiveState struct {

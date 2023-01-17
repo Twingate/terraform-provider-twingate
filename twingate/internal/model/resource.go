@@ -21,15 +21,17 @@ const (
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
 type Resource struct {
-	ID              string
-	RemoteNetworkID string
-	Address         string
-	Name            string
-	Protocols       *Protocols
-	IsActive        bool
-	Groups          []string
-	ServiceAccounts []string
-	IsAuthoritative bool
+	ID                       string
+	RemoteNetworkID          string
+	Address                  string
+	Name                     string
+	Protocols                *Protocols
+	IsActive                 bool
+	Groups                   []string
+	ServiceAccounts          []string
+	IsAuthoritative          bool
+	IsVisible                *bool
+	IsBrowserShortcutEnabled *bool
 }
 
 func (r Resource) AccessToTerraform() []interface{} {
@@ -45,8 +47,6 @@ func (r Resource) AccessToTerraform() []interface{} {
 	if len(rawMap) == 0 {
 		return nil
 	}
-
-	rawMap[attr.NonAuthoritative] = !r.IsAuthoritative
 
 	return []interface{}{rawMap}
 }

@@ -29,6 +29,9 @@ const (
 	nameAttr        = "name"
 	addressAttr     = "address"
 	accessTokenAttr = "access_token"
+
+	isVisibleAttr                = "is_visible"
+	isBrowserShortcutEnabledAttr = "is_browser_shortcut_enabled"
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
@@ -961,8 +964,8 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 	    }
 	  }
 
+	  authoritative = false
 	  access {
-	    non_authoritative = true
 	    service_account_ids = [%s]
 	  }
 
@@ -1067,8 +1070,8 @@ func createResource13(networkName, resourceName string, serviceAccounts, service
 	    }
 	  }
 
+	  authoritative = true
 	  access {
-	    non_authoritative = false
 	    service_account_ids = [%s]
 	  }
 
@@ -1369,8 +1372,8 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 	    }
 	  }
 
+	  authoritative = false
 	  access {
-	    non_authoritative = true
 	    group_ids = [%s]
 	  }
 
@@ -1475,8 +1478,8 @@ func createResource23(networkName, resourceName string, groups, groupsID []strin
 	    }
 	  }
 
+	  authoritative = true
 	  access {
-	    non_authoritative = false
 	    group_ids = [%s]
 	  }
 
@@ -1507,4 +1510,310 @@ func TestGetResourceNameFromID(t *testing.T) {
 		actual := getResourceNameFromID(c.input)
 		assert.Equal(t, c.expected, actual)
 	}
+}
+
+func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
+	const terraformResourceName = "test24"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "true"),
+					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+				),
+			},
+			{
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
+					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func createResourceWithFlagIsVisible(terraformResourceName, networkName, resourceName string, isVisible bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	  is_visible = %v
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName, isVisible)
+}
+
+func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T) {
+	const terraformResourceName = "test25"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "true"),
+					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+				),
+			},
+			{
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
+					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, networkName, resourceName string, isBrowserShortcutEnabled bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	  is_browser_shortcut_enabled = %v
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName, isBrowserShortcutEnabled)
+}
+
+func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
+	const theResource = "twingate_resource.test26"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	groups, groupsID := genNewGroups("g26", 3)
+
+	groupResource := getResourceNameFromID(groupsID[2])
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.WaitTestFunc(),
+					// added new group to the resource though API
+					acctests.AddResourceGroup(theResource, groupResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+				),
+				// expecting drift - terraform going to remove unknown group
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 1),
+				),
+			},
+			{
+				// added 2 new groups to the resource though terraform
+				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "3"),
+					acctests.CheckResourceGroupsLen(theResource, 3),
+				),
+			},
+			{
+				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID),
+				Check: acctests.ComposeTestCheckFunc(
+					// delete one group from the resource though API
+					acctests.DeleteResourceGroup(theResource, groupResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "3"),
+				),
+				// expecting drift - terraform going to restore deleted group
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckResourceGroupsLen(theResource, 3),
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "3"),
+				),
+			},
+			{
+				// remove 2 groups from the resource though terraform
+				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 1),
+				),
+			},
+		},
+	})
+}
+
+func createResource26(networkName, resourceName string, groups, groupsID []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test26" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test26" {
+	  name = "%s"
+	  address = "acc-test.com.26"
+	  remote_network_id = twingate_remote_network.test26.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  group_ids = [%s]
+
+	}
+	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
+}
+
+func TestAccTwingateResourceGroupsNotAuthoritative(t *testing.T) {
+	const theResource = "twingate_resource.test27"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	groups, groupsID := genNewGroups("g27", 3)
+
+	groupResource := getResourceNameFromID(groupsID[2])
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource27(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.WaitTestFunc(),
+					// added new group to the resource though API
+					acctests.AddResourceGroup(theResource, groupResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource27(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+				),
+			},
+			{
+				// added new group to the resource though terraform
+				Config: createResource27(remoteNetworkName, resourceName, groups, groupsID[:2]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "2"),
+					acctests.CheckResourceGroupsLen(theResource, 3),
+				),
+			},
+			{
+				// remove one group from the resource though terraform
+				Config: createResource27(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource27(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 2),
+					// remove one group from the resource though API
+					acctests.DeleteResourceGroup(theResource, groupResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceGroupsLen(theResource, 1),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource27(remoteNetworkName, resourceName, groups, groupsID[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, groupIdsLen, "1"),
+					acctests.CheckResourceGroupsLen(theResource, 1),
+				),
+			},
+		},
+	})
+}
+
+func createResource27(networkName, resourceName string, groups, groupsID []string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test27" {
+	  name = "%s"
+	}
+
+	%s
+
+	resource "twingate_resource" "test27" {
+	  name = "%s"
+	  address = "acc-test.com.27"
+	  remote_network_id = twingate_remote_network.test27.id
+	  
+	  protocols {
+	    allow_icmp = true
+	    tcp {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp {
+	      policy = "%s"
+	    }
+	  }
+
+	  authoritative = false
+	  group_ids = [%s]
+
+	}
+	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
 }

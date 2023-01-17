@@ -84,12 +84,6 @@ func Resource() *schema.Resource { //nolint:funlen
 				AtLeastOneOf: []string{attr.Path(attr.Access, attr.GroupIDs)},
 				Description:  "List of Service Account IDs that have permission to access the Resource.",
 			},
-			attr.NonAuthoritative: {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "Determines authoritative behaviour for handling the Resource's groups or service accounts.",
-			},
 		},
 	}
 
@@ -126,6 +120,12 @@ func Resource() *schema.Resource { //nolint:funlen
 				Deprecated:    "The group_ids argument is now deprecated, and the new access block argument should be used instead. The group_ids argument will be removed in a future version of the provider.",
 				ConflictsWith: []string{attr.Access},
 			},
+			attr.Authoritative: {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Determines authoritative behaviour for handling the Resource's groups or service accounts.",
+			},
 			attr.Protocols: {
 				Type:                  schema.TypeList,
 				Optional:              true,
@@ -142,6 +142,16 @@ func Resource() *schema.Resource { //nolint:funlen
 				ConflictsWith: []string{attr.GroupIDs},
 				Description:   "Restrict access to certain groups or service accounts",
 				Elem:          accessSchema,
+			},
+			attr.IsVisible: {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
+			},
+			attr.IsBrowserShortcutEnabled: {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
 			},
 			// computed
 			attr.ID: {
@@ -216,6 +226,16 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 	resource, err := client.ReadResource(ctx, resourceData.Id())
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlag(resourceData)
+
+		_, exists := resourceData.GetOkExists(attr.IsVisible) //nolint
+		if !exists {
+			resource.IsVisible = nil
+		}
+
+		_, exists = resourceData.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
+		if !exists {
+			resource.IsBrowserShortcutEnabled = nil
+		}
 	}
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
@@ -280,7 +300,7 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 	return readDiagnostics(resourceData, resource)
 }
 
-func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource) diag.Diagnostics {
+func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource) diag.Diagnostics { //nolint:cyclop
 	if err := resourceData.Set(attr.Name, resource.Name); err != nil {
 		return ErrAttributeSet(err, attr.Name)
 	}
@@ -291,6 +311,10 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 
 	if err := resourceData.Set(attr.Address, resource.Address); err != nil {
 		return ErrAttributeSet(err, attr.Address)
+	}
+
+	if err := resourceData.Set(attr.Authoritative, resource.IsAuthoritative); err != nil {
+		return ErrAttributeSet(err, attr.Authoritative)
 	}
 
 	if _, exists := resourceData.GetOk(attr.GroupIDs); exists {
@@ -305,6 +329,18 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 
 	if err := resourceData.Set(attr.Protocols, resource.Protocols.ToTerraform()); err != nil {
 		return ErrAttributeSet(err, attr.Protocols)
+	}
+
+	if resource.IsVisible != nil {
+		if err := resourceData.Set(attr.IsVisible, *resource.IsVisible); err != nil {
+			return ErrAttributeSet(err, attr.IsVisible)
+		}
+	}
+
+	if resource.IsBrowserShortcutEnabled != nil {
+		if err := resourceData.Set(attr.IsBrowserShortcutEnabled, *resource.IsBrowserShortcutEnabled); err != nil {
+			return ErrAttributeSet(err, attr.IsBrowserShortcutEnabled)
+		}
 	}
 
 	return nil
@@ -430,11 +466,11 @@ func getIDsToDelete(ctx context.Context, resourceData *schema.ResourceData, curr
 }
 
 func getOldIDs(ctx context.Context, resourceData *schema.ResourceData, attribute string, resource *model.Resource, client *client.Client) []string {
-	if !resource.IsAuthoritative {
-		return getOldIDsNonAuthoritative(resourceData, attribute)
+	if resource.IsAuthoritative {
+		return getOldIDsAuthoritative(ctx, resource, client, attribute)
 	}
 
-	return getOldIDsAuthoritative(ctx, resource, client, attribute)
+	return getOldIDsNonAuthoritative(resourceData, attribute)
 }
 
 func getOldIDsNonAuthoritative(resourceData *schema.ResourceData, attribute string) []string {
@@ -511,38 +547,34 @@ func convertGroups(data *schema.ResourceData) []string {
 		return convertIDs(groupIDs)
 	}
 
-	groups, _, _ := convertAccess(data)
+	groups, _ := convertAccess(data)
 
 	return groups
 }
 
-func convertAccess(data *schema.ResourceData) ([]string, []string, bool) {
-	const defaultAuthoritative = true
-
+func convertAccess(data *schema.ResourceData) ([]string, []string) {
 	rawList := data.Get(attr.Access).([]interface{})
 	if len(rawList) == 0 {
-		return nil, nil, defaultAuthoritative
+		return nil, nil
 	}
 
 	if rawList[0] == nil {
-		return nil, nil, defaultAuthoritative
+		return nil, nil
 	}
 
 	rawMap := rawList[0].(map[string]interface{})
 
-	return convertIDs(rawMap[attr.GroupIDs]), convertIDs(rawMap[attr.ServiceAccountIDs]), !rawMap[attr.NonAuthoritative].(bool)
+	return convertIDs(rawMap[attr.GroupIDs]), convertIDs(rawMap[attr.ServiceAccountIDs])
 }
 
 func convertServiceAccounts(data *schema.ResourceData) []string {
-	_, serviceAccounts, _ := convertAccess(data)
+	_, serviceAccounts := convertAccess(data)
 
 	return serviceAccounts
 }
 
 func convertAuthoritativeFlag(data *schema.ResourceData) bool {
-	_, _, isAuthoritative := convertAccess(data)
-
-	return isAuthoritative
+	return data.Get(attr.Authoritative).(bool)
 }
 
 func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {

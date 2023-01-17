@@ -266,8 +266,8 @@ func TestResourceAccessToTerraform(t *testing.T) {
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					attr.GroupIDs:         []string{"group-1"},
-					attr.NonAuthoritative: true,
+					attr.GroupIDs:      []string{"group-1"},
+					attr.Authoritative: true,
 				},
 			},
 		},
@@ -279,7 +279,7 @@ func TestResourceAccessToTerraform(t *testing.T) {
 			expected: []interface{}{
 				map[string]interface{}{
 					attr.ServiceAccountIDs: []string{"service-1"},
-					attr.NonAuthoritative:  false,
+					attr.Authoritative:     false,
 				},
 			},
 		},

@@ -4,6 +4,7 @@ const (
 	TwingateGroup            = "twingate_group"
 	TwingateGroups           = "twingate_groups"
 	TwingateRemoteNetwork    = "twingate_remote_network"
+	TwingateRemoteNetworks   = "twingate_remote_networks"
 	TwingateUser             = "twingate_user"
 	TwingateUsers            = "twingate_users"
 	TwingateConnector        = "twingate_connector"

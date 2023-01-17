@@ -119,6 +119,8 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 
 func TestClientResourceReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Client Resource Ok", func(t *testing.T) {
+		var defaultBool bool
+
 		expected := &model.Resource{
 			ID:              "resource1",
 			Name:            "test resource",
@@ -141,6 +143,8 @@ func TestClientResourceReadOk(t *testing.T) {
 				},
 				AllowIcmp: true,
 			},
+			IsVisible:                &defaultBool,
+			IsBrowserShortcutEnabled: &defaultBool,
 		}
 
 		jsonResponse := fmt.Sprintf(`{
@@ -208,6 +212,8 @@ func TestClientResourceReadOk(t *testing.T) {
 
 func TestClientResourceReadAllGroups(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Groups", func(t *testing.T) {
+		var defaultBool bool
+
 		expected := &model.Resource{
 			ID:              "resource1",
 			Name:            "test resource",
@@ -231,6 +237,8 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 				},
 				AllowIcmp: true,
 			},
+			IsVisible:                &defaultBool,
+			IsBrowserShortcutEnabled: &defaultBool,
 		}
 
 		jsonResponse := fmt.Sprintf(`{
@@ -655,12 +663,14 @@ func TestClientResourceEmptyDeleteError(t *testing.T) {
 
 func TestClientResourcesReadAllOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Resource Read All Ok", func(t *testing.T) {
+		var defaultBool bool
+
 		expected := []*model.Resource{
-			{ID: "resource1", Name: "tf-acc-resource1"},
-			{ID: "resource2", Name: "resource2"},
-			{ID: "resource3", Name: "tf-acc-resource3"},
-			{ID: "resource4", Name: "tf-acc-resource4"},
-			{ID: "resource5", Name: "tf-acc-resource5"},
+			{ID: "resource1", Name: "tf-acc-resource1", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
+			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
+			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
+			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
+			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
 		}
 
 		// response JSON
@@ -983,6 +993,8 @@ func TestClientResourceReadWithoutGroupsOk(t *testing.T) {
 
 func TestClientResourcesReadByNameOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read Resources By Name - Ok", func(t *testing.T) {
+		var defaultBool bool
+
 		expected := []*model.Resource{
 			{
 				ID: "id-1", Name: "resource-test", Address: "internal.int",
@@ -999,7 +1011,9 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 						Ports:  []*model.PortRange{},
 					},
 				},
-				RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+				RemoteNetworkID:          "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+				IsVisible:                &defaultBool,
+				IsBrowserShortcutEnabled: &defaultBool,
 			},
 			{
 				ID: "id-2", Name: "resource-test", Address: "internal.int",
@@ -1016,7 +1030,9 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 						Ports:  []*model.PortRange{},
 					},
 				},
-				RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+				RemoteNetworkID:          "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+				IsVisible:                &defaultBool,
+				IsBrowserShortcutEnabled: &defaultBool,
 			},
 			{
 				ID: "id-3", Name: "resource-test", Address: "internal.int",
@@ -1033,7 +1049,9 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 						Ports:  []*model.PortRange{},
 					},
 				},
-				RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+				RemoteNetworkID:          "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+				IsVisible:                &defaultBool,
+				IsBrowserShortcutEnabled: &defaultBool,
 			},
 		}
 
