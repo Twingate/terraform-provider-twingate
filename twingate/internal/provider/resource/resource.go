@@ -102,6 +102,16 @@ func Resource() *schema.Resource { //nolint:funlen
 					},
 				},
 			},
+			"is_visible": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
+			},
+			"is_browser_shortcut_enabled": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
+			},
 			// computed
 			"id": {
 				Type:        schema.TypeString,
@@ -249,10 +259,22 @@ func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
-	resource, err := c.ReadResource(ctx, resourceData.Id())
+	client := meta.(*client.Client)
+	resource, err := client.ReadResource(ctx, resourceData.Id())
 
-	return resourceResourceReadHelper(ctx, c, resourceData, resource, err)
+	if resource != nil {
+		_, exists := resourceData.GetOkExists("is_visible") //nolint
+		if !exists {
+			resource.IsVisible = nil
+		}
+
+		_, exists = resourceData.GetOkExists("is_browser_shortcut_enabled") //nolint
+		if !exists {
+			resource.IsBrowserShortcutEnabled = nil
+		}
+	}
+
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
 
 func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Client, resourceData *schema.ResourceData, resource *model.Resource, err error) diag.Diagnostics {
@@ -307,6 +329,18 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 
 	if err := resourceData.Set("protocols", resource.Protocols.ToTerraform()); err != nil {
 		return diag.FromErr(fmt.Errorf("error setting protocols: %w ", err))
+	}
+
+	if resource.IsVisible != nil {
+		if err := resourceData.Set("is_visible", *resource.IsVisible); err != nil {
+			return diag.FromErr(fmt.Errorf("error setting is_visible: %w ", err))
+		}
+	}
+
+	if resource.IsBrowserShortcutEnabled != nil {
+		if err := resourceData.Set("is_browser_shortcut_enabled", *resource.IsBrowserShortcutEnabled); err != nil {
+			return diag.FromErr(fmt.Errorf("error setting is_browser_shortcut_enabled: %w ", err))
+		}
 	}
 
 	return nil

@@ -49,6 +49,11 @@ func TestReadConnectorQueryToModel(t *testing.T) {
 }
 
 func TestReadResourcesByNameQueryToModel(t *testing.T) {
+	var (
+		boolTrue  = true
+		boolFalse = false
+	)
+
 	cases := []struct {
 		query    ReadResourcesByName
 		expected []*model.Resource
@@ -73,6 +78,8 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 									}{
 										ID: "resource-network-id",
 									},
+									IsVisible:                true,
+									IsBrowserShortcutEnabled: false,
 								},
 							},
 						},
@@ -81,9 +88,11 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 			},
 			expected: []*model.Resource{
 				{
-					ID:              "resource-id",
-					Name:            "resource-name",
-					RemoteNetworkID: "resource-network-id",
+					ID:                       "resource-id",
+					Name:                     "resource-name",
+					RemoteNetworkID:          "resource-network-id",
+					IsVisible:                &boolTrue,
+					IsBrowserShortcutEnabled: &boolFalse,
 				},
 			},
 		},
