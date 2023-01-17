@@ -105,12 +105,12 @@ func Resource() *schema.Resource { //nolint:funlen
 			"is_visible": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Description: "Indicates if the Resource is active.",
+				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
 			},
 			"is_browser_shortcut_enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Description: "Indicates whether this Resource will display a browser shortcut in the client.",
+				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
 			},
 			// computed
 			"id": {
