@@ -20,13 +20,15 @@ const (
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
 type Resource struct {
-	ID              string
-	RemoteNetworkID string
-	Address         string
-	Name            string
-	Groups          []string
-	Protocols       *Protocols
-	IsActive        bool
+	ID                       string
+	RemoteNetworkID          string
+	Address                  string
+	Name                     string
+	Groups                   []string
+	Protocols                *Protocols
+	IsActive                 bool
+	IsVisible                *bool
+	IsBrowserShortcutEnabled *bool
 }
 
 func (r Resource) GetID() string {
