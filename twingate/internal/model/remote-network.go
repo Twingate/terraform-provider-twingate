@@ -23,3 +23,11 @@ func (n RemoteNetwork) GetName() string {
 func (n RemoteNetwork) GetID() string {
 	return n.ID
 }
+
+func (n RemoteNetwork) ToTerraform() interface{} {
+	return map[string]interface{}{
+		"id":       n.ID,
+		"name":     n.Name,
+		"location": n.Location,
+	}
+}

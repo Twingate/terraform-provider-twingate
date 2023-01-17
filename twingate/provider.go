@@ -41,6 +41,7 @@ func Provider(version string) *schema.Provider {
 			datasource.TwingateGroup:            datasource.Group(),
 			datasource.TwingateGroups:           datasource.Groups(),
 			datasource.TwingateRemoteNetwork:    datasource.RemoteNetwork(),
+			datasource.TwingateRemoteNetworks:   datasource.RemoteNetworks(),
 			datasource.TwingateUser:             datasource.User(),
 			datasource.TwingateUsers:            datasource.Users(),
 			datasource.TwingateConnector:        datasource.Connector(),
