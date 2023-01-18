@@ -101,6 +101,7 @@ func Resource() *schema.Resource { //nolint:funlen
 					},
 				},
 			},
+			// computed
 			"is_visible": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -113,7 +114,6 @@ func Resource() *schema.Resource { //nolint:funlen
 				Computed:    true,
 				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
 			},
-			// computed
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -262,18 +262,6 @@ func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 	resource, err := client.ReadResource(ctx, resourceData.Id())
-
-	//if resource != nil {
-	//	_, exists := resourceData.GetOkExists("is_visible") //nolint
-	//	if !exists {
-	//		resource.IsVisible = nil
-	//	}
-	//
-	//	_, exists = resourceData.GetOkExists("is_browser_shortcut_enabled") //nolint
-	//	if !exists {
-	//		resource.IsBrowserShortcutEnabled = nil
-	//	}
-	//}
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
