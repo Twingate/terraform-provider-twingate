@@ -104,11 +104,13 @@ func Resource() *schema.Resource { //nolint:funlen
 			"is_visible": {
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
 			},
 			"is_browser_shortcut_enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
 			},
 			// computed
@@ -261,17 +263,17 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 	client := meta.(*client.Client)
 	resource, err := client.ReadResource(ctx, resourceData.Id())
 
-	if resource != nil {
-		_, exists := resourceData.GetOkExists("is_visible") //nolint
-		if !exists {
-			resource.IsVisible = nil
-		}
-
-		_, exists = resourceData.GetOkExists("is_browser_shortcut_enabled") //nolint
-		if !exists {
-			resource.IsBrowserShortcutEnabled = nil
-		}
-	}
+	//if resource != nil {
+	//	_, exists := resourceData.GetOkExists("is_visible") //nolint
+	//	if !exists {
+	//		resource.IsVisible = nil
+	//	}
+	//
+	//	_, exists = resourceData.GetOkExists("is_browser_shortcut_enabled") //nolint
+	//	if !exists {
+	//		resource.IsBrowserShortcutEnabled = nil
+	//	}
+	//}
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
