@@ -1,0 +1,1 @@
+data "twingate_remote_networks" "all" {}

@@ -61,3 +61,13 @@ func convertSecurityPoliciesToTerraform(securityPolicies []*model.SecurityPolicy
 
 	return out
 }
+
+func convertRemoteNetworksToTerraform(remoteNetworks []*model.RemoteNetwork) []interface{} {
+	out := make([]interface{}, 0, len(remoteNetworks))
+
+	for _, remoteNetwork := range remoteNetworks {
+		out = append(out, remoteNetwork.ToTerraform())
+	}
+
+	return out
+}

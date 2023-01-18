@@ -23,8 +23,10 @@ type ResourceNode struct {
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
-	Protocols *Protocols
-	IsActive  graphql.Boolean
+	Protocols                *Protocols
+	IsActive                 graphql.Boolean
+	IsVisible                graphql.Boolean
+	IsBrowserShortcutEnabled graphql.Boolean
 }
 
 type Protocols struct {
@@ -56,13 +58,18 @@ func (r gqlResource) ToModel() *model.Resource {
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
+	isVisible := bool(r.IsVisible)
+	isBrowserShortcutEnabled := bool(r.IsBrowserShortcutEnabled)
+
 	return &model.Resource{
-		ID:              r.StringID(),
-		Name:            r.StringName(),
-		Address:         string(r.Address.Value),
-		RemoteNetworkID: idToString(r.RemoteNetwork.ID),
-		Protocols:       protocolsToModel(r.Protocols),
-		IsActive:        bool(r.IsActive),
+		ID:                       r.StringID(),
+		Name:                     r.StringName(),
+		Address:                  string(r.Address.Value),
+		RemoteNetworkID:          idToString(r.RemoteNetwork.ID),
+		Protocols:                protocolsToModel(r.Protocols),
+		IsActive:                 bool(r.IsActive),
+		IsVisible:                &isVisible,
+		IsBrowserShortcutEnabled: &isBrowserShortcutEnabled,
 	}
 }
 

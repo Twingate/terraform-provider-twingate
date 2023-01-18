@@ -12,13 +12,25 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		return nil, err
 	}
 
-	return &model.Resource{
+	res := &model.Resource{
 		Name:            data.Get("name").(string),
 		RemoteNetworkID: data.Get("remote_network_id").(string),
 		Address:         data.Get("address").(string),
 		Groups:          convertGroups(data),
 		Protocols:       protocols,
-	}, nil
+	}
+
+	isVisible, ok := data.GetOkExists("is_visible") //nolint
+	if val := isVisible.(bool); ok {
+		res.IsVisible = &val
+	}
+
+	isBrowserShortcutEnabled, ok := data.GetOkExists("is_browser_shortcut_enabled") //nolint
+	if val := isBrowserShortcutEnabled.(bool); ok {
+		res.IsBrowserShortcutEnabled = &val
+	}
+
+	return res, nil
 }
 
 func convertGroups(data *schema.ResourceData) []string {

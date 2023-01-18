@@ -25,6 +25,9 @@ const (
 	nameAttr        = "name"
 	addressAttr     = "address"
 	accessTokenAttr = "access_token"
+
+	isVisibleAttr                = "is_visible"
+	isBrowserShortcutEnabledAttr = "is_browser_shortcut_enabled"
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
@@ -724,4 +727,98 @@ func newTerraformGroup(resourceName, groupName string) string {
       name = "%s"
     }
 	`, resourceName, groupName)
+}
+
+func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
+	const terraformResourceName = "test14"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "true"),
+					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+				),
+			},
+			{
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
+					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithFlagIsVisible(terraformResourceName, networkName, resourceName string, isVisible bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	  is_visible = %v
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName, isVisible)
+}
+
+func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T) {
+	const terraformResourceName = "test15"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "true"),
+					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+				),
+			},
+			{
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
+					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, networkName, resourceName string, isBrowserShortcutEnabled bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	  is_browser_shortcut_enabled = %v
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName, isBrowserShortcutEnabled)
 }
