@@ -1539,7 +1539,8 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
+				ExpectNonEmptyPlan: true,
+				Config:             createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
 				),
@@ -1610,7 +1611,8 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				ExpectNonEmptyPlan: true,
+				Config:             createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
 				),
