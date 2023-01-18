@@ -143,17 +143,19 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description:   "Restrict access to certain groups or service accounts",
 				Elem:          accessSchema,
 			},
+			// computed
 			attr.IsVisible: {
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
 			},
 			attr.IsBrowserShortcutEnabled: {
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
 			},
-			// computed
 			attr.ID: {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -226,16 +228,6 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 	resource, err := client.ReadResource(ctx, resourceData.Id())
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlag(resourceData)
-
-		_, exists := resourceData.GetOkExists(attr.IsVisible) //nolint
-		if !exists {
-			resource.IsVisible = nil
-		}
-
-		_, exists = resourceData.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
-		if !exists {
-			resource.IsBrowserShortcutEnabled = nil
-		}
 	}
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
