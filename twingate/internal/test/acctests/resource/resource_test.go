@@ -741,25 +741,49 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Config: createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+				),
+			},
+			{
+				// expecting no changes
+				PlanOnly: true,
+				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "true"),
-					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
 				),
 			},
 			{
 				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
 					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
-					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+				),
+			},
+			{
+				// expecting no changes
+				PlanOnly: true,
+				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
 				),
 			},
 		},
 	})
+}
+
+func createSimpleResource(terraformResourceName, networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName)
 }
 
 func createResourceWithFlagIsVisible(terraformResourceName, networkName, resourceName string, isVisible bool) string {
@@ -788,21 +812,32 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
+				Config: createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
+					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+				),
+			},
+			{
+				// expecting no changes
+				PlanOnly: true,
+				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "true"),
-					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
 				),
 			},
 			{
 				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, groupIdsLen),
 					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
-					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+				),
+			},
+			{
+				// expecting no changes
+				PlanOnly: true,
+				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
 				),
 			},
 		},
