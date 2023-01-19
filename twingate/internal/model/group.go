@@ -1,10 +1,11 @@
 package model
 
 type Group struct {
-	ID       string
-	Name     string
-	Type     string
-	IsActive bool
+	ID               string
+	Name             string
+	Type             string
+	IsActive         bool
+	SecurityPolicyID string
 }
 
 func (g Group) GetName() string {

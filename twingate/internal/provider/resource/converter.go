@@ -33,6 +33,14 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 	return res, nil
 }
 
+func convertGroup(resourceData *schema.ResourceData) *model.Group {
+	return &model.Group{
+		ID:               resourceData.Id(),
+		Name:             resourceData.Get("name").(string),
+		SecurityPolicyID: resourceData.Get("security_policy_id").(string),
+	}
+}
+
 func convertGroups(data *schema.ResourceData) []string {
 	return utils.Map[interface{}, string](
 		data.Get("group_ids").(*schema.Set).List(),

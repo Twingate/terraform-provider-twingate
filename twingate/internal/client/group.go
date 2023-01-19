@@ -16,12 +16,15 @@ type PageInfo struct {
 	HasNextPage graphql.Boolean
 }
 
-func (client *Client) CreateGroup(ctx context.Context, groupName string) (*model.Group, error) {
-	if groupName == "" {
+func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*model.Group, error) {
+	if input == nil || input.Name == "" {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "create", groupResourceName)
 	}
 
-	variables := newVars(gqlVar(groupName, "name"))
+	variables := newVars(
+		gqlVar(input.Name, "name"),
+		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+	)
 	response := query.CreateGroup{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createGroup", &response, variables)
@@ -137,33 +140,34 @@ func (client *Client) readGroupsByNameAfter(ctx context.Context, variables map[s
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) UpdateGroup(ctx context.Context, groupID, groupName string) (*model.Group, error) {
-	if groupID == "" {
+func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*model.Group, error) {
+	if input == nil || input.ID == "" {
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "update", groupResourceName)
 	}
 
-	if groupName == "" {
+	if input.Name == "" {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "update", groupResourceName)
 	}
 
 	variables := newVars(
-		gqlID(groupID),
-		gqlVar(groupName, "name"),
+		gqlID(input.ID),
+		gqlVar(input.Name, "name"),
+		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 	)
 
 	response := query.UpdateGroup{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(err, "update", groupResourceName, input.ID)
 	}
 
 	if !response.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", groupResourceName, input.ID)
 	}
 
 	if response.Entity == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", groupResourceName, input.ID)
 	}
 
 	return response.Entity.ToModel(), nil

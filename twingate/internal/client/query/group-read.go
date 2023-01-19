@@ -11,16 +11,18 @@ type ReadGroup struct {
 
 type gqlGroup struct {
 	IDName
-	IsActive graphql.Boolean
-	Type     graphql.String
+	IsActive       graphql.Boolean
+	Type           graphql.String
+	SecurityPolicy gqlSecurityPolicy
 }
 
 func (g gqlGroup) ToModel() *model.Group {
 	return &model.Group{
-		ID:       g.StringID(),
-		Name:     g.StringName(),
-		Type:     string(g.Type),
-		IsActive: bool(g.IsActive),
+		ID:               g.StringID(),
+		Name:             g.StringName(),
+		Type:             string(g.Type),
+		IsActive:         bool(g.IsActive),
+		SecurityPolicyID: g.SecurityPolicy.StringID(),
 	}
 }
 
