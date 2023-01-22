@@ -22,7 +22,7 @@ func (q ReadSecurityPolicy) ToModel() *model.SecurityPolicy {
 
 func (q *gqlSecurityPolicy) ToModel() *model.SecurityPolicy {
 	return &model.SecurityPolicy{
-		ID:   q.StringID(),
-		Name: q.StringName(),
+		ID:   string(q.ID),
+		Name: q.Name,
 	}
 }

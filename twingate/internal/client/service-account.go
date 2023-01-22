@@ -135,7 +135,7 @@ func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.
 	return response.ToModel(), nil
 }
 
-func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
+func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
 	variables[query.CursorServiceAccounts] = cursor
 
 	response := query.ReadShallowServiceAccounts{}
@@ -190,7 +190,7 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 	return response.Services.ToModel(), nil
 }
 
-func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ServiceEdge], error) {
+func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceEdge], error) {
 	response := query.ReadServiceAccounts{}
 	variables[query.CursorServices] = cursor
 
@@ -206,7 +206,7 @@ func (client *Client) readServicesAfter(ctx context.Context, variables map[strin
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
+func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
 	response := query.ReadServiceAccount{}
 
 	gqlNullable("", query.CursorServiceKeys)(variables)
@@ -224,7 +224,7 @@ func (client *Client) readServiceResourcesAfter(ctx context.Context, variables m
 	return &response.Service.Resources.PaginatedResource, nil
 }
 
-func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
+func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
 	response := query.ReadServiceAccount{}
 
 	gqlNullable("", query.CursorServiceResources)(variables)

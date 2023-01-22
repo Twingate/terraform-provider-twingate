@@ -14,19 +14,19 @@ const (
 )
 
 type ProtocolsInput struct {
-	UDP       *ProtocolInput  `json:"udp"`
-	TCP       *ProtocolInput  `json:"tcp"`
-	AllowIcmp graphql.Boolean `json:"allowIcmp"`
+	UDP       *ProtocolInput `json:"udp"`
+	TCP       *ProtocolInput `json:"tcp"`
+	AllowIcmp bool           `json:"allowIcmp"`
 }
 
 type ProtocolInput struct {
 	Ports  []*PortRangeInput `json:"ports"`
-	Policy graphql.String    `json:"policy"`
+	Policy string            `json:"policy"`
 }
 
 type PortRangeInput struct {
-	Start graphql.Int `json:"start"`
-	End   graphql.Int `json:"end"`
+	Start int `json:"start"`
+	End   int `json:"end"`
 }
 
 func newProtocolsInput(protocols *model.Protocols) *ProtocolsInput {
@@ -37,7 +37,7 @@ func newProtocolsInput(protocols *model.Protocols) *ProtocolsInput {
 	return &ProtocolsInput{
 		UDP:       newProtocol(protocols.UDP),
 		TCP:       newProtocol(protocols.TCP),
-		AllowIcmp: graphql.Boolean(protocols.AllowIcmp),
+		AllowIcmp: protocols.AllowIcmp,
 	}
 }
 
@@ -48,15 +48,15 @@ func newProtocol(protocol *model.Protocol) *ProtocolInput {
 
 	return &ProtocolInput{
 		Ports:  newPorts(protocol.Ports),
-		Policy: graphql.String(protocol.Policy),
+		Policy: protocol.Policy,
 	}
 }
 
 func newPorts(ports []*model.PortRange) []*PortRangeInput {
 	return utils.Map[*model.PortRange, *PortRangeInput](ports, func(port *model.PortRange) *PortRangeInput {
 		return &PortRangeInput{
-			Start: graphql.Int(port.Start),
-			End:   graphql.Int(port.End),
+			Start: port.Start,
+			End:   port.End,
 		}
 	})
 }
@@ -136,7 +136,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 	return response.Resource.ToModel(), nil
 }
 
-func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
+func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
 	response := query.ReadResourceGroups{}
 	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorGroups] = cursor
@@ -170,7 +170,7 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	variables[query.CursorResources] = cursor
 	response := query.ReadResources{}
 
@@ -304,7 +304,7 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	response := query.ReadResourcesByName{}
 	variables[query.CursorResources] = cursor
 

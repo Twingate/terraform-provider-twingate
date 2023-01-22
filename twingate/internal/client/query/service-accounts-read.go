@@ -38,8 +38,8 @@ type GqlService struct {
 
 func (s *GqlService) ToModel() *model.ServiceAccount {
 	return &model.ServiceAccount{
-		ID:        s.StringID(),
-		Name:      s.StringName(),
+		ID:        string(s.ID),
+		Name:      s.Name,
 		Resources: s.Resources.listIDs(),
 		Keys:      s.Keys.listIDs(),
 	}
@@ -61,15 +61,11 @@ type GqlResourceIDEdge struct {
 
 type gqlResourceID struct {
 	ID       graphql.ID
-	IsActive graphql.Boolean
-}
-
-func (r gqlResourceID) isActive() bool {
-	return bool(r.IsActive)
+	IsActive bool
 }
 
 func IsGqlResourceActive(item *GqlResourceIDEdge) bool {
-	return item.Node.isActive()
+	return item.Node.IsActive
 }
 
 type gqlKeyIDs struct {
@@ -88,11 +84,11 @@ type GqlKeyIDEdge struct {
 
 type gqlKeyID struct {
 	ID     graphql.ID
-	Status graphql.String
+	Status string
 }
 
 func (k gqlKeyID) isActive() bool {
-	return string(k.Status) == model.StatusActive
+	return k.Status == model.StatusActive
 }
 
 func IsGqlKeyActive(item *GqlKeyIDEdge) bool {
@@ -104,7 +100,7 @@ type ServiceAccountFilterInput struct {
 }
 
 type StringFilter struct {
-	Eq graphql.String `json:"eq"`
+	Eq string `json:"eq"`
 }
 
 func NewServiceAccountFilterInput(name string) *ServiceAccountFilterInput {
@@ -114,7 +110,7 @@ func NewServiceAccountFilterInput(name string) *ServiceAccountFilterInput {
 
 	return &ServiceAccountFilterInput{
 		Name: StringFilter{
-			Eq: graphql.String(name),
+			Eq: name,
 		},
 	}
 }

@@ -61,7 +61,7 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 	return response.ToModel(), nil
 }
 
-func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.SecurityPolicyEdge], error) {
+func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.SecurityPolicyEdge], error) {
 	variables[query.CursorPolicies] = cursor
 	response := query.ReadSecurityPolicies{}
 

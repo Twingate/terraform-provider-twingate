@@ -12,8 +12,8 @@ import (
 const groupResourceName = "group"
 
 type PageInfo struct {
-	EndCursor   graphql.String
-	HasNextPage graphql.Boolean
+	EndCursor   string
+	HasNextPage bool
 }
 
 func (client *Client) CreateGroup(ctx context.Context, groupName string) (*model.Group, error) {
@@ -77,7 +77,7 @@ func (client *Client) ReadGroups(ctx context.Context) ([]*model.Group, error) {
 	return response.ToModel(), nil
 }
 
-func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
+func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
 	variables[query.CursorGroups] = cursor
 	response := query.ReadGroups{}
 
@@ -121,7 +121,7 @@ func (client *Client) ReadGroupsByName(ctx context.Context, groupName string) ([
 	return response.ToModel(), nil
 }
 
-func (client *Client) readGroupsByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
+func (client *Client) readGroupsByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
 	response := query.ReadGroupsByName{}
 	variables[query.CursorGroups] = cursor
 

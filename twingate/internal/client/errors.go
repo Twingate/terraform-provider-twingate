@@ -102,15 +102,15 @@ func (e *APIError) Unwrap() error {
 }
 
 type MutationError struct {
-	Message graphql.String
+	Message string
 }
 
-func NewMutationError(message graphql.String) *MutationError {
+func NewMutationError(message string) *MutationError {
 	return &MutationError{
 		Message: message,
 	}
 }
 
 func (e *MutationError) Error() string {
-	return string(e.Message)
+	return e.Message
 }

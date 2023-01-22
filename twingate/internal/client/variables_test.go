@@ -4,56 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
 )
-
-func Test_convertToGQL(t *testing.T) {
-	cases := []struct {
-		val      interface{}
-		expected interface{}
-	}{
-		{
-			val:      nil,
-			expected: nil,
-		},
-		{
-			val:      "123",
-			expected: graphql.String("123"),
-		},
-		{
-			val:      101,
-			expected: graphql.Int(101),
-		},
-		{
-			val:      int32(102),
-			expected: graphql.Int(102),
-		},
-		{
-			val:      int64(103),
-			expected: graphql.Int(103),
-		},
-		{
-			val:      101.5,
-			expected: graphql.Float(101.5),
-		},
-		{
-			val:      float32(101.25),
-			expected: graphql.Float(101.25),
-		},
-		{
-			val:      true,
-			expected: graphql.Boolean(true),
-		},
-	}
-
-	for i, c := range cases {
-		t.Run(fmt.Sprintf("test case #%d", i+1), func(t *testing.T) {
-			actual := convertToGQL(c.val)
-			assert.Equal(t, c.expected, actual)
-		})
-	}
-}
 
 func TestIsDefaultValue(t *testing.T) {
 	cases := []struct {
@@ -129,17 +81,17 @@ func TestIsDefaultValue(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 
-			assert.Equal(t, c.expected, isDefaultValue(c.val))
+			assert.Equal(t, c.expected, isZeroValue(c.val))
 		})
 	}
 }
 
 func TestGetDefaultGQLValue(t *testing.T) {
 	var (
-		defaultString *graphql.String
-		defaultInt    *graphql.Int
-		defaultBool   *graphql.Boolean
-		defaultFloat  *graphql.Float
+		defaultString *string
+		defaultInt    *int
+		defaultBool   *bool
+		defaultFloat  *float64
 	)
 
 	cases := []struct {
@@ -187,7 +139,7 @@ func TestGetDefaultGQLValue(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 
-			assert.Equal(t, c.expected, getDefaultGQLValue(c.val))
+			assert.Equal(t, c.expected, getNullableValue(c.val))
 		})
 	}
 }

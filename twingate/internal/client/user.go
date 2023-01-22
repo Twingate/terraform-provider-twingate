@@ -31,7 +31,7 @@ func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
 	return response.ToModel(), nil
 }
 
-func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.UserEdge], error) {
+func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
 	variables[query.CursorUsers] = cursor
 	response := query.ReadUsers{}
 

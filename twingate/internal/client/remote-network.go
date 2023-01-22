@@ -10,7 +10,7 @@ import (
 
 const remoteNetworkResourceName = "remote network"
 
-type RemoteNetworkLocation graphql.String
+type RemoteNetworkLocation string
 
 func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.RemoteNetwork) (*model.RemoteNetwork, error) {
 	if req.Name == "" {
@@ -58,7 +58,7 @@ func (client *Client) ReadRemoteNetworks(ctx context.Context) ([]*model.RemoteNe
 	return response.ToModel(), nil
 }
 
-func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.RemoteNetworkEdge], error) {
+func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.RemoteNetworkEdge], error) {
 	variables[query.CursorRemoteNetworks] = cursor
 	response := query.ReadRemoteNetworks{}
 

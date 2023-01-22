@@ -18,37 +18,37 @@ type gqlResource struct {
 type ResourceNode struct {
 	IDName
 	Address struct {
-		Value graphql.String
+		Value string
 	}
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
 	Protocols                *Protocols
-	IsActive                 graphql.Boolean
-	IsVisible                graphql.Boolean
-	IsBrowserShortcutEnabled graphql.Boolean
+	IsActive                 bool
+	IsVisible                bool
+	IsBrowserShortcutEnabled bool
 }
 
 type Protocols struct {
-	UDP       *Protocol       `json:"udp"`
-	TCP       *Protocol       `json:"tcp"`
-	AllowIcmp graphql.Boolean `json:"allowIcmp"`
+	UDP       *Protocol `json:"udp"`
+	TCP       *Protocol `json:"tcp"`
+	AllowIcmp bool      `json:"allowIcmp"`
 }
 
 type Protocol struct {
-	Ports  []*PortRange   `json:"ports"`
-	Policy graphql.String `json:"policy"`
+	Ports  []*PortRange `json:"ports"`
+	Policy string       `json:"policy"`
 }
 
 type PortRange struct {
-	Start graphql.Int `json:"start"`
-	End   graphql.Int `json:"end"`
+	Start int `json:"start"`
+	End   int `json:"end"`
 }
 
 func (r gqlResource) ToModel() *model.Resource {
 	groups := make([]string, 0, len(r.Groups.Edges))
 	for _, elem := range r.Groups.Edges {
-		groups = append(groups, idToString(elem.Node.ID))
+		groups = append(groups, string(elem.Node.ID))
 	}
 
 	resource := r.ResourceNode.ToModel()
@@ -58,18 +58,15 @@ func (r gqlResource) ToModel() *model.Resource {
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
-	isVisible := bool(r.IsVisible)
-	isBrowserShortcutEnabled := bool(r.IsBrowserShortcutEnabled)
-
 	return &model.Resource{
-		ID:                       r.StringID(),
-		Name:                     r.StringName(),
-		Address:                  string(r.Address.Value),
-		RemoteNetworkID:          idToString(r.RemoteNetwork.ID),
+		ID:                       string(r.ID),
+		Name:                     r.Name,
+		Address:                  r.Address.Value,
+		RemoteNetworkID:          string(r.RemoteNetwork.ID),
 		Protocols:                protocolsToModel(r.Protocols),
-		IsActive:                 bool(r.IsActive),
-		IsVisible:                &isVisible,
-		IsBrowserShortcutEnabled: &isBrowserShortcutEnabled,
+		IsActive:                 r.IsActive,
+		IsVisible:                &r.IsVisible,
+		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 	}
 }
 
@@ -81,7 +78,7 @@ func protocolsToModel(protocols *Protocols) *model.Protocols {
 	return &model.Protocols{
 		UDP:       protocolToModel(protocols.UDP),
 		TCP:       protocolToModel(protocols.TCP),
-		AllowIcmp: bool(protocols.AllowIcmp),
+		AllowIcmp: protocols.AllowIcmp,
 	}
 }
 
@@ -92,7 +89,7 @@ func protocolToModel(protocol *Protocol) *model.Protocol {
 
 	return &model.Protocol{
 		Ports:  portsRangeToModel(protocol.Ports),
-		Policy: string(protocol.Policy),
+		Policy: protocol.Policy,
 	}
 }
 
@@ -103,8 +100,8 @@ func portsRangeToModel(ports []*PortRange) []*model.PortRange {
 		}
 
 		return &model.PortRange{
-			Start: int32(port.Start),
-			End:   int32(port.End),
+			Start: port.Start,
+			End:   port.End,
 		}
 	})
 }

@@ -178,8 +178,8 @@ func equalPorts(a, b interface{}) bool {
 	return reflect.DeepEqual(oldPortsMap, newPortsMap)
 }
 
-func convertPortsRangeToMap(portsRange []*model.PortRange) map[int32]struct{} {
-	out := make(map[int32]struct{})
+func convertPortsRangeToMap(portsRange []*model.PortRange) map[int]struct{} {
+	out := make(map[int]struct{})
 
 	for _, port := range portsRange {
 		if port.Start == port.End {

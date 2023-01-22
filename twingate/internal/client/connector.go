@@ -127,7 +127,7 @@ func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, e
 	return response.ToModel(), nil
 }
 
-func (client *Client) readConnectorsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ConnectorEdge], error) {
+func (client *Client) readConnectorsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ConnectorEdge], error) {
 	variables[query.CursorConnectors] = cursor
 	response := query.ReadConnectors{}
 

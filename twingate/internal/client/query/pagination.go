@@ -2,13 +2,11 @@ package query
 
 import (
 	"context"
-
-	"github.com/hasura/go-graphql-client"
 )
 
 type PageInfo struct {
-	EndCursor   graphql.String
-	HasNextPage graphql.Boolean
+	EndCursor   string
+	HasNextPage bool
 }
 
 type PaginatedResource[E any] struct {
@@ -16,7 +14,7 @@ type PaginatedResource[E any] struct {
 	Edges    []E
 }
 
-type NextPageFunc[E any] func(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*PaginatedResource[E], error)
+type NextPageFunc[E any] func(ctx context.Context, variables map[string]interface{}, cursor string) (*PaginatedResource[E], error)
 
 func (r *PaginatedResource[E]) FetchPages(ctx context.Context, fetchNextPage NextPageFunc[E], variables map[string]interface{}) error {
 	if r == nil {
