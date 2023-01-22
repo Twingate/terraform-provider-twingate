@@ -4,17 +4,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 var (
-	ErrTooManyGroupsError = fmt.Errorf("provider does not support more than %d groups per resource", readResourceQueryGroupsSize)
-
 	ErrGraphqlIDIsEmpty          = errors.New("id is empty")
 	ErrGraphqlNameIsEmpty        = errors.New("name is empty")
 	ErrGraphqlEmptyBothNameAndID = errors.New("both name and id should not be empty")
-	ErrGraphqlResourceNotFound   = errors.New("not found")
-
 	ErrGraphqlResultIsEmpty      = errors.New("query result is empty")
 	ErrGraphqlConnectorIDIsEmpty = errors.New("connector id is empty")
 	ErrGraphqlNetworkIDIsEmpty   = errors.New("network id is empty")
@@ -48,16 +44,16 @@ type APIError struct {
 	Name         string
 }
 
-func NewAPIErrorWithID(wrappedError error, operation string, resource string, id graphql.ID) *APIError {
+func NewAPIErrorWithID(wrappedError error, operation, resource, id string) *APIError {
 	return &APIError{
 		WrappedError: wrappedError,
 		Operation:    operation,
 		Resource:     resource,
-		ID:           id,
+		ID:           graphql.ID(id),
 	}
 }
 
-func NewAPIErrorWithName(wrappedError error, operation string, resource string, name string) *APIError {
+func NewAPIErrorWithName(wrappedError error, operation, resource, name string) *APIError {
 	return &APIError{
 		WrappedError: wrappedError,
 		Operation:    operation,
@@ -66,7 +62,7 @@ func NewAPIErrorWithName(wrappedError error, operation string, resource string, 
 	}
 }
 
-func NewAPIError(wrappedError error, operation string, resource string) *APIError {
+func NewAPIError(wrappedError error, operation, resource string) *APIError {
 	return &APIError{
 		WrappedError: wrappedError,
 		Operation:    operation,
@@ -80,7 +76,7 @@ func (e *APIError) Error() string {
 
 	var format = "failed to %s %s"
 
-	if e.ID != nil && e.ID.(string) != "" {
+	if e.ID != "" {
 		format += " with id %s"
 
 		args = append(args, e.ID)

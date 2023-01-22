@@ -5,7 +5,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const remoteNetworkResourceName = "remote network"
@@ -24,7 +24,7 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.Remote
 		gqlVar(RemoteNetworkLocation(req.Location), "location"),
 	)
 
-	err := client.GraphqlClient.NamedMutate(ctx, "createRemoteNetwork", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createRemoteNetwork"))
 	if err != nil {
 		return nil, NewAPIError(err, "create", remoteNetworkResourceName)
 	}
@@ -45,7 +45,7 @@ func (client *Client) ReadRemoteNetworks(ctx context.Context) ([]*model.RemoteNe
 
 	variables := newVars(gqlNullable("", query.CursorRemoteNetworks))
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworks", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readRemoteNetworks"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, "All")
 	}
@@ -62,7 +62,7 @@ func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map
 	variables[query.CursorRemoteNetworks] = cursor
 	response := query.ReadRemoteNetworks{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworks", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readRemoteNetworks"))
 	if err != nil {
 		return nil, NewAPIError(err, "read", remoteNetworkResourceName)
 	}
@@ -91,7 +91,7 @@ func (client *Client) ReadRemoteNetworkByID(ctx context.Context, remoteNetworkID
 	variables := newVars(gqlID(remoteNetworkID))
 	response := query.ReadRemoteNetworkByID{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworkByID", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readRemoteNetworkByID"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", remoteNetworkResourceName, remoteNetworkID)
 	}
@@ -111,7 +111,7 @@ func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetwork
 	variables := newVars(gqlVar(remoteNetworkName, "name"))
 	response := query.ReadRemoteNetworkByName{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readRemoteNetworkByName", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readRemoteNetworkByName"))
 	if err != nil {
 		return nil, NewAPIErrorWithName(err, "read", remoteNetworkResourceName, remoteNetworkName)
 	}
@@ -132,7 +132,7 @@ func (client *Client) UpdateRemoteNetwork(ctx context.Context, req *model.Remote
 
 	response := query.UpdateRemoteNetwork{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateRemoteNetwork", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateRemoteNetwork"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "update", remoteNetworkResourceName, req.ID)
 	}
@@ -156,7 +156,7 @@ func (client *Client) DeleteRemoteNetwork(ctx context.Context, remoteNetworkID s
 	variables := newVars(gqlID(remoteNetworkID))
 	response := query.DeleteRemoteNetwork{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "deleteRemoteNetwork", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("deleteRemoteNetwork"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", remoteNetworkResourceName, remoteNetworkID)
 	}

@@ -8,11 +8,11 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.1
+	github.com/hasura/go-graphql-client v0.8.1
 	github.com/jarcoal/httpmock v1.1.0
 	github.com/mattn/goveralls v0.0.11
 	github.com/securego/gosec/v2 v2.14.0
 	github.com/stretchr/testify v1.8.1
-	github.com/twingate/go-graphql-client v0.2.4
 	gotest.tools/gotestsum v1.9.0
 )
 

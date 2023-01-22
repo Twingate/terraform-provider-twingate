@@ -129,9 +129,9 @@ func TestClientConnectorTokensCreateRequestError(t *testing.T) {
 
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-		httpmock.NewErrorResponder(errors.New("error_1")))
+		httpmock.NewErrorResponder(errBadRequest))
 
 	_, err := client.GenerateConnectorTokens(context.Background(), "connector-id")
 
-	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens: Post "%s": error_1`, client.GraphqlServerURL))
+	assert.EqualError(t, err, graphqlErr(client, "failed to generate connector tokens", errBadRequest))
 }

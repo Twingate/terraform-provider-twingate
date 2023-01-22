@@ -1,9 +1,7 @@
 package query
 
 import (
-	"fmt"
-
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 type IDName struct {
@@ -25,9 +23,5 @@ type OkError struct {
 }
 
 func idToString(id graphql.ID) string {
-	if id == nil {
-		return ""
-	}
-
-	return fmt.Sprintf("%v", id)
+	return string(id)
 }

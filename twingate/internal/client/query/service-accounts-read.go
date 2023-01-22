@@ -3,7 +3,7 @@ package query
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const (
@@ -51,7 +51,7 @@ type gqlResourceIDs struct {
 
 func (q gqlResourceIDs) listIDs() []string {
 	return utils.Map[*GqlResourceIDEdge, string](q.Edges, func(edge *GqlResourceIDEdge) string {
-		return edge.Node.ID.(string)
+		return string(edge.Node.ID)
 	})
 }
 
@@ -78,7 +78,7 @@ type gqlKeyIDs struct {
 
 func (q gqlKeyIDs) listIDs() []string {
 	return utils.Map[*GqlKeyIDEdge, string](q.Edges, func(edge *GqlKeyIDEdge) string {
-		return edge.Node.ID.(string)
+		return string(edge.Node.ID)
 	})
 }
 

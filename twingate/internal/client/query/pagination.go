@@ -3,7 +3,7 @@ package query
 import (
 	"context"
 
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 type PageInfo struct {

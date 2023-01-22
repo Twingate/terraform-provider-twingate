@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
+	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func TestPagination(t *testing.T) {

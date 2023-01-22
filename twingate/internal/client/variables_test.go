@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func Test_convertToGQL(t *testing.T) {

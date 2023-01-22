@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func Test_idToString(t *testing.T) {
@@ -14,20 +14,8 @@ func Test_idToString(t *testing.T) {
 		expected string
 	}{
 		{
-			id:       nil,
-			expected: "",
-		},
-		{
 			id:       graphql.ID("123"),
 			expected: "123",
-		},
-		{
-			id:       graphql.ID(101),
-			expected: "101",
-		},
-		{
-			id:       graphql.ID(101.5),
-			expected: "101.5",
 		},
 	}
 

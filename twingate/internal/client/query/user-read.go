@@ -2,7 +2,7 @@ package query
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 type ReadUser struct {

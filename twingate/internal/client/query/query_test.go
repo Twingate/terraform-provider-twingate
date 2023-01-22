@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func TestReadConnectorQueryToModel(t *testing.T) {

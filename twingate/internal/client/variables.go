@@ -2,7 +2,7 @@ package client
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 func newVars(options ...gqlVarOption) map[string]interface{} {
@@ -24,7 +24,12 @@ func gqlID(val interface{}, name ...string) gqlVarOption {
 	}
 
 	return func(values map[string]interface{}) map[string]interface{} {
-		values[key] = graphql.ID(val)
+		switch value := val.(type) {
+		case string:
+			values[key] = graphql.ID(value)
+		case graphql.ID:
+			values[key] = value
+		}
 
 		return values
 	}

@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -56,7 +55,7 @@ func TestCreateServiceAccountRequestError(t *testing.T) {
 		serviceAccount, err := c.CreateServiceAccount(context.Background(), "test")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create service account: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to create service account", errBadRequest))
 	})
 }
 
@@ -143,7 +142,7 @@ func TestReadServiceAccountRequestError(t *testing.T) {
 		serviceAccount, err := c.ReadShallowServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id account-id", errBadRequest))
 	})
 }
 
@@ -239,7 +238,7 @@ func TestUpdateServiceAccountRequestError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to update service account with id account-id", errBadRequest))
 	})
 }
 
@@ -338,7 +337,7 @@ func TestDeleteServiceAccountRequestError(t *testing.T) {
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to delete service account with id account-id", errBadRequest))
 	})
 }
 
@@ -450,7 +449,7 @@ func TestReadServiceAccountsRequestError(t *testing.T) {
 		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -509,7 +508,7 @@ func TestReadServiceAccountsRequestErrorOnFetching(t *testing.T) {
 		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -601,7 +600,7 @@ func TestReadServicesOk(t *testing.T) {
 		                "endCursor": null,
 		                "hasNextPage": false
 		              },
-		              "edges": []
+		              "edges": null
 		            },
 		            "keys": {
 		              "pageInfo": {
@@ -675,7 +674,7 @@ func TestReadServicesOk(t *testing.T) {
 		                "endCursor": null,
 		                "hasNextPage": false
 		              },
-		              "edges": []
+		              "edges": null
 		            },
 		            "keys": {
 		              "pageInfo": {
@@ -754,7 +753,7 @@ func TestReadServicesOk(t *testing.T) {
 		          "endCursor": null,
 		          "hasNextPage": false
 		        },
-		        "edges": []
+		        "edges": null
 		      },
 		      "keys": {
 		        "pageInfo": {
@@ -784,7 +783,7 @@ func TestReadServicesOk(t *testing.T) {
 		          "endCursor": null,
 		          "hasNextPage": false
 		        },
-		        "edges": []
+		        "edges": null
 		      },
 		      "keys": {
 		        "pageInfo": {
@@ -834,7 +833,7 @@ func TestReadServicesRequestError(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -893,7 +892,7 @@ func TestReadServicesRequestErrorOnFetchingServices(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -1071,7 +1070,7 @@ func TestReadServicesRequestErrorOnFetchingResources(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -1388,7 +1387,7 @@ func TestReadServicesRequestErrorOnFetchingKeys(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -1766,7 +1765,7 @@ func TestReadServiceRequestError(t *testing.T) {
 		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id account-id", errBadRequest))
 	})
 }
 
@@ -1826,6 +1825,6 @@ func TestReadServiceRequestErrorOnFetching(t *testing.T) {
 		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }

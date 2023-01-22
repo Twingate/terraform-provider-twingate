@@ -5,7 +5,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const connectorResourceName = "connector"
@@ -22,7 +22,7 @@ func (client *Client) CreateConnector(ctx context.Context, remoteNetworkID, conn
 
 	response := query.CreateConnector{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "createConnector", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createConnector"))
 	if err != nil {
 		return nil, NewAPIErrorWithName(err, "create", connectorResourceName, connectorName)
 	}
@@ -50,7 +50,7 @@ func (client *Client) UpdateConnector(ctx context.Context, connectorID string, c
 
 	response := query.UpdateConnector{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateConnector", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateConnector"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "update", connectorResourceName, connectorID)
 	}
@@ -74,7 +74,7 @@ func (client *Client) DeleteConnector(ctx context.Context, connectorID string) e
 	variables := newVars(gqlID(connectorID))
 	response := query.DeleteConnector{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "deleteConnector", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("deleteConnector"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", connectorResourceName, connectorID)
 	}
@@ -94,7 +94,7 @@ func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*m
 	variables := newVars(gqlID(connectorID))
 	response := query.ReadConnector{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readConnector", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readConnector"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, connectorID)
 	}
@@ -110,7 +110,7 @@ func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, e
 	response := query.ReadConnectors{}
 	variables := newVars(gqlNullable("", query.CursorConnectors))
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readConnectors"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
@@ -131,7 +131,7 @@ func (client *Client) readConnectorsAfter(ctx context.Context, variables map[str
 	variables[query.CursorConnectors] = cursor
 	response := query.ReadConnectors{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readConnectors", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readConnectors"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", connectorResourceName, "All")
 	}
