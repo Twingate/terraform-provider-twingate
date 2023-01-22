@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsDefaultValue(t *testing.T) {
+func TestIsZeroValue(t *testing.T) {
 	cases := []struct {
 		val      interface{}
 		expected bool
@@ -86,7 +87,7 @@ func TestIsDefaultValue(t *testing.T) {
 	}
 }
 
-func TestGetDefaultGQLValue(t *testing.T) {
+func TestGetNullableValue(t *testing.T) {
 	var (
 		defaultString *string
 		defaultInt    *int
@@ -140,6 +141,49 @@ func TestGetDefaultGQLValue(t *testing.T) {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, getNullableValue(c.val))
+		})
+	}
+}
+
+func TestGqlID(t *testing.T) {
+	cases := []struct {
+		inputVal   interface{}
+		inputNames []string
+		expected   map[string]interface{}
+	}{
+		{
+			inputVal: "test-id",
+			expected: map[string]interface{}{
+				"id": graphql.ID("test-id"),
+			},
+		},
+		{
+			inputVal:   "custom-id",
+			inputNames: []string{"custom"},
+			expected: map[string]interface{}{
+				"custom": graphql.ID("custom-id"),
+			},
+		},
+		{
+			inputVal: graphql.ID("gql"),
+			expected: map[string]interface{}{
+				"id": graphql.ID("gql"),
+			},
+		},
+		{
+			inputVal: 101,
+			expected: map[string]interface{}{
+				"id": graphql.ID("101"),
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			values := make(map[string]interface{})
+			gqlID(c.inputVal, c.inputNames...)(values)
+
+			assert.Equal(t, c.expected, values)
 		})
 	}
 }
