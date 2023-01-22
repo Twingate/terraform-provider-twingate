@@ -24,7 +24,14 @@ func gqlID(val interface{}, name ...string) gqlVarOption {
 	}
 
 	return func(values map[string]interface{}) map[string]interface{} {
-		values[key] = graphql.ToID(val)
+		switch value := val.(type) {
+		case string:
+			values[key] = graphql.ID(value)
+		case graphql.ID:
+			values[key] = value
+		default:
+			values[key] = graphql.ToID(val)
+		}
 
 		return values
 	}
