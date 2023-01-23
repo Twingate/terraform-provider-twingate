@@ -629,3 +629,18 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 
 	return ports, nil
 }
+
+func convertGroup(data *schema.ResourceData) (*model.Group, error) {
+	return &model.Group{
+		Name:  data.Get(attr.Name).(string),
+		Users: convertUsers(data),
+	}, nil
+}
+
+func convertUsers(data *schema.ResourceData) []string {
+	if ids, ok := data.GetOk(attr.UserIDs); ok {
+		return convertIDs(ids)
+	}
+
+	return nil
+}

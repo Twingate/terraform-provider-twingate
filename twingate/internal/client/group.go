@@ -16,12 +16,12 @@ type PageInfo struct {
 	HasNextPage graphql.Boolean
 }
 
-func (client *Client) CreateGroup(ctx context.Context, groupName string) (*model.Group, error) {
-	if groupName == "" {
+func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*model.Group, error) {
+	if input == nil || input.Name == "" {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "create", groupResourceName)
 	}
 
-	variables := newVars(gqlVar(groupName, "name"))
+	variables := newVars(gqlVar(input.Name, "name"))
 	response := query.CreateGroup{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createGroup", &response, variables)
