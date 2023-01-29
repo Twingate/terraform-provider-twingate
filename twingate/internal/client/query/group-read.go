@@ -2,6 +2,7 @@ package query
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/twingate/go-graphql-client"
 )
 
@@ -13,6 +14,7 @@ type gqlGroup struct {
 	IDName
 	IsActive graphql.Boolean
 	Type     graphql.String
+	Users    Users
 }
 
 func (g gqlGroup) ToModel() *model.Group {
@@ -21,6 +23,9 @@ func (g gqlGroup) ToModel() *model.Group {
 		Name:     g.StringName(),
 		Type:     string(g.Type),
 		IsActive: bool(g.IsActive),
+		Users: utils.Map[*UserEdge, string](g.Users.Edges, func(edge *UserEdge) string {
+			return idToString(edge.Node.ID)
+		}),
 	}
 }
 

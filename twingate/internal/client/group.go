@@ -21,7 +21,10 @@ func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*mod
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "create", groupResourceName)
 	}
 
-	variables := newVars(gqlVar(input.Name, "name"))
+	variables := newVars(
+		gqlVar(input.Name, "name"),
+		gqlIDs(input.Users, "userIds"),
+	)
 	response := query.CreateGroup{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "createGroup", &response, variables)
@@ -33,7 +36,11 @@ func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*mod
 		return nil, NewAPIError(NewMutationError(response.Error), "create", groupResourceName)
 	}
 
-	return response.ToModel(), nil
+	group := response.ToModel()
+	group.Users = input.Users
+	group.IsAuthoritative = input.IsAuthoritative
+
+	return group, nil
 }
 
 func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Group, error) {
@@ -51,6 +58,11 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 
 	if response.Group == nil {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupID)
+	}
+
+	err = response.Group.Users.FetchPages(ctx, client.readGroupUsersAfter, variables)
+	if err != nil {
+		return nil, err //nolint
 	}
 
 	return response.ToModel(), nil
@@ -137,36 +149,45 @@ func (client *Client) readGroupsByNameAfter(ctx context.Context, variables map[s
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) UpdateGroup(ctx context.Context, groupID, groupName string) (*model.Group, error) {
-	if groupID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "update", groupResourceName)
+func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*model.Group, error) {
+	if input == nil || input.ID == "" {
+		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, groupResourceName)
 	}
 
-	if groupName == "" {
-		return nil, NewAPIError(ErrGraphqlNameIsEmpty, "update", groupResourceName)
+	if input.Name == "" {
+		return nil, NewAPIError(ErrGraphqlNameIsEmpty, operationUpdate, groupResourceName)
 	}
 
 	variables := newVars(
-		gqlID(groupID),
-		gqlVar(groupName, "name"),
+		gqlID(input.ID),
+		gqlVar(input.Name, "name"),
+		gqlIDs(input.Users, "addedUserIds"),
 	)
 
 	response := query.UpdateGroup{}
 
 	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(err, operationUpdate, groupResourceName, input.ID)
 	}
 
 	if !response.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, groupResourceName, input.ID)
 	}
 
 	if response.Entity == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", groupResourceName, groupID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, groupResourceName, input.ID)
 	}
 
-	return response.Entity.ToModel(), nil
+	err = response.Entity.Users.FetchPages(ctx, client.readGroupUsersAfter, newVars(gqlID(input.ID)))
+	if err != nil {
+		return nil, err //nolint
+	}
+
+	group := response.Entity.ToModel()
+	group.IsAuthoritative = input.IsAuthoritative
+
+	return group, nil
 }
 
 func (client *Client) DeleteGroup(ctx context.Context, groupID string) error {
@@ -184,6 +205,38 @@ func (client *Client) DeleteGroup(ctx context.Context, groupID string) error {
 
 	if !response.Ok {
 		return NewAPIErrorWithID(NewMutationError(response.Error), "delete", groupResourceName, groupID)
+	}
+
+	return nil
+}
+
+func (client *Client) DeleteGroupUsers(ctx context.Context, groupID string, userIDs []string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	if groupID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, groupResourceName)
+	}
+
+	variables := newVars(
+		gqlID(groupID),
+		gqlIDs(userIDs, "removedUserIds"),
+	)
+
+	response := query.UpdateGroupRemoveUsers{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
+	if err != nil {
+		return NewAPIErrorWithID(err, operationUpdate, groupResourceName, groupID)
+	}
+
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, groupResourceName, groupID)
+	}
+
+	if response.Entity == nil {
+		return NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, groupResourceName, groupID)
 	}
 
 	return nil
@@ -244,4 +297,21 @@ func (client *Client) FilterGroups(ctx context.Context, filter *GroupsFilter) ([
 	}
 
 	return filtered, nil
+}
+
+func (client *Client) readGroupUsersAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.UserEdge], error) {
+	response := query.ReadGroup{}
+	resourceID := variables["id"]
+	variables[query.CursorUsers] = cursor
+
+	err := client.GraphqlClient.NamedQuery(ctx, "readGroup", &response, variables)
+	if err != nil {
+		return nil, NewAPIErrorWithID(err, operationRead, groupResourceName, resourceID)
+	}
+
+	if response.Group == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, groupResourceName, resourceID)
+	}
+
+	return &response.Group.Users.PaginatedResource, nil
 }

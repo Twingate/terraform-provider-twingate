@@ -66,9 +66,15 @@ func groupCreate(ctx context.Context, resourceData *schema.ResourceData, meta in
 }
 
 func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
+	client := meta.(*client.Client)
 
-	group, err := c.UpdateGroup(ctx, resourceData.Id(), resourceData.Get("name").(string))
+	group := convertGroup(resourceData)
+
+	if err := deleteGroupUserIDs(ctx, resourceData, group, client); err != nil {
+		return diag.FromErr(err)
+	}
+
+	group, err := client.UpdateGroup(ctx, group)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -76,6 +82,36 @@ func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta in
 	log.Printf("[INFO] Updated group id %v", group.ID)
 
 	return resourceGroupReadHelper(resourceData, group, err)
+}
+
+func deleteGroupUserIDs(ctx context.Context, resourceData *schema.ResourceData, group *model.Group, client *client.Client) error {
+	userIDs := getGroupUserIDsToDelete(ctx, resourceData, group.Users, group, client)
+
+	return client.DeleteGroupUsers(ctx, group.ID, userIDs) //nolint
+}
+
+func getGroupUserIDsToDelete(ctx context.Context, resourceData *schema.ResourceData, currentIDs []string, group *model.Group, client *client.Client) []string {
+	oldIDs := getOldGroupUserIDs(ctx, resourceData, group, client)
+	if len(oldIDs) == 0 {
+		return nil
+	}
+
+	return setDifference(oldIDs, currentIDs)
+}
+
+func getOldGroupUserIDs(ctx context.Context, resourceData *schema.ResourceData, group *model.Group, client *client.Client) []string {
+	if group.IsAuthoritative {
+		result, err := client.ReadGroup(ctx, group.ID)
+		if err != nil {
+			return nil
+		}
+
+		return result.Users
+	}
+
+	old, _ := resourceData.GetChange(attr.UserIDs)
+
+	return convertIDs(old)
 }
 
 func groupDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -94,7 +130,11 @@ func groupDelete(ctx context.Context, resourceData *schema.ResourceData, meta in
 
 func groupRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
+
 	group, err := c.ReadGroup(ctx, resourceData.Id())
+	if group != nil {
+		group.IsAuthoritative = convertAuthoritativeFlag(resourceData)
+	}
 
 	return resourceGroupReadHelper(resourceData, group, err)
 }
@@ -111,11 +151,30 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Gro
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", group.Name); err != nil {
-		return diag.FromErr(err)
+	if !group.IsAuthoritative {
+		group.Users = setIntersection(convertUsers(resourceData), group.Users)
 	}
 
 	resourceData.SetId(group.ID)
 
+	if err := resourceData.Set(attr.Name, group.Name); err != nil {
+		return ErrAttributeSet(err, attr.Name)
+	}
+
+	if _, exists := resourceData.GetOk(attr.UserIDs); exists {
+		if err := resourceData.Set(attr.UserIDs, group.Users); err != nil {
+			return ErrAttributeSet(err, attr.UserIDs)
+		}
+	}
+
 	return nil
+}
+
+func convertGroup(data *schema.ResourceData) *model.Group {
+	return &model.Group{
+		ID:              data.Id(),
+		Name:            data.Get(attr.Name).(string),
+		Users:           convertUsers(data),
+		IsAuthoritative: convertAuthoritativeFlag(data),
+	}
 }

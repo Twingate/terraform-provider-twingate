@@ -46,7 +46,7 @@ func TestIntersection(t *testing.T) {
 
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
-			actual := intersection(c.a, c.b)
+			actual := setIntersection(c.a, c.b)
 
 			assert.ElementsMatch(t, c.expected, actual)
 		})
