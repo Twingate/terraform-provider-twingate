@@ -643,6 +643,7 @@ func TestCreateGroupToModel(t *testing.T) {
 				Name:     "group-name",
 				IsActive: true,
 				Type:     "MANUAL",
+				Users:    []string{},
 			},
 		},
 	}
@@ -679,6 +680,7 @@ func TestReadGroupToModel(t *testing.T) {
 				Name:     "group-name",
 				IsActive: true,
 				Type:     "MANUAL",
+				Users:    []string{},
 			},
 		},
 	}
