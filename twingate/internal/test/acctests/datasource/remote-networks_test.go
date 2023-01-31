@@ -6,6 +6,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -34,7 +35,7 @@ func testDatasourceTwingateRemoteNetworks() string {
 
 func TestAccDatasourceTwingateRemoteNetworks_read(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Remote Networks Read", func(t *testing.T) {
-		prefix := "orange"
+		prefix := acctest.RandString(10)
 		networkName1 := test.RandomName(prefix)
 		networkName2 := test.RandomName(prefix)
 
