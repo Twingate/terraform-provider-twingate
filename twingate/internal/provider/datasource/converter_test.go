@@ -58,14 +58,15 @@ func TestConverterGroupsToTerraform(t *testing.T) {
 		},
 		{
 			input: []*model.Group{
-				{ID: "group-id", Name: "group-name", Type: groupTypeManual, IsActive: true},
+				{ID: "group-id", Name: "group-name", Type: groupTypeManual, IsActive: true, SecurityPolicyID: "policy-id"},
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"id":        "group-id",
-					"name":      "group-name",
-					"type":      "MANUAL",
-					"is_active": true,
+					"id":                 "group-id",
+					"name":               "group-name",
+					"type":               "MANUAL",
+					"is_active":          true,
+					"security_policy_id": "policy-id",
 				},
 			},
 		},

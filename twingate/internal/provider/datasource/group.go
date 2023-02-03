@@ -29,6 +29,10 @@ func datasourceGroupRead(ctx context.Context, resourceData *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
+	if err := resourceData.Set("security_policy_id", group.SecurityPolicyID); err != nil {
+		return diag.FromErr(err)
+	}
+
 	resourceData.SetId(groupID)
 
 	return nil
@@ -58,6 +62,11 @@ func Group() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The type of the Group",
+			},
+			"security_policy_id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The security policy assigned to the Group.",
 			},
 		},
 	}
