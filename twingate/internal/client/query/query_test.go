@@ -154,3 +154,128 @@ func TestReadConnectorsQueryToModel(t *testing.T) {
 		})
 	}
 }
+
+func optionalString(val string) *string {
+	if val == "" {
+		return nil
+	}
+
+	return &val
+}
+
+func optionalBool(val bool) *bool {
+	return &val
+}
+
+func TestBuildGroupsFilter(t *testing.T) {
+	defaultActive := BooleanFilterOperatorInput{Eq: true}
+	defaultType := GroupTypeFilterOperatorInput{
+		In: []graphql.String{model.GroupTypeManual,
+			model.GroupTypeSynced,
+			model.GroupTypeSystem},
+	}
+
+	testCases := []struct {
+		filter   *model.GroupsFilter
+		expected *GroupFilterInput
+	}{
+		{
+			filter:   nil,
+			expected: nil,
+		},
+		{
+			filter: &model.GroupsFilter{Name: optionalString("Group")},
+			expected: &GroupFilterInput{
+				Name: &StringFilterOperationInput{
+					Eq: "Group",
+				},
+				Type:     defaultType,
+				IsActive: defaultActive,
+			},
+		},
+		{
+			filter: &model.GroupsFilter{Type: optionalString("MANUAL")},
+			expected: &GroupFilterInput{
+				Type: GroupTypeFilterOperatorInput{
+					In: []graphql.String{model.GroupTypeManual},
+				},
+				IsActive: defaultActive,
+			},
+		},
+		{
+			filter: &model.GroupsFilter{Type: optionalString("SYSTEM")},
+			expected: &GroupFilterInput{
+				Type: GroupTypeFilterOperatorInput{
+					In: []graphql.String{model.GroupTypeSystem},
+				},
+				IsActive: defaultActive,
+			},
+		},
+		{
+			filter: &model.GroupsFilter{Type: optionalString("SYNCED")},
+			expected: &GroupFilterInput{
+				Type: GroupTypeFilterOperatorInput{
+					In: []graphql.String{model.GroupTypeSynced},
+				},
+				IsActive: defaultActive,
+			},
+		},
+		{
+			filter: &model.GroupsFilter{IsActive: optionalBool(true)},
+			expected: &GroupFilterInput{
+				Type:     defaultType,
+				IsActive: BooleanFilterOperatorInput{Eq: true},
+			},
+		},
+		{
+			filter: &model.GroupsFilter{IsActive: optionalBool(false)},
+			expected: &GroupFilterInput{
+				Type:     defaultType,
+				IsActive: BooleanFilterOperatorInput{Eq: false},
+			},
+		},
+		{
+			filter: &model.GroupsFilter{
+				Type:     optionalString("SYSTEM"),
+				IsActive: optionalBool(false),
+			},
+			expected: &GroupFilterInput{
+				Type: GroupTypeFilterOperatorInput{
+					In: []graphql.String{model.GroupTypeSystem},
+				},
+				IsActive: BooleanFilterOperatorInput{Eq: false},
+			},
+		},
+		{
+			filter: &model.GroupsFilter{
+				Type:     optionalString("MANUAL"),
+				IsActive: optionalBool(true),
+			},
+			expected: &GroupFilterInput{
+				Type: GroupTypeFilterOperatorInput{
+					In: []graphql.String{model.GroupTypeManual},
+				},
+				IsActive: BooleanFilterOperatorInput{Eq: true},
+			},
+		},
+		{
+			filter: &model.GroupsFilter{
+				Type:     optionalString("MANUAL"),
+				IsActive: optionalBool(false),
+			},
+			expected: &GroupFilterInput{
+				Type: GroupTypeFilterOperatorInput{
+					In: []graphql.String{model.GroupTypeManual},
+				},
+				IsActive: BooleanFilterOperatorInput{Eq: false},
+			},
+		},
+	}
+
+	for n, td := range testCases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+
+			assert.Equal(t, td.expected, NewGroupFilterInput(td.filter))
+		})
+	}
+}
