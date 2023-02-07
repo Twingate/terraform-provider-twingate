@@ -30,7 +30,7 @@ func Group() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Optional:    true,
-				Description: "Defines which security policy applies to this group. The security policy ID can be obtained from the twingate_security_policy and twingate_security_policies data sources.",
+				Description: "Defines which Security Policy applies to this Group. The Security Policy ID can be obtained from the `twingate_security_policy` and `twingate_security_policies` data sources.",
 			},
 			"id": {
 				Type:        schema.TypeString,
