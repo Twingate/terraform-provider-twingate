@@ -74,7 +74,7 @@ func Resource() *schema.Resource { //nolint:funlen
 				MinItems:     1,
 				Optional:     true,
 				AtLeastOneOf: []string{attr.Path(attr.Access, attr.ServiceAccountIDs)},
-				Description:  "List of Group IDs that have permission to access the Resource.",
+				Description:  "List of Group IDs that must have permission to access the Resource.",
 			},
 			attr.ServiceAccountIDs: {
 				Type:         schema.TypeSet,
@@ -82,7 +82,7 @@ func Resource() *schema.Resource { //nolint:funlen
 				MinItems:     1,
 				Optional:     true,
 				AtLeastOneOf: []string{attr.Path(attr.Access, attr.GroupIDs)},
-				Description:  "List of Service Account IDs that have permission to access the Resource.",
+				Description:  "List of Service Account IDs that must have permission to access the Resource.",
 			},
 		},
 	}
@@ -120,11 +120,11 @@ func Resource() *schema.Resource { //nolint:funlen
 				Deprecated:    "The group_ids argument is now deprecated, and the new access block argument should be used instead. The group_ids argument will be removed in a future version of the provider.",
 				ConflictsWith: []string{attr.Access},
 			},
-			attr.Authoritative: {
+			attr.IsAuthoritative: {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				Description: "Determines authoritative behaviour for handling the Resource's groups or service accounts.",
+				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.Protocols: {
 				Type:                  schema.TypeList,
@@ -305,8 +305,8 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		return ErrAttributeSet(err, attr.Address)
 	}
 
-	if err := resourceData.Set(attr.Authoritative, resource.IsAuthoritative); err != nil {
-		return ErrAttributeSet(err, attr.Authoritative)
+	if err := resourceData.Set(attr.IsAuthoritative, resource.IsAuthoritative); err != nil {
+		return ErrAttributeSet(err, attr.IsAuthoritative)
 	}
 
 	if _, exists := resourceData.GetOk(attr.GroupIDs); exists {
@@ -566,7 +566,7 @@ func convertServiceAccounts(data *schema.ResourceData) []string {
 }
 
 func convertAuthoritativeFlag(data *schema.ResourceData) bool {
-	return data.Get(attr.Authoritative).(bool)
+	return data.Get(attr.IsAuthoritative).(bool)
 }
 
 func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {

@@ -964,7 +964,7 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 	    }
 	  }
 
-	  authoritative = false
+	  is_authoritative = false
 	  access {
 	    service_account_ids = [%s]
 	  }
@@ -1070,7 +1070,7 @@ func createResource13(networkName, resourceName string, serviceAccounts, service
 	    }
 	  }
 
-	  authoritative = true
+	  is_authoritative = true
 	  access {
 	    service_account_ids = [%s]
 	  }
@@ -1372,7 +1372,7 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 	    }
 	  }
 
-	  authoritative = false
+	  is_authoritative = false
 	  access {
 	    group_ids = [%s]
 	  }
@@ -1478,7 +1478,7 @@ func createResource23(networkName, resourceName string, groups, groupsID []strin
 	    }
 	  }
 
-	  authoritative = true
+	  is_authoritative = true
 	  access {
 	    group_ids = [%s]
 	  }
@@ -1846,7 +1846,7 @@ func createResource27(networkName, resourceName string, groups, groupsID []strin
 	    }
 	  }
 
-	  authoritative = false
+	  is_authoritative = false
 	  group_ids = [%s]
 
 	}

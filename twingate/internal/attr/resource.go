@@ -4,7 +4,7 @@ const (
 	Access                   = "access"
 	GroupIDs                 = "group_ids"
 	ServiceAccountIDs        = "service_account_ids"
-	Authoritative            = "authoritative"
+	IsAuthoritative          = "is_authoritative"
 	Policy                   = "policy"
 	Ports                    = "ports"
 	Address                  = "address"
