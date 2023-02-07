@@ -2,26 +2,22 @@ package datasource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-)
-
-const (
-	groupTypeManual = "MANUAL"
-	groupTypeSynced = "SYNCED"
-	groupTypeSystem = "SYSTEM"
 )
 
 func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 	filter := buildFilter(resourceData)
 
-	groups, err := c.FilterGroups(ctx, filter)
-	if err != nil {
+	groups, err := c.ReadGroups(ctx, filter)
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		return diag.FromErr(err)
 	}
 
@@ -57,8 +53,8 @@ func Groups() *schema.Resource {
 			"type": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  fmt.Sprintf("Returns only Groups of the specified type (valid: `%s`, `%s`, `%s`).", groupTypeManual, groupTypeSynced, groupTypeSystem),
-				ValidateFunc: validation.StringInSlice([]string{groupTypeManual, groupTypeSynced, groupTypeSystem}, false),
+				Description:  fmt.Sprintf("Returns only Groups of the specified type (valid: `%s`, `%s`, `%s`).", model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem),
+				ValidateFunc: validation.StringInSlice([]string{model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem}, false),
 			},
 			"groups": {
 				Type:        schema.TypeList,
@@ -93,7 +89,7 @@ func Groups() *schema.Resource {
 	}
 }
 
-func buildFilter(resourceData *schema.ResourceData) *client.GroupsFilter {
+func buildFilter(resourceData *schema.ResourceData) *model.GroupsFilter {
 	groupName, hasName := resourceData.GetOk("name")
 	groupType, hasType := resourceData.GetOk("type")
 
@@ -104,7 +100,7 @@ func buildFilter(resourceData *schema.ResourceData) *client.GroupsFilter {
 		return nil
 	}
 
-	filter := &client.GroupsFilter{}
+	filter := &model.GroupsFilter{}
 
 	if hasName {
 		val := groupName.(string)

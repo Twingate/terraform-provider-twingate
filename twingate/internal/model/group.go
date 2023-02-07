@@ -1,5 +1,11 @@
 package model
 
+const (
+	GroupTypeManual = "MANUAL"
+	GroupTypeSynced = "SYNCED"
+	GroupTypeSystem = "SYSTEM"
+)
+
 type Group struct {
 	ID       string
 	Name     string
@@ -22,4 +28,14 @@ func (g Group) ToTerraform() interface{} {
 		"type":      g.Type,
 		"is_active": g.IsActive,
 	}
+}
+
+type GroupsFilter struct {
+	Name     *string
+	Type     *string
+	IsActive *bool
+}
+
+func (f *GroupsFilter) HasName() bool {
+	return f != nil && f.Name != nil && *f.Name != ""
 }
