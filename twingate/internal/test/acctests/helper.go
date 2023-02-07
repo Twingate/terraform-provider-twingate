@@ -12,6 +12,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -26,6 +27,14 @@ var (
 	ErrClientNotInited          = errors.New("meta client not inited")
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 )
+
+func ErrServiceAccountsLenMismatch(expected, actual int) error {
+	return fmt.Errorf("expected %d service accounts, actual - %d", expected, actual) //nolint
+}
+
+func ErrGroupsLenMismatch(expected, actual int) error {
+	return fmt.Errorf("expected %d groups, actual - %d", expected, actual) //nolint
+}
 
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
 var ProviderFactories map[string]func() (*schema.Provider, error) //nolint:gochecknoglobals
@@ -428,4 +437,177 @@ func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 	}
 
 	return securityPolicies, nil
+}
+
+func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		groupID, err := getResourceID(state, groupName)
+		if err != nil {
+			return err
+		}
+
+		err = providerClient.AddResourceGroups(context.Background(), &model.Resource{
+			ID:     resourceID,
+			Groups: []string{groupID},
+		})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to add group with ID %s: %w", resourceID, groupID, err)
+		}
+
+		return nil
+	}
+}
+
+func DeleteResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		groupID, err := getResourceID(state, groupName)
+		if err != nil {
+			return err
+		}
+
+		err = providerClient.DeleteResourceGroups(context.Background(), resourceID, []string{groupID})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to delete group with ID %s: %w", resourceID, groupID, err)
+		}
+
+		return nil
+	}
+}
+
+func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		resource, err := providerClient.ReadResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		if len(resource.Groups) != expectedGroupsLen {
+			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.Groups))
+		}
+
+		return nil
+	}
+}
+
+func getResourceID(s *terraform.State, resourceName string) (string, error) {
+	resourceState, ok := s.RootModule().Resources[resourceName]
+
+	if !ok {
+		return "", fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+	}
+
+	resourceID := resourceState.Primary.ID
+
+	if resourceID == "" {
+		return "", ErrResourceIDNotSet
+	}
+
+	return resourceID, nil
+}
+
+func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		serviceAccountID, err := getResourceID(state, serviceAccountName)
+		if err != nil {
+			return err
+		}
+
+		_, err = providerClient.UpdateServiceAccount(context.Background(), &model.ServiceAccount{
+			ID:        serviceAccountID,
+			Resources: []string{resourceID},
+		})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
+		}
+
+		return nil
+	}
+}
+
+func DeleteResourceServiceAccount(resourceName, serviceAccountName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		serviceAccountID, err := getResourceID(state, serviceAccountName)
+		if err != nil {
+			return err
+		}
+
+		err = providerClient.DeleteResourceServiceAccounts(context.Background(), resourceID, []string{serviceAccountID})
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to delete service account with ID %s: %w", resourceID, serviceAccountID, err)
+		}
+
+		return nil
+	}
+}
+
+func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccountsLen int) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		resource, err := providerClient.ReadResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		serviceAccounts, err := providerClient.ReadServiceAccounts(context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to read service accounts: %w", err)
+		}
+
+		serviceAccountIDs := make(map[string]bool)
+
+		for _, account := range serviceAccounts {
+			if utils.Contains(account.Resources, resource.ID) {
+				serviceAccountIDs[account.ID] = true
+			}
+		}
+
+		resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
+
+		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
+			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))
+		}
+
+		return nil
+	}
 }

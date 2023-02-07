@@ -1,5 +1,6 @@
 package utils
 
+// Map - transform giving slice of items by applying the func.
 func Map[T, R any](items []T, f func(item T) R) []R {
 	result := make([]R, 0, len(items))
 
@@ -21,4 +22,37 @@ func Filter[T any](items []T, ok func(item T) bool) []T {
 	}
 
 	return result
+}
+
+// Contains - checks if element exists in the slice.
+func Contains[T comparable](items []T, element T) bool {
+	for _, item := range items {
+		if item == element {
+			return true
+		}
+	}
+
+	return false
+}
+
+// MapKeys - collects map keys to slice.
+func MapKeys[T comparable](lookup map[T]bool) []T {
+	result := make([]T, 0, len(lookup))
+
+	for item := range lookup {
+		result = append(result, item)
+	}
+
+	return result
+}
+
+// MakeLookupMap - creates lookup map from slice.
+func MakeLookupMap[T comparable](items []T) map[T]bool {
+	lookup := make(map[T]bool, len(items))
+
+	for _, item := range items {
+		lookup[item] = true
+	}
+
+	return lookup
 }
