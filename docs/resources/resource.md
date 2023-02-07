@@ -80,7 +80,7 @@ resource "twingate_resource" "resource" {
 
 Optional:
 
-- `group_ids` (Set of String) List of Group IDs that must have permission to access the Resource.
+- `group_ids` (Set of String) List of Group IDs that will have permission to access the Resource.
 - `service_account_ids` (Set of String) List of Service Account IDs that must have permission to access the Resource.
 
 

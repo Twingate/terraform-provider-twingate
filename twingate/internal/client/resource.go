@@ -414,15 +414,15 @@ func (client *Client) ReadResourceServiceAccounts(ctx context.Context, resourceI
 		return nil, err
 	}
 
-	serviceAccountIDs := make(map[string]bool)
+	serviceAccountIDs := make([]string, 0, len(serviceAccounts))
 
 	for _, account := range serviceAccounts {
 		if utils.Contains(account.Resources, resourceID) {
-			serviceAccountIDs[account.ID] = true
+			serviceAccountIDs = append(serviceAccountIDs, account.ID)
 		}
 	}
 
-	return utils.MapKeys(serviceAccountIDs), nil
+	return serviceAccountIDs, nil
 }
 
 func (client *Client) AddResourceServiceAccountIDs(ctx context.Context, resource *model.Resource) error {

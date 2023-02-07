@@ -26,9 +26,13 @@ func Filter[T any](items []T, ok func(item T) bool) []T {
 
 // Contains - checks if element exists in the slice.
 func Contains[T comparable](items []T, element T) bool {
-	lookup := MakeLookupMap[T](items)
+	for _, item := range items {
+		if item == element {
+			return true
+		}
+	}
 
-	return lookup[element]
+	return false
 }
 
 // MapKeys - collects map keys to slice.
