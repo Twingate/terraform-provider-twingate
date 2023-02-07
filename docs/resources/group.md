@@ -32,7 +32,7 @@ resource "twingate_group" "aws" {
 
 ### Optional
 
-- `authoritative` (Boolean) Determines authoritative behaviour for handling the Group's users.
+- `is_authoritative` (Boolean) Determines whether User assignments to this Group will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `user_ids` (Set of String) List of User IDs that have permission to access the Group.
 
 ### Read-Only

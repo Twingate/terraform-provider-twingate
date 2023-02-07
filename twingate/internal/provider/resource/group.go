@@ -27,11 +27,11 @@ func Group() *schema.Resource {
 				Description: "The name of the group",
 			},
 			// optional
-			attr.Authoritative: {
+			attr.IsAuthoritative: {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				Description: "Determines authoritative behaviour for handling the Group's users.",
+				Description: "Determines whether User assignments to this Group will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.UserIDs: {
 				Type:        schema.TypeSet,

@@ -224,7 +224,7 @@ func terraformResourceTwingateGroupWithUsersAuthoritative(terraformResourceName,
 	resource "twingate_group" "%s" {
 	  name = "%s"
 	  user_ids = ["%s"]
-	  authoritative = %v
+	  is_authoritative = %v
 	}
 	`, terraformResourceName, name, strings.Join(usersID, `", "`), authoritative)
 }
