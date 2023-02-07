@@ -100,6 +100,8 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	resource := response.Entity.ToModel()
 	resource.Groups = input.Groups
+	resource.ServiceAccounts = input.ServiceAccounts
+	resource.IsAuthoritative = input.IsAuthoritative
 
 	if input.IsVisible == nil {
 		resource.IsVisible = nil
@@ -225,8 +227,14 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, input.ID)
 	}
 
+	err = response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(input.ID)))
+	if err != nil {
+		return nil, err //nolint
+	}
+
 	resource := response.Entity.ToModel()
-	resource.Groups = input.Groups
+	resource.ServiceAccounts = input.ServiceAccounts
+	resource.IsAuthoritative = input.IsAuthoritative
 
 	if input.IsVisible == nil {
 		resource.IsVisible = nil
@@ -319,4 +327,114 @@ func (client *Client) readResourcesByNameAfter(ctx context.Context, variables ma
 	}
 
 	return &response.PaginatedResource, nil
+}
+
+func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourceID string, deleteServiceAccountIDs []string) error {
+	if len(deleteServiceAccountIDs) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+	}
+
+	resourcesToDelete := []string{resourceID}
+
+	for _, serviceAccountID := range deleteServiceAccountIDs {
+		if err := client.UpdateServiceAccountRemoveResources(ctx, serviceAccountID, resourcesToDelete); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Resource) error {
+	if len(resource.Groups) == 0 {
+		return nil
+	}
+
+	if resource.ID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+	}
+
+	variables := newVars(
+		gqlID(resource.ID),
+		gqlIDs(resource.Groups, "groupIds"),
+	)
+
+	response := query.AddResourceGroups{}
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	if err != nil {
+		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resource.ID)
+	}
+
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, resourceResourceName, resource.ID)
+	}
+
+	return nil
+}
+
+func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID string, deleteGroupIDs []string) error {
+	if len(deleteGroupIDs) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+	}
+
+	response := query.UpdateResourceRemoveGroups{}
+	variables := newVars(
+		gqlID(resourceID),
+		gqlIDs(deleteGroupIDs, "removedGroupIds"),
+	)
+
+	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	if err != nil {
+		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resourceID)
+	}
+
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, resourceResourceName, resourceID)
+	}
+
+	if response.Entity == nil {
+		return NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, resourceResourceName, resourceID)
+	}
+
+	return nil
+}
+
+func (client *Client) ReadResourceServiceAccounts(ctx context.Context, resourceID string) ([]string, error) {
+	serviceAccounts, err := client.ReadServiceAccounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceAccountIDs := make([]string, 0, len(serviceAccounts))
+
+	for _, account := range serviceAccounts {
+		if utils.Contains(account.Resources, resourceID) {
+			serviceAccountIDs = append(serviceAccountIDs, account.ID)
+		}
+	}
+
+	return serviceAccountIDs, nil
+}
+
+func (client *Client) AddResourceServiceAccountIDs(ctx context.Context, resource *model.Resource) error {
+	for _, serviceAccountID := range resource.ServiceAccounts {
+		_, err := client.UpdateServiceAccount(ctx, &model.ServiceAccount{
+			ID:        serviceAccountID,
+			Resources: []string{resource.ID},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

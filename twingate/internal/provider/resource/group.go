@@ -115,3 +115,11 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Gro
 
 	return nil
 }
+
+func convertGroup(resourceData *schema.ResourceData) *model.Group {
+	return &model.Group{
+		ID:               resourceData.Id(),
+		Name:             resourceData.Get("name").(string),
+		SecurityPolicyID: resourceData.Get("security_policy_id").(string),
+	}
+}
