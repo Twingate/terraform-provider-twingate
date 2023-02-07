@@ -73,7 +73,7 @@ func Resource() *schema.Resource { //nolint:funlen
 				MinItems:     1,
 				Optional:     true,
 				AtLeastOneOf: []string{attr.Path(attr.Access, attr.ServiceAccountIDs)},
-				Description:  "List of Group IDs that must have permission to access the Resource.",
+				Description:  "List of Group IDs that will have permission to access the Resource.",
 			},
 			attr.ServiceAccountIDs: {
 				Type:         schema.TypeSet,
@@ -81,7 +81,7 @@ func Resource() *schema.Resource { //nolint:funlen
 				MinItems:     1,
 				Optional:     true,
 				AtLeastOneOf: []string{attr.Path(attr.Access, attr.GroupIDs)},
-				Description:  "List of Service Account IDs that must have permission to access the Resource.",
+				Description:  "List of Service Account IDs that will have permission to access the Resource.",
 			},
 		},
 	}

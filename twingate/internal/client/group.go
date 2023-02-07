@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
@@ -68,17 +67,28 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 	return response.ToModel(), nil
 }
 
-func (client *Client) ReadGroups(ctx context.Context) ([]*model.Group, error) {
+func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
 	response := query.ReadGroups{}
-	variables := newVars(gqlNullable("", query.CursorGroups))
+	variables := newVars(
+		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
+		gqlNullable("", query.CursorGroups),
+	)
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
+		if filter.HasName() {
+			return nil, NewAPIErrorWithName(err, "read", groupResourceName, *filter.Name)
+		} else {
+			return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
+		}
 	}
 
 	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
+		if filter.HasName() {
+			return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "read", groupResourceName, *filter.Name)
+		} else {
+			return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
+		}
 	}
 
 	err = response.FetchPages(ctx, client.readGroupsAfter, variables)
@@ -92,50 +102,6 @@ func (client *Client) ReadGroups(ctx context.Context) ([]*model.Group, error) {
 func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
 	variables[query.CursorGroups] = cursor
 	response := query.ReadGroups{}
-
-	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
-	}
-
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", groupResourceName, "All")
-	}
-
-	return &response.PaginatedResource, nil
-}
-
-func (client *Client) ReadGroupsByName(ctx context.Context, groupName string) ([]*model.Group, error) {
-	if groupName == "" {
-		return nil, NewAPIError(ErrGraphqlGroupNameIsEmpty, "read", groupResourceName)
-	}
-
-	response := query.ReadGroupsByName{}
-	variables := newVars(
-		gqlVar(groupName, "name"),
-		gqlNullable("", query.CursorGroups),
-	)
-
-	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
-	if err != nil {
-		return nil, NewAPIErrorWithName(err, "read", groupResourceName, groupName)
-	}
-
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "read", groupResourceName, groupName)
-	}
-
-	err = response.FetchPages(ctx, client.readGroupsByNameAfter, variables)
-	if err != nil {
-		return nil, err //nolint
-	}
-
-	return response.ToModel(), nil
-}
-
-func (client *Client) readGroupsByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
-	response := query.ReadGroupsByName{}
-	variables[query.CursorGroups] = cursor
 
 	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
 	if err != nil {
@@ -240,63 +206,6 @@ func (client *Client) DeleteGroupUsers(ctx context.Context, groupID string, user
 	}
 
 	return nil
-}
-
-type GroupsFilter struct {
-	Name     *string
-	Type     *string
-	IsActive *bool
-}
-
-func (f *GroupsFilter) HasName() bool {
-	return f != nil && f.Name != nil && *f.Name != ""
-}
-
-func (f *GroupsFilter) Match(group *model.Group) bool {
-	if f == nil {
-		return true
-	}
-
-	if f.Type != nil && *f.Type != group.Type {
-		return false
-	}
-
-	if f.IsActive != nil && *f.IsActive != group.IsActive {
-		return false
-	}
-
-	return true
-}
-
-func (client *Client) FilterGroups(ctx context.Context, filter *GroupsFilter) ([]*model.Group, error) {
-	var (
-		groups []*model.Group
-		err    error
-	)
-
-	if !filter.HasName() {
-		groups, err = client.ReadGroups(ctx)
-	} else {
-		groups, err = client.ReadGroupsByName(ctx, *filter.Name)
-	}
-
-	if err != nil {
-		if errors.Is(err, ErrGraphqlResultIsEmpty) {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	var filtered []*model.Group
-
-	for _, g := range groups {
-		if filter.Match(g) {
-			filtered = append(filtered, g)
-		}
-	}
-
-	return filtered, nil
 }
 
 func (client *Client) readGroupUsersAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.UserEdge], error) {
