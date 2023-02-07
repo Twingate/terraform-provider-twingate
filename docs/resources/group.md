@@ -32,7 +32,7 @@ resource "twingate_group" "aws" {
 
 ### Optional
 
-- `security_policy_id` (String) Defines which security policy applies to this group. The security policy ID can be obtained from the twingate_security_policy and twingate_security_policies data sources.
+- `security_policy_id` (String) Defines which Security Policy applies to this Group. The Security Policy ID can be obtained from the `twingate_security_policy` and `twingate_security_policies` data sources.
 
 ### Read-Only
 
