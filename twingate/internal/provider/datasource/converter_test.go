@@ -58,7 +58,7 @@ func TestConverterGroupsToTerraform(t *testing.T) {
 		},
 		{
 			input: []*model.Group{
-				{ID: "group-id", Name: "group-name", Type: groupTypeManual, IsActive: true, SecurityPolicyID: "policy-id"},
+				{ID: "group-id", Name: "group-name", Type: model.GroupTypeManual, IsActive: true, SecurityPolicyID: "policy-id"},
 			},
 			expected: []interface{}{
 				map[string]interface{}{
@@ -200,6 +200,99 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 			actual := convertResourcesToTerraform(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestTerraformServicesDatasourceID(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "",
+			expected: "all-services",
+		},
+		{
+			input:    "hello",
+			expected: "service-by-name-hello",
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := terraformServicesDatasourceID(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestConvertServicesToTerraform(t *testing.T) {
+	cases := []struct {
+		input    []*model.ServiceAccount
+		expected []interface{}
+	}{
+		{
+			input:    nil,
+			expected: []interface{}{},
+		},
+		{
+			input: []*model.ServiceAccount{
+				{
+					ID:        "service-account-id",
+					Name:      "service-account-name",
+					Resources: []string{"res-1", "res-2"},
+					Keys:      []string{"key-1", "key-2"},
+				},
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"id":           "service-account-id",
+					"name":         "service-account-name",
+					"resource_ids": []string{"res-1", "res-2"},
+					"key_ids":      []string{"key-1", "key-2"},
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := convertServicesToTerraform(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
+	cases := []struct {
+		input    []*model.SecurityPolicy
+		expected []interface{}
+	}{
+		{
+			input:    nil,
+			expected: []interface{}{},
+		},
+		{
+			input: []*model.SecurityPolicy{
+				{
+					ID:   "policy-id",
+					Name: "policy-name",
+				},
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"id":   "policy-id",
+					"name": "policy-name",
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := convertSecurityPoliciesToTerraform(c.input)
 			assert.Equal(t, c.expected, actual)
 		})
 	}
