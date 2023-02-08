@@ -14,7 +14,7 @@ func init() {
 		Name: resourceGroup,
 		F: newTestSweeper(resourceGroup,
 			func(client *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := client.ReadGroups(ctx, nil)
+				resources, err := client.ReadGroups(ctx)
 				if err != nil {
 					return nil, err
 				}
