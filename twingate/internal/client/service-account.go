@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
@@ -66,13 +67,14 @@ func (client *Client) UpdateServiceAccount(ctx context.Context, serviceAccount *
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, serviceAccountResourceName)
 	}
 
-	if serviceAccount.Name == "" {
+	if serviceAccount.Name == "" && len(serviceAccount.Resources) == 0 {
 		return nil, NewAPIError(ErrGraphqlNameIsEmpty, operationUpdate, serviceAccountResourceName)
 	}
 
 	variables := newVars(
 		gqlID(serviceAccount.ID),
-		gqlVar(serviceAccount.Name, "name"),
+		gqlNullable(serviceAccount.Name, "name"),
+		gqlIDs(serviceAccount.Resources, "addedResourceIds"),
 	)
 
 	response := query.UpdateServiceAccount{}
@@ -288,6 +290,44 @@ func (client *Client) fetchServiceInternalResources(ctx context.Context, service
 	}
 
 	serviceAccount.Keys.Edges = utils.Filter[*query.GqlKeyIDEdge](serviceAccount.Keys.Edges, query.IsGqlKeyActive)
+
+	return nil
+}
+
+func (client *Client) UpdateServiceAccountRemoveResources(ctx context.Context, serviceAccountID string, resourceIDsToRemove []string) error {
+	if len(resourceIDsToRemove) == 0 {
+		return nil
+	}
+
+	if serviceAccountID == "" {
+		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, serviceAccountResourceName)
+	}
+
+	_, err := client.ReadServiceAccount(ctx, serviceAccountID)
+	if errors.Is(err, ErrGraphqlResultIsEmpty) {
+		// no-op - service does not exist
+		return nil
+	}
+
+	variables := newVars(
+		gqlID(serviceAccountID),
+		gqlIDs(resourceIDsToRemove, "removedResourceIds"),
+	)
+
+	response := query.UpdateServiceAccountRemoveResources{}
+
+	err = client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationUpdateServiceAccount))
+	if err != nil {
+		return NewAPIErrorWithID(err, operationUpdate, serviceAccountResourceName, serviceAccountID)
+	}
+
+	if !response.Ok {
+		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, serviceAccountResourceName, serviceAccountID)
+	}
+
+	if response.Entity == nil {
+		return NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, serviceAccountResourceName, serviceAccountID)
+	}
 
 	return nil
 }
