@@ -579,7 +579,7 @@ func TestClientResourceUpdateFetchGroupsError(t *testing.T) {
 
 		_, err := client.UpdateResource(context.Background(), newTestResource())
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id test: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id test", errBadRequest))
 	})
 }
 
@@ -1462,7 +1462,7 @@ func TestClientResourcesAddResourceGroupsRequestError(t *testing.T) {
 			Groups: []string{"g-1"},
 		})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id resource-id: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id resource-id", errBadRequest))
 	})
 }
 
@@ -1545,7 +1545,7 @@ func TestClientResourcesDeleteResourceGroupsRequestError(t *testing.T) {
 
 		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id resource-id: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id resource-id", errBadRequest))
 	})
 }
 
@@ -1668,7 +1668,7 @@ func TestClientReadResourceServiceAccountsRequestError(t *testing.T) {
 
 		serviceAccounts, err := client.ReadResourceServiceAccounts(context.Background(), "resource-2-1")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read service account with id All", errBadRequest))
 		assert.Nil(t, serviceAccounts)
 	})
 }
@@ -1732,6 +1732,6 @@ func TestClientAddResourceServiceAccountIDsRequestError(t *testing.T) {
 			ServiceAccounts: []string{"id-1", "id-2"},
 		})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update service account with id id-1: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update service account with id id-1", errBadRequest))
 	})
 }

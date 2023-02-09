@@ -8,6 +8,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -61,7 +62,7 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - All", func(t *testing.T) {
 
-		prefix := test.Prefix()
+		prefix := test.Prefix() + acctest.RandString(4)
 		const (
 			terraformResourceName = "dts_service"
 			theDatasource         = "data.twingate_service_accounts.out"

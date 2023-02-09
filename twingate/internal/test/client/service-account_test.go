@@ -1935,7 +1935,7 @@ func TestUpdateServiceAccountRemoveResourcesRequestError(t *testing.T) {
 
 		err := c.UpdateServiceAccountRemoveResources(context.Background(), "service-id", []string{"id1"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update service account with id service-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to update service account with id service-id", errBadRequest))
 	})
 }
 
