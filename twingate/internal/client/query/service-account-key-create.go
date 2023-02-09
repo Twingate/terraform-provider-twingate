@@ -2,7 +2,6 @@ package query
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
 )
 
 type CreateServiceAccountKey struct {
@@ -11,7 +10,7 @@ type CreateServiceAccountKey struct {
 
 type ServiceAccountKeyEntityCreateResponse struct {
 	ServiceAccountKeyEntityResponse
-	Token graphql.String
+	Token string
 }
 
 func (q CreateServiceAccountKey) ToModel() (*model.ServiceKey, error) {
@@ -24,7 +23,7 @@ func (q CreateServiceAccountKey) ToModel() (*model.ServiceKey, error) {
 		return nil, err
 	}
 
-	serviceKey.Token = string(q.Token)
+	serviceKey.Token = q.Token
 
 	return serviceKey, nil
 }

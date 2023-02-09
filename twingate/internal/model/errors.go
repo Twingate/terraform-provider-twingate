@@ -12,10 +12,10 @@ func ErrInvalidPortRange(portRange string, err error) error {
 }
 
 type PortNotInRangeError struct {
-	Port int64
+	Port int
 }
 
-func NewPortNotInRangeError(port int64) *PortNotInRangeError {
+func NewPortNotInRangeError(port int) *PortNotInRangeError {
 	return &PortNotInRangeError{
 		Port: port,
 	}
@@ -26,11 +26,11 @@ func (e *PortNotInRangeError) Error() string {
 }
 
 type PortRangeNotRisingSequenceError struct {
-	Start int32
-	End   int32
+	Start int
+	End   int
 }
 
-func NewPortRangeNotRisingSequenceError(start, end int32) *PortRangeNotRisingSequenceError {
+func NewPortRangeNotRisingSequenceError(start, end int) *PortRangeNotRisingSequenceError {
 	return &PortRangeNotRisingSequenceError{
 		Start: start,
 		End:   end,

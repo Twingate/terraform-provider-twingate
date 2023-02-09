@@ -5,14 +5,14 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const groupResourceName = "group"
 
 type PageInfo struct {
-	EndCursor   graphql.String
-	HasNextPage graphql.Boolean
+	EndCursor   string
+	HasNextPage bool
 }
 
 func (client *Client) CreateGroup(ctx context.Context, groupName string) (*model.Group, error) {
@@ -23,7 +23,7 @@ func (client *Client) CreateGroup(ctx context.Context, groupName string) (*model
 	variables := newVars(gqlVar(groupName, "name"))
 	response := query.CreateGroup{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "createGroup", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createGroup"))
 	if err != nil {
 		return nil, NewAPIError(err, "create", groupResourceName)
 	}
@@ -43,7 +43,7 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 	variables := newVars(gqlID(groupID))
 	response := query.ReadGroup{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readGroup", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readGroup"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", groupResourceName, groupID)
 	}
@@ -57,12 +57,13 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 
 func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
 	response := query.ReadGroups{}
+
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
 		gqlNullable("", query.CursorGroups),
 	)
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readGroups"))
 	if err != nil {
 		if filter.HasName() {
 			return nil, NewAPIErrorWithName(err, "read", groupResourceName, *filter.Name)
@@ -87,11 +88,11 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 	return response.ToModel(), nil
 }
 
-func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
+func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
 	variables[query.CursorGroups] = cursor
 	response := query.ReadGroups{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readGroups", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readGroups"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", groupResourceName, "All")
 	}
@@ -119,7 +120,7 @@ func (client *Client) UpdateGroup(ctx context.Context, groupID, groupName string
 
 	response := query.UpdateGroup{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateGroup", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateGroup"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "update", groupResourceName, groupID)
 	}
@@ -143,7 +144,7 @@ func (client *Client) DeleteGroup(ctx context.Context, groupID string) error {
 	variables := newVars(gqlID(groupID))
 	response := query.DeleteGroup{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "deleteGroup", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("deleteGroup"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", groupResourceName, groupID)
 	}

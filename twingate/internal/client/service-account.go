@@ -7,7 +7,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const (
@@ -30,7 +30,7 @@ func (client *Client) CreateServiceAccount(ctx context.Context, serviceAccountNa
 	variables := newVars(gqlVar(serviceAccountName, "name"))
 	response := query.CreateServiceAccount{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, mutationCreateServiceAccount, &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationCreateServiceAccount))
 	if err != nil {
 		return nil, NewAPIError(err, operationCreate, serviceAccountResourceName)
 	}
@@ -50,7 +50,7 @@ func (client *Client) ReadShallowServiceAccount(ctx context.Context, serviceAcco
 	variables := newVars(gqlID(serviceAccountID))
 	response := query.ReadShallowServiceAccount{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccount, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccount))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, serviceAccountID)
 	}
@@ -79,7 +79,7 @@ func (client *Client) UpdateServiceAccount(ctx context.Context, serviceAccount *
 
 	response := query.UpdateServiceAccount{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, mutationUpdateServiceAccount, &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationUpdateServiceAccount))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationUpdate, serviceAccountResourceName, serviceAccount.ID)
 	}
@@ -103,7 +103,7 @@ func (client *Client) DeleteServiceAccount(ctx context.Context, serviceAccountID
 	variables := newVars(gqlID(serviceAccountID))
 	response := query.DeleteServiceAccount{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, mutationDeleteServiceAccount, &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationDeleteServiceAccount))
 	if err != nil {
 		return NewAPIErrorWithID(err, operationDelete, serviceAccountResourceName, serviceAccountID)
 	}
@@ -120,7 +120,7 @@ func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.
 
 	variables := newVars(gqlNullable("", query.CursorServiceAccounts))
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccounts, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccounts))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
@@ -137,12 +137,12 @@ func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.
 	return response.ToModel(), nil
 }
 
-func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
+func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
 	variables[query.CursorServiceAccounts] = cursor
 
 	response := query.ReadShallowServiceAccounts{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccounts, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccounts))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
@@ -168,7 +168,7 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 		gqlNullable("", query.CursorServiceKeys),
 	)
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccounts, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccounts))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
@@ -192,11 +192,11 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 	return response.Services.ToModel(), nil
 }
 
-func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ServiceEdge], error) {
+func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceEdge], error) {
 	response := query.ReadServiceAccounts{}
 	variables[query.CursorServices] = cursor
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServices))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
@@ -208,13 +208,13 @@ func (client *Client) readServicesAfter(ctx context.Context, variables map[strin
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
+func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
 	response := query.ReadServiceAccount{}
 
 	gqlNullable("", query.CursorServiceKeys)(variables)
 	variables[query.CursorServiceResources] = cursor
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServices))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
@@ -226,13 +226,13 @@ func (client *Client) readServiceResourcesAfter(ctx context.Context, variables m
 	return &response.Service.Resources.PaginatedResource, nil
 }
 
-func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
+func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
 	response := query.ReadServiceAccount{}
 
 	gqlNullable("", query.CursorServiceResources)(variables)
 	variables[query.CursorServiceKeys] = cursor
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServices, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServices))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
 	}
@@ -257,7 +257,7 @@ func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID s
 
 	response := query.ReadServiceAccount{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadServiceAccount, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccount))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, serviceAccountID)
 	}
@@ -316,7 +316,7 @@ func (client *Client) UpdateServiceAccountRemoveResources(ctx context.Context, s
 
 	response := query.UpdateServiceAccountRemoveResources{}
 
-	err = client.GraphqlClient.NamedMutate(ctx, mutationUpdateServiceAccount, &response, variables)
+	err = client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationUpdateServiceAccount))
 	if err != nil {
 		return NewAPIErrorWithID(err, operationUpdate, serviceAccountResourceName, serviceAccountID)
 	}

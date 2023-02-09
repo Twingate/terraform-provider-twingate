@@ -1,6 +1,6 @@
 package query
 
-import "github.com/twingate/go-graphql-client"
+import "github.com/hasura/go-graphql-client"
 
 type ReadResourceGroups struct {
 	Resource *gqlResourceGroups `graphql:"resource(id: $id)"`
