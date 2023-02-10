@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func TestReadConnectorQueryToModel(t *testing.T) {
@@ -185,7 +185,7 @@ func TestReadServiceAccountKeyToModel(t *testing.T) {
 						ID:   "service-key-id",
 						Name: "service key name",
 					},
-					ExpiresAt: graphql.String(today.Format(time.RFC3339)),
+					ExpiresAt: today.Format(time.RFC3339),
 					Status:    "OK",
 					ServiceAccount: gqlServiceAccount{
 						IDName{
@@ -275,7 +275,7 @@ func TestUpdateServiceAccountKeyToModel(t *testing.T) {
 							ID:   "service-key-id",
 							Name: "service key name",
 						},
-						ExpiresAt: graphql.String(today.Format(time.RFC3339)),
+						ExpiresAt: today.Format(time.RFC3339),
 						Status:    "OK",
 						ServiceAccount: gqlServiceAccount{
 							IDName{
@@ -371,7 +371,7 @@ func TestCreateServiceAccountKeyToModel(t *testing.T) {
 								ID:   "service-key-id",
 								Name: "service key name",
 							},
-							ExpiresAt: graphql.String(today.Format(time.RFC3339)),
+							ExpiresAt: today.Format(time.RFC3339),
 							Status:    "OK",
 							ServiceAccount: gqlServiceAccount{
 								IDName{
@@ -806,7 +806,7 @@ func optionalBool(val bool) *bool {
 func TestBuildGroupsFilter(t *testing.T) {
 	defaultActive := BooleanFilterOperatorInput{Eq: true}
 	defaultType := GroupTypeFilterOperatorInput{
-		In: []graphql.String{model.GroupTypeManual,
+		In: []string{model.GroupTypeManual,
 			model.GroupTypeSynced,
 			model.GroupTypeSystem},
 	}
@@ -833,7 +833,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			filter: &model.GroupsFilter{Type: optionalString("MANUAL")},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
-					In: []graphql.String{model.GroupTypeManual},
+					In: []string{model.GroupTypeManual},
 				},
 				IsActive: defaultActive,
 			},
@@ -842,7 +842,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			filter: &model.GroupsFilter{Type: optionalString("SYSTEM")},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
-					In: []graphql.String{model.GroupTypeSystem},
+					In: []string{model.GroupTypeSystem},
 				},
 				IsActive: defaultActive,
 			},
@@ -851,7 +851,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			filter: &model.GroupsFilter{Type: optionalString("SYNCED")},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
-					In: []graphql.String{model.GroupTypeSynced},
+					In: []string{model.GroupTypeSynced},
 				},
 				IsActive: defaultActive,
 			},
@@ -877,7 +877,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
-					In: []graphql.String{model.GroupTypeSystem},
+					In: []string{model.GroupTypeSystem},
 				},
 				IsActive: BooleanFilterOperatorInput{Eq: false},
 			},
@@ -889,7 +889,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
-					In: []graphql.String{model.GroupTypeManual},
+					In: []string{model.GroupTypeManual},
 				},
 				IsActive: BooleanFilterOperatorInput{Eq: true},
 			},
@@ -901,7 +901,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
-					In: []graphql.String{model.GroupTypeManual},
+					In: []string{model.GroupTypeManual},
 				},
 				IsActive: BooleanFilterOperatorInput{Eq: false},
 			},

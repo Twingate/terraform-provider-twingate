@@ -5,7 +5,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const (
@@ -26,7 +26,7 @@ func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, 
 	)
 	response := query.ReadSecurityPolicy{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicy, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadSecurityPolicy))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, operationRead, securityPolicyResourceName, securityPolicyID)
 	}
@@ -44,7 +44,7 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 	)
 	response := query.ReadSecurityPolicies{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicies, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadSecurityPolicies))
 	if err != nil {
 		return nil, NewAPIError(err, operationRead, securityPolicyResourceName)
 	}
@@ -61,11 +61,11 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 	return response.ToModel(), nil
 }
 
-func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.SecurityPolicyEdge], error) {
+func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.SecurityPolicyEdge], error) {
 	variables[query.CursorPolicies] = cursor
 	response := query.ReadSecurityPolicies{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, queryReadSecurityPolicies, &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadSecurityPolicies))
 	if err != nil {
 		return nil, err //nolint
 	}

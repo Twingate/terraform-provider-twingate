@@ -3,15 +3,14 @@ package client
 import (
 	"context"
 	b64 "encoding/base64"
-	"errors"
 	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hasura/go-graphql-client"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func newTestResource() *model.Resource {
@@ -109,11 +108,11 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create resource: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to create resource", errBadRequest))
 	})
 }
 
@@ -385,13 +384,13 @@ func TestClientResourceReadRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 		resourceID := "test-id"
 
 		resource, err := client.ReadResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id "+resourceID, errBadRequest))
 	})
 }
 
@@ -417,13 +416,13 @@ func TestClientResourceReadGroupsRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			MultipleResponders(
 				httpmock.NewStringResponder(200, jsonResponse),
-				httpmock.NewErrorResponder(errors.New("error_1")),
+				httpmock.NewErrorResponder(errBadRequest),
 			),
 		)
 
 		resource, err := client.ReadResource(context.Background(), "resource1")
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id resource1: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id resource1", errBadRequest))
 	})
 }
 
@@ -513,12 +512,12 @@ func TestClientResourceUpdateRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		req := newTestResource()
 		_, err := client.UpdateResource(context.Background(), req)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Post "%s": error_1`, req.ID, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id "+req.ID, errBadRequest))
 	})
 }
 
@@ -528,7 +527,7 @@ func TestClientResourceUpdateEmptyResponse(t *testing.T) {
 		  "data": {
 		    "resourceUpdate": {
 		      "ok": true,
-		      "entity": []
+		      "entity": null
 		    }
 		  }
 		}`
@@ -580,7 +579,7 @@ func TestClientResourceUpdateFetchGroupsError(t *testing.T) {
 
 		_, err := client.UpdateResource(context.Background(), newTestResource())
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id test: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id test", errBadRequest))
 	})
 }
 
@@ -636,12 +635,12 @@ func TestClientResourceDeleteRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		resourceID := "resource1"
 		err := client.DeleteResource(context.Background(), resourceID)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to delete resource with id "+resourceID, errBadRequest))
 	})
 }
 
@@ -750,12 +749,12 @@ func TestClientResourcesReadRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		resources, err := client.ReadResources(context.Background())
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id All", errBadRequest))
 	})
 }
 
@@ -778,14 +777,14 @@ func TestClientResourcesReadAllRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			MultipleResponders(
 				httpmock.NewStringResponder(200, jsonResponse),
-				httpmock.NewErrorResponder(errors.New("error_1")),
+				httpmock.NewErrorResponder(errBadRequest),
 			),
 		)
 
 		resources, err := client.ReadResources(context.Background())
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource", errBadRequest))
 	})
 }
 
@@ -873,12 +872,12 @@ func TestClientResourceUpdateActiveStateRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 		resource := newTestResource()
 
 		err := client.UpdateResourceActiveState(context.Background(), resource)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id %v: Post "%s": error_1`, resource.ID, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id "+resource.ID, errBadRequest))
 	})
 }
 
@@ -926,13 +925,13 @@ func TestClientResourceReadWithoutGroupsRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 		resourceID := "test-id"
 
 		resource, err := client.ReadResource(context.Background(), resourceID)
 
 		assert.Nil(t, resource)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id %s: Post "%s": error_1`, resourceID, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id "+resourceID, errBadRequest))
 	})
 }
 
@@ -1214,12 +1213,12 @@ func TestClientResourcesReadByNameRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		groups, err := client.ReadResourcesByName(context.Background(), "resource-name")
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id All", errBadRequest))
 	})
 }
 
@@ -1298,14 +1297,14 @@ func TestClientResourcesReadByNameAllRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			MultipleResponders(
 				httpmock.NewStringResponder(200, jsonResponse),
-				httpmock.NewErrorResponder(errors.New("error_1")),
+				httpmock.NewErrorResponder(errBadRequest),
 			),
 		)
 
 		resources, err := client.ReadResourcesByName(context.Background(), "resource-name")
 
 		assert.Nil(t, resources)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read resource with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id All", errBadRequest))
 	})
 }
 
@@ -1463,7 +1462,7 @@ func TestClientResourcesAddResourceGroupsRequestError(t *testing.T) {
 			Groups: []string{"g-1"},
 		})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id resource-id: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id resource-id", errBadRequest))
 	})
 }
 
@@ -1546,7 +1545,7 @@ func TestClientResourcesDeleteResourceGroupsRequestError(t *testing.T) {
 
 		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update resource with id resource-id: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id resource-id", errBadRequest))
 	})
 }
 
@@ -1669,7 +1668,7 @@ func TestClientReadResourceServiceAccountsRequestError(t *testing.T) {
 
 		serviceAccounts, err := client.ReadResourceServiceAccounts(context.Background(), "resource-2-1")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read service account with id All", errBadRequest))
 		assert.Nil(t, serviceAccounts)
 	})
 }
@@ -1733,6 +1732,6 @@ func TestClientAddResourceServiceAccountIDsRequestError(t *testing.T) {
 			ServiceAccounts: []string{"id-1", "id-2"},
 		})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update service account with id id-1: Post "%s": %v`, client.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update service account with id id-1", errBadRequest))
 	})
 }

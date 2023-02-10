@@ -5,6 +5,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hasura/go-graphql-client"
 )
 
 const serviceKeyResourceName = "service key"
@@ -22,7 +23,7 @@ func (client *Client) CreateServiceKey(ctx context.Context, serviceAccountKey *m
 
 	response := query.CreateServiceAccountKey{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "createServiceAccountKey", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createServiceAccountKey"))
 	if err != nil {
 		return nil, NewAPIError(err, "create", serviceKeyResourceName)
 	}
@@ -42,7 +43,7 @@ func (client *Client) ReadServiceKey(ctx context.Context, serviceAccountKeyID st
 	variables := newVars(gqlID(serviceAccountKeyID))
 	response := query.ReadServiceAccountKey{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readServiceAccountKey", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readServiceAccountKey"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", serviceKeyResourceName, serviceAccountKeyID)
 	}
@@ -66,7 +67,7 @@ func (client *Client) UpdateServiceKey(ctx context.Context, serviceAccountKey *m
 
 	response := query.UpdateServiceAccountKey{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateServiceAccountKey", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateServiceAccountKey"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "update", serviceKeyResourceName, serviceAccountKey.ID)
 	}
@@ -90,7 +91,7 @@ func (client *Client) DeleteServiceKey(ctx context.Context, serviceAccountKeyID 
 	variables := newVars(gqlID(serviceAccountKeyID))
 	response := query.DeleteServiceAccountKey{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "deleteServiceAccountKey", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("deleteServiceAccountKey"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", serviceKeyResourceName, serviceAccountKeyID)
 	}
@@ -110,7 +111,7 @@ func (client *Client) RevokeServiceKey(ctx context.Context, serviceAccountKeyID 
 	variables := newVars(gqlID(serviceAccountKeyID))
 	response := query.RevokeServiceAccountKey{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "revokeServiceAccountKey", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("revokeServiceAccountKey"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "revoke", serviceKeyResourceName, serviceAccountKeyID)
 	}

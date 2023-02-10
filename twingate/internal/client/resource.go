@@ -6,28 +6,27 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const (
-	resourceResourceName        = "resource"
-	readResourceQueryGroupsSize = 50
+	resourceResourceName = "resource"
 )
 
 type ProtocolsInput struct {
-	UDP       *ProtocolInput  `json:"udp"`
-	TCP       *ProtocolInput  `json:"tcp"`
-	AllowIcmp graphql.Boolean `json:"allowIcmp"`
+	UDP       *ProtocolInput `json:"udp"`
+	TCP       *ProtocolInput `json:"tcp"`
+	AllowIcmp bool           `json:"allowIcmp"`
 }
 
 type ProtocolInput struct {
 	Ports  []*PortRangeInput `json:"ports"`
-	Policy graphql.String    `json:"policy"`
+	Policy string            `json:"policy"`
 }
 
 type PortRangeInput struct {
-	Start graphql.Int `json:"start"`
-	End   graphql.Int `json:"end"`
+	Start int `json:"start"`
+	End   int `json:"end"`
 }
 
 func newProtocolsInput(protocols *model.Protocols) *ProtocolsInput {
@@ -38,7 +37,7 @@ func newProtocolsInput(protocols *model.Protocols) *ProtocolsInput {
 	return &ProtocolsInput{
 		UDP:       newProtocol(protocols.UDP),
 		TCP:       newProtocol(protocols.TCP),
-		AllowIcmp: graphql.Boolean(protocols.AllowIcmp),
+		AllowIcmp: protocols.AllowIcmp,
 	}
 }
 
@@ -49,15 +48,15 @@ func newProtocol(protocol *model.Protocol) *ProtocolInput {
 
 	return &ProtocolInput{
 		Ports:  newPorts(protocol.Ports),
-		Policy: graphql.String(protocol.Policy),
+		Policy: protocol.Policy,
 	}
 }
 
 func newPorts(ports []*model.PortRange) []*PortRangeInput {
 	return utils.Map[*model.PortRange, *PortRangeInput](ports, func(port *model.PortRange) *PortRangeInput {
 		return &PortRangeInput{
-			Start: graphql.Int(port.Start),
-			End:   graphql.Int(port.End),
+			Start: port.Start,
+			End:   port.End,
 		}
 	})
 }
@@ -85,7 +84,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	response := query.CreateResource{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "createResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createResource"))
 	if err != nil {
 		return nil, NewAPIError(err, "create", resourceResourceName)
 	}
@@ -122,7 +121,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 	response := query.ReadResource{}
 	variables := newVars(gqlID(resourceID))
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
@@ -139,12 +138,12 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 	return response.Resource.ToModel(), nil
 }
 
-func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.GroupEdge], error) {
+func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
 	response := query.ReadResourceGroups{}
-	resourceID := variables["id"]
+	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorGroups] = cursor
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
 	}
@@ -160,7 +159,7 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 	response := query.ReadResources{}
 	variables := newVars(gqlNullable("", query.CursorResources))
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResources"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
@@ -173,11 +172,11 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	variables[query.CursorResources] = cursor
 	response := query.ReadResources{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResource", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
 	if err != nil {
 		return nil, NewAPIError(err, "read", resourceResourceName)
 	}
@@ -213,7 +212,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	response := query.UpdateResource{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
 
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "update", resourceResourceName, input.ID)
@@ -256,7 +255,7 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 
 	variables := newVars(gqlID(resourceID))
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
 	if err != nil {
 		return NewAPIErrorWithID(err, "delete", resourceResourceName, resourceID)
 	}
@@ -276,7 +275,7 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 
 	response := query.UpdateResourceActiveState{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
 
 	if err != nil {
 		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
@@ -296,7 +295,7 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 		gqlNullable("", query.CursorResources),
 	)
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResources"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
@@ -313,11 +312,11 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	response := query.ReadResourcesByName{}
 	variables[query.CursorResources] = cursor
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readResources", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResources"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
 	}
@@ -365,7 +364,7 @@ func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Res
 
 	response := query.AddResourceGroups{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
 	if err != nil {
 		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resource.ID)
 	}
@@ -392,7 +391,7 @@ func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID strin
 		gqlIDs(deleteGroupIDs, "removedGroupIds"),
 	)
 
-	err := client.GraphqlClient.NamedMutate(ctx, "updateResource", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
 	if err != nil {
 		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resourceID)
 	}
