@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -247,4 +248,44 @@ func TestProtocols(t *testing.T) {
 		assert.EqualValues(t, "1-18000", tcpPorts[0])
 		assert.EqualValues(t, "1-18000", udpPorts[0])
 	})
+}
+
+func TestResourceAccessToTerraform(t *testing.T) {
+	cases := []struct {
+		resource model.Resource
+
+		expected []interface{}
+	}{
+		{
+			resource: model.Resource{},
+			expected: nil,
+		},
+		{
+			resource: model.Resource{
+				Groups: []string{"group-1"},
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					attr.GroupIDs: []string{"group-1"},
+				},
+			},
+		},
+		{
+			resource: model.Resource{
+				ServiceAccounts: []string{"service-1"},
+				IsAuthoritative: true,
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					attr.ServiceAccountIDs: []string{"service-1"},
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.resource.AccessToTerraform())
+		})
+	}
 }

@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -56,7 +55,7 @@ func TestCreateServiceAccountRequestError(t *testing.T) {
 		serviceAccount, err := c.CreateServiceAccount(context.Background(), "test")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create service account: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to create service account", errBadRequest))
 	})
 }
 
@@ -143,7 +142,7 @@ func TestReadServiceAccountRequestError(t *testing.T) {
 		serviceAccount, err := c.ReadShallowServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id account-id", errBadRequest))
 	})
 }
 
@@ -239,7 +238,7 @@ func TestUpdateServiceAccountRequestError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to update service account with id account-id", errBadRequest))
 	})
 }
 
@@ -338,7 +337,7 @@ func TestDeleteServiceAccountRequestError(t *testing.T) {
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to delete service account with id account-id", errBadRequest))
 	})
 }
 
@@ -450,7 +449,7 @@ func TestReadServiceAccountsRequestError(t *testing.T) {
 		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -509,7 +508,7 @@ func TestReadServiceAccountsRequestErrorOnFetching(t *testing.T) {
 		serviceAccounts, err := c.ReadShallowServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -601,7 +600,7 @@ func TestReadServicesOk(t *testing.T) {
 		                "endCursor": null,
 		                "hasNextPage": false
 		              },
-		              "edges": []
+		              "edges": null
 		            },
 		            "keys": {
 		              "pageInfo": {
@@ -675,7 +674,7 @@ func TestReadServicesOk(t *testing.T) {
 		                "endCursor": null,
 		                "hasNextPage": false
 		              },
-		              "edges": []
+		              "edges": null
 		            },
 		            "keys": {
 		              "pageInfo": {
@@ -754,7 +753,7 @@ func TestReadServicesOk(t *testing.T) {
 		          "endCursor": null,
 		          "hasNextPage": false
 		        },
-		        "edges": []
+		        "edges": null
 		      },
 		      "keys": {
 		        "pageInfo": {
@@ -784,7 +783,7 @@ func TestReadServicesOk(t *testing.T) {
 		          "endCursor": null,
 		          "hasNextPage": false
 		        },
-		        "edges": []
+		        "edges": null
 		      },
 		      "keys": {
 		        "pageInfo": {
@@ -834,7 +833,7 @@ func TestReadServicesRequestError(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -893,7 +892,7 @@ func TestReadServicesRequestErrorOnFetchingServices(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -1071,7 +1070,7 @@ func TestReadServicesRequestErrorOnFetchingResources(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -1388,7 +1387,7 @@ func TestReadServicesRequestErrorOnFetchingKeys(t *testing.T) {
 		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
 
 		assert.Nil(t, serviceAccounts)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
 	})
 }
 
@@ -1766,7 +1765,7 @@ func TestReadServiceRequestError(t *testing.T) {
 		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id account-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id account-id", errBadRequest))
 	})
 }
 
@@ -1826,6 +1825,172 @@ func TestReadServiceRequestErrorOnFetching(t *testing.T) {
 		serviceAccount, err := c.ReadServiceAccount(context.Background(), "account-id")
 
 		assert.Nil(t, serviceAccount)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service account with id All: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Ok", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-1",
+		      "keys": null
+		      }
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": {
+		        "id": "account-id",
+		        "name": "account name"
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			))
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "account-id", []string{"resource-1"})
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesOkButEmpty(t *testing.T) {
+	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Ok But Empty", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-1",
+		      "keys": null
+		      }
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": null,
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			))
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "account-id", []string{"resource-1"})
+
+		assert.EqualError(t, err, `failed to update service account with id account-id: query result is empty`)
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesWithEmptyID(t *testing.T) {
+	t.Run("Test Twingate Resource : Update Service Account Remove Resources - With Empty ID", func(t *testing.T) {
+		c := newHTTPMockClient()
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "", []string{"resource-1"})
+
+		assert.EqualError(t, err, `failed to update service account: id is empty`)
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesWithEmptyResourceIDs(t *testing.T) {
+	t.Run("Test Twingate Resource : Update Service Account Remove Resources - With Empty Resource IDs", func(t *testing.T) {
+		c := newHTTPMockClient()
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "service-id", nil)
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource: Update Service Account Remove Resources - Request Error", func(t *testing.T) {
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "service-id", []string{"id1"})
+
+		assert.EqualError(t, err, graphqlErr(c, "failed to update service account with id service-id", errBadRequest))
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Response Error", func(t *testing.T) {
+		response1 := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "service-id",
+		      "name": "test-1",
+		      "keys": null
+		      }
+		    }
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+		    "serviceAccountUpdate": {
+		      "entity": null,
+		      "ok": false,
+		      "error": "error_1"
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+			))
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "service-id", []string{"id1"})
+
+		assert.EqualError(t, err, `failed to update service account with id service-id: error_1`)
+	})
+}
+
+func TestUpdateServiceAccountRemoveResourcesEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Update Service Account Remove Resources - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "serviceAccount": null
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := c.UpdateServiceAccountRemoveResources(context.Background(), "service-id", []string{"id1"})
+
+		assert.NoError(t, err)
 	})
 }

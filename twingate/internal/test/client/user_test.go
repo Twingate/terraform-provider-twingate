@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -80,14 +79,12 @@ func TestClientUserReadRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
-		const userID = "userID"
-
-		user, err := client.ReadUser(context.Background(), userID)
+		user, err := client.ReadUser(context.Background(), "userID")
 
 		assert.Nil(t, user)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read user with id %s: Post "%s": error_1`, userID, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read user with id userID", errBadRequest))
 	})
 }
 

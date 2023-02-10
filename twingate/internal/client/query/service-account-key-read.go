@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
 )
 
 type ReadServiceAccountKey struct {
@@ -22,8 +21,8 @@ func (q ReadServiceAccountKey) ToModel() (*model.ServiceKey, error) {
 
 type gqlServiceKey struct {
 	IDName
-	ExpiresAt      graphql.String
-	Status         graphql.String
+	ExpiresAt      string
+	Status         string
 	ServiceAccount gqlServiceAccount
 }
 
@@ -34,11 +33,11 @@ func (q gqlServiceKey) ToModel() (*model.ServiceKey, error) {
 	}
 
 	return &model.ServiceKey{
-		ID:             q.StringID(),
-		Name:           q.StringName(),
-		Service:        q.ServiceAccount.StringID(),
+		ID:             string(q.ID),
+		Name:           q.Name,
+		Service:        string(q.ServiceAccount.ID),
 		ExpirationTime: expirationTime,
-		Status:         string(q.Status),
+		Status:         q.Status,
 	}, nil
 }
 
@@ -47,7 +46,7 @@ func (q gqlServiceKey) parseExpirationTime() (int, error) {
 		return 0, nil
 	}
 
-	expiresAt, err := time.Parse(time.RFC3339, string(q.ExpiresAt))
+	expiresAt, err := time.Parse(time.RFC3339, q.ExpiresAt)
 	if err != nil {
 		return -1, fmt.Errorf("failed to parse expiration time `%s`: %w", q.ExpiresAt, err)
 	}

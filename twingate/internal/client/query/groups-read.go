@@ -3,7 +3,6 @@ package query
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/twingate/go-graphql-client"
 )
 
 const CursorGroups = "groupsEndCursor"
@@ -33,15 +32,15 @@ type GroupFilterInput struct {
 }
 
 type StringFilterOperationInput struct {
-	Eq graphql.String `json:"eq"`
+	Eq string `json:"eq"`
 }
 
 type GroupTypeFilterOperatorInput struct {
-	In []graphql.String `json:"in"`
+	In []string `json:"in"`
 }
 
 type BooleanFilterOperatorInput struct {
-	Eq graphql.Boolean `json:"eq"`
+	Eq bool `json:"eq"`
 }
 
 func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
@@ -52,7 +51,7 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 	// default filter settings
 	filter := &GroupFilterInput{
 		Type: GroupTypeFilterOperatorInput{
-			In: []graphql.String{
+			In: []string{
 				model.GroupTypeManual,
 				model.GroupTypeSynced,
 				model.GroupTypeSystem,
@@ -63,16 +62,16 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 
 	if input.Name != nil {
 		filter.Name = &StringFilterOperationInput{
-			Eq: graphql.String(*input.Name),
+			Eq: *input.Name,
 		}
 	}
 
 	if input.Type != nil {
-		filter.Type.In = []graphql.String{graphql.String(*input.Type)}
+		filter.Type.In = []string{*input.Type}
 	}
 
 	if input.IsActive != nil {
-		filter.IsActive.Eq = graphql.Boolean(*input.IsActive)
+		filter.IsActive.Eq = *input.IsActive
 	}
 
 	return filter

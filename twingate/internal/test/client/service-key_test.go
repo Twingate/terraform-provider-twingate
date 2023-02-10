@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -110,7 +109,7 @@ func TestCreateServiceKeyRequestError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create service key: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to create service key", errBadRequest))
 	})
 }
 
@@ -217,7 +216,7 @@ func TestReadServiceKeyRequestError(t *testing.T) {
 		serviceKey, err := c.ReadServiceKey(context.Background(), "account-key-id")
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read service key with id account-key-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service key with id account-key-id", errBadRequest))
 	})
 }
 
@@ -307,7 +306,7 @@ func TestUpdateServiceKeyRequestError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update service key with id key-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to update service key with id key-id", errBadRequest))
 	})
 }
 
@@ -406,7 +405,7 @@ func TestDeleteServiceKeyRequestError(t *testing.T) {
 
 		err := c.DeleteServiceKey(context.Background(), "key-id")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete service key with id key-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to delete service key with id key-id", errBadRequest))
 	})
 }
 
@@ -473,7 +472,7 @@ func TestRevokeServiceKeyRequestError(t *testing.T) {
 
 		err := c.RevokeServiceKey(context.Background(), "key-id")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to revoke service key with id key-id: Post "%s": bad request`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to revoke service key with id key-id", errBadRequest))
 	})
 }
 
