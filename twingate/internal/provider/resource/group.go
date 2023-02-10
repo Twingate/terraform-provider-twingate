@@ -30,7 +30,7 @@ func Group() *schema.Resource {
 			attr.IsAuthoritative: {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Computed:    true,
 				Description: "Determines whether User assignments to this Group will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.UserIDs: {
@@ -165,6 +165,10 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Gro
 		if err := resourceData.Set(attr.UserIDs, group.Users); err != nil {
 			return ErrAttributeSet(err, attr.UserIDs)
 		}
+	}
+
+	if err := resourceData.Set(attr.IsAuthoritative, group.IsAuthoritative); err != nil {
+		return ErrAttributeSet(err, attr.IsAuthoritative)
 	}
 
 	return nil

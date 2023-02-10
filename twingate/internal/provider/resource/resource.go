@@ -541,7 +541,14 @@ func convertServiceAccounts(data *schema.ResourceData) []string {
 }
 
 func convertAuthoritativeFlag(data *schema.ResourceData) bool {
-	return data.Get(attr.IsAuthoritative).(bool)
+	flag, hasFlag := data.GetOkExists(attr.IsAuthoritative) //nolint
+
+	if hasFlag {
+		return flag.(bool)
+	}
+
+	// default value
+	return true
 }
 
 func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {
