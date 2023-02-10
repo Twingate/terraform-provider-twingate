@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -89,12 +88,12 @@ func TestClientSecurityPolicyReadRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(requestError))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		securityPolicy, err := c.ReadSecurityPolicy(context.Background(), "security-id", "")
 
 		assert.Nil(t, securityPolicy)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read security policy with id security-id: Post "%s": request error`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read security policy with id security-id", errBadRequest))
 	})
 }
 
@@ -200,12 +199,12 @@ func TestClientSecurityPoliciesReadRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(requestError))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		securityPolicies, err := c.ReadSecurityPolicies(context.Background())
 
 		assert.Nil(t, securityPolicies)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read security policy: Post "%s": request error`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read security policy", errBadRequest))
 	})
 }
 
@@ -278,14 +277,14 @@ func TestClientSecurityPoliciesReadRequestErrorOnFetching(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			MultipleResponders(
 				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
-				httpmock.NewErrorResponder(requestError),
+				httpmock.NewErrorResponder(errBadRequest),
 			),
 		)
 
 		securityPolicies, err := c.ReadSecurityPolicies(context.Background())
 
 		assert.Nil(t, securityPolicies)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read security policy: Post "%s": request error`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read security policy", errBadRequest))
 	})
 }
 

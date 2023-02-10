@@ -8,7 +8,6 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/stretchr/testify/assert"
-	"github.com/twingate/go-graphql-client"
 )
 
 func TestPagination(t *testing.T) {
@@ -40,7 +39,7 @@ func TestPagination(t *testing.T) {
 					HasNextPage: true,
 				},
 			},
-			nextPage: func(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[int], error) {
+			nextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[int], error) {
 				return nil, badError
 			},
 			expected: &query.PaginatedResource[int]{
@@ -57,7 +56,7 @@ func TestPagination(t *testing.T) {
 				},
 				Edges: []int{1, 2},
 			},
-			nextPage: func(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[int], error) {
+			nextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[int], error) {
 				return &query.PaginatedResource[int]{
 					PageInfo: query.PageInfo{
 						HasNextPage: false,

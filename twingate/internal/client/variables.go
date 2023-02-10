@@ -2,7 +2,7 @@ package client
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 func newVars(options ...gqlVarOption) map[string]interface{} {
@@ -24,7 +24,14 @@ func gqlID(val interface{}, name ...string) gqlVarOption {
 	}
 
 	return func(values map[string]interface{}) map[string]interface{} {
-		values[key] = graphql.ID(val)
+		switch value := val.(type) {
+		case string:
+			values[key] = graphql.ID(value)
+		case graphql.ID:
+			values[key] = value
+		default:
+			values[key] = graphql.ToID(val)
+		}
 
 		return values
 	}
@@ -45,49 +52,21 @@ func gqlIDs(ids []string, name string) gqlVarOption {
 
 func gqlVar(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
-		gqlValue := convertToGQL(val)
-		if gqlValue != nil {
-			values[name] = gqlValue
+		if val != nil {
+			values[name] = val
 		}
 
 		return values
 	}
 }
 
-func convertToGQL(val interface{}) interface{} {
-	var gqlValue interface{}
-
-	switch value := val.(type) {
-	case string:
-		gqlValue = graphql.String(value)
-	case bool:
-		gqlValue = graphql.Boolean(value)
-	case int:
-		gqlValue = graphql.Int(value)
-	case int32:
-		gqlValue = graphql.Int(value)
-	case int64:
-		gqlValue = graphql.Int(int32(value))
-	case float64:
-		gqlValue = graphql.Float(value)
-	case float32:
-		gqlValue = graphql.Float(value)
-	}
-
-	if gqlValue != nil {
-		return gqlValue
-	}
-
-	return val
-}
-
 func gqlNullable(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
 		var gqlValue interface{}
-		if isDefaultValue(val) {
-			gqlValue = getDefaultGQLValue(val)
+		if isZeroValue(val) {
+			gqlValue = getNullableValue(val)
 		} else {
-			gqlValue = convertToGQL(val)
+			gqlValue = val
 		}
 
 		values[name] = gqlValue
@@ -103,10 +82,10 @@ func gqlNullableID(val interface{}, name string) gqlVarOption {
 			defaultID *graphql.ID
 		)
 
-		if isDefaultValue(val) {
+		if isZeroValue(val) {
 			gqlValue = defaultID
 		} else {
-			gqlValue = graphql.ID(val)
+			gqlValue = graphql.ToID(val)
 		}
 
 		values[name] = gqlValue
@@ -115,7 +94,7 @@ func gqlNullableID(val interface{}, name string) gqlVarOption {
 	}
 }
 
-func isDefaultValue(val interface{}) bool {
+func isZeroValue(val interface{}) bool {
 	if val == nil {
 		return true
 	}
@@ -150,16 +129,16 @@ func isDefaultValue(val interface{}) bool {
 	return false
 }
 
-func getDefaultGQLValue(val interface{}) interface{} {
+func getNullableValue(val interface{}) interface{} {
 	if val == nil {
 		return nil
 	}
 
 	var (
-		defaultString *graphql.String
-		defaultInt    *graphql.Int
-		defaultBool   *graphql.Boolean
-		defaultFloat  *graphql.Float
+		defaultString *string
+		defaultInt    *int
+		defaultBool   *bool
+		defaultFloat  *float64
 	)
 
 	switch val.(type) {
