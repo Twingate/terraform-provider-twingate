@@ -2,7 +2,6 @@ package query
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
 )
 
 type GenerateConnectorTokens struct {
@@ -15,14 +14,14 @@ type ConnectorTokensResponse struct {
 }
 
 type gqlConnectorTokens struct {
-	AccessToken  graphql.String
-	RefreshToken graphql.String
+	AccessToken  string
+	RefreshToken string
 }
 
 func (q gqlConnectorTokens) ToModel() *model.ConnectorTokens {
 	return &model.ConnectorTokens{
-		AccessToken:  string(q.AccessToken),
-		RefreshToken: string(q.RefreshToken),
+		AccessToken:  q.AccessToken,
+		RefreshToken: q.RefreshToken,
 	}
 }
 

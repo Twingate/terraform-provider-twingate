@@ -2,7 +2,7 @@ package query
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 type ReadConnector struct {
@@ -26,8 +26,8 @@ func (q ReadConnector) ToModel() *model.Connector {
 
 func (c gqlConnector) ToModel() *model.Connector {
 	return &model.Connector{
-		ID:        c.StringID(),
-		Name:      c.StringName(),
-		NetworkID: idToString(c.RemoteNetwork.ID),
+		ID:        string(c.ID),
+		Name:      c.Name,
+		NetworkID: string(c.RemoteNetwork.ID),
 	}
 }

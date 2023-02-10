@@ -5,7 +5,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/twingate/go-graphql-client"
+	"github.com/hasura/go-graphql-client"
 )
 
 const userResourceName = "user"
@@ -14,7 +14,7 @@ func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
 	variables := newVars(gqlNullable("", query.CursorUsers))
 	response := query.ReadUsers{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readUsers", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readUsers"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", userResourceName, "All")
 	}
@@ -31,11 +31,11 @@ func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
 	return response.ToModel(), nil
 }
 
-func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor graphql.String) (*query.PaginatedResource[*query.UserEdge], error) {
+func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
 	variables[query.CursorUsers] = cursor
 	response := query.ReadUsers{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readUsers", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readUsers"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", userResourceName, "All")
 	}
@@ -55,7 +55,7 @@ func (client *Client) ReadUser(ctx context.Context, userID string) (*model.User,
 	variables := newVars(gqlID(userID))
 	response := query.ReadUser{}
 
-	err := client.GraphqlClient.NamedQuery(ctx, "readUser", &response, variables)
+	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readUser"))
 	if err != nil {
 		return nil, NewAPIErrorWithID(err, "read", userResourceName, userID)
 	}

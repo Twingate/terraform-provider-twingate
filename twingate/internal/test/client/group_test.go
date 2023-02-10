@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -74,11 +73,11 @@ func TestClientGroupCreateRequestError(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		group, err := c.CreateGroup(context.Background(), &model.Group{Name: "test"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create group: Post "%s": error_1`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to create group", errBadRequest))
 		assert.Nil(t, group)
 	})
 }
@@ -169,7 +168,7 @@ func TestClientGroupUpdateErrorOnFetchPages(t *testing.T) {
 
 		_, err := c.UpdateGroup(context.Background(), &model.Group{ID: "group-id", Name: "groupName"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id group-id: Post "%s": %v`, c.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
 	})
 }
 
@@ -224,12 +223,12 @@ func TestClientGroupUpdateRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		const groupId = "g1"
 		_, err := c.UpdateGroup(context.Background(), &model.Group{ID: groupId, Name: "test"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id %s: Post "%s": error_1`, groupId, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to update group with id "+groupId, errBadRequest))
 	})
 }
 
@@ -314,13 +313,13 @@ func TestClientGroupReadRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		const groupId = "g1"
 		group, err := c.ReadGroup(context.Background(), groupId)
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id %s: Post "%s": error_1`, groupId, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id "+groupId, errBadRequest))
 	})
 }
 
@@ -382,7 +381,7 @@ func TestClientGroupReadErrorOnFetchPages(t *testing.T) {
 		group, err := c.ReadGroup(context.Background(), "group-id")
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id group-id: Post "%s": %v`, c.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
 	})
 }
 
@@ -574,11 +573,11 @@ func TestClientDeleteGroupRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_2")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		err := c.DeleteGroup(context.Background(), "g1")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete group with id g1: Post "%s": error_2`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to delete group with id g1", errBadRequest))
 	})
 }
 
@@ -666,12 +665,12 @@ func TestClientGroupsReadRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		group, err := c.ReadGroups(context.Background(), nil)
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id All", errBadRequest))
 	})
 }
 
@@ -701,14 +700,14 @@ func TestClientGroupsReadRequestErrorOnFetching(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			MultipleResponders(
 				httpmock.NewStringResponder(200, jsonResponse),
-				httpmock.NewErrorResponder(errors.New("error_1")),
+				httpmock.NewErrorResponder(errBadRequest),
 			),
 		)
 
 		groups, err := c.ReadGroups(context.Background(), nil)
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id All", errBadRequest))
 	})
 }
 
@@ -913,14 +912,14 @@ func TestClientGroupsReadByNameRequestErrorOnFetching(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			MultipleResponders(
 				httpmock.NewStringResponder(200, jsonResponse),
-				httpmock.NewErrorResponder(errors.New("error_1")),
+				httpmock.NewErrorResponder(errBadRequest),
 			),
 		)
 
 		groups, err := c.ReadGroups(context.Background(), &model.GroupsFilter{Name: optionalString("group-1-2-3")})
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id All", errBadRequest))
 	})
 }
 
@@ -989,13 +988,13 @@ func TestClientGroupsReadByNameRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		const groupName = "group-name"
 		groups, err := c.ReadGroups(context.Background(), &model.GroupsFilter{Name: optionalString(groupName)})
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with name %s: Post "%s": error_1`, groupName, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with name "+groupName, errBadRequest))
 	})
 }
 
@@ -1012,12 +1011,12 @@ func TestClientFilterGroupsRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		groups, err := c.ReadGroups(context.Background(), nil)
 
 		assert.Nil(t, groups)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id All: Post "%s": error_1`, c.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id All", errBadRequest))
 	})
 }
 
@@ -1100,7 +1099,7 @@ func TestClientDeleteGroupUsersRequestError(t *testing.T) {
 
 		err := c.DeleteGroupUsers(context.Background(), "group-1", []string{"user-1"})
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update group with id group-1: Post "%s": %v`, c.GraphqlServerURL, errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to update group with id group-1", errBadRequest))
 	})
 }
 

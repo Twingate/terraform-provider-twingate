@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -467,13 +466,13 @@ func TestClientConnectorUpdateRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		connectorId := "test"
 		connector, err := client.UpdateConnector(context.Background(), connectorId, "new name")
 
 		assert.Nil(t, connector)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to update connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to update connector with id "+connectorId, errBadRequest))
 	})
 }
 
@@ -506,12 +505,12 @@ func TestClientConnectorDeleteRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		connectorId := "test"
 		err := client.DeleteConnector(context.Background(), connectorId)
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to delete connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to delete connector with id "+connectorId, errBadRequest))
 	})
 }
 
@@ -521,11 +520,11 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to create connector", errBadRequest))
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -536,11 +535,11 @@ func TestClientConnectorCreateWithNameRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "test-name")
 
-		assert.EqualError(t, err, fmt.Sprintf(`failed to create connector with name test-name: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to create connector with name test-name", errBadRequest))
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -551,13 +550,13 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 		connectorId := "test"
 
 		connector, err := client.ReadConnector(context.Background(), connectorId)
 
 		assert.Nil(t, connector)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id %s: Post "%s": error_1`, connectorId, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read connector with id "+connectorId, errBadRequest))
 	})
 }
 
@@ -634,12 +633,12 @@ func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
 		client := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errors.New("error_1")))
+			httpmock.NewErrorResponder(errBadRequest))
 
 		connectors, err := client.ReadConnectors(context.Background())
 
 		assert.Nil(t, connectors)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read connector with id All", errBadRequest))
 	})
 }
 
@@ -798,12 +797,12 @@ func TestClientReadConnectorsAllPagesRequestErrorOnFetching(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			MultipleResponders(
 				httpmock.NewStringResponder(200, jsonResponse),
-				httpmock.NewErrorResponder(errors.New("error_1")),
+				httpmock.NewErrorResponder(errBadRequest),
 			),
 		)
 
 		connectors, err := client.ReadConnectors(context.Background())
 		assert.Nil(t, connectors)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read connector with id All: Post "%s": error_1`, client.GraphqlServerURL))
+		assert.EqualError(t, err, graphqlErr(client, "failed to read connector with id All", errBadRequest))
 	})
 }

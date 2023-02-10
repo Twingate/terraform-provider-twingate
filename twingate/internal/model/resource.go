@@ -70,8 +70,8 @@ func (r Resource) ToTerraform() interface{} {
 }
 
 type PortRange struct {
-	Start int32
-	End   int32
+	Start int
+	End   int
 }
 
 func (p PortRange) String() string {

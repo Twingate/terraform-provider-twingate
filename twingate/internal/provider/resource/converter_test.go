@@ -64,11 +64,11 @@ func TestConvertProtocol(t *testing.T) {
 func TestConvertPortsRangeToMap(t *testing.T) {
 	cases := []struct {
 		portsRange []*model.PortRange
-		expected   map[int32]struct{}
+		expected   map[int]struct{}
 	}{
 		{
 			portsRange: nil,
-			expected:   map[int32]struct{}{},
+			expected:   map[int]struct{}{},
 		},
 		{
 			portsRange: []*model.PortRange{
@@ -81,7 +81,7 @@ func TestConvertPortsRangeToMap(t *testing.T) {
 					End:   85,
 				},
 			},
-			expected: map[int32]struct{}{
+			expected: map[int]struct{}{
 				70: {},
 				81: {},
 				82: {},
@@ -105,7 +105,7 @@ func TestConvertPortsRangeToMap(t *testing.T) {
 					End:   82,
 				},
 			},
-			expected: map[int32]struct{}{
+			expected: map[int]struct{}{
 				80: {},
 				81: {},
 				82: {},

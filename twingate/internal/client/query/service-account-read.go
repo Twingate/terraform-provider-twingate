@@ -12,8 +12,8 @@ type gqlServiceAccount struct {
 
 func (q gqlServiceAccount) ToModel() *model.ServiceAccount {
 	return &model.ServiceAccount{
-		ID:   q.StringID(),
-		Name: q.StringName(),
+		ID:   string(q.ID),
+		Name: q.Name,
 	}
 }
 

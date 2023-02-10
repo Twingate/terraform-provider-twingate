@@ -6,6 +6,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hasura/go-graphql-client"
 )
 
 const connectorTokensResourceName = "connector tokens"
@@ -31,7 +32,7 @@ func (client *Client) GenerateConnectorTokens(ctx context.Context, connectorID s
 	variables := newVars(gqlID(connectorID, "connectorId"))
 	response := query.GenerateConnectorTokens{}
 
-	err := client.GraphqlClient.NamedMutate(ctx, "generateConnectorTokens", &response, variables)
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("generateConnectorTokens"))
 	if err != nil {
 		return nil, NewAPIError(err, "generate", connectorTokensResourceName)
 	}
