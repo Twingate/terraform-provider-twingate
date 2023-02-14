@@ -123,7 +123,7 @@ func Resource() *schema.Resource { //nolint:funlen
 			attr.IsAuthoritative: {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Computed:    true,
 				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.Protocols: {
@@ -578,7 +578,14 @@ func convertServiceAccounts(data *schema.ResourceData) []string {
 }
 
 func convertAuthoritativeFlag(data *schema.ResourceData) bool {
-	return data.Get(attr.IsAuthoritative).(bool)
+	flag, hasFlag := data.GetOkExists(attr.IsAuthoritative) //nolint
+
+	if hasFlag {
+		return flag.(bool)
+	}
+
+	// default value
+	return true
 }
 
 func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {
