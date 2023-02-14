@@ -122,7 +122,7 @@ func Resource() *schema.Resource { //nolint:funlen
 			attr.IsAuthoritative: {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Computed:    true,
 				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.Protocols: {
