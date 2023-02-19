@@ -36,7 +36,8 @@ var (
 	// A regular expression to match the error returned by net/http when the
 	// TLS certificate name is not match with input. This error isn't typed
 	// specifically so we resort to matching on the error string.
-	certNameNotMatchErrorRe = regexp.MustCompile(`certificate name does not match input`)
+	certNameNotMatchMacErrorRe   = regexp.MustCompile(`certificate name does not match input`)
+	certNameNotMatchLinuxErrorRe = regexp.MustCompile(`certificate is valid for`)
 )
 
 type Client struct {
@@ -115,7 +116,8 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 	// do not retry if there is an issue with TLS certificate
 	if err != nil {
 		if v, ok := err.(*url.Error); ok { //nolint:errorlint
-			if certNameNotMatchErrorRe.MatchString(v.Error()) {
+			if certNameNotMatchMacErrorRe.MatchString(v.Error()) ||
+				certNameNotMatchLinuxErrorRe.MatchString(v.Error()) {
 				return false, v
 			}
 		}
