@@ -9,7 +9,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -28,7 +30,15 @@ const (
 	headerAgent  = "User-Agent"
 )
 
-var ErrAPITokenNoSet = errors.New("api_token not set")
+var (
+	ErrAPITokenNoSet = errors.New("api_token not set")
+
+	// A regular expression to match the error returned by net/http when the
+	// TLS certificate name is not match with input. This error isn't typed
+	// specifically so we resort to matching on the error string.
+	certNameNotMatchMacErrorRe   = regexp.MustCompile(`certificate name does not match input`)
+	certNameNotMatchLinuxErrorRe = regexp.MustCompile(`certificate is valid for`)
+)
 
 type Client struct {
 	GraphqlClient    *graphql.Client
@@ -101,6 +111,16 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 	// do not retry if API token not set
 	if errors.Is(err, ErrAPITokenNoSet) {
 		return false, err
+	}
+
+	// do not retry if there is an issue with TLS certificate
+	if err != nil {
+		if v, ok := err.(*url.Error); ok { //nolint:errorlint
+			if certNameNotMatchMacErrorRe.MatchString(v.Error()) ||
+				certNameNotMatchLinuxErrorRe.MatchString(v.Error()) {
+				return false, v
+			}
+		}
 	}
 
 	return retryablehttp.DefaultRetryPolicy(ctx, resp, err) //nolint

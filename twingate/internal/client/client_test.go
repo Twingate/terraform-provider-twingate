@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -88,4 +89,21 @@ func TestClientAPITokenNotSet(t *testing.T) {
 	_, err = client.post(context.TODO(), "/hello", "hello", nil)
 
 	assert.ErrorContains(t, err, "lookup test.twindev.com: no such host")
+}
+
+func TestClientInvalidServerAddress(t *testing.T) {
+	client := NewClient(
+		"beamreach.twingate.com", "XXXXX", "beamreach",
+		time.Duration(10)*time.Second, 3, "test",
+	)
+
+	internal := client.HTTPClient.Transport.(*retryablehttp.RoundTripper)
+	internal.Client.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
+		assert.Less(t, retryNumber, 3)
+	}
+
+	_, err := client.post(context.TODO(), "/hello", "hello", nil)
+
+	assert.ErrorContains(t, err, `x509`)
+	assert.ErrorContains(t, err, `certificate`)
 }
