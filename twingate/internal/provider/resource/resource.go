@@ -523,7 +523,7 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		return nil, err
 	}
 
-	return &model.Resource{
+	res := &model.Resource{
 		Name:            data.Get(attr.Name).(string),
 		RemoteNetworkID: data.Get(attr.RemoteNetworkID).(string),
 		Address:         data.Get(attr.Address).(string),
@@ -531,7 +531,19 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		Groups:          convertGroups(data),
 		ServiceAccounts: convertServiceAccounts(data),
 		IsAuthoritative: convertAuthoritativeFlag(data),
-	}, nil
+	}
+
+	isVisible, ok := data.GetOkExists(attr.IsVisible) //nolint
+	if val := isVisible.(bool); ok {
+		res.IsVisible = &val
+	}
+
+	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
+	if val := isBrowserShortcutEnabled.(bool); ok {
+		res.IsBrowserShortcutEnabled = &val
+	}
+
+	return res, nil
 }
 
 func convertGroups(data *schema.ResourceData) []string {
