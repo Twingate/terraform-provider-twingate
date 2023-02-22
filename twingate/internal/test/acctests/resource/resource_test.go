@@ -1531,7 +1531,7 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - default value on the backend side is `true`
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
@@ -1545,7 +1545,15 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - no drift after re-applying changes
+				PlanOnly: true,
+				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
+				),
+			},
+			{
+				// expecting no changes - flag not set
 				PlanOnly: true,
 				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
@@ -1602,7 +1610,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - default value on the backend side is `true`
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
@@ -1616,7 +1624,15 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - no drift after re-applying changes
+				PlanOnly: true,
+				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
+				),
+			},
+			{
+				// expecting no changes - flag not set
 				PlanOnly: true,
 				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
