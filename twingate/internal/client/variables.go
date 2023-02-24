@@ -75,6 +75,25 @@ func gqlNullable(val interface{}, name string) gqlVarOption {
 	}
 }
 
+func gqlNullableID(val interface{}, name string) gqlVarOption {
+	return func(values map[string]interface{}) map[string]interface{} {
+		var (
+			gqlValue  interface{}
+			defaultID *graphql.ID
+		)
+
+		if isZeroValue(val) {
+			gqlValue = defaultID
+		} else {
+			gqlValue = graphql.ToID(val)
+		}
+
+		values[name] = gqlValue
+
+		return values
+	}
+}
+
 func isZeroValue(val interface{}) bool {
 	if val == nil {
 		return true

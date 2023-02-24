@@ -10,16 +10,18 @@ type ReadGroup struct {
 
 type gqlGroup struct {
 	IDName
-	IsActive bool
-	Type     string
+	IsActive       bool
+	Type           string
+	SecurityPolicy gqlSecurityPolicy
 }
 
 func (g gqlGroup) ToModel() *model.Group {
 	return &model.Group{
-		ID:       string(g.ID),
-		Name:     g.Name,
-		Type:     g.Type,
-		IsActive: g.IsActive,
+		ID:               string(g.ID),
+		Name:             g.Name,
+		Type:             g.Type,
+		IsActive:         g.IsActive,
+		SecurityPolicyID: string(g.SecurityPolicy.ID),
 	}
 }
 

@@ -26,6 +26,12 @@ func Group() *schema.Resource {
 				Description: "The name of the group",
 			},
 			// computed
+			"security_policy_id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Description: "Defines which Security Policy applies to this Group. The Security Policy ID can be obtained from the `twingate_security_policy` and `twingate_security_policies` data sources.",
+			},
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -41,7 +47,7 @@ func Group() *schema.Resource {
 func groupCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 
-	group, err := c.CreateGroup(ctx, resourceData.Get("name").(string))
+	group, err := c.CreateGroup(ctx, convertGroup(resourceData))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -54,7 +60,7 @@ func groupCreate(ctx context.Context, resourceData *schema.ResourceData, meta in
 func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 
-	group, err := c.UpdateGroup(ctx, resourceData.Id(), resourceData.Get("name").(string))
+	group, err := c.UpdateGroup(ctx, convertGroup(resourceData))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -101,7 +107,19 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Gro
 		return diag.FromErr(err)
 	}
 
+	if err := resourceData.Set("security_policy_id", group.SecurityPolicyID); err != nil {
+		return diag.FromErr(err)
+	}
+
 	resourceData.SetId(group.ID)
 
 	return nil
+}
+
+func convertGroup(resourceData *schema.ResourceData) *model.Group {
+	return &model.Group{
+		ID:               resourceData.Id(),
+		Name:             resourceData.Get("name").(string),
+		SecurityPolicyID: resourceData.Get("security_policy_id").(string),
+	}
 }

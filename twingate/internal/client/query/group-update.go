@@ -1,5 +1,5 @@
 package query
 
 type UpdateGroup struct {
-	GroupEntityResponse `graphql:"groupUpdate(id: $id, name: $name)"`
+	GroupEntityResponse `graphql:"groupUpdate(id: $id, name: $name, securityPolicyId: $securityPolicyId)"`
 }
