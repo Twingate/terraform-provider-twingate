@@ -53,6 +53,7 @@ linters:
     - structcheck
     - varcheck
     - revive
+    - gomoddirectives
   disable-all: false
   fast: false
 

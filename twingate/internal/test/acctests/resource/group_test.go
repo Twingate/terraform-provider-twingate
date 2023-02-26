@@ -2,6 +2,7 @@ package resource
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -350,6 +351,54 @@ func TestAccTwingateGroupUsersNotAuthoritative(t *testing.T) {
 					// expecting no drift - empty plan
 					Config:   terraformResourceTwingateGroupWithUsersAuthoritative(terraformResourceName, groupName, usersID[:1], false),
 					PlanOnly: true,
+				},
+			},
+		})
+	})
+}
+
+func TestAccTwingateGroupNotAllowUpdateSystemGroup(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Group - Not Allow Update System Group", func(t *testing.T) {
+		const terraformResourceName = "test007"
+		theResource := acctests.TerraformGroup(terraformResourceName)
+
+		group, err := acctests.GetSystemGroup()
+		if err != nil {
+			t.Skip("can't run test:", err)
+		}
+
+		users, err := acctests.GetTestUsers()
+		if err != nil {
+			t.Skip("can't run test:", err)
+		}
+
+		if len(users) < 1 {
+			t.Skip("can't run test: not enough users")
+		}
+
+		usersID := utils.Map(users, func(user *model.User) string {
+			return user.ID
+		})
+
+		sdk.Test(t, sdk.TestCase{
+			ProviderFactories:         acctests.ProviderFactories,
+			PreventPostDestroy:        true,
+			PreventPostDestroyRefresh: true,
+			PreCheck:                  func() { acctests.PreCheck(t) },
+			Steps: []sdk.TestStep{
+				{
+					ImportState:        true,
+					ImportStatePersist: true,
+					ResourceName:       theResource,
+					ImportStateId:      group.ID,
+					ImportStateCheck: acctests.CheckImportState(map[string]string{
+						nameAttr: group.Name,
+					}),
+					Config: terraformResourceTwingateGroup(terraformResourceName, group.Name),
+				},
+				{
+					Config:      terraformResourceTwingateGroupWithUsers(terraformResourceName, group.Name, usersID[:1]),
+					ExpectError: regexp.MustCompile(resource.ErrAllowedToChangeOnlyManualGroups.Error()),
 				},
 			},
 		})
