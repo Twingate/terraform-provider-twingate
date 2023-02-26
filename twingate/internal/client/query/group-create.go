@@ -3,7 +3,7 @@ package query
 import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 
 type CreateGroup struct {
-	GroupEntityResponse `graphql:"groupCreate(name: $name, userIds: $userIds)"`
+	GroupEntityResponse `graphql:"groupCreate(name: $name, userIds: $userIds, securityPolicyId: $securityPolicyId)"`
 }
 
 type GroupEntityResponse struct {

@@ -248,7 +248,7 @@ func TestClientGroupUpdateWithEmptyID(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 
-		_, err := c.UpdateGroup(context.Background(), &model.Group{Name: "groupName"})
+		_, err := c.UpdateGroup(context.Background(), &model.Group{Name: "test"})
 
 		assert.EqualError(t, err, "failed to update group: id is empty")
 	})

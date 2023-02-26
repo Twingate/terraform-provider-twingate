@@ -7,12 +7,13 @@ const (
 )
 
 type Group struct {
-	ID              string
-	Name            string
-	Type            string
-	IsActive        bool
-	Users           []string
-	IsAuthoritative bool
+	ID               string
+	Name             string
+	Type             string
+	IsActive         bool
+	Users            []string
+	IsAuthoritative  bool
+	SecurityPolicyID string
 }
 
 func (g Group) GetName() string {

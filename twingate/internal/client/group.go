@@ -24,6 +24,7 @@ func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*mod
 	variables := newVars(
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "userIds"),
+		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 	)
 	response := query.CreateGroup{}
 
@@ -130,6 +131,7 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 		gqlID(input.ID),
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "addedUserIds"),
+		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 	)
 
 	response := query.UpdateGroup{}
@@ -145,6 +147,14 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 
 	if response.Entity == nil {
 		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, groupResourceName, input.ID)
+	}
+
+	if !response.Ok {
+		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", groupResourceName, input.ID)
+	}
+
+	if response.Entity == nil {
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", groupResourceName, input.ID)
 	}
 
 	err = response.Entity.Users.FetchPages(ctx, client.readGroupUsersAfter, newVars(gqlID(input.ID)))

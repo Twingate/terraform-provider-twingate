@@ -43,6 +43,12 @@ func Group() *schema.Resource {
 				Description: "List of User IDs that have permission to access the Group.",
 			},
 			// computed
+			attr.SecurityPolicyID: {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Description: "Defines which Security Policy applies to this Group. The Security Policy ID can be obtained from the `twingate_security_policy` and `twingate_security_policies` data sources.",
+			},
 			attr.ID: {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -83,6 +89,7 @@ func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta in
 	}
 
 	group, err = client.UpdateGroup(ctx, group)
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -155,11 +162,15 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Gro
 		return diag.FromErr(err)
 	}
 
+	resourceData.SetId(group.ID)
+
 	if !group.IsAuthoritative {
 		group.Users = setIntersection(convertUsers(resourceData), group.Users)
 	}
 
-	resourceData.SetId(group.ID)
+	if err := resourceData.Set(attr.SecurityPolicyID, group.SecurityPolicyID); err != nil {
+		return diag.FromErr(err)
+	}
 
 	if err := resourceData.Set(attr.Name, group.Name); err != nil {
 		return ErrAttributeSet(err, attr.Name)
@@ -180,9 +191,10 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Gro
 
 func convertGroup(data *schema.ResourceData) *model.Group {
 	return &model.Group{
-		ID:              data.Id(),
-		Name:            data.Get(attr.Name).(string),
-		Users:           convertUsers(data),
-		IsAuthoritative: convertAuthoritativeFlag(data),
+		ID:               data.Id(),
+		Name:             data.Get(attr.Name).(string),
+		Users:            convertUsers(data),
+		IsAuthoritative:  convertAuthoritativeFlag(data),
+		SecurityPolicyID: data.Get(attr.SecurityPolicyID).(string),
 	}
 }

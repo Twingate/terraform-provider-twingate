@@ -1079,7 +1079,7 @@ func createResource13(networkName, resourceName string, serviceAccounts, service
 	`, networkName, strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(serviceAccountIDs, ", "))
 }
 
-func TestAccTwingateResourceAccessWitEmptyGroups(t *testing.T) {
+func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1126,7 +1126,7 @@ func createResource18(networkName, resourceName string) string {
 	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
 }
 
-func TestAccTwingateResourceAccessWitEmptyServiceAccounts(t *testing.T) {
+func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1173,7 +1173,7 @@ func createResource19(networkName, resourceName string) string {
 	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
 }
 
-func TestAccTwingateResourceAccessWitEmptyBlock(t *testing.T) {
+func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
