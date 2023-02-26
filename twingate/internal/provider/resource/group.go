@@ -3,6 +3,7 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -11,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+var ErrAllowedToChangeOnlyManualGroups = fmt.Errorf("allowed to change only %s groups", model.GroupTypeManual)
 
 func Group() *schema.Resource {
 	return &schema.Resource{
@@ -67,14 +70,19 @@ func groupCreate(ctx context.Context, resourceData *schema.ResourceData, meta in
 
 func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
-
 	group := convertGroup(resourceData)
 
-	if err := deleteGroupUserIDs(ctx, resourceData, group, client); err != nil {
+	remoteGroup, err := isAllowedToChangeGroup(ctx, group.ID, client)
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	group, err := client.UpdateGroup(ctx, group)
+	oldIDs := getOldGroupUserIDs(resourceData, group, remoteGroup)
+	if err := client.DeleteGroupUsers(ctx, group.ID, setDifference(oldIDs, group.Users)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	group, err = client.UpdateGroup(ctx, group)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -84,29 +92,9 @@ func groupUpdate(ctx context.Context, resourceData *schema.ResourceData, meta in
 	return resourceGroupReadHelper(resourceData, group, err)
 }
 
-func deleteGroupUserIDs(ctx context.Context, resourceData *schema.ResourceData, group *model.Group, client *client.Client) error {
-	userIDs := getGroupUserIDsToDelete(ctx, resourceData, group.Users, group, client)
-
-	return client.DeleteGroupUsers(ctx, group.ID, userIDs) //nolint
-}
-
-func getGroupUserIDsToDelete(ctx context.Context, resourceData *schema.ResourceData, currentIDs []string, group *model.Group, client *client.Client) []string {
-	oldIDs := getOldGroupUserIDs(ctx, resourceData, group, client)
-	if len(oldIDs) == 0 {
-		return nil
-	}
-
-	return setDifference(oldIDs, currentIDs)
-}
-
-func getOldGroupUserIDs(ctx context.Context, resourceData *schema.ResourceData, group *model.Group, client *client.Client) []string {
+func getOldGroupUserIDs(resourceData *schema.ResourceData, group, remoteGroup *model.Group) []string {
 	if group.IsAuthoritative {
-		result, err := client.ReadGroup(ctx, group.ID)
-		if err != nil {
-			return nil
-		}
-
-		return result.Users
+		return remoteGroup.Users
 	}
 
 	old, _ := resourceData.GetChange(attr.UserIDs)
@@ -115,17 +103,33 @@ func getOldGroupUserIDs(ctx context.Context, resourceData *schema.ResourceData, 
 }
 
 func groupDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
+	client := meta.(*client.Client)
 	groupID := resourceData.Id()
 
-	err := c.DeleteGroup(ctx, groupID)
-	if err != nil {
+	if _, err := isAllowedToChangeGroup(ctx, groupID, client); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := client.DeleteGroup(ctx, groupID); err != nil {
 		return diag.FromErr(err)
 	}
 
 	log.Printf("[INFO] Deleted group id %s", resourceData.Id())
 
 	return nil
+}
+
+func isAllowedToChangeGroup(ctx context.Context, groupID string, client *client.Client) (*model.Group, error) {
+	group, err := client.ReadGroup(ctx, groupID)
+	if err != nil {
+		return nil, err //nolint
+	}
+
+	if group.Type != model.GroupTypeManual {
+		return nil, ErrAllowedToChangeOnlyManualGroups
+	}
+
+	return group, nil
 }
 
 func groupRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {

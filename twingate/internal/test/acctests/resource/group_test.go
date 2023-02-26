@@ -37,7 +37,8 @@ func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 					),
 				},
 				{
-					Config: terraformResourceTwingateGroup(terraformResourceName, nameAfter),
+					ExpectNonEmptyPlan: true,
+					Config:             terraformResourceTwingateGroup(terraformResourceName, nameAfter),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						sdk.TestCheckResourceAttr(theResource, nameAttr, nameAfter),
