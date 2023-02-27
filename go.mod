@@ -12,7 +12,7 @@ require (
 	github.com/jarcoal/httpmock v1.3.0
 	github.com/mattn/goveralls v0.0.11
 	github.com/securego/gosec/v2 v2.15.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	gotest.tools/gotestsum v1.9.0
 )
 
