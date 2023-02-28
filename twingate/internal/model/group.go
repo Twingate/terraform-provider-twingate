@@ -11,6 +11,8 @@ type Group struct {
 	Name             string
 	Type             string
 	IsActive         bool
+	Users            []string
+	IsAuthoritative  bool
 	SecurityPolicyID string
 }
 

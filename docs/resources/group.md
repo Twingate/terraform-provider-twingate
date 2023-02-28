@@ -32,7 +32,9 @@ resource "twingate_group" "aws" {
 
 ### Optional
 
+- `is_authoritative` (Boolean) Determines whether User assignments to this Group will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `security_policy_id` (String) Defines which Security Policy applies to this Group. The Security Policy ID can be obtained from the `twingate_security_policy` and `twingate_security_policies` data sources.
+- `user_ids` (Set of String) List of User IDs that have permission to access the Group.
 
 ### Read-Only
 
