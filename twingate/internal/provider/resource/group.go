@@ -13,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var ErrAllowedToChangeOnlyManualGroups = fmt.Errorf("allowed to change only %s groups", model.GroupTypeManual)
+func ErrAllowedToChangeOnlyManualGroups(group *model.Group) error {
+	return fmt.Errorf("Only groups of type %s may be modified. Group %s is a %s type group.", model.GroupTypeManual, group.Name, group.Type) //nolint
+}
 
 func Group() *schema.Resource {
 	return &schema.Resource{
@@ -133,7 +135,7 @@ func isAllowedToChangeGroup(ctx context.Context, groupID string, client *client.
 	}
 
 	if group.Type != model.GroupTypeManual {
-		return nil, ErrAllowedToChangeOnlyManualGroups
+		return nil, ErrAllowedToChangeOnlyManualGroups(group)
 	}
 
 	return group, nil
