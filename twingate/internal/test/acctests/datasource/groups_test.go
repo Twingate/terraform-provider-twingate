@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	groupsLen      = "groups.#"
-	firstGroupName = "groups.0.name"
+	groupsLen          = "groups.#"
+	firstGroupName     = "groups.0.name"
+	firstGroupPolicyID = "groups.0.security_policy_id"
 )
 
 func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
@@ -21,16 +22,24 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 
 		const theDatasource = "data.twingate_groups.out_dgs1"
 
+		securityPolicies, err := acctests.ListSecurityPolicies()
+		if err != nil {
+			t.Skip("can't run test:", err)
+		}
+
+		testPolicy := securityPolicies[0]
+
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testDatasourceTwingateGroups(groupName),
+					Config: testDatasourceTwingateGroups(groupName, testPolicy.ID),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, groupsLen, "2"),
 						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
+						resource.TestCheckResourceAttr(theDatasource, firstGroupPolicyID, testPolicy.ID),
 					),
 				},
 			},
@@ -38,14 +47,16 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 	})
 }
 
-func testDatasourceTwingateGroups(name string) string {
+func testDatasourceTwingateGroups(name, securityPolicyID string) string {
 	return fmt.Sprintf(`
 	resource "twingate_group" "test_dgs1_1" {
 	  name = "%s"
+	  security_policy_id = "%s"
 	}
 
 	resource "twingate_group" "test_dgs1_2" {
 	  name = "%s"
+	  security_policy_id = "%s"
 	}
 
 	data "twingate_groups" "out_dgs1" {
@@ -53,7 +64,7 @@ func testDatasourceTwingateGroups(name string) string {
 
 	  depends_on = [twingate_group.test_dgs1_1, twingate_group.test_dgs1_2]
 	}
-	`, name, name, name)
+	`, name, securityPolicyID, name, securityPolicyID, name)
 }
 
 func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
