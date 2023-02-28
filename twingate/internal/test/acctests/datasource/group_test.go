@@ -16,17 +16,25 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Group Basic", func(t *testing.T) {
 		groupName := test.RandomName()
 
+		securityPolicies, err := acctests.ListSecurityPolicies()
+		if err != nil {
+			t.Skip("can't run test:", err)
+		}
+
+		testPolicy := securityPolicies[0]
+
 		resource.Test(t, resource.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
 			PreCheck:          func() { acctests.PreCheck(t) },
 			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testDatasourceTwingateGroup(groupName),
+					Config: testDatasourceTwingateGroup(groupName, testPolicy.ID),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckOutput("my_group_dg1", groupName),
 						resource.TestCheckOutput("my_group_is_active_dg1", "true"),
 						resource.TestCheckOutput("my_group_type_dg1", "MANUAL"),
+						resource.TestCheckOutput("my_group_policy_dg1", testPolicy.ID),
 					),
 				},
 			},
@@ -34,10 +42,11 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 	})
 }
 
-func testDatasourceTwingateGroup(name string) string {
+func testDatasourceTwingateGroup(name, securityPolicyID string) string {
 	return fmt.Sprintf(`
 	resource "twingate_group" "foo_dg1" {
 	  name = "%s"
+	  security_policy_id = "%s"
 	}
 
 	data "twingate_group" "bar_dg1" {
@@ -55,7 +64,11 @@ func testDatasourceTwingateGroup(name string) string {
 	output "my_group_type_dg1" {
 	  value = data.twingate_group.bar_dg1.type
 	}
-	`, name)
+
+	output "my_group_policy_dg1" {
+	  value = data.twingate_group.bar_dg1.security_policy_id
+	}
+	`, name, securityPolicyID)
 }
 
 func TestAccDatasourceTwingateGroup_negative(t *testing.T) {
