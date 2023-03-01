@@ -7,10 +7,13 @@ const (
 )
 
 type Group struct {
-	ID       string
-	Name     string
-	Type     string
-	IsActive bool
+	ID               string
+	Name             string
+	Type             string
+	IsActive         bool
+	Users            []string
+	IsAuthoritative  bool
+	SecurityPolicyID string
 }
 
 func (g Group) GetName() string {
@@ -23,10 +26,11 @@ func (g Group) GetID() string {
 
 func (g Group) ToTerraform() interface{} {
 	return map[string]interface{}{
-		"id":        g.ID,
-		"name":      g.Name,
-		"type":      g.Type,
-		"is_active": g.IsActive,
+		"id":                 g.ID,
+		"name":               g.Name,
+		"type":               g.Type,
+		"is_active":          g.IsActive,
+		"security_policy_id": g.SecurityPolicyID,
 	}
 }
 

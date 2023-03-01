@@ -82,6 +82,11 @@ func Groups() *schema.Resource {
 							Computed:    true,
 							Description: "The type of the Group",
 						},
+						"security_policy_id": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The Security Policy assigned to the Group.",
+						},
 					},
 				},
 			},

@@ -36,6 +36,10 @@ func ErrGroupsLenMismatch(expected, actual int) error {
 	return fmt.Errorf("expected %d groups, actual - %d", expected, actual) //nolint
 }
 
+func ErrUsersLenMismatch(expected, actual int) error {
+	return fmt.Errorf("expected %d users, actual - %d", expected, actual) //nolint
+}
+
 var Provider *schema.Provider                                     //nolint:gochecknoglobals
 var ProviderFactories map[string]func() (*schema.Provider, error) //nolint:gochecknoglobals
 
@@ -610,4 +614,85 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 
 		return nil
 	}
+}
+
+func AddGroupUser(groupResource, groupName, userID string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		resourceID, err := getResourceID(state, groupResource)
+		if err != nil {
+			return err
+		}
+
+		_, err = providerClient.UpdateGroup(context.Background(), &model.Group{
+			ID:    resourceID,
+			Name:  groupName,
+			Users: []string{userID},
+		})
+		if err != nil {
+			return fmt.Errorf("group with ID %s failed to add user with ID %s: %w", resourceID, userID, err)
+		}
+
+		return nil
+	}
+}
+
+func DeleteGroupUser(groupResource, userID string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		groupID, err := getResourceID(state, groupResource)
+		if err != nil {
+			return err
+		}
+
+		err = providerClient.DeleteGroupUsers(context.Background(), groupID, []string{userID})
+		if err != nil {
+			return fmt.Errorf("group with ID %s failed to delete user with ID %s: %w", groupID, userID, err)
+		}
+
+		return nil
+	}
+}
+
+func CheckGroupUsersLen(resourceName string, expectedUsersLen int) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		providerClient := Provider.Meta().(*client.Client)
+
+		groupID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		group, err := providerClient.ReadGroup(context.Background(), groupID)
+		if err != nil {
+			return fmt.Errorf("group with ID %s failed to read: %w", groupID, err)
+		}
+
+		if len(group.Users) != expectedUsersLen {
+			return ErrUsersLenMismatch(expectedUsersLen, len(group.Users))
+		}
+
+		return nil
+	}
+}
+
+func GetTestUsers() ([]*model.User, error) {
+	if Provider.Meta() == nil {
+		return nil, ErrClientNotInited
+	}
+
+	client := Provider.Meta().(*client.Client)
+
+	users, err := client.ReadUsers(context.Background())
+	if err != nil {
+		return nil, err //nolint
+	}
+
+	if len(users) == 0 {
+		return nil, ErrResourceNotFound
+	}
+
+	return users, nil
 }

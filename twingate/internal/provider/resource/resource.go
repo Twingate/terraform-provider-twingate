@@ -11,7 +11,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -283,8 +282,8 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 	resource.ServiceAccounts = serviceAccounts
 
 	if !resource.IsAuthoritative {
-		resource.ServiceAccounts = intersection(convertServiceAccounts(resourceData), resource.ServiceAccounts)
-		resource.Groups = intersection(convertGroups(resourceData), resource.Groups)
+		resource.ServiceAccounts = setIntersection(convertServiceAccounts(resourceData), resource.ServiceAccounts)
+		resource.Groups = setIntersection(convertGroups(resourceData), resource.Groups)
 	}
 
 	resourceData.SetId(resource.ID)
@@ -444,17 +443,7 @@ func getIDsToDelete(ctx context.Context, resourceData *schema.ResourceData, curr
 		return nil
 	}
 
-	lookup := utils.MakeLookupMap(currentIDs)
-
-	var idsToDelete []string
-
-	for _, id := range oldIDs {
-		if !lookup[id] {
-			idsToDelete = append(idsToDelete, id)
-		}
-	}
-
-	return idsToDelete
+	return setDifference(oldIDs, currentIDs)
 }
 
 func getOldIDs(ctx context.Context, resourceData *schema.ResourceData, attribute string, resource *model.Resource, client *client.Client) []string {
@@ -503,27 +492,13 @@ func getOldIDsAuthoritative(ctx context.Context, resource *model.Resource, clien
 	return nil
 }
 
-func intersection(a, b []string) []string {
-	setA := utils.MakeLookupMap(a)
-	setB := utils.MakeLookupMap(b)
-	result := make([]string, 0, len(setA))
-
-	for key := range setA {
-		if setB[key] {
-			result = append(result, key)
-		}
-	}
-
-	return result
-}
-
 func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 	protocols, err := convertProtocols(data)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.Resource{
+	res := &model.Resource{
 		Name:            data.Get(attr.Name).(string),
 		RemoteNetworkID: data.Get(attr.RemoteNetworkID).(string),
 		Address:         data.Get(attr.Address).(string),
@@ -531,7 +506,19 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		Groups:          convertGroups(data),
 		ServiceAccounts: convertServiceAccounts(data),
 		IsAuthoritative: convertAuthoritativeFlag(data),
-	}, nil
+	}
+
+	isVisible, ok := data.GetOkExists(attr.IsVisible) //nolint
+	if val := isVisible.(bool); ok {
+		res.IsVisible = &val
+	}
+
+	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
+	if val := isBrowserShortcutEnabled.(bool); ok {
+		res.IsBrowserShortcutEnabled = &val
+	}
+
+	return res, nil
 }
 
 func convertGroups(data *schema.ResourceData) []string {
@@ -635,4 +622,12 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 	}
 
 	return ports, nil
+}
+
+func convertUsers(data *schema.ResourceData) []string {
+	if ids, ok := data.GetOk(attr.UserIDs); ok {
+		return convertIDs(ids)
+	}
+
+	return nil
 }

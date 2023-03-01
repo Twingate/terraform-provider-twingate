@@ -1079,7 +1079,7 @@ func createResource13(networkName, resourceName string, serviceAccounts, service
 	`, networkName, strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(serviceAccountIDs, ", "))
 }
 
-func TestAccTwingateResourceAccessWitEmptyGroups(t *testing.T) {
+func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1126,7 +1126,7 @@ func createResource18(networkName, resourceName string) string {
 	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
 }
 
-func TestAccTwingateResourceAccessWitEmptyServiceAccounts(t *testing.T) {
+func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1173,7 +1173,7 @@ func createResource19(networkName, resourceName string) string {
 	`, networkName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
 }
 
-func TestAccTwingateResourceAccessWitEmptyBlock(t *testing.T) {
+func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1531,7 +1531,7 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - default value on the backend side is `true`
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
@@ -1539,14 +1539,21 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				ExpectNonEmptyPlan: true,
-				Config:             createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - no drift after re-applying changes
+				PlanOnly: true,
+				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
+				),
+			},
+			{
+				// expecting no changes - flag not set
 				PlanOnly: true,
 				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
@@ -1603,7 +1610,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - default value on the backend side is `true`
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
@@ -1611,14 +1618,21 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				ExpectNonEmptyPlan: true,
-				Config:             createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
 				),
 			},
 			{
-				// expecting no changes
+				// expecting no changes - no drift after re-applying changes
+				PlanOnly: true,
+				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
+				),
+			},
+			{
+				// expecting no changes - flag not set
 				PlanOnly: true,
 				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(

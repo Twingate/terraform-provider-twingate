@@ -46,13 +46,10 @@ type PortRange struct {
 }
 
 func (r gqlResource) ToModel() *model.Resource {
-	groups := make([]string, 0, len(r.Groups.Edges))
-	for _, elem := range r.Groups.Edges {
-		groups = append(groups, string(elem.Node.ID))
-	}
-
 	resource := r.ResourceNode.ToModel()
-	resource.Groups = groups
+	resource.Groups = utils.Map[*GroupEdge, string](r.Groups.Edges, func(edge *GroupEdge) string {
+		return string(edge.Node.ID)
+	})
 
 	return resource
 }
