@@ -398,7 +398,7 @@ func TestAccTwingateGroupNotAllowUpdateSystemGroup(t *testing.T) {
 				},
 				{
 					Config:      terraformResourceTwingateGroupWithUsers(terraformResourceName, group.Name, usersID[:1]),
-					ExpectError: regexp.MustCompile(resource.ErrAllowedToChangeOnlyManualGroups.Error()),
+					ExpectError: regexp.MustCompile(resource.ErrAllowedToChangeOnlyManualGroups(group).Error()),
 				},
 			},
 		})
