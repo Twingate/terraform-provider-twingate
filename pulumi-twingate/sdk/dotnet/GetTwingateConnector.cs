@@ -12,9 +12,57 @@ namespace TwingateLabs.Twingate
 {
     public static class GetTwingateConnector
     {
+        /// <summary>
+        /// Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var foo = Twingate.GetTwingateConnector.Invoke(new()
+        ///     {
+        ///         Id = "&lt;your connector's id&gt;",
+        ///     });
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Task<GetTwingateConnectorResult> InvokeAsync(GetTwingateConnectorArgs args, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.InvokeAsync<GetTwingateConnectorResult>("twingate:index/getTwingateConnector:getTwingateConnector", args ?? new GetTwingateConnectorArgs(), options.WithDefaults());
 
+        /// <summary>
+        /// Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var foo = Twingate.GetTwingateConnector.Invoke(new()
+        ///     {
+        ///         Id = "&lt;your connector's id&gt;",
+        ///     });
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Output<GetTwingateConnectorResult> Invoke(GetTwingateConnectorInvokeArgs args, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.Invoke<GetTwingateConnectorResult>("twingate:index/getTwingateConnector:getTwingateConnector", args ?? new GetTwingateConnectorInvokeArgs(), options.WithDefaults());
     }
@@ -22,6 +70,9 @@ namespace TwingateLabs.Twingate
 
     public sealed class GetTwingateConnectorArgs : global::Pulumi.InvokeArgs
     {
+        /// <summary>
+        /// The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+        /// </summary>
         [Input("id", required: true)]
         public string Id { get; set; } = null!;
 
@@ -33,6 +84,9 @@ namespace TwingateLabs.Twingate
 
     public sealed class GetTwingateConnectorInvokeArgs : global::Pulumi.InvokeArgs
     {
+        /// <summary>
+        /// The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+        /// </summary>
         [Input("id", required: true)]
         public Input<string> Id { get; set; } = null!;
 
@@ -46,8 +100,17 @@ namespace TwingateLabs.Twingate
     [OutputType]
     public sealed class GetTwingateConnectorResult
     {
+        /// <summary>
+        /// The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+        /// </summary>
         public readonly string Id;
+        /// <summary>
+        /// The name of the Connector
+        /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// The ID of the Remote Network the Connector is attached to
+        /// </summary>
         public readonly string RemoteNetworkId;
 
         [OutputConstructor]

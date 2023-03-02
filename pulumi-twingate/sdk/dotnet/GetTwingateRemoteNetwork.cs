@@ -12,9 +12,57 @@ namespace TwingateLabs.Twingate
 {
     public static class GetTwingateRemoteNetwork
     {
+        /// <summary>
+        /// A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var foo = Twingate.GetTwingateRemoteNetwork.Invoke(new()
+        ///     {
+        ///         Name = "&lt;your network's name&gt;",
+        ///     });
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Task<GetTwingateRemoteNetworkResult> InvokeAsync(GetTwingateRemoteNetworkArgs? args = null, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.InvokeAsync<GetTwingateRemoteNetworkResult>("twingate:index/getTwingateRemoteNetwork:getTwingateRemoteNetwork", args ?? new GetTwingateRemoteNetworkArgs(), options.WithDefaults());
 
+        /// <summary>
+        /// A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var foo = Twingate.GetTwingateRemoteNetwork.Invoke(new()
+        ///     {
+        ///         Name = "&lt;your network's name&gt;",
+        ///     });
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Output<GetTwingateRemoteNetworkResult> Invoke(GetTwingateRemoteNetworkInvokeArgs? args = null, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.Invoke<GetTwingateRemoteNetworkResult>("twingate:index/getTwingateRemoteNetwork:getTwingateRemoteNetwork", args ?? new GetTwingateRemoteNetworkInvokeArgs(), options.WithDefaults());
     }
@@ -22,9 +70,15 @@ namespace TwingateLabs.Twingate
 
     public sealed class GetTwingateRemoteNetworkArgs : global::Pulumi.InvokeArgs
     {
+        /// <summary>
+        /// The ID of the Remote Network
+        /// </summary>
         [Input("id")]
         public string? Id { get; set; }
 
+        /// <summary>
+        /// The name of the Remote Network
+        /// </summary>
         [Input("name")]
         public string? Name { get; set; }
 
@@ -36,9 +90,15 @@ namespace TwingateLabs.Twingate
 
     public sealed class GetTwingateRemoteNetworkInvokeArgs : global::Pulumi.InvokeArgs
     {
+        /// <summary>
+        /// The ID of the Remote Network
+        /// </summary>
         [Input("id")]
         public Input<string>? Id { get; set; }
 
+        /// <summary>
+        /// The name of the Remote Network
+        /// </summary>
         [Input("name")]
         public Input<string>? Name { get; set; }
 
@@ -52,8 +112,17 @@ namespace TwingateLabs.Twingate
     [OutputType]
     public sealed class GetTwingateRemoteNetworkResult
     {
+        /// <summary>
+        /// The ID of the Remote Network
+        /// </summary>
         public readonly string? Id;
+        /// <summary>
+        /// The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
+        /// </summary>
         public readonly string Location;
+        /// <summary>
+        /// The name of the Remote Network
+        /// </summary>
         public readonly string? Name;
 
         [OutputConstructor]

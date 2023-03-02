@@ -10,6 +10,31 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			_, err := twingate.GetTwingateConnectors(ctx, nil, nil)
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 func GetTwingateConnectors(ctx *pulumi.Context, args *GetTwingateConnectorsArgs, opts ...pulumi.InvokeOption) (*GetTwingateConnectorsResult, error) {
 	opts = pkgInvokeDefaultOpts(opts)
 	var rv GetTwingateConnectorsResult
@@ -22,11 +47,13 @@ func GetTwingateConnectors(ctx *pulumi.Context, args *GetTwingateConnectorsArgs,
 
 // A collection of arguments for invoking getTwingateConnectors.
 type GetTwingateConnectorsArgs struct {
+	// List of Connectors
 	Connectors []GetTwingateConnectorsConnector `pulumi:"connectors"`
 }
 
 // A collection of values returned by getTwingateConnectors.
 type GetTwingateConnectorsResult struct {
+	// List of Connectors
 	Connectors []GetTwingateConnectorsConnector `pulumi:"connectors"`
 	// The provider-assigned unique ID for this managed resource.
 	Id string `pulumi:"id"`
@@ -47,6 +74,7 @@ func GetTwingateConnectorsOutput(ctx *pulumi.Context, args GetTwingateConnectors
 
 // A collection of arguments for invoking getTwingateConnectors.
 type GetTwingateConnectorsOutputArgs struct {
+	// List of Connectors
 	Connectors GetTwingateConnectorsConnectorArrayInput `pulumi:"connectors"`
 }
 
@@ -69,6 +97,7 @@ func (o GetTwingateConnectorsResultOutput) ToGetTwingateConnectorsResultOutputWi
 	return o
 }
 
+// List of Connectors
 func (o GetTwingateConnectorsResultOutput) Connectors() GetTwingateConnectorsConnectorArrayOutput {
 	return o.ApplyT(func(v GetTwingateConnectorsResult) []GetTwingateConnectorsConnector { return v.Connectors }).(GetTwingateConnectorsConnectorArrayOutput)
 }

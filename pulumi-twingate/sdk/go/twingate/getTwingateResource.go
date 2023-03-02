@@ -10,6 +10,33 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Resources in Twingate represent any network destination address that you wish to provide private access to for users authorized via the Twingate Client application. Resources can be defined by either IP or DNS address, and all private DNS addresses will be automatically resolved with no client configuration changes. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			_, err := twingate.LookupTwingateResource(ctx, &twingate.LookupTwingateResourceArgs{
+//				Id: "<your resource's id>",
+//			}, nil)
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 func LookupTwingateResource(ctx *pulumi.Context, args *LookupTwingateResourceArgs, opts ...pulumi.InvokeOption) (*LookupTwingateResourceResult, error) {
 	opts = pkgInvokeDefaultOpts(opts)
 	var rv LookupTwingateResourceResult
@@ -22,17 +49,24 @@ func LookupTwingateResource(ctx *pulumi.Context, args *LookupTwingateResourceArg
 
 // A collection of arguments for invoking getTwingateResource.
 type LookupTwingateResourceArgs struct {
-	Id        string                        `pulumi:"id"`
+	// The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
+	Id string `pulumi:"id"`
+	// By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.
 	Protocols []GetTwingateResourceProtocol `pulumi:"protocols"`
 }
 
 // A collection of values returned by getTwingateResource.
 type LookupTwingateResourceResult struct {
-	Address         string                        `pulumi:"address"`
-	Id              string                        `pulumi:"id"`
-	Name            string                        `pulumi:"name"`
-	Protocols       []GetTwingateResourceProtocol `pulumi:"protocols"`
-	RemoteNetworkId string                        `pulumi:"remoteNetworkId"`
+	// The Resource's address, which may be an IP address, CIDR range, or DNS address
+	Address string `pulumi:"address"`
+	// The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
+	Id string `pulumi:"id"`
+	// The name of the Resource
+	Name string `pulumi:"name"`
+	// By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.
+	Protocols []GetTwingateResourceProtocol `pulumi:"protocols"`
+	// The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
+	RemoteNetworkId string `pulumi:"remoteNetworkId"`
 }
 
 func LookupTwingateResourceOutput(ctx *pulumi.Context, args LookupTwingateResourceOutputArgs, opts ...pulumi.InvokeOption) LookupTwingateResourceResultOutput {
@@ -50,7 +84,9 @@ func LookupTwingateResourceOutput(ctx *pulumi.Context, args LookupTwingateResour
 
 // A collection of arguments for invoking getTwingateResource.
 type LookupTwingateResourceOutputArgs struct {
-	Id        pulumi.StringInput                    `pulumi:"id"`
+	// The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
+	Id pulumi.StringInput `pulumi:"id"`
+	// By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.
 	Protocols GetTwingateResourceProtocolArrayInput `pulumi:"protocols"`
 }
 
@@ -73,22 +109,27 @@ func (o LookupTwingateResourceResultOutput) ToLookupTwingateResourceResultOutput
 	return o
 }
 
+// The Resource's address, which may be an IP address, CIDR range, or DNS address
 func (o LookupTwingateResourceResultOutput) Address() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateResourceResult) string { return v.Address }).(pulumi.StringOutput)
 }
 
+// The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
 func (o LookupTwingateResourceResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateResourceResult) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// The name of the Resource
 func (o LookupTwingateResourceResultOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateResourceResult) string { return v.Name }).(pulumi.StringOutput)
 }
 
+// By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.
 func (o LookupTwingateResourceResultOutput) Protocols() GetTwingateResourceProtocolArrayOutput {
 	return o.ApplyT(func(v LookupTwingateResourceResult) []GetTwingateResourceProtocol { return v.Protocols }).(GetTwingateResourceProtocolArrayOutput)
 }
 
+// The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
 func (o LookupTwingateResourceResultOutput) RemoteNetworkId() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateResourceResult) string { return v.RemoteNetworkId }).(pulumi.StringOutput)
 }

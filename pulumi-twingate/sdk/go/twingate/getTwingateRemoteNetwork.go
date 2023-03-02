@@ -10,6 +10,33 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			_, err := twingate.LookupTwingateRemoteNetwork(ctx, &twingate.LookupTwingateRemoteNetworkArgs{
+//				Name: pulumi.StringRef("<your network's name>"),
+//			}, nil)
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 func LookupTwingateRemoteNetwork(ctx *pulumi.Context, args *LookupTwingateRemoteNetworkArgs, opts ...pulumi.InvokeOption) (*LookupTwingateRemoteNetworkResult, error) {
 	opts = pkgInvokeDefaultOpts(opts)
 	var rv LookupTwingateRemoteNetworkResult
@@ -22,15 +49,20 @@ func LookupTwingateRemoteNetwork(ctx *pulumi.Context, args *LookupTwingateRemote
 
 // A collection of arguments for invoking getTwingateRemoteNetwork.
 type LookupTwingateRemoteNetworkArgs struct {
-	Id   *string `pulumi:"id"`
+	// The ID of the Remote Network
+	Id *string `pulumi:"id"`
+	// The name of the Remote Network
 	Name *string `pulumi:"name"`
 }
 
 // A collection of values returned by getTwingateRemoteNetwork.
 type LookupTwingateRemoteNetworkResult struct {
-	Id       *string `pulumi:"id"`
-	Location string  `pulumi:"location"`
-	Name     *string `pulumi:"name"`
+	// The ID of the Remote Network
+	Id *string `pulumi:"id"`
+	// The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
+	Location string `pulumi:"location"`
+	// The name of the Remote Network
+	Name *string `pulumi:"name"`
 }
 
 func LookupTwingateRemoteNetworkOutput(ctx *pulumi.Context, args LookupTwingateRemoteNetworkOutputArgs, opts ...pulumi.InvokeOption) LookupTwingateRemoteNetworkResultOutput {
@@ -48,7 +80,9 @@ func LookupTwingateRemoteNetworkOutput(ctx *pulumi.Context, args LookupTwingateR
 
 // A collection of arguments for invoking getTwingateRemoteNetwork.
 type LookupTwingateRemoteNetworkOutputArgs struct {
-	Id   pulumi.StringPtrInput `pulumi:"id"`
+	// The ID of the Remote Network
+	Id pulumi.StringPtrInput `pulumi:"id"`
+	// The name of the Remote Network
 	Name pulumi.StringPtrInput `pulumi:"name"`
 }
 
@@ -71,14 +105,17 @@ func (o LookupTwingateRemoteNetworkResultOutput) ToLookupTwingateRemoteNetworkRe
 	return o
 }
 
+// The ID of the Remote Network
 func (o LookupTwingateRemoteNetworkResultOutput) Id() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v LookupTwingateRemoteNetworkResult) *string { return v.Id }).(pulumi.StringPtrOutput)
 }
 
+// The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
 func (o LookupTwingateRemoteNetworkResultOutput) Location() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateRemoteNetworkResult) string { return v.Location }).(pulumi.StringOutput)
 }
 
+// The name of the Remote Network
 func (o LookupTwingateRemoteNetworkResultOutput) Name() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v LookupTwingateRemoteNetworkResult) *string { return v.Name }).(pulumi.StringPtrOutput)
 }

@@ -7,10 +7,37 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/pkg/errors"
+	"errors"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			_, err := twingate.NewTwingateServiceAccount(ctx, "githubActionsProd", &twingate.TwingateServiceAccountArgs{
+//				Name: pulumi.String("Github Actions PROD"),
+//			})
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 type TwingateServiceAccount struct {
 	pulumi.CustomResourceState
 

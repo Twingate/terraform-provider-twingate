@@ -10,9 +10,86 @@ using Pulumi;
 
 namespace TwingateLabs.Twingate
 {
+    /// <summary>
+    /// Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).
+    /// 
+    /// ## Example Usage
+    /// 
+    /// ```csharp
+    /// using System.Collections.Generic;
+    /// using Pulumi;
+    /// using Twingate = TwingateLabs.Twingate;
+    /// 
+    /// return await Deployment.RunAsync(() =&gt; 
+    /// {
+    ///     var awsNetwork = new Twingate.TwingateRemoteNetwork("awsNetwork", new()
+    ///     {
+    ///         Name = "aws_remote_network",
+    ///     });
+    /// 
+    ///     var aws = new Twingate.TwingateGroup("aws", new()
+    ///     {
+    ///         Name = "aws_group",
+    ///     });
+    /// 
+    ///     var githubActionsProd = new Twingate.TwingateServiceAccount("githubActionsProd", new()
+    ///     {
+    ///         Name = "Github Actions PROD",
+    ///     });
+    /// 
+    ///     var resource = new Twingate.TwingateResource("resource", new()
+    ///     {
+    ///         Name = "network",
+    ///         Address = "internal.int",
+    ///         RemoteNetworkId = awsNetwork.Id,
+    ///         Protocols = new Twingate.Inputs.TwingateResourceProtocolsArgs
+    ///         {
+    ///             AllowIcmp = true,
+    ///             Tcp = new Twingate.Inputs.TwingateResourceProtocolsTcpArgs
+    ///             {
+    ///                 Policy = "RESTRICTED",
+    ///                 Ports = new[]
+    ///                 {
+    ///                     "80",
+    ///                     "82-83",
+    ///                 },
+    ///             },
+    ///             Udp = new Twingate.Inputs.TwingateResourceProtocolsUdpArgs
+    ///             {
+    ///                 Policy = "ALLOW_ALL",
+    ///             },
+    ///         },
+    ///         Access = new Twingate.Inputs.TwingateResourceAccessArgs
+    ///         {
+    ///             GroupIds = new[]
+    ///             {
+    ///                 aws.Id,
+    ///             },
+    ///             ServiceAccountIds = new[]
+    ///             {
+    ///                 githubActionsProd.Id,
+    ///             },
+    ///         },
+    ///     });
+    /// 
+    /// });
+    /// ```
+    /// 
+    /// ## Import
+    /// 
+    /// ```sh
+    ///  $ pulumi import twingate:index/twingateResource:TwingateResource resource UmVzb3VyY2U6MzQwNDQ3
+    /// ```
+    /// </summary>
     [TwingateResourceType("twingate:index/twingateResource:TwingateResource")]
     public partial class TwingateResource : global::Pulumi.CustomResource
     {
+        /// <summary>
+        /// Restrict access to certain groups or service accounts
+        /// </summary>
+        [Output("access")]
+        public Output<Outputs.TwingateResourceAccess?> Access { get; private set; } = null!;
+
         /// <summary>
         /// The Resource's IP/CIDR or FQDN/DNS zone
         /// </summary>
@@ -27,14 +104,32 @@ namespace TwingateLabs.Twingate
         public Output<ImmutableArray<string>> GroupIds { get; private set; } = null!;
 
         /// <summary>
+        /// Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to
+        /// `false`, assignments made outside of Terraform will be ignored.
+        /// </summary>
+        [Output("isAuthoritative")]
+        public Output<bool> IsAuthoritative { get; private set; } = null!;
+
+        /// <summary>
+        /// Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
+        /// </summary>
+        [Output("isBrowserShortcutEnabled")]
+        public Output<bool> IsBrowserShortcutEnabled { get; private set; } = null!;
+
+        /// <summary>
+        /// Controls whether this Resource will be visible in the main Resource list in the Twingate Client.
+        /// </summary>
+        [Output("isVisible")]
+        public Output<bool> IsVisible { get; private set; } = null!;
+
+        /// <summary>
         /// The name of the Resource
         /// </summary>
         [Output("name")]
         public Output<string> Name { get; private set; } = null!;
 
         /// <summary>
-        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no
-        /// restriction, and all protocols and ports are allowed.
+        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
         /// </summary>
         [Output("protocols")]
         public Output<Outputs.TwingateResourceProtocols?> Protocols { get; private set; } = null!;
@@ -93,6 +188,12 @@ namespace TwingateLabs.Twingate
     public sealed class TwingateResourceArgs : global::Pulumi.ResourceArgs
     {
         /// <summary>
+        /// Restrict access to certain groups or service accounts
+        /// </summary>
+        [Input("access")]
+        public Input<Inputs.TwingateResourceAccessArgs>? Access { get; set; }
+
+        /// <summary>
         /// The Resource's IP/CIDR or FQDN/DNS zone
         /// </summary>
         [Input("address", required: true)]
@@ -105,11 +206,31 @@ namespace TwingateLabs.Twingate
         /// List of Group IDs that have permission to access the Resource, cannot be generated by Terraform and must be retrieved
         /// from the Twingate Admin Console or API
         /// </summary>
+        [Obsolete(@"The group_ids argument is now deprecated, and the new access block argument should be used instead. The group_ids argument will be removed in a future version of the provider.")]
         public InputList<string> GroupIds
         {
             get => _groupIds ?? (_groupIds = new InputList<string>());
             set => _groupIds = value;
         }
+
+        /// <summary>
+        /// Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to
+        /// `false`, assignments made outside of Terraform will be ignored.
+        /// </summary>
+        [Input("isAuthoritative")]
+        public Input<bool>? IsAuthoritative { get; set; }
+
+        /// <summary>
+        /// Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
+        /// </summary>
+        [Input("isBrowserShortcutEnabled")]
+        public Input<bool>? IsBrowserShortcutEnabled { get; set; }
+
+        /// <summary>
+        /// Controls whether this Resource will be visible in the main Resource list in the Twingate Client.
+        /// </summary>
+        [Input("isVisible")]
+        public Input<bool>? IsVisible { get; set; }
 
         /// <summary>
         /// The name of the Resource
@@ -118,8 +239,7 @@ namespace TwingateLabs.Twingate
         public Input<string> Name { get; set; } = null!;
 
         /// <summary>
-        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no
-        /// restriction, and all protocols and ports are allowed.
+        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
         /// </summary>
         [Input("protocols")]
         public Input<Inputs.TwingateResourceProtocolsArgs>? Protocols { get; set; }
@@ -139,6 +259,12 @@ namespace TwingateLabs.Twingate
     public sealed class TwingateResourceState : global::Pulumi.ResourceArgs
     {
         /// <summary>
+        /// Restrict access to certain groups or service accounts
+        /// </summary>
+        [Input("access")]
+        public Input<Inputs.TwingateResourceAccessGetArgs>? Access { get; set; }
+
+        /// <summary>
         /// The Resource's IP/CIDR or FQDN/DNS zone
         /// </summary>
         [Input("address")]
@@ -151,11 +277,31 @@ namespace TwingateLabs.Twingate
         /// List of Group IDs that have permission to access the Resource, cannot be generated by Terraform and must be retrieved
         /// from the Twingate Admin Console or API
         /// </summary>
+        [Obsolete(@"The group_ids argument is now deprecated, and the new access block argument should be used instead. The group_ids argument will be removed in a future version of the provider.")]
         public InputList<string> GroupIds
         {
             get => _groupIds ?? (_groupIds = new InputList<string>());
             set => _groupIds = value;
         }
+
+        /// <summary>
+        /// Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to
+        /// `false`, assignments made outside of Terraform will be ignored.
+        /// </summary>
+        [Input("isAuthoritative")]
+        public Input<bool>? IsAuthoritative { get; set; }
+
+        /// <summary>
+        /// Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
+        /// </summary>
+        [Input("isBrowserShortcutEnabled")]
+        public Input<bool>? IsBrowserShortcutEnabled { get; set; }
+
+        /// <summary>
+        /// Controls whether this Resource will be visible in the main Resource list in the Twingate Client.
+        /// </summary>
+        [Input("isVisible")]
+        public Input<bool>? IsVisible { get; set; }
 
         /// <summary>
         /// The name of the Resource
@@ -164,8 +310,7 @@ namespace TwingateLabs.Twingate
         public Input<string>? Name { get; set; }
 
         /// <summary>
-        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no
-        /// restriction, and all protocols and ports are allowed.
+        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
         /// </summary>
         [Input("protocols")]
         public Input<Inputs.TwingateResourceProtocolsGetArgs>? Protocols { get; set; }

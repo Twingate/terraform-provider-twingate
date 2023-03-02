@@ -14,9 +14,21 @@ namespace TwingateLabs.Twingate.Outputs
     [OutputType]
     public sealed class GetTwingateGroupsGroupResult
     {
+        /// <summary>
+        /// The ID of the Group
+        /// </summary>
         public readonly string Id;
+        /// <summary>
+        /// Indicates if the Group is active
+        /// </summary>
         public readonly bool IsActive;
+        /// <summary>
+        /// The name of the Group
+        /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// The type of the Group
+        /// </summary>
         public readonly string Type;
 
         [OutputConstructor]

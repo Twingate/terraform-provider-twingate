@@ -7,10 +7,49 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/pkg/errors"
+	"errors"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			awsNetwork, err := twingate.NewTwingateRemoteNetwork(ctx, "awsNetwork", &twingate.TwingateRemoteNetworkArgs{
+//				Name: pulumi.String("aws_remote_network"),
+//			})
+//			if err != nil {
+//				return err
+//			}
+//			awsConnector, err := twingate.NewTwingateConnector(ctx, "awsConnector", &twingate.TwingateConnectorArgs{
+//				RemoteNetworkId: awsNetwork.ID(),
+//			})
+//			if err != nil {
+//				return err
+//			}
+//			_, err = twingate.NewTwingateConnectorTokens(ctx, "awsConnectorTokens", &twingate.TwingateConnectorTokensArgs{
+//				ConnectorId: awsConnector.ID(),
+//			})
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 type TwingateConnectorTokens struct {
 	pulumi.CustomResourceState
 
@@ -18,8 +57,7 @@ type TwingateConnectorTokens struct {
 	AccessToken pulumi.StringOutput `pulumi:"accessToken"`
 	// The ID of the parent Connector
 	ConnectorId pulumi.StringOutput `pulumi:"connectorId"`
-	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-	// Connector tokens on a schedule.
+	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
 	Keepers pulumi.MapOutput `pulumi:"keepers"`
 	// The Refresh Token of the parent Connector
 	RefreshToken pulumi.StringOutput `pulumi:"refreshToken"`
@@ -67,8 +105,7 @@ type twingateConnectorTokensState struct {
 	AccessToken *string `pulumi:"accessToken"`
 	// The ID of the parent Connector
 	ConnectorId *string `pulumi:"connectorId"`
-	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-	// Connector tokens on a schedule.
+	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
 	Keepers map[string]interface{} `pulumi:"keepers"`
 	// The Refresh Token of the parent Connector
 	RefreshToken *string `pulumi:"refreshToken"`
@@ -79,8 +116,7 @@ type TwingateConnectorTokensState struct {
 	AccessToken pulumi.StringPtrInput
 	// The ID of the parent Connector
 	ConnectorId pulumi.StringPtrInput
-	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-	// Connector tokens on a schedule.
+	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
 	Keepers pulumi.MapInput
 	// The Refresh Token of the parent Connector
 	RefreshToken pulumi.StringPtrInput
@@ -93,8 +129,7 @@ func (TwingateConnectorTokensState) ElementType() reflect.Type {
 type twingateConnectorTokensArgs struct {
 	// The ID of the parent Connector
 	ConnectorId string `pulumi:"connectorId"`
-	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-	// Connector tokens on a schedule.
+	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
 	Keepers map[string]interface{} `pulumi:"keepers"`
 }
 
@@ -102,8 +137,7 @@ type twingateConnectorTokensArgs struct {
 type TwingateConnectorTokensArgs struct {
 	// The ID of the parent Connector
 	ConnectorId pulumi.StringInput
-	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-	// Connector tokens on a schedule.
+	// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
 	Keepers pulumi.MapInput
 }
 
@@ -204,8 +238,7 @@ func (o TwingateConnectorTokensOutput) ConnectorId() pulumi.StringOutput {
 	return o.ApplyT(func(v *TwingateConnectorTokens) pulumi.StringOutput { return v.ConnectorId }).(pulumi.StringOutput)
 }
 
-// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-// Connector tokens on a schedule.
+// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
 func (o TwingateConnectorTokensOutput) Keepers() pulumi.MapOutput {
 	return o.ApplyT(func(v *TwingateConnectorTokens) pulumi.MapOutput { return v.Keepers }).(pulumi.MapOutput)
 }

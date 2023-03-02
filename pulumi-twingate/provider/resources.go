@@ -59,7 +59,7 @@ func Provider() tfbridge.ProviderInfo {
 		// category/cloud tag helps with categorizing the package in the Pulumi Registry.
 		// For all available categories, see `Keywords` in
 		// https://www.pulumi.com/docs/guides/pulumi-packages/schema/#package.
-		Keywords:   []string{"pulumi", "twingate", "category/Infrastructure"},
+		Keywords:   []string{"pulumi", "twingate", "category/infrastructure"},
 		License:    "Apache-2.0",
 		Homepage:   "https://www.twingate.com",
 		Repository: "https://github.com/Twingate-Labs/pulumi-twingate",
@@ -85,15 +85,19 @@ func Provider() tfbridge.ProviderInfo {
 			"twingate_service_account_key": {Tok: tfbridge.MakeResource(mainPkg, mainMod, "TwingateServiceAccountKey")},
 		},
 		DataSources: map[string]*tfbridge.DataSourceInfo{
-			"twingate_remote_network": {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateRemoteNetwork")},
-			"twingate_connector":      {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateConnector")},
-			"twingate_connectors":     {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateConnectors")},
-			"twingate_group":          {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateGroup")},
-			"twingate_groups":         {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateGroups")},
-			"twingate_resource":       {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateResource")},
-			"twingate_resources":      {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateResources")},
-			"twingate_user":           {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateUser")},
-			"twingate_users":          {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateUsers")},
+			"twingate_remote_network":    {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateRemoteNetwork")},
+			"twingate_remote_networks":   {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateRemoteNetworks")},
+			"twingate_connector":         {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateConnector")},
+			"twingate_connectors":        {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateConnectors")},
+			"twingate_group":             {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateGroup")},
+			"twingate_groups":            {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateGroups")},
+			"twingate_resource":          {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateResource")},
+			"twingate_resources":         {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateResources")},
+			"twingate_user":              {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateUser")},
+			"twingate_users":             {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateUsers")},
+			"twingate_service_accounts":  {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateServiceAccounts")},
+			"twingate_security_policy":   {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateSecurityPolicy")},
+			"twingate_security_policies": {Tok: tfbridge.MakeDataSource(mainPkg, mainMod, "getTwingateSecurityPolicies")},
 		},
 		JavaScript: &tfbridge.JavaScriptInfo{
 			PackageName: "@twingate-labs/pulumi-twingate",
@@ -127,10 +131,10 @@ func Provider() tfbridge.ProviderInfo {
 			},
 			RootNamespace: "TwingateLabs",
 		},
-		GitHubOrg: "Twingate-Labs",
+		GitHubOrg: "Twingate",
 	}
 
-	// prov.SetAutonaming(255, "-")
+	//prov.SetAutonaming(255, "-")
 
 	return prov
 }

@@ -4,12 +4,23 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
+/**
+ * Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+ *
+ * ## Example Usage
+ *
+ * ```typescript
+ * import * as pulumi from "@pulumi/pulumi";
+ * import * as twingate from "@pulumi/twingate";
+ *
+ * const foo = twingate.getTwingateConnector({
+ *     id: "<your connector's id>",
+ * });
+ * ```
+ */
 export function getTwingateConnector(args: GetTwingateConnectorArgs, opts?: pulumi.InvokeOptions): Promise<GetTwingateConnectorResult> {
-    if (!opts) {
-        opts = {}
-    }
 
-    opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
+    opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts || {});
     return pulumi.runtime.invoke("twingate:index/getTwingateConnector:getTwingateConnector", {
         "id": args.id,
     }, opts);
@@ -19,6 +30,9 @@ export function getTwingateConnector(args: GetTwingateConnectorArgs, opts?: pulu
  * A collection of arguments for invoking getTwingateConnector.
  */
 export interface GetTwingateConnectorArgs {
+    /**
+     * The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+     */
     id: string;
 }
 
@@ -26,18 +40,43 @@ export interface GetTwingateConnectorArgs {
  * A collection of values returned by getTwingateConnector.
  */
 export interface GetTwingateConnectorResult {
+    /**
+     * The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+     */
     readonly id: string;
+    /**
+     * The name of the Connector
+     */
     readonly name: string;
+    /**
+     * The ID of the Remote Network the Connector is attached to
+     */
     readonly remoteNetworkId: string;
 }
-
+/**
+ * Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+ *
+ * ## Example Usage
+ *
+ * ```typescript
+ * import * as pulumi from "@pulumi/pulumi";
+ * import * as twingate from "@pulumi/twingate";
+ *
+ * const foo = twingate.getTwingateConnector({
+ *     id: "<your connector's id>",
+ * });
+ * ```
+ */
 export function getTwingateConnectorOutput(args: GetTwingateConnectorOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateConnectorResult> {
-    return pulumi.output(args).apply(a => getTwingateConnector(a, opts))
+    return pulumi.output(args).apply((a: any) => getTwingateConnector(a, opts))
 }
 
 /**
  * A collection of arguments for invoking getTwingateConnector.
  */
 export interface GetTwingateConnectorOutputArgs {
+    /**
+     * The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+     */
     id: pulumi.Input<string>;
 }

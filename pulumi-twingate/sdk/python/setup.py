@@ -45,7 +45,7 @@ setup(name='pulumi_twingate',
       cmdclass={
           'install': InstallPluginCommand,
       },
-      keywords='pulumi twingate category/Infrastructure',
+      keywords='pulumi twingate category/infrastructure',
       url='https://www.twingate.com',
       project_urls={
           'Repository': 'https://github.com/Twingate-Labs/pulumi-twingate'

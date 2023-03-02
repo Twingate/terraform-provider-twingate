@@ -10,8 +10,12 @@ from .get_twingate_connectors import *
 from .get_twingate_group import *
 from .get_twingate_groups import *
 from .get_twingate_remote_network import *
+from .get_twingate_remote_networks import *
 from .get_twingate_resource import *
 from .get_twingate_resources import *
+from .get_twingate_security_policies import *
+from .get_twingate_security_policy import *
+from .get_twingate_service_accounts import *
 from .get_twingate_user import *
 from .get_twingate_users import *
 from .provider import *

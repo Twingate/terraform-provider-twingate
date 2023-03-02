@@ -13,15 +13,27 @@ namespace TwingateLabs.Twingate.Inputs
 
     public sealed class GetTwingateGroupsGroupInputArgs : global::Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// The ID of the Group
+        /// </summary>
         [Input("id", required: true)]
         public Input<string> Id { get; set; } = null!;
 
+        /// <summary>
+        /// Indicates if the Group is active
+        /// </summary>
         [Input("isActive", required: true)]
         public Input<bool> IsActive { get; set; } = null!;
 
+        /// <summary>
+        /// The name of the Group
+        /// </summary>
         [Input("name", required: true)]
         public Input<string> Name { get; set; } = null!;
 
+        /// <summary>
+        /// The type of the Group
+        /// </summary>
         [Input("type", required: true)]
         public Input<string> Type { get; set; } = null!;
 

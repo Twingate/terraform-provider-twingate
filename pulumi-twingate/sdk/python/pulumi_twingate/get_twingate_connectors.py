@@ -34,6 +34,9 @@ class GetTwingateConnectorsResult:
     @property
     @pulumi.getter
     def connectors(self) -> Optional[Sequence['outputs.GetTwingateConnectorsConnectorResult']]:
+        """
+        List of Connectors
+        """
         return pulumi.get(self, "connectors")
 
     @property
@@ -58,7 +61,19 @@ class AwaitableGetTwingateConnectorsResult(GetTwingateConnectorsResult):
 def get_twingate_connectors(connectors: Optional[Sequence[pulumi.InputType['GetTwingateConnectorsConnectorArgs']]] = None,
                             opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateConnectorsResult:
     """
-    Use this data source to access information about an existing resource.
+    Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    all = twingate.get_twingate_connectors()
+    ```
+
+
+    :param Sequence[pulumi.InputType['GetTwingateConnectorsConnectorArgs']] connectors: List of Connectors
     """
     __args__ = dict()
     __args__['connectors'] = connectors
@@ -74,6 +89,18 @@ def get_twingate_connectors(connectors: Optional[Sequence[pulumi.InputType['GetT
 def get_twingate_connectors_output(connectors: Optional[pulumi.Input[Optional[Sequence[pulumi.InputType['GetTwingateConnectorsConnectorArgs']]]]] = None,
                                    opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateConnectorsResult]:
     """
-    Use this data source to access information about an existing resource.
+    Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    all = twingate.get_twingate_connectors()
+    ```
+
+
+    :param Sequence[pulumi.InputType['GetTwingateConnectorsConnectorArgs']] connectors: List of Connectors
     """
     ...

@@ -30,6 +30,11 @@ export const getTwingateRemoteNetwork: typeof import("./getTwingateRemoteNetwork
 export const getTwingateRemoteNetworkOutput: typeof import("./getTwingateRemoteNetwork").getTwingateRemoteNetworkOutput = null as any;
 utilities.lazyLoad(exports, ["getTwingateRemoteNetwork","getTwingateRemoteNetworkOutput"], () => require("./getTwingateRemoteNetwork"));
 
+export { GetTwingateRemoteNetworksArgs, GetTwingateRemoteNetworksResult, GetTwingateRemoteNetworksOutputArgs } from "./getTwingateRemoteNetworks";
+export const getTwingateRemoteNetworks: typeof import("./getTwingateRemoteNetworks").getTwingateRemoteNetworks = null as any;
+export const getTwingateRemoteNetworksOutput: typeof import("./getTwingateRemoteNetworks").getTwingateRemoteNetworksOutput = null as any;
+utilities.lazyLoad(exports, ["getTwingateRemoteNetworks","getTwingateRemoteNetworksOutput"], () => require("./getTwingateRemoteNetworks"));
+
 export { GetTwingateResourceArgs, GetTwingateResourceResult, GetTwingateResourceOutputArgs } from "./getTwingateResource";
 export const getTwingateResource: typeof import("./getTwingateResource").getTwingateResource = null as any;
 export const getTwingateResourceOutput: typeof import("./getTwingateResource").getTwingateResourceOutput = null as any;
@@ -39,6 +44,21 @@ export { GetTwingateResourcesArgs, GetTwingateResourcesResult, GetTwingateResour
 export const getTwingateResources: typeof import("./getTwingateResources").getTwingateResources = null as any;
 export const getTwingateResourcesOutput: typeof import("./getTwingateResources").getTwingateResourcesOutput = null as any;
 utilities.lazyLoad(exports, ["getTwingateResources","getTwingateResourcesOutput"], () => require("./getTwingateResources"));
+
+export { GetTwingateSecurityPoliciesArgs, GetTwingateSecurityPoliciesResult, GetTwingateSecurityPoliciesOutputArgs } from "./getTwingateSecurityPolicies";
+export const getTwingateSecurityPolicies: typeof import("./getTwingateSecurityPolicies").getTwingateSecurityPolicies = null as any;
+export const getTwingateSecurityPoliciesOutput: typeof import("./getTwingateSecurityPolicies").getTwingateSecurityPoliciesOutput = null as any;
+utilities.lazyLoad(exports, ["getTwingateSecurityPolicies","getTwingateSecurityPoliciesOutput"], () => require("./getTwingateSecurityPolicies"));
+
+export { GetTwingateSecurityPolicyArgs, GetTwingateSecurityPolicyResult, GetTwingateSecurityPolicyOutputArgs } from "./getTwingateSecurityPolicy";
+export const getTwingateSecurityPolicy: typeof import("./getTwingateSecurityPolicy").getTwingateSecurityPolicy = null as any;
+export const getTwingateSecurityPolicyOutput: typeof import("./getTwingateSecurityPolicy").getTwingateSecurityPolicyOutput = null as any;
+utilities.lazyLoad(exports, ["getTwingateSecurityPolicy","getTwingateSecurityPolicyOutput"], () => require("./getTwingateSecurityPolicy"));
+
+export { GetTwingateServiceAccountsArgs, GetTwingateServiceAccountsResult, GetTwingateServiceAccountsOutputArgs } from "./getTwingateServiceAccounts";
+export const getTwingateServiceAccounts: typeof import("./getTwingateServiceAccounts").getTwingateServiceAccounts = null as any;
+export const getTwingateServiceAccountsOutput: typeof import("./getTwingateServiceAccounts").getTwingateServiceAccountsOutput = null as any;
+utilities.lazyLoad(exports, ["getTwingateServiceAccounts","getTwingateServiceAccountsOutput"], () => require("./getTwingateServiceAccounts"));
 
 export { GetTwingateUserArgs, GetTwingateUserResult, GetTwingateUserOutputArgs } from "./getTwingateUser";
 export const getTwingateUser: typeof import("./getTwingateUser").getTwingateUser = null as any;

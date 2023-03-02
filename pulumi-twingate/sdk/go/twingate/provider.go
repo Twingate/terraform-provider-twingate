@@ -36,14 +36,14 @@ func NewProvider(ctx *pulumi.Context,
 		args = &ProviderArgs{}
 	}
 
-	if isZero(args.HttpMaxRetry) {
+	if args.HttpMaxRetry == nil {
 		args.HttpMaxRetry = pulumi.IntPtr(5)
 	}
-	if isZero(args.HttpTimeout) {
+	if args.HttpTimeout == nil {
 		args.HttpTimeout = pulumi.IntPtr(10)
 	}
 	if args.ApiToken != nil {
-		args.ApiToken = pulumi.ToSecret(args.ApiToken).(pulumi.StringPtrOutput)
+		args.ApiToken = pulumi.ToSecret(args.ApiToken).(pulumi.StringPtrInput)
 	}
 	secrets := pulumi.AdditionalSecretOutputs([]string{
 		"apiToken",

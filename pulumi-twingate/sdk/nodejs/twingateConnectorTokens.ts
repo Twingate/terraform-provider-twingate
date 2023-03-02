@@ -4,6 +4,20 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
+/**
+ * This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.
+ *
+ * ## Example Usage
+ *
+ * ```typescript
+ * import * as pulumi from "@pulumi/pulumi";
+ * import * as twingate from "@twingate-labs/pulumi-twingate";
+ *
+ * const awsNetwork = new twingate.TwingateRemoteNetwork("awsNetwork", {name: "aws_remote_network"});
+ * const awsConnector = new twingate.TwingateConnector("awsConnector", {remoteNetworkId: awsNetwork.id});
+ * const awsConnectorTokens = new twingate.TwingateConnectorTokens("awsConnectorTokens", {connectorId: awsConnector.id});
+ * ```
+ */
 export class TwingateConnectorTokens extends pulumi.CustomResource {
     /**
      * Get an existing TwingateConnectorTokens resource's state with the given name, ID, and optional extra
@@ -41,8 +55,7 @@ export class TwingateConnectorTokens extends pulumi.CustomResource {
      */
     public readonly connectorId!: pulumi.Output<string>;
     /**
-     * Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-     * Connector tokens on a schedule.
+     * Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
      */
     public readonly keepers!: pulumi.Output<{[key: string]: any} | undefined>;
     /**
@@ -97,8 +110,7 @@ export interface TwingateConnectorTokensState {
      */
     connectorId?: pulumi.Input<string>;
     /**
-     * Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-     * Connector tokens on a schedule.
+     * Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
      */
     keepers?: pulumi.Input<{[key: string]: any}>;
     /**
@@ -116,8 +128,7 @@ export interface TwingateConnectorTokensArgs {
      */
     connectorId: pulumi.Input<string>;
     /**
-     * Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-     * Connector tokens on a schedule.
+     * Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
      */
     keepers?: pulumi.Input<{[key: string]: any}>;
 }

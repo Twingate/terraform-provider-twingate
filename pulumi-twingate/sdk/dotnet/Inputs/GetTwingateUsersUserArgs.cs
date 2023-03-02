@@ -13,21 +13,39 @@ namespace TwingateLabs.Twingate.Inputs
 
     public sealed class GetTwingateUsersUserInputArgs : global::Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// The email address of the User
+        /// </summary>
         [Input("email", required: true)]
         public Input<string> Email { get; set; } = null!;
 
+        /// <summary>
+        /// The first name of the User
+        /// </summary>
         [Input("firstName", required: true)]
         public Input<string> FirstName { get; set; } = null!;
 
+        /// <summary>
+        /// The ID of the User
+        /// </summary>
         [Input("id", required: true)]
         public Input<string> Id { get; set; } = null!;
 
+        /// <summary>
+        /// Indicates whether the User is an admin
+        /// </summary>
         [Input("isAdmin", required: true)]
         public Input<bool> IsAdmin { get; set; } = null!;
 
+        /// <summary>
+        /// The last name of the User
+        /// </summary>
         [Input("lastName", required: true)]
         public Input<string> LastName { get; set; } = null!;
 
+        /// <summary>
+        /// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.
+        /// </summary>
         [Input("role", required: true)]
         public Input<string> Role { get; set; } = null!;
 

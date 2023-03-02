@@ -10,6 +10,26 @@ using Pulumi;
 
 namespace TwingateLabs.Twingate
 {
+    /// <summary>
+    /// Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.
+    /// 
+    /// ## Example Usage
+    /// 
+    /// ```csharp
+    /// using System.Collections.Generic;
+    /// using Pulumi;
+    /// using Twingate = TwingateLabs.Twingate;
+    /// 
+    /// return await Deployment.RunAsync(() =&gt; 
+    /// {
+    ///     var githubActionsProd = new Twingate.TwingateServiceAccount("githubActionsProd", new()
+    ///     {
+    ///         Name = "Github Actions PROD",
+    ///     });
+    /// 
+    /// });
+    /// ```
+    /// </summary>
     [TwingateResourceType("twingate:index/twingateServiceAccount:TwingateServiceAccount")]
     public partial class TwingateServiceAccount : global::Pulumi.CustomResource
     {

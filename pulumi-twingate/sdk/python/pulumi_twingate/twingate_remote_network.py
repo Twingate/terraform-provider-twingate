@@ -19,7 +19,7 @@ class TwingateRemoteNetworkArgs:
         """
         The set of arguments for constructing a TwingateRemoteNetwork resource.
         :param pulumi.Input[str] name: The name of the Remote Network
-        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
         """
         pulumi.set(__self__, "name", name)
         if location is not None:
@@ -41,7 +41,7 @@ class TwingateRemoteNetworkArgs:
     @pulumi.getter
     def location(self) -> Optional[pulumi.Input[str]]:
         """
-        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
         """
         return pulumi.get(self, "location")
 
@@ -57,7 +57,7 @@ class _TwingateRemoteNetworkState:
                  name: Optional[pulumi.Input[str]] = None):
         """
         Input properties used for looking up and filtering TwingateRemoteNetwork resources.
-        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
         :param pulumi.Input[str] name: The name of the Remote Network
         """
         if location is not None:
@@ -69,7 +69,7 @@ class _TwingateRemoteNetworkState:
     @pulumi.getter
     def location(self) -> Optional[pulumi.Input[str]]:
         """
-        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
         """
         return pulumi.get(self, "location")
 
@@ -99,10 +99,26 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
                  name: Optional[pulumi.Input[str]] = None,
                  __props__=None):
         """
-        Create a TwingateRemoteNetwork resource with the given unique name, props, and options.
+        A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).
+
+        ## Example Usage
+
+        ```python
+        import pulumi
+        import pulumi_twingate as twingate
+
+        aws_network = twingate.TwingateRemoteNetwork("awsNetwork", name="aws_remote_network")
+        ```
+
+        ## Import
+
+        ```sh
+         $ pulumi import twingate:index/twingateRemoteNetwork:TwingateRemoteNetwork network UmVtb3RlTmV0d29zaipgMKIkNg==
+        ```
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
         :param pulumi.Input[str] name: The name of the Remote Network
         """
         ...
@@ -112,7 +128,23 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
                  args: TwingateRemoteNetworkArgs,
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
-        Create a TwingateRemoteNetwork resource with the given unique name, props, and options.
+        A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).
+
+        ## Example Usage
+
+        ```python
+        import pulumi
+        import pulumi_twingate as twingate
+
+        aws_network = twingate.TwingateRemoteNetwork("awsNetwork", name="aws_remote_network")
+        ```
+
+        ## Import
+
+        ```sh
+         $ pulumi import twingate:index/twingateRemoteNetwork:TwingateRemoteNetwork network UmVtb3RlTmV0d29zaipgMKIkNg==
+        ```
+
         :param str resource_name: The name of the resource.
         :param TwingateRemoteNetworkArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -162,7 +194,7 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
         :param str resource_name: The unique name of the resulting resource.
         :param pulumi.Input[str] id: The unique provider ID of the resource to lookup.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        :param pulumi.Input[str] location: The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
         :param pulumi.Input[str] name: The name of the Remote Network
         """
         opts = pulumi.ResourceOptions.merge(opts, pulumi.ResourceOptions(id=id))
@@ -177,7 +209,7 @@ class TwingateRemoteNetwork(pulumi.CustomResource):
     @pulumi.getter
     def location(self) -> pulumi.Output[Optional[str]]:
         """
-        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+        The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
         """
         return pulumi.get(self, "location")
 

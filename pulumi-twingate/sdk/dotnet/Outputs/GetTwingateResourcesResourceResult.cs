@@ -14,10 +14,25 @@ namespace TwingateLabs.Twingate.Outputs
     [OutputType]
     public sealed class GetTwingateResourcesResourceResult
     {
+        /// <summary>
+        /// The Resource's IP/CIDR or FQDN/DNS zone
+        /// </summary>
         public readonly string Address;
+        /// <summary>
+        /// The id of the Resource
+        /// </summary>
         public readonly string Id;
+        /// <summary>
+        /// The name of the Resource
+        /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
+        /// </summary>
         public readonly ImmutableArray<Outputs.GetTwingateResourcesResourceProtocolResult> Protocols;
+        /// <summary>
+        /// Remote Network ID where the Resource lives
+        /// </summary>
         public readonly string RemoteNetworkId;
 
         [OutputConstructor]

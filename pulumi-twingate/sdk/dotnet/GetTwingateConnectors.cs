@@ -12,9 +12,51 @@ namespace TwingateLabs.Twingate
 {
     public static class GetTwingateConnectors
     {
+        /// <summary>
+        /// Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var all = Twingate.GetTwingateConnectors.Invoke();
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Task<GetTwingateConnectorsResult> InvokeAsync(GetTwingateConnectorsArgs? args = null, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.InvokeAsync<GetTwingateConnectorsResult>("twingate:index/getTwingateConnectors:getTwingateConnectors", args ?? new GetTwingateConnectorsArgs(), options.WithDefaults());
 
+        /// <summary>
+        /// Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var all = Twingate.GetTwingateConnectors.Invoke();
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Output<GetTwingateConnectorsResult> Invoke(GetTwingateConnectorsInvokeArgs? args = null, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.Invoke<GetTwingateConnectorsResult>("twingate:index/getTwingateConnectors:getTwingateConnectors", args ?? new GetTwingateConnectorsInvokeArgs(), options.WithDefaults());
     }
@@ -24,6 +66,10 @@ namespace TwingateLabs.Twingate
     {
         [Input("connectors")]
         private List<Inputs.GetTwingateConnectorsConnectorArgs>? _connectors;
+
+        /// <summary>
+        /// List of Connectors
+        /// </summary>
         public List<Inputs.GetTwingateConnectorsConnectorArgs> Connectors
         {
             get => _connectors ?? (_connectors = new List<Inputs.GetTwingateConnectorsConnectorArgs>());
@@ -40,6 +86,10 @@ namespace TwingateLabs.Twingate
     {
         [Input("connectors")]
         private InputList<Inputs.GetTwingateConnectorsConnectorInputArgs>? _connectors;
+
+        /// <summary>
+        /// List of Connectors
+        /// </summary>
         public InputList<Inputs.GetTwingateConnectorsConnectorInputArgs> Connectors
         {
             get => _connectors ?? (_connectors = new InputList<Inputs.GetTwingateConnectorsConnectorInputArgs>());
@@ -56,6 +106,9 @@ namespace TwingateLabs.Twingate
     [OutputType]
     public sealed class GetTwingateConnectorsResult
     {
+        /// <summary>
+        /// List of Connectors
+        /// </summary>
         public readonly ImmutableArray<Outputs.GetTwingateConnectorsConnectorResult> Connectors;
         /// <summary>
         /// The provider-assigned unique ID for this managed resource.

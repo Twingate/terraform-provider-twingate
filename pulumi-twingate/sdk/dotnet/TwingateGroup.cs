@@ -10,6 +10,32 @@ using Pulumi;
 
 namespace TwingateLabs.Twingate
 {
+    /// <summary>
+    /// Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+    /// 
+    /// ## Example Usage
+    /// 
+    /// ```csharp
+    /// using System.Collections.Generic;
+    /// using Pulumi;
+    /// using Twingate = TwingateLabs.Twingate;
+    /// 
+    /// return await Deployment.RunAsync(() =&gt; 
+    /// {
+    ///     var aws = new Twingate.TwingateGroup("aws", new()
+    ///     {
+    ///         Name = "aws_group",
+    ///     });
+    /// 
+    /// });
+    /// ```
+    /// 
+    /// ## Import
+    /// 
+    /// ```sh
+    ///  $ pulumi import twingate:index/twingateGroup:TwingateGroup aws R3JvdXA6MzQ4OTE=
+    /// ```
+    /// </summary>
     [TwingateResourceType("twingate:index/twingateGroup:TwingateGroup")]
     public partial class TwingateGroup : global::Pulumi.CustomResource
     {

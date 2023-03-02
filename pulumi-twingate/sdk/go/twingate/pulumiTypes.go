@@ -10,7 +10,164 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+type TwingateResourceAccess struct {
+	// List of Group IDs that will have permission to access the Resource.
+	GroupIds []string `pulumi:"groupIds"`
+	// List of Service Account IDs that will have permission to access the Resource.
+	ServiceAccountIds []string `pulumi:"serviceAccountIds"`
+}
+
+// TwingateResourceAccessInput is an input type that accepts TwingateResourceAccessArgs and TwingateResourceAccessOutput values.
+// You can construct a concrete instance of `TwingateResourceAccessInput` via:
+//
+//	TwingateResourceAccessArgs{...}
+type TwingateResourceAccessInput interface {
+	pulumi.Input
+
+	ToTwingateResourceAccessOutput() TwingateResourceAccessOutput
+	ToTwingateResourceAccessOutputWithContext(context.Context) TwingateResourceAccessOutput
+}
+
+type TwingateResourceAccessArgs struct {
+	// List of Group IDs that will have permission to access the Resource.
+	GroupIds pulumi.StringArrayInput `pulumi:"groupIds"`
+	// List of Service Account IDs that will have permission to access the Resource.
+	ServiceAccountIds pulumi.StringArrayInput `pulumi:"serviceAccountIds"`
+}
+
+func (TwingateResourceAccessArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*TwingateResourceAccess)(nil)).Elem()
+}
+
+func (i TwingateResourceAccessArgs) ToTwingateResourceAccessOutput() TwingateResourceAccessOutput {
+	return i.ToTwingateResourceAccessOutputWithContext(context.Background())
+}
+
+func (i TwingateResourceAccessArgs) ToTwingateResourceAccessOutputWithContext(ctx context.Context) TwingateResourceAccessOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TwingateResourceAccessOutput)
+}
+
+func (i TwingateResourceAccessArgs) ToTwingateResourceAccessPtrOutput() TwingateResourceAccessPtrOutput {
+	return i.ToTwingateResourceAccessPtrOutputWithContext(context.Background())
+}
+
+func (i TwingateResourceAccessArgs) ToTwingateResourceAccessPtrOutputWithContext(ctx context.Context) TwingateResourceAccessPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TwingateResourceAccessOutput).ToTwingateResourceAccessPtrOutputWithContext(ctx)
+}
+
+// TwingateResourceAccessPtrInput is an input type that accepts TwingateResourceAccessArgs, TwingateResourceAccessPtr and TwingateResourceAccessPtrOutput values.
+// You can construct a concrete instance of `TwingateResourceAccessPtrInput` via:
+//
+//	        TwingateResourceAccessArgs{...}
+//
+//	or:
+//
+//	        nil
+type TwingateResourceAccessPtrInput interface {
+	pulumi.Input
+
+	ToTwingateResourceAccessPtrOutput() TwingateResourceAccessPtrOutput
+	ToTwingateResourceAccessPtrOutputWithContext(context.Context) TwingateResourceAccessPtrOutput
+}
+
+type twingateResourceAccessPtrType TwingateResourceAccessArgs
+
+func TwingateResourceAccessPtr(v *TwingateResourceAccessArgs) TwingateResourceAccessPtrInput {
+	return (*twingateResourceAccessPtrType)(v)
+}
+
+func (*twingateResourceAccessPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**TwingateResourceAccess)(nil)).Elem()
+}
+
+func (i *twingateResourceAccessPtrType) ToTwingateResourceAccessPtrOutput() TwingateResourceAccessPtrOutput {
+	return i.ToTwingateResourceAccessPtrOutputWithContext(context.Background())
+}
+
+func (i *twingateResourceAccessPtrType) ToTwingateResourceAccessPtrOutputWithContext(ctx context.Context) TwingateResourceAccessPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TwingateResourceAccessPtrOutput)
+}
+
+type TwingateResourceAccessOutput struct{ *pulumi.OutputState }
+
+func (TwingateResourceAccessOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*TwingateResourceAccess)(nil)).Elem()
+}
+
+func (o TwingateResourceAccessOutput) ToTwingateResourceAccessOutput() TwingateResourceAccessOutput {
+	return o
+}
+
+func (o TwingateResourceAccessOutput) ToTwingateResourceAccessOutputWithContext(ctx context.Context) TwingateResourceAccessOutput {
+	return o
+}
+
+func (o TwingateResourceAccessOutput) ToTwingateResourceAccessPtrOutput() TwingateResourceAccessPtrOutput {
+	return o.ToTwingateResourceAccessPtrOutputWithContext(context.Background())
+}
+
+func (o TwingateResourceAccessOutput) ToTwingateResourceAccessPtrOutputWithContext(ctx context.Context) TwingateResourceAccessPtrOutput {
+	return o.ApplyTWithContext(ctx, func(_ context.Context, v TwingateResourceAccess) *TwingateResourceAccess {
+		return &v
+	}).(TwingateResourceAccessPtrOutput)
+}
+
+// List of Group IDs that will have permission to access the Resource.
+func (o TwingateResourceAccessOutput) GroupIds() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v TwingateResourceAccess) []string { return v.GroupIds }).(pulumi.StringArrayOutput)
+}
+
+// List of Service Account IDs that will have permission to access the Resource.
+func (o TwingateResourceAccessOutput) ServiceAccountIds() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v TwingateResourceAccess) []string { return v.ServiceAccountIds }).(pulumi.StringArrayOutput)
+}
+
+type TwingateResourceAccessPtrOutput struct{ *pulumi.OutputState }
+
+func (TwingateResourceAccessPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**TwingateResourceAccess)(nil)).Elem()
+}
+
+func (o TwingateResourceAccessPtrOutput) ToTwingateResourceAccessPtrOutput() TwingateResourceAccessPtrOutput {
+	return o
+}
+
+func (o TwingateResourceAccessPtrOutput) ToTwingateResourceAccessPtrOutputWithContext(ctx context.Context) TwingateResourceAccessPtrOutput {
+	return o
+}
+
+func (o TwingateResourceAccessPtrOutput) Elem() TwingateResourceAccessOutput {
+	return o.ApplyT(func(v *TwingateResourceAccess) TwingateResourceAccess {
+		if v != nil {
+			return *v
+		}
+		var ret TwingateResourceAccess
+		return ret
+	}).(TwingateResourceAccessOutput)
+}
+
+// List of Group IDs that will have permission to access the Resource.
+func (o TwingateResourceAccessPtrOutput) GroupIds() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v *TwingateResourceAccess) []string {
+		if v == nil {
+			return nil
+		}
+		return v.GroupIds
+	}).(pulumi.StringArrayOutput)
+}
+
+// List of Service Account IDs that will have permission to access the Resource.
+func (o TwingateResourceAccessPtrOutput) ServiceAccountIds() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v *TwingateResourceAccess) []string {
+		if v == nil {
+			return nil
+		}
+		return v.ServiceAccountIds
+	}).(pulumi.StringArrayOutput)
+}
+
 type TwingateResourceProtocols struct {
+	// Whether to allow ICMP (ping) traffic
 	AllowIcmp *bool                        `pulumi:"allowIcmp"`
 	Tcp       TwingateResourceProtocolsTcp `pulumi:"tcp"`
 	Udp       TwingateResourceProtocolsUdp `pulumi:"udp"`
@@ -28,6 +185,7 @@ type TwingateResourceProtocolsInput interface {
 }
 
 type TwingateResourceProtocolsArgs struct {
+	// Whether to allow ICMP (ping) traffic
 	AllowIcmp pulumi.BoolPtrInput               `pulumi:"allowIcmp"`
 	Tcp       TwingateResourceProtocolsTcpInput `pulumi:"tcp"`
 	Udp       TwingateResourceProtocolsUdpInput `pulumi:"udp"`
@@ -110,6 +268,7 @@ func (o TwingateResourceProtocolsOutput) ToTwingateResourceProtocolsPtrOutputWit
 	}).(TwingateResourceProtocolsPtrOutput)
 }
 
+// Whether to allow ICMP (ping) traffic
 func (o TwingateResourceProtocolsOutput) AllowIcmp() pulumi.BoolPtrOutput {
 	return o.ApplyT(func(v TwingateResourceProtocols) *bool { return v.AllowIcmp }).(pulumi.BoolPtrOutput)
 }
@@ -146,6 +305,7 @@ func (o TwingateResourceProtocolsPtrOutput) Elem() TwingateResourceProtocolsOutp
 	}).(TwingateResourceProtocolsOutput)
 }
 
+// Whether to allow ICMP (ping) traffic
 func (o TwingateResourceProtocolsPtrOutput) AllowIcmp() pulumi.BoolPtrOutput {
 	return o.ApplyT(func(v *TwingateResourceProtocols) *bool {
 		if v == nil {
@@ -470,8 +630,11 @@ func (o TwingateResourceProtocolsUdpPtrOutput) Ports() pulumi.StringArrayOutput 
 }
 
 type GetTwingateConnectorsConnector struct {
-	Id              string `pulumi:"id"`
-	Name            string `pulumi:"name"`
+	// The ID of the Connector
+	Id string `pulumi:"id"`
+	// The Name of the Connector
+	Name string `pulumi:"name"`
+	// The ID of the Remote Network attached to the Connector
 	RemoteNetworkId string `pulumi:"remoteNetworkId"`
 }
 
@@ -487,8 +650,11 @@ type GetTwingateConnectorsConnectorInput interface {
 }
 
 type GetTwingateConnectorsConnectorArgs struct {
-	Id              pulumi.StringInput `pulumi:"id"`
-	Name            pulumi.StringInput `pulumi:"name"`
+	// The ID of the Connector
+	Id pulumi.StringInput `pulumi:"id"`
+	// The Name of the Connector
+	Name pulumi.StringInput `pulumi:"name"`
+	// The ID of the Remote Network attached to the Connector
 	RemoteNetworkId pulumi.StringInput `pulumi:"remoteNetworkId"`
 }
 
@@ -543,14 +709,17 @@ func (o GetTwingateConnectorsConnectorOutput) ToGetTwingateConnectorsConnectorOu
 	return o
 }
 
+// The ID of the Connector
 func (o GetTwingateConnectorsConnectorOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateConnectorsConnector) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// The Name of the Connector
 func (o GetTwingateConnectorsConnectorOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateConnectorsConnector) string { return v.Name }).(pulumi.StringOutput)
 }
 
+// The ID of the Remote Network attached to the Connector
 func (o GetTwingateConnectorsConnectorOutput) RemoteNetworkId() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateConnectorsConnector) string { return v.RemoteNetworkId }).(pulumi.StringOutput)
 }
@@ -576,10 +745,14 @@ func (o GetTwingateConnectorsConnectorArrayOutput) Index(i pulumi.IntInput) GetT
 }
 
 type GetTwingateGroupsGroup struct {
-	Id       string `pulumi:"id"`
-	IsActive bool   `pulumi:"isActive"`
-	Name     string `pulumi:"name"`
-	Type     string `pulumi:"type"`
+	// The ID of the Group
+	Id string `pulumi:"id"`
+	// Indicates if the Group is active
+	IsActive bool `pulumi:"isActive"`
+	// The name of the Group
+	Name string `pulumi:"name"`
+	// The type of the Group
+	Type string `pulumi:"type"`
 }
 
 // GetTwingateGroupsGroupInput is an input type that accepts GetTwingateGroupsGroupArgs and GetTwingateGroupsGroupOutput values.
@@ -594,10 +767,14 @@ type GetTwingateGroupsGroupInput interface {
 }
 
 type GetTwingateGroupsGroupArgs struct {
-	Id       pulumi.StringInput `pulumi:"id"`
-	IsActive pulumi.BoolInput   `pulumi:"isActive"`
-	Name     pulumi.StringInput `pulumi:"name"`
-	Type     pulumi.StringInput `pulumi:"type"`
+	// The ID of the Group
+	Id pulumi.StringInput `pulumi:"id"`
+	// Indicates if the Group is active
+	IsActive pulumi.BoolInput `pulumi:"isActive"`
+	// The name of the Group
+	Name pulumi.StringInput `pulumi:"name"`
+	// The type of the Group
+	Type pulumi.StringInput `pulumi:"type"`
 }
 
 func (GetTwingateGroupsGroupArgs) ElementType() reflect.Type {
@@ -651,18 +828,22 @@ func (o GetTwingateGroupsGroupOutput) ToGetTwingateGroupsGroupOutputWithContext(
 	return o
 }
 
+// The ID of the Group
 func (o GetTwingateGroupsGroupOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateGroupsGroup) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// Indicates if the Group is active
 func (o GetTwingateGroupsGroupOutput) IsActive() pulumi.BoolOutput {
 	return o.ApplyT(func(v GetTwingateGroupsGroup) bool { return v.IsActive }).(pulumi.BoolOutput)
 }
 
+// The name of the Group
 func (o GetTwingateGroupsGroupOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateGroupsGroup) string { return v.Name }).(pulumi.StringOutput)
 }
 
+// The type of the Group
 func (o GetTwingateGroupsGroupOutput) Type() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateGroupsGroup) string { return v.Type }).(pulumi.StringOutput)
 }
@@ -687,7 +868,123 @@ func (o GetTwingateGroupsGroupArrayOutput) Index(i pulumi.IntInput) GetTwingateG
 	}).(GetTwingateGroupsGroupOutput)
 }
 
+type GetTwingateRemoteNetworksRemoteNetwork struct {
+	// The ID of the Remote Network
+	Id string `pulumi:"id"`
+	// The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
+	Location string `pulumi:"location"`
+	// The name of the Remote Network
+	Name string `pulumi:"name"`
+}
+
+// GetTwingateRemoteNetworksRemoteNetworkInput is an input type that accepts GetTwingateRemoteNetworksRemoteNetworkArgs and GetTwingateRemoteNetworksRemoteNetworkOutput values.
+// You can construct a concrete instance of `GetTwingateRemoteNetworksRemoteNetworkInput` via:
+//
+//	GetTwingateRemoteNetworksRemoteNetworkArgs{...}
+type GetTwingateRemoteNetworksRemoteNetworkInput interface {
+	pulumi.Input
+
+	ToGetTwingateRemoteNetworksRemoteNetworkOutput() GetTwingateRemoteNetworksRemoteNetworkOutput
+	ToGetTwingateRemoteNetworksRemoteNetworkOutputWithContext(context.Context) GetTwingateRemoteNetworksRemoteNetworkOutput
+}
+
+type GetTwingateRemoteNetworksRemoteNetworkArgs struct {
+	// The ID of the Remote Network
+	Id pulumi.StringInput `pulumi:"id"`
+	// The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
+	Location pulumi.StringInput `pulumi:"location"`
+	// The name of the Remote Network
+	Name pulumi.StringInput `pulumi:"name"`
+}
+
+func (GetTwingateRemoteNetworksRemoteNetworkArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*GetTwingateRemoteNetworksRemoteNetwork)(nil)).Elem()
+}
+
+func (i GetTwingateRemoteNetworksRemoteNetworkArgs) ToGetTwingateRemoteNetworksRemoteNetworkOutput() GetTwingateRemoteNetworksRemoteNetworkOutput {
+	return i.ToGetTwingateRemoteNetworksRemoteNetworkOutputWithContext(context.Background())
+}
+
+func (i GetTwingateRemoteNetworksRemoteNetworkArgs) ToGetTwingateRemoteNetworksRemoteNetworkOutputWithContext(ctx context.Context) GetTwingateRemoteNetworksRemoteNetworkOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(GetTwingateRemoteNetworksRemoteNetworkOutput)
+}
+
+// GetTwingateRemoteNetworksRemoteNetworkArrayInput is an input type that accepts GetTwingateRemoteNetworksRemoteNetworkArray and GetTwingateRemoteNetworksRemoteNetworkArrayOutput values.
+// You can construct a concrete instance of `GetTwingateRemoteNetworksRemoteNetworkArrayInput` via:
+//
+//	GetTwingateRemoteNetworksRemoteNetworkArray{ GetTwingateRemoteNetworksRemoteNetworkArgs{...} }
+type GetTwingateRemoteNetworksRemoteNetworkArrayInput interface {
+	pulumi.Input
+
+	ToGetTwingateRemoteNetworksRemoteNetworkArrayOutput() GetTwingateRemoteNetworksRemoteNetworkArrayOutput
+	ToGetTwingateRemoteNetworksRemoteNetworkArrayOutputWithContext(context.Context) GetTwingateRemoteNetworksRemoteNetworkArrayOutput
+}
+
+type GetTwingateRemoteNetworksRemoteNetworkArray []GetTwingateRemoteNetworksRemoteNetworkInput
+
+func (GetTwingateRemoteNetworksRemoteNetworkArray) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]GetTwingateRemoteNetworksRemoteNetwork)(nil)).Elem()
+}
+
+func (i GetTwingateRemoteNetworksRemoteNetworkArray) ToGetTwingateRemoteNetworksRemoteNetworkArrayOutput() GetTwingateRemoteNetworksRemoteNetworkArrayOutput {
+	return i.ToGetTwingateRemoteNetworksRemoteNetworkArrayOutputWithContext(context.Background())
+}
+
+func (i GetTwingateRemoteNetworksRemoteNetworkArray) ToGetTwingateRemoteNetworksRemoteNetworkArrayOutputWithContext(ctx context.Context) GetTwingateRemoteNetworksRemoteNetworkArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(GetTwingateRemoteNetworksRemoteNetworkArrayOutput)
+}
+
+type GetTwingateRemoteNetworksRemoteNetworkOutput struct{ *pulumi.OutputState }
+
+func (GetTwingateRemoteNetworksRemoteNetworkOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*GetTwingateRemoteNetworksRemoteNetwork)(nil)).Elem()
+}
+
+func (o GetTwingateRemoteNetworksRemoteNetworkOutput) ToGetTwingateRemoteNetworksRemoteNetworkOutput() GetTwingateRemoteNetworksRemoteNetworkOutput {
+	return o
+}
+
+func (o GetTwingateRemoteNetworksRemoteNetworkOutput) ToGetTwingateRemoteNetworksRemoteNetworkOutputWithContext(ctx context.Context) GetTwingateRemoteNetworksRemoteNetworkOutput {
+	return o
+}
+
+// The ID of the Remote Network
+func (o GetTwingateRemoteNetworksRemoteNetworkOutput) Id() pulumi.StringOutput {
+	return o.ApplyT(func(v GetTwingateRemoteNetworksRemoteNetwork) string { return v.Id }).(pulumi.StringOutput)
+}
+
+// The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
+func (o GetTwingateRemoteNetworksRemoteNetworkOutput) Location() pulumi.StringOutput {
+	return o.ApplyT(func(v GetTwingateRemoteNetworksRemoteNetwork) string { return v.Location }).(pulumi.StringOutput)
+}
+
+// The name of the Remote Network
+func (o GetTwingateRemoteNetworksRemoteNetworkOutput) Name() pulumi.StringOutput {
+	return o.ApplyT(func(v GetTwingateRemoteNetworksRemoteNetwork) string { return v.Name }).(pulumi.StringOutput)
+}
+
+type GetTwingateRemoteNetworksRemoteNetworkArrayOutput struct{ *pulumi.OutputState }
+
+func (GetTwingateRemoteNetworksRemoteNetworkArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]GetTwingateRemoteNetworksRemoteNetwork)(nil)).Elem()
+}
+
+func (o GetTwingateRemoteNetworksRemoteNetworkArrayOutput) ToGetTwingateRemoteNetworksRemoteNetworkArrayOutput() GetTwingateRemoteNetworksRemoteNetworkArrayOutput {
+	return o
+}
+
+func (o GetTwingateRemoteNetworksRemoteNetworkArrayOutput) ToGetTwingateRemoteNetworksRemoteNetworkArrayOutputWithContext(ctx context.Context) GetTwingateRemoteNetworksRemoteNetworkArrayOutput {
+	return o
+}
+
+func (o GetTwingateRemoteNetworksRemoteNetworkArrayOutput) Index(i pulumi.IntInput) GetTwingateRemoteNetworksRemoteNetworkOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) GetTwingateRemoteNetworksRemoteNetwork {
+		return vs[0].([]GetTwingateRemoteNetworksRemoteNetwork)[vs[1].(int)]
+	}).(GetTwingateRemoteNetworksRemoteNetworkOutput)
+}
+
 type GetTwingateResourceProtocol struct {
+	// Whether to allow ICMP (ping) traffic
 	AllowIcmp bool                             `pulumi:"allowIcmp"`
 	Tcps      []GetTwingateResourceProtocolTcp `pulumi:"tcps"`
 	Udps      []GetTwingateResourceProtocolUdp `pulumi:"udps"`
@@ -705,6 +1002,7 @@ type GetTwingateResourceProtocolInput interface {
 }
 
 type GetTwingateResourceProtocolArgs struct {
+	// Whether to allow ICMP (ping) traffic
 	AllowIcmp pulumi.BoolInput                         `pulumi:"allowIcmp"`
 	Tcps      GetTwingateResourceProtocolTcpArrayInput `pulumi:"tcps"`
 	Udps      GetTwingateResourceProtocolUdpArrayInput `pulumi:"udps"`
@@ -761,6 +1059,7 @@ func (o GetTwingateResourceProtocolOutput) ToGetTwingateResourceProtocolOutputWi
 	return o
 }
 
+// Whether to allow ICMP (ping) traffic
 func (o GetTwingateResourceProtocolOutput) AllowIcmp() pulumi.BoolOutput {
 	return o.ApplyT(func(v GetTwingateResourceProtocol) bool { return v.AllowIcmp }).(pulumi.BoolOutput)
 }
@@ -994,11 +1293,16 @@ func (o GetTwingateResourceProtocolUdpArrayOutput) Index(i pulumi.IntInput) GetT
 }
 
 type GetTwingateResourcesResource struct {
-	Address         string                                 `pulumi:"address"`
-	Id              string                                 `pulumi:"id"`
-	Name            string                                 `pulumi:"name"`
-	Protocols       []GetTwingateResourcesResourceProtocol `pulumi:"protocols"`
-	RemoteNetworkId string                                 `pulumi:"remoteNetworkId"`
+	// The Resource's IP/CIDR or FQDN/DNS zone
+	Address string `pulumi:"address"`
+	// The id of the Resource
+	Id string `pulumi:"id"`
+	// The name of the Resource
+	Name string `pulumi:"name"`
+	// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
+	Protocols []GetTwingateResourcesResourceProtocol `pulumi:"protocols"`
+	// Remote Network ID where the Resource lives
+	RemoteNetworkId string `pulumi:"remoteNetworkId"`
 }
 
 // GetTwingateResourcesResourceInput is an input type that accepts GetTwingateResourcesResourceArgs and GetTwingateResourcesResourceOutput values.
@@ -1013,11 +1317,16 @@ type GetTwingateResourcesResourceInput interface {
 }
 
 type GetTwingateResourcesResourceArgs struct {
-	Address         pulumi.StringInput                             `pulumi:"address"`
-	Id              pulumi.StringInput                             `pulumi:"id"`
-	Name            pulumi.StringInput                             `pulumi:"name"`
-	Protocols       GetTwingateResourcesResourceProtocolArrayInput `pulumi:"protocols"`
-	RemoteNetworkId pulumi.StringInput                             `pulumi:"remoteNetworkId"`
+	// The Resource's IP/CIDR or FQDN/DNS zone
+	Address pulumi.StringInput `pulumi:"address"`
+	// The id of the Resource
+	Id pulumi.StringInput `pulumi:"id"`
+	// The name of the Resource
+	Name pulumi.StringInput `pulumi:"name"`
+	// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
+	Protocols GetTwingateResourcesResourceProtocolArrayInput `pulumi:"protocols"`
+	// Remote Network ID where the Resource lives
+	RemoteNetworkId pulumi.StringInput `pulumi:"remoteNetworkId"`
 }
 
 func (GetTwingateResourcesResourceArgs) ElementType() reflect.Type {
@@ -1071,22 +1380,27 @@ func (o GetTwingateResourcesResourceOutput) ToGetTwingateResourcesResourceOutput
 	return o
 }
 
+// The Resource's IP/CIDR or FQDN/DNS zone
 func (o GetTwingateResourcesResourceOutput) Address() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateResourcesResource) string { return v.Address }).(pulumi.StringOutput)
 }
 
+// The id of the Resource
 func (o GetTwingateResourcesResourceOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateResourcesResource) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// The name of the Resource
 func (o GetTwingateResourcesResourceOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateResourcesResource) string { return v.Name }).(pulumi.StringOutput)
 }
 
+// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
 func (o GetTwingateResourcesResourceOutput) Protocols() GetTwingateResourcesResourceProtocolArrayOutput {
 	return o.ApplyT(func(v GetTwingateResourcesResource) []GetTwingateResourcesResourceProtocol { return v.Protocols }).(GetTwingateResourcesResourceProtocolArrayOutput)
 }
 
+// Remote Network ID where the Resource lives
 func (o GetTwingateResourcesResourceOutput) RemoteNetworkId() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateResourcesResource) string { return v.RemoteNetworkId }).(pulumi.StringOutput)
 }
@@ -1417,13 +1731,249 @@ func (o GetTwingateResourcesResourceProtocolUdpArrayOutput) Index(i pulumi.IntIn
 	}).(GetTwingateResourcesResourceProtocolUdpOutput)
 }
 
+type GetTwingateSecurityPoliciesSecurityPolicy struct {
+	// Return a matching Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.
+	Id string `pulumi:"id"`
+	// Return a Security Policy that exactly matches this name.
+	Name string `pulumi:"name"`
+}
+
+// GetTwingateSecurityPoliciesSecurityPolicyInput is an input type that accepts GetTwingateSecurityPoliciesSecurityPolicyArgs and GetTwingateSecurityPoliciesSecurityPolicyOutput values.
+// You can construct a concrete instance of `GetTwingateSecurityPoliciesSecurityPolicyInput` via:
+//
+//	GetTwingateSecurityPoliciesSecurityPolicyArgs{...}
+type GetTwingateSecurityPoliciesSecurityPolicyInput interface {
+	pulumi.Input
+
+	ToGetTwingateSecurityPoliciesSecurityPolicyOutput() GetTwingateSecurityPoliciesSecurityPolicyOutput
+	ToGetTwingateSecurityPoliciesSecurityPolicyOutputWithContext(context.Context) GetTwingateSecurityPoliciesSecurityPolicyOutput
+}
+
+type GetTwingateSecurityPoliciesSecurityPolicyArgs struct {
+	// Return a matching Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.
+	Id pulumi.StringInput `pulumi:"id"`
+	// Return a Security Policy that exactly matches this name.
+	Name pulumi.StringInput `pulumi:"name"`
+}
+
+func (GetTwingateSecurityPoliciesSecurityPolicyArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*GetTwingateSecurityPoliciesSecurityPolicy)(nil)).Elem()
+}
+
+func (i GetTwingateSecurityPoliciesSecurityPolicyArgs) ToGetTwingateSecurityPoliciesSecurityPolicyOutput() GetTwingateSecurityPoliciesSecurityPolicyOutput {
+	return i.ToGetTwingateSecurityPoliciesSecurityPolicyOutputWithContext(context.Background())
+}
+
+func (i GetTwingateSecurityPoliciesSecurityPolicyArgs) ToGetTwingateSecurityPoliciesSecurityPolicyOutputWithContext(ctx context.Context) GetTwingateSecurityPoliciesSecurityPolicyOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(GetTwingateSecurityPoliciesSecurityPolicyOutput)
+}
+
+// GetTwingateSecurityPoliciesSecurityPolicyArrayInput is an input type that accepts GetTwingateSecurityPoliciesSecurityPolicyArray and GetTwingateSecurityPoliciesSecurityPolicyArrayOutput values.
+// You can construct a concrete instance of `GetTwingateSecurityPoliciesSecurityPolicyArrayInput` via:
+//
+//	GetTwingateSecurityPoliciesSecurityPolicyArray{ GetTwingateSecurityPoliciesSecurityPolicyArgs{...} }
+type GetTwingateSecurityPoliciesSecurityPolicyArrayInput interface {
+	pulumi.Input
+
+	ToGetTwingateSecurityPoliciesSecurityPolicyArrayOutput() GetTwingateSecurityPoliciesSecurityPolicyArrayOutput
+	ToGetTwingateSecurityPoliciesSecurityPolicyArrayOutputWithContext(context.Context) GetTwingateSecurityPoliciesSecurityPolicyArrayOutput
+}
+
+type GetTwingateSecurityPoliciesSecurityPolicyArray []GetTwingateSecurityPoliciesSecurityPolicyInput
+
+func (GetTwingateSecurityPoliciesSecurityPolicyArray) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]GetTwingateSecurityPoliciesSecurityPolicy)(nil)).Elem()
+}
+
+func (i GetTwingateSecurityPoliciesSecurityPolicyArray) ToGetTwingateSecurityPoliciesSecurityPolicyArrayOutput() GetTwingateSecurityPoliciesSecurityPolicyArrayOutput {
+	return i.ToGetTwingateSecurityPoliciesSecurityPolicyArrayOutputWithContext(context.Background())
+}
+
+func (i GetTwingateSecurityPoliciesSecurityPolicyArray) ToGetTwingateSecurityPoliciesSecurityPolicyArrayOutputWithContext(ctx context.Context) GetTwingateSecurityPoliciesSecurityPolicyArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(GetTwingateSecurityPoliciesSecurityPolicyArrayOutput)
+}
+
+type GetTwingateSecurityPoliciesSecurityPolicyOutput struct{ *pulumi.OutputState }
+
+func (GetTwingateSecurityPoliciesSecurityPolicyOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*GetTwingateSecurityPoliciesSecurityPolicy)(nil)).Elem()
+}
+
+func (o GetTwingateSecurityPoliciesSecurityPolicyOutput) ToGetTwingateSecurityPoliciesSecurityPolicyOutput() GetTwingateSecurityPoliciesSecurityPolicyOutput {
+	return o
+}
+
+func (o GetTwingateSecurityPoliciesSecurityPolicyOutput) ToGetTwingateSecurityPoliciesSecurityPolicyOutputWithContext(ctx context.Context) GetTwingateSecurityPoliciesSecurityPolicyOutput {
+	return o
+}
+
+// Return a matching Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.
+func (o GetTwingateSecurityPoliciesSecurityPolicyOutput) Id() pulumi.StringOutput {
+	return o.ApplyT(func(v GetTwingateSecurityPoliciesSecurityPolicy) string { return v.Id }).(pulumi.StringOutput)
+}
+
+// Return a Security Policy that exactly matches this name.
+func (o GetTwingateSecurityPoliciesSecurityPolicyOutput) Name() pulumi.StringOutput {
+	return o.ApplyT(func(v GetTwingateSecurityPoliciesSecurityPolicy) string { return v.Name }).(pulumi.StringOutput)
+}
+
+type GetTwingateSecurityPoliciesSecurityPolicyArrayOutput struct{ *pulumi.OutputState }
+
+func (GetTwingateSecurityPoliciesSecurityPolicyArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]GetTwingateSecurityPoliciesSecurityPolicy)(nil)).Elem()
+}
+
+func (o GetTwingateSecurityPoliciesSecurityPolicyArrayOutput) ToGetTwingateSecurityPoliciesSecurityPolicyArrayOutput() GetTwingateSecurityPoliciesSecurityPolicyArrayOutput {
+	return o
+}
+
+func (o GetTwingateSecurityPoliciesSecurityPolicyArrayOutput) ToGetTwingateSecurityPoliciesSecurityPolicyArrayOutputWithContext(ctx context.Context) GetTwingateSecurityPoliciesSecurityPolicyArrayOutput {
+	return o
+}
+
+func (o GetTwingateSecurityPoliciesSecurityPolicyArrayOutput) Index(i pulumi.IntInput) GetTwingateSecurityPoliciesSecurityPolicyOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) GetTwingateSecurityPoliciesSecurityPolicy {
+		return vs[0].([]GetTwingateSecurityPoliciesSecurityPolicy)[vs[1].(int)]
+	}).(GetTwingateSecurityPoliciesSecurityPolicyOutput)
+}
+
+type GetTwingateServiceAccountsServiceAccount struct {
+	// ID of the Service Account resource
+	Id string `pulumi:"id"`
+	// List of twingate*service*account_key IDs that are assigned to the Service Account.
+	KeyIds []string `pulumi:"keyIds"`
+	// Name of the Service Account
+	Name string `pulumi:"name"`
+	// List of TwingateResource IDs that the Service Account is assigned to.
+	ResourceIds []string `pulumi:"resourceIds"`
+}
+
+// GetTwingateServiceAccountsServiceAccountInput is an input type that accepts GetTwingateServiceAccountsServiceAccountArgs and GetTwingateServiceAccountsServiceAccountOutput values.
+// You can construct a concrete instance of `GetTwingateServiceAccountsServiceAccountInput` via:
+//
+//	GetTwingateServiceAccountsServiceAccountArgs{...}
+type GetTwingateServiceAccountsServiceAccountInput interface {
+	pulumi.Input
+
+	ToGetTwingateServiceAccountsServiceAccountOutput() GetTwingateServiceAccountsServiceAccountOutput
+	ToGetTwingateServiceAccountsServiceAccountOutputWithContext(context.Context) GetTwingateServiceAccountsServiceAccountOutput
+}
+
+type GetTwingateServiceAccountsServiceAccountArgs struct {
+	// ID of the Service Account resource
+	Id pulumi.StringInput `pulumi:"id"`
+	// List of twingate*service*account_key IDs that are assigned to the Service Account.
+	KeyIds pulumi.StringArrayInput `pulumi:"keyIds"`
+	// Name of the Service Account
+	Name pulumi.StringInput `pulumi:"name"`
+	// List of TwingateResource IDs that the Service Account is assigned to.
+	ResourceIds pulumi.StringArrayInput `pulumi:"resourceIds"`
+}
+
+func (GetTwingateServiceAccountsServiceAccountArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*GetTwingateServiceAccountsServiceAccount)(nil)).Elem()
+}
+
+func (i GetTwingateServiceAccountsServiceAccountArgs) ToGetTwingateServiceAccountsServiceAccountOutput() GetTwingateServiceAccountsServiceAccountOutput {
+	return i.ToGetTwingateServiceAccountsServiceAccountOutputWithContext(context.Background())
+}
+
+func (i GetTwingateServiceAccountsServiceAccountArgs) ToGetTwingateServiceAccountsServiceAccountOutputWithContext(ctx context.Context) GetTwingateServiceAccountsServiceAccountOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(GetTwingateServiceAccountsServiceAccountOutput)
+}
+
+// GetTwingateServiceAccountsServiceAccountArrayInput is an input type that accepts GetTwingateServiceAccountsServiceAccountArray and GetTwingateServiceAccountsServiceAccountArrayOutput values.
+// You can construct a concrete instance of `GetTwingateServiceAccountsServiceAccountArrayInput` via:
+//
+//	GetTwingateServiceAccountsServiceAccountArray{ GetTwingateServiceAccountsServiceAccountArgs{...} }
+type GetTwingateServiceAccountsServiceAccountArrayInput interface {
+	pulumi.Input
+
+	ToGetTwingateServiceAccountsServiceAccountArrayOutput() GetTwingateServiceAccountsServiceAccountArrayOutput
+	ToGetTwingateServiceAccountsServiceAccountArrayOutputWithContext(context.Context) GetTwingateServiceAccountsServiceAccountArrayOutput
+}
+
+type GetTwingateServiceAccountsServiceAccountArray []GetTwingateServiceAccountsServiceAccountInput
+
+func (GetTwingateServiceAccountsServiceAccountArray) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]GetTwingateServiceAccountsServiceAccount)(nil)).Elem()
+}
+
+func (i GetTwingateServiceAccountsServiceAccountArray) ToGetTwingateServiceAccountsServiceAccountArrayOutput() GetTwingateServiceAccountsServiceAccountArrayOutput {
+	return i.ToGetTwingateServiceAccountsServiceAccountArrayOutputWithContext(context.Background())
+}
+
+func (i GetTwingateServiceAccountsServiceAccountArray) ToGetTwingateServiceAccountsServiceAccountArrayOutputWithContext(ctx context.Context) GetTwingateServiceAccountsServiceAccountArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(GetTwingateServiceAccountsServiceAccountArrayOutput)
+}
+
+type GetTwingateServiceAccountsServiceAccountOutput struct{ *pulumi.OutputState }
+
+func (GetTwingateServiceAccountsServiceAccountOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*GetTwingateServiceAccountsServiceAccount)(nil)).Elem()
+}
+
+func (o GetTwingateServiceAccountsServiceAccountOutput) ToGetTwingateServiceAccountsServiceAccountOutput() GetTwingateServiceAccountsServiceAccountOutput {
+	return o
+}
+
+func (o GetTwingateServiceAccountsServiceAccountOutput) ToGetTwingateServiceAccountsServiceAccountOutputWithContext(ctx context.Context) GetTwingateServiceAccountsServiceAccountOutput {
+	return o
+}
+
+// ID of the Service Account resource
+func (o GetTwingateServiceAccountsServiceAccountOutput) Id() pulumi.StringOutput {
+	return o.ApplyT(func(v GetTwingateServiceAccountsServiceAccount) string { return v.Id }).(pulumi.StringOutput)
+}
+
+// List of twingate*service*account_key IDs that are assigned to the Service Account.
+func (o GetTwingateServiceAccountsServiceAccountOutput) KeyIds() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v GetTwingateServiceAccountsServiceAccount) []string { return v.KeyIds }).(pulumi.StringArrayOutput)
+}
+
+// Name of the Service Account
+func (o GetTwingateServiceAccountsServiceAccountOutput) Name() pulumi.StringOutput {
+	return o.ApplyT(func(v GetTwingateServiceAccountsServiceAccount) string { return v.Name }).(pulumi.StringOutput)
+}
+
+// List of TwingateResource IDs that the Service Account is assigned to.
+func (o GetTwingateServiceAccountsServiceAccountOutput) ResourceIds() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v GetTwingateServiceAccountsServiceAccount) []string { return v.ResourceIds }).(pulumi.StringArrayOutput)
+}
+
+type GetTwingateServiceAccountsServiceAccountArrayOutput struct{ *pulumi.OutputState }
+
+func (GetTwingateServiceAccountsServiceAccountArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]GetTwingateServiceAccountsServiceAccount)(nil)).Elem()
+}
+
+func (o GetTwingateServiceAccountsServiceAccountArrayOutput) ToGetTwingateServiceAccountsServiceAccountArrayOutput() GetTwingateServiceAccountsServiceAccountArrayOutput {
+	return o
+}
+
+func (o GetTwingateServiceAccountsServiceAccountArrayOutput) ToGetTwingateServiceAccountsServiceAccountArrayOutputWithContext(ctx context.Context) GetTwingateServiceAccountsServiceAccountArrayOutput {
+	return o
+}
+
+func (o GetTwingateServiceAccountsServiceAccountArrayOutput) Index(i pulumi.IntInput) GetTwingateServiceAccountsServiceAccountOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) GetTwingateServiceAccountsServiceAccount {
+		return vs[0].([]GetTwingateServiceAccountsServiceAccount)[vs[1].(int)]
+	}).(GetTwingateServiceAccountsServiceAccountOutput)
+}
+
 type GetTwingateUsersUser struct {
-	Email     string `pulumi:"email"`
+	// The email address of the User
+	Email string `pulumi:"email"`
+	// The first name of the User
 	FirstName string `pulumi:"firstName"`
-	Id        string `pulumi:"id"`
-	IsAdmin   bool   `pulumi:"isAdmin"`
-	LastName  string `pulumi:"lastName"`
-	Role      string `pulumi:"role"`
+	// The ID of the User
+	Id string `pulumi:"id"`
+	// Indicates whether the User is an admin
+	IsAdmin bool `pulumi:"isAdmin"`
+	// The last name of the User
+	LastName string `pulumi:"lastName"`
+	// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.
+	Role string `pulumi:"role"`
 }
 
 // GetTwingateUsersUserInput is an input type that accepts GetTwingateUsersUserArgs and GetTwingateUsersUserOutput values.
@@ -1438,12 +1988,18 @@ type GetTwingateUsersUserInput interface {
 }
 
 type GetTwingateUsersUserArgs struct {
-	Email     pulumi.StringInput `pulumi:"email"`
+	// The email address of the User
+	Email pulumi.StringInput `pulumi:"email"`
+	// The first name of the User
 	FirstName pulumi.StringInput `pulumi:"firstName"`
-	Id        pulumi.StringInput `pulumi:"id"`
-	IsAdmin   pulumi.BoolInput   `pulumi:"isAdmin"`
-	LastName  pulumi.StringInput `pulumi:"lastName"`
-	Role      pulumi.StringInput `pulumi:"role"`
+	// The ID of the User
+	Id pulumi.StringInput `pulumi:"id"`
+	// Indicates whether the User is an admin
+	IsAdmin pulumi.BoolInput `pulumi:"isAdmin"`
+	// The last name of the User
+	LastName pulumi.StringInput `pulumi:"lastName"`
+	// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.
+	Role pulumi.StringInput `pulumi:"role"`
 }
 
 func (GetTwingateUsersUserArgs) ElementType() reflect.Type {
@@ -1497,26 +2053,32 @@ func (o GetTwingateUsersUserOutput) ToGetTwingateUsersUserOutputWithContext(ctx 
 	return o
 }
 
+// The email address of the User
 func (o GetTwingateUsersUserOutput) Email() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUsersUser) string { return v.Email }).(pulumi.StringOutput)
 }
 
+// The first name of the User
 func (o GetTwingateUsersUserOutput) FirstName() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUsersUser) string { return v.FirstName }).(pulumi.StringOutput)
 }
 
+// The ID of the User
 func (o GetTwingateUsersUserOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUsersUser) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// Indicates whether the User is an admin
 func (o GetTwingateUsersUserOutput) IsAdmin() pulumi.BoolOutput {
 	return o.ApplyT(func(v GetTwingateUsersUser) bool { return v.IsAdmin }).(pulumi.BoolOutput)
 }
 
+// The last name of the User
 func (o GetTwingateUsersUserOutput) LastName() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUsersUser) string { return v.LastName }).(pulumi.StringOutput)
 }
 
+// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.
 func (o GetTwingateUsersUserOutput) Role() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUsersUser) string { return v.Role }).(pulumi.StringOutput)
 }
@@ -1542,6 +2104,8 @@ func (o GetTwingateUsersUserArrayOutput) Index(i pulumi.IntInput) GetTwingateUse
 }
 
 func init() {
+	pulumi.RegisterInputType(reflect.TypeOf((*TwingateResourceAccessInput)(nil)).Elem(), TwingateResourceAccessArgs{})
+	pulumi.RegisterInputType(reflect.TypeOf((*TwingateResourceAccessPtrInput)(nil)).Elem(), TwingateResourceAccessArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*TwingateResourceProtocolsInput)(nil)).Elem(), TwingateResourceProtocolsArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*TwingateResourceProtocolsPtrInput)(nil)).Elem(), TwingateResourceProtocolsArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*TwingateResourceProtocolsTcpInput)(nil)).Elem(), TwingateResourceProtocolsTcpArgs{})
@@ -1552,6 +2116,8 @@ func init() {
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateConnectorsConnectorArrayInput)(nil)).Elem(), GetTwingateConnectorsConnectorArray{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateGroupsGroupInput)(nil)).Elem(), GetTwingateGroupsGroupArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateGroupsGroupArrayInput)(nil)).Elem(), GetTwingateGroupsGroupArray{})
+	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateRemoteNetworksRemoteNetworkInput)(nil)).Elem(), GetTwingateRemoteNetworksRemoteNetworkArgs{})
+	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateRemoteNetworksRemoteNetworkArrayInput)(nil)).Elem(), GetTwingateRemoteNetworksRemoteNetworkArray{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateResourceProtocolInput)(nil)).Elem(), GetTwingateResourceProtocolArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateResourceProtocolArrayInput)(nil)).Elem(), GetTwingateResourceProtocolArray{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateResourceProtocolTcpInput)(nil)).Elem(), GetTwingateResourceProtocolTcpArgs{})
@@ -1566,8 +2132,14 @@ func init() {
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateResourcesResourceProtocolTcpArrayInput)(nil)).Elem(), GetTwingateResourcesResourceProtocolTcpArray{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateResourcesResourceProtocolUdpInput)(nil)).Elem(), GetTwingateResourcesResourceProtocolUdpArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateResourcesResourceProtocolUdpArrayInput)(nil)).Elem(), GetTwingateResourcesResourceProtocolUdpArray{})
+	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateSecurityPoliciesSecurityPolicyInput)(nil)).Elem(), GetTwingateSecurityPoliciesSecurityPolicyArgs{})
+	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateSecurityPoliciesSecurityPolicyArrayInput)(nil)).Elem(), GetTwingateSecurityPoliciesSecurityPolicyArray{})
+	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateServiceAccountsServiceAccountInput)(nil)).Elem(), GetTwingateServiceAccountsServiceAccountArgs{})
+	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateServiceAccountsServiceAccountArrayInput)(nil)).Elem(), GetTwingateServiceAccountsServiceAccountArray{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateUsersUserInput)(nil)).Elem(), GetTwingateUsersUserArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GetTwingateUsersUserArrayInput)(nil)).Elem(), GetTwingateUsersUserArray{})
+	pulumi.RegisterOutputType(TwingateResourceAccessOutput{})
+	pulumi.RegisterOutputType(TwingateResourceAccessPtrOutput{})
 	pulumi.RegisterOutputType(TwingateResourceProtocolsOutput{})
 	pulumi.RegisterOutputType(TwingateResourceProtocolsPtrOutput{})
 	pulumi.RegisterOutputType(TwingateResourceProtocolsTcpOutput{})
@@ -1578,6 +2150,8 @@ func init() {
 	pulumi.RegisterOutputType(GetTwingateConnectorsConnectorArrayOutput{})
 	pulumi.RegisterOutputType(GetTwingateGroupsGroupOutput{})
 	pulumi.RegisterOutputType(GetTwingateGroupsGroupArrayOutput{})
+	pulumi.RegisterOutputType(GetTwingateRemoteNetworksRemoteNetworkOutput{})
+	pulumi.RegisterOutputType(GetTwingateRemoteNetworksRemoteNetworkArrayOutput{})
 	pulumi.RegisterOutputType(GetTwingateResourceProtocolOutput{})
 	pulumi.RegisterOutputType(GetTwingateResourceProtocolArrayOutput{})
 	pulumi.RegisterOutputType(GetTwingateResourceProtocolTcpOutput{})
@@ -1592,6 +2166,10 @@ func init() {
 	pulumi.RegisterOutputType(GetTwingateResourcesResourceProtocolTcpArrayOutput{})
 	pulumi.RegisterOutputType(GetTwingateResourcesResourceProtocolUdpOutput{})
 	pulumi.RegisterOutputType(GetTwingateResourcesResourceProtocolUdpArrayOutput{})
+	pulumi.RegisterOutputType(GetTwingateSecurityPoliciesSecurityPolicyOutput{})
+	pulumi.RegisterOutputType(GetTwingateSecurityPoliciesSecurityPolicyArrayOutput{})
+	pulumi.RegisterOutputType(GetTwingateServiceAccountsServiceAccountOutput{})
+	pulumi.RegisterOutputType(GetTwingateServiceAccountsServiceAccountArrayOutput{})
 	pulumi.RegisterOutputType(GetTwingateUsersUserOutput{})
 	pulumi.RegisterOutputType(GetTwingateUsersUserArrayOutput{})
 }

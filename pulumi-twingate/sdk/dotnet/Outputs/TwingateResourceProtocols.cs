@@ -14,6 +14,9 @@ namespace TwingateLabs.Twingate.Outputs
     [OutputType]
     public sealed class TwingateResourceProtocols
     {
+        /// <summary>
+        /// Whether to allow ICMP (ping) traffic
+        /// </summary>
         public readonly bool? AllowIcmp;
         public readonly Outputs.TwingateResourceProtocolsTcp Tcp;
         public readonly Outputs.TwingateResourceProtocolsUdp Udp;

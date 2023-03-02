@@ -4,6 +4,24 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
+/**
+ * A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).
+ *
+ * ## Example Usage
+ *
+ * ```typescript
+ * import * as pulumi from "@pulumi/pulumi";
+ * import * as twingate from "@twingate-labs/pulumi-twingate";
+ *
+ * const awsNetwork = new twingate.TwingateRemoteNetwork("awsNetwork", {name: "aws_remote_network"});
+ * ```
+ *
+ * ## Import
+ *
+ * ```sh
+ *  $ pulumi import twingate:index/twingateRemoteNetwork:TwingateRemoteNetwork network UmVtb3RlTmV0d29zaipgMKIkNg==
+ * ```
+ */
 export class TwingateRemoteNetwork extends pulumi.CustomResource {
     /**
      * Get an existing TwingateRemoteNetwork resource's state with the given name, ID, and optional extra
@@ -33,7 +51,7 @@ export class TwingateRemoteNetwork extends pulumi.CustomResource {
     }
 
     /**
-     * The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+     * The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
      */
     public readonly location!: pulumi.Output<string | undefined>;
     /**
@@ -74,7 +92,7 @@ export class TwingateRemoteNetwork extends pulumi.CustomResource {
  */
 export interface TwingateRemoteNetworkState {
     /**
-     * The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+     * The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
      */
     location?: pulumi.Input<string>;
     /**
@@ -88,7 +106,7 @@ export interface TwingateRemoteNetworkState {
  */
 export interface TwingateRemoteNetworkArgs {
     /**
-     * The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+     * The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
      */
     location?: pulumi.Input<string>;
     /**

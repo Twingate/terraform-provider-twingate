@@ -13,12 +13,21 @@ namespace TwingateLabs.Twingate.Inputs
 
     public sealed class GetTwingateConnectorsConnectorArgs : global::Pulumi.InvokeArgs
     {
+        /// <summary>
+        /// The ID of the Connector
+        /// </summary>
         [Input("id", required: true)]
         public string Id { get; set; } = null!;
 
+        /// <summary>
+        /// The Name of the Connector
+        /// </summary>
         [Input("name", required: true)]
         public string Name { get; set; } = null!;
 
+        /// <summary>
+        /// The ID of the Remote Network attached to the Connector
+        /// </summary>
         [Input("remoteNetworkId", required: true)]
         public string RemoteNetworkId { get; set; } = null!;
 

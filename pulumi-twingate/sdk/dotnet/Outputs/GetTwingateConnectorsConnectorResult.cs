@@ -14,8 +14,17 @@ namespace TwingateLabs.Twingate.Outputs
     [OutputType]
     public sealed class GetTwingateConnectorsConnectorResult
     {
+        /// <summary>
+        /// The ID of the Connector
+        /// </summary>
         public readonly string Id;
+        /// <summary>
+        /// The Name of the Connector
+        /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// The ID of the Remote Network attached to the Connector
+        /// </summary>
         public readonly string RemoteNetworkId;
 
         [OutputConstructor]

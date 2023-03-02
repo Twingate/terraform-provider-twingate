@@ -4,6 +4,18 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
+/**
+ * Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.
+ *
+ * ## Example Usage
+ *
+ * ```typescript
+ * import * as pulumi from "@pulumi/pulumi";
+ * import * as twingate from "@twingate-labs/pulumi-twingate";
+ *
+ * const githubActionsProd = new twingate.TwingateServiceAccount("githubActionsProd", {name: "Github Actions PROD"});
+ * ```
+ */
 export class TwingateServiceAccount extends pulumi.CustomResource {
     /**
      * Get an existing TwingateServiceAccount resource's state with the given name, ID, and optional extra

@@ -10,6 +10,37 @@ using Pulumi;
 
 namespace TwingateLabs.Twingate
 {
+    /// <summary>
+    /// Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+    /// 
+    /// ## Example Usage
+    /// 
+    /// ```csharp
+    /// using System.Collections.Generic;
+    /// using Pulumi;
+    /// using Twingate = TwingateLabs.Twingate;
+    /// 
+    /// return await Deployment.RunAsync(() =&gt; 
+    /// {
+    ///     var awsNetwork = new Twingate.TwingateRemoteNetwork("awsNetwork", new()
+    ///     {
+    ///         Name = "aws_remote_network",
+    ///     });
+    /// 
+    ///     var awsConnector = new Twingate.TwingateConnector("awsConnector", new()
+    ///     {
+    ///         RemoteNetworkId = awsNetwork.Id,
+    ///     });
+    /// 
+    /// });
+    /// ```
+    /// 
+    /// ## Import
+    /// 
+    /// ```sh
+    ///  $ pulumi import twingate:index/twingateConnector:TwingateConnector aws_connector Q29ubmVjdG9yOjI2NzM=
+    /// ```
+    /// </summary>
     [TwingateResourceType("twingate:index/twingateConnector:TwingateConnector")]
     public partial class TwingateConnector : global::Pulumi.CustomResource
     {

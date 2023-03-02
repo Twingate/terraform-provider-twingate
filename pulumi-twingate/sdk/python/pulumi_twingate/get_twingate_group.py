@@ -38,21 +38,33 @@ class GetTwingateGroupResult:
     @property
     @pulumi.getter
     def id(self) -> str:
+        """
+        The ID of the Group. The ID for the Group must be obtained from the Admin API.
+        """
         return pulumi.get(self, "id")
 
     @property
     @pulumi.getter(name="isActive")
     def is_active(self) -> bool:
+        """
+        Indicates if the Group is active
+        """
         return pulumi.get(self, "is_active")
 
     @property
     @pulumi.getter
     def name(self) -> str:
+        """
+        The name of the Group
+        """
         return pulumi.get(self, "name")
 
     @property
     @pulumi.getter
     def type(self) -> str:
+        """
+        The type of the Group
+        """
         return pulumi.get(self, "type")
 
 
@@ -71,7 +83,19 @@ class AwaitableGetTwingateGroupResult(GetTwingateGroupResult):
 def get_twingate_group(id: Optional[str] = None,
                        opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateGroupResult:
     """
-    Use this data source to access information about an existing resource.
+    Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_group(id="<your group's id>")
+    ```
+
+
+    :param str id: The ID of the Group. The ID for the Group must be obtained from the Admin API.
     """
     __args__ = dict()
     __args__['id'] = id
@@ -89,6 +113,18 @@ def get_twingate_group(id: Optional[str] = None,
 def get_twingate_group_output(id: Optional[pulumi.Input[str]] = None,
                               opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateGroupResult]:
     """
-    Use this data source to access information about an existing resource.
+    Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_group(id="<your group's id>")
+    ```
+
+
+    :param str id: The ID of the Group. The ID for the Group must be obtained from the Admin API.
     """
     ...

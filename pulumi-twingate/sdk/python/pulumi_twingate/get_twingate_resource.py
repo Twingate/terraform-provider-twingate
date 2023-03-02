@@ -43,26 +43,41 @@ class GetTwingateResourceResult:
     @property
     @pulumi.getter
     def address(self) -> str:
+        """
+        The Resource's address, which may be an IP address, CIDR range, or DNS address
+        """
         return pulumi.get(self, "address")
 
     @property
     @pulumi.getter
     def id(self) -> str:
+        """
+        The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
+        """
         return pulumi.get(self, "id")
 
     @property
     @pulumi.getter
     def name(self) -> str:
+        """
+        The name of the Resource
+        """
         return pulumi.get(self, "name")
 
     @property
     @pulumi.getter
     def protocols(self) -> Optional[Sequence['outputs.GetTwingateResourceProtocolResult']]:
+        """
+        By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.
+        """
         return pulumi.get(self, "protocols")
 
     @property
     @pulumi.getter(name="remoteNetworkId")
     def remote_network_id(self) -> str:
+        """
+        The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
+        """
         return pulumi.get(self, "remote_network_id")
 
 
@@ -83,7 +98,20 @@ def get_twingate_resource(id: Optional[str] = None,
                           protocols: Optional[Sequence[pulumi.InputType['GetTwingateResourceProtocolArgs']]] = None,
                           opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateResourceResult:
     """
-    Use this data source to access information about an existing resource.
+    Resources in Twingate represent any network destination address that you wish to provide private access to for users authorized via the Twingate Client application. Resources can be defined by either IP or DNS address, and all private DNS addresses will be automatically resolved with no client configuration changes. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_resource(id="<your resource's id>")
+    ```
+
+
+    :param str id: The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
+    :param Sequence[pulumi.InputType['GetTwingateResourceProtocolArgs']] protocols: By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.
     """
     __args__ = dict()
     __args__['id'] = id
@@ -104,6 +132,19 @@ def get_twingate_resource_output(id: Optional[pulumi.Input[str]] = None,
                                  protocols: Optional[pulumi.Input[Optional[Sequence[pulumi.InputType['GetTwingateResourceProtocolArgs']]]]] = None,
                                  opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateResourceResult]:
     """
-    Use this data source to access information about an existing resource.
+    Resources in Twingate represent any network destination address that you wish to provide private access to for users authorized via the Twingate Client application. Resources can be defined by either IP or DNS address, and all private DNS addresses will be automatically resolved with no client configuration changes. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_resource(id="<your resource's id>")
+    ```
+
+
+    :param str id: The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
+    :param Sequence[pulumi.InputType['GetTwingateResourceProtocolArgs']] protocols: By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.
     """
     ...

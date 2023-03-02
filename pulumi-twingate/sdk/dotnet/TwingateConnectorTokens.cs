@@ -10,6 +10,36 @@ using Pulumi;
 
 namespace TwingateLabs.Twingate
 {
+    /// <summary>
+    /// This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.
+    /// 
+    /// ## Example Usage
+    /// 
+    /// ```csharp
+    /// using System.Collections.Generic;
+    /// using Pulumi;
+    /// using Twingate = TwingateLabs.Twingate;
+    /// 
+    /// return await Deployment.RunAsync(() =&gt; 
+    /// {
+    ///     var awsNetwork = new Twingate.TwingateRemoteNetwork("awsNetwork", new()
+    ///     {
+    ///         Name = "aws_remote_network",
+    ///     });
+    /// 
+    ///     var awsConnector = new Twingate.TwingateConnector("awsConnector", new()
+    ///     {
+    ///         RemoteNetworkId = awsNetwork.Id,
+    ///     });
+    /// 
+    ///     var awsConnectorTokens = new Twingate.TwingateConnectorTokens("awsConnectorTokens", new()
+    ///     {
+    ///         ConnectorId = awsConnector.Id,
+    ///     });
+    /// 
+    /// });
+    /// ```
+    /// </summary>
     [TwingateResourceType("twingate:index/twingateConnectorTokens:TwingateConnectorTokens")]
     public partial class TwingateConnectorTokens : global::Pulumi.CustomResource
     {
@@ -26,8 +56,7 @@ namespace TwingateLabs.Twingate
         public Output<string> ConnectorId { get; private set; } = null!;
 
         /// <summary>
-        /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-        /// Connector tokens on a schedule.
+        /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
         /// </summary>
         [Output("keepers")]
         public Output<ImmutableDictionary<string, object>?> Keepers { get; private set; } = null!;
@@ -100,8 +129,7 @@ namespace TwingateLabs.Twingate
         private InputMap<object>? _keepers;
 
         /// <summary>
-        /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-        /// Connector tokens on a schedule.
+        /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
         /// </summary>
         public InputMap<object> Keepers
         {
@@ -143,8 +171,7 @@ namespace TwingateLabs.Twingate
         private InputMap<object>? _keepers;
 
         /// <summary>
-        /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
-        /// Connector tokens on a schedule.
+        /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.
         /// </summary>
         public InputMap<object> Keepers
         {

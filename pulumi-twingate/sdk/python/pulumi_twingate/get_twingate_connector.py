@@ -35,16 +35,25 @@ class GetTwingateConnectorResult:
     @property
     @pulumi.getter
     def id(self) -> str:
+        """
+        The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+        """
         return pulumi.get(self, "id")
 
     @property
     @pulumi.getter
     def name(self) -> str:
+        """
+        The name of the Connector
+        """
         return pulumi.get(self, "name")
 
     @property
     @pulumi.getter(name="remoteNetworkId")
     def remote_network_id(self) -> str:
+        """
+        The ID of the Remote Network the Connector is attached to
+        """
         return pulumi.get(self, "remote_network_id")
 
 
@@ -62,7 +71,19 @@ class AwaitableGetTwingateConnectorResult(GetTwingateConnectorResult):
 def get_twingate_connector(id: Optional[str] = None,
                            opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateConnectorResult:
     """
-    Use this data source to access information about an existing resource.
+    Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_connector(id="<your connector's id>")
+    ```
+
+
+    :param str id: The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
     """
     __args__ = dict()
     __args__['id'] = id
@@ -79,6 +100,18 @@ def get_twingate_connector(id: Optional[str] = None,
 def get_twingate_connector_output(id: Optional[pulumi.Input[str]] = None,
                                   opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateConnectorResult]:
     """
-    Use this data source to access information about an existing resource.
+    Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_connector(id="<your connector's id>")
+    ```
+
+
+    :param str id: The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
     """
     ...

@@ -10,6 +10,33 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			_, err := twingate.GetTwingateUser(ctx, &twingate.GetTwingateUserArgs{
+//				Id: "<your user's id>",
+//			}, nil)
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 func GetTwingateUser(ctx *pulumi.Context, args *GetTwingateUserArgs, opts ...pulumi.InvokeOption) (*GetTwingateUserResult, error) {
 	opts = pkgInvokeDefaultOpts(opts)
 	var rv GetTwingateUserResult
@@ -22,17 +49,24 @@ func GetTwingateUser(ctx *pulumi.Context, args *GetTwingateUserArgs, opts ...pul
 
 // A collection of arguments for invoking getTwingateUser.
 type GetTwingateUserArgs struct {
+	// The ID of the User. The ID for the User must be obtained from the Admin API.
 	Id string `pulumi:"id"`
 }
 
 // A collection of values returned by getTwingateUser.
 type GetTwingateUserResult struct {
-	Email     string `pulumi:"email"`
+	// The email address of the User
+	Email string `pulumi:"email"`
+	// The first name of the User
 	FirstName string `pulumi:"firstName"`
-	Id        string `pulumi:"id"`
-	IsAdmin   bool   `pulumi:"isAdmin"`
-	LastName  string `pulumi:"lastName"`
-	Role      string `pulumi:"role"`
+	// The ID of the User. The ID for the User must be obtained from the Admin API.
+	Id string `pulumi:"id"`
+	// Indicates whether the User is an admin
+	IsAdmin bool `pulumi:"isAdmin"`
+	// The last name of the User
+	LastName string `pulumi:"lastName"`
+	// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER
+	Role string `pulumi:"role"`
 }
 
 func GetTwingateUserOutput(ctx *pulumi.Context, args GetTwingateUserOutputArgs, opts ...pulumi.InvokeOption) GetTwingateUserResultOutput {
@@ -50,6 +84,7 @@ func GetTwingateUserOutput(ctx *pulumi.Context, args GetTwingateUserOutputArgs, 
 
 // A collection of arguments for invoking getTwingateUser.
 type GetTwingateUserOutputArgs struct {
+	// The ID of the User. The ID for the User must be obtained from the Admin API.
 	Id pulumi.StringInput `pulumi:"id"`
 }
 
@@ -72,26 +107,32 @@ func (o GetTwingateUserResultOutput) ToGetTwingateUserResultOutputWithContext(ct
 	return o
 }
 
+// The email address of the User
 func (o GetTwingateUserResultOutput) Email() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUserResult) string { return v.Email }).(pulumi.StringOutput)
 }
 
+// The first name of the User
 func (o GetTwingateUserResultOutput) FirstName() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUserResult) string { return v.FirstName }).(pulumi.StringOutput)
 }
 
+// The ID of the User. The ID for the User must be obtained from the Admin API.
 func (o GetTwingateUserResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUserResult) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// Indicates whether the User is an admin
 func (o GetTwingateUserResultOutput) IsAdmin() pulumi.BoolOutput {
 	return o.ApplyT(func(v GetTwingateUserResult) bool { return v.IsAdmin }).(pulumi.BoolOutput)
 }
 
+// The last name of the User
 func (o GetTwingateUserResultOutput) LastName() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUserResult) string { return v.LastName }).(pulumi.StringOutput)
 }
 
+// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER
 func (o GetTwingateUserResultOutput) Role() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateUserResult) string { return v.Role }).(pulumi.StringOutput)
 }

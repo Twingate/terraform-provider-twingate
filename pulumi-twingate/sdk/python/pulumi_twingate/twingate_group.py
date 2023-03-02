@@ -66,7 +66,23 @@ class TwingateGroup(pulumi.CustomResource):
                  name: Optional[pulumi.Input[str]] = None,
                  __props__=None):
         """
-        Create a TwingateGroup resource with the given unique name, props, and options.
+        Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+
+        ## Example Usage
+
+        ```python
+        import pulumi
+        import pulumi_twingate as twingate
+
+        aws = twingate.TwingateGroup("aws", name="aws_group")
+        ```
+
+        ## Import
+
+        ```sh
+         $ pulumi import twingate:index/twingateGroup:TwingateGroup aws R3JvdXA6MzQ4OTE=
+        ```
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[str] name: The name of the group
@@ -78,7 +94,23 @@ class TwingateGroup(pulumi.CustomResource):
                  args: TwingateGroupArgs,
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
-        Create a TwingateGroup resource with the given unique name, props, and options.
+        Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+
+        ## Example Usage
+
+        ```python
+        import pulumi
+        import pulumi_twingate as twingate
+
+        aws = twingate.TwingateGroup("aws", name="aws_group")
+        ```
+
+        ## Import
+
+        ```sh
+         $ pulumi import twingate:index/twingateGroup:TwingateGroup aws R3JvdXA6MzQ4OTE=
+        ```
+
         :param str resource_name: The name of the resource.
         :param TwingateGroupArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.

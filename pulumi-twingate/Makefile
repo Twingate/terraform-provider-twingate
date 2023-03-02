@@ -10,7 +10,8 @@ VERSION_PATH     := ${PROVIDER_PATH}/pkg/version.Version
 
 TFGEN           := pulumi-tfgen-${PACK}
 PROVIDER        := pulumi-resource-${PACK}
-VERSION         := $(shell pulumictl get version --repo ../ | grep -Eo '^\d+.\d+.\d+')	# grep next release version
+# grep release version
+VERSION         := $(shell pulumictl get version --repo ../ | grep -Eo '^\d+.\d+.\d+')
 
 TESTPARALLELISM := 4
 

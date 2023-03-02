@@ -14,11 +14,29 @@ namespace TwingateLabs.Twingate.Outputs
     [OutputType]
     public sealed class GetTwingateUsersUserResult
     {
+        /// <summary>
+        /// The email address of the User
+        /// </summary>
         public readonly string Email;
+        /// <summary>
+        /// The first name of the User
+        /// </summary>
         public readonly string FirstName;
+        /// <summary>
+        /// The ID of the User
+        /// </summary>
         public readonly string Id;
+        /// <summary>
+        /// Indicates whether the User is an admin
+        /// </summary>
         public readonly bool IsAdmin;
+        /// <summary>
+        /// The last name of the User
+        /// </summary>
         public readonly string LastName;
+        /// <summary>
+        /// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.
+        /// </summary>
         public readonly string Role;
 
         [OutputConstructor]

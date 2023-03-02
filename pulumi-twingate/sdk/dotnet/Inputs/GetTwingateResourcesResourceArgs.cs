@@ -13,23 +13,39 @@ namespace TwingateLabs.Twingate.Inputs
 
     public sealed class GetTwingateResourcesResourceInputArgs : global::Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// The Resource's IP/CIDR or FQDN/DNS zone
+        /// </summary>
         [Input("address", required: true)]
         public Input<string> Address { get; set; } = null!;
 
+        /// <summary>
+        /// The id of the Resource
+        /// </summary>
         [Input("id", required: true)]
         public Input<string> Id { get; set; } = null!;
 
+        /// <summary>
+        /// The name of the Resource
+        /// </summary>
         [Input("name", required: true)]
         public Input<string> Name { get; set; } = null!;
 
         [Input("protocols")]
         private InputList<Inputs.GetTwingateResourcesResourceProtocolInputArgs>? _protocols;
+
+        /// <summary>
+        /// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
+        /// </summary>
         public InputList<Inputs.GetTwingateResourcesResourceProtocolInputArgs> Protocols
         {
             get => _protocols ?? (_protocols = new InputList<Inputs.GetTwingateResourcesResourceProtocolInputArgs>());
             set => _protocols = value;
         }
 
+        /// <summary>
+        /// Remote Network ID where the Resource lives
+        /// </summary>
         [Input("remoteNetworkId", required: true)]
         public Input<string> RemoteNetworkId { get; set; } = null!;
 

@@ -6,19 +6,58 @@ import * as inputs from "../types/input";
 import * as outputs from "../types/output";
 
 export interface GetTwingateConnectorsConnector {
+    /**
+     * The ID of the Connector
+     */
     id: string;
+    /**
+     * The Name of the Connector
+     */
     name: string;
+    /**
+     * The ID of the Remote Network attached to the Connector
+     */
     remoteNetworkId: string;
 }
 
 export interface GetTwingateGroupsGroup {
+    /**
+     * The ID of the Group
+     */
     id: string;
+    /**
+     * Indicates if the Group is active
+     */
     isActive: boolean;
+    /**
+     * The name of the Group
+     */
     name: string;
+    /**
+     * The type of the Group
+     */
     type: string;
 }
 
+export interface GetTwingateRemoteNetworksRemoteNetwork {
+    /**
+     * The ID of the Remote Network
+     */
+    id: string;
+    /**
+     * The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE*CLOUD, ON*PREMISE, OTHER.
+     */
+    location: string;
+    /**
+     * The name of the Remote Network
+     */
+    name: string;
+}
+
 export interface GetTwingateResourceProtocol {
+    /**
+     * Whether to allow ICMP (ping) traffic
+     */
     allowIcmp: boolean;
     tcps?: outputs.GetTwingateResourceProtocolTcp[];
     udps?: outputs.GetTwingateResourceProtocolUdp[];
@@ -35,10 +74,25 @@ export interface GetTwingateResourceProtocolUdp {
 }
 
 export interface GetTwingateResourcesResource {
+    /**
+     * The Resource's IP/CIDR or FQDN/DNS zone
+     */
     address: string;
+    /**
+     * The id of the Resource
+     */
     id: string;
+    /**
+     * The name of the Resource
+     */
     name: string;
+    /**
+     * Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.
+     */
     protocols?: outputs.GetTwingateResourcesResourceProtocol[];
+    /**
+     * Remote Network ID where the Resource lives
+     */
     remoteNetworkId: string;
 }
 
@@ -58,16 +112,78 @@ export interface GetTwingateResourcesResourceProtocolUdp {
     ports: string[];
 }
 
-export interface GetTwingateUsersUser {
-    email: string;
-    firstName: string;
+export interface GetTwingateSecurityPoliciesSecurityPolicy {
+    /**
+     * Return a matching Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.
+     */
     id: string;
+    /**
+     * Return a Security Policy that exactly matches this name.
+     */
+    name: string;
+}
+
+export interface GetTwingateServiceAccountsServiceAccount {
+    /**
+     * ID of the Service Account resource
+     */
+    id: string;
+    /**
+     * List of twingate*service*account_key IDs that are assigned to the Service Account.
+     */
+    keyIds: string[];
+    /**
+     * Name of the Service Account
+     */
+    name: string;
+    /**
+     * List of twingate.TwingateResource IDs that the Service Account is assigned to.
+     */
+    resourceIds: string[];
+}
+
+export interface GetTwingateUsersUser {
+    /**
+     * The email address of the User
+     */
+    email: string;
+    /**
+     * The first name of the User
+     */
+    firstName: string;
+    /**
+     * The ID of the User
+     */
+    id: string;
+    /**
+     * Indicates whether the User is an admin
+     */
     isAdmin: boolean;
+    /**
+     * The last name of the User
+     */
     lastName: string;
+    /**
+     * Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.
+     */
     role: string;
 }
 
+export interface TwingateResourceAccess {
+    /**
+     * List of Group IDs that will have permission to access the Resource.
+     */
+    groupIds?: string[];
+    /**
+     * List of Service Account IDs that will have permission to access the Resource.
+     */
+    serviceAccountIds?: string[];
+}
+
 export interface TwingateResourceProtocols {
+    /**
+     * Whether to allow ICMP (ping) traffic
+     */
     allowIcmp?: boolean;
     tcp: outputs.TwingateResourceProtocolsTcp;
     udp: outputs.TwingateResourceProtocolsUdp;

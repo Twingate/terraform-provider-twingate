@@ -44,31 +44,49 @@ class GetTwingateUserResult:
     @property
     @pulumi.getter
     def email(self) -> str:
+        """
+        The email address of the User
+        """
         return pulumi.get(self, "email")
 
     @property
     @pulumi.getter(name="firstName")
     def first_name(self) -> str:
+        """
+        The first name of the User
+        """
         return pulumi.get(self, "first_name")
 
     @property
     @pulumi.getter
     def id(self) -> str:
+        """
+        The ID of the User. The ID for the User must be obtained from the Admin API.
+        """
         return pulumi.get(self, "id")
 
     @property
     @pulumi.getter(name="isAdmin")
     def is_admin(self) -> bool:
+        """
+        Indicates whether the User is an admin
+        """
         return pulumi.get(self, "is_admin")
 
     @property
     @pulumi.getter(name="lastName")
     def last_name(self) -> str:
+        """
+        The last name of the User
+        """
         return pulumi.get(self, "last_name")
 
     @property
     @pulumi.getter
     def role(self) -> str:
+        """
+        Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER
+        """
         return pulumi.get(self, "role")
 
 
@@ -89,7 +107,19 @@ class AwaitableGetTwingateUserResult(GetTwingateUserResult):
 def get_twingate_user(id: Optional[str] = None,
                       opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateUserResult:
     """
-    Use this data source to access information about an existing resource.
+    Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_user(id="<your user's id>")
+    ```
+
+
+    :param str id: The ID of the User. The ID for the User must be obtained from the Admin API.
     """
     __args__ = dict()
     __args__['id'] = id
@@ -109,6 +139,18 @@ def get_twingate_user(id: Optional[str] = None,
 def get_twingate_user_output(id: Optional[pulumi.Input[str]] = None,
                              opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateUserResult]:
     """
-    Use this data source to access information about an existing resource.
+    Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_user(id="<your user's id>")
+    ```
+
+
+    :param str id: The ID of the User. The ID for the User must be obtained from the Admin API.
     """
     ...

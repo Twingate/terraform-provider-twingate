@@ -10,6 +10,33 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			_, err := twingate.GetTwingateGroups(ctx, &twingate.GetTwingateGroupsArgs{
+//				Name: pulumi.StringRef("<your group's name>"),
+//			}, nil)
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 func GetTwingateGroups(ctx *pulumi.Context, args *GetTwingateGroupsArgs, opts ...pulumi.InvokeOption) (*GetTwingateGroupsResult, error) {
 	opts = pkgInvokeDefaultOpts(opts)
 	var rv GetTwingateGroupsResult
@@ -22,20 +49,28 @@ func GetTwingateGroups(ctx *pulumi.Context, args *GetTwingateGroupsArgs, opts ..
 
 // A collection of arguments for invoking getTwingateGroups.
 type GetTwingateGroupsArgs struct {
-	Groups   []GetTwingateGroupsGroup `pulumi:"groups"`
-	IsActive *bool                    `pulumi:"isActive"`
-	Name     *string                  `pulumi:"name"`
-	Type     *string                  `pulumi:"type"`
+	// List of Groups
+	Groups []GetTwingateGroupsGroup `pulumi:"groups"`
+	// Returns only Groups matching the specified state.
+	IsActive *bool `pulumi:"isActive"`
+	// Returns only Groups that exactly match this name.
+	Name *string `pulumi:"name"`
+	// Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
+	Type *string `pulumi:"type"`
 }
 
 // A collection of values returned by getTwingateGroups.
 type GetTwingateGroupsResult struct {
+	// List of Groups
 	Groups []GetTwingateGroupsGroup `pulumi:"groups"`
 	// The provider-assigned unique ID for this managed resource.
-	Id       string  `pulumi:"id"`
-	IsActive *bool   `pulumi:"isActive"`
-	Name     *string `pulumi:"name"`
-	Type     *string `pulumi:"type"`
+	Id string `pulumi:"id"`
+	// Returns only Groups matching the specified state.
+	IsActive *bool `pulumi:"isActive"`
+	// Returns only Groups that exactly match this name.
+	Name *string `pulumi:"name"`
+	// Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
+	Type *string `pulumi:"type"`
 }
 
 func GetTwingateGroupsOutput(ctx *pulumi.Context, args GetTwingateGroupsOutputArgs, opts ...pulumi.InvokeOption) GetTwingateGroupsResultOutput {
@@ -53,10 +88,14 @@ func GetTwingateGroupsOutput(ctx *pulumi.Context, args GetTwingateGroupsOutputAr
 
 // A collection of arguments for invoking getTwingateGroups.
 type GetTwingateGroupsOutputArgs struct {
-	Groups   GetTwingateGroupsGroupArrayInput `pulumi:"groups"`
-	IsActive pulumi.BoolPtrInput              `pulumi:"isActive"`
-	Name     pulumi.StringPtrInput            `pulumi:"name"`
-	Type     pulumi.StringPtrInput            `pulumi:"type"`
+	// List of Groups
+	Groups GetTwingateGroupsGroupArrayInput `pulumi:"groups"`
+	// Returns only Groups matching the specified state.
+	IsActive pulumi.BoolPtrInput `pulumi:"isActive"`
+	// Returns only Groups that exactly match this name.
+	Name pulumi.StringPtrInput `pulumi:"name"`
+	// Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
+	Type pulumi.StringPtrInput `pulumi:"type"`
 }
 
 func (GetTwingateGroupsOutputArgs) ElementType() reflect.Type {
@@ -78,6 +117,7 @@ func (o GetTwingateGroupsResultOutput) ToGetTwingateGroupsResultOutputWithContex
 	return o
 }
 
+// List of Groups
 func (o GetTwingateGroupsResultOutput) Groups() GetTwingateGroupsGroupArrayOutput {
 	return o.ApplyT(func(v GetTwingateGroupsResult) []GetTwingateGroupsGroup { return v.Groups }).(GetTwingateGroupsGroupArrayOutput)
 }
@@ -87,14 +127,17 @@ func (o GetTwingateGroupsResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateGroupsResult) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// Returns only Groups matching the specified state.
 func (o GetTwingateGroupsResultOutput) IsActive() pulumi.BoolPtrOutput {
 	return o.ApplyT(func(v GetTwingateGroupsResult) *bool { return v.IsActive }).(pulumi.BoolPtrOutput)
 }
 
+// Returns only Groups that exactly match this name.
 func (o GetTwingateGroupsResultOutput) Name() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v GetTwingateGroupsResult) *string { return v.Name }).(pulumi.StringPtrOutput)
 }
 
+// Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
 func (o GetTwingateGroupsResultOutput) Type() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v GetTwingateGroupsResult) *string { return v.Type }).(pulumi.StringPtrOutput)
 }

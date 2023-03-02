@@ -12,9 +12,57 @@ namespace TwingateLabs.Twingate
 {
     public static class GetTwingateUser
     {
+        /// <summary>
+        /// Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var foo = Twingate.GetTwingateUser.Invoke(new()
+        ///     {
+        ///         Id = "&lt;your user's id&gt;",
+        ///     });
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Task<GetTwingateUserResult> InvokeAsync(GetTwingateUserArgs args, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.InvokeAsync<GetTwingateUserResult>("twingate:index/getTwingateUser:getTwingateUser", args ?? new GetTwingateUserArgs(), options.WithDefaults());
 
+        /// <summary>
+        /// Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).
+        /// 
+        /// {{% examples %}}
+        /// ## Example Usage
+        /// {{% example %}}
+        /// 
+        /// ```csharp
+        /// using System.Collections.Generic;
+        /// using Pulumi;
+        /// using Twingate = Pulumi.Twingate;
+        /// 
+        /// return await Deployment.RunAsync(() =&gt; 
+        /// {
+        ///     var foo = Twingate.GetTwingateUser.Invoke(new()
+        ///     {
+        ///         Id = "&lt;your user's id&gt;",
+        ///     });
+        /// 
+        /// });
+        /// ```
+        /// {{% /example %}}
+        /// {{% /examples %}}
+        /// </summary>
         public static Output<GetTwingateUserResult> Invoke(GetTwingateUserInvokeArgs args, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.Invoke<GetTwingateUserResult>("twingate:index/getTwingateUser:getTwingateUser", args ?? new GetTwingateUserInvokeArgs(), options.WithDefaults());
     }
@@ -22,6 +70,9 @@ namespace TwingateLabs.Twingate
 
     public sealed class GetTwingateUserArgs : global::Pulumi.InvokeArgs
     {
+        /// <summary>
+        /// The ID of the User. The ID for the User must be obtained from the Admin API.
+        /// </summary>
         [Input("id", required: true)]
         public string Id { get; set; } = null!;
 
@@ -33,6 +84,9 @@ namespace TwingateLabs.Twingate
 
     public sealed class GetTwingateUserInvokeArgs : global::Pulumi.InvokeArgs
     {
+        /// <summary>
+        /// The ID of the User. The ID for the User must be obtained from the Admin API.
+        /// </summary>
         [Input("id", required: true)]
         public Input<string> Id { get; set; } = null!;
 
@@ -46,11 +100,29 @@ namespace TwingateLabs.Twingate
     [OutputType]
     public sealed class GetTwingateUserResult
     {
+        /// <summary>
+        /// The email address of the User
+        /// </summary>
         public readonly string Email;
+        /// <summary>
+        /// The first name of the User
+        /// </summary>
         public readonly string FirstName;
+        /// <summary>
+        /// The ID of the User. The ID for the User must be obtained from the Admin API.
+        /// </summary>
         public readonly string Id;
+        /// <summary>
+        /// Indicates whether the User is an admin
+        /// </summary>
         public readonly bool IsAdmin;
+        /// <summary>
+        /// The last name of the User
+        /// </summary>
         public readonly string LastName;
+        /// <summary>
+        /// Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER
+        /// </summary>
         public readonly string Role;
 
         [OutputConstructor]

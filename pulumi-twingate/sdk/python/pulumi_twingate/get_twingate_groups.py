@@ -43,6 +43,9 @@ class GetTwingateGroupsResult:
     @property
     @pulumi.getter
     def groups(self) -> Optional[Sequence['outputs.GetTwingateGroupsGroupResult']]:
+        """
+        List of Groups
+        """
         return pulumi.get(self, "groups")
 
     @property
@@ -56,16 +59,25 @@ class GetTwingateGroupsResult:
     @property
     @pulumi.getter(name="isActive")
     def is_active(self) -> Optional[bool]:
+        """
+        Returns only Groups matching the specified state.
+        """
         return pulumi.get(self, "is_active")
 
     @property
     @pulumi.getter
     def name(self) -> Optional[str]:
+        """
+        Returns only Groups that exactly match this name.
+        """
         return pulumi.get(self, "name")
 
     @property
     @pulumi.getter
     def type(self) -> Optional[str]:
+        """
+        Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
+        """
         return pulumi.get(self, "type")
 
 
@@ -88,7 +100,22 @@ def get_twingate_groups(groups: Optional[Sequence[pulumi.InputType['GetTwingateG
                         type: Optional[str] = None,
                         opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateGroupsResult:
     """
-    Use this data source to access information about an existing resource.
+    Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_groups(name="<your group's name>")
+    ```
+
+
+    :param Sequence[pulumi.InputType['GetTwingateGroupsGroupArgs']] groups: List of Groups
+    :param bool is_active: Returns only Groups matching the specified state.
+    :param str name: Returns only Groups that exactly match this name.
+    :param str type: Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
     """
     __args__ = dict()
     __args__['groups'] = groups
@@ -113,6 +140,21 @@ def get_twingate_groups_output(groups: Optional[pulumi.Input[Optional[Sequence[p
                                type: Optional[pulumi.Input[Optional[str]]] = None,
                                opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateGroupsResult]:
     """
-    Use this data source to access information about an existing resource.
+    Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+
+    ## Example Usage
+
+    ```python
+    import pulumi
+    import pulumi_twingate as twingate
+
+    foo = twingate.get_twingate_groups(name="<your group's name>")
+    ```
+
+
+    :param Sequence[pulumi.InputType['GetTwingateGroupsGroupArgs']] groups: List of Groups
+    :param bool is_active: Returns only Groups matching the specified state.
+    :param str name: Returns only Groups that exactly match this name.
+    :param str type: Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
     """
     ...

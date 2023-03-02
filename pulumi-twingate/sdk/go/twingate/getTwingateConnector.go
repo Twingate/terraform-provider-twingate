@@ -10,6 +10,33 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
+//
+// ## Example Usage
+//
+// ```go
+// package main
+//
+// import (
+//
+//	"github.com/Twingate-Labs/pulumi-twingate/sdk/go/twingate"
+//	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+//
+// )
+//
+//	func main() {
+//		pulumi.Run(func(ctx *pulumi.Context) error {
+//			_, err := twingate.LookupTwingateConnector(ctx, &twingate.LookupTwingateConnectorArgs{
+//				Id: "<your connector's id>",
+//			}, nil)
+//			if err != nil {
+//				return err
+//			}
+//			return nil
+//		})
+//	}
+//
+// ```
 func LookupTwingateConnector(ctx *pulumi.Context, args *LookupTwingateConnectorArgs, opts ...pulumi.InvokeOption) (*LookupTwingateConnectorResult, error) {
 	opts = pkgInvokeDefaultOpts(opts)
 	var rv LookupTwingateConnectorResult
@@ -22,13 +49,17 @@ func LookupTwingateConnector(ctx *pulumi.Context, args *LookupTwingateConnectorA
 
 // A collection of arguments for invoking getTwingateConnector.
 type LookupTwingateConnectorArgs struct {
+	// The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
 	Id string `pulumi:"id"`
 }
 
 // A collection of values returned by getTwingateConnector.
 type LookupTwingateConnectorResult struct {
-	Id              string `pulumi:"id"`
-	Name            string `pulumi:"name"`
+	// The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+	Id string `pulumi:"id"`
+	// The name of the Connector
+	Name string `pulumi:"name"`
+	// The ID of the Remote Network the Connector is attached to
 	RemoteNetworkId string `pulumi:"remoteNetworkId"`
 }
 
@@ -47,6 +78,7 @@ func LookupTwingateConnectorOutput(ctx *pulumi.Context, args LookupTwingateConne
 
 // A collection of arguments for invoking getTwingateConnector.
 type LookupTwingateConnectorOutputArgs struct {
+	// The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
 	Id pulumi.StringInput `pulumi:"id"`
 }
 
@@ -69,14 +101,17 @@ func (o LookupTwingateConnectorResultOutput) ToLookupTwingateConnectorResultOutp
 	return o
 }
 
+// The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
 func (o LookupTwingateConnectorResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateConnectorResult) string { return v.Id }).(pulumi.StringOutput)
 }
 
+// The name of the Connector
 func (o LookupTwingateConnectorResultOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateConnectorResult) string { return v.Name }).(pulumi.StringOutput)
 }
 
+// The ID of the Remote Network the Connector is attached to
 func (o LookupTwingateConnectorResultOutput) RemoteNetworkId() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateConnectorResult) string { return v.RemoteNetworkId }).(pulumi.StringOutput)
 }
