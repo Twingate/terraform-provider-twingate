@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/google/go-cmp/cmp"
@@ -28,6 +29,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						testCheckOutputLength("my_connectors", 2),
 						testCheckOutputAttr("my_connectors", 0, "name", connectorName),
+						testCheckOutputAttr("my_connectors", 0, attr.StatusUpdatesEnabled, true),
 					),
 				},
 			},

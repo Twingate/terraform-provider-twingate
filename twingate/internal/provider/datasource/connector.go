@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,6 +23,10 @@ func datasourceConnectorRead(ctx context.Context, resourceData *schema.ResourceD
 	}
 
 	if err := resourceData.Set("remote_network_id", connector.NetworkID); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceData.Set(attr.StatusUpdatesEnabled, *connector.StatusUpdatesEnabled); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -50,6 +55,11 @@ func Connector() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The ID of the Remote Network the Connector is attached to",
+			},
+			attr.StatusUpdatesEnabled: {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Indicates whether status notifications enabled for the Connector",
 			},
 		},
 	}
