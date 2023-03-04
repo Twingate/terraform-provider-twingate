@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
@@ -194,4 +195,90 @@ func checkTwingateConnectorSetWithRemoteNetwork(connectorResource, remoteNetwork
 
 		return nil
 	}
+}
+
+func TestAccRemoteConnectorUpdateName(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector Update Name", func(t *testing.T) {
+		const terraformResourceName = "test_c6"
+		theResource := acctests.TerraformConnector(terraformResourceName)
+		remoteNetworkName := test.RandomName()
+		connectorName := test.RandomConnectorName()
+
+		sdk.Test(t, sdk.TestCase{
+			ProviderFactories: acctests.ProviderFactories,
+			PreCheck:          func() { acctests.PreCheck(t) },
+			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			Steps: []sdk.TestStep{
+				{
+					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
+						sdk.TestCheckResourceAttrSet(theResource, nameAttr),
+					),
+				},
+				{
+					Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
+					Check: acctests.ComposeTestCheckFunc(
+						sdk.TestCheckResourceAttr(theResource, nameAttr, connectorName),
+					),
+				},
+			},
+		})
+	})
+}
+
+func TestAccRemoteConnectorCreateWithNotificationStatus(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Connector With Notification Status", func(t *testing.T) {
+		const terraformResourceName = "test_c7"
+		theResource := acctests.TerraformConnector(terraformResourceName)
+		remoteNetworkName := test.RandomName()
+
+		sdk.Test(t, sdk.TestCase{
+			ProviderFactories: acctests.ProviderFactories,
+			PreCheck:          func() { acctests.PreCheck(t) },
+			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			Steps: []sdk.TestStep{
+				{
+					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
+						sdk.TestCheckResourceAttrSet(theResource, nameAttr),
+					),
+				},
+				{
+					// expecting no changes, as by default notifications enabled
+					PlanOnly: true,
+					Config:   terraformResourceTwingateConnectorWithNotificationStatus(terraformResourceName, terraformResourceName, remoteNetworkName, true),
+					Check: acctests.ComposeTestCheckFunc(
+						sdk.TestCheckResourceAttr(theResource, attr.StatusUpdatesEnabled, "true"),
+					),
+				},
+				{
+					Config: terraformResourceTwingateConnectorWithNotificationStatus(terraformResourceName, terraformResourceName, remoteNetworkName, false),
+					Check: acctests.ComposeTestCheckFunc(
+						sdk.TestCheckResourceAttr(theResource, attr.StatusUpdatesEnabled, "false"),
+					),
+				},
+				{
+					// expecting no changes, when user removes `status_updates_enabled` field from terraform
+					PlanOnly: true,
+					Config:   terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
+					Check: acctests.ComposeTestCheckFunc(
+						sdk.TestCheckResourceAttr(theResource, attr.StatusUpdatesEnabled, "false"),
+					),
+				},
+			},
+		})
+	})
+}
+
+func terraformResourceTwingateConnectorWithNotificationStatus(terraformRemoteNetworkName, terraformConnectorName, remoteNetworkName string, notificationStatus bool) string {
+	return fmt.Sprintf(`
+	%s
+
+	resource "twingate_connector" "%s" {
+	  remote_network_id = twingate_remote_network.%s.id
+	  status_updates_enabled = %v
+	}
+	`, terraformResourceRemoteNetwork(terraformRemoteNetworkName, remoteNetworkName), terraformConnectorName, terraformRemoteNetworkName, notificationStatus)
 }

@@ -1,9 +1,10 @@
 package model
 
 type Connector struct {
-	ID        string
-	Name      string
-	NetworkID string
+	ID                   string
+	Name                 string
+	NetworkID            string
+	StatusUpdatesEnabled *bool
 }
 
 func (c Connector) GetName() string {

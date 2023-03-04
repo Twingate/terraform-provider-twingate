@@ -10,57 +10,92 @@ import (
 
 const connectorResourceName = "connector"
 
-func (client *Client) CreateConnector(ctx context.Context, remoteNetworkID, connectorName string) (*model.Connector, error) {
-	if remoteNetworkID == "" {
+func (client *Client) CreateConnector(ctx context.Context, input *model.Connector) (*model.Connector, error) {
+	if input == nil || input.NetworkID == "" {
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "create", connectorResourceName)
 	}
 
+	if input.StatusUpdatesEnabled != nil {
+		return client.createConnectorWithNotificationStatus(ctx, input)
+	}
+
 	variables := newVars(
-		gqlID(remoteNetworkID, "remoteNetworkId"),
-		gqlNullable(connectorName, "connectorName"),
+		gqlID(input.NetworkID, "remoteNetworkId"),
+		gqlNullable(input.Name, "connectorName"),
 	)
 
-	response := query.CreateConnector{}
+	var response query.CreateConnector
 
 	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createConnector"))
 	if err != nil {
-		return nil, NewAPIErrorWithName(err, "create", connectorResourceName, connectorName)
+		return nil, NewAPIErrorWithName(err, "create", connectorResourceName, input.Name)
 	}
 
 	if !response.Ok {
-		return nil, NewAPIErrorWithName(NewMutationError(response.Error), "create", connectorResourceName, connectorName)
+		return nil, NewAPIErrorWithName(NewMutationError(response.Error), "create", connectorResourceName, input.Name)
 	}
 
 	if response.Entity == nil {
-		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "create", connectorResourceName, connectorName)
+		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "create", connectorResourceName, input.Name)
 	}
 
 	return response.Entity.ToModel(), nil
 }
 
-func (client *Client) UpdateConnector(ctx context.Context, connectorID string, connectorName string) (*model.Connector, error) {
-	if connectorID == "" {
+func (client *Client) createConnectorWithNotificationStatus(ctx context.Context, input *model.Connector) (*model.Connector, error) {
+	variables := newVars(
+		gqlID(input.NetworkID, "remoteNetworkId"),
+		gqlNullable(input.Name, "connectorName"),
+		gqlVar(*input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled"),
+	)
+
+	var response query.CreateConnectorWithNotificationStatus
+
+	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createConnector"))
+	if err != nil {
+		return nil, NewAPIErrorWithName(err, "create", connectorResourceName, input.Name)
+	}
+
+	if !response.Ok {
+		return nil, NewAPIErrorWithName(NewMutationError(response.Error), "create", connectorResourceName, input.Name)
+	}
+
+	if response.Entity == nil {
+		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "create", connectorResourceName, input.Name)
+	}
+
+	return response.Entity.ToModel(), nil
+}
+
+func (client *Client) UpdateConnector(ctx context.Context, input *model.Connector) (*model.Connector, error) {
+	if input == nil || input.ID == "" {
 		return nil, NewAPIError(ErrGraphqlConnectorIDIsEmpty, "update", connectorResourceName)
 	}
 
 	variables := newVars(
-		gqlID(connectorID, "connectorId"),
-		gqlVar(connectorName, "connectorName"),
+		gqlID(input.ID, "connectorId"),
+		gqlNullable(input.Name, "connectorName"),
 	)
+
+	if input.StatusUpdatesEnabled == nil {
+		variables = gqlNullable(false, "hasStatusNotificationsEnabled")(variables)
+	} else {
+		variables = gqlVar(*input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled")(variables)
+	}
 
 	response := query.UpdateConnector{}
 
 	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateConnector"))
 	if err != nil {
-		return nil, NewAPIErrorWithID(err, "update", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(err, "update", connectorResourceName, input.ID)
 	}
 
 	if !response.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", connectorResourceName, input.ID)
 	}
 
 	if response.Entity == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", connectorResourceName, connectorID)
+		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", connectorResourceName, input.ID)
 	}
 
 	return response.Entity.ToModel(), nil

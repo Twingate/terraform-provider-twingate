@@ -4,6 +4,10 @@ type CreateConnector struct {
 	ConnectorEntityResponse `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId, name: $connectorName)"`
 }
 
+type CreateConnectorWithNotificationStatus struct {
+	ConnectorEntityResponse `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId, name: $connectorName, hasStatusNotificationsEnabled: $hasStatusNotificationsEnabled)"`
+}
+
 type ConnectorEntityResponse struct {
 	Entity *gqlConnector
 	OkError

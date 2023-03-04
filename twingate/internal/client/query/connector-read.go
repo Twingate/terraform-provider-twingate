@@ -14,6 +14,7 @@ type gqlConnector struct {
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
+	HasStatusNotificationsEnabled bool
 }
 
 func (q ReadConnector) ToModel() *model.Connector {
@@ -26,8 +27,9 @@ func (q ReadConnector) ToModel() *model.Connector {
 
 func (c gqlConnector) ToModel() *model.Connector {
 	return &model.Connector{
-		ID:        string(c.ID),
-		Name:      c.Name,
-		NetworkID: string(c.RemoteNetwork.ID),
+		ID:                   string(c.ID),
+		Name:                 c.Name,
+		NetworkID:            string(c.RemoteNetwork.ID),
+		StatusUpdatesEnabled: &c.HasStatusNotificationsEnabled,
 	}
 }
