@@ -11,12 +11,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	notificationEnabled  = true
+	notificationDisabled = false
+)
+
 func TestClientConnectorCreateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Create Ok", func(t *testing.T) {
 		expected := &model.Connector{
-			ID:        "test-id",
-			Name:      "test-name",
-			NetworkID: "remote-network-id",
+			ID:                   "test-id",
+			Name:                 "test-name",
+			NetworkID:            "remote-network-id",
+			StatusUpdatesEnabled: &notificationEnabled,
 		}
 
 		jsonResponse := `{
@@ -25,6 +31,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 		      "entity": {
 		        "id": "test-id",
 		        "name": "test-name",
+		        "hasStatusNotificationsEnabled": true,
 		        "remoteNetwork": {
 		          "id": "remote-network-id"
 		        }
@@ -40,7 +47,48 @@ func TestClientConnectorCreateOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connector, err := client.CreateConnector(context.Background(), "test", "")
+		connector, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test"})
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, connector)
+	})
+}
+
+func TestClientConnectorCreateWithNotificationStatusOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Notification Status Ok", func(t *testing.T) {
+		expected := &model.Connector{
+			ID:                   "test-id",
+			Name:                 "test-name",
+			NetworkID:            "remote-network-id",
+			StatusUpdatesEnabled: &notificationEnabled,
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "connectorCreate": {
+		      "entity": {
+		        "id": "test-id",
+		        "name": "test-name",
+		        "hasStatusNotificationsEnabled": true,
+		        "remoteNetwork": {
+		          "id": "remote-network-id"
+		        }
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		connector, err := client.CreateConnector(context.Background(), &model.Connector{
+			NetworkID:            "test",
+			StatusUpdatesEnabled: &notificationEnabled,
+		})
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, connector)
@@ -50,8 +98,9 @@ func TestClientConnectorCreateOk(t *testing.T) {
 func TestClientConnectorCreateWithNameOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Create With Name Ok", func(t *testing.T) {
 		expected := &model.Connector{
-			ID:   "test-id",
-			Name: "test-name",
+			ID:                   "test-id",
+			Name:                 "test-name",
+			StatusUpdatesEnabled: &notificationDisabled,
 		}
 
 		jsonResponse := `{
@@ -59,7 +108,8 @@ func TestClientConnectorCreateWithNameOk(t *testing.T) {
 		    "connectorCreate": {
 		      "entity": {
 		        "id": "test-id",
-		        "name": "test-name"
+		        "name": "test-name",
+		        "hasStatusNotificationsEnabled": false
 		      },
 		      "ok": true,
 		      "error": null
@@ -72,7 +122,7 @@ func TestClientConnectorCreateWithNameOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connector, err := client.CreateConnector(context.Background(), "test", "test-name")
+		connector, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test", Name: "test-name"})
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, connector)
@@ -82,8 +132,9 @@ func TestClientConnectorCreateWithNameOk(t *testing.T) {
 func TestClientConnectorUpdateOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Update Ok", func(t *testing.T) {
 		expected := &model.Connector{
-			ID:   "test-id",
-			Name: "test-name",
+			ID:                   "test-id",
+			Name:                 "test-name",
+			StatusUpdatesEnabled: &notificationEnabled,
 		}
 
 		jsonResponse := `{
@@ -91,7 +142,8 @@ func TestClientConnectorUpdateOk(t *testing.T) {
 		    "connectorUpdate": {
 		      "entity": {
 		        "id": "test-id",
-		        "name": "test-name"
+		        "name": "test-name",
+		        "hasStatusNotificationsEnabled": true
 		      },
 		      "ok": true,
 		      "error": null
@@ -104,7 +156,43 @@ func TestClientConnectorUpdateOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connector, err := client.UpdateConnector(context.Background(), "test-id", "test-name")
+		connector, err := client.UpdateConnector(context.Background(), &model.Connector{ID: "test-id", Name: "test-name"})
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, connector)
+	})
+}
+
+func TestClientConnectorUpdateWithNotificationStatusOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Update With Notification Status Ok", func(t *testing.T) {
+		expected := &model.Connector{
+			ID:                   "test-id",
+			Name:                 "test-name",
+			StatusUpdatesEnabled: &notificationEnabled,
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "connectorUpdate": {
+		      "entity": {
+		        "id": "test-id",
+		        "name": "test-name",
+		        "hasStatusNotificationsEnabled": true
+		      },
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		connector, err := client.UpdateConnector(context.Background(), &model.Connector{
+			ID: "test-id", Name: "test-name", StatusUpdatesEnabled: &notificationEnabled,
+		})
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, connector)
@@ -149,7 +237,33 @@ func TestClientConnectorCreateError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "")
+		remoteNetwork, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test"})
+
+		assert.Nil(t, remoteNetwork)
+		assert.EqualError(t, err, "failed to create connector: error_1")
+	})
+}
+
+func TestClientConnectorCreateWithNotificationStatusError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Notification Status Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "connectorCreate": {
+		      "ok": false,
+		      "error": "error_1"
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		remoteNetwork, err := client.CreateConnector(context.Background(), &model.Connector{
+			NetworkID:            "test",
+			StatusUpdatesEnabled: &notificationEnabled,
+		})
 
 		assert.Nil(t, remoteNetwork)
 		assert.EqualError(t, err, "failed to create connector: error_1")
@@ -172,7 +286,7 @@ func TestClientConnectorCreateWithNameError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "test-name")
+		remoteNetwork, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test", Name: "test-name"})
 
 		assert.Nil(t, remoteNetwork)
 		assert.EqualError(t, err, "failed to create connector with name test-name: error_1")
@@ -195,7 +309,33 @@ func TestClientConnectorCreateErrorEmptyResult(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connector, err := client.CreateConnector(context.Background(), "test", "")
+		connector, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test"})
+
+		assert.Nil(t, connector)
+		assert.EqualError(t, err, "failed to create connector: query result is empty")
+	})
+}
+
+func TestClientConnectorCreateWithNotificationStatusErrorEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Notification Status Error Empty Result", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "connectorCreate": {
+		      "ok": true,
+		      "entity": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		connector, err := client.CreateConnector(context.Background(), &model.Connector{
+			NetworkID:            "test",
+			StatusUpdatesEnabled: &notificationEnabled,
+		})
 
 		assert.Nil(t, connector)
 		assert.EqualError(t, err, "failed to create connector: query result is empty")
@@ -218,7 +358,7 @@ func TestClientConnectorCreateWithNameErrorEmptyResult(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connector, err := client.CreateConnector(context.Background(), "test", "test-name")
+		connector, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test", Name: "test-name"})
 
 		assert.Nil(t, connector)
 		assert.EqualError(t, err, "failed to create connector with name test-name: query result is empty")
@@ -242,7 +382,7 @@ func TestClientConnectorUpdateError(t *testing.T) {
 			httpmock.NewStringResponder(200, jsonResponse))
 		connectorId := "test-id"
 
-		connector, err := client.UpdateConnector(context.Background(), connectorId, "test-name")
+		connector, err := client.UpdateConnector(context.Background(), &model.Connector{ID: connectorId, Name: "test-name"})
 
 		assert.Nil(t, connector)
 		assert.EqualError(t, err, fmt.Sprintf("failed to update connector with id %s: error_1", connectorId))
@@ -265,7 +405,7 @@ func TestClientConnectorUpdateErrorWhenIdEmpty(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		_, err := client.UpdateConnector(context.Background(), "", "")
+		_, err := client.UpdateConnector(context.Background(), nil)
 
 		assert.EqualError(t, err, "failed to update connector: connector id is empty")
 	})
@@ -280,7 +420,7 @@ func TestClientConnectorEmptyNetworkIDCreateError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, emptyResponse))
 
-		connector, err := client.CreateConnector(context.Background(), "", "")
+		connector, err := client.CreateConnector(context.Background(), nil)
 
 		assert.Nil(t, connector)
 		assert.EqualError(t, err, "failed to create connector: network id is empty")
@@ -313,15 +453,17 @@ func TestClientConnectorDeleteError(t *testing.T) {
 func TestClientConnectorReadOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Client Connector Read - Ok", func(t *testing.T) {
 		expected := &model.Connector{
-			ID:   "test-id",
-			Name: "test-name",
+			ID:                   "test-id",
+			Name:                 "test-name",
+			StatusUpdatesEnabled: &notificationEnabled,
 		}
 
 		jsonResponse := `{
 		  "data": {
 		    "connector": {
 		      "id": "test-id",
-		      "name": "test-name"
+		      "name": "test-name",
+		      "hasStatusNotificationsEnabled": true
 		    }
 		  }
 		}`
@@ -410,16 +552,19 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Client Connectors", func(t *testing.T) {
 		expected := []*model.Connector{
 			{
-				ID:   "connector1",
-				Name: "tf-acc-connector1",
+				ID:                   "connector1",
+				Name:                 "tf-acc-connector1",
+				StatusUpdatesEnabled: &notificationEnabled,
 			},
 			{
-				ID:   "connector2",
-				Name: "connector2",
+				ID:                   "connector2",
+				Name:                 "connector2",
+				StatusUpdatesEnabled: &notificationDisabled,
 			},
 			{
-				ID:   "connector3",
-				Name: "tf-acc-connector3",
+				ID:                   "connector3",
+				Name:                 "tf-acc-connector3",
+				StatusUpdatesEnabled: &notificationEnabled,
 			},
 		}
 
@@ -430,19 +575,22 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 		        {
 		          "node": {
 		            "id": "connector1",
-		            "name": "tf-acc-connector1"
+		            "name": "tf-acc-connector1",
+		            "hasStatusNotificationsEnabled": true
 		          }
 		        },
 		        {
 		          "node": {
 		            "id": "connector2",
-		            "name": "connector2"
+		            "name": "connector2",
+		            "hasStatusNotificationsEnabled": false
 		          }
 		        },
 		        {
 		          "node": {
 		            "id": "connector3",
-		            "name": "tf-acc-connector3"
+		            "name": "tf-acc-connector3",
+		            "hasStatusNotificationsEnabled": true
 		          }
 		        }
 		      ]
@@ -469,7 +617,7 @@ func TestClientConnectorUpdateRequestError(t *testing.T) {
 			httpmock.NewErrorResponder(errBadRequest))
 
 		connectorId := "test"
-		connector, err := client.UpdateConnector(context.Background(), connectorId, "new name")
+		connector, err := client.UpdateConnector(context.Background(), &model.Connector{ID: connectorId, Name: "new name"})
 
 		assert.Nil(t, connector)
 		assert.EqualError(t, err, graphqlErr(client, "failed to update connector with id "+connectorId, errBadRequest))
@@ -493,7 +641,7 @@ func TestClientConnectorUpdateEmptyResponse(t *testing.T) {
 			httpmock.NewStringResponder(200, jsonResponse))
 		connectorId := "test"
 
-		connector, err := client.UpdateConnector(context.Background(), connectorId, "new name")
+		connector, err := client.UpdateConnector(context.Background(), &model.Connector{ID: connectorId, Name: "new name"})
 
 		assert.Nil(t, connector)
 		assert.EqualError(t, err, fmt.Sprintf(`failed to update connector with id %s: query result is empty`, connectorId))
@@ -522,7 +670,25 @@ func TestClientConnectorCreateRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "")
+		remoteNetwork, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test"})
+
+		assert.EqualError(t, err, graphqlErr(client, "failed to create connector", errBadRequest))
+		assert.Nil(t, remoteNetwork)
+	})
+}
+
+func TestClientConnectorCreateWithNotificationStatusRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Connector Create With Notification Status Request Error", func(t *testing.T) {
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		remoteNetwork, err := client.CreateConnector(context.Background(), &model.Connector{
+			NetworkID:            "test",
+			StatusUpdatesEnabled: &notificationEnabled,
+		})
 
 		assert.EqualError(t, err, graphqlErr(client, "failed to create connector", errBadRequest))
 		assert.Nil(t, remoteNetwork)
@@ -537,7 +703,7 @@ func TestClientConnectorCreateWithNameRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		remoteNetwork, err := client.CreateConnector(context.Background(), "test", "test-name")
+		remoteNetwork, err := client.CreateConnector(context.Background(), &model.Connector{NetworkID: "test", Name: "test-name"})
 
 		assert.EqualError(t, err, graphqlErr(client, "failed to create connector with name test-name", errBadRequest))
 		assert.Nil(t, remoteNetwork)
@@ -565,8 +731,8 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Ok", func(t *testing.T) {
 		expected := []*model.Connector{
-			{ID: "connector1", Name: "tf-acc-connector1", NetworkID: "tf-acc-network1"},
-			{ID: "connector2", Name: "tf-acc-connector2", NetworkID: "tf-acc-network2"},
+			{ID: "connector1", Name: "tf-acc-connector1", NetworkID: "tf-acc-network1", StatusUpdatesEnabled: &notificationEnabled},
+			{ID: "connector2", Name: "tf-acc-connector2", NetworkID: "tf-acc-network2", StatusUpdatesEnabled: &notificationEnabled},
 		}
 
 		jsonResponse := `{
@@ -577,6 +743,7 @@ func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 		          "node": {
 		            "id": "connector1",
 		            "name": "tf-acc-connector1",
+		            "hasStatusNotificationsEnabled": true,
 		            "remoteNetwork": {
 		              "id": "tf-acc-network1"
 		            }
@@ -586,6 +753,7 @@ func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 		          "node": {
 		            "id": "connector2",
 		            "name": "tf-acc-connector2",
+		            "hasStatusNotificationsEnabled": true,
 		            "remoteNetwork": {
 		              "id": "tf-acc-network2"
 		            }
@@ -645,9 +813,9 @@ func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
 func TestClientReadConnectorsAllPagesOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Pages - Ok", func(t *testing.T) {
 		expected := []*model.Connector{
-			{ID: "connector1", NetworkID: "tf-acc-network1", Name: "tf-acc-connector1"},
-			{ID: "connector2", NetworkID: "tf-acc-network2", Name: "tf-acc-connector2"},
-			{ID: "connector3", NetworkID: "tf-acc-network3", Name: "tf-acc-connector3"},
+			{ID: "connector1", NetworkID: "tf-acc-network1", Name: "tf-acc-connector1", StatusUpdatesEnabled: &notificationEnabled},
+			{ID: "connector2", NetworkID: "tf-acc-network2", Name: "tf-acc-connector2", StatusUpdatesEnabled: &notificationEnabled},
+			{ID: "connector3", NetworkID: "tf-acc-network3", Name: "tf-acc-connector3", StatusUpdatesEnabled: &notificationEnabled},
 		}
 
 		jsonResponse := `{
@@ -662,6 +830,7 @@ func TestClientReadConnectorsAllPagesOk(t *testing.T) {
 		          "node": {
 		            "id": "connector1",
 		            "name": "tf-acc-connector1",
+		            "hasStatusNotificationsEnabled": true,
 		            "remoteNetwork": {
 		              "id": "tf-acc-network1"
 		            }
@@ -671,6 +840,7 @@ func TestClientReadConnectorsAllPagesOk(t *testing.T) {
 		          "node": {
 		            "id": "connector2",
 		            "name": "tf-acc-connector2",
+		            "hasStatusNotificationsEnabled": true,
 		            "remoteNetwork": {
 		              "id": "tf-acc-network2"
 		            }
@@ -692,6 +862,7 @@ func TestClientReadConnectorsAllPagesOk(t *testing.T) {
 		          "node": {
 		            "id": "connector3",
 		            "name": "tf-acc-connector3",
+		            "hasStatusNotificationsEnabled": true,
 		            "remoteNetwork": {
 		              "id": "tf-acc-network3"
 		            }
