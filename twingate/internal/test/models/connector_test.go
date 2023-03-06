@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConnectorModel(t *testing.T) {
+	var (
+		boolTrue  = true
+		boolFalse = false
+	)
+
 	cases := []struct {
 		connector model.Connector
 
@@ -17,25 +23,30 @@ func TestConnectorModel(t *testing.T) {
 		expected     interface{}
 	}{
 		{
-			connector: model.Connector{},
+			connector: model.Connector{
+				StatusUpdatesEnabled: &boolFalse,
+			},
 			expected: map[string]interface{}{
-				"id":                "",
-				"name":              "",
-				"remote_network_id": "",
+				"id":                      "",
+				"name":                    "",
+				"remote_network_id":       "",
+				attr.StatusUpdatesEnabled: false,
 			},
 		},
 		{
 			connector: model.Connector{
-				ID:        "id",
-				Name:      "name",
-				NetworkID: "network-id",
+				ID:                   "id",
+				Name:                 "name",
+				NetworkID:            "network-id",
+				StatusUpdatesEnabled: &boolTrue,
 			},
 			expectedID:   "id",
 			expectedName: "name",
 			expected: map[string]interface{}{
-				"id":                "id",
-				"name":              "name",
-				"remote_network_id": "network-id",
+				"id":                      "id",
+				"name":                    "name",
+				"remote_network_id":       "network-id",
+				attr.StatusUpdatesEnabled: true,
 			},
 		},
 	}

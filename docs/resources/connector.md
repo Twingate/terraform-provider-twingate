@@ -37,6 +37,7 @@ resource "twingate_connector" "aws_connector" {
 ### Optional
 
 - `name` (String) Name of the Connector, if not provided one will be generated
+- `status_updates_enabled` (Boolean) Indicates whether status notifications enabled for the Connector
 
 ### Read-Only
 
