@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -51,6 +52,11 @@ func Connectors() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The ID of the Remote Network attached to the Connector",
+						},
+						attr.StatusUpdatesEnabled: {
+							Type:        schema.TypeBool,
+							Computed:    true,
+							Description: "Indicates whether status notifications enabled for the Connector",
 						},
 					},
 				},

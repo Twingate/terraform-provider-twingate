@@ -26,6 +26,7 @@ func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
 					Config: testDatasourceTwingateConnector(networkName, connectorName),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckOutput("my_connector", connectorName),
+						resource.TestCheckOutput("my_connector_notification_status", "true"),
 					),
 				},
 			},
@@ -49,6 +50,10 @@ func testDatasourceTwingateConnector(remoteNetworkName, connectorName string) st
 
 	output "my_connector" {
 	  value = data.twingate_connector.out_dc1.name
+	}
+
+	output "my_connector_notification_status" {
+	  value = data.twingate_connector.out_dc1.status_updates_enabled
 	}
 	`, remoteNetworkName, connectorName)
 }
