@@ -88,7 +88,7 @@ func TestClientAPITokenNotSet(t *testing.T) {
 	os.Setenv(EnvAPIToken, "xxx")
 	_, err = client.post(context.TODO(), "/hello", "hello", nil)
 
-	assert.ErrorContains(t, err, "lookup test.twindev.com: no such host")
+	assert.ErrorContains(t, err, "lookup test.twindev.com on 127.0.0.53:53: no such host")
 }
 
 func TestClientInvalidServerAddress(t *testing.T) {
