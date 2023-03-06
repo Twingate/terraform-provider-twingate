@@ -1,10 +1,6 @@
 package query
 
 type CreateConnector struct {
-	ConnectorEntityResponse `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId, name: $connectorName)"`
-}
-
-type CreateConnectorWithNotificationStatus struct {
 	ConnectorEntityResponse `graphql:"connectorCreate(remoteNetworkId: $remoteNetworkId, name: $connectorName, hasStatusNotificationsEnabled: $hasStatusNotificationsEnabled)"`
 }
 

@@ -15,41 +15,18 @@ func (client *Client) CreateConnector(ctx context.Context, input *model.Connecto
 		return nil, NewAPIError(ErrGraphqlNetworkIDIsEmpty, "create", connectorResourceName)
 	}
 
-	if input.StatusUpdatesEnabled != nil {
-		return client.createConnectorWithNotificationStatus(ctx, input)
-	}
-
 	variables := newVars(
 		gqlID(input.NetworkID, "remoteNetworkId"),
 		gqlNullable(input.Name, "connectorName"),
 	)
+
+	if input.StatusUpdatesEnabled == nil {
+		variables = gqlNullable(false, "hasStatusNotificationsEnabled")(variables)
+	} else {
+		variables = gqlVar(*input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled")(variables)
+	}
 
 	var response query.CreateConnector
-
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createConnector"))
-	if err != nil {
-		return nil, NewAPIErrorWithName(err, "create", connectorResourceName, input.Name)
-	}
-
-	if !response.Ok {
-		return nil, NewAPIErrorWithName(NewMutationError(response.Error), "create", connectorResourceName, input.Name)
-	}
-
-	if response.Entity == nil {
-		return nil, NewAPIErrorWithName(ErrGraphqlResultIsEmpty, "create", connectorResourceName, input.Name)
-	}
-
-	return response.Entity.ToModel(), nil
-}
-
-func (client *Client) createConnectorWithNotificationStatus(ctx context.Context, input *model.Connector) (*model.Connector, error) {
-	variables := newVars(
-		gqlID(input.NetworkID, "remoteNetworkId"),
-		gqlNullable(input.Name, "connectorName"),
-		gqlVar(*input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled"),
-	)
-
-	var response query.CreateConnectorWithNotificationStatus
 
 	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createConnector"))
 	if err != nil {
