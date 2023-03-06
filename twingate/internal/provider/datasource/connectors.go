@@ -41,22 +41,22 @@ func Connectors() *schema.Resource {
 						"id": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The ID of the Connector",
+							Description: "The ID of the Connector.",
 						},
 						"name": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The Name of the Connector",
+							Description: "The Name of the Connector.",
 						},
 						"remote_network_id": {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The ID of the Remote Network attached to the Connector",
+							Description: "The ID of the Remote Network attached to the Connector.",
 						},
 						attr.StatusUpdatesEnabled: {
 							Type:        schema.TypeBool,
 							Computed:    true,
-							Description: "Indicates whether status notifications enabled for the Connector",
+							Description: "Determines whether status notifications are enabled for the Connector.",
 						},
 					},
 				},
