@@ -7,7 +7,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func createServiceAccount(resourceName, serviceAccountName string) string {
