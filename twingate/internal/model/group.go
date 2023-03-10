@@ -1,5 +1,7 @@
 package model
 
+import "github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
+
 const (
 	GroupTypeManual = "MANUAL"
 	GroupTypeSynced = "SYNCED"
@@ -26,11 +28,11 @@ func (g Group) GetID() string {
 
 func (g Group) ToTerraform() interface{} {
 	return map[string]interface{}{
-		"id":                 g.ID,
-		"name":               g.Name,
-		"type":               g.Type,
-		"is_active":          g.IsActive,
-		"security_policy_id": g.SecurityPolicyID,
+		attr.ID:               g.ID,
+		attr.Name:             g.Name,
+		attr.Type:             g.Type,
+		attr.IsActive:         g.IsActive,
+		attr.SecurityPolicyID: g.SecurityPolicyID,
 	}
 }
 

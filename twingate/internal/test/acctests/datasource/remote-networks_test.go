@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -19,7 +20,7 @@ func TestAccDatasourceTwingateRemoteNetworks_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateRemoteNetworks(),
 					Check: acctests.ComposeTestCheckFunc(
-						testCheckResourceAttrNotEqual("data.twingate_remote_networks.all", "remote_networks.#", "0"),
+						testCheckResourceAttrNotEqual("data.twingate_remote_networks.all", attr.Len(attr.RemoteNetworks), "0"),
 					),
 				},
 			},

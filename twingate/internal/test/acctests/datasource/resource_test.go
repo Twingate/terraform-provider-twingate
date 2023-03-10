@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -25,7 +26,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateResource(networkName, resourceName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", "name", resourceName),
+						resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.Name, resourceName),
 					),
 				},
 			},

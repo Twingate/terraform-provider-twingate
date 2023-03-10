@@ -1,5 +1,7 @@
 package model
 
+import "github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
+
 const (
 	LocationAWS         = "AWS"
 	LocationAzure       = "AZURE"
@@ -26,8 +28,8 @@ func (n RemoteNetwork) GetID() string {
 
 func (n RemoteNetwork) ToTerraform() interface{} {
 	return map[string]interface{}{
-		"id":       n.ID,
-		"name":     n.Name,
-		"location": n.Location,
+		attr.ID:       n.ID,
+		attr.Name:     n.Name,
+		attr.Location: n.Location,
 	}
 }

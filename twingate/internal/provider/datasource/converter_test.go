@@ -30,9 +30,9 @@ func TestConverterConnectorsToTerraform(t *testing.T) {
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"id":                      "connector-id",
-					"name":                    "connector-name",
-					"remote_network_id":       "network-id",
+					attr.ID:                   "connector-id",
+					attr.Name:                 "connector-name",
+					attr.RemoteNetworkID:      "network-id",
 					attr.StatusUpdatesEnabled: true,
 				},
 			},
@@ -66,11 +66,11 @@ func TestConverterGroupsToTerraform(t *testing.T) {
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"id":                 "group-id",
-					"name":               "group-name",
-					"type":               "MANUAL",
-					"is_active":          true,
-					"security_policy_id": "policy-id",
+					attr.ID:               "group-id",
+					attr.Name:             "group-name",
+					attr.Type:             model.GroupTypeManual,
+					attr.IsActive:         true,
+					attr.SecurityPolicyID: "policy-id",
 				},
 			},
 		},
@@ -100,24 +100,24 @@ func TestConverterUsersToTerraform(t *testing.T) {
 		{
 			input: []*model.User{
 				{ID: "user-id", FirstName: "Name", LastName: "Last", Email: "user@email.com", Role: "USER"},
-				{ID: "admin-id", FirstName: "Admin", LastName: "Last", Email: "admin@email.com", Role: "ADMIN"},
+				{ID: "admin-id", FirstName: "Admin", LastName: "Last", Email: "admin@email.com", Role: model.RoleAdmin},
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"id":         "user-id",
-					"first_name": "Name",
-					"last_name":  "Last",
-					"email":      "user@email.com",
-					"is_admin":   false,
-					"role":       "USER",
+					attr.ID:        "user-id",
+					attr.FirstName: "Name",
+					attr.LastName:  "Last",
+					attr.Email:     "user@email.com",
+					attr.IsAdmin:   false,
+					attr.Role:      "USER",
 				},
 				map[string]interface{}{
-					"id":         "admin-id",
-					"first_name": "Admin",
-					"last_name":  "Last",
-					"email":      "admin@email.com",
-					"is_admin":   true,
-					"role":       "ADMIN",
+					attr.ID:        "admin-id",
+					attr.FirstName: "Admin",
+					attr.LastName:  "Last",
+					attr.Email:     "admin@email.com",
+					attr.IsAdmin:   true,
+					attr.Role:      model.RoleAdmin,
 				},
 			},
 		},
@@ -168,30 +168,30 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"id":                "resource-id",
-					"name":              "name",
-					"address":           "address",
-					"remote_network_id": "network-id",
-					"protocols":         emptySlice,
+					attr.ID:              "resource-id",
+					attr.Name:            "name",
+					attr.Address:         "address",
+					attr.RemoteNetworkID: "network-id",
+					attr.Protocols:       emptySlice,
 				},
 				map[string]interface{}{
-					"id":                "resource-1",
-					"name":              "",
-					"address":           "",
-					"remote_network_id": "",
-					"protocols": []interface{}{
+					attr.ID:              "resource-1",
+					attr.Name:            "",
+					attr.Address:         "",
+					attr.RemoteNetworkID: "",
+					attr.Protocols: []interface{}{
 						map[string]interface{}{
-							"allow_icmp": true,
-							"tcp": []interface{}{
+							attr.AllowIcmp: true,
+							attr.TCP: []interface{}{
 								map[string]interface{}{
-									"policy": model.PolicyRestricted,
-									"ports":  []string{"8000-8080"},
+									attr.Policy: model.PolicyRestricted,
+									attr.Ports:  []string{"8000-8080"},
 								},
 							},
-							"udp": []interface{}{
+							attr.UDP: []interface{}{
 								map[string]interface{}{
-									"policy": model.PolicyRestricted,
-									"ports":  emptyStringSlice,
+									attr.Policy: model.PolicyRestricted,
+									attr.Ports:  emptyStringSlice,
 								},
 							},
 						},
@@ -252,10 +252,10 @@ func TestConvertServicesToTerraform(t *testing.T) {
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"id":           "service-account-id",
-					"name":         "service-account-name",
-					"resource_ids": []string{"res-1", "res-2"},
-					"key_ids":      []string{"key-1", "key-2"},
+					attr.ID:          "service-account-id",
+					attr.Name:        "service-account-name",
+					attr.ResourceIDs: []string{"res-1", "res-2"},
+					attr.KeyIDs:      []string{"key-1", "key-2"},
 				},
 			},
 		},
@@ -287,8 +287,8 @@ func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"id":   "policy-id",
-					"name": "policy-name",
+					attr.ID:   "policy-id",
+					attr.Name: "policy-name",
 				},
 			},
 		},

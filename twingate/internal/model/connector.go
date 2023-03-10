@@ -19,9 +19,9 @@ func (c Connector) GetID() string {
 
 func (c Connector) ToTerraform() interface{} {
 	return map[string]interface{}{
-		"id":                      c.ID,
-		"name":                    c.Name,
-		"remote_network_id":       c.NetworkID,
+		attr.ID:                   c.ID,
+		attr.Name:                 c.Name,
+		attr.RemoteNetworkID:      c.NetworkID,
 		attr.StatusUpdatesEnabled: *c.StatusUpdatesEnabled,
 	}
 }

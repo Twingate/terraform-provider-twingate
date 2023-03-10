@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
-
-const tokenAttr = "token"
 
 var ErrEmptyValue = errors.New("empty value")
 
@@ -61,18 +60,18 @@ func TestAccTwingateServiceKeyCreateUpdate(t *testing.T) {
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceAccount),
-						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
+						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttrWith(serviceKey, tokenAttr, nonEmptyValue),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
 				{
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceAccount),
-						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
+						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttrWith(serviceKey, tokenAttr, nonEmptyValue),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
 			},
@@ -98,20 +97,20 @@ func TestAccTwingateServiceKeyCreateUpdateWithName(t *testing.T) {
 					Config: createServiceKeyWithName(terraformResourceName, serviceAccountName, beforeName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceAccount),
-						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
+						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttr(serviceKey, nameAttr, beforeName),
-						sdk.TestCheckResourceAttrWith(serviceKey, tokenAttr, nonEmptyValue),
+						sdk.TestCheckResourceAttr(serviceKey, attr.Name, beforeName),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
 				{
 					Config: createServiceKeyWithName(terraformResourceName, serviceAccountName, afterName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceAccount),
-						sdk.TestCheckResourceAttr(serviceAccount, nameAttr, serviceAccountName),
+						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttr(serviceKey, nameAttr, afterName),
-						sdk.TestCheckResourceAttrWith(serviceKey, tokenAttr, nonEmptyValue),
+						sdk.TestCheckResourceAttr(serviceKey, attr.Name, afterName),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 						acctests.WaitTestFunc(),
 					),
 				},
@@ -135,7 +134,7 @@ func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttrWith(serviceKey, tokenAttr, nonEmptyValue),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 						acctests.RevokeTwingateServiceKey(serviceKey),
 						acctests.WaitTestFunc(),
 						acctests.CheckTwingateServiceKeyStatus(serviceKey, model.StatusRevoked),
@@ -146,7 +145,7 @@ func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
 						acctests.CheckTwingateServiceKeyStatus(serviceKey, model.StatusActive),
-						sdk.TestCheckResourceAttrWith(serviceKey, tokenAttr, nonEmptyValue),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
 			},
@@ -201,7 +200,7 @@ func TestAccTwingateServiceKeyReCreateAfterDeletion(t *testing.T) {
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttrWith(serviceKey, tokenAttr, nonEmptyValue),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
 			},
