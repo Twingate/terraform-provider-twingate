@@ -10,7 +10,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccDatasourceTwingateSecurityPoliciesBasic(t *testing.T) {
