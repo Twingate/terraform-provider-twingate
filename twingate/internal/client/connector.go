@@ -18,13 +18,8 @@ func (client *Client) CreateConnector(ctx context.Context, input *model.Connecto
 	variables := newVars(
 		gqlID(input.NetworkID, "remoteNetworkId"),
 		gqlNullable(input.Name, "connectorName"),
+		gqlNullable(input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled"),
 	)
-
-	if input.StatusUpdatesEnabled == nil {
-		variables = gqlNullable(false, "hasStatusNotificationsEnabled")(variables)
-	} else {
-		variables = gqlVar(*input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled")(variables)
-	}
 
 	var response query.CreateConnector
 
@@ -52,13 +47,8 @@ func (client *Client) UpdateConnector(ctx context.Context, input *model.Connecto
 	variables := newVars(
 		gqlID(input.ID, "connectorId"),
 		gqlNullable(input.Name, "connectorName"),
+		gqlNullable(input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled"),
 	)
-
-	if input.StatusUpdatesEnabled == nil {
-		variables = gqlNullable(false, "hasStatusNotificationsEnabled")(variables)
-	} else {
-		variables = gqlVar(*input.StatusUpdatesEnabled, "hasStatusNotificationsEnabled")(variables)
-	}
 
 	response := query.UpdateConnector{}
 
