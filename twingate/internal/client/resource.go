@@ -2,15 +2,12 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
-)
-
-const (
-	resourceResourceName = "resource"
 )
 
 type ProtocolsInput struct {
@@ -62,6 +59,8 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 }
 
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
+	opr := resourceResource.create()
+
 	variables := newVars(
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
 		gqlIDs(input.Groups, "groupIds"),
@@ -83,18 +82,8 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	}
 
 	response := query.CreateResource{}
-
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("createResource"))
-	if err != nil {
-		return nil, NewAPIError(err, "create", resourceResourceName)
-	}
-
-	if !response.Ok {
-		return nil, NewAPIError(NewMutationError(response.Error), "create", resourceResourceName)
-	}
-
-	if response.Entity == nil {
-		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "create", resourceResourceName)
+	if err := client.mutate(ctx, &response, variables, opr); err != nil {
+		return nil, err
 	}
 
 	resource := response.Entity.ToModel()
@@ -114,24 +103,20 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 }
 
 func (client *Client) ReadResource(ctx context.Context, resourceID string) (*model.Resource, error) {
+	opr := resourceResource.read()
+
 	if resourceID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", resourceResourceName)
+		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	response := query.ReadResource{}
 	variables := newVars(gqlID(resourceID))
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
+	response := query.ReadResource{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: resourceID}); err != nil {
+		return nil, err
 	}
 
-	if response.Resource == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
-	}
-
-	err = response.Resource.Groups.FetchPages(ctx, client.readResourceGroupsAfter, variables)
-	if err != nil {
+	if err := response.Resource.Groups.FetchPages(ctx, client.readResourceGroupsAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -139,33 +124,30 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 }
 
 func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
-	response := query.ReadResourceGroups{}
+	opr := resourceResource.read()
+
 	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorGroups] = cursor
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, resourceID)
-	}
-
-	if response.Resource == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, resourceID)
+	response := query.ReadResourceGroups{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: resourceID}); err != nil {
+		return nil, err
 	}
 
 	return &response.Resource.Groups.PaginatedResource, nil
 }
 
 func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) {
-	response := query.ReadResources{}
+	op := resourceResource.read()
+
 	variables := newVars(gqlNullable("", query.CursorResources))
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResources"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
+	response := query.ReadResources{}
+	if err := client.query(ctx, &response, variables, op.withCustomName("readResources"), attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+		return nil, err
 	}
 
-	err = response.FetchPages(ctx, client.readResourcesAfter, variables)
-	if err != nil {
+	if err := response.FetchPages(ctx, client.readResourcesAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -173,22 +155,21 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 }
 
 func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
+	op := resourceResource.read()
+
 	variables[query.CursorResources] = cursor
+
 	response := query.ReadResources{}
-
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
-	if err != nil {
-		return nil, NewAPIError(err, "read", resourceResourceName)
-	}
-
-	if len(response.Edges) == 0 {
-		return nil, NewAPIError(ErrGraphqlResultIsEmpty, "read", resourceResourceName)
+	if err := client.query(ctx, &response, variables, op); err != nil {
+		return nil, err
 	}
 
 	return &response.PaginatedResource, nil
 }
 
 func (client *Client) UpdateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
+	opr := resourceResource.update()
+
 	variables := newVars(
 		gqlID(input.ID),
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
@@ -211,23 +192,11 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 	}
 
 	response := query.UpdateResource{}
-
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
-
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "update", resourceResourceName, input.ID)
+	if err := client.mutate(ctx, &response, variables, opr, attr{id: input.ID}); err != nil {
+		return nil, err
 	}
 
-	if !response.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.Error), "update", resourceResourceName, input.ID)
-	}
-
-	if response.Entity == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "update", resourceResourceName, input.ID)
-	}
-
-	err = response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(input.ID)))
-	if err != nil {
+	if err := response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(input.ID))); err != nil {
 		return nil, err //nolint
 	}
 
@@ -247,27 +216,20 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 }
 
 func (client *Client) DeleteResource(ctx context.Context, resourceID string) error {
+	opr := resourceResource.delete()
+
 	if resourceID == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, "delete", resourceResourceName)
+		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
 	response := query.DeleteResource{}
 
-	variables := newVars(gqlID(resourceID))
-
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
-	if err != nil {
-		return NewAPIErrorWithID(err, "delete", resourceResourceName, resourceID)
-	}
-
-	if !response.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.Error), "delete", resourceResourceName, resourceID)
-	}
-
-	return nil
+	return client.mutate(ctx, &response, newVars(gqlID(resourceID)), opr, attr{id: resourceID})
 }
 
 func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *model.Resource) error {
+	opr := resourceResource.update()
+
 	variables := newVars(
 		gqlID(resource.ID),
 		gqlVar(resource.IsActive, "isActive"),
@@ -275,37 +237,23 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 
 	response := query.UpdateResourceActiveState{}
 
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
-
-	if err != nil {
-		return NewAPIErrorWithID(err, "update", resourceResourceName, resource.ID)
-	}
-
-	if !response.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.Error), "update", resourceResourceName, resource.ID)
-	}
-
-	return nil
+	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
 }
 
 func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*model.Resource, error) {
-	response := query.ReadResourcesByName{}
+	opr := resourceResource.read()
+
 	variables := newVars(
 		gqlVar(name, "name"),
 		gqlNullable("", query.CursorResources),
 	)
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResources"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
+	response := query.ReadResourcesByName{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, "All")
-	}
-
-	err = response.FetchPages(ctx, client.readResourcesByNameAfter, variables)
-	if err != nil {
+	if err := response.FetchPages(ctx, client.readResourcesByNameAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -313,28 +261,27 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 }
 
 func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
-	response := query.ReadResourcesByName{}
+	op := resourceResource.read()
+
 	variables[query.CursorResources] = cursor
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResources"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", resourceResourceName, "All")
-	}
-
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", resourceResourceName, "All")
+	response := query.ReadResourcesByName{}
+	if err := client.query(ctx, &response, variables, op.withCustomName("readResources"), attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
 	return &response.PaginatedResource, nil
 }
 
 func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourceID string, deleteServiceAccountIDs []string) error {
+	opr := resourceResource.update()
+
 	if len(deleteServiceAccountIDs) == 0 {
 		return nil
 	}
 
 	if resourceID == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
 	resourcesToDelete := []string{resourceID}
@@ -349,12 +296,14 @@ func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourc
 }
 
 func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Resource) error {
+	opr := resourceResource.update()
+
 	if len(resource.Groups) == 0 {
 		return nil
 	}
 
 	if resource.ID == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
 	variables := newVars(
@@ -364,47 +313,28 @@ func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Res
 
 	response := query.AddResourceGroups{}
 
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
-	if err != nil {
-		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resource.ID)
-	}
-
-	if !response.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, resourceResourceName, resource.ID)
-	}
-
-	return nil
+	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
 }
 
 func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID string, deleteGroupIDs []string) error {
+	opr := resourceResource.update()
+
 	if len(deleteGroupIDs) == 0 {
 		return nil
 	}
 
 	if resourceID == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, resourceResourceName)
+		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	response := query.UpdateResourceRemoveGroups{}
 	variables := newVars(
 		gqlID(resourceID),
 		gqlIDs(deleteGroupIDs, "removedGroupIds"),
 	)
 
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
-	if err != nil {
-		return NewAPIErrorWithID(err, operationUpdate, resourceResourceName, resourceID)
-	}
+	response := query.UpdateResourceRemoveGroups{}
 
-	if !response.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, resourceResourceName, resourceID)
-	}
-
-	if response.Entity == nil {
-		return NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, resourceResourceName, resourceID)
-	}
-
-	return nil
+	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
 }
 
 func (client *Client) ReadResourceServiceAccounts(ctx context.Context, resourceID string) ([]string, error) {

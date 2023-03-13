@@ -17,6 +17,10 @@ type gqlConnector struct {
 	HasStatusNotificationsEnabled bool
 }
 
+func (q ReadConnector) IsEmpty() bool {
+	return q.Connector == nil
+}
+
 func (q ReadConnector) ToModel() *model.Connector {
 	if q.Connector == nil {
 		return nil

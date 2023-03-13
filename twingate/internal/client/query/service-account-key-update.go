@@ -8,6 +8,10 @@ type UpdateServiceAccountKey struct {
 	ServiceAccountKeyEntityResponse `graphql:"serviceAccountKeyUpdate(id: $id, name: $name)"`
 }
 
+func (q UpdateServiceAccountKey) IsEmpty() bool {
+	return q.Entity == nil
+}
+
 type ServiceAccountKeyEntityResponse struct {
 	Entity *gqlServiceKey
 	OkError

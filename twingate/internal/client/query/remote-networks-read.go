@@ -11,6 +11,10 @@ type ReadRemoteNetworks struct {
 	RemoteNetworks `graphql:"remoteNetworks(after: $remoteNetworksEndCursor)"`
 }
 
+func (q ReadRemoteNetworks) IsEmpty() bool {
+	return len(q.Edges) == 0
+}
+
 type RemoteNetworks struct {
 	PaginatedResource[*RemoteNetworkEdge]
 }

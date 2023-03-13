@@ -43,3 +43,11 @@ type GroupsFilter struct {
 func (f *GroupsFilter) HasName() bool {
 	return f != nil && f.Name != nil && *f.Name != ""
 }
+
+func (f *GroupsFilter) GetName() string {
+	if f.HasName() {
+		return *f.Name
+	}
+
+	return ""
+}
