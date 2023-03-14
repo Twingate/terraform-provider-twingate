@@ -67,7 +67,7 @@ func TestClientRemoteNetworkCreateError(t *testing.T) {
 			Location: model.LocationOther,
 		})
 
-		assert.EqualError(t, err, "failed to create remote network: error_1")
+		assert.EqualError(t, err, "failed to create remote network with name test: error_1")
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -85,7 +85,7 @@ func TestClientRemoteNetworkCreateRequestError(t *testing.T) {
 			Location: model.LocationOther,
 		})
 
-		assert.EqualError(t, err, graphqlErr(client, "failed to create remote network", errBadRequest))
+		assert.EqualError(t, err, graphqlErr(client, "failed to create remote network with name test", errBadRequest))
 		assert.Nil(t, remoteNetwork)
 	})
 }
@@ -112,7 +112,7 @@ func TestClientRemoteNetworkCreateEmptyResponse(t *testing.T) {
 			Location: model.LocationOther,
 		})
 
-		assert.EqualError(t, err, "failed to create remote network: query result is empty")
+		assert.EqualError(t, err, "failed to create remote network with name test: query result is empty")
 		assert.Nil(t, remoteNetwork)
 	})
 }

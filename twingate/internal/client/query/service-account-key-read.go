@@ -11,6 +11,10 @@ type ReadServiceAccountKey struct {
 	ServiceAccountKey *gqlServiceKey `graphql:"serviceAccountKey(id: $id)"`
 }
 
+func (q ReadServiceAccountKey) IsEmpty() bool {
+	return q.ServiceAccountKey == nil
+}
+
 func (q ReadServiceAccountKey) ToModel() (*model.ServiceKey, error) {
 	if q.ServiceAccountKey == nil {
 		return nil, nil //nolint

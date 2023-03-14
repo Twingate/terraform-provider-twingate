@@ -8,3 +8,7 @@ type ConnectorEntityResponse struct {
 	Entity *gqlConnector
 	OkError
 }
+
+func (r *ConnectorEntityResponse) IsEmpty() bool {
+	return r == nil || r.Entity == nil
+}
