@@ -171,7 +171,7 @@ func resourceGroupReadHelper(resourceData *schema.ResourceData, group *model.Gro
 	}
 
 	if err := resourceData.Set(attr.SecurityPolicyID, group.SecurityPolicyID); err != nil {
-		return diag.FromErr(err)
+		return ErrAttributeSet(err, attr.SecurityPolicyID)
 	}
 
 	if err := resourceData.Set(attr.Name, group.Name); err != nil {

@@ -30,7 +30,7 @@ func TestAccRemoteConnectorCreate(t *testing.T) {
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
 					Check: acctests.ComposeTestCheckFunc(
 						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-						sdk.TestCheckResourceAttrSet(theResource, nameAttr),
+						sdk.TestCheckResourceAttrSet(theResource, attr.Name),
 					),
 				},
 			},
@@ -54,7 +54,7 @@ func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 					Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
 					Check: acctests.ComposeTestCheckFunc(
 						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-						sdk.TestMatchResourceAttr(theResource, nameAttr, regexp.MustCompile(connectorName)),
+						sdk.TestMatchResourceAttr(theResource, attr.Name, regexp.MustCompile(connectorName)),
 					),
 				},
 			},
@@ -78,7 +78,7 @@ func TestAccRemoteConnectorImport(t *testing.T) {
 					Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
 					Check: acctests.ComposeTestCheckFunc(
 						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-						sdk.TestMatchResourceAttr(theResource, nameAttr, testRegexp),
+						sdk.TestMatchResourceAttr(theResource, attr.Name, testRegexp),
 					),
 				},
 				{
@@ -189,7 +189,7 @@ func checkTwingateConnectorSetWithRemoteNetwork(connectorResource, remoteNetwork
 			return fmt.Errorf("Not found: %s ", remoteNetworkResource)
 		}
 
-		if connector.Primary.Attributes["remote_network_id"] != remoteNetwork.Primary.ID {
+		if connector.Primary.Attributes[attr.RemoteNetworkID] != remoteNetwork.Primary.ID {
 			return fmt.Errorf("Remote Network ID not set properly in the connector ")
 		}
 
@@ -213,13 +213,13 @@ func TestAccRemoteConnectorUpdateName(t *testing.T) {
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
 					Check: acctests.ComposeTestCheckFunc(
 						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-						sdk.TestCheckResourceAttrSet(theResource, nameAttr),
+						sdk.TestCheckResourceAttrSet(theResource, attr.Name),
 					),
 				},
 				{
 					Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
 					Check: acctests.ComposeTestCheckFunc(
-						sdk.TestCheckResourceAttr(theResource, nameAttr, connectorName),
+						sdk.TestCheckResourceAttr(theResource, attr.Name, connectorName),
 					),
 				},
 			},
@@ -242,7 +242,7 @@ func TestAccRemoteConnectorCreateWithNotificationStatus(t *testing.T) {
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
 					Check: acctests.ComposeTestCheckFunc(
 						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-						sdk.TestCheckResourceAttrSet(theResource, nameAttr),
+						sdk.TestCheckResourceAttrSet(theResource, attr.Name),
 					),
 				},
 				{

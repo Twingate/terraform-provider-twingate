@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
@@ -57,8 +58,8 @@ func checkTwingateConnectorTokensInvalidated(s *terraform.State) error {
 		}
 
 		connectorId := rs.Primary.ID
-		accessToken := rs.Primary.Attributes["access_token"]
-		refreshToken := rs.Primary.Attributes["refresh_token"]
+		accessToken := rs.Primary.Attributes[attr.AccessToken]
+		refreshToken := rs.Primary.Attributes[attr.RefreshToken]
 
 		err := c.VerifyConnectorTokens(context.Background(), refreshToken, accessToken)
 		// expecting error here , Since tokens invalidated
@@ -82,11 +83,11 @@ func checkTwingateConnectorTokensSet(connectorNameTokens string) sdk.TestCheckFu
 			return fmt.Errorf("no connectorTokensID set")
 		}
 
-		if connectorTokens.Primary.Attributes["access_token"] == "" {
+		if connectorTokens.Primary.Attributes[attr.AccessToken] == "" {
 			return fmt.Errorf("no access token set")
 		}
 
-		if connectorTokens.Primary.Attributes["refresh_token"] == "" {
+		if connectorTokens.Primary.Attributes[attr.RefreshToken] == "" {
 			return fmt.Errorf("no refresh token set")
 		}
 

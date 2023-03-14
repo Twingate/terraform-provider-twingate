@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
@@ -22,7 +23,7 @@ func TestAccDatasourceTwingateSecurityPoliciesBasic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateSecurityPolicies(),
 					Check: acctests.ComposeTestCheckFunc(
-						sdk.TestCheckResourceAttr("data.twingate_security_policies.all", "security_policies.#", fmt.Sprintf("%d", len(securityPolicies))),
+						sdk.TestCheckResourceAttr("data.twingate_security_policies.all", attr.Len(attr.SecurityPolicies), fmt.Sprintf("%d", len(securityPolicies))),
 					),
 				},
 			},

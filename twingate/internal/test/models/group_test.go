@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,11 +20,11 @@ func TestGroupModel(t *testing.T) {
 		{
 			group: model.Group{},
 			expected: map[string]interface{}{
-				"id":                 "",
-				"name":               "",
-				"type":               "",
-				"is_active":          false,
-				"security_policy_id": "",
+				attr.ID:               "",
+				attr.Name:             "",
+				attr.Type:             "",
+				attr.IsActive:         false,
+				attr.SecurityPolicyID: "",
 			},
 		},
 		{
@@ -37,11 +38,11 @@ func TestGroupModel(t *testing.T) {
 			expectedID:   "id",
 			expectedName: "name",
 			expected: map[string]interface{}{
-				"id":                 "id",
-				"name":               "name",
-				"type":               "type",
-				"is_active":          true,
-				"security_policy_id": "policy-id",
+				attr.ID:               "id",
+				attr.Name:             "name",
+				attr.Type:             "type",
+				attr.IsActive:         true,
+				attr.SecurityPolicyID: "policy-id",
 			},
 		},
 	}

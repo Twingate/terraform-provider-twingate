@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,8 +18,8 @@ func TestSecurityPolicyModel(t *testing.T) {
 		{
 			policy: model.SecurityPolicy{},
 			expected: map[string]interface{}{
-				"id":   "",
-				"name": "",
+				attr.ID:   "",
+				attr.Name: "",
 			},
 		},
 		{
@@ -27,8 +28,8 @@ func TestSecurityPolicyModel(t *testing.T) {
 				Name: "name",
 			},
 			expected: map[string]interface{}{
-				"id":   "id",
-				"name": "name",
+				attr.ID:   "id",
+				attr.Name: "name",
 			},
 		},
 	}

@@ -28,7 +28,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName, connectorName),
 					Check: acctests.ComposeTestCheckFunc(
 						testCheckOutputLength("my_connectors", 2),
-						testCheckOutputAttr("my_connectors", 0, "name", connectorName),
+						testCheckOutputAttr("my_connectors", 0, attr.Name, connectorName),
 						testCheckOutputAttr("my_connectors", 0, attr.StatusUpdatesEnabled, true),
 					),
 				},

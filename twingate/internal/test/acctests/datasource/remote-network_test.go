@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -25,7 +26,7 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateRemoteNetwork(networkName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn1_2", "name", networkName),
+						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn1_2", attr.Name, networkName),
 					),
 				},
 			},
@@ -62,7 +63,7 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateRemoteNetworkByName(networkName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn2_2", "name", networkName),
+						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn2_2", attr.Name, networkName),
 					),
 				},
 			},

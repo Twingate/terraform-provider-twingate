@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -18,7 +19,7 @@ func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
 				{
 					Config: testDatasourceTwingateUsers(),
 					Check: acctests.ComposeTestCheckFunc(
-						testCheckResourceAttrNotEqual("data.twingate_users.all", "users.#", "0"),
+						testCheckResourceAttrNotEqual("data.twingate_users.all", attr.Len(attr.Users), "0"),
 					),
 				},
 			},

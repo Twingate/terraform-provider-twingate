@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -21,7 +22,7 @@ func datasourceGroupsRead(ctx context.Context, resourceData *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("groups", convertGroupsToTerraform(groups)); err != nil {
+	if err := resourceData.Set(attr.Groups, convertGroupsToTerraform(groups)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -40,49 +41,49 @@ func Groups() *schema.Resource {
 		Description: "Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).",
 		ReadContext: datasourceGroupsRead,
 		Schema: map[string]*schema.Schema{
-			"name": {
+			attr.Name: {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Returns only Groups that exactly match this name.",
 			},
-			"is_active": {
+			attr.IsActive: {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Returns only Groups matching the specified state.",
 			},
-			"type": {
+			attr.Type: {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Description:  fmt.Sprintf("Returns only Groups of the specified type (valid: `%s`, `%s`, `%s`).", model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem),
 				ValidateFunc: validation.StringInSlice([]string{model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem}, false),
 			},
-			"groups": {
+			attr.Groups: {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "List of Groups",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": {
+						attr.ID: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The ID of the Group",
 						},
-						"name": {
+						attr.Name: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The name of the Group",
 						},
-						"is_active": {
+						attr.IsActive: {
 							Type:        schema.TypeBool,
 							Computed:    true,
 							Description: "Indicates if the Group is active",
 						},
-						"type": {
+						attr.Type: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The type of the Group",
 						},
-						"security_policy_id": {
+						attr.SecurityPolicyID: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The Security Policy assigned to the Group.",
@@ -95,11 +96,11 @@ func Groups() *schema.Resource {
 }
 
 func buildFilter(resourceData *schema.ResourceData) *model.GroupsFilter {
-	groupName, hasName := resourceData.GetOk("name")
-	groupType, hasType := resourceData.GetOk("type")
+	groupName, hasName := resourceData.GetOk(attr.Name)
+	groupType, hasType := resourceData.GetOk(attr.Type)
 
 	// GetOk does not provide correct value for exists flag (second output value)
-	groupIsActive, hasIsActive := resourceData.GetOkExists("is_active") //nolint
+	groupIsActive, hasIsActive := resourceData.GetOkExists(attr.IsActive) //nolint
 
 	if !hasName && !hasType && !hasIsActive {
 		return nil

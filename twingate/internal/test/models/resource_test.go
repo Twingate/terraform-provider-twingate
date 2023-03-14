@@ -98,11 +98,11 @@ func TestResourceModel(t *testing.T) {
 		{
 			resource: model.Resource{},
 			expected: map[string]interface{}{
-				"id":                "",
-				"name":              "",
-				"address":           "",
-				"remote_network_id": "",
-				"protocols":         emptySlice,
+				attr.ID:              "",
+				attr.Name:            "",
+				attr.Address:         "",
+				attr.RemoteNetworkID: "",
+				attr.Protocols:       emptySlice,
 			},
 		},
 		{
@@ -127,23 +127,23 @@ func TestResourceModel(t *testing.T) {
 			expectedID:   "id",
 			expectedName: "name",
 			expected: map[string]interface{}{
-				"id":                "id",
-				"name":              "name",
-				"address":           "address",
-				"remote_network_id": "network-id",
-				"protocols": []interface{}{
+				attr.ID:              "id",
+				attr.Name:            "name",
+				attr.Address:         "address",
+				attr.RemoteNetworkID: "network-id",
+				attr.Protocols: []interface{}{
 					map[string]interface{}{
-						"allow_icmp": true,
-						"tcp": []interface{}{
+						attr.AllowIcmp: true,
+						attr.TCP: []interface{}{
 							map[string]interface{}{
-								"policy": "RESTRICTED",
-								"ports":  []string{"80"},
+								attr.Policy: "RESTRICTED",
+								attr.Ports:  []string{"80"},
 							},
 						},
-						"udp": []interface{}{
+						attr.UDP: []interface{}{
 							map[string]interface{}{
-								"policy": "ALLOW_ALL",
-								"ports":  emptyStringSlice,
+								attr.Policy: "ALLOW_ALL",
+								attr.Ports:  emptyStringSlice,
 							},
 						},
 					},
@@ -217,8 +217,8 @@ func TestProtocolToTerraform(t *testing.T) {
 			},
 			expected: []interface{}{
 				map[string]interface{}{
-					"policy": "ALLOW_ALL",
-					"ports":  emptyStringSlice,
+					attr.Policy: "ALLOW_ALL",
+					attr.Ports:  emptyStringSlice,
 				},
 			},
 		},
