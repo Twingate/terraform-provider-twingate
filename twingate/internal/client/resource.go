@@ -67,20 +67,10 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlIDs(input.Groups, "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
+		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
+		gqlNullable(input.IsVisible, "isVisible"),
+		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 	)
-	variables["protocols"] = newProtocolsInput(input.Protocols)
-
-	if input.IsVisible == nil {
-		variables = gqlNullable(false, "isVisible")(variables)
-	} else {
-		variables = gqlVar(*input.IsVisible, "isVisible")(variables)
-	}
-
-	if input.IsBrowserShortcutEnabled == nil {
-		variables = gqlNullable(false, "isBrowserShortcutEnabled")(variables)
-	} else {
-		variables = gqlVar(*input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled")(variables)
-	}
 
 	response := query.CreateResource{}
 
@@ -196,19 +186,9 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
+		gqlNullable(input.IsVisible, "isVisible"),
+		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 	)
-
-	if input.IsVisible == nil {
-		variables = gqlNullable(false, "isVisible")(variables)
-	} else {
-		variables = gqlVar(*input.IsVisible, "isVisible")(variables)
-	}
-
-	if input.IsBrowserShortcutEnabled == nil {
-		variables = gqlNullable(false, "isBrowserShortcutEnabled")(variables)
-	} else {
-		variables = gqlVar(*input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled")(variables)
-	}
 
 	response := query.UpdateResource{}
 
