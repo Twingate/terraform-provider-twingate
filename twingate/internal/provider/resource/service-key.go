@@ -139,11 +139,11 @@ func serviceKeyReadHelper(ctx context.Context, resourceData *schema.ResourceData
 	}
 
 	if err := resourceData.Set(attr.Name, serviceKey.Name); err != nil {
-		return diag.FromErr(err)
+		return ErrAttributeSet(err, attr.Name)
 	}
 
 	if err := resourceData.Set(attr.ServiceAccountID, serviceKey.Service); err != nil {
-		return diag.FromErr(err)
+		return ErrAttributeSet(err, attr.ServiceAccountID)
 	}
 
 	resourceData.SetId(serviceKey.ID)

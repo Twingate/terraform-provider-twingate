@@ -8,6 +8,10 @@ type CreateServiceAccountKey struct {
 	ServiceAccountKeyEntityCreateResponse `graphql:"serviceAccountKeyCreate(expirationTime: $expirationTime, serviceAccountId: $serviceAccountId, name: $name)"`
 }
 
+func (q CreateServiceAccountKey) IsEmpty() bool {
+	return q.Entity == nil
+}
+
 type ServiceAccountKeyEntityCreateResponse struct {
 	ServiceAccountKeyEntityResponse
 	Token string

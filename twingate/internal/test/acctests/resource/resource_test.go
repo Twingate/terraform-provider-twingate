@@ -6,31 +6,24 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	tcpPolicy    = "protocols.0.tcp.0.policy"
-	udpPolicy    = "protocols.0.udp.0.policy"
-	firstTCPPort = "protocols.0.tcp.0.ports.0"
-	firstUDPPort = "protocols.0.udp.0.ports.0"
-	tcpPortsLen  = "protocols.0.tcp.0.ports.#"
-	udpPortsLen  = "protocols.0.udp.0.ports.#"
-
-	accessGroupIdsLen          = "access.0.group_ids.#"
-	accessServiceAccountIdsLen = "access.0.service_account_ids.#"
-
-	nameAttr        = "name"
-	addressAttr     = "address"
-	accessTokenAttr = "access_token"
-
-	isVisibleAttr                = "is_visible"
-	isBrowserShortcutEnabledAttr = "is_browser_shortcut_enabled"
+var (
+	tcpPolicy                  = attr.Path(attr.Protocols, attr.TCP, attr.Policy)
+	udpPolicy                  = attr.Path(attr.Protocols, attr.UDP, attr.Policy)
+	firstTCPPort               = attr.First(attr.Protocols, attr.TCP, attr.Ports)
+	firstUDPPort               = attr.First(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPortsLen                = attr.Len(attr.Protocols, attr.TCP, attr.Ports)
+	udpPortsLen                = attr.Len(attr.Protocols, attr.UDP, attr.Ports)
+	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
+	accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
@@ -49,9 +42,9 @@ func TestAccTwingateResourceCreate(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckNoResourceAttr(theResource, accessGroupIdsLen),
-					sdk.TestCheckResourceAttr(acctests.TerraformRemoteNetwork(terraformResourceName), nameAttr, remoteNetworkName),
-					sdk.TestCheckResourceAttr(theResource, nameAttr, resourceName),
-					sdk.TestCheckResourceAttr(theResource, addressAttr, "acc-test.com"),
+					sdk.TestCheckResourceAttr(acctests.TerraformRemoteNetwork(terraformResourceName), attr.Name, remoteNetworkName),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckResourceAttr(theResource, attr.Address, "acc-test.com"),
 				),
 			},
 		},
@@ -87,7 +80,7 @@ func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
 				Config: createResourceWithProtocolsAndGroups(remoteNetworkName, groupName1, groupName2, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, addressAttr, "new-acc-test.com"),
+					sdk.TestCheckResourceAttr(theResource, attr.Address, "new-acc-test.com"),
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "2"),
 					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
 					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
@@ -148,9 +141,9 @@ func TestAccTwingateResourceFullCreationFlow(t *testing.T) {
 			{
 				Config: resourceFullCreationFlow(remoteNetworkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr("twingate_remote_network.test3", nameAttr, remoteNetworkName),
-					sdk.TestCheckResourceAttr(theResource, nameAttr, resourceName),
-					sdk.TestMatchResourceAttr("twingate_connector_tokens.test31", accessTokenAttr, regexp.MustCompile(".+")),
+					sdk.TestCheckResourceAttr("twingate_remote_network.test3", attr.Name, remoteNetworkName),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestMatchResourceAttr("twingate_connector_tokens.test31", attr.AccessToken, regexp.MustCompile(".+")),
 				),
 			},
 		},
@@ -367,7 +360,7 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 			{
 				Config: createResourceWithRestrictedPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, nameAttr, resourceName),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
 					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
 					sdk.TestCheckNoResourceAttr(theResource, tcpPortsLen),
 					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyRestricted),
@@ -629,7 +622,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ImportState:  true,
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
-					addressAttr:  "acc-test.com.12",
+					attr.Address: "acc-test.com.12",
 					tcpPolicy:    model.PolicyRestricted,
 					tcpPortsLen:  "2",
 					firstTCPPort: "80",
@@ -1440,7 +1433,7 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				Config: createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+					sdk.TestCheckNoResourceAttr(theResource, attr.IsVisible),
 				),
 			},
 			{
@@ -1448,13 +1441,13 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "true"),
+					sdk.TestCheckResourceAttr(theResource, attr.IsVisible, "true"),
 				),
 			},
 			{
 				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.IsVisible, "false"),
 				),
 			},
 			{
@@ -1462,7 +1455,7 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, isVisibleAttr, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.IsVisible, "false"),
 				),
 			},
 			{
@@ -1470,7 +1463,7 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				PlanOnly: true,
 				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, isVisibleAttr),
+					sdk.TestCheckNoResourceAttr(theResource, attr.IsVisible),
 				),
 			},
 		},
@@ -1519,7 +1512,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				Config: createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+					sdk.TestCheckNoResourceAttr(theResource, attr.IsBrowserShortcutEnabled),
 				),
 			},
 			{
@@ -1527,13 +1520,13 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "true"),
+					sdk.TestCheckResourceAttr(theResource, attr.IsBrowserShortcutEnabled, "true"),
 				),
 			},
 			{
 				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.IsBrowserShortcutEnabled, "false"),
 				),
 			},
 			{
@@ -1541,7 +1534,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				PlanOnly: true,
 				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, isBrowserShortcutEnabledAttr, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.IsBrowserShortcutEnabled, "false"),
 				),
 			},
 			{
@@ -1549,7 +1542,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				PlanOnly: true,
 				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, isBrowserShortcutEnabledAttr),
+					sdk.TestCheckNoResourceAttr(theResource, attr.IsBrowserShortcutEnabled),
 				),
 			},
 		},

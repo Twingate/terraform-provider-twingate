@@ -5,17 +5,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-const (
-	idAttr             = "id"
-	serviceAccountsLen = "service_accounts.#"
-	firstKeyIDsLen     = "service_accounts.0.key_ids.#"
+var (
+	serviceAccountsLen = attr.Len(attr.ServiceAccounts)
+	keyIDsLen          = attr.Len(attr.ServiceAccounts, attr.KeyIDs)
 )
 
 func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
@@ -50,8 +50,8 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 					),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
-						resource.TestCheckResourceAttr(theDatasource, firstKeyIDsLen, "1"),
-						resource.TestCheckResourceAttr(theDatasource, idAttr, "service-by-name-"+name),
+						resource.TestCheckResourceAttr(theDatasource, keyIDsLen, "1"),
+						resource.TestCheckResourceAttr(theDatasource, attr.ID, "service-by-name-"+name),
 					),
 				},
 			},
@@ -87,7 +87,7 @@ func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 				{
 					Config: filterDatasourceServices(prefix, config),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, idAttr, "all-services"),
+						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
 					),
 				},
 				{

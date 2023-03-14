@@ -66,12 +66,33 @@ func gqlNullable(val interface{}, name string) gqlVarOption {
 		if isZeroValue(val) {
 			gqlValue = getNullableValue(val)
 		} else {
-			gqlValue = val
+			gqlValue = getValue(val)
 		}
 
 		values[name] = gqlValue
 
 		return values
+	}
+}
+
+func getValue(val any) any {
+	switch value := val.(type) {
+	case *bool:
+		return *value
+	case *string:
+		return *value
+	case *int:
+		return *value
+	case *int32:
+		return *value
+	case *int64:
+		return *value
+	case *float32:
+		return *value
+	case *float64:
+		return *value
+	default:
+		return val
 	}
 }
 
@@ -94,6 +115,7 @@ func gqlNullableID(val interface{}, name string) gqlVarOption {
 	}
 }
 
+//nolint:cyclop
 func isZeroValue(val interface{}) bool {
 	if val == nil {
 		return true
@@ -124,6 +146,20 @@ func isZeroValue(val interface{}) bool {
 		return value == defaultFloat32
 	case float64:
 		return value == defaultFloat64
+	case *bool:
+		return value == nil
+	case *string:
+		return value == nil
+	case *int:
+		return value == nil
+	case *int32:
+		return value == nil
+	case *int64:
+		return value == nil
+	case *float32:
+		return value == nil
+	case *float64:
+		return value == nil
 	}
 
 	return false
@@ -142,13 +178,13 @@ func getNullableValue(val interface{}) interface{} {
 	)
 
 	switch val.(type) {
-	case string:
+	case string, *string:
 		return defaultString
-	case bool:
+	case bool, *bool:
 		return defaultBool
-	case int, int32, int64:
+	case int, int32, int64, *int, *int32, *int64:
 		return defaultInt
-	case float32, float64:
+	case float32, float64, *float32, *float64:
 		return defaultFloat
 	}
 

@@ -11,6 +11,10 @@ type ReadResources struct {
 	Resources `graphql:"resources(after: $resourcesEndCursor)"`
 }
 
+func (r ReadResources) IsEmpty() bool {
+	return len(r.Edges) == 0
+}
+
 type Resources struct {
 	PaginatedResource[*ResourceEdge]
 }

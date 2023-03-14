@@ -19,6 +19,10 @@ type ConnectorEdge struct {
 	Node *gqlConnector
 }
 
+func (q ReadConnectors) IsEmpty() bool {
+	return len(q.Edges) == 0
+}
+
 func (q ReadConnectors) ToModel() []*model.Connector {
 	if len(q.Edges) == 0 {
 		return nil

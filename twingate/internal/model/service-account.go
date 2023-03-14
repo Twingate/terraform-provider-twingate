@@ -1,5 +1,7 @@
 package model
 
+import "github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
+
 type ServiceAccount struct {
 	ID        string
 	Name      string
@@ -17,9 +19,9 @@ func (s ServiceAccount) GetName() string {
 
 func (s ServiceAccount) ToTerraform() interface{} {
 	return map[string]interface{}{
-		"id":           s.ID,
-		"name":         s.Name,
-		"resource_ids": s.Resources,
-		"key_ids":      s.Keys,
+		attr.ID:          s.ID,
+		attr.Name:        s.Name,
+		attr.ResourceIDs: s.Resources,
+		attr.KeyIDs:      s.Keys,
 	}
 }

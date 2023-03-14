@@ -8,6 +8,10 @@ type ReadSecurityPolicy struct {
 	SecurityPolicy *gqlSecurityPolicy `graphql:"securityPolicy(id: $id, name: $name)"`
 }
 
+func (q ReadSecurityPolicy) IsEmpty() bool {
+	return q.SecurityPolicy == nil
+}
+
 type gqlSecurityPolicy struct {
 	IDName
 }

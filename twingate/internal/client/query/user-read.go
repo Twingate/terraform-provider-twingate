@@ -9,6 +9,10 @@ type ReadUser struct {
 	User *gqlUser `graphql:"user(id: $id)"`
 }
 
+func (q ReadUser) IsEmpty() bool {
+	return q.User == nil
+}
+
 type gqlUser struct {
 	ID        graphql.ID
 	FirstName string

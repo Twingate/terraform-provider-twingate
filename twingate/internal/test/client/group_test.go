@@ -62,7 +62,7 @@ func TestClientGroupCreateError(t *testing.T) {
 
 		group, err := c.CreateGroup(context.Background(), &model.Group{Name: "test"})
 
-		assert.EqualError(t, err, "failed to create group: error_1")
+		assert.EqualError(t, err, "failed to create group with name test: error_1")
 		assert.Nil(t, group)
 	})
 }
@@ -77,7 +77,7 @@ func TestClientGroupCreateRequestError(t *testing.T) {
 
 		group, err := c.CreateGroup(context.Background(), &model.Group{Name: "test"})
 
-		assert.EqualError(t, err, graphqlErr(c, "failed to create group", errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to create group with name test", errBadRequest))
 		assert.Nil(t, group)
 	})
 }
