@@ -13,3 +13,11 @@ type OkError struct {
 	Ok    bool   `json:"ok"`
 	Error string `json:"error"`
 }
+
+func (ok OkError) OK() bool {
+	return ok.Ok
+}
+
+func (ok OkError) ErrorStr() string {
+	return ok.Error
+}

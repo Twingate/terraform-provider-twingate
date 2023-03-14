@@ -19,11 +19,6 @@ import (
 )
 
 const (
-	operationCreate = "create"
-	operationRead   = "read"
-	operationUpdate = "update"
-	operationDelete = "delete"
-
 	EnvAPIToken = "TWINGATE_API_TOKEN" //#nosec
 
 	headerAPIKey = "X-API-KEY"
@@ -206,4 +201,44 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+type MutationResponse interface {
+	OK() bool
+	ErrorStr() string
+	ResponseWithPayload
+}
+
+func (client *Client) mutate(ctx context.Context, resp MutationResponse, variables map[string]any, opr operation, attrs ...attr) error {
+	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(opr.String()))
+	if err != nil {
+		return opr.apiError(err, attrs...)
+	}
+
+	if !resp.OK() {
+		return opr.apiError(NewMutationError(resp.ErrorStr()), attrs...)
+	}
+
+	if resp.IsEmpty() {
+		return opr.apiError(ErrGraphqlResultIsEmpty, attrs...)
+	}
+
+	return nil
+}
+
+type ResponseWithPayload interface {
+	IsEmpty() bool
+}
+
+func (client *Client) query(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
+	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(opr.String()))
+	if err != nil {
+		return opr.apiError(err, attrs...)
+	}
+
+	if resp.IsEmpty() {
+		return opr.apiError(ErrGraphqlResultIsEmpty, attrs...)
+	}
+
+	return nil
 }

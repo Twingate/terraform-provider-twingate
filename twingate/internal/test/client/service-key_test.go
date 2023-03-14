@@ -109,7 +109,7 @@ func TestCreateServiceKeyRequestError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, graphqlErr(c, "failed to create service key", errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to create service account key", errBadRequest))
 	})
 }
 
@@ -134,7 +134,7 @@ func TestCreateServiceKeyResponseError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to create service key: error_1`)
+		assert.EqualError(t, err, `failed to create service account key: error_1`)
 	})
 }
 
@@ -145,7 +145,7 @@ func TestCreateServiceKeyWithEmptyID(t *testing.T) {
 		serviceKey, err := c.CreateServiceKey(context.Background(), &model.ServiceKey{})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to create service key: id is empty`)
+		assert.EqualError(t, err, `failed to create service account key: id is empty`)
 	})
 }
 
@@ -156,7 +156,7 @@ func TestCreateServiceKeyWithNilRequest(t *testing.T) {
 		serviceKey, err := c.CreateServiceKey(context.Background(), nil)
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to create service key: id is empty`)
+		assert.EqualError(t, err, `failed to create service account key: id is empty`)
 	})
 }
 
@@ -202,7 +202,7 @@ func TestReadServiceKeyWithEmptyID(t *testing.T) {
 		serviceKey, err := c.ReadServiceKey(context.Background(), "")
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to read service key: id is empty`)
+		assert.EqualError(t, err, `failed to read service account key: id is empty`)
 	})
 }
 
@@ -216,7 +216,7 @@ func TestReadServiceKeyRequestError(t *testing.T) {
 		serviceKey, err := c.ReadServiceKey(context.Background(), "account-key-id")
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, graphqlErr(c, "failed to read service key with id account-key-id", errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to read service account key with id account-key-id", errBadRequest))
 	})
 }
 
@@ -236,7 +236,7 @@ func TestReadServiceKeyEmptyResponse(t *testing.T) {
 		serviceKey, err := c.ReadServiceKey(context.Background(), "account-key-id")
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to read service key with id account-key-id: query result is empty`)
+		assert.EqualError(t, err, `failed to read service account key with id account-key-id: query result is empty`)
 	})
 }
 
@@ -289,7 +289,7 @@ func TestUpdateServiceKeyWithEmptyID(t *testing.T) {
 		serviceKey, err := c.UpdateServiceKey(context.Background(), &model.ServiceKey{})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to update service key: id is empty`)
+		assert.EqualError(t, err, `failed to update service account key: id is empty`)
 	})
 }
 
@@ -306,7 +306,7 @@ func TestUpdateServiceKeyRequestError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, graphqlErr(c, "failed to update service key with id key-id", errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to update service account key with id key-id", errBadRequest))
 	})
 }
 
@@ -333,7 +333,7 @@ func TestUpdateServiceKeyResponseError(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to update service key with id key-id: error_1`)
+		assert.EqualError(t, err, `failed to update service account key with id key-id: error_1`)
 	})
 }
 
@@ -360,7 +360,7 @@ func TestUpdateServiceKeyEmptyResponse(t *testing.T) {
 		})
 
 		assert.Nil(t, serviceKey)
-		assert.EqualError(t, err, `failed to update service key with id key-id: query result is empty`)
+		assert.EqualError(t, err, `failed to update service account key with id key-id: query result is empty`)
 	})
 }
 
@@ -392,7 +392,7 @@ func TestDeleteServiceKeyWithEmptyID(t *testing.T) {
 
 		err := c.DeleteServiceKey(context.Background(), "")
 
-		assert.EqualError(t, err, `failed to delete service key: id is empty`)
+		assert.EqualError(t, err, `failed to delete service account key: id is empty`)
 	})
 }
 
@@ -405,7 +405,7 @@ func TestDeleteServiceKeyRequestError(t *testing.T) {
 
 		err := c.DeleteServiceKey(context.Background(), "key-id")
 
-		assert.EqualError(t, err, graphqlErr(c, "failed to delete service key with id key-id", errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to delete service account key with id key-id", errBadRequest))
 	})
 }
 
@@ -427,7 +427,7 @@ func TestDeleteServiceKeyResponseError(t *testing.T) {
 
 		err := c.DeleteServiceKey(context.Background(), "key-id")
 
-		assert.EqualError(t, err, `failed to delete service key with id key-id: error_1`)
+		assert.EqualError(t, err, `failed to delete service account key with id key-id: error_1`)
 	})
 }
 
@@ -459,7 +459,7 @@ func TestRevokeServiceKeyWithEmptyID(t *testing.T) {
 
 		err := c.RevokeServiceKey(context.Background(), "")
 
-		assert.EqualError(t, err, `failed to revoke service key: id is empty`)
+		assert.EqualError(t, err, `failed to revoke service account key: id is empty`)
 	})
 }
 
@@ -472,7 +472,7 @@ func TestRevokeServiceKeyRequestError(t *testing.T) {
 
 		err := c.RevokeServiceKey(context.Background(), "key-id")
 
-		assert.EqualError(t, err, graphqlErr(c, "failed to revoke service key with id key-id", errBadRequest))
+		assert.EqualError(t, err, graphqlErr(c, "failed to revoke service account key with id key-id", errBadRequest))
 	})
 }
 
@@ -494,6 +494,6 @@ func TestRevokeServiceKeyResponseError(t *testing.T) {
 
 		err := c.RevokeServiceKey(context.Background(), "key-id")
 
-		assert.EqualError(t, err, `failed to revoke service key with id key-id: error_1`)
+		assert.EqualError(t, err, `failed to revoke service account key with id key-id: error_1`)
 	})
 }

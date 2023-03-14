@@ -11,6 +11,10 @@ type ReadGroups struct {
 	Groups `graphql:"groups(filter: $filter, after: $groupsEndCursor)"`
 }
 
+func (q ReadGroups) IsEmpty() bool {
+	return len(q.Edges) == 0
+}
+
 type Groups struct {
 	PaginatedResource[*GroupEdge]
 }

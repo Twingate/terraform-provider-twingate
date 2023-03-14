@@ -37,3 +37,7 @@ func (q ReadGroup) ToModel() *model.Group {
 
 	return q.Group.ToModel()
 }
+
+func (q ReadGroup) IsEmpty() bool {
+	return q.Group == nil
+}

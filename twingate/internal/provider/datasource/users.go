@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,7 +19,7 @@ func datasourceUsersRead(ctx context.Context, resourceData *schema.ResourceData,
 
 	data := convertUsersToTerraform(users)
 
-	if err := resourceData.Set("users", data); err != nil {
+	if err := resourceData.Set(attr.Users, data); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -32,37 +33,37 @@ func Users() *schema.Resource {
 		Description: userDescription,
 		ReadContext: datasourceUsersRead,
 		Schema: map[string]*schema.Schema{
-			"users": {
+			attr.Users: {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": {
+						attr.ID: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The ID of the User",
 						},
-						"first_name": {
+						attr.FirstName: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The first name of the User",
 						},
-						"last_name": {
+						attr.LastName: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The last name of the User",
 						},
-						"email": {
+						attr.Email: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "The email address of the User",
 						},
-						"is_admin": {
+						attr.IsAdmin: {
 							Type:        schema.TypeBool,
 							Computed:    true,
 							Description: "Indicates whether the User is an admin",
 						},
-						"role": {
+						attr.Role: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.",

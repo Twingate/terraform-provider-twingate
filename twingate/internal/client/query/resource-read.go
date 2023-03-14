@@ -10,6 +10,10 @@ type ReadResource struct {
 	Resource *gqlResource `graphql:"resource(id: $id)"`
 }
 
+func (q ReadResource) IsEmpty() bool {
+	return q.Resource == nil
+}
+
 type gqlResource struct {
 	ResourceNode
 	Groups Groups

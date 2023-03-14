@@ -11,6 +11,10 @@ type ReadUsers struct {
 	Users `graphql:"users(after: $usersEndCursor)"`
 }
 
+func (q ReadUsers) IsEmpty() bool {
+	return len(q.Edges) == 0
+}
+
 type Users struct {
 	PaginatedResource[*UserEdge]
 }

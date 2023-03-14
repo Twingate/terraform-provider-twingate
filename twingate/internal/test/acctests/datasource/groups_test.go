@@ -5,15 +5,16 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-const (
-	groupsLen          = "groups.#"
-	firstGroupName     = "groups.0.name"
-	firstGroupPolicyID = "groups.0.security_policy_id"
+var (
+	groupsLen         = attr.Len(attr.Groups)
+	groupNamePath     = attr.Path(attr.Groups, attr.Name)
+	groupPolicyIDPath = attr.Path(attr.Groups, attr.SecurityPolicyID)
 )
 
 func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
@@ -38,8 +39,8 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 					Config: testDatasourceTwingateGroups(groupName, testPolicy.ID),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, groupsLen, "2"),
-						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
-						resource.TestCheckResourceAttr(theDatasource, firstGroupPolicyID, testPolicy.ID),
+						resource.TestCheckResourceAttr(theDatasource, groupNamePath, groupName),
+						resource.TestCheckResourceAttr(theDatasource, groupPolicyIDPath, testPolicy.ID),
 					),
 				},
 			},
@@ -108,7 +109,7 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 					Config: testDatasourceTwingateGroupsWithFilters(groupName),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, groupsLen, "2"),
-						resource.TestCheckResourceAttr(theDatasource, firstGroupName, groupName),
+						resource.TestCheckResourceAttr(theDatasource, groupNamePath, groupName),
 					),
 				},
 			},
@@ -204,7 +205,7 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 				{
 					Config: testDatasourceTwingateGroupsWithDatasource(groupName),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", firstGroupName, groupName),
+						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", groupNamePath, groupName),
 						resource.TestCheckResourceAttr("data.twingate_groups.one_dgs3", groupsLen, "1"),
 						resource.TestCheckResourceAttr("data.twingate_groups.two_dgs3", groupsLen, "2"),
 					),

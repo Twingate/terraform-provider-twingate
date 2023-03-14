@@ -6,6 +6,10 @@ type CreateRemoteNetwork struct {
 	RemoteNetworkEntityResponse `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive, location: $location)"`
 }
 
+func (q CreateRemoteNetwork) IsEmpty() bool {
+	return q.Entity == nil
+}
+
 type RemoteNetworkEntityResponse struct {
 	Entity *gqlRemoteNetwork
 	OkError

@@ -11,6 +11,10 @@ type ReadSecurityPolicies struct {
 	SecurityPolicies `graphql:"securityPolicies(after: $policiesEndCursor)"`
 }
 
+func (q ReadSecurityPolicies) IsEmpty() bool {
+	return len(q.Edges) == 0
+}
+
 type SecurityPolicies struct {
 	PaginatedResource[*SecurityPolicyEdge]
 }
