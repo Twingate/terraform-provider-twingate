@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.14.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
 	github.com/hashicorp/terraform-plugin-testing v1.1.0
-	github.com/hasura/go-graphql-client v0.9.1
+	github.com/hasura/go-graphql-client v0.9.2
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jarcoal/httpmock v1.3.0
 	github.com/mattn/goveralls v0.0.11
