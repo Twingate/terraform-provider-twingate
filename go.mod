@@ -15,7 +15,7 @@ require (
 	github.com/mattn/goveralls v0.0.11
 	github.com/securego/gosec/v2 v2.15.0
 	github.com/stretchr/testify v1.8.2
-	gotest.tools/gotestsum v1.9.0
+	gotest.tools/gotestsum v1.10.0
 )
 
 require (
