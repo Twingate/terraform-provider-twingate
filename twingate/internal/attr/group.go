@@ -6,4 +6,5 @@ const (
 	Type             = "type"
 	IsActive         = "is_active"
 	Groups           = "groups"
+	Alias            = "alias"
 )
