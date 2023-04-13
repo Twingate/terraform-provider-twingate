@@ -43,7 +43,7 @@ func Connector() *schema.Resource {
 			attr.ID: {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the Connector. The ID for the Connector must be obtained from the Admin API.",
+				Description: "The ID of the Connector. The ID for the Connector can be obtained from the Admin API or the URL string in the Admin Console.",
 			},
 			// computed
 			attr.Name: {
