@@ -149,7 +149,7 @@ func Resource() *schema.Resource { //nolint:funlen
 			attr.Alias: {
 				Type:             schema.TypeString,
 				Optional:         true,
-				Description:      "Resource alias address",
+				Description:      "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
 				DiffSuppressFunc: aliasDiff,
 			},
 			attr.ID: {

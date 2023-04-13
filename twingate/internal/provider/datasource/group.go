@@ -47,7 +47,7 @@ func Group() *schema.Resource {
 			attr.ID: {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the Group. The ID for the Group must be obtained from the Admin API.",
+				Description: "The ID of the Group. The ID for the Group can be obtained from the Admin API or the URL string in the Admin Console.",
 			},
 			attr.Name: {
 				Type:        schema.TypeString,
