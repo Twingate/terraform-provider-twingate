@@ -69,6 +69,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
+		gqlNullable(input.Alias, "alias"),
 	)
 
 	response := query.CreateResource{}
@@ -169,6 +170,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
+		gqlNullable(input.Alias, "alias"),
 	)
 
 	response := query.UpdateResource{}

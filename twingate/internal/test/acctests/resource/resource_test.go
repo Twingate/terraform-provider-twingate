@@ -1716,3 +1716,69 @@ func createResource28(networkName, resourceName string, groups, groupsID []strin
 	}
 	`, networkName, strings.Join(groups, "\n"), resourceName, strings.Join(groupsID, ", "), model.PolicyRestricted, model.PolicyAllowAll)
 }
+
+func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
+	const terraformResourceName = "test29"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	aliasName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource29(terraformResourceName, remoteNetworkName, resourceName, aliasName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
+				),
+			},
+			{
+				// alias attr commented out, means state keeps the same value without changes
+				Config: createResource29WithoutAlias(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
+				),
+			},
+			{
+				// alias attr set with emtpy string
+				Config: createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, ""),
+				),
+			},
+		},
+	})
+}
+
+func createResource29(terraformResourceName, networkName, resourceName, aliasName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	  alias = "%s"
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName, aliasName)
+}
+
+func createResource29WithoutAlias(terraformResourceName, networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	  # alias = "some.value"
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName)
+}
