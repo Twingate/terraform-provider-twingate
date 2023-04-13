@@ -23,7 +23,7 @@ data "twingate_user" "foo" {
 
 ### Required
 
-- `id` (String) The ID of the User. The ID for the User must be obtained from the Admin API.
+- `id` (String) The ID of the User. The ID for the User can be obtained from the Admin API or the URL string in the Admin Console.
 
 ### Read-Only
 
