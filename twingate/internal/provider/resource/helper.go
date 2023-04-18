@@ -60,7 +60,7 @@ func setDifference(a, b []string) []string {
 }
 
 func getOptionalBoolFlag(data *schema.ResourceData, attribute string) *bool {
-	isVisible, ok := data.GetOkExists(attribute) //nolint
+	isVisible, ok := data.GetOkExists(attribute) //nolint:staticcheck
 	if val := isVisible.(bool); ok {
 		return &val
 	}

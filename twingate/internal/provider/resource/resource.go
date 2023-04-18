@@ -146,6 +146,12 @@ func Resource() *schema.Resource { //nolint:funlen
 				Computed:    true,
 				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
 			},
+			attr.Alias: {
+				Type:             schema.TypeString,
+				Optional:         true,
+				Description:      "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
+				DiffSuppressFunc: aliasDiff,
+			},
 			attr.ID: {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -320,6 +326,15 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		}
 	}
 
+	var alias interface{}
+	if resource.Alias != nil {
+		alias = *resource.Alias
+	}
+
+	if err := resourceData.Set(attr.Alias, alias); err != nil {
+		return ErrAttributeSet(err, attr.Alias)
+	}
+
 	return nil
 }
 
@@ -357,6 +372,12 @@ func protocolsDiff(key, oldValue, newValue string, resourceData *schema.Resource
 	default:
 		return false
 	}
+}
+
+func aliasDiff(key, _, _ string, resourceData *schema.ResourceData) bool {
+	oldVal, newVal := castToStrings(resourceData.GetChange(key))
+
+	return oldVal == newVal
 }
 
 func equalPorts(a, b interface{}) bool {
@@ -493,6 +514,7 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		Groups:          groups,
 		ServiceAccounts: serviceAccounts,
 		IsAuthoritative: convertAuthoritativeFlag(data),
+		Alias:           getOptionalString(data, attr.Alias),
 	}
 
 	isVisible, ok := data.GetOkExists(attr.IsVisible) //nolint
@@ -500,12 +522,26 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		res.IsVisible = &val
 	}
 
-	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
+	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint:staticcheck
 	if val := isBrowserShortcutEnabled.(bool); ok {
 		res.IsBrowserShortcutEnabled = &val
 	}
 
 	return res, nil
+}
+
+func getOptionalString(data *schema.ResourceData, attr string) *string {
+	var result *string
+
+	cfg := data.GetRawConfig()
+	val := cfg.GetAttr(attr)
+
+	if !val.IsNull() {
+		str := val.AsString()
+		result = &str
+	}
+
+	return result
 }
 
 func convertAccess(data *schema.ResourceData) ([]string, []string) {
@@ -520,7 +556,7 @@ func convertAccess(data *schema.ResourceData) ([]string, []string) {
 }
 
 func convertAuthoritativeFlag(data *schema.ResourceData) bool {
-	flag, hasFlag := data.GetOkExists(attr.IsAuthoritative) //nolint
+	flag, hasFlag := data.GetOkExists(attr.IsAuthoritative) //nolint:staticcheck
 
 	if hasFlag {
 		return flag.(bool)

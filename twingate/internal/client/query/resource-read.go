@@ -31,6 +31,7 @@ type ResourceNode struct {
 	IsActive                 bool
 	IsVisible                bool
 	IsBrowserShortcutEnabled bool
+	Alias                    string
 }
 
 type Protocols struct {
@@ -68,6 +69,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsActive:                 r.IsActive,
 		IsVisible:                &r.IsVisible,
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
+		Alias:                    optionalString(r.Alias),
 	}
 }
 
@@ -105,4 +107,12 @@ func portsRangeToModel(ports []*PortRange) []*model.PortRange {
 			End:   port.End,
 		}
 	})
+}
+
+func optionalString(str string) *string {
+	if str == "" {
+		return nil
+	}
+
+	return &str
 }

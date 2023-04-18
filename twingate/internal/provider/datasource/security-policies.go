@@ -22,7 +22,7 @@ func SecurityPolicies() *schema.Resource {
 						attr.ID: {
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "Return a matching Security Policy by its ID. The ID for the Security Policy must be obtained from the Admin API.",
+							Description: "Return a matching Security Policy by its ID. The ID for the Security Policy can be obtained from the Admin API or the URL string in the Admin Console.",
 						},
 						attr.Name: {
 							Type:        schema.TypeString,

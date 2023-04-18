@@ -23,7 +23,7 @@ data "twingate_connector" "foo" {
 
 ### Required
 
-- `id` (String) The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+- `id` (String) The ID of the Connector. The ID for the Connector can be obtained from the Admin API or the URL string in the Admin Console.
 
 ### Read-Only
 

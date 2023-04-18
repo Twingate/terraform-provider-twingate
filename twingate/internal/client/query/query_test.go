@@ -822,14 +822,6 @@ func TestProtocolToModel(t *testing.T) {
 
 }
 
-func optionalString(val string) *string {
-	if val == "" {
-		return nil
-	}
-
-	return &val
-}
-
 func optionalBool(val bool) *bool {
 	return &val
 }

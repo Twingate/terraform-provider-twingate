@@ -23,7 +23,7 @@ data "twingate_resource" "foo" {
 
 ### Required
 
-- `id` (String) The ID of the Resource. The ID for the Resource must be obtained from the Admin API.
+- `id` (String) The ID of the Resource. The ID for the Resource can be obtained from the Admin API or the URL string in the Admin Console.
 
 ### Read-Only
 

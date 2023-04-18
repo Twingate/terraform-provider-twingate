@@ -65,6 +65,7 @@ resource "twingate_resource" "resource" {
 ### Optional
 
 - `access` (Block List, Max: 1) Restrict access to certain groups or service accounts (see [below for nested schema](#nestedblock--access))
+- `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client.

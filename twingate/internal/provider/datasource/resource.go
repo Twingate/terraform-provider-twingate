@@ -67,7 +67,7 @@ func Resource() *schema.Resource { //nolint:funlen
 			attr.ID: {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the Resource. The ID for the Resource must be obtained from the Admin API.",
+				Description: "The ID of the Resource. The ID for the Resource can be obtained from the Admin API or the URL string in the Admin Console.",
 			},
 			// computed
 			attr.Name: {
