@@ -1,5 +1,7 @@
 package model
 
+import "github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
+
 type SecurityPolicy struct {
 	ID   string
 	Name string
@@ -7,7 +9,7 @@ type SecurityPolicy struct {
 
 func (s SecurityPolicy) ToTerraform() interface{} {
 	return map[string]interface{}{
-		"id":   s.ID,
-		"name": s.Name,
+		attr.ID:   s.ID,
+		attr.Name: s.Name,
 	}
 }

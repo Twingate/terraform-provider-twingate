@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -19,27 +20,27 @@ func ConnectorTokens() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// required
-			"connector_id": {
+			attr.ConnectorID: {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 				Description: "The ID of the parent Connector",
 			},
 			// optional
-			"keepers": {
+			attr.Keepers: {
 				Description: "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.",
 				Type:        schema.TypeMap,
 				Optional:    true,
 				ForceNew:    true,
 			},
 			// Computed
-			"access_token": {
+			attr.AccessToken: {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Sensitive:   true,
 				Description: "The Access Token of the parent Connector",
 			},
-			"refresh_token": {
+			attr.RefreshToken: {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Sensitive:   true,
@@ -52,7 +53,7 @@ func ConnectorTokens() *schema.Resource {
 func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 
-	connectorID := resourceData.Get("connector_id").(string)
+	connectorID := resourceData.Get(attr.ConnectorID).(string)
 	resourceData.SetId(connectorID)
 
 	tokens, err := c.GenerateConnectorTokens(ctx, connectorID)
@@ -60,12 +61,12 @@ func resourceConnectorTokensCreate(ctx context.Context, resourceData *schema.Res
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("access_token", tokens.AccessToken); err != nil {
-		return diag.FromErr(fmt.Errorf("error setting access_token: %w ", err))
+	if err := resourceData.Set(attr.AccessToken, tokens.AccessToken); err != nil {
+		return ErrAttributeSet(err, attr.AccessToken)
 	}
 
-	if err := resourceData.Set("refresh_token", tokens.RefreshToken); err != nil {
-		return diag.FromErr(fmt.Errorf("error setting refresh_token: %w ", err))
+	if err := resourceData.Set(attr.RefreshToken, tokens.RefreshToken); err != nil {
+		return ErrAttributeSet(err, attr.RefreshToken)
 	}
 
 	return resourceConnectorTokensRead(ctx, resourceData, meta)
@@ -89,8 +90,8 @@ func resourceConnectorTokensDelete(ctx context.Context, resourceData *schema.Res
 
 func resourceConnectorTokensRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
-	accessToken := resourceData.Get("access_token").(string)
-	refreshToken := resourceData.Get("refresh_token").(string)
+	accessToken := resourceData.Get(attr.AccessToken).(string)
+	refreshToken := resourceData.Get(attr.RefreshToken).(string)
 
 	err := c.VerifyConnectorTokens(ctx, refreshToken, accessToken)
 	if err != nil {

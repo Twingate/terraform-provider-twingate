@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
@@ -27,7 +28,8 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName, connectorName),
 					Check: acctests.ComposeTestCheckFunc(
 						testCheckOutputLength("my_connectors", 2),
-						testCheckOutputAttr("my_connectors", 0, "name", connectorName),
+						testCheckOutputAttr("my_connectors", 0, attr.Name, connectorName),
+						testCheckOutputAttr("my_connectors", 0, attr.StatusUpdatesEnabled, true),
 					),
 				},
 			},

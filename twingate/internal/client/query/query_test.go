@@ -11,6 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	boolTrue  = true
+	boolFalse = false
+)
+
 func TestReadConnectorQueryToModel(t *testing.T) {
 	cases := []struct {
 		query    ReadConnector
@@ -35,9 +40,32 @@ func TestReadConnectorQueryToModel(t *testing.T) {
 				},
 			},
 			expected: &model.Connector{
-				ID:        "connector-id",
-				Name:      "connector-name",
-				NetworkID: "connector-network-id",
+				ID:                   "connector-id",
+				Name:                 "connector-name",
+				NetworkID:            "connector-network-id",
+				StatusUpdatesEnabled: &boolFalse,
+			},
+		},
+		{
+			query: ReadConnector{
+				Connector: &gqlConnector{
+					IDName: IDName{
+						ID:   "connector-id",
+						Name: "connector-name",
+					},
+					RemoteNetwork: struct {
+						ID graphql.ID
+					}{
+						ID: "connector-network-id",
+					},
+					HasStatusNotificationsEnabled: true,
+				},
+			},
+			expected: &model.Connector{
+				ID:                   "connector-id",
+				Name:                 "connector-name",
+				NetworkID:            "connector-network-id",
+				StatusUpdatesEnabled: &boolTrue,
 			},
 		},
 	}
@@ -141,9 +169,10 @@ func TestReadConnectorsQueryToModel(t *testing.T) {
 			},
 			expected: []*model.Connector{
 				{
-					ID:        "connector-id",
-					Name:      "connector-name",
-					NetworkID: "connector-network-id",
+					ID:                   "connector-id",
+					Name:                 "connector-name",
+					NetworkID:            "connector-network-id",
+					StatusUpdatesEnabled: &boolFalse,
 				},
 			},
 		},
@@ -791,14 +820,6 @@ func TestProtocolToModel(t *testing.T) {
 		})
 	}
 
-}
-
-func optionalString(val string) *string {
-	if val == "" {
-		return nil
-	}
-
-	return &val
 }
 
 func optionalBool(val bool) *bool {

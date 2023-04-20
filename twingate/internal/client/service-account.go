@@ -7,68 +7,54 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/hasura/go-graphql-client"
 )
 
 const (
-	serviceAccountResourceName = "service account"
-
-	mutationCreateServiceAccount = "createServiceAccount"
-	mutationUpdateServiceAccount = "updateServiceAccount"
-	mutationDeleteServiceAccount = "deleteServiceAccount"
-
-	queryReadServiceAccount  = "readServiceAccount"
 	queryReadServiceAccounts = "readServiceAccounts"
 	queryReadServices        = "readServices"
 )
 
 func (client *Client) CreateServiceAccount(ctx context.Context, serviceAccountName string) (*model.ServiceAccount, error) {
+	opr := resourceServiceAccount.create()
+
 	if serviceAccountName == "" {
-		return nil, NewAPIError(ErrGraphqlNameIsEmpty, operationCreate, serviceAccountResourceName)
+		return nil, opr.apiError(ErrGraphqlNameIsEmpty)
 	}
 
 	variables := newVars(gqlVar(serviceAccountName, "name"))
+
 	response := query.CreateServiceAccount{}
-
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationCreateServiceAccount))
-	if err != nil {
-		return nil, NewAPIError(err, operationCreate, serviceAccountResourceName)
-	}
-
-	if !response.Ok {
-		return nil, NewAPIError(NewMutationError(response.Error), "create", serviceAccountResourceName)
+	if err := client.mutate(ctx, &response, variables, opr); err != nil {
+		return nil, err
 	}
 
 	return response.ToModel(), nil
 }
 
 func (client *Client) ReadShallowServiceAccount(ctx context.Context, serviceAccountID string) (*model.ServiceAccount, error) {
+	opr := resourceServiceAccount.read()
+
 	if serviceAccountID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationRead, serviceAccountResourceName)
+		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	variables := newVars(gqlID(serviceAccountID))
 	response := query.ReadShallowServiceAccount{}
-
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccount))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, serviceAccountID)
-	}
-
-	if response.ServiceAccount == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, serviceAccountID)
+	if err := client.query(ctx, &response, newVars(gqlID(serviceAccountID)), opr, attr{id: serviceAccountID}); err != nil {
+		return nil, err
 	}
 
 	return response.ToModel(), nil
 }
 
 func (client *Client) UpdateServiceAccount(ctx context.Context, serviceAccount *model.ServiceAccount) (*model.ServiceAccount, error) {
+	opr := resourceServiceAccount.update()
+
 	if serviceAccount == nil || serviceAccount.ID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, serviceAccountResourceName)
+		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
 	if serviceAccount.Name == "" && len(serviceAccount.Resources) == 0 {
-		return nil, NewAPIError(ErrGraphqlNameIsEmpty, operationUpdate, serviceAccountResourceName)
+		return nil, opr.apiError(ErrGraphqlNameIsEmpty)
 	}
 
 	variables := newVars(
@@ -78,59 +64,36 @@ func (client *Client) UpdateServiceAccount(ctx context.Context, serviceAccount *
 	)
 
 	response := query.UpdateServiceAccount{}
-
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationUpdateServiceAccount))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationUpdate, serviceAccountResourceName, serviceAccount.ID)
-	}
-
-	if !response.Ok {
-		return nil, NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, serviceAccountResourceName, serviceAccount.ID)
-	}
-
-	if response.Entity == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, serviceAccountResourceName, serviceAccount.ID)
+	if err := client.mutate(ctx, &response, variables, opr, attr{id: serviceAccount.ID}); err != nil {
+		return nil, err
 	}
 
 	return response.ToModel(), nil
 }
 
 func (client *Client) DeleteServiceAccount(ctx context.Context, serviceAccountID string) error {
+	opr := resourceServiceAccount.delete()
+
 	if serviceAccountID == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, operationDelete, serviceAccountResourceName)
+		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	variables := newVars(gqlID(serviceAccountID))
 	response := query.DeleteServiceAccount{}
 
-	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationDeleteServiceAccount))
-	if err != nil {
-		return NewAPIErrorWithID(err, operationDelete, serviceAccountResourceName, serviceAccountID)
-	}
-
-	if !response.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.Error), operationDelete, serviceAccountResourceName, serviceAccountID)
-	}
-
-	return nil
+	return client.mutate(ctx, &response, newVars(gqlID(serviceAccountID)), opr, attr{id: serviceAccountID})
 }
 
 func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.ServiceAccount, error) {
-	response := query.ReadShallowServiceAccounts{}
+	op := resourceServiceAccount.read()
 
 	variables := newVars(gqlNullable("", query.CursorServiceAccounts))
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccounts))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
+	response := query.ReadShallowServiceAccounts{}
+	if err := client.query(ctx, &response, variables, op, attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, "All")
-	}
-
-	err = response.FetchPages(ctx, client.readServiceAccountsAfter, variables)
-	if err != nil {
+	if err := response.FetchPages(ctx, client.readServiceAccountsAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -138,29 +101,26 @@ func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.
 }
 
 func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
+	op := resourceServiceAccount.read()
+
 	variables[query.CursorServiceAccounts] = cursor
 
 	response := query.ReadShallowServiceAccounts{}
-
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccounts))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
-	}
-
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, "All")
+	if err := client.query(ctx, &response, variables, op.withCustomName(queryReadServiceAccounts), attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
 	return &response.PaginatedResource, nil
 }
 
 func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) ([]*model.ServiceAccount, error) {
+	opr := resourceServiceAccount.read()
+
 	var name string
 	if len(input) > 0 {
 		name = input[0]
 	}
 
-	response := query.ReadServiceAccounts{}
 	variables := newVars(
 		gqlNullable(query.NewServiceAccountFilterInput(name), "filter"),
 		gqlNullable("", query.CursorServices),
@@ -168,23 +128,22 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 		gqlNullable("", query.CursorServiceKeys),
 	)
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccounts))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
+	response := query.ReadServiceAccounts{}
+	if err := client.query(ctx, &response, variables, opr.withCustomName(queryReadServiceAccounts), attr{id: "All"}); err != nil {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+			return nil, nil
+		}
+
+		return nil, err
 	}
 
-	if len(response.Edges) == 0 {
-		return nil, nil
-	}
-
-	err = response.FetchPages(ctx, client.readServicesAfter, variables)
-	if err != nil {
+	if err := response.FetchPages(ctx, client.readServicesAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
 	for i := range response.Edges {
-		err = client.fetchServiceInternalResources(ctx, response.Edges[i].Node)
-		if err != nil {
+		err := client.fetchServiceInternalResources(ctx, response.Edges[i].Node)
+		if err != nil { // && !errors.Is(err, ErrGraphqlResultIsEmpty) {
 			return nil, err
 		}
 	}
@@ -193,60 +152,51 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 }
 
 func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceEdge], error) {
-	response := query.ReadServiceAccounts{}
+	op := resourceServiceAccount.read()
+
 	variables[query.CursorServices] = cursor
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServices))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
-	}
-
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, "All")
+	response := query.ReadServiceAccounts{}
+	if err := client.query(ctx, &response, variables, op.withCustomName(queryReadServices), attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
 	return &response.PaginatedResource, nil
 }
 
 func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
-	response := query.ReadServiceAccount{}
+	opr := resourceServiceAccount.read()
 
 	gqlNullable("", query.CursorServiceKeys)(variables)
 	variables[query.CursorServiceResources] = cursor
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServices))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
-	}
-
-	if response.Service == nil || len(response.Service.Resources.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, "All")
+	response := query.ReadServiceAccount{}
+	if err := client.query(ctx, &response, variables, opr.withCustomName(queryReadServices), attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
 	return &response.Service.Resources.PaginatedResource, nil
 }
 
 func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
-	response := query.ReadServiceAccount{}
+	opr := resourceServiceAccount.read()
 
 	gqlNullable("", query.CursorServiceResources)(variables)
 	variables[query.CursorServiceKeys] = cursor
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServices))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, "All")
-	}
-
-	if response.Service == nil || len(response.Service.Keys.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, "All")
+	response := query.ReadServiceAccount{}
+	if err := client.query(ctx, &response, variables, opr.withCustomName(queryReadServices), attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
 	return &response.Service.Keys.PaginatedResource, nil
 }
 
 func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID string) (*model.ServiceAccount, error) {
+	opr := resourceServiceAccount.read()
+
 	if serviceAccountID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, operationRead, serviceAccountResourceName)
+		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
 	variables := newVars(
@@ -256,18 +206,11 @@ func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID s
 	)
 
 	response := query.ReadServiceAccount{}
-
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName(queryReadServiceAccount))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, operationRead, serviceAccountResourceName, serviceAccountID)
+	if err := client.query(ctx, &response, variables, opr, attr{id: serviceAccountID}); err != nil {
+		return nil, err
 	}
 
-	if response.Service == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationRead, serviceAccountResourceName, serviceAccountID)
-	}
-
-	err = client.fetchServiceInternalResources(ctx, response.Service)
-	if err != nil {
+	if err := client.fetchServiceInternalResources(ctx, response.Service); err != nil {
 		return nil, err
 	}
 
@@ -295,15 +238,17 @@ func (client *Client) fetchServiceInternalResources(ctx context.Context, service
 }
 
 func (client *Client) UpdateServiceAccountRemoveResources(ctx context.Context, serviceAccountID string, resourceIDsToRemove []string) error {
+	opr := resourceServiceAccount.update()
+
 	if len(resourceIDsToRemove) == 0 {
 		return nil
 	}
 
 	if serviceAccountID == "" {
-		return NewAPIError(ErrGraphqlIDIsEmpty, operationUpdate, serviceAccountResourceName)
+		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	_, err := client.ReadServiceAccount(ctx, serviceAccountID)
+	_, err := client.ReadShallowServiceAccount(ctx, serviceAccountID)
 	if errors.Is(err, ErrGraphqlResultIsEmpty) {
 		// no-op - service does not exist
 		return nil
@@ -316,18 +261,5 @@ func (client *Client) UpdateServiceAccountRemoveResources(ctx context.Context, s
 
 	response := query.UpdateServiceAccountRemoveResources{}
 
-	err = client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName(mutationUpdateServiceAccount))
-	if err != nil {
-		return NewAPIErrorWithID(err, operationUpdate, serviceAccountResourceName, serviceAccountID)
-	}
-
-	if !response.Ok {
-		return NewAPIErrorWithID(NewMutationError(response.Error), operationUpdate, serviceAccountResourceName, serviceAccountID)
-	}
-
-	if response.Entity == nil {
-		return NewAPIErrorWithID(ErrGraphqlResultIsEmpty, operationUpdate, serviceAccountResourceName, serviceAccountID)
-	}
-
-	return nil
+	return client.mutate(ctx, &response, variables, opr, attr{id: serviceAccountID})
 }

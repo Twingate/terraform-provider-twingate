@@ -23,11 +23,12 @@ data "twingate_connector" "foo" {
 
 ### Required
 
-- `id` (String) The ID of the Connector. The ID for the Connector must be obtained from the Admin API.
+- `id` (String) The ID of the Connector. The ID for the Connector can be obtained from the Admin API or the URL string in the Admin Console.
 
 ### Read-Only
 
-- `name` (String) The name of the Connector
-- `remote_network_id` (String) The ID of the Remote Network the Connector is attached to
+- `name` (String) The name of the Connector.
+- `remote_network_id` (String) The ID of the Remote Network the Connector is attached to.
+- `status_updates_enabled` (Boolean) Determines whether status notifications are enabled for the Connector.
 
 

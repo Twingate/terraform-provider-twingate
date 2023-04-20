@@ -9,12 +9,17 @@ type ReadUser struct {
 	User *gqlUser `graphql:"user(id: $id)"`
 }
 
+func (q ReadUser) IsEmpty() bool {
+	return q.User == nil
+}
+
 type gqlUser struct {
 	ID        graphql.ID
 	FirstName string
 	LastName  string
 	Email     string
 	Role      string
+	Type      string
 }
 
 func (u gqlUser) ToModel() *model.User {
@@ -24,6 +29,7 @@ func (u gqlUser) ToModel() *model.User {
 		LastName:  u.LastName,
 		Email:     u.Email,
 		Role:      u.Role,
+		Type:      u.Type,
 	}
 }
 

@@ -6,17 +6,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	sdk "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-const (
-	userIdsLen         = "user_ids.#"
-	securityPolicyAttr = "security_policy_id"
+var (
+	userIdsLen = attr.Len(attr.UserIDs)
 )
 
 func TestAccTwingateGroupCreateUpdate(t *testing.T) {
@@ -35,14 +35,14 @@ func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 					Config: terraformResourceTwingateGroup(terraformResourceName, nameBefore),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, nameAttr, nameBefore),
+						sdk.TestCheckResourceAttr(theResource, attr.Name, nameBefore),
 					),
 				},
 				{
 					Config: terraformResourceTwingateGroup(terraformResourceName, nameAfter),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, nameAttr, nameAfter),
+						sdk.TestCheckResourceAttr(theResource, attr.Name, nameAfter),
 					),
 				},
 			},
@@ -133,15 +133,15 @@ func TestAccTwingateGroupWithSecurityPolicy(t *testing.T) {
 					Config: terraformResourceTwingateGroup(terraformResourceName, name),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, nameAttr, name),
+						sdk.TestCheckResourceAttr(theResource, attr.Name, name),
 					),
 				},
 				{
 					Config: terraformResourceTwingateGroupWithSecurityPolicy(terraformResourceName, name, testPolicy.ID),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, nameAttr, name),
-						sdk.TestCheckResourceAttr(theResource, securityPolicyAttr, testPolicy.ID),
+						sdk.TestCheckResourceAttr(theResource, attr.Name, name),
+						sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, testPolicy.ID),
 					),
 				},
 				{
@@ -150,7 +150,7 @@ func TestAccTwingateGroupWithSecurityPolicy(t *testing.T) {
 					Config:   terraformResourceTwingateGroup(terraformResourceName, name),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, nameAttr, name),
+						sdk.TestCheckResourceAttr(theResource, attr.Name, name),
 					),
 				},
 			},
@@ -381,8 +381,8 @@ func TestAccTwingateGroupNotAllowUpdateSystemGroup(t *testing.T) {
 		})
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories:         acctests.ProviderFactories,
-			PreventPostDestroy:        true,
+			ProviderFactories: acctests.ProviderFactories,
+			//PreventPostDestroy:        true,
 			PreventPostDestroyRefresh: true,
 			PreCheck:                  func() { acctests.PreCheck(t) },
 			Steps: []sdk.TestStep{
@@ -392,7 +392,7 @@ func TestAccTwingateGroupNotAllowUpdateSystemGroup(t *testing.T) {
 					ResourceName:       theResource,
 					ImportStateId:      group.ID,
 					ImportStateCheck: acctests.CheckImportState(map[string]string{
-						nameAttr: group.Name,
+						attr.Name: group.Name,
 					}),
 					Config: terraformResourceTwingateGroup(terraformResourceName, group.Name),
 				},

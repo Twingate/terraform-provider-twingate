@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -23,17 +24,17 @@ func RemoteNetwork() *schema.Resource {
 		DeleteContext: remoteNetworkDelete,
 
 		Schema: map[string]*schema.Schema{
-			"id": {
+			attr.ID: {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The ID of the Remote Network",
 			},
-			"name": {
+			attr.Name: {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The name of the Remote Network",
 			},
-			"location": {
+			attr.Location: {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice(model.Locations, false),
@@ -50,8 +51,8 @@ func RemoteNetwork() *schema.Resource {
 func remoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 	remoteNetwork, err := c.CreateRemoteNetwork(ctx, &model.RemoteNetwork{
-		Name:     resourceData.Get("name").(string),
-		Location: resourceData.Get("location").(string),
+		Name:     resourceData.Get(attr.Name).(string),
+		Location: resourceData.Get(attr.Location).(string),
 	})
 
 	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
@@ -61,15 +62,15 @@ func remoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData,
 	log.Printf("[INFO] Updating remote network id %s", resourceData.Id())
 
 	var name string
-	if resourceData.HasChange("name") {
-		name = resourceData.Get("name").(string)
+	if resourceData.HasChange(attr.Name) {
+		name = resourceData.Get(attr.Name).(string)
 	}
 
 	c := meta.(*client.Client)
 	remoteNetwork, err := c.UpdateRemoteNetwork(ctx, &model.RemoteNetwork{
 		ID:       resourceData.Id(),
 		Name:     name,
-		Location: resourceData.Get("location").(string),
+		Location: resourceData.Get(attr.Location).(string),
 	})
 
 	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
@@ -107,12 +108,12 @@ func resourceRemoteNetworkReadHelper(resourceData *schema.ResourceData, remoteNe
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("name", remoteNetwork.Name); err != nil {
-		return diag.FromErr(err)
+	if err := resourceData.Set(attr.Name, remoteNetwork.Name); err != nil {
+		return ErrAttributeSet(err, attr.Name)
 	}
 
-	if err := resourceData.Set("location", remoteNetwork.Location); err != nil {
-		return diag.FromErr(err)
+	if err := resourceData.Set(attr.Location, remoteNetwork.Location); err != nil {
+		return ErrAttributeSet(err, attr.Location)
 	}
 
 	resourceData.SetId(remoteNetwork.ID)

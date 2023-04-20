@@ -2,29 +2,27 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/hasura/go-graphql-client"
 )
 
-const userResourceName = "user"
-
 func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
+	op := resourceUser.read()
+
 	variables := newVars(gqlNullable("", query.CursorUsers))
+
 	response := query.ReadUsers{}
+	if err := client.query(ctx, &response, variables, op.withCustomName("readUsers"), attr{id: "All"}); err != nil {
+		if errors.Is(err, ErrGraphqlResultIsEmpty) {
+			return nil, nil
+		}
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readUsers"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", userResourceName, "All")
+		return nil, err
 	}
 
-	if len(response.Edges) == 0 {
-		return nil, nil
-	}
-
-	err = response.FetchPages(ctx, client.readUsersAfter, variables)
-	if err != nil {
+	if err := response.FetchPages(ctx, client.readUsersAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -32,36 +30,30 @@ func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
 }
 
 func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
+	op := resourceUser.read()
+
 	variables[query.CursorUsers] = cursor
 	response := query.ReadUsers{}
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readUsers"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", userResourceName, "All")
-	}
-
-	if len(response.Edges) == 0 {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", userResourceName, "All")
+	if err := client.query(ctx, &response, variables, op.withCustomName("readUsers"), attr{id: "All"}); err != nil {
+		return nil, err
 	}
 
 	return &response.PaginatedResource, nil
 }
 
 func (client *Client) ReadUser(ctx context.Context, userID string) (*model.User, error) {
+	opr := resourceUser.read()
+
 	if userID == "" {
-		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", userResourceName)
+		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
 	variables := newVars(gqlID(userID))
 	response := query.ReadUser{}
 
-	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readUser"))
-	if err != nil {
-		return nil, NewAPIErrorWithID(err, "read", userResourceName, userID)
-	}
-
-	if response.User == nil {
-		return nil, NewAPIErrorWithID(ErrGraphqlResultIsEmpty, "read", userResourceName, userID)
+	if err := client.query(ctx, &response, variables, opr, attr{id: userID}); err != nil {
+		return nil, err
 	}
 
 	return response.ToModel(), nil

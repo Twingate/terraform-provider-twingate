@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-const (
-	resourcesLen      = "resources.#"
-	firstResourceName = "resources.0.name"
+var (
+	resourcesLen     = attr.Len(attr.Resources)
+	resourceNamePath = attr.Path(attr.Resources, attr.Name)
 )
 
 func TestAccDatasourceTwingateResources_basic(t *testing.T) {
@@ -30,7 +31,7 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 					Config: testDatasourceTwingateResources(networkName, resourceName),
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, resourcesLen, "2"),
-						resource.TestCheckResourceAttr(theDatasource, firstResourceName, resourceName),
+						resource.TestCheckResourceAttr(theDatasource, resourceNamePath, resourceName),
 					),
 				},
 			},

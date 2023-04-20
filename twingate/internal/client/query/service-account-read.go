@@ -6,6 +6,10 @@ type ReadShallowServiceAccount struct {
 	ServiceAccount *gqlServiceAccount `graphql:"serviceAccount(id: $id)"`
 }
 
+func (q ReadShallowServiceAccount) IsEmpty() bool {
+	return q.ServiceAccount == nil
+}
+
 type gqlServiceAccount struct {
 	IDName
 }
@@ -27,4 +31,8 @@ func (q ReadShallowServiceAccount) ToModel() *model.ServiceAccount {
 
 type ReadServiceAccount struct {
 	Service *GqlService `graphql:"serviceAccount(id: $id)"`
+}
+
+func (q ReadServiceAccount) IsEmpty() bool {
+	return q.Service == nil || len(q.Service.Resources.Edges) == 0 && len(q.Service.Keys.Edges) == 0
 }

@@ -3,17 +3,10 @@ package datasource
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-)
-
-const (
-	fieldID              = "id"
-	fieldName            = "name"
-	fieldServiceAccounts = "service_accounts"
-	fieldResourceIDs     = "resource_ids"
-	fieldKeyIDs          = "key_ids"
 )
 
 func ServiceAccounts() *schema.Resource {
@@ -21,34 +14,34 @@ func ServiceAccounts() *schema.Resource {
 		Description: "Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.",
 		ReadContext: readServiceAccounts,
 		Schema: map[string]*schema.Schema{
-			fieldName: {
+			attr.Name: {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Filter results by the name of the Service Account.",
 			},
-			fieldServiceAccounts: {
+			attr.ServiceAccounts: {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "List of Service Accounts",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						fieldID: {
+						attr.ID: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "ID of the Service Account resource",
 						},
-						fieldName: {
+						attr.Name: {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "Name of the Service Account",
 						},
-						fieldResourceIDs: {
+						attr.ResourceIDs: {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Computed:    true,
 							Description: "List of twingate_resource IDs that the Service Account is assigned to.",
 						},
-						fieldKeyIDs: {
+						attr.KeyIDs: {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Computed:    true,
@@ -64,14 +57,14 @@ func ServiceAccounts() *schema.Resource {
 func readServiceAccounts(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
-	name := resourceData.Get(fieldName).(string)
+	name := resourceData.Get(attr.Name).(string)
 
 	services, err := client.ReadServiceAccounts(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set(fieldServiceAccounts, convertServicesToTerraform(services)); err != nil {
+	if err := resourceData.Set(attr.ServiceAccounts, convertServicesToTerraform(services)); err != nil {
 		return diag.FromErr(err)
 	}
 

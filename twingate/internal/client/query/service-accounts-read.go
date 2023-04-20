@@ -16,6 +16,10 @@ type ReadServiceAccounts struct {
 	Services `graphql:"serviceAccounts(filter: $filter, after: $servicesEndCursor)"`
 }
 
+func (q ReadServiceAccounts) IsEmpty() bool {
+	return len(q.Edges) == 0
+}
+
 type Services struct {
 	PaginatedResource[*ServiceEdge]
 }

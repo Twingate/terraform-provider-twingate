@@ -8,6 +8,10 @@ type ReadRemoteNetworkByID struct {
 	RemoteNetwork *gqlRemoteNetwork `graphql:"remoteNetwork(id: $id)"`
 }
 
+func (r ReadRemoteNetworkByID) IsEmpty() bool {
+	return r.RemoteNetwork == nil
+}
+
 type gqlRemoteNetwork struct {
 	IDName
 	Location string

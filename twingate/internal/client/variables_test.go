@@ -9,6 +9,16 @@ import (
 )
 
 func TestIsZeroValue(t *testing.T) {
+	var (
+		boolPointer    *bool
+		strPointer     *string
+		intPointer     *int
+		int32Pointer   *int32
+		int64Pointer   *int64
+		float64Pointer *float64
+		float32Pointer *float32
+	)
+
 	cases := []struct {
 		val      interface{}
 		expected bool
@@ -76,6 +86,34 @@ func TestIsZeroValue(t *testing.T) {
 		{
 			val:      []interface{}{},
 			expected: false,
+		},
+		{
+			val:      boolPointer,
+			expected: true,
+		},
+		{
+			val:      strPointer,
+			expected: true,
+		},
+		{
+			val:      intPointer,
+			expected: true,
+		},
+		{
+			val:      int32Pointer,
+			expected: true,
+		},
+		{
+			val:      int64Pointer,
+			expected: true,
+		},
+		{
+			val:      float32Pointer,
+			expected: true,
+		},
+		{
+			val:      float64Pointer,
+			expected: true,
 		},
 	}
 

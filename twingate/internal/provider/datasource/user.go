@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -10,30 +11,34 @@ import (
 
 func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
-	userID := resourceData.Get("id").(string)
+	userID := resourceData.Get(attr.ID).(string)
 
 	user, err := c.ReadUser(ctx, userID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("first_name", user.FirstName); err != nil {
+	if err := resourceData.Set(attr.FirstName, user.FirstName); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("last_name", user.LastName); err != nil {
+	if err := resourceData.Set(attr.LastName, user.LastName); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("email", user.Email); err != nil {
+	if err := resourceData.Set(attr.Email, user.Email); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("is_admin", user.IsAdmin()); err != nil {
+	if err := resourceData.Set(attr.IsAdmin, user.IsAdmin()); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := resourceData.Set("role", user.Role); err != nil {
+	if err := resourceData.Set(attr.Role, user.Role); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceData.Set(attr.Type, user.Type); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -49,36 +54,41 @@ func User() *schema.Resource {
 		Description: userDescription,
 		ReadContext: datasourceUserRead,
 		Schema: map[string]*schema.Schema{
-			"id": {
+			attr.ID: {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the User. The ID for the User must be obtained from the Admin API.",
+				Description: "The ID of the User. The ID for the User can be obtained from the Admin API or the URL string in the Admin Console.",
 			},
 			// computed
-			"first_name": {
+			attr.FirstName: {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The first name of the User",
 			},
-			"last_name": {
+			attr.LastName: {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The last name of the User",
 			},
-			"email": {
+			attr.Email: {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The email address of the User",
 			},
-			"is_admin": {
+			attr.IsAdmin: {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Indicates whether the User is an admin",
 			},
-			"role": {
+			attr.Role: {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER",
+			},
+			attr.Type: {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Indicates the User's type. Either MANUAL or SYNCED.",
 			},
 		},
 	}

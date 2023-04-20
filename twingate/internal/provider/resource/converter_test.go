@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,8 +21,8 @@ func TestConvertProtocol(t *testing.T) {
 		{
 			input: []interface{}{
 				map[string]interface{}{
-					"policy": model.PolicyAllowAll,
-					"ports": []interface{}{
+					attr.Policy: model.PolicyAllowAll,
+					attr.Ports: []interface{}{
 						"-",
 					},
 				},
@@ -31,8 +32,8 @@ func TestConvertProtocol(t *testing.T) {
 		{
 			input: []interface{}{
 				map[string]interface{}{
-					"policy": model.PolicyRestricted,
-					"ports": []interface{}{
+					attr.Policy: model.PolicyRestricted,
+					attr.Ports: []interface{}{
 						"80-88",
 					},
 				},

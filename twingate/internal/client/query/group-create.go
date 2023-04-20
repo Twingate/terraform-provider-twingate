@@ -18,3 +18,7 @@ func (q CreateGroup) ToModel() *model.Group {
 
 	return q.Entity.ToModel()
 }
+
+func (q CreateGroup) IsEmpty() bool {
+	return q.Entity == nil
+}

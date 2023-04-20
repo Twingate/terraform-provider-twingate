@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
@@ -60,7 +61,7 @@ func Provider(version string) *schema.Provider {
 
 func providerOptions() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"api_token": {
+		attr.APIToken: {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   true,
@@ -69,7 +70,7 @@ func providerOptions() map[string]*schema.Schema {
 				"from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).\n"+
 				"Alternatively, this can be specified using the %s environment variable.", EnvAPIToken),
 		},
-		"network": {
+		attr.Network: {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   false,
@@ -79,7 +80,7 @@ func providerOptions() map[string]*schema.Schema {
 				"`autoco.twingate.com`, where `autoco` is your network ID\n"+
 				"Alternatively, this can be specified using the %s environment variable.", EnvNetwork),
 		},
-		"url": {
+		attr.URL: {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   false,
@@ -87,14 +88,14 @@ func providerOptions() map[string]*schema.Schema {
 			Description: fmt.Sprintf("The default is '%s'\n"+
 				"This is optional and shouldn't be changed under normal circumstances.", DefaultURL),
 		},
-		"http_timeout": {
+		attr.HTTPTimeout: {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPTimeout, DefaultHTTPTimeout),
 			Description: fmt.Sprintf("Specifies a time limit in seconds for the http requests made. The default value is %s seconds.\n"+
 				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPTimeout, EnvHTTPTimeout),
 		},
-		"http_max_retry": {
+		attr.HTTPMaxRetry: {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPMaxRetry, DefaultHTTPMaxRetry),
@@ -106,11 +107,11 @@ func providerOptions() map[string]*schema.Schema {
 
 func configure(version string, _ *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		apiToken := d.Get("api_token").(string)
-		network := d.Get("network").(string)
-		url := d.Get("url").(string)
-		httpTimeout := d.Get("http_timeout").(int)
-		httpMaxRetry := d.Get("http_max_retry").(int)
+		apiToken := d.Get(attr.APIToken).(string)
+		network := d.Get(attr.Network).(string)
+		url := d.Get(attr.URL).(string)
+		httpTimeout := d.Get(attr.HTTPTimeout).(int)
+		httpMaxRetry := d.Get(attr.HTTPMaxRetry).(int)
 
 		if network != "" {
 			return client.NewClient(url,

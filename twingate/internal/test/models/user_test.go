@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,12 +17,13 @@ func TestUserModel(t *testing.T) {
 		{
 			user: model.User{},
 			expected: map[string]interface{}{
-				"id":         "",
-				"first_name": "",
-				"last_name":  "",
-				"email":      "",
-				"is_admin":   false,
-				"role":       "",
+				attr.ID:        "",
+				attr.FirstName: "",
+				attr.LastName:  "",
+				attr.Email:     "",
+				attr.IsAdmin:   false,
+				attr.Role:      "",
+				attr.Type:      "",
 			},
 		},
 		{
@@ -31,14 +33,16 @@ func TestUserModel(t *testing.T) {
 				LastName:  "White",
 				Email:     "john@white.com",
 				Role:      "ADMIN",
+				Type:      "MANUAL",
 			},
 			expected: map[string]interface{}{
-				"id":         "1",
-				"first_name": "John",
-				"last_name":  "White",
-				"email":      "john@white.com",
-				"is_admin":   true,
-				"role":       "ADMIN",
+				attr.ID:        "1",
+				attr.FirstName: "John",
+				attr.LastName:  "White",
+				attr.Email:     "john@white.com",
+				attr.IsAdmin:   true,
+				attr.Role:      "ADMIN",
+				attr.Type:      "MANUAL",
 			},
 		},
 		{
@@ -48,14 +52,16 @@ func TestUserModel(t *testing.T) {
 				LastName:  "Black",
 				Email:     "hue@black.com",
 				Role:      "USER",
+				Type:      "SYNCED",
 			},
 			expected: map[string]interface{}{
-				"id":         "2",
-				"first_name": "Hue",
-				"last_name":  "Black",
-				"email":      "hue@black.com",
-				"is_admin":   false,
-				"role":       "USER",
+				attr.ID:        "2",
+				attr.FirstName: "Hue",
+				attr.LastName:  "Black",
+				attr.Email:     "hue@black.com",
+				attr.IsAdmin:   false,
+				attr.Role:      "USER",
+				attr.Type:      "SYNCED",
 			},
 		},
 	}
