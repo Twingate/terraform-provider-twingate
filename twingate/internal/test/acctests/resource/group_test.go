@@ -381,8 +381,7 @@ func TestAccTwingateGroupNotAllowUpdateSystemGroup(t *testing.T) {
 		})
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			//PreventPostDestroy:        true,
+			ProviderFactories:         acctests.ProviderFactories,
 			PreventPostDestroyRefresh: true,
 			PreCheck:                  func() { acctests.PreCheck(t) },
 			Steps: []sdk.TestStep{
@@ -399,6 +398,8 @@ func TestAccTwingateGroupNotAllowUpdateSystemGroup(t *testing.T) {
 				{
 					Config:      terraformResourceTwingateGroupWithUsers(terraformResourceName, group.Name, usersID[:1]),
 					ExpectError: regexp.MustCompile(resource.ErrAllowedToChangeOnlyManualGroups(group).Error()),
+					// TODO: need to wait for new release v1.2.1
+					RemoveState: []string{theResource},
 				},
 			},
 		})
