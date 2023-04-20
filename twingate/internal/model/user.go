@@ -10,6 +10,7 @@ type User struct {
 	LastName  string
 	Email     string
 	Role      string
+	Type      string
 }
 
 func (u User) IsAdmin() bool {
@@ -24,5 +25,6 @@ func (u User) ToTerraform() interface{} {
 		attr.Email:     u.Email,
 		attr.IsAdmin:   u.IsAdmin(),
 		attr.Role:      u.Role,
+		attr.Type:      u.Type,
 	}
 }

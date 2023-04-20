@@ -19,6 +19,7 @@ type gqlUser struct {
 	LastName  string
 	Email     string
 	Role      string
+	Type      string
 }
 
 func (u gqlUser) ToModel() *model.User {
@@ -28,6 +29,7 @@ func (u gqlUser) ToModel() *model.User {
 		LastName:  u.LastName,
 		Email:     u.Email,
 		Role:      u.Role,
+		Type:      u.Type,
 	}
 }
 

@@ -68,6 +68,11 @@ func Users() *schema.Resource {
 							Computed:    true,
 							Description: "Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.",
 						},
+						attr.Type: {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Indicates the User's type. Either MANUAL or SYNCED.",
+						},
 					},
 				},
 			},
