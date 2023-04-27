@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 )
 
@@ -34,6 +35,19 @@ func RandomGroupName() string {
 
 func RandomName(names ...string) string {
 	return acctest.RandomWithPrefix(Prefix(names...))
+}
+
+func RandomEmail() string {
+	const (
+		nameLen   = 6
+		domainLen = 4
+	)
+
+	return fmt.Sprintf("%s_%s@%s.com", Prefix(), acctest.RandString(nameLen), acctest.RandString(domainLen))
+}
+
+func RandomUserRole() string {
+	return model.UserRoles[acctest.RandIntRange(0, len(model.UserRoles)-1)]
 }
 
 func Prefix(names ...string) string {

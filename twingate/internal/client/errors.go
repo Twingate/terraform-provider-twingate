@@ -15,7 +15,7 @@ var (
 	ErrGraphqlConnectorIDIsEmpty = errors.New("connector id is empty")
 	ErrGraphqlNetworkIDIsEmpty   = errors.New("network id is empty")
 	ErrGraphqlNetworkNameIsEmpty = errors.New("network name is empty")
-	ErrGraphqlGroupNameIsEmpty   = errors.New("group name is empty")
+	ErrGraphqlEmailIsEmpty       = errors.New("email is empty")
 )
 
 type HTTPError struct {

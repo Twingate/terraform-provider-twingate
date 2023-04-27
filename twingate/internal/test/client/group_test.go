@@ -1006,6 +1006,10 @@ func optionalString(val string) *string {
 	return &val
 }
 
+func optionalBool(val bool) *bool {
+	return &val
+}
+
 func TestClientFilterGroupsRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Filter Groups - Request Error", func(t *testing.T) {
 		c := newHTTPMockClient()
