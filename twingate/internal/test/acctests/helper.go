@@ -696,3 +696,24 @@ func GetTestUsers() ([]*model.User, error) {
 
 	return users, nil
 }
+
+func GetSystemGroup() (*model.Group, error) {
+	if Provider.Meta() == nil {
+		return nil, ErrClientNotInited
+	}
+
+	client := Provider.Meta().(*client.Client)
+
+	groupType := model.GroupTypeSystem
+
+	groups, err := client.ReadGroups(context.Background(), &model.GroupsFilter{Type: &groupType})
+	if err != nil {
+		return nil, err //nolint
+	}
+
+	if len(groups) == 0 {
+		return nil, ErrResourceNotFound
+	}
+
+	return groups[0], nil
+}
