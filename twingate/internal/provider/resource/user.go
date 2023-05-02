@@ -29,45 +29,45 @@ func User() *schema.Resource { //nolint:funlen
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "The email address of the User",
+				Description: "The User's email address",
 			},
 			// optional
 			attr.FirstName: {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "The first name of the User",
+				Description: "The User's first name",
 			},
 			attr.LastName: {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "The last name of the User",
+				Description: "The User's last name",
 			},
 			attr.SendInvite: {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
-				Description: "Indicates whether to sends an invite to the User’s email. True by default.",
+				Description: "Determines whether to send an email invitation to the User. True by default.",
 			},
 			attr.IsActive: {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
-				Description: "Indicates whether the User is active or not.",
+				Description: "Determines whether the User is active or not. Inactive users will be not able to sign in.",
 			},
 			attr.Role: {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				Description:  fmt.Sprintf("Indicates the User's role. Either %s.", utils.DocList(model.UserRoles)),
+				Description:  fmt.Sprintf("If the User is an admin, determines the User's role. Either %s.", utils.DocList(model.UserRoles)),
 				ValidateFunc: validation.StringInSlice(model.UserRoles, false),
 			},
 			// computed
 			attr.Type: {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: fmt.Sprintf("Indicates the User's type. Either %s.", utils.DocList(model.UserTypes)),
+				Description: fmt.Sprintf("Determines the User's type. Either %s.", utils.DocList(model.UserTypes)),
 			},
 			attr.ID: {
 				Type:        schema.TypeString,
