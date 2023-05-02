@@ -60,14 +60,14 @@ func User() *schema.Resource { //nolint:funlen
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				Description:  fmt.Sprintf("If the User is an admin, determines the User's role. Either %s.", utils.DocList(model.UserRoles)),
+				Description:  fmt.Sprintf("Determines the User's role. Either %s.", utils.DocList(model.UserRoles)),
 				ValidateFunc: validation.StringInSlice(model.UserRoles, false),
 			},
 			// computed
 			attr.Type: {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: fmt.Sprintf("Determines the User's type. Either %s.", utils.DocList(model.UserTypes)),
+				Description: fmt.Sprintf("Indicates the User's type. Either %s.", utils.DocList(model.UserTypes)),
 			},
 			attr.ID: {
 				Type:        schema.TypeString,

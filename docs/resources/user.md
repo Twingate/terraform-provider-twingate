@@ -32,15 +32,15 @@ resource "twingate_user" "user" {
 
 ### Required
 
-- `email` (String) The email address of the User
+- `email` (String) The User's email address
 
 ### Optional
 
-- `first_name` (String) The first name of the User
-- `is_active` (Boolean) Indicates whether the User is active or not.
-- `last_name` (String) The last name of the User
-- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT or MEMBER.
-- `send_invite` (Boolean) Indicates whether to sends an invite to the User’s email. True by default.
+- `first_name` (String) The User's first name
+- `is_active` (Boolean) Determines whether the User is active or not. Inactive users will be not able to sign in.
+- `last_name` (String) The User's last name
+- `role` (String) Determines the User's role. Either ADMIN, DEVOPS, SUPPORT or MEMBER.
+- `send_invite` (Boolean) Determines whether to send an email invitation to the User. True by default.
 
 ### Read-Only
 
