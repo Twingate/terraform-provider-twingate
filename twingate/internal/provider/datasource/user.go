@@ -38,6 +38,10 @@ func datasourceUserRead(ctx context.Context, resourceData *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
+	if err := resourceData.Set(attr.Type, user.Type); err != nil {
+		return diag.FromErr(err)
+	}
+
 	resourceData.SetId(userID)
 
 	return nil
@@ -80,6 +84,11 @@ func User() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER",
+			},
+			attr.Type: {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Indicates the User's type. Either MANUAL or SYNCED.",
 			},
 		},
 	}

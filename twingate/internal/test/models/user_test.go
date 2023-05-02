@@ -23,6 +23,7 @@ func TestUserModel(t *testing.T) {
 				attr.Email:     "",
 				attr.IsAdmin:   false,
 				attr.Role:      "",
+				attr.Type:      "",
 			},
 		},
 		{
@@ -32,6 +33,7 @@ func TestUserModel(t *testing.T) {
 				LastName:  "White",
 				Email:     "john@white.com",
 				Role:      "ADMIN",
+				Type:      "MANUAL",
 			},
 			expected: map[string]interface{}{
 				attr.ID:        "1",
@@ -40,6 +42,7 @@ func TestUserModel(t *testing.T) {
 				attr.Email:     "john@white.com",
 				attr.IsAdmin:   true,
 				attr.Role:      "ADMIN",
+				attr.Type:      "MANUAL",
 			},
 		},
 		{
@@ -49,6 +52,7 @@ func TestUserModel(t *testing.T) {
 				LastName:  "Black",
 				Email:     "hue@black.com",
 				Role:      "USER",
+				Type:      "SYNCED",
 			},
 			expected: map[string]interface{}{
 				attr.ID:        "2",
@@ -57,6 +61,7 @@ func TestUserModel(t *testing.T) {
 				attr.Email:     "hue@black.com",
 				attr.IsAdmin:   false,
 				attr.Role:      "USER",
+				attr.Type:      "SYNCED",
 			},
 		},
 	}

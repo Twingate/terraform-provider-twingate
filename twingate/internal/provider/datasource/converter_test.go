@@ -99,8 +99,8 @@ func TestConverterUsersToTerraform(t *testing.T) {
 		},
 		{
 			input: []*model.User{
-				{ID: "user-id", FirstName: "Name", LastName: "Last", Email: "user@email.com", Role: "USER"},
-				{ID: "admin-id", FirstName: "Admin", LastName: "Last", Email: "admin@email.com", Role: model.RoleAdmin},
+				{ID: "user-id", FirstName: "Name", LastName: "Last", Email: "user@email.com", Role: "USER", Type: "SYNCED"},
+				{ID: "admin-id", FirstName: "Admin", LastName: "Last", Email: "admin@email.com", Role: model.RoleAdmin, Type: "MANUAL"},
 			},
 			expected: []interface{}{
 				map[string]interface{}{
@@ -110,6 +110,7 @@ func TestConverterUsersToTerraform(t *testing.T) {
 					attr.Email:     "user@email.com",
 					attr.IsAdmin:   false,
 					attr.Role:      "USER",
+					attr.Type:      "SYNCED",
 				},
 				map[string]interface{}{
 					attr.ID:        "admin-id",
@@ -118,6 +119,7 @@ func TestConverterUsersToTerraform(t *testing.T) {
 					attr.Email:     "admin@email.com",
 					attr.IsAdmin:   true,
 					attr.Role:      model.RoleAdmin,
+					attr.Type:      "MANUAL",
 				},
 			},
 		},
