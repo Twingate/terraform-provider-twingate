@@ -10,48 +10,17 @@ using Pulumi;
 
 namespace TwingateLabs.Twingate
 {
-    /// <summary>
-    /// Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
-    /// 
-    /// ## Example Usage
-    /// 
-    /// ```csharp
-    /// using System.Collections.Generic;
-    /// using Pulumi;
-    /// using Twingate = TwingateLabs.Twingate;
-    /// 
-    /// return await Deployment.RunAsync(() =&gt; 
-    /// {
-    ///     var awsNetwork = new Twingate.TwingateRemoteNetwork("awsNetwork", new()
-    ///     {
-    ///         Name = "aws_remote_network",
-    ///     });
-    /// 
-    ///     var awsConnector = new Twingate.TwingateConnector("awsConnector", new()
-    ///     {
-    ///         RemoteNetworkId = awsNetwork.Id,
-    ///     });
-    /// 
-    /// });
-    /// ```
-    /// 
-    /// ## Import
-    /// 
-    /// ```sh
-    ///  $ pulumi import twingate:index/twingateConnector:TwingateConnector aws_connector Q29ubmVjdG9yOjI2NzM=
-    /// ```
-    /// </summary>
     [TwingateResourceType("twingate:index/twingateConnector:TwingateConnector")]
     public partial class TwingateConnector : global::Pulumi.CustomResource
     {
         /// <summary>
-        /// Name of the Connector, if not provided one will be generated
+        /// Name of the Connector, if not provided one will be generated.
         /// </summary>
         [Output("name")]
         public Output<string> Name { get; private set; } = null!;
 
         /// <summary>
-        /// The ID of the Remote Network the Connector is attached to
+        /// The ID of the Remote Network the Connector is attached to.
         /// </summary>
         [Output("remoteNetworkId")]
         public Output<string> RemoteNetworkId { get; private set; } = null!;
@@ -104,13 +73,13 @@ namespace TwingateLabs.Twingate
     public sealed class TwingateConnectorArgs : global::Pulumi.ResourceArgs
     {
         /// <summary>
-        /// Name of the Connector, if not provided one will be generated
+        /// Name of the Connector, if not provided one will be generated.
         /// </summary>
         [Input("name")]
         public Input<string>? Name { get; set; }
 
         /// <summary>
-        /// The ID of the Remote Network the Connector is attached to
+        /// The ID of the Remote Network the Connector is attached to.
         /// </summary>
         [Input("remoteNetworkId", required: true)]
         public Input<string> RemoteNetworkId { get; set; } = null!;
@@ -124,13 +93,13 @@ namespace TwingateLabs.Twingate
     public sealed class TwingateConnectorState : global::Pulumi.ResourceArgs
     {
         /// <summary>
-        /// Name of the Connector, if not provided one will be generated
+        /// Name of the Connector, if not provided one will be generated.
         /// </summary>
         [Input("name")]
         public Input<string>? Name { get; set; }
 
         /// <summary>
-        /// The ID of the Remote Network the Connector is attached to
+        /// The ID of the Remote Network the Connector is attached to.
         /// </summary>
         [Input("remoteNetworkId")]
         public Input<string>? RemoteNetworkId { get; set; }

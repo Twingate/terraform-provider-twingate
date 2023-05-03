@@ -5,29 +5,8 @@
 from . import _utilities
 import typing
 # Export this package's modules as members:
-from .get_twingate_connector import *
-from .get_twingate_connectors import *
-from .get_twingate_group import *
-from .get_twingate_groups import *
-from .get_twingate_remote_network import *
-from .get_twingate_remote_networks import *
-from .get_twingate_resource import *
-from .get_twingate_resources import *
-from .get_twingate_security_policies import *
-from .get_twingate_security_policy import *
-from .get_twingate_service_accounts import *
-from .get_twingate_user import *
-from .get_twingate_users import *
 from .provider import *
 from .twingate_connector import *
-from .twingate_connector_tokens import *
-from .twingate_group import *
-from .twingate_remote_network import *
-from .twingate_resource import *
-from .twingate_service_account import *
-from .twingate_service_account_key import *
-from ._inputs import *
-from . import outputs
 
 # Make subpackages available:
 if typing.TYPE_CHECKING:
@@ -45,54 +24,6 @@ _utilities.register(
   "fqn": "pulumi_twingate",
   "classes": {
    "twingate:index/twingateConnector:TwingateConnector": "TwingateConnector"
-  }
- },
- {
-  "pkg": "twingate",
-  "mod": "index/twingateConnectorTokens",
-  "fqn": "pulumi_twingate",
-  "classes": {
-   "twingate:index/twingateConnectorTokens:TwingateConnectorTokens": "TwingateConnectorTokens"
-  }
- },
- {
-  "pkg": "twingate",
-  "mod": "index/twingateGroup",
-  "fqn": "pulumi_twingate",
-  "classes": {
-   "twingate:index/twingateGroup:TwingateGroup": "TwingateGroup"
-  }
- },
- {
-  "pkg": "twingate",
-  "mod": "index/twingateRemoteNetwork",
-  "fqn": "pulumi_twingate",
-  "classes": {
-   "twingate:index/twingateRemoteNetwork:TwingateRemoteNetwork": "TwingateRemoteNetwork"
-  }
- },
- {
-  "pkg": "twingate",
-  "mod": "index/twingateResource",
-  "fqn": "pulumi_twingate",
-  "classes": {
-   "twingate:index/twingateResource:TwingateResource": "TwingateResource"
-  }
- },
- {
-  "pkg": "twingate",
-  "mod": "index/twingateServiceAccount",
-  "fqn": "pulumi_twingate",
-  "classes": {
-   "twingate:index/twingateServiceAccount:TwingateServiceAccount": "TwingateServiceAccount"
-  }
- },
- {
-  "pkg": "twingate",
-  "mod": "index/twingateServiceAccountKey",
-  "fqn": "pulumi_twingate",
-  "classes": {
-   "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey": "TwingateServiceAccountKey"
   }
  }
 ]

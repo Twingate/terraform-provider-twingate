@@ -22,18 +22,6 @@ func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi
 	switch typ {
 	case "twingate:index/twingateConnector:TwingateConnector":
 		r = &TwingateConnector{}
-	case "twingate:index/twingateConnectorTokens:TwingateConnectorTokens":
-		r = &TwingateConnectorTokens{}
-	case "twingate:index/twingateGroup:TwingateGroup":
-		r = &TwingateGroup{}
-	case "twingate:index/twingateRemoteNetwork:TwingateRemoteNetwork":
-		r = &TwingateRemoteNetwork{}
-	case "twingate:index/twingateResource:TwingateResource":
-		r = &TwingateResource{}
-	case "twingate:index/twingateServiceAccount:TwingateServiceAccount":
-		r = &TwingateServiceAccount{}
-	case "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey":
-		r = &TwingateServiceAccountKey{}
 	default:
 		return nil, fmt.Errorf("unknown resource type: %s", typ)
 	}
@@ -65,36 +53,6 @@ func init() {
 	pulumi.RegisterResourceModule(
 		"twingate",
 		"index/twingateConnector",
-		&module{version},
-	)
-	pulumi.RegisterResourceModule(
-		"twingate",
-		"index/twingateConnectorTokens",
-		&module{version},
-	)
-	pulumi.RegisterResourceModule(
-		"twingate",
-		"index/twingateGroup",
-		&module{version},
-	)
-	pulumi.RegisterResourceModule(
-		"twingate",
-		"index/twingateRemoteNetwork",
-		&module{version},
-	)
-	pulumi.RegisterResourceModule(
-		"twingate",
-		"index/twingateResource",
-		&module{version},
-	)
-	pulumi.RegisterResourceModule(
-		"twingate",
-		"index/twingateServiceAccount",
-		&module{version},
-	)
-	pulumi.RegisterResourceModule(
-		"twingate",
-		"index/twingateServiceAccountKey",
 		&module{version},
 	)
 	pulumi.RegisterResourcePackage(

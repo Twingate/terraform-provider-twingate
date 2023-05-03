@@ -1,0 +1,22 @@
+{
+    "renames": {
+        "resources": {
+            "twingate:index/twingateConnector:TwingateConnector": "twingate_connector"
+        },
+        "renamedProperties": {
+            "twingate:index/twingateConnector:TwingateConnector": {
+                "remoteNetworkId": "remote_network_id"
+            },
+            "twingate:index:Provider": {
+                "apiToken": "api_token",
+                "httpMaxRetry": "http_max_retry",
+                "httpTimeout": "http_timeout"
+            }
+        },
+        "renamedConfigProperties": {
+            "apiToken": "api_token",
+            "httpMaxRetry": "http_max_retry",
+            "httpTimeout": "http_timeout"
+        }
+    }
+}

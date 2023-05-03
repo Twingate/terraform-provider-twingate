@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go run ./generate.go
-
 package main
 
 import (
+	"context"
+	_ "embed"
+
 	twingate "github.com/Twingate-Labs/pulumi-twingate/provider"
-	"github.com/Twingate-Labs/pulumi-twingate/provider/pkg/version"
-	"github.com/pulumi/pulumi-terraform-bridge/v3/pkg/tfbridge"
+	"github.com/pulumi/pulumi-terraform-bridge/pf/tfbridge"
 )
 
+//go:embed bridge-metadata.json
+var bridgeMetadata []byte
+
+//go:embed schema.json
+var schema []byte
+
 func main() {
-	// Modify the path to point to the new provider
-	tfbridge.Main("twingate", version.Version, twingate.Provider(), pulumiSchema)
+	meta := tfbridge.ProviderMetadata{PackageSchema: schema, BridgeMetadata: bridgeMetadata}
+	tfbridge.Main(context.Background(), "twingate", twingate.Provider(), meta)
 }

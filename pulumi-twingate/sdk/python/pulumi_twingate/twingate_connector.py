@@ -18,8 +18,8 @@ class TwingateConnectorArgs:
                  name: Optional[pulumi.Input[str]] = None):
         """
         The set of arguments for constructing a TwingateConnector resource.
-        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to
-        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated
+        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to.
+        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated.
         """
         pulumi.set(__self__, "remote_network_id", remote_network_id)
         if name is not None:
@@ -29,7 +29,7 @@ class TwingateConnectorArgs:
     @pulumi.getter(name="remoteNetworkId")
     def remote_network_id(self) -> pulumi.Input[str]:
         """
-        The ID of the Remote Network the Connector is attached to
+        The ID of the Remote Network the Connector is attached to.
         """
         return pulumi.get(self, "remote_network_id")
 
@@ -41,7 +41,7 @@ class TwingateConnectorArgs:
     @pulumi.getter
     def name(self) -> Optional[pulumi.Input[str]]:
         """
-        Name of the Connector, if not provided one will be generated
+        Name of the Connector, if not provided one will be generated.
         """
         return pulumi.get(self, "name")
 
@@ -57,8 +57,8 @@ class _TwingateConnectorState:
                  remote_network_id: Optional[pulumi.Input[str]] = None):
         """
         Input properties used for looking up and filtering TwingateConnector resources.
-        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated
-        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to
+        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated.
+        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to.
         """
         if name is not None:
             pulumi.set(__self__, "name", name)
@@ -69,7 +69,7 @@ class _TwingateConnectorState:
     @pulumi.getter
     def name(self) -> Optional[pulumi.Input[str]]:
         """
-        Name of the Connector, if not provided one will be generated
+        Name of the Connector, if not provided one will be generated.
         """
         return pulumi.get(self, "name")
 
@@ -81,7 +81,7 @@ class _TwingateConnectorState:
     @pulumi.getter(name="remoteNetworkId")
     def remote_network_id(self) -> Optional[pulumi.Input[str]]:
         """
-        The ID of the Remote Network the Connector is attached to
+        The ID of the Remote Network the Connector is attached to.
         """
         return pulumi.get(self, "remote_network_id")
 
@@ -99,28 +99,11 @@ class TwingateConnector(pulumi.CustomResource):
                  remote_network_id: Optional[pulumi.Input[str]] = None,
                  __props__=None):
         """
-        Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
-
-        ## Example Usage
-
-        ```python
-        import pulumi
-        import pulumi_twingate as twingate
-
-        aws_network = twingate.TwingateRemoteNetwork("awsNetwork", name="aws_remote_network")
-        aws_connector = twingate.TwingateConnector("awsConnector", remote_network_id=aws_network.id)
-        ```
-
-        ## Import
-
-        ```sh
-         $ pulumi import twingate:index/twingateConnector:TwingateConnector aws_connector Q29ubmVjdG9yOjI2NzM=
-        ```
-
+        Create a TwingateConnector resource with the given unique name, props, and options.
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated
-        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to
+        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated.
+        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to.
         """
         ...
     @overload
@@ -129,24 +112,7 @@ class TwingateConnector(pulumi.CustomResource):
                  args: TwingateConnectorArgs,
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
-        Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
-
-        ## Example Usage
-
-        ```python
-        import pulumi
-        import pulumi_twingate as twingate
-
-        aws_network = twingate.TwingateRemoteNetwork("awsNetwork", name="aws_remote_network")
-        aws_connector = twingate.TwingateConnector("awsConnector", remote_network_id=aws_network.id)
-        ```
-
-        ## Import
-
-        ```sh
-         $ pulumi import twingate:index/twingateConnector:TwingateConnector aws_connector Q29ubmVjdG9yOjI2NzM=
-        ```
-
+        Create a TwingateConnector resource with the given unique name, props, and options.
         :param str resource_name: The name of the resource.
         :param TwingateConnectorArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -196,8 +162,8 @@ class TwingateConnector(pulumi.CustomResource):
         :param str resource_name: The unique name of the resulting resource.
         :param pulumi.Input[str] id: The unique provider ID of the resource to lookup.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated
-        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to
+        :param pulumi.Input[str] name: Name of the Connector, if not provided one will be generated.
+        :param pulumi.Input[str] remote_network_id: The ID of the Remote Network the Connector is attached to.
         """
         opts = pulumi.ResourceOptions.merge(opts, pulumi.ResourceOptions(id=id))
 
@@ -211,7 +177,7 @@ class TwingateConnector(pulumi.CustomResource):
     @pulumi.getter
     def name(self) -> pulumi.Output[str]:
         """
-        Name of the Connector, if not provided one will be generated
+        Name of the Connector, if not provided one will be generated.
         """
         return pulumi.get(self, "name")
 
@@ -219,7 +185,7 @@ class TwingateConnector(pulumi.CustomResource):
     @pulumi.getter(name="remoteNetworkId")
     def remote_network_id(self) -> pulumi.Output[str]:
         """
-        The ID of the Remote Network the Connector is attached to
+        The ID of the Remote Network the Connector is attached to.
         """
         return pulumi.get(self, "remote_network_id")
 

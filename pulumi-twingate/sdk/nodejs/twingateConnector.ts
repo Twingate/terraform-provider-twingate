@@ -4,25 +4,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
-/**
- * Connectors provide connectivity to Remote Networks. This resource type will create the Connector in the Twingate Admin Console, but in order to successfully deploy it, you must also generate Connector tokens that authenticate the Connector with Twingate. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).
- *
- * ## Example Usage
- *
- * ```typescript
- * import * as pulumi from "@pulumi/pulumi";
- * import * as twingate from "@twingate-labs/pulumi-twingate";
- *
- * const awsNetwork = new twingate.TwingateRemoteNetwork("awsNetwork", {name: "aws_remote_network"});
- * const awsConnector = new twingate.TwingateConnector("awsConnector", {remoteNetworkId: awsNetwork.id});
- * ```
- *
- * ## Import
- *
- * ```sh
- *  $ pulumi import twingate:index/twingateConnector:TwingateConnector aws_connector Q29ubmVjdG9yOjI2NzM=
- * ```
- */
 export class TwingateConnector extends pulumi.CustomResource {
     /**
      * Get an existing TwingateConnector resource's state with the given name, ID, and optional extra
@@ -52,11 +33,11 @@ export class TwingateConnector extends pulumi.CustomResource {
     }
 
     /**
-     * Name of the Connector, if not provided one will be generated
+     * Name of the Connector, if not provided one will be generated.
      */
     public readonly name!: pulumi.Output<string>;
     /**
-     * The ID of the Remote Network the Connector is attached to
+     * The ID of the Remote Network the Connector is attached to.
      */
     public readonly remoteNetworkId!: pulumi.Output<string>;
 
@@ -93,11 +74,11 @@ export class TwingateConnector extends pulumi.CustomResource {
  */
 export interface TwingateConnectorState {
     /**
-     * Name of the Connector, if not provided one will be generated
+     * Name of the Connector, if not provided one will be generated.
      */
     name?: pulumi.Input<string>;
     /**
-     * The ID of the Remote Network the Connector is attached to
+     * The ID of the Remote Network the Connector is attached to.
      */
     remoteNetworkId?: pulumi.Input<string>;
 }
@@ -107,11 +88,11 @@ export interface TwingateConnectorState {
  */
 export interface TwingateConnectorArgs {
     /**
-     * Name of the Connector, if not provided one will be generated
+     * Name of the Connector, if not provided one will be generated.
      */
     name?: pulumi.Input<string>;
     /**
-     * The ID of the Remote Network the Connector is attached to
+     * The ID of the Remote Network the Connector is attached to.
      */
     remoteNetworkId: pulumi.Input<string>;
 }
