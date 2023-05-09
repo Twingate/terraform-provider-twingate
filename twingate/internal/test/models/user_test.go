@@ -72,3 +72,112 @@ func TestUserModel(t *testing.T) {
 		})
 	}
 }
+
+func TestUserGetID(t *testing.T) {
+	cases := []struct {
+		user     model.User
+		expected string
+	}{
+		{
+			user:     model.User{},
+			expected: "",
+		},
+		{
+			user: model.User{
+				ID: "1",
+			},
+			expected: "1",
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.user.GetID())
+		})
+	}
+}
+
+func TestUserGetName(t *testing.T) {
+	cases := []struct {
+		user     model.User
+		expected string
+	}{
+		{
+			user:     model.User{},
+			expected: "",
+		},
+		{
+			user: model.User{
+				Email:     "user-mail",
+				FirstName: "Twin",
+				LastName:  "Gate",
+			},
+			expected: "user-mail",
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.user.GetName())
+		})
+	}
+}
+
+func TestUserState(t *testing.T) {
+	cases := []struct {
+		user     model.User
+		expected string
+	}{
+		{
+			user: model.User{
+				IsActive: false,
+			},
+			expected: model.UserStateDisabled,
+		},
+		{
+			user: model.User{
+				IsActive: true,
+			},
+			expected: model.UserStateActive,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.user.State())
+		})
+	}
+}
+
+func TestUserUpdateState(t *testing.T) {
+	valTrue := true
+	valFalse := false
+
+	cases := []struct {
+		user     model.UserUpdate
+		expected string
+	}{
+		{
+			user:     model.UserUpdate{},
+			expected: "",
+		},
+		{
+			user: model.UserUpdate{
+				IsActive: &valTrue,
+			},
+			expected: model.UserStateActive,
+		},
+		{
+			user: model.UserUpdate{
+				IsActive: &valFalse,
+			},
+			expected: model.UserStateDisabled,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.user.State())
+		})
+	}
+}

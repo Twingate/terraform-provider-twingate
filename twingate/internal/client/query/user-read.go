@@ -20,6 +20,7 @@ type gqlUser struct {
 	Email     string
 	Role      string
 	Type      string
+	State     string
 }
 
 func (u gqlUser) ToModel() *model.User {
@@ -30,6 +31,7 @@ func (u gqlUser) ToModel() *model.User {
 		Email:     u.Email,
 		Role:      u.Role,
 		Type:      u.Type,
+		IsActive:  u.State == model.UserStateActive || u.State == model.UserStatePending,
 	}
 }
 
