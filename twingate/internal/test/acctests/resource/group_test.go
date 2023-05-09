@@ -26,9 +26,9 @@ func TestAccTwingateGroupCreateUpdate(t *testing.T) {
 		nameAfter := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateGroup(terraformResourceName, nameBefore),
@@ -64,9 +64,9 @@ func TestAccTwingateGroupDeleteNonExisting(t *testing.T) {
 		groupName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config:  terraformResourceTwingateGroup(terraformResourceName, groupName),
@@ -87,9 +87,9 @@ func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
 		groupName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateGroup(terraformResourceName, groupName),
@@ -124,9 +124,9 @@ func TestAccTwingateGroupWithSecurityPolicy(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateGroup(terraformResourceName, name),
@@ -186,9 +186,9 @@ func TestAccTwingateGroupUsersAuthoritativeByDefault(t *testing.T) {
 		})
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateGroupWithUsers(terraformResourceName, groupName, usersID[:1]),
@@ -306,9 +306,9 @@ func TestAccTwingateGroupUsersNotAuthoritative(t *testing.T) {
 		})
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateGroupWithUsersAuthoritative(terraformResourceName, groupName, usersID[:1], false),

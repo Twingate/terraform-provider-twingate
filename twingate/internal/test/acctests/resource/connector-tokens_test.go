@@ -1,17 +1,12 @@
 package resource
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccRemoteConnectorWithTokens(t *testing.T) {
@@ -21,14 +16,14 @@ func TestAccRemoteConnectorWithTokens(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      checkTwingateConnectorTokensInvalidated,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorTokensInvalidated,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetworkName),
 					Check: acctests.ComposeTestCheckFunc(
-						checkTwingateConnectorTokensSet(theResource),
+						acctests.CheckTwingateConnectorTokensSet(theResource),
 					),
 				},
 			},
@@ -42,55 +37,9 @@ func terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetwo
 
 	resource "twingate_connector_tokens" "%s" {
 	  connector_id = twingate_connector.%s.id
-      keepers = {
-         foo = "bar"
-      }
+     keepers = {
+        foo = "bar"
+     }
 	}
 	`, terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName), terraformResourceName, terraformResourceName)
-}
-
-func checkTwingateConnectorTokensInvalidated(s *terraform.State) error {
-	c := acctests.Provider.Meta().(*client.Client)
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateConnectorTokens {
-			continue
-		}
-
-		connectorId := rs.Primary.ID
-		accessToken := rs.Primary.Attributes[attr.AccessToken]
-		refreshToken := rs.Primary.Attributes[attr.RefreshToken]
-
-		err := c.VerifyConnectorTokens(context.Background(), refreshToken, accessToken)
-		// expecting error here , Since tokens invalidated
-		if err == nil {
-			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active", connectorId)
-		}
-	}
-
-	return nil
-}
-
-func checkTwingateConnectorTokensSet(connectorNameTokens string) sdk.TestCheckFunc {
-	return func(s *terraform.State) error {
-		connectorTokens, ok := s.RootModule().Resources[connectorNameTokens]
-
-		if !ok {
-			return fmt.Errorf("not found: %s", connectorNameTokens)
-		}
-
-		if connectorTokens.Primary.ID == "" {
-			return fmt.Errorf("no connectorTokensID set")
-		}
-
-		if connectorTokens.Primary.Attributes[attr.AccessToken] == "" {
-			return fmt.Errorf("no access token set")
-		}
-
-		if connectorTokens.Primary.Attributes[attr.RefreshToken] == "" {
-			return fmt.Errorf("no refresh token set")
-		}
-
-		return nil
-	}
 }
