@@ -70,6 +70,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	response := query.CreateResource{}
@@ -100,7 +101,10 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	variables := newVars(gqlID(resourceID))
+	variables := newVars(
+		gqlID(resourceID),
+		gqlNullable("", query.CursorUsers),
+	)
 
 	response := query.ReadResource{}
 	if err := client.query(ctx, &response, variables, opr, attr{id: resourceID}); err != nil {
@@ -171,6 +175,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	response := query.UpdateResource{}
@@ -312,6 +317,7 @@ func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID strin
 	variables := newVars(
 		gqlID(resourceID),
 		gqlIDs(deleteGroupIDs, "removedGroupIds"),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	response := query.UpdateResourceRemoveGroups{}
