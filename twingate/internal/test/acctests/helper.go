@@ -224,6 +224,10 @@ func TerraformServiceKey(name string) string {
 	return ResourceName(resource.TwingateServiceAccountKey, name)
 }
 
+func TerraformUser(name string) string {
+	return ResourceName(resource.TwingateUser, name)
+}
+
 func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resourceState, ok := s.RootModule().Resources[resourceName]
@@ -261,6 +265,8 @@ func deleteResource(resourceType, resourceID string) error {
 		err = providerClient.DeleteServiceAccount(context.Background(), resourceID)
 	case resource.TwingateServiceAccountKey:
 		err = providerClient.DeleteServiceKey(context.Background(), resourceID)
+	case resource.TwingateUser:
+		err = providerClient.DeleteUser(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -702,4 +708,23 @@ func GetTestUsers() ([]*model.User, error) {
 	}
 
 	return users, nil
+}
+
+func CheckTwingateUserDestroy(s *terraform.State) error {
+	providerClient := Provider.Meta().(*client.Client)
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateUser {
+			continue
+		}
+
+		userID := rs.Primary.ID
+
+		user, _ := providerClient.ReadUser(context.Background(), userID)
+		if user != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, userID)
+		}
+	}
+
+	return nil
 }

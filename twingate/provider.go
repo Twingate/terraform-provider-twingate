@@ -195,6 +195,7 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 //			resource.TwingateResource:          resource.Resource(),
 //			resource.TwingateServiceAccount:    resource.ServiceAccount(),
 //			resource.TwingateServiceAccountKey: resource.ServiceKey(),
+//			resource.TwingateUser:              resource.User(),
 //		},
 //		DataSourcesMap: map[string]*schema.Resource{
 //			datasource.TwingateGroup:            datasource.Group(),

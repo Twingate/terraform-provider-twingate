@@ -93,3 +93,41 @@ func TestMakeLookupMap(t *testing.T) {
 		})
 	}
 }
+
+func TestDocList(t *testing.T) {
+	type testCase struct {
+		items    []string
+		expected string
+	}
+
+	cases := []testCase{
+		{
+			items:    []string{},
+			expected: "",
+		},
+		{
+			items:    []string{"1"},
+			expected: "1",
+		},
+		{
+			items:    []string{"1", "2"},
+			expected: "1 or 2",
+		},
+		{
+			items:    []string{"1", "2", "3"},
+			expected: "1, 2 or 3",
+		},
+		{
+			items:    []string{"1", "2", "3", "4"},
+			expected: "1, 2, 3 or 4",
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case: %d", n), func(t *testing.T) {
+			actual := utils.DocList(c.items)
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}

@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Map - transform giving slice of items by applying the func.
 func Map[T, R any](items []T, f func(item T) R) []R {
 	result := make([]R, 0, len(items))
@@ -55,4 +60,18 @@ func MakeLookupMap[T comparable](items []T) map[T]bool {
 	}
 
 	return lookup
+}
+
+func DocList(items []string) string {
+	switch len(items) {
+	case 0:
+		return ""
+	case 1:
+		return items[0]
+	default:
+		n := len(items)
+		last := items[n-1]
+
+		return fmt.Sprintf("%s or %s", strings.Join(items[:n-1], ", "), last)
+	}
 }

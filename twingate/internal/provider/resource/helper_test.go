@@ -70,3 +70,78 @@ func TestSetDifference(t *testing.T) {
 		})
 	}
 }
+
+func TestStringPtr(t *testing.T) {
+	val := "value"
+	emptyStr := ""
+
+	cases := []struct {
+		input    string
+		expected *string
+	}{
+		{
+			input:    emptyStr,
+			expected: &emptyStr,
+		},
+		{
+			input:    val,
+			expected: &val,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, stringPtr(c.input))
+		})
+	}
+}
+
+func TestBoolPtr(t *testing.T) {
+	valTrue := true
+	valFalse := false
+
+	cases := []struct {
+		input    bool
+		expected *bool
+	}{
+		{
+			input:    valTrue,
+			expected: &valTrue,
+		},
+		{
+			input:    valFalse,
+			expected: &valFalse,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, boolPtr(c.input))
+		})
+	}
+}
+
+func TestWithDefaultValue(t *testing.T) {
+	cases := []struct {
+		input      string
+		defaultVal string
+		expected   string
+	}{
+		{
+			input:      "",
+			defaultVal: "default",
+			expected:   "default",
+		},
+		{
+			input:      "val",
+			defaultVal: "default",
+			expected:   "val",
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, withDefaultValue(c.input, c.defaultVal))
+		})
+	}
+}

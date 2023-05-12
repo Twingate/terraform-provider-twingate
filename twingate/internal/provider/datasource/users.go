@@ -62,6 +62,7 @@ func Users() *schema.Resource {
 							Type:        schema.TypeBool,
 							Computed:    true,
 							Description: "Indicates whether the User is an admin",
+							Deprecated:  "This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.",
 						},
 						attr.Role: {
 							Type:        schema.TypeString,

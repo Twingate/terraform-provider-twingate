@@ -225,3 +225,99 @@ func TestGqlID(t *testing.T) {
 		})
 	}
 }
+
+func TestGqlNullableID(t *testing.T) {
+	var defaultID *graphql.ID
+
+	cases := []struct {
+		inputVal  interface{}
+		inputName string
+		expected  map[string]interface{}
+	}{
+		{
+			inputVal:  "test-id",
+			inputName: "id",
+			expected: map[string]interface{}{
+				"id": graphql.ID("test-id"),
+			},
+		},
+		{
+			inputVal:  "",
+			inputName: "custom",
+			expected: map[string]interface{}{
+				"custom": defaultID,
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			values := make(map[string]interface{})
+			gqlNullableID(c.inputVal, c.inputName)(values)
+
+			assert.Equal(t, c.expected, values)
+		})
+	}
+}
+
+func TestGetValue(t *testing.T) {
+	var (
+		strVal             = "str"
+		boolTrue           = true
+		boolFalse          = false
+		intVal     int     = 1
+		int32Val   int32   = 1
+		int64Val   int64   = 1111
+		float32Val float32 = 1.1
+		float64Val float64 = 9999.99
+	)
+
+	cases := []struct {
+		val      interface{}
+		expected interface{}
+	}{
+		{
+			val:      nil,
+			expected: nil,
+		},
+		{
+			val:      &strVal,
+			expected: strVal,
+		},
+		{
+			val:      &boolTrue,
+			expected: boolTrue,
+		},
+		{
+			val:      &boolFalse,
+			expected: boolFalse,
+		},
+		{
+			val:      &intVal,
+			expected: intVal,
+		},
+		{
+			val:      &int32Val,
+			expected: int32Val,
+		},
+		{
+			val:      &int64Val,
+			expected: int64Val,
+		},
+		{
+			val:      &float32Val,
+			expected: float32Val,
+		},
+		{
+			val:      &float64Val,
+			expected: float64Val,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+
+			assert.Equal(t, c.expected, getValue(c.val))
+		})
+	}
+}
