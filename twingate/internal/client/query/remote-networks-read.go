@@ -5,10 +5,13 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
-const CursorRemoteNetworks = "remoteNetworksEndCursor"
+const (
+	CursorRemoteNetworks    = "remoteNetworksEndCursor"
+	PageLimitRemoteNetworks = "remoteNetworksPageLimit"
+)
 
 type ReadRemoteNetworks struct {
-	RemoteNetworks `graphql:"remoteNetworks(after: $remoteNetworksEndCursor)"`
+	RemoteNetworks `graphql:"remoteNetworks(after: $remoteNetworksEndCursor, first: $remoteNetworksPageLimit)"`
 }
 
 func (q ReadRemoteNetworks) IsEmpty() bool {

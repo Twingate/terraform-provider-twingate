@@ -5,10 +5,13 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
-const CursorGroups = "groupsEndCursor"
+const (
+	CursorGroups    = "groupsEndCursor"
+	PageLimitGroups = "groupsPageLimit"
+)
 
 type ReadGroups struct {
-	Groups `graphql:"groups(filter: $filter, after: $groupsEndCursor)"`
+	Groups `graphql:"groups(filter: $filter, after: $groupsEndCursor, first: $groupsPageLimit)"`
 }
 
 func (q ReadGroups) IsEmpty() bool {

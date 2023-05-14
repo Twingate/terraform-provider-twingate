@@ -5,10 +5,13 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
-const CursorPolicies = "policiesEndCursor"
+const (
+	CursorPolicies    = "policiesEndCursor"
+	PageLimitPolicies = "policiesPageLimit"
+)
 
 type ReadSecurityPolicies struct {
-	SecurityPolicies `graphql:"securityPolicies(after: $policiesEndCursor)"`
+	SecurityPolicies `graphql:"securityPolicies(after: $policiesEndCursor, first: $policiesPageLimit)"`
 }
 
 func (q ReadSecurityPolicies) IsEmpty() bool {

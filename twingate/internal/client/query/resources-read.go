@@ -5,10 +5,13 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
-const CursorResources = "resourcesEndCursor"
+const (
+	CursorResources    = "resourcesEndCursor"
+	PageLimitResources = "resourcesPageLimit"
+)
 
 type ReadResources struct {
-	Resources `graphql:"resources(after: $resourcesEndCursor)"`
+	Resources `graphql:"resources(after: $resourcesEndCursor, first: $resourcesPageLimit)"`
 }
 
 func (r ReadResources) IsEmpty() bool {

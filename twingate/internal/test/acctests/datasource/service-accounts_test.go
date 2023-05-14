@@ -61,7 +61,7 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 
 func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - All", func(t *testing.T) {
-
+		acctests.SetPageLimit(1)
 		prefix := test.Prefix() + acctest.RandString(4)
 		const (
 			terraformResourceName = "dts_service"

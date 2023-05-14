@@ -5,10 +5,13 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
-const CursorUsers = "usersEndCursor"
+const (
+	CursorUsers    = "usersEndCursor"
+	PageLimitUsers = "usersPageLimit"
+)
 
 type ReadUsers struct {
-	Users `graphql:"users(after: $usersEndCursor)"`
+	Users `graphql:"users(after: $usersEndCursor, first: $usersPageLimit)"`
 }
 
 func (q ReadUsers) IsEmpty() bool {

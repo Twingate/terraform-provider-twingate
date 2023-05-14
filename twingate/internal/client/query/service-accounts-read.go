@@ -7,13 +7,14 @@ import (
 )
 
 const (
-	CursorServices         = "servicesEndCursor"
-	CursorServiceResources = "resourcesEndCursor"
-	CursorServiceKeys      = "keysEndCursor"
+	CursorServices       = "servicesEndCursor"
+	PageLimitServices    = "servicesPageLimit"
+	CursorServiceKeys    = "keysEndCursor"
+	PageLimitServiceKeys = "keysPageLimit"
 )
 
 type ReadServiceAccounts struct {
-	Services `graphql:"serviceAccounts(filter: $filter, after: $servicesEndCursor)"`
+	Services `graphql:"serviceAccounts(filter: $filter, after: $servicesEndCursor, first: $servicesPageLimit)"`
 }
 
 func (q ReadServiceAccounts) IsEmpty() bool {
@@ -36,8 +37,8 @@ type ServiceEdge struct {
 
 type GqlService struct {
 	IDName
-	Resources gqlResourceIDs `graphql:"resources(after: $resourcesEndCursor)"`
-	Keys      gqlKeyIDs      `graphql:"keys(after: $keysEndCursor)"`
+	Resources gqlResourceIDs `graphql:"resources(after: $resourcesEndCursor, first: $resourcesPageLimit)"`
+	Keys      gqlKeyIDs      `graphql:"keys(after: $keysEndCursor, first: $keysPageLimit)"`
 }
 
 func (s *GqlService) ToModel() *model.ServiceAccount {

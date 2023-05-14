@@ -35,6 +35,7 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 
 	variables := newVars(
 		gqlNullable("", query.CursorPolicies),
+		gqlVar(client.pageLimit, query.PageLimitPolicies),
 	)
 
 	response := query.ReadSecurityPolicies{}
