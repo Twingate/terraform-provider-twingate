@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -73,9 +72,9 @@ func TestClientFailedReadBody(t *testing.T) {
 }
 
 func TestClientAPITokenNotSet(t *testing.T) {
-	apiToken := os.Getenv(twingate.EnvAPIToken)
-	os.Setenv(twingate.EnvAPIToken, "")
-	defer os.Setenv(twingate.EnvAPIToken, apiToken)
+	apiToken := os.Getenv(EnvAPIToken)
+	os.Setenv(EnvAPIToken, "")
+	defer os.Setenv(EnvAPIToken, apiToken)
 
 	client := NewClient(
 		"twindev.com", "", "test",
@@ -86,7 +85,7 @@ func TestClientAPITokenNotSet(t *testing.T) {
 
 	assert.ErrorContains(t, err, ErrAPITokenNoSet.Error())
 
-	os.Setenv(twingate.EnvAPIToken, "xxx")
+	os.Setenv(EnvAPIToken, "xxx")
 	_, err = client.post(context.TODO(), "/hello", "hello", nil)
 
 	assert.ErrorContains(t, err, "lookup test.twindev.com")

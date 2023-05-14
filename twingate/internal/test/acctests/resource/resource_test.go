@@ -1783,8 +1783,6 @@ func createResource29WithoutAlias(terraformResourceName, networkName, resourceNa
 	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName)
 }
 
-// usersID := []string{"VXNlcjoxNDEwMA==", "VXNlcjoxNDEwMQ==", "VXNlcjoxNjU1NA==", "VXNlcjoxNjU1NQ=="}
-
 func TestAccTwingateResourceGroupsCursor(t *testing.T) {
 	acctests.SetPageLimit(1)
 
