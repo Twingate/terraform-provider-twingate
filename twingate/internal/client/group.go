@@ -19,8 +19,8 @@ func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*mod
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "userIds"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.CreateGroup{}
@@ -44,8 +44,8 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 
 	variables := newVars(
 		gqlID(groupID),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadGroup{}
@@ -65,10 +65,9 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
-		gqlNullable("", query.CursorGroups),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitGroups),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
+		cursor(query.CursorGroups),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadGroups{}
@@ -113,8 +112,8 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "addedUserIds"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.UpdateGroup{}
@@ -122,7 +121,8 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 		return nil, err
 	}
 
-	if err := response.Entity.Users.FetchPages(ctx, client.readGroupUsersAfter, newVars(gqlID(input.ID))); err != nil {
+	if err := response.Entity.Users.FetchPages(ctx,
+		client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(input.ID))); err != nil {
 		return nil, err //nolint
 	}
 
@@ -158,8 +158,8 @@ func (client *Client) DeleteGroupUsers(ctx context.Context, groupID string, user
 	variables := newVars(
 		gqlID(groupID),
 		gqlIDs(userIDs, "removedUserIds"),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.UpdateGroupRemoveUsers{}
@@ -171,7 +171,6 @@ func (client *Client) readGroupUsersAfter(ctx context.Context, variables map[str
 	opr := resourceGroup.read()
 
 	variables[query.CursorUsers] = cursor
-	variables[query.PageLimitUsers] = client.pageLimit
 	resourceID := fmt.Sprintf("%v", variables["id"])
 
 	response := query.ReadGroup{}

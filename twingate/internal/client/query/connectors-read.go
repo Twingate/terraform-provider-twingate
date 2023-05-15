@@ -5,13 +5,10 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
-const (
-	CursorConnectors    = "connectorsEndCursor"
-	PageLimitConnectors = "connectorsPageLimit"
-)
+const CursorConnectors = "connectorsEndCursor"
 
 type ReadConnectors struct {
-	Connectors `graphql:"connectors(after: $connectorsEndCursor, first: $connectorsPageLimit)"`
+	Connectors `graphql:"connectors(after: $connectorsEndCursor, first: $pageLimit)"`
 }
 
 type Connectors struct {

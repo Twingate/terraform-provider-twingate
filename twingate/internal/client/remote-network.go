@@ -34,8 +34,8 @@ func (client *Client) ReadRemoteNetworks(ctx context.Context) ([]*model.RemoteNe
 	opr := resourceRemoteNetwork.read()
 
 	variables := newVars(
-		gqlNullable("", query.CursorRemoteNetworks),
-		gqlVar(client.pageLimit, query.PageLimitRemoteNetworks),
+		cursor(query.CursorRemoteNetworks),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadRemoteNetworks{}

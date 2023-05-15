@@ -151,3 +151,45 @@ func testCheckOutputAttr(name string, index int, attr string, expected interface
 		return fmt.Errorf("not equal: expected '%v', got '%v'", expected, actual)
 	}
 }
+
+func testCheckOutputNestedLen(name string, index int, attr string, length int) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ms := s.RootModule()
+
+		res, ok := ms.Outputs[name]
+		if !ok || res == nil || res.Value == nil {
+			return fmt.Errorf("output '%s' not found", name)
+		}
+
+		list, ok := res.Value.([]interface{})
+		if !ok {
+			return fmt.Errorf("output '%s' is not a list", name)
+		}
+
+		if index >= len(list) {
+			return fmt.Errorf("index out of bounds, actual length %d", len(list))
+		}
+
+		item := list[index]
+		obj, ok := item.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("expected map, actual is %T", item)
+		}
+
+		actual, ok := obj[attr]
+		if !ok {
+			return fmt.Errorf("attribute '%s' not found", attr)
+		}
+
+		attrList, ok := actual.([]interface{})
+		if !ok {
+			return fmt.Errorf("output '%s' is not a list", attr)
+		}
+
+		if len(attrList) != length {
+			return fmt.Errorf("expected length %d, got %d", length, len(attrList))
+		}
+
+		return nil
+	}
+}

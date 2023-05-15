@@ -12,8 +12,8 @@ func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
 	opr := resourceUser.read()
 
 	variables := newVars(
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadUsers{}

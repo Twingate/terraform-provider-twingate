@@ -12,5 +12,5 @@ func (q ReadResourceGroups) IsEmpty() bool {
 
 type gqlResourceGroups struct {
 	ID     graphql.ID
-	Groups Groups `graphql:"groups(after: $groupsEndCursor, first: $groupsPageLimit)"`
+	Groups Groups `graphql:"groups(after: $groupsEndCursor, first: $pageLimit)"`
 }

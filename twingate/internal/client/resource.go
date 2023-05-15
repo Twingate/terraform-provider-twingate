@@ -70,10 +70,9 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
-		gqlNullable("", query.CursorGroups),
-		gqlVar(client.pageLimit, query.PageLimitGroups),
+		cursor(query.CursorUsers),
+		cursor(query.CursorGroups),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.CreateResource{}
@@ -106,10 +105,9 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 
 	variables := newVars(
 		gqlID(resourceID),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
-		gqlNullable("", query.CursorGroups),
-		gqlVar(client.pageLimit, query.PageLimitGroups),
+		cursor(query.CursorUsers),
+		cursor(query.CursorGroups),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadResource{}
@@ -129,8 +127,6 @@ func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map
 
 	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorGroups] = cursor
-	variables[query.PageLimitUsers] = client.pageLimit
-	variables[query.PageLimitGroups] = client.pageLimit
 
 	if _, exists := variables[query.CursorUsers]; !exists {
 		gqlNullable("", query.CursorUsers)(variables)
@@ -148,8 +144,8 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 	opr := resourceResource.read()
 
 	variables := newVars(
-		gqlNullable("", query.CursorResources),
-		gqlVar(client.pageLimit, query.PageLimitResources),
+		cursor(query.CursorResources),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadResources{}
@@ -190,10 +186,9 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
-		gqlNullable("", query.CursorGroups),
-		gqlVar(client.pageLimit, query.PageLimitGroups),
+		cursor(query.CursorUsers),
+		cursor(query.CursorGroups),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.UpdateResource{}
@@ -201,7 +196,8 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, err
 	}
 
-	if err := response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(input.ID))); err != nil {
+	if err := response.Entity.Groups.FetchPages(ctx,
+		client.readResourceGroupsAfter, newVars(pageLimit(client.pageLimit), gqlID(input.ID))); err != nil {
 		return nil, err //nolint
 	}
 
@@ -250,8 +246,8 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 
 	variables := newVars(
 		gqlVar(name, "name"),
-		gqlNullable("", query.CursorResources),
-		gqlVar(client.pageLimit, query.PageLimitResources),
+		cursor(query.CursorResources),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadResourcesByName{}
@@ -336,10 +332,9 @@ func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID strin
 	variables := newVars(
 		gqlID(resourceID),
 		gqlIDs(deleteGroupIDs, "removedGroupIds"),
-		gqlNullable("", query.CursorUsers),
-		gqlVar(client.pageLimit, query.PageLimitUsers),
-		gqlNullable("", query.CursorGroups),
-		gqlVar(client.pageLimit, query.PageLimitGroups),
+		cursor(query.CursorGroups),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.UpdateResourceRemoveGroups{}

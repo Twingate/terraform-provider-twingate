@@ -80,8 +80,8 @@ func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, e
 	opr := resourceConnector.read()
 
 	variables := newVars(
-		gqlNullable("", query.CursorConnectors),
-		gqlVar(client.pageLimit, query.PageLimitConnectors),
+		cursor(query.CursorConnectors),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadConnectors{}

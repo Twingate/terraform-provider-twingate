@@ -6,7 +6,7 @@ import (
 )
 
 type ReadShallowServiceAccounts struct {
-	ServiceAccounts `graphql:"serviceAccounts(after: $servicesEndCursor, first: $servicesPageLimit)"`
+	ServiceAccounts `graphql:"serviceAccounts(after: $servicesEndCursor, first: $pageLimit)"`
 }
 
 func (q ReadShallowServiceAccounts) IsEmpty() bool {

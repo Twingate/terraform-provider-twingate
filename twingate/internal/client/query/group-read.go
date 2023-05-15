@@ -13,7 +13,7 @@ type gqlGroup struct {
 	IDName
 	IsActive       bool
 	Type           string
-	Users          Users `graphql:"users(after: $usersEndCursor, first: $usersPageLimit)"`
+	Users          Users `graphql:"users(after: $usersEndCursor, first: $pageLimit)"`
 	SecurityPolicy gqlSecurityPolicy
 }
 
