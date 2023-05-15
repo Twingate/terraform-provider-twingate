@@ -15,6 +15,7 @@ on:
       - 'README.md'
     branches:
       - main
+      - fix/acctest-timeout
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
