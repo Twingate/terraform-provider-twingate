@@ -5,10 +5,8 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
-const CursorServiceAccounts = "serviceAccountsEndCursor"
-
 type ReadShallowServiceAccounts struct {
-	ServiceAccounts `graphql:"serviceAccounts(after: $serviceAccountsEndCursor)"`
+	ServiceAccounts `graphql:"serviceAccounts(after: $servicesEndCursor, first: $pageLimit)"`
 }
 
 func (q ReadShallowServiceAccounts) IsEmpty() bool {

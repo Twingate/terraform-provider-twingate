@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -51,6 +52,12 @@ func init() {
 		"twingate": func() (*schema.Provider, error) {
 			return Provider, nil
 		},
+	}
+}
+
+func SetPageLimit(limit int) {
+	if err := os.Setenv(client.EnvPageLimit, fmt.Sprintf("%d", limit)); err != nil {
+		log.Fatal("failed to set page limit", err)
 	}
 }
 
