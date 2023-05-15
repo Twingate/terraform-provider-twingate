@@ -15,7 +15,7 @@ import (
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors Basic", func(t *testing.T) {
-		acctests.SetPageLimit(1)
+		acctests.SetPageLimit(10)
 
 		networkName1 := test.RandomName()
 		networkName2 := test.RandomName()
