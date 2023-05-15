@@ -10,6 +10,7 @@ import (
 )
 
 func TestAccDatasourceTwingateSecurityPoliciesBasic(t *testing.T) {
+	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Security Policies - basic", func(t *testing.T) {
 		acctests.SetPageLimit(1)
 

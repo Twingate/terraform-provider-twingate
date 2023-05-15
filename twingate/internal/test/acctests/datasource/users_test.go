@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
+	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Users Basic", func(t *testing.T) {
 		acctests.SetPageLimit(1)
 		resource.Test(t, resource.TestCase{

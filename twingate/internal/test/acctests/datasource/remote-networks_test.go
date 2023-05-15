@@ -4,37 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccDatasourceTwingateRemoteNetworks_basic(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Remote Networks Basic", func(t *testing.T) {
-		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			Steps: []resource.TestStep{
-				{
-					Config: testDatasourceTwingateRemoteNetworks(),
-					Check: acctests.ComposeTestCheckFunc(
-						testCheckResourceAttrNotEqual("data.twingate_remote_networks.all", attr.Len(attr.RemoteNetworks), "0"),
-					),
-				},
-			},
-		})
-	})
-}
-
-func testDatasourceTwingateRemoteNetworks() string {
-	return `
-	data "twingate_remote_networks" "all" {}
-	`
-}
-
 func TestAccDatasourceTwingateRemoteNetworks_read(t *testing.T) {
+	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Remote Networks Read", func(t *testing.T) {
 		acctests.SetPageLimit(1)
 

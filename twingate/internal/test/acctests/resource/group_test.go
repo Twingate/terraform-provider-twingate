@@ -357,6 +357,7 @@ func TestAccTwingateGroupUsersNotAuthoritative(t *testing.T) {
 }
 
 func TestAccTwingateGroupUsersCursor(t *testing.T) {
+	t.Parallel()
 	t.Run("Test Twingate Resource : Acc Group Users Cursor", func(t *testing.T) {
 		acctests.SetPageLimit(1)
 

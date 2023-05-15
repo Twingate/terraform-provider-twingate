@@ -1784,6 +1784,7 @@ func createResource29WithoutAlias(terraformResourceName, networkName, resourceNa
 }
 
 func TestAccTwingateResourceGroupsCursor(t *testing.T) {
+	t.Parallel()
 	acctests.SetPageLimit(1)
 
 	const terraformResourceName = "test27"

@@ -96,6 +96,7 @@ func testTwingateGroupsDoesNotExists(name string) string {
 }
 
 func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
+	t.Parallel()
 	acctests.SetPageLimit(1)
 	groupName := test.RandomName()
 
