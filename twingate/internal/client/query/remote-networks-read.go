@@ -8,7 +8,7 @@ import (
 const CursorRemoteNetworks = "remoteNetworksEndCursor"
 
 type ReadRemoteNetworks struct {
-	RemoteNetworks `graphql:"remoteNetworks(after: $remoteNetworksEndCursor, first: $pageLimit)"`
+	RemoteNetworks `graphql:"remoteNetworks(after: $remoteNetworksEndCursor)"`
 }
 
 func (q ReadRemoteNetworks) IsEmpty() bool {

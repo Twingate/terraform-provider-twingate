@@ -17,7 +17,7 @@ var (
 
 func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Resources Basic", func(t *testing.T) {
-		acctests.SetPageLimit(1)
+
 		networkName := test.RandomName()
 		resourceName := test.RandomResourceName()
 		const theDatasource = "data.twingate_resources.out_drs1"

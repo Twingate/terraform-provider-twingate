@@ -8,7 +8,7 @@ import (
 const CursorPolicies = "policiesEndCursor"
 
 type ReadSecurityPolicies struct {
-	SecurityPolicies `graphql:"securityPolicies(after: $policiesEndCursor, first: $pageLimit)"`
+	SecurityPolicies `graphql:"securityPolicies(after: $policiesEndCursor)"`
 }
 
 func (q ReadSecurityPolicies) IsEmpty() bool {

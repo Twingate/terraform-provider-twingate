@@ -84,15 +84,12 @@ func (client *Client) DeleteServiceAccount(ctx context.Context, serviceAccountID
 }
 
 func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.ServiceAccount, error) {
-	opr := resourceServiceAccount.read()
+	op := resourceServiceAccount.read()
 
-	variables := newVars(
-		cursor(query.CursorServices),
-		pageLimit(client.pageLimit),
-	)
+	variables := newVars(gqlNullable("", query.CursorServiceAccounts))
 
 	response := query.ReadShallowServiceAccounts{}
-	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op, attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -104,12 +101,12 @@ func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.
 }
 
 func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
-	opr := resourceServiceAccount.read()
+	op := resourceServiceAccount.read()
 
-	variables[query.CursorServices] = cursor
+	variables[query.CursorServiceAccounts] = cursor
 
 	response := query.ReadShallowServiceAccounts{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName(queryReadServiceAccounts), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName(queryReadServiceAccounts), attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -126,10 +123,9 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 
 	variables := newVars(
 		gqlNullable(query.NewServiceAccountFilterInput(name), "filter"),
-		cursor(query.CursorServices),
-		cursor(query.CursorResources),
-		cursor(query.CursorServiceKeys),
-		pageLimit(client.pageLimit),
+		gqlNullable("", query.CursorServices),
+		gqlNullable("", query.CursorServiceResources),
+		gqlNullable("", query.CursorServiceKeys),
 	)
 
 	response := query.ReadServiceAccounts{}
@@ -156,12 +152,12 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 }
 
 func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceEdge], error) {
-	opr := resourceServiceAccount.read()
+	op := resourceServiceAccount.read()
 
 	variables[query.CursorServices] = cursor
 
 	response := query.ReadServiceAccounts{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName(queryReadServices), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName(queryReadServices), attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -172,7 +168,7 @@ func (client *Client) readServiceResourcesAfter(ctx context.Context, variables m
 	opr := resourceServiceAccount.read()
 
 	gqlNullable("", query.CursorServiceKeys)(variables)
-	variables[query.CursorResources] = cursor
+	variables[query.CursorServiceResources] = cursor
 
 	response := query.ReadServiceAccount{}
 	if err := client.query(ctx, &response, variables, opr.withCustomName(queryReadServices), attr{id: "All"}); err != nil {
@@ -185,7 +181,7 @@ func (client *Client) readServiceResourcesAfter(ctx context.Context, variables m
 func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
 	opr := resourceServiceAccount.read()
 
-	gqlNullable("", query.CursorResources)(variables)
+	gqlNullable("", query.CursorServiceResources)(variables)
 	variables[query.CursorServiceKeys] = cursor
 
 	response := query.ReadServiceAccount{}
@@ -205,9 +201,8 @@ func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID s
 
 	variables := newVars(
 		gqlID(serviceAccountID),
-		cursor(query.CursorResources),
-		cursor(query.CursorServiceKeys),
-		pageLimit(client.pageLimit),
+		gqlNullable("", query.CursorServiceResources),
+		gqlNullable("", query.CursorServiceKeys),
 	)
 
 	response := query.ReadServiceAccount{}
@@ -223,7 +218,7 @@ func (client *Client) ReadServiceAccount(ctx context.Context, serviceAccountID s
 }
 
 func (client *Client) fetchServiceInternalResources(ctx context.Context, serviceAccount *query.GqlService) error {
-	vars := newVars(gqlID(serviceAccount.ID), pageLimit(client.pageLimit))
+	vars := newVars(gqlID(serviceAccount.ID))
 
 	err := serviceAccount.Resources.FetchPages(ctx, client.readServiceResourcesAfter, vars)
 	if err != nil {

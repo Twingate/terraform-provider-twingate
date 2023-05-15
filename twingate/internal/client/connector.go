@@ -77,15 +77,12 @@ func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*m
 }
 
 func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, error) {
-	opr := resourceConnector.read()
+	op := resourceConnector.read()
 
-	variables := newVars(
-		cursor(query.CursorConnectors),
-		pageLimit(client.pageLimit),
-	)
+	variables := newVars(gqlNullable("", query.CursorConnectors))
 
 	response := query.ReadConnectors{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readConnectors"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName("readConnectors"), attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -97,12 +94,12 @@ func (client *Client) ReadConnectors(ctx context.Context) ([]*model.Connector, e
 }
 
 func (client *Client) readConnectorsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ConnectorEdge], error) {
-	opr := resourceConnector.read()
+	op := resourceConnector.read()
 
 	variables[query.CursorConnectors] = cursor
 
 	response := query.ReadConnectors{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readConnectors"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName("readConnectors"), attr{id: "All"}); err != nil {
 		return nil, err
 	}
 

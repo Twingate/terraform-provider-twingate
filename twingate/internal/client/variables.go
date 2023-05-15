@@ -1,7 +1,6 @@
 package client
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
 )
@@ -17,14 +16,6 @@ func newVars(options ...gqlVarOption) map[string]interface{} {
 }
 
 type gqlVarOption func(values map[string]interface{}) map[string]interface{}
-
-func pageLimit(limit int) gqlVarOption {
-	return gqlVar(limit, query.PageLimit)
-}
-
-func cursor(name string) gqlVarOption {
-	return gqlNullable("", name)
-}
 
 func gqlID(val interface{}, name ...string) gqlVarOption {
 	key := "id"

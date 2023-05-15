@@ -9,15 +9,12 @@ import (
 )
 
 func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
-	opr := resourceUser.read()
+	op := resourceUser.read()
 
-	variables := newVars(
-		cursor(query.CursorUsers),
-		pageLimit(client.pageLimit),
-	)
+	variables := newVars(gqlNullable("", query.CursorUsers))
 
 	response := query.ReadUsers{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readUsers"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName("readUsers"), attr{id: "All"}); err != nil {
 		if errors.Is(err, ErrGraphqlResultIsEmpty) {
 			return nil, nil
 		}
@@ -33,12 +30,12 @@ func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
 }
 
 func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
-	opr := resourceUser.read()
+	op := resourceUser.read()
 
 	variables[query.CursorUsers] = cursor
 	response := query.ReadUsers{}
 
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readUsers"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName("readUsers"), attr{id: "All"}); err != nil {
 		return nil, err
 	}
 

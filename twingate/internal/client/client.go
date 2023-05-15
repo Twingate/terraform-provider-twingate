@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -20,13 +19,10 @@ import (
 )
 
 const (
-	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
-	EnvAPIToken  = "TWINGATE_API_TOKEN" //#nosec
+	EnvAPIToken = "TWINGATE_API_TOKEN" //#nosec
 
 	headerAPIKey = "X-API-KEY"
 	headerAgent  = "User-Agent"
-
-	defaultPageLimit = 50
 )
 
 var (
@@ -45,7 +41,6 @@ type Client struct {
 	GraphqlServerURL string
 	APIServerURL     string
 	version          string
-	pageLimit        int
 }
 
 type transport struct {
@@ -145,23 +140,11 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		APIServerURL:     sURL.newAPIServerURL(),
 		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), httpClient),
 		version:          version,
-		pageLimit:        getPageLimit(),
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
 
 	return &client
-}
-
-func getPageLimit() int {
-	str := os.Getenv(EnvPageLimit)
-
-	val, err := strconv.Atoi(str)
-	if err != nil {
-		return defaultPageLimit
-	}
-
-	return val
 }
 
 func (client *Client) post(ctx context.Context, url string, payload interface{}, headers map[string]string) ([]byte, error) {

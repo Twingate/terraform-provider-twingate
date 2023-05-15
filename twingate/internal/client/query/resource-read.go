@@ -16,7 +16,7 @@ func (q ReadResource) IsEmpty() bool {
 
 type gqlResource struct {
 	ResourceNode
-	Groups Groups `graphql:"groups(after: $groupsEndCursor, first: $pageLimit)"`
+	Groups Groups
 }
 
 type ResourceNode struct {

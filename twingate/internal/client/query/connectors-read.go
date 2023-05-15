@@ -8,7 +8,7 @@ import (
 const CursorConnectors = "connectorsEndCursor"
 
 type ReadConnectors struct {
-	Connectors `graphql:"connectors(after: $connectorsEndCursor, first: $pageLimit)"`
+	Connectors `graphql:"connectors(after: $connectorsEndCursor)"`
 }
 
 type Connectors struct {

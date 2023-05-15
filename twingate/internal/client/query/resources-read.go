@@ -8,7 +8,7 @@ import (
 const CursorResources = "resourcesEndCursor"
 
 type ReadResources struct {
-	Resources `graphql:"resources(after: $resourcesEndCursor, first: $pageLimit)"`
+	Resources `graphql:"resources(after: $resourcesEndCursor)"`
 }
 
 func (r ReadResources) IsEmpty() bool {

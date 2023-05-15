@@ -34,8 +34,7 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.Securi
 	opr := resourceSecurityPolicy.read()
 
 	variables := newVars(
-		cursor(query.CursorPolicies),
-		pageLimit(client.pageLimit),
+		gqlNullable("", query.CursorPolicies),
 	)
 
 	response := query.ReadSecurityPolicies{}

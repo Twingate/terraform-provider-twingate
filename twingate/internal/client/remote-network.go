@@ -31,15 +31,12 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.Remote
 }
 
 func (client *Client) ReadRemoteNetworks(ctx context.Context) ([]*model.RemoteNetwork, error) {
-	opr := resourceRemoteNetwork.read()
+	op := resourceRemoteNetwork.read()
 
-	variables := newVars(
-		cursor(query.CursorRemoteNetworks),
-		pageLimit(client.pageLimit),
-	)
+	variables := newVars(gqlNullable("", query.CursorRemoteNetworks))
 
 	response := query.ReadRemoteNetworks{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readRemoteNetworks"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName("readRemoteNetworks"), attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -51,12 +48,12 @@ func (client *Client) ReadRemoteNetworks(ctx context.Context) ([]*model.RemoteNe
 }
 
 func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.RemoteNetworkEdge], error) {
-	opr := resourceRemoteNetwork.read()
+	op := resourceRemoteNetwork.read()
 
 	variables[query.CursorRemoteNetworks] = cursor
 
 	response := query.ReadRemoteNetworks{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readRemoteNetworks")); err != nil {
+	if err := client.query(ctx, &response, variables, op.withCustomName("readRemoteNetworks")); err != nil {
 		return nil, err
 	}
 
