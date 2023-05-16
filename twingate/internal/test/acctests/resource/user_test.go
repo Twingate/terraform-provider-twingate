@@ -309,3 +309,16 @@ func terraformResourceTwingateUserWithoutEmail(terraformResourceName string) str
 	}
 	`, terraformResourceName)
 }
+
+func genNewUsers(resourcePrefix string, count int) ([]string, []string) {
+	users := make([]string, 0, count)
+	userIDs := make([]string, 0, count)
+
+	for i := 0; i < count; i++ {
+		resourceName := fmt.Sprintf("%s_%d", resourcePrefix, i+1)
+		users = append(users, terraformResourceTwingateUser(resourceName, test.RandomEmail()))
+		userIDs = append(userIDs, fmt.Sprintf("twingate_user.%s.id", resourceName))
+	}
+
+	return users, userIDs
+}

@@ -366,18 +366,7 @@ func TestAccTwingateGroupUsersCursor(t *testing.T) {
 		theResource := acctests.TerraformGroup(terraformResourceName)
 		groupName := test.RandomName()
 
-		users, err := acctests.GetTestUsers()
-		if err != nil {
-			t.Skip("can't run test:", err)
-		}
-
-		usersID := utils.Map(users, func(user *model.User) string {
-			return user.ID
-		})
-
-		if len(usersID) < 4 {
-			t.Skip("can't run test: not enough users")
-		}
+		users, userIDs := genNewUsers("u007", 4)
 
 		sdk.Test(t, sdk.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
@@ -385,13 +374,13 @@ func TestAccTwingateGroupUsersCursor(t *testing.T) {
 			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config: terraformResourceTwingateGroupWithUsers(terraformResourceName, groupName, usersID),
+					Config: terraformResourceTwingateGroupAndUsers(terraformResourceName, groupName, users, userIDs),
 					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckGroupUsersLen(theResource, len(usersID)),
+						acctests.CheckGroupUsersLen(theResource, len(users)),
 					),
 				},
 				{
-					Config: terraformResourceTwingateGroupWithUsers(terraformResourceName, groupName, usersID[:3]),
+					Config: terraformResourceTwingateGroupAndUsers(terraformResourceName, groupName, users[:3], userIDs[:3]),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckGroupUsersLen(theResource, 3),
 					),
@@ -399,4 +388,15 @@ func TestAccTwingateGroupUsersCursor(t *testing.T) {
 			},
 		})
 	})
+}
+
+func terraformResourceTwingateGroupAndUsers(terraformResourceName, name string, users, userIDs []string) string {
+	return fmt.Sprintf(`
+	%s
+
+	resource "twingate_group" "%s" {
+	  name = "%s"
+	  user_ids = [%s]
+	}
+	`, strings.Join(users, `\n`), terraformResourceName, name, strings.Join(userIDs, `, `))
 }
