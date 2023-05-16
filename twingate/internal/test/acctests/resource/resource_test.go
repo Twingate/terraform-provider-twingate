@@ -716,6 +716,7 @@ func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
 	const theResource = "twingate_resource.test15"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
+	serviceAccountName := test.RandomName("s15")
 
 	sdk.Test(t, sdk.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
@@ -723,7 +724,7 @@ func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResource15(remoteNetworkName, resourceName, createServiceAccount(resourceName, "s15")),
+				Config: createResource15(remoteNetworkName, resourceName, createServiceAccount(resourceName, serviceAccountName)),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
@@ -769,6 +770,7 @@ func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
 	const theResource = "twingate_resource.test16"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
+	serviceAccountName := test.RandomName("s16")
 	groups, groupsID := genNewGroups("g16", 1)
 
 	sdk.Test(t, sdk.TestCase{
@@ -777,7 +779,7 @@ func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResource16(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, "s16")),
+				Config: createResource16(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, serviceAccountName)),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
