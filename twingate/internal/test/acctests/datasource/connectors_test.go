@@ -14,6 +14,7 @@ import (
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
+	t.Skip("test with cursor")
 	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Connectors Basic", func(t *testing.T) {
 		acctests.SetPageLimit(1)

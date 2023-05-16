@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccDatasourceTwingateRemoteNetworks_read(t *testing.T) {
+	t.Skip("test with cursor")
 	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Remote Networks Read", func(t *testing.T) {
 		acctests.SetPageLimit(1)

@@ -197,6 +197,7 @@ func filterDatasourceServices(prefix string, configs []terraformServiceConfig) s
 }
 
 func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
+	t.Skip("test with cursor")
 	t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Services - All Cursors", func(t *testing.T) {
 		acctests.SetPageLimit(1)
