@@ -8,7 +8,7 @@ import (
 const CursorGroups = "groupsEndCursor"
 
 type ReadGroups struct {
-	Groups `graphql:"groups(filter: $filter, after: $groupsEndCursor)"`
+	Groups `graphql:"groups(filter: $filter, after: $groupsEndCursor, first: $pageLimit)"`
 }
 
 func (q ReadGroups) IsEmpty() bool {

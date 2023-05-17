@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,6 +53,12 @@ func init() {
 		"twingate": func() (*schema.Provider, error) {
 			return Provider, nil
 		},
+	}
+}
+
+func SetPageLimit(limit int) {
+	if err := os.Setenv(client.EnvPageLimit, fmt.Sprintf("%d", limit)); err != nil {
+		log.Fatal("failed to set page limit", err)
 	}
 }
 
@@ -622,9 +630,14 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 	}
 }
 
-func AddGroupUser(groupResource, groupName, userID string) sdk.TestCheckFunc {
+func AddGroupUser(groupResource, groupName, terraformUserID string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		providerClient := Provider.Meta().(*client.Client)
+
+		userID, err := getResourceID(state, getResourceNameFromID(terraformUserID))
+		if err != nil {
+			return err
+		}
 
 		resourceID, err := getResourceID(state, groupResource)
 		if err != nil {
@@ -644,9 +657,18 @@ func AddGroupUser(groupResource, groupName, userID string) sdk.TestCheckFunc {
 	}
 }
 
-func DeleteGroupUser(groupResource, userID string) sdk.TestCheckFunc {
+func getResourceNameFromID(terraformID string) string {
+	return strings.TrimSuffix(terraformID, ".id")
+}
+
+func DeleteGroupUser(groupResource, terraformUserID string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		providerClient := Provider.Meta().(*client.Client)
+
+		userID, err := getResourceID(state, getResourceNameFromID(terraformUserID))
+		if err != nil {
+			return err
+		}
 
 		groupID, err := getResourceID(state, groupResource)
 		if err != nil {

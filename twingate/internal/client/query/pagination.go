@@ -4,6 +4,8 @@ import (
 	"context"
 )
 
+const PageLimit = "pageLimit"
+
 type PageInfo struct {
 	EndCursor   string
 	HasNextPage bool

@@ -70,7 +70,9 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
-		gqlNullable("", query.CursorUsers),
+		cursor(query.CursorUsers),
+		cursor(query.CursorGroups),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.CreateResource{}
@@ -103,7 +105,9 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 
 	variables := newVars(
 		gqlID(resourceID),
-		gqlNullable("", query.CursorUsers),
+		cursor(query.CursorUsers),
+		cursor(query.CursorGroups),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadResource{}
@@ -124,6 +128,10 @@ func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map
 	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorGroups] = cursor
 
+	if _, exists := variables[query.CursorUsers]; !exists {
+		gqlNullable("", query.CursorUsers)(variables)
+	}
+
 	response := query.ReadResourceGroups{}
 	if err := client.query(ctx, &response, variables, opr, attr{id: resourceID}); err != nil {
 		return nil, err
@@ -133,12 +141,15 @@ func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map
 }
 
 func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) {
-	op := resourceResource.read()
+	opr := resourceResource.read()
 
-	variables := newVars(gqlNullable("", query.CursorResources))
+	variables := newVars(
+		cursor(query.CursorResources),
+		pageLimit(client.pageLimit),
+	)
 
 	response := query.ReadResources{}
-	if err := client.query(ctx, &response, variables, op.withCustomName("readResources"), attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+	if err := client.query(ctx, &response, variables, opr.withCustomName("readResources"), attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
 		return nil, err
 	}
 
@@ -150,12 +161,12 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 }
 
 func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
-	op := resourceResource.read()
+	opr := resourceResource.read()
 
 	variables[query.CursorResources] = cursor
 
 	response := query.ReadResources{}
-	if err := client.query(ctx, &response, variables, op); err != nil {
+	if err := client.query(ctx, &response, variables, opr); err != nil {
 		return nil, err
 	}
 
@@ -175,7 +186,9 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
-		gqlNullable("", query.CursorUsers),
+		cursor(query.CursorUsers),
+		cursor(query.CursorGroups),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.UpdateResource{}
@@ -183,7 +196,8 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, err
 	}
 
-	if err := response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(input.ID))); err != nil {
+	if err := response.Entity.Groups.FetchPages(ctx,
+		client.readResourceGroupsAfter, newVars(pageLimit(client.pageLimit), gqlID(input.ID))); err != nil {
 		return nil, err //nolint
 	}
 
@@ -232,7 +246,8 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 
 	variables := newVars(
 		gqlVar(name, "name"),
-		gqlNullable("", query.CursorResources),
+		cursor(query.CursorResources),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.ReadResourcesByName{}
@@ -248,12 +263,12 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*
 }
 
 func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
-	op := resourceResource.read()
+	opr := resourceResource.read()
 
 	variables[query.CursorResources] = cursor
 
 	response := query.ReadResourcesByName{}
-	if err := client.query(ctx, &response, variables, op.withCustomName("readResources"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, opr.withCustomName("readResources"), attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -317,7 +332,9 @@ func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID strin
 	variables := newVars(
 		gqlID(resourceID),
 		gqlIDs(deleteGroupIDs, "removedGroupIds"),
-		gqlNullable("", query.CursorUsers),
+		cursor(query.CursorGroups),
+		cursor(query.CursorUsers),
+		pageLimit(client.pageLimit),
 	)
 
 	response := query.UpdateResourceRemoveGroups{}
