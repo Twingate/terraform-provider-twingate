@@ -3,7 +3,8 @@
 set -o errexit
 set -o nounset
 
-PACKAGE_NAME=./twingate/...
+#PACKAGE_NAME=./twingate/...
+PACKAGE_NAME=./twingate/internal/test/acctests/datasource/...
 TEST_RESULTS=${TEST_RESULTS:-"./test_results"}
 
 mkdir -p "${TEST_RESULTS}"
