@@ -13,7 +13,6 @@ import (
 )
 
 func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
-	//t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Connector Basic", func(t *testing.T) {
 		networkName := test.RandomName()
 		connectorName := test.RandomConnectorName()
