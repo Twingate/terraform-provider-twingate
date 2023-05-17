@@ -826,6 +826,7 @@ func createResource16(networkName, resourceName string, groups, groupsID []strin
 }
 
 func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test17"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -935,6 +936,7 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 }
 
 func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test13"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1181,6 +1183,7 @@ func createResource20(networkName, resourceName string) string {
 }
 
 func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test22"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1290,6 +1293,7 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 }
 
 func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test23"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1566,6 +1570,7 @@ func createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, netwo
 }
 
 func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test26"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
