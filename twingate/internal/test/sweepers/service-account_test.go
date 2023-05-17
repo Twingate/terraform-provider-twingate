@@ -2,6 +2,7 @@ package sweepers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
@@ -12,8 +13,8 @@ func init() {
 	sdk.AddTestSweepers(resource.TwingateServiceAccount, &sdk.Sweeper{
 		Name: resource.TwingateServiceAccount,
 		F: newTestSweeper(resource.TwingateServiceAccount,
-			func(client *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := client.ReadShallowServiceAccounts(ctx)
+			func(providerClient *client.Client, ctx context.Context) ([]Resource, error) {
+				resources, err := providerClient.ReadShallowServiceAccounts(ctx)
 				if err != nil {
 					return nil, err
 				}
@@ -24,27 +25,29 @@ func init() {
 				}
 				return items, nil
 			},
-			func(client *client.Client, ctx context.Context, id string) error {
-				service, err := client.ReadServiceAccount(ctx, id)
-				if err != nil {
+			func(providerClient *client.Client, ctx context.Context, id string) error {
+				service, err := providerClient.ReadServiceAccount(ctx, id)
+				if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 					return err
 				}
 
-				for _, keyID := range service.Keys {
-					key, err := client.ReadServiceKey(ctx, keyID)
-					if err != nil {
-						return err
-					}
-
-					if key.IsActive() {
-						err = client.RevokeServiceKey(ctx, keyID)
+				if service != nil {
+					for _, keyID := range service.Keys {
+						key, err := providerClient.ReadServiceKey(ctx, keyID)
 						if err != nil {
 							return err
+						}
+
+						if key.IsActive() {
+							err = providerClient.RevokeServiceKey(ctx, keyID)
+							if err != nil {
+								return err
+							}
 						}
 					}
 				}
 
-				return client.DeleteServiceAccount(ctx, id)
+				return providerClient.DeleteServiceAccount(ctx, id)
 			},
 		),
 	})

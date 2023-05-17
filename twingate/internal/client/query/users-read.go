@@ -8,7 +8,7 @@ import (
 const CursorUsers = "usersEndCursor"
 
 type ReadUsers struct {
-	Users `graphql:"users(after: $usersEndCursor)"`
+	Users `graphql:"users(after: $usersEndCursor, first: $pageLimit)"`
 }
 
 func (q ReadUsers) IsEmpty() bool {
