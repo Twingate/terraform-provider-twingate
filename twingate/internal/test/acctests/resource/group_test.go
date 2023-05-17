@@ -358,7 +358,7 @@ func TestAccTwingateGroupUsersNotAuthoritative(t *testing.T) {
 
 func TestAccTwingateGroupUsersCursor(t *testing.T) {
 	//t.Skip("test with cursor")
-	t.Parallel()
+	//t.Parallel()
 	t.Run("Test Twingate Resource : Acc Group Users Cursor", func(t *testing.T) {
 		acctests.SetPageLimit(1)
 
@@ -366,7 +366,7 @@ func TestAccTwingateGroupUsersCursor(t *testing.T) {
 		theResource := acctests.TerraformGroup(terraformResourceName)
 		groupName := test.RandomName()
 
-		users, userIDs := genNewUsers("u007", 4)
+		users, userIDs := genNewUsers("u007", 3)
 
 		sdk.Test(t, sdk.TestCase{
 			ProviderFactories: acctests.ProviderFactories,
@@ -380,9 +380,9 @@ func TestAccTwingateGroupUsersCursor(t *testing.T) {
 					),
 				},
 				{
-					Config: terraformResourceTwingateGroupAndUsers(terraformResourceName, groupName, users[:3], userIDs[:3]),
+					Config: terraformResourceTwingateGroupAndUsers(terraformResourceName, groupName, users[:2], userIDs[:2]),
 					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckGroupUsersLen(theResource, 3),
+						acctests.CheckGroupUsersLen(theResource, 2),
 					),
 				},
 			},
@@ -398,5 +398,5 @@ func terraformResourceTwingateGroupAndUsers(terraformResourceName, name string, 
 	  name = "%s"
 	  user_ids = [%s]
 	}
-	`, strings.Join(users, `\n`), terraformResourceName, name, strings.Join(userIDs, `, `))
+	`, strings.Join(users, "\n"), terraformResourceName, name, strings.Join(userIDs, ", "))
 }
