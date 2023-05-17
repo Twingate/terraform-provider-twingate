@@ -716,6 +716,7 @@ func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
 	const theResource = "twingate_resource.test15"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
+	serviceAccountName := test.RandomName("s15")
 
 	sdk.Test(t, sdk.TestCase{
 		ProviderFactories: acctests.ProviderFactories,
@@ -723,7 +724,7 @@ func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResource15(remoteNetworkName, resourceName, createServiceAccount(resourceName, "s15")),
+				Config: createResource15(remoteNetworkName, resourceName, createServiceAccount(resourceName, serviceAccountName)),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
@@ -769,6 +770,7 @@ func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
 	const theResource = "twingate_resource.test16"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
+	serviceAccountName := test.RandomName("s16")
 	groups, groupsID := genNewGroups("g16", 1)
 
 	sdk.Test(t, sdk.TestCase{
@@ -777,7 +779,7 @@ func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResource16(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, "s16")),
+				Config: createResource16(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, serviceAccountName)),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
@@ -824,6 +826,7 @@ func createResource16(networkName, resourceName string, groups, groupsID []strin
 }
 
 func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test17"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -933,6 +936,7 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 }
 
 func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test13"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1179,6 +1183,7 @@ func createResource20(networkName, resourceName string) string {
 }
 
 func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test22"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1288,6 +1293,7 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 }
 
 func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test23"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1564,6 +1570,7 @@ func createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, netwo
 }
 
 func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
+	t.Parallel()
 	const theResource = "twingate_resource.test26"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()

@@ -15,7 +15,7 @@ func init() {
 		F: newTestSweeper(resource.TwingateServiceAccount,
 			func(providerClient *client.Client, ctx context.Context) ([]Resource, error) {
 				resources, err := providerClient.ReadShallowServiceAccounts(ctx)
-				if err != nil {
+				if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 					return nil, err
 				}
 

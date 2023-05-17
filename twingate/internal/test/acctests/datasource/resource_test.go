@@ -14,6 +14,7 @@ import (
 )
 
 func TestAccDatasourceTwingateResource_basic(t *testing.T) {
+	//t.Parallel()
 	t.Run("Test Twingate Datasource : Acc Resource Basic", func(t *testing.T) {
 		networkName := test.RandomName()
 		resourceName := test.RandomResourceName()
