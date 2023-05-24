@@ -83,15 +83,14 @@ func (r *connectorTokens) Schema(_ context.Context, _ resource.SchemaRequest, re
 
 func (r *connectorTokens) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan connectorTokensModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	tokens, err := r.client.GenerateConnectorTokens(ctx, plan.ConnectorID.ValueString())
 	if err != nil {
-		addErr(resp.Diagnostics, err, operationCreate, TwingateConnectorTokens)
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateConnectorTokens)
 		return
 	}
 
@@ -99,8 +98,7 @@ func (r *connectorTokens) Create(ctx context.Context, req resource.CreateRequest
 	plan.AccessToken = types.StringValue(tokens.AccessToken)
 	plan.RefreshToken = types.StringValue(tokens.RefreshToken)
 
-	diags = resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -110,8 +108,7 @@ func (r *connectorTokens) Create(ctx context.Context, req resource.CreateRequest
 
 func (r *connectorTokens) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state connectorTokensModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -125,17 +122,14 @@ func (r *connectorTokens) Update(ctx context.Context, req resource.UpdateRequest
 
 func (r *connectorTokens) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state connectorTokensModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Just calling generate new tokens for the connector so the old ones are invalidated
 	_, err := r.client.GenerateConnectorTokens(ctx, state.ID.ValueString())
-	if err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateConnectorTokens)
-	}
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateConnectorTokens)
 }
 
 func resourceConnectorTokensReadHelper(ctx context.Context, client *client.Client, id, accessToken, refreshToken string, state *tfsdk.State, diagnostics diag.Diagnostics) {

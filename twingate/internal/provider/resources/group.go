@@ -88,21 +88,19 @@ func (r *group) Schema(_ context.Context, _ resource.SchemaRequest, resp *resour
 
 func (r *group) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan groupModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	group, err := r.client.CreateGroup(ctx, convertGroup(&plan))
 
-	resourceGroupReadHelper(ctx, group, &plan, &resp.State, resp.Diagnostics, err, operationCreate)
+	resourceGroupReadHelper(ctx, group, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *group) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state groupModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -112,37 +110,32 @@ func (r *group) Read(ctx context.Context, req resource.ReadRequest, resp *resour
 		group.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 	}
 
-	resourceGroupReadHelper(ctx, group, &state, &resp.State, resp.Diagnostics, err, operationRead)
+	resourceGroupReadHelper(ctx, group, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *group) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state groupModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	group := convertGroup(&plan)
+	remoteGroup, err := r.isAllowedToChangeGroup(ctx, state.ID.ValueString())
+	addErr(&resp.Diagnostics, err, operationUpdate, TwingateGroup)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	group := convertGroup(&plan)
-	remoteGroup, err := r.isAllowedToChangeGroup(ctx, state.ID.ValueString())
-	if err != nil {
-		addErr(resp.Diagnostics, err, operationUpdate, TwingateGroup)
-		return
-	}
-
 	oldIDs := getOldGroupUserIDs(&state, group, remoteGroup)
 	if err := r.client.DeleteGroupUsers(ctx, state.ID.ValueString(), setDifference(oldIDs, group.Users)); err != nil {
-		addErr(resp.Diagnostics, err, operationUpdate, TwingateGroup)
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateGroup)
+		return
 	}
 
 	group.ID = state.ID.ValueString()
 	group, err = r.client.UpdateGroup(ctx, group)
 
-	resourceGroupReadHelper(ctx, group, &plan, &resp.State, resp.Diagnostics, err, operationUpdate)
+	resourceGroupReadHelper(ctx, group, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func getOldGroupUserIDs(state *groupModel, group, remoteGroup *model.Group) []string {
@@ -155,21 +148,18 @@ func getOldGroupUserIDs(state *groupModel, group, remoteGroup *model.Group) []st
 
 func (r *group) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state groupModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if _, err := r.isAllowedToChangeGroup(ctx, state.ID.ValueString()); err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateGroup)
+		addErr(&resp.Diagnostics, err, operationDelete, TwingateGroup)
 		return
 	}
 
 	err := r.client.DeleteGroup(ctx, state.ID.ValueString())
-	if err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateGroup)
-	}
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateGroup)
 }
 
 func (r *group) isAllowedToChangeGroup(ctx context.Context, groupID string) (*model.Group, error) {
@@ -185,7 +175,7 @@ func (r *group) isAllowedToChangeGroup(ctx context.Context, groupID string) (*mo
 	return group, nil
 }
 
-func resourceGroupReadHelper(ctx context.Context, group *model.Group, state *groupModel, respState *tfsdk.State, diagnostics diag.Diagnostics, err error, operation string) {
+func resourceGroupReadHelper(ctx context.Context, group *model.Group, state *groupModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state

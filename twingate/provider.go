@@ -181,6 +181,8 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		resources.NewGroupResource,
 		resources.NewServiceAccountResource,
 		resources.NewServiceKeyResource,
+		resources.NewUserResource,
+		resources.NewResourceResource,
 	}
 }
 

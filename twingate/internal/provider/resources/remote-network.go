@@ -76,8 +76,7 @@ func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp
 
 func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan remoteNetworkModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -93,30 +92,25 @@ func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, 
 		Location: location,
 	})
 
-	resourceRemoteNetworkReadHelper(ctx, network, &plan, &resp.State, resp.Diagnostics, err, operationCreate)
+	resourceRemoteNetworkReadHelper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state remoteNetworkModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	network, err := r.client.ReadRemoteNetworkByID(ctx, state.ID.ValueString())
 
-	resourceRemoteNetworkReadHelper(ctx, network, &state, &resp.State, resp.Diagnostics, err, operationRead)
+	resourceRemoteNetworkReadHelper(ctx, network, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var state remoteNetworkModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-
-	var plan remoteNetworkModel
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	var state, plan remoteNetworkModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -134,24 +128,21 @@ func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, 
 
 	network, err := r.client.UpdateRemoteNetwork(ctx, network)
 
-	resourceRemoteNetworkReadHelper(ctx, network, &plan, &resp.State, resp.Diagnostics, err, operationUpdate)
+	resourceRemoteNetworkReadHelper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *remoteNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state remoteNetworkModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	err := r.client.DeleteRemoteNetwork(ctx, state.ID.ValueString())
-	if err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateRemoteNetwork)
-	}
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateRemoteNetwork)
 }
 
-func resourceRemoteNetworkReadHelper(ctx context.Context, network *model.RemoteNetwork, state *remoteNetworkModel, respState *tfsdk.State, diagnostics diag.Diagnostics, err error, operation string) {
+func resourceRemoteNetworkReadHelper(ctx context.Context, network *model.RemoteNetwork, state *remoteNetworkModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state

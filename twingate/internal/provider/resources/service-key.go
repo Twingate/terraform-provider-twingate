@@ -90,7 +90,11 @@ func (r *serviceKey) Create(ctx context.Context, req resource.CreateRequest, res
 		Name:    plan.Name.ValueString(),
 	})
 
-	resourceServiceKeyReadHelper(ctx, serviceKey, &plan, &resp.State, resp.Diagnostics, err, operationCreate)
+	if err == nil && serviceKey != nil {
+		plan.Token = types.StringValue(serviceKey.Token)
+	}
+
+	resourceServiceKeyReadHelper(ctx, serviceKey, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *serviceKey) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -103,7 +107,7 @@ func (r *serviceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 	serviceKey, err := r.client.ReadServiceKey(ctx, state.ID.ValueString())
 
-	resourceServiceKeyReadHelper(ctx, serviceKey, &state, &resp.State, resp.Diagnostics, err, operationRead)
+	resourceServiceKeyReadHelper(ctx, serviceKey, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *serviceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -122,11 +126,11 @@ func (r *serviceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 		},
 	)
 
-	resourceServiceKeyReadHelper(ctx, serviceKey, &state, &resp.State, resp.Diagnostics, err, operationUpdate)
+	resourceServiceKeyReadHelper(ctx, serviceKey, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *serviceKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state serviceAccountModel
+	var state serviceKeyModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -135,23 +139,22 @@ func (r *serviceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 
 	serviceKey, err := r.client.ReadServiceKey(ctx, state.ID.ValueString())
 	if err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
+		addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
 		return
 	}
 
 	if serviceKey.IsActive() {
 		if err = r.client.RevokeServiceKey(ctx, state.ID.ValueString()); err != nil {
-			addErr(resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
+			addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
 			return
 		}
 	}
 
-	if err = r.client.DeleteServiceKey(ctx, state.ID.ValueString()); err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
-	}
+	err = r.client.DeleteServiceKey(ctx, state.ID.ValueString())
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
 }
 
-func resourceServiceKeyReadHelper(ctx context.Context, serviceKey *model.ServiceKey, state *serviceKeyModel, respState *tfsdk.State, diagnostics diag.Diagnostics, err error, operation string) {
+func resourceServiceKeyReadHelper(ctx context.Context, serviceKey *model.ServiceKey, state *serviceKeyModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -168,7 +171,6 @@ func resourceServiceKeyReadHelper(ctx context.Context, serviceKey *model.Service
 	state.ID = types.StringValue(serviceKey.ID)
 	state.Name = types.StringValue(serviceKey.Name)
 	state.ServiceAccountID = types.StringValue(serviceKey.Service)
-	state.Token = types.StringValue(serviceKey.Token)
 	state.IsActive = types.BoolValue(serviceKey.IsActive())
 
 	// Set refreshed state

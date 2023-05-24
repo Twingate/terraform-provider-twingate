@@ -119,6 +119,7 @@ func TestAccTwingateServiceKeyCreateUpdateWithName(t *testing.T) {
 	})
 }
 
+// TODO: fix re-creation after status changes to REVOKED
 func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Service Key ReCreate After Inactive", func(t *testing.T) {
 		serviceAccountName := test.RandomName()

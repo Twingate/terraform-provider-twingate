@@ -108,8 +108,7 @@ func (r *connector) Schema(_ context.Context, _ resource.SchemaRequest, resp *re
 
 func (r *connector) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan connectorModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -119,30 +118,25 @@ func (r *connector) Create(ctx context.Context, req resource.CreateRequest, resp
 		NetworkID: plan.RemoteNetworkID.ValueString(),
 	})
 
-	resourceConnectorReadHelper(ctx, conn, &plan, &resp.State, resp.Diagnostics, err, operationCreate)
+	resourceConnectorReadHelper(ctx, conn, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *connector) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state connectorModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	conn, err := r.client.ReadConnector(ctx, state.ID.ValueString())
 
-	resourceConnectorReadHelper(ctx, conn, &state, &resp.State, resp.Diagnostics, err, operationRead)
+	resourceConnectorReadHelper(ctx, conn, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *connector) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var state connectorModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-
-	var plan connectorModel
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	var state, plan connectorModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -165,24 +159,21 @@ func (r *connector) Update(ctx context.Context, req resource.UpdateRequest, resp
 
 	conn, err := r.client.UpdateConnector(ctx, conn)
 
-	resourceConnectorReadHelper(ctx, conn, &plan, &resp.State, resp.Diagnostics, err, operationUpdate)
+	resourceConnectorReadHelper(ctx, conn, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *connector) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state connectorModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	err := r.client.DeleteConnector(ctx, state.ID.ValueString())
-	if err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateConnector)
-	}
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateConnector)
 }
 
-func resourceConnectorReadHelper(ctx context.Context, conn *model.Connector, state *connectorModel, respState *tfsdk.State, diagnostics diag.Diagnostics, err error, operation string) {
+func resourceConnectorReadHelper(ctx context.Context, conn *model.Connector, state *connectorModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -206,7 +197,11 @@ func resourceConnectorReadHelper(ctx context.Context, conn *model.Connector, sta
 	diagnostics.Append(diags...)
 }
 
-func addErr(diagnostics diag.Diagnostics, err error, operation, resource string) {
+func addErr(diagnostics *diag.Diagnostics, err error, operation, resource string) {
+	if err == nil {
+		return
+	}
+
 	diagnostics.AddError(
 		fmt.Sprintf("failed to %s %s", operation, resource),
 		err.Error(),

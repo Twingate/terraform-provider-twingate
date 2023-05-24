@@ -58,28 +58,26 @@ func (r *serviceAccount) Schema(_ context.Context, _ resource.SchemaRequest, res
 
 func (r *serviceAccount) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan serviceAccountModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	serviceAccount, err := r.client.CreateServiceAccount(ctx, plan.Name.ValueString())
 
-	resourceServiceAccountReadHelper(ctx, serviceAccount, &plan, &resp.State, resp.Diagnostics, err, operationCreate)
+	resourceServiceAccountReadHelper(ctx, serviceAccount, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *serviceAccount) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state serviceAccountModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	serviceAccount, err := r.client.ReadShallowServiceAccount(ctx, state.ID.ValueString())
 
-	resourceServiceAccountReadHelper(ctx, serviceAccount, &state, &resp.State, resp.Diagnostics, err, operationRead)
+	resourceServiceAccountReadHelper(ctx, serviceAccount, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *serviceAccount) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -98,24 +96,21 @@ func (r *serviceAccount) Update(ctx context.Context, req resource.UpdateRequest,
 		},
 	)
 
-	resourceServiceAccountReadHelper(ctx, serviceAccount, &state, &resp.State, resp.Diagnostics, err, operationUpdate)
+	resourceServiceAccountReadHelper(ctx, serviceAccount, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *serviceAccount) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state serviceAccountModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	err := r.client.DeleteServiceAccount(ctx, state.ID.ValueString())
-	if err != nil {
-		addErr(resp.Diagnostics, err, operationDelete, TwingateServiceAccount)
-	}
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccount)
 }
 
-func resourceServiceAccountReadHelper(ctx context.Context, serviceAccount *model.ServiceAccount, state *serviceAccountModel, respState *tfsdk.State, diagnostics diag.Diagnostics, err error, operation string) {
+func resourceServiceAccountReadHelper(ctx context.Context, serviceAccount *model.ServiceAccount, state *serviceAccountModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
