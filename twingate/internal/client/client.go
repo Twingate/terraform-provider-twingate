@@ -20,11 +20,13 @@ import (
 )
 
 const (
-	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
-	EnvAPIToken  = "TWINGATE_API_TOKEN" //#nosec
+	EnvPageLimit     = "TWINGATE_PAGE_LIMIT"
+	EnvAPIToken      = "TWINGATE_API_TOKEN" //#nosec
+	EnvCorrelationID = "TWINGATE_CORRELATION_ID"
 
-	headerAPIKey = "X-API-KEY"
-	headerAgent  = "User-Agent"
+	headerAPIKey        = "X-API-KEY"
+	headerAgent         = "User-Agent"
+	headerCorrelationID = "X-Correlation-Id"
 
 	defaultPageLimit = 50
 )
@@ -46,12 +48,14 @@ type Client struct {
 	APIServerURL     string
 	version          string
 	pageLimit        int
+	correlationID    string
 }
 
 type transport struct {
 	underlineRoundTripper http.RoundTripper
 	apiToken              string
 	version               string
+	correlationID         string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -61,6 +65,7 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	req.Header.Set(headerAPIKey, t.apiToken)
 	req.Header.Set(headerAgent, t.version)
+	req.Header.Set(headerCorrelationID, t.correlationID)
 
 	return t.underlineRoundTripper.RoundTrip(req) //nolint:wrapcheck
 }
@@ -77,11 +82,12 @@ func (t *transport) init() error {
 	return nil
 }
 
-func newTransport(underlineRoundTripper http.RoundTripper, apiToken string, version string) *transport {
+func newTransport(underlineRoundTripper http.RoundTripper, apiToken, version, correlationID string) *transport {
 	return &transport{
 		underlineRoundTripper: underlineRoundTripper,
 		apiToken:              apiToken,
 		version:               twingateAgentVersion(version),
+		correlationID:         correlationID,
 	}
 }
 
@@ -127,6 +133,8 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 }
 
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
+	correlationID := os.Getenv(EnvCorrelationID)
+
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.CheckRetry = customRetryPolicy
@@ -135,7 +143,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
-	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, version)
+	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, version, correlationID)
 
 	httpClient := retryableClient.StandardClient()
 
@@ -143,9 +151,12 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		HTTPClient:       httpClient,
 		GraphqlServerURL: sURL.newGraphqlServerURL(),
 		APIServerURL:     sURL.newAPIServerURL(),
-		GraphqlClient:    graphql.NewClient(sURL.newGraphqlServerURL(), httpClient),
-		version:          version,
-		pageLimit:        getPageLimit(),
+		GraphqlClient: graphql.NewClient(sURL.newGraphqlServerURL(), httpClient).WithRequestModifier(func(request *http.Request) {
+			request.Header.Set(headerCorrelationID, correlationID)
+		}),
+		version:       version,
+		pageLimit:     getPageLimit(),
+		correlationID: correlationID,
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
@@ -196,6 +207,7 @@ func (client *Client) post(ctx context.Context, url string, payload interface{},
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set(headerAgent, twingateAgentVersion(client.version))
+	req.Header.Set(headerCorrelationID, client.correlationID)
 	res, err := client.HTTPClient.Do(req)
 
 	if err != nil {
