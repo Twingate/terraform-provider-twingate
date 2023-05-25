@@ -3,14 +3,12 @@ package twingate
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
-	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -21,18 +19,12 @@ const (
 	DefaultURL          = "twingate.com"
 
 	// EnvAPIToken env var for Token.
-	EnvAPIToken      = "TWINGATE_API_TOKEN" //#nosec
-	EnvNetwork       = "TWINGATE_NETWORK"
-	EnvURL           = "TWINGATE_URL"
-	EnvHTTPTimeout   = "TWINGATE_HTTP_TIMEOUT"
-	EnvHTTPMaxRetry  = "TWINGATE_HTTP_MAX_RETRY"
-	EnvCorrelationID = "TWINGATE_CORRELATION_ID"
+	EnvAPIToken     = "TWINGATE_API_TOKEN" //#nosec
+	EnvNetwork      = "TWINGATE_NETWORK"
+	EnvURL          = "TWINGATE_URL"
+	EnvHTTPTimeout  = "TWINGATE_HTTP_TIMEOUT"
+	EnvHTTPMaxRetry = "TWINGATE_HTTP_MAX_RETRY"
 )
-
-func init() { //nolint:gochecknoinits
-	correlationID, _ := uuid.GenerateUUID()
-	_ = os.Setenv(EnvCorrelationID, correlationID)
-}
 
 func Provider(version string) *schema.Provider {
 	provider := &schema.Provider{

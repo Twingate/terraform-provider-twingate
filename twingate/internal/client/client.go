@@ -16,13 +16,15 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-uuid"
 	"github.com/hasura/go-graphql-client"
 )
 
+var correlationID, _ = uuid.GenerateUUID() //nolint:gochecknoglobals
+
 const (
-	EnvPageLimit     = "TWINGATE_PAGE_LIMIT"
-	EnvAPIToken      = "TWINGATE_API_TOKEN" //#nosec
-	EnvCorrelationID = "TWINGATE_CORRELATION_ID"
+	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
+	EnvAPIToken  = "TWINGATE_API_TOKEN" //#nosec
 
 	headerAPIKey        = "X-API-KEY"
 	headerAgent         = "User-Agent"
@@ -133,8 +135,6 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 }
 
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
-	correlationID := os.Getenv(EnvCorrelationID)
-
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.CheckRetry = customRetryPolicy
