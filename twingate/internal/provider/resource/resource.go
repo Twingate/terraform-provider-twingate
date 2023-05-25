@@ -204,12 +204,12 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	resource, err = client.UpdateResource(ctx, resource)
-	if err != nil {
+	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
+	resource, err = client.UpdateResource(ctx, resource)
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -270,13 +270,6 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 			return diag.FromErr(err)
 		}
 	}
-
-	remoteServiceAccounts, err := resourceClient.ReadResourceServiceAccounts(ctx, resource.ID)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	resource.ServiceAccounts = remoteServiceAccounts
 
 	if !resource.IsAuthoritative {
 		groups, serviceAccounts := convertAccess(resourceData)
@@ -478,21 +471,16 @@ func getOldIDsNonAuthoritative(resourceData *schema.ResourceData, attribute stri
 }
 
 func getOldIDsAuthoritative(ctx context.Context, resource *model.Resource, client *client.Client, attribute string) []string {
+	res, err := client.ReadResource(ctx, resource.ID)
+	if err != nil {
+		return nil
+	}
+
 	switch attribute {
 	case attr.ServiceAccountIDs:
-		serviceAccounts, err := client.ReadResourceServiceAccounts(ctx, resource.ID)
-		if err != nil {
-			return nil
-		}
-
-		return serviceAccounts
+		return res.ServiceAccounts
 
 	case attr.GroupIDs:
-		res, err := client.ReadResource(ctx, resource.ID)
-		if err != nil {
-			return nil
-		}
-
 		return res.Groups
 	}
 
