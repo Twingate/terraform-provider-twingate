@@ -16,7 +16,8 @@ func (q ReadResource) IsEmpty() bool {
 
 type gqlResource struct {
 	ResourceNode
-	Groups Groups `graphql:"groups(after: $groupsEndCursor, first: $pageLimit)"`
+	Groups          Groups          `graphql:"groups(after: $groupsEndCursor, first: $pageLimit)"`
+	ServiceAccounts ServiceAccounts `graphql:"serviceAccounts(after: $servicesEndCursor, first: $pageLimit)"`
 }
 
 type ResourceNode struct {
@@ -53,6 +54,9 @@ type PortRange struct {
 func (r gqlResource) ToModel() *model.Resource {
 	resource := r.ResourceNode.ToModel()
 	resource.Groups = utils.Map[*GroupEdge, string](r.Groups.Edges, func(edge *GroupEdge) string {
+		return string(edge.Node.ID)
+	})
+	resource.ServiceAccounts = utils.Map[*ServiceAccountEdge, string](r.ServiceAccounts.Edges, func(edge *ServiceAccountEdge) string {
 		return string(edge.Node.ID)
 	})
 
