@@ -60,7 +60,7 @@ func createResourceOnlyWithNetwork(terraformResourceName, networkName, resourceN
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.%s.id
-	  access = {
+	  access {
 	    group_ids = []
 	  }
 	}

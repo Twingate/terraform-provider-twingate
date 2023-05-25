@@ -3,16 +3,19 @@ package resources
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -26,12 +29,12 @@ type twingateResource struct {
 }
 
 type resourceModel struct {
-	ID              types.String `tfsdk:"id"`
-	Name            types.String `tfsdk:"name"`
-	Address         types.String `tfsdk:"address"`
-	RemoteNetworkID types.String `tfsdk:"remote_network_id"`
-	IsAuthoritative types.Bool   `tfsdk:"is_authoritative"`
-	//Protocols                protocolModel `tfsdk:"protocols"`
+	ID                       types.String `tfsdk:"id"`
+	Name                     types.String `tfsdk:"name"`
+	Address                  types.String `tfsdk:"address"`
+	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
+	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
+	Protocols                types.Object `tfsdk:"protocols"`
 	Access                   types.Object `tfsdk:"access"`
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
@@ -71,26 +74,26 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 }
 
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	//portSchema := schema.SingleNestedAttribute{
-	//	Required: true,
-	//	Attributes: map[string]schema.Attribute{
-	//		attr.Policy: schema.StringAttribute{
-	//			Required: true,
-	//			Validators: []validator.String{
-	//				stringvalidator.OneOf(model.Policies...),
-	//			},
-	//			Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
-	//		},
-	//		attr.Ports: schema.ListAttribute{
-	//			Optional:    true,
-	//			ElementType: types.StringType,
-	//			Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
-	//			// TODO:
-	//			//DiffSuppressOnRefresh: true,
-	//			//DiffSuppressFunc:      portsNotChanged,
-	//		},
-	//	},
-	//}
+	portSchema := schema.SingleNestedAttribute{
+		Required: true,
+		Attributes: map[string]schema.Attribute{
+			attr.Policy: schema.StringAttribute{
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.Policies...),
+				},
+				Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
+			},
+			attr.Ports: schema.ListAttribute{
+				Optional:    true,
+				ElementType: types.StringType,
+				Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
+				// TODO:
+				//DiffSuppressOnRefresh: true,
+				//DiffSuppressFunc:      portsNotChanged,
+			},
+		},
+	}
 
 	//protocolSchema := schema.SingleNestedAttribute{
 	//	Optional: true,
@@ -133,28 +136,6 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			//attr.Protocols: protocolSchema,
 
-			attr.Access: schema.SingleNestedAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Restrict access to certain groups or service accounts",
-				Attributes: map[string]schema.Attribute{
-					attr.GroupIDs: schema.SetAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
-						// TODO:
-						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.ServiceAccountIDs)},
-						Description: "List of Group IDs that will have permission to access the Resource.",
-					},
-					attr.ServiceAccountIDs: schema.SetAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
-						// TODO:
-						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.GroupIDs)},
-						Description: "List of Service Account IDs that will have permission to access the Resource.",
-					},
-				},
-			},
-
 			attr.Alias: schema.StringAttribute{
 				Optional:    true,
 				Description: "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
@@ -176,6 +157,43 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: "Autogenerated ID of the Resource, encoded in base64",
+			},
+		},
+
+		Blocks: map[string]schema.Block{
+			attr.Access: schema.SingleNestedBlock{
+				Description: "Restrict access to certain groups or service accounts",
+				Attributes: map[string]schema.Attribute{
+
+					attr.GroupIDs: schema.SetAttribute{
+						Optional:    true,
+						ElementType: types.StringType,
+						// TODO:
+						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.ServiceAccountIDs)},
+
+						Description: "List of Group IDs that will have permission to access the Resource.",
+					},
+					attr.ServiceAccountIDs: schema.SetAttribute{
+						Optional:    true,
+						ElementType: types.StringType,
+						// TODO:
+						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.GroupIDs)},
+						Description: "List of Service Account IDs that will have permission to access the Resource.",
+					},
+				},
+			},
+
+			attr.Protocols: schema.SingleNestedBlock{
+				Attributes: map[string]schema.Attribute{
+					attr.AllowIcmp: schema.BoolAttribute{
+						Optional: true,
+						//Default: true,
+						Description: "Whether to allow ICMP (ping) traffic",
+					},
+					attr.TCP: portSchema,
+					attr.UDP: portSchema,
+				},
+				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
 			},
 		},
 	}
@@ -206,11 +224,24 @@ func getAccessAttribute(obj *types.Object, attribute string) []string {
 	}
 
 	val := obj.Attributes()[attribute]
-	if val.IsNull() || val.IsUnknown() {
+	if val == nil || val.IsNull() || val.IsUnknown() {
 		return nil
 	}
 
 	return convertIDs(val.(types.Set))
+}
+
+func isAccessAttributeKnown(obj *types.Object, attribute string) bool {
+	if obj == nil || obj.IsUnknown() {
+		return false
+	}
+
+	val := obj.Attributes()[attribute]
+	if val == nil || val.IsNull() || val.IsUnknown() {
+		return false
+	}
+
+	return true
 }
 
 func convertResource(plan *resourceModel) (*model.Resource, error) {
@@ -458,18 +489,23 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 	}
 
 	attributes := map[string]tfattr.Value{
-		attr.GroupIDs:          groupIDs,
-		attr.ServiceAccountIDs: serviceAccountIDs,
+		attr.GroupIDs:          state.Access.Attributes()[attr.GroupIDs],
+		attr.ServiceAccountIDs: state.Access.Attributes()[attr.ServiceAccountIDs],
 	}
 
-	state.Access, diags = types.ObjectValue(attributeTypes, attributes)
+	if !groupIDs.IsNull() {
+		attributes[attr.GroupIDs] = groupIDs
+	}
+
+	if !serviceAccountIDs.IsNull() {
+		attributes[attr.ServiceAccountIDs] = serviceAccountIDs
+	}
+
+	if !state.Access.IsNull() {
+		state.Access, diags = types.ObjectValue(attributeTypes, attributes)
+	}
 
 	diagnostics.Append(diags...)
-
-	//state.Access = accessModel{
-	//	GroupIDs:          groupIDs,
-	//	ServiceAccountIDs: serviceAccountIDs,
-	//}
 
 	// Set refreshed state
 	diagnostics.Append(respState.Set(ctx, state)...)
