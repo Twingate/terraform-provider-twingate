@@ -128,6 +128,7 @@ func TestClientResourceReadOk(t *testing.T) {
 			Groups: []string{
 				"group1", "group2",
 			},
+			ServiceAccounts: []string{},
 			Protocols: &model.Protocols{
 				UDP: &model.Protocol{
 					Ports:  []*model.PortRange{},
@@ -221,7 +222,8 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 			Groups: []string{
 				"group1", "group2", "group3", "group4",
 			},
-			IsActive: true,
+			ServiceAccounts: []string{},
+			IsActive:        true,
 			Protocols: &model.Protocols{
 				UDP: &model.Protocol{
 					Ports:  []*model.PortRange{},

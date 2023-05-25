@@ -129,6 +129,8 @@ resource "twingate_resource" "tg_instance" {
   name = "My AWS Instance"
   address = aws_instance.my_instance.private_dns
   remote_network_id = twingate_remote_network.my_aws_network.id
-  group_ids = ["R3JvdXG6OGky"]
+  access {
+    group_ids = ["R3JvdXG6OGky"]
+  }
 }
 ```
