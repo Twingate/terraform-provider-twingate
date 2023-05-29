@@ -11,6 +11,9 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -540,7 +543,14 @@ func convertAccess(data *schema.ResourceData) ([]string, []string) {
 
 	rawMap := rawList[0].(map[string]interface{})
 
-	return convertIDs(rawMap[attr.GroupIDs]), convertIDs(rawMap[attr.ServiceAccountIDs])
+	return convertIDsFromTerraform(rawMap[attr.GroupIDs]), convertIDsFromTerraform(rawMap[attr.ServiceAccountIDs])
+}
+
+func convertIDsFromTerraform(data interface{}) []string {
+	return utils.Map(data.(types.Set).Elements(), func(elem tfattr.Value) string {
+		return elem.(types.String).ValueString()
+	},
+	)
 }
 
 func convertAuthoritativeFlag(data *schema.ResourceData) bool {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
@@ -15,9 +16,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 func NewResourceResource() resource.Resource {
@@ -49,7 +52,7 @@ type protocolModel struct {
 
 type portsModel struct {
 	Policy types.String `tfsdk:"policy"`
-	Ports  types.List   `tfsdk:"ports"`
+	Ports  types.Set    `tfsdk:"ports"`
 }
 
 type accessModel struct {
@@ -74,23 +77,34 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 }
 
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	portSchema := schema.SingleNestedAttribute{
-		Required: true,
+	protocolSchema := schema.SingleNestedBlock{
+		//Required: true,
+
 		Attributes: map[string]schema.Attribute{
 			attr.Policy: schema.StringAttribute{
-				Required: true,
+				// tODO:
+				//Required: true,
+				Computed: true,
+				Optional: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.Policies...),
 				},
 				Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
+				//PlanModifiers: []planmodifier.String{
+				//	ProtocolDiff(),
+				//},
 			},
-			attr.Ports: schema.ListAttribute{
+			attr.Ports: schema.SetAttribute{
 				Optional:    true,
+				Computed:    true,
 				ElementType: types.StringType,
 				Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
 				// TODO:
 				//DiffSuppressOnRefresh: true,
 				//DiffSuppressFunc:      portsNotChanged,
+				PlanModifiers: []planmodifier.Set{
+					PortsDiff(),
+				},
 			},
 		},
 	}
@@ -162,11 +176,19 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 		Blocks: map[string]schema.Block{
 			attr.Access: schema.SingleNestedBlock{
+				//Validators: []validator.Object{
+				//	objectvalidator.AtLeastOneOf(path.Expressions{
+				//		path.MatchRoot("access.group_ids"),
+				//		path.MatchRoot("access.service_account_ids"),
+				//	}...),
+				//},
+
 				Description: "Restrict access to certain groups or service accounts",
 				Attributes: map[string]schema.Attribute{
 
 					attr.GroupIDs: schema.SetAttribute{
-						Optional:    true,
+						Optional: true,
+						//Computed:    true,
 						ElementType: types.StringType,
 						// TODO:
 						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.ServiceAccountIDs)},
@@ -174,7 +196,8 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Description: "List of Group IDs that will have permission to access the Resource.",
 					},
 					attr.ServiceAccountIDs: schema.SetAttribute{
-						Optional:    true,
+						Optional: true,
+						//Computed:    true,
 						ElementType: types.StringType,
 						// TODO:
 						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.GroupIDs)},
@@ -186,14 +209,20 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.Protocols: schema.SingleNestedBlock{
 				Attributes: map[string]schema.Attribute{
 					attr.AllowIcmp: schema.BoolAttribute{
+						Computed: true,
 						Optional: true,
 						//Default: true,
 						Description: "Whether to allow ICMP (ping) traffic",
 					},
-					attr.TCP: portSchema,
-					attr.UDP: portSchema,
+					//attr.TCP: portSchema,
+					//attr.UDP: portSchema,
+				},
+				Blocks: map[string]schema.Block{
+					attr.TCP: protocolSchema,
+					attr.UDP: protocolSchema,
 				},
 				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
+				//PlanModifiers: []planmodifier.Object{},
 			},
 		},
 	}
@@ -245,79 +274,109 @@ func isAccessAttributeKnown(obj *types.Object, attribute string) bool {
 }
 
 func convertResource(plan *resourceModel) (*model.Resource, error) {
-	//protocols, err := convertProtocols(&plan.Protocols)
-	//if err != nil {
-	//	return nil, err
-	//}
+	protocols, err := convertProtocols(&plan.Protocols)
+	if err != nil {
+		return nil, err
+	}
 
 	groupIDs := getAccessAttribute(&plan.Access, attr.GroupIDs)
 	serviceAccountIDs := getAccessAttribute(&plan.Access, attr.ServiceAccountIDs)
 
-	//serviceAccountIDs = convertIDs(plan.Access.ServiceAccountIDs)
-	//}
+	var isVisible, isBrowserShortcutEnabled *bool
+	if !plan.IsVisible.IsUnknown() {
+		isVisible = plan.IsVisible.ValueBoolPointer()
+	}
+
+	if !plan.IsBrowserShortcutEnabled.IsUnknown() {
+		isBrowserShortcutEnabled = plan.IsBrowserShortcutEnabled.ValueBoolPointer()
+	}
 
 	return &model.Resource{
-		Name:            plan.Name.ValueString(),
-		RemoteNetworkID: plan.RemoteNetworkID.ValueString(),
-		Address:         plan.Address.ValueString(),
-		//Protocols:       protocols,
-		Groups:          groupIDs,
-		ServiceAccounts: serviceAccountIDs,
-		IsAuthoritative: convertAuthoritativeFlag(plan.IsAuthoritative),
-		Alias:           plan.Alias.ValueStringPointer(),
+		Name:                     plan.Name.ValueString(),
+		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
+		Address:                  plan.Address.ValueString(),
+		Protocols:                protocols,
+		Groups:                   groupIDs,
+		ServiceAccounts:          serviceAccountIDs,
+		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
+		Alias:                    plan.Alias.ValueStringPointer(),
+		IsVisible:                isVisible,
+		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 	}, nil
 }
 
 func convertIDs(list types.Set) []string {
 	return utils.Map(list.Elements(), func(item tfattr.Value) string {
-		return item.String()
+		return item.(types.String).ValueString()
 	})
 }
 
-func convertProtocols(protocols *protocolModel) (*model.Protocols, error) {
-	if protocols == nil {
+func convertProtocols(protocols *types.Object) (*model.Protocols, error) {
+	if protocols == nil || protocols.IsNull() {
 		return model.DefaultProtocols(), nil
 	}
 
-	udp, err := convertProtocol(protocols.UDP)
+	udp, err := convertProtocol(protocols.Attributes()[attr.UDP])
 	if err != nil {
 		return nil, err
 	}
 
-	tcp, err := convertProtocol(protocols.TCP)
+	tcp, err := convertProtocol(protocols.Attributes()[attr.TCP])
 	if err != nil {
 		return nil, err
 	}
 
 	return &model.Protocols{
-		AllowIcmp: protocols.AllowIcmp.ValueBool(),
+		AllowIcmp: protocols.Attributes()[attr.AllowIcmp].(types.Bool).ValueBool(),
 		UDP:       udp,
 		TCP:       tcp,
 	}, nil
 }
 
-func convertProtocol(protocol portsModel) (*model.Protocol, error) {
-	if protocol.Policy.IsUnknown() {
+func convertProtocol(protocol tfattr.Value) (*model.Protocol, error) {
+	if protocol == nil || protocol.IsNull() {
 		return nil, nil //nolint:nilnil
 	}
 
-	ports, err := convertPorts(protocol.Ports)
+	obj, ok := protocol.(types.Object)
+	if !ok || obj.IsNull() {
+		return nil, nil
+	}
+
+	ports, err := decodePorts(obj)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.Protocol{
-		Policy: protocol.Policy.ValueString(),
-		Ports:  ports,
-	}, nil
+	policy := obj.Attributes()[attr.Policy].(types.String).ValueString()
+
+	return model.NewProtocol(policy, ports), nil
+	//return &model.Protocol{
+	//	Policy: obj.Attributes()[attr.Policy].(types.String).ValueString(),
+	//	Ports:  ports,
+	//}, nil
 }
 
-func convertPorts(list types.List) ([]*model.PortRange, error) {
+func decodePorts(obj types.Object) ([]*model.PortRange, error) {
+	portsVal := obj.Attributes()[attr.Ports]
+	if portsVal == nil || portsVal.IsNull() {
+		return nil, nil
+	}
+
+	portsList, ok := portsVal.(types.Set)
+	if !ok {
+		return nil, nil
+	}
+
+	return convertPorts(portsList)
+}
+
+func convertPorts(list types.Set) ([]*model.PortRange, error) {
 	items := list.Elements()
 	var ports = make([]*model.PortRange, 0, len(items))
 
 	for _, port := range items {
-		portRange, err := model.NewPortRange(port.String())
+		portRange, err := model.NewPortRange(port.(types.String).ValueString())
 		if err != nil {
 			return nil, err //nolint:wrapcheck
 		}
@@ -447,37 +506,58 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 	state.Address = types.StringValue(resource.Address)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 
-	//if resource.IsVisible != nil {
-	state.IsVisible = types.BoolPointerValue(resource.IsVisible)
-	//}
+	if !state.IsVisible.IsNull() {
+		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
+	}
 
-	//if resource.IsBrowserShortcutEnabled != nil {
-	state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
-	//}
+	if !state.IsBrowserShortcutEnabled.IsNull() {
+		state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
+	}
 
 	if resource.Alias != nil {
 		state.Alias = types.StringPointerValue(resource.Alias)
 	}
 
-	var diags []diag.Diagnostic
+	if !state.Protocols.IsNull() {
+		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &state.Protocols)
+		diagnostics.Append(diags...)
+		if diagnostics.HasError() {
+			return
+		}
+
+		state.Protocols = protocols
+	}
+
+	if !state.Access.IsNull() {
+		access, diags := convertAccessBlockToTerraform(resource,
+			state.Access.Attributes()[attr.GroupIDs],
+			state.Access.Attributes()[attr.ServiceAccountIDs])
+
+		diagnostics.Append(diags...)
+		if diagnostics.HasError() {
+			return
+		}
+
+		state.Access = access
+	}
+
+	// Set refreshed state
+	diagnostics.Append(respState.Set(ctx, state)...)
+}
+
+func convertAccessBlockToTerraform(resource *model.Resource, stateGroupIDs, stateServiceAccounts tfattr.Value) (types.Object, diag.Diagnostics) {
+	var diagnostics, diags diag.Diagnostics
 	groupIDs, serviceAccountIDs := types.SetNull(types.StringType), types.SetNull(types.StringType)
-	//groupIDs, serviceAccountIDs := types.SetNull(types.StringType), types.SetNull(types.StringType)
 
 	if len(resource.Groups) > 0 {
-		groupIDs, diags = types.SetValueFrom(ctx, types.StringType, resource.Groups)
+		groupIDs, diags = makeSet(resource.Groups)
 		diagnostics.Append(diags...)
 	}
 
 	if len(resource.ServiceAccounts) > 0 {
-		serviceAccountIDs, diags = types.SetValueFrom(ctx, types.StringType, resource.ServiceAccounts)
+		serviceAccountIDs, diags = makeSet(resource.ServiceAccounts)
 		diagnostics.Append(diags...)
 	}
-
-	if diagnostics.HasError() {
-		return
-	}
-
-	//state.Protocols = convertProtocolsToTerraform(resource.Protocols)
 
 	attributeTypes := map[string]tfattr.Type{
 		attr.GroupIDs: types.SetType{
@@ -488,9 +568,13 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 		},
 	}
 
+	if diagnostics.HasError() {
+		return types.ObjectNull(attributeTypes), diagnostics
+	}
+
 	attributes := map[string]tfattr.Value{
-		attr.GroupIDs:          state.Access.Attributes()[attr.GroupIDs],
-		attr.ServiceAccountIDs: state.Access.Attributes()[attr.ServiceAccountIDs],
+		attr.GroupIDs:          stateGroupIDs,
+		attr.ServiceAccountIDs: stateServiceAccounts,
 	}
 
 	if !groupIDs.IsNull() {
@@ -501,14 +585,20 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 		attributes[attr.ServiceAccountIDs] = serviceAccountIDs
 	}
 
-	if !state.Access.IsNull() {
-		state.Access, diags = types.ObjectValue(attributeTypes, attributes)
+	return types.ObjectValue(attributeTypes, attributes)
+}
+
+func makeSet(list []string) (basetypes.SetValue, diag.Diagnostics) {
+	return types.SetValue(types.StringType, stringsToTerraformValue(list))
+}
+
+func stringsToTerraformValue(list []string) []tfattr.Value {
+	var out []tfattr.Value
+	for _, item := range list {
+		out = append(out, types.StringValue(item))
 	}
 
-	diagnostics.Append(diags...)
-
-	// Set refreshed state
-	diagnostics.Append(respState.Set(ctx, state)...)
+	return out
 }
 
 func (r *twingateResource) deleteResourceGroupIDs(ctx context.Context, state *resourceModel, input *model.Resource) error {
@@ -558,11 +648,11 @@ func (r *twingateResource) getOldIDsAuthoritative(ctx context.Context, input *mo
 
 func (r *twingateResource) getOldIDsNonAuthoritative(state *resourceModel, attribute string) []string {
 	switch attribute {
-	case attr.GroupIDs:
-		return convertIDs(state.Access.Attributes()[attr.GroupIDs].(types.Set))
+	case attr.GroupIDs, attr.ServiceAccountIDs:
+		return convertIDs(state.Access.Attributes()[attribute].(types.Set))
 		//return convertIDs(state.Access.GroupIDs)
 		//case attr.ServiceAccountIDs:
-		//	return convertIDs(state.Access.ServiceAccountIDs)
+		//	return convertIDs(state.Access.Attributes()[attr.ServiceAccountIDs].(types.Set))
 	}
 
 	return nil
@@ -574,24 +664,111 @@ func (r *twingateResource) deleteResourceServiceAccountIDs(ctx context.Context, 
 	return r.client.DeleteResourceServiceAccounts(ctx, input.ID, idsToDelete) //nolint
 }
 
-func convertProtocolsToTerraform(protocols *model.Protocols) protocolModel {
+func convertProtocolsToTerraform(protocols *model.Protocols, state *types.Object) (types.Object, diag.Diagnostics) {
 	if protocols == nil {
-		return protocolModel{
-			AllowIcmp: types.BoolValue(true),
-			TCP: portsModel{
-				Policy: types.StringValue(model.PolicyAllowAll),
-			},
-			UDP: portsModel{
-				Policy: types.StringValue(model.PolicyAllowAll),
-			},
-		}
+		return defaultProtocolsModelToTerraform()
+		//return protocolModel{
+		//	AllowIcmp: types.BoolValue(true),
+		//	TCP: portsModel{
+		//		Policy: types.StringValue(model.PolicyAllowAll),
+		//	},
+		//	UDP: portsModel{
+		//		Policy: types.StringValue(model.PolicyAllowAll),
+		//	},
+		//}
 	}
 
-	return protocolModel{
-		AllowIcmp: types.BoolValue(protocols.AllowIcmp),
-		TCP:       convertProtocolToTerraform(protocols.TCP),
-		UDP:       convertProtocolToTerraform(protocols.UDP),
+	var diagnostics diag.Diagnostics
+	tcp, diags := convertProtocolModelToTerraform(protocols.TCP, state.Attributes()[attr.TCP])
+	diagnostics.Append(diags...)
+
+	udp, diags := convertProtocolModelToTerraform(protocols.UDP, state.Attributes()[attr.UDP])
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return types.ObjectNull(protocolsAttributeTypes()), diagnostics
 	}
+
+	attributes := map[string]tfattr.Value{
+		attr.AllowIcmp: types.BoolValue(protocols.AllowIcmp),
+		attr.TCP:       tcp,
+		attr.UDP:       udp,
+	}
+
+	return types.ObjectValue(protocolsAttributeTypes(), attributes)
+	//return protocolModel{
+	//	AllowIcmp: types.BoolValue(protocols.AllowIcmp),
+	//	TCP:       convertProtocolToTerraform(protocols.TCP),
+	//	UDP:       convertProtocolToTerraform(protocols.UDP),
+	//}
+}
+
+func protocolsAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.AllowIcmp: types.BoolType,
+		attr.TCP: types.ObjectType{
+			AttrTypes: protocolAttributeTypes(),
+		},
+		attr.UDP: types.ObjectType{
+			AttrTypes: protocolAttributeTypes(),
+		},
+	}
+}
+
+func protocolAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.Policy: types.StringType,
+		attr.Ports: types.SetType{
+			ElemType: types.StringType,
+		},
+	}
+}
+
+func defaultProtocolsModelToTerraform() (types.Object, diag.Diagnostics) {
+	attributeTypes := protocolsAttributeTypes()
+
+	var diagnostics diag.Diagnostics
+	defaultPorts, diags := defaultProtocolModelToTerraform()
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return types.ObjectNull(attributeTypes), diagnostics
+	}
+
+	attributes := map[string]tfattr.Value{
+		attr.AllowIcmp: types.BoolValue(true),
+		attr.TCP:       defaultPorts,
+		attr.UDP:       defaultPorts,
+	}
+
+	return types.ObjectValue(attributeTypes, attributes)
+}
+
+func defaultProtocolModelToTerraform() (basetypes.ObjectValue, diag.Diagnostics) {
+	attributes := map[string]tfattr.Value{
+		attr.Policy: types.StringValue(model.PolicyAllowAll),
+		attr.Ports:  types.ListNull(types.StringType),
+	}
+
+	return types.ObjectValue(protocolAttributeTypes(), attributes)
+}
+
+func convertProtocolModelToTerraform(protocol *model.Protocol, state tfattr.Value) (types.Object, diag.Diagnostics) {
+	if protocol == nil {
+		return types.ObjectNull(protocolAttributeTypes()), nil
+	}
+
+	policy := protocol.Policy
+	statePolicy := state.(types.Object).Attributes()[attr.Policy].(types.String).ValueString()
+	if statePolicy == model.PolicyDenyAll && policy == model.PolicyRestricted {
+		policy = model.PolicyDenyAll
+	}
+
+	attributes := map[string]tfattr.Value{
+		attr.Policy: types.StringValue(policy),
+		attr.Ports:  convertPortsToTerraform(protocol.Ports),
+	}
+	return types.ObjectValue(protocolAttributeTypes(), attributes)
 }
 
 func convertProtocolToTerraform(protocol *model.Protocol) portsModel {
@@ -605,16 +782,128 @@ func convertProtocolToTerraform(protocol *model.Protocol) portsModel {
 	}
 }
 
-func convertPortsToTerraform(ports []*model.PortRange) types.List {
-	if len(ports) == 0 {
-		return types.ListNull(types.StringType)
-	}
+func convertPortsToTerraform(ports []*model.PortRange) types.Set {
+	//if len(ports) == 0 {
+	//	return resu, types.ListValue(types.StringType, nil)
+	//}
 
 	elements := make([]tfattr.Value, 0, len(ports))
 	for _, port := range ports {
 		elements = append(elements, types.StringValue(port.String()))
 	}
 
-	list, _ := types.ListValue(types.StringType, elements)
+	list, _ := types.SetValue(types.StringType, elements)
 	return list
+}
+
+func ProtocolDiff() planmodifier.String {
+	return protocolDiff{}
+}
+
+// protocolDiff implements the plan modifier.
+type protocolDiff struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m protocolDiff) Description(_ context.Context) string {
+	return "Handles protocol policy difference."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m protocolDiff) MarkdownDescription(_ context.Context) string {
+	return "Handles protocol policy difference."
+}
+
+// PlanModifyString implements the plan modification logic.
+func (m protocolDiff) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is a known planned value.
+	if !req.PlanValue.IsUnknown() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	resp.PlanValue = req.StateValue
+}
+
+func PortsDiff() planmodifier.Set {
+	return portsDiff{}
+}
+
+type portsDiff struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m portsDiff) Description(_ context.Context) string {
+	return "Handles ports difference."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m portsDiff) MarkdownDescription(_ context.Context) string {
+	return "Handles ports difference."
+}
+
+// PlanModifySet implements the plan modification logic.
+func (m portsDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	//// Do nothing if there is a known planned value.
+	//if !req.PlanValue.IsUnknown() {
+	//	return
+	//}
+	//
+	//// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	//if req.ConfigValue.IsUnknown() {
+	//	return
+	//}
+
+	if equalPorts(req.StateValue, req.PlanValue) {
+		resp.PlanValue = req.StateValue
+		//resp.PlanValue = req.ConfigValue
+	}
+
+}
+
+func equalPorts(a, b types.Set) bool {
+	oldPortsRange, err := convertPorts(a)
+	if err != nil {
+		return false
+	}
+
+	newPortsRange, err := convertPorts(b)
+	if err != nil {
+		return false
+	}
+
+	oldPortsMap := convertPortsRangeToMap(oldPortsRange)
+	newPortsMap := convertPortsRangeToMap(newPortsRange)
+
+	return reflect.DeepEqual(oldPortsMap, newPortsMap)
+}
+
+func convertPortsRangeToMap(portsRange []*model.PortRange) map[int]struct{} {
+	out := make(map[int]struct{})
+
+	for _, port := range portsRange {
+		if port.Start == port.End {
+			out[port.Start] = struct{}{}
+
+			continue
+		}
+
+		for i := port.Start; i <= port.End; i++ {
+			out[i] = struct{}{}
+		}
+	}
+
+	return out
 }
