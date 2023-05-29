@@ -1712,10 +1712,7 @@ func TestClientAddResourceServiceAccountIDsOk(t *testing.T) {
 			),
 		)
 
-		err := client.AddResourceServiceAccountIDs(context.Background(), &model.Resource{
-			ID:              "resource-1",
-			ServiceAccounts: []string{"id-1", "id-2"},
-		})
+		err := client.AddResourceServiceAccountIDs(context.Background(), "resource-1", []string{"id-1", "id-2"})
 
 		assert.NoError(t, err)
 	})
@@ -1729,10 +1726,7 @@ func TestClientAddResourceServiceAccountIDsRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		err := client.AddResourceServiceAccountIDs(context.Background(), &model.Resource{
-			ID:              "resource-1",
-			ServiceAccounts: []string{"id-1", "id-2"},
-		})
+		err := client.AddResourceServiceAccountIDs(context.Background(), "resource-1", []string{"id-1", "id-2"})
 
 		assert.EqualError(t, err, graphqlErr(client, "failed to update service account with id id-1", errBadRequest))
 	})

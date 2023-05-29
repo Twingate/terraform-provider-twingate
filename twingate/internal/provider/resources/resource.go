@@ -244,7 +244,12 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 
 	resource, err := r.client.CreateResource(ctx, input)
 
-	r.resourceResourceReadHelper(ctx, resource, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	if err = r.client.AddResourceServiceAccountIDs(ctx, resource.ID, resource.ServiceAccounts); err != nil {
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
+		return
+	}
+
+	r.resourceResourceReadHelper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func getAccessAttribute(obj *types.Object, attribute string) []string {
@@ -400,7 +405,7 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 	}
 
-	r.resourceResourceReadHelper(ctx, resource, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.resourceResourceReadHelper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *twingateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -436,12 +441,15 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	if err = r.client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
+	addServiceAccountIDs := setDifference(input.ServiceAccounts, resource.ServiceAccounts)
+	if err = r.client.AddResourceServiceAccountIDs(ctx, resource.ID, addServiceAccountIDs); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
 		return
 	}
 
-	r.resourceResourceReadHelper(ctx, resource, &state, &resp.State, &resp.Diagnostics, nil, operationUpdate)
+	resource.ServiceAccounts = setJoin(resource.ServiceAccounts, input.ServiceAccounts)
+
+	r.resourceResourceReadHelper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, nil, operationUpdate)
 }
 
 func (r *twingateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -456,7 +464,7 @@ func (r *twingateResource) Delete(ctx context.Context, req resource.DeleteReques
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateResource)
 }
 
-func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resource *model.Resource, state *resourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resource *model.Resource, state, reference *resourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -496,8 +504,8 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 	resource.ServiceAccounts = remoteServiceAccounts
 
 	if !resource.IsAuthoritative {
-		resource.Groups = setIntersection(getAccessAttribute(&state.Access, attr.GroupIDs), resource.Groups)
-		resource.ServiceAccounts = setIntersection(getAccessAttribute(&state.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
+		resource.Groups = setIntersection(getAccessAttribute(&reference.Access, attr.GroupIDs), resource.Groups)
+		resource.ServiceAccounts = setIntersection(getAccessAttribute(&reference.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
 	}
 
 	state.ID = types.StringValue(resource.ID)

@@ -180,7 +180,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
+	if err = client.AddResourceServiceAccountIDs(ctx, resource.ID, resource.ServiceAccounts); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -207,7 +207,7 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
+	if err = client.AddResourceServiceAccountIDs(ctx, resource.ID, resource.ServiceAccounts); err != nil {
 		return diag.FromErr(err)
 	}
 

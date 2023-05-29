@@ -16,7 +16,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -625,20 +624,20 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
 
-		serviceAccounts, err := providerClient.ReadServiceAccounts(context.Background())
-		if err != nil {
-			return fmt.Errorf("failed to read service accounts: %w", err)
-		}
-
-		serviceAccountIDs := make(map[string]bool)
-
-		for _, account := range serviceAccounts {
-			if utils.Contains(account.Resources, resource.ID) {
-				serviceAccountIDs[account.ID] = true
-			}
-		}
-
-		resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
+		//serviceAccounts, err := providerClient.ReadServiceAccounts(context.Background())
+		//if err != nil {
+		//	return fmt.Errorf("failed to read service accounts: %w", err)
+		//}
+		//
+		//serviceAccountIDs := make(map[string]bool)
+		//
+		//for _, account := range serviceAccounts {
+		//	if utils.Contains(account.Resources, resource.ID) {
+		//		serviceAccountIDs[account.ID] = true
+		//	}
+		//}
+		//
+		//resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
 
 		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
 			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))

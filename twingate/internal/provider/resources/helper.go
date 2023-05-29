@@ -35,3 +35,11 @@ func setDifference(a, b []string) []string {
 
 	return result
 }
+
+func setJoin(a, b []string) []string {
+	result := make([]string, 0, len(a)+len(b))
+	result = append(result, a...)
+	result = append(result, b...)
+
+	return utils.MapKeys(utils.MakeLookupMap(result))
+}

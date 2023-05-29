@@ -382,11 +382,11 @@ func (client *Client) ReadResourceServiceAccounts(ctx context.Context, resourceI
 	return serviceAccountIDs, nil
 }
 
-func (client *Client) AddResourceServiceAccountIDs(ctx context.Context, resource *model.Resource) error {
-	for _, serviceAccountID := range resource.ServiceAccounts {
+func (client *Client) AddResourceServiceAccountIDs(ctx context.Context, resourceID string, serviceAccounts []string) error {
+	for _, serviceAccountID := range serviceAccounts {
 		_, err := client.UpdateServiceAccount(ctx, &model.ServiceAccount{
 			ID:        serviceAccountID,
-			Resources: []string{resource.ID},
+			Resources: []string{resourceID},
 		})
 		if err != nil {
 			return err

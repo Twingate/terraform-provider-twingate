@@ -884,53 +884,58 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
 				),
 			},
-			//{
-			//	// expecting no drift - empty plan
-			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-			//	PlanOnly: true,
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
-			//	),
-			//},
-			//{
-			//	// added new service account to the resource though terraform
-			//	Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:2]),
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "2"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 3),
-			//	),
-			//},
-			//{
-			//	// remove one service account from the resource though terraform
-			//	Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
-			//	),
-			//},
-			//{
-			//	// expecting no drift - empty plan
-			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-			//	PlanOnly: true,
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
-			//		// delete service account from the resource though API
-			//		acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
-			//		acctests.WaitTestFunc(),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
-			//	),
-			//},
-			//{
-			//	// expecting no drift - empty plan
-			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-			//	PlanOnly: true,
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
-			//	),
-			//},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 2),
+				),
+			},
+			{
+				// added new service account to the resource though terraform
+				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:2]),
+				Check: acctests.ComposeTestCheckFunc(
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "2"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "2"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 3),
+				),
+			},
+			{
+				// remove one service account from the resource though terraform
+				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				Check: acctests.ComposeTestCheckFunc(
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 2),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 2),
+					// delete service account from the resource though API
+					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
+					acctests.WaitTestFunc(),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
+				),
+			},
+			{
+				// expecting no drift - empty plan
+				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
+				),
+			},
 		},
 	})
 }
@@ -985,7 +990,8 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
 					acctests.WaitTestFunc(),
 					// added new service account to the resource though API
 					acctests.AddResourceServiceAccount(theResource, serviceAccountResource),
@@ -998,7 +1004,8 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 			{
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
@@ -1006,7 +1013,8 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				// added 2 new service accounts to the resource though terraform
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "3"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 3),
 				),
 			},
@@ -1017,7 +1025,8 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "3"),
 				),
 				// expecting drift - terraform going to restore deleted service account
 				ExpectNonEmptyPlan: true,
@@ -1026,7 +1035,8 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckResourceServiceAccountsLen(theResource, 3),
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "3"),
 				),
 			},
 			{
@@ -1034,7 +1044,8 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckResourceServiceAccountsLen(theResource, 1),
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
 				),
 			},
 		},
