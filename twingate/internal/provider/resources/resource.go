@@ -23,6 +23,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
+var ErrNotEnoughListItems = errors.New("not enough list items")
+var ErrMissingRequiredArgument = errors.New("missing required argument")
+
 func NewResourceResource() resource.Resource {
 	return &twingateResource{}
 }
@@ -152,6 +155,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 			attr.Alias: schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
 				//DiffSuppressFunc: aliasDiff,
 			},
@@ -285,7 +289,18 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 	}
 
 	groupIDs := getAccessAttribute(&plan.Access, attr.GroupIDs)
+	if groupIDs != nil && len(groupIDs) == 0 {
+		return nil, fmt.Errorf("%w: '%s' attribute", ErrNotEnoughListItems, attr.BlockPath(attr.Access, attr.GroupIDs))
+	}
+
 	serviceAccountIDs := getAccessAttribute(&plan.Access, attr.ServiceAccountIDs)
+	if serviceAccountIDs != nil && len(serviceAccountIDs) == 0 {
+		return nil, fmt.Errorf("%w: '%s' attribute", ErrNotEnoughListItems, attr.BlockPath(attr.Access, attr.ServiceAccountIDs))
+	}
+
+	if plan.Access.IsUnknown() && groupIDs == nil && serviceAccountIDs == nil {
+		return nil, fmt.Errorf("%w: '%s' block", ErrMissingRequiredArgument, attr.Access)
+	}
 
 	var isVisible, isBrowserShortcutEnabled *bool
 	if !plan.IsVisible.IsUnknown() {
@@ -514,11 +529,11 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 	state.Address = types.StringValue(resource.Address)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 
-	if !state.IsVisible.IsNull() {
+	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
 	}
 
-	if !state.IsBrowserShortcutEnabled.IsNull() {
+	if !state.IsBrowserShortcutEnabled.IsNull() || !reference.IsBrowserShortcutEnabled.IsUnknown() {
 		state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
 	}
 

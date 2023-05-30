@@ -94,6 +94,10 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		resource.IsBrowserShortcutEnabled = nil
 	}
 
+	if resource.Alias == nil && input.Alias != nil {
+		resource.Alias = input.Alias
+	}
+
 	return resource, nil
 }
 
@@ -233,6 +237,10 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	if input.IsBrowserShortcutEnabled == nil {
 		resource.IsBrowserShortcutEnabled = nil
+	}
+
+	if resource.Alias == nil && input.Alias != nil {
+		resource.Alias = input.Alias
 	}
 
 	return resource, nil

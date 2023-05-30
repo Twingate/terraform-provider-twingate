@@ -22,8 +22,8 @@ var (
 	firstUDPPort               = attr.First(attr.Protocols, attr.UDP, attr.Ports)
 	tcpPortsLen                = attr.Len(attr.Protocols, attr.TCP, attr.Ports)
 	udpPortsLen                = attr.Len(attr.Protocols, attr.UDP, attr.Ports)
-	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
-	accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
+	accessGroupIdsLen          = attr.BlockLen(attr.Access, attr.GroupIDs)
+	accessServiceAccountIdsLen = attr.BlockLen(attr.Access, attr.ServiceAccountIDs)
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
@@ -1096,7 +1096,7 @@ func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource18(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Not enough list items"),
+				ExpectError: regexp.MustCompile("not enough list items"),
 			},
 		},
 	})
@@ -1143,7 +1143,7 @@ func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource19(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Not enough list items"),
+				ExpectError: regexp.MustCompile("not enough list items"),
 			},
 		},
 	})
@@ -1190,7 +1190,7 @@ func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource20(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Missing required argument"),
+				ExpectError: regexp.MustCompile("missing required argument"),
 			},
 		},
 	})
