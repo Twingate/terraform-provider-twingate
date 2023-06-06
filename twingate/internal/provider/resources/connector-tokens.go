@@ -76,6 +76,9 @@ func (r *connectorTokens) Schema(_ context.Context, _ resource.SchemaRequest, re
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: "ID of the Connector Tokens.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}

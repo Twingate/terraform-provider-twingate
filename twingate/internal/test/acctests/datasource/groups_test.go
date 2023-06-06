@@ -31,9 +31,9 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroups(groupName, testPolicy.ID),
@@ -73,8 +73,8 @@ func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
 		groupName := test.RandomName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config: testTwingateGroupsDoesNotExists(groupName),
@@ -103,8 +103,8 @@ func TestAccDatasourceTwingateGroupsWithFilters_basic(t *testing.T) {
 
 	t.Run("Test Twingate Datasource : Acc Groups with filters - basic", func(t *testing.T) {
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroupsWithFilters(groupName),
@@ -141,14 +141,14 @@ func testDatasourceTwingateGroupsWithFilters(name string) string {
 func TestAccDatasourceTwingateGroupsWithFilters_ErrorNotSupportedTypes(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups with filters - error not supported types", func(t *testing.T) {
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateGroupsWithFilterNotSupportedType(),
-					ExpectError: regexp.MustCompile("Error: expected type to be one of"),
+					ExpectError: regexp.MustCompile("Attribute type value must be one of"),
 				},
 			},
 		})
@@ -170,7 +170,7 @@ func testTwingateGroupsWithFilterNotSupportedType() string {
 func TestAccDatasourceTwingateGroups_WithEmptyFilters(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Groups - with empty filters", func(t *testing.T) {
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -199,9 +199,9 @@ func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
 		groupName := test.RandomName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroupsWithDatasource(groupName),

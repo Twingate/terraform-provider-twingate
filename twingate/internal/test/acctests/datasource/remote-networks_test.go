@@ -19,9 +19,9 @@ func TestAccDatasourceTwingateRemoteNetworks_read(t *testing.T) {
 		networkName2 := test.RandomName(prefix)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateRemoteNetworkDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateRemoteNetworks2(networkName1, networkName2, prefix),

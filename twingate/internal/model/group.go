@@ -8,6 +8,8 @@ const (
 	GroupTypeSystem = "SYSTEM"
 )
 
+var GroupTypes = []string{GroupTypeManual, GroupTypeSynced, GroupTypeSystem}
+
 type Group struct {
 	ID               string
 	Name             string

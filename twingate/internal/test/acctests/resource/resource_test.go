@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	tcpPolicy                  = attr.Path(attr.Protocols, attr.TCP, attr.Policy)
-	udpPolicy                  = attr.Path(attr.Protocols, attr.UDP, attr.Policy)
-	firstTCPPort               = attr.First(attr.Protocols, attr.TCP, attr.Ports)
-	firstUDPPort               = attr.First(attr.Protocols, attr.UDP, attr.Ports)
-	tcpPortsLen                = attr.Len(attr.Protocols, attr.TCP, attr.Ports)
-	udpPortsLen                = attr.Len(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPolicy                  = attr.BlockPath(attr.Protocols, attr.TCP, attr.Policy)
+	udpPolicy                  = attr.BlockPath(attr.Protocols, attr.UDP, attr.Policy)
+	firstTCPPort               = attr.BlockFirst(attr.Protocols, attr.TCP, attr.Ports)
+	firstUDPPort               = attr.BlockFirst(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPortsLen                = attr.BlockLen(attr.Protocols, attr.TCP, attr.Ports)
+	udpPortsLen                = attr.BlockLen(attr.Protocols, attr.UDP, attr.Ports)
 	accessGroupIdsLen          = attr.BlockLen(attr.Access, attr.GroupIDs)
 	accessServiceAccountIdsLen = attr.BlockLen(attr.Access, attr.ServiceAccountIDs)
 )
@@ -60,9 +60,6 @@ func createResourceOnlyWithNetwork(terraformResourceName, networkName, resourceN
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.%s.id
-	  access {
-	    group_ids = []
-	  }
 	}
 	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName)
 }
@@ -84,14 +81,9 @@ func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Address, "new-acc-test.com"),
-					sdk.TestCheckResourceAttr(theResource, "access.group_ids.#", "2"),
-					//sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "2"),
-
-					sdk.TestCheckResourceAttr(theResource, "protocols.tcp.policy", model.PolicyRestricted),
-					//sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
-
-					sdk.TestCheckResourceAttr(theResource, "protocols.tcp.ports.0", "80"),
-					//sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "2"),
+					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
 				),
 			},
 		},
@@ -217,7 +209,7 @@ func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithInvalidGroupId(networkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: failed to create twingate_resource"),
+				ExpectError: regexp.MustCompile("Field 'groupIds' Unable to parse global ID"),
 			},
 		},
 	})
@@ -255,7 +247,7 @@ func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
 				Config: createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
+					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyDenyAll),
 				),
 			},
 			// expecting no changes - empty plan
@@ -312,8 +304,7 @@ func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
 				Config: createResourceWithUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					//sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyRestricted),
-					sdk.TestCheckResourceAttr(theResource, "protocols.udp.policy", model.PolicyDenyAll),
+					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyDenyAll),
 				),
 			},
 			// expecting no changes - empty plan
@@ -370,14 +361,10 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 				Config: createResourceWithRestrictedPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
-					//sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
-					sdk.TestCheckResourceAttr(theResource, "protocols.tcp.policy", model.PolicyRestricted),
-					//sdk.TestCheckNoResourceAttr(theResource, tcpPortsLen),
-					sdk.TestCheckNoResourceAttr(theResource, "protocols.tcp.ports.#"),
-					//sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyRestricted),
-					sdk.TestCheckResourceAttr(theResource, "protocols.udp.policy", model.PolicyRestricted),
-					//sdk.TestCheckNoResourceAttr(theResource, udpPortsLen),
-					sdk.TestCheckNoResourceAttr(theResource, "protocols.udp.ports.#"),
+					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
+					sdk.TestCheckNoResourceAttr(theResource, tcpPortsLen),
+					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyRestricted),
+					sdk.TestCheckNoResourceAttr(theResource, udpPortsLen),
 				),
 			},
 		},
@@ -502,10 +489,8 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					//sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
-					sdk.TestCheckResourceAttr(theResource, "protocols.tcp.ports.0", "80"),
-					//sdk.TestCheckResourceAttr(theResource, firstUDPPort, "80"),
-					sdk.TestCheckResourceAttr(theResource, "protocols.udp.ports.0", "80"),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
+					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "80"),
 				),
 			},
 			// no changes
@@ -515,23 +500,115 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 			},
 			// no changes
 			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
-				//PlanOnly: true,
+				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
+				PlanOnly: true,
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, "protocols.udp.ports.#", "2"),
+					sdk.TestCheckResourceAttr(theResource, udpPortsLen, "2"),
 				),
 			},
-			//// new changes applied
-			//{
-			//	Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		acctests.CheckTwingateResourceExists(theResource),
-			//		//sdk.TestCheckResourceAttr(theResource, firstTCPPort, "70"),
-			//		sdk.TestCheckResourceAttr(theResource, "protocols.tcp.ports.0", "70"),
-			//		//sdk.TestCheckResourceAttr(theResource, firstUDPPort, "70"),
-			//		sdk.TestCheckResourceAttr(theResource, "protocols.udp.ports.0", "70"),
-			//	),
-			//},
+			// new changes applied
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "70"),
+					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "70"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourcePortsRepresentationChanged(t *testing.T) {
+	const theResource = "twingate_resource.test9"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourcePortsNotChanged(t *testing.T) {
+	const theResource = "twingate_resource.test9"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
+				),
+			},
+			{
+				PlanOnly: true,
+				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"80", "82-83"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "2"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
+	const theResource = "twingate_resource.test9"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
+					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "80"),
+				),
+			},
+			// no changes
+			{
+				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
+				PlanOnly: true,
+			},
+			// no changes
+			{
+				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
+				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, udpPortsLen, "2"),
+				),
+			},
+			// new changes applied
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "70"),
+					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "70"),
+				),
+			},
 		},
 	})
 }
@@ -643,23 +720,13 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
 					attr.Address: "acc-test.com.12",
-					//tcpPolicy:    model.PolicyRestricted,
-					//"protocols.tcp.policy": model.PolicyRestricted,
-					////tcpPortsLen:  "2",
-					//"protocols.tcp.ports.#": "2",
-					////firstTCPPort: "80",
-					//"protocols.tcp.ports.0": "80",
-					////udpPolicy:    model.PolicyAllowAll,
-					//"protocols.udp.policy": model.PolicyAllowAll,
-					////udpPortsLen:  "0",
-					//"protocols.udp.ports.#": "0",
 				}),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, "protocols.tcp.policy", model.PolicyRestricted),
-					sdk.TestCheckResourceAttr(theResource, "protocols.tcp.ports.#", "2"),
-					sdk.TestCheckResourceAttr(theResource, "protocols.tcp.ports.0", "80"),
-					sdk.TestCheckResourceAttr(theResource, "protocols.udp.policy", model.PolicyAllowAll),
-					sdk.TestCheckResourceAttr(theResource, "protocols.udp.ports.#", "0"),
+					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "2"),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
+					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyAllowAll),
+					sdk.TestCheckResourceAttr(theResource, udpPortsLen, "0"),
 				),
 			},
 		},
@@ -758,8 +825,7 @@ func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
 				Config: createResource15(remoteNetworkName, resourceName, createServiceAccount(resourceName, "s15")),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 				),
 			},
 		},
@@ -813,10 +879,8 @@ func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
 				Config: createResource16(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, "s16")),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					//sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.group_ids.#", "1"),
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 				),
 			},
 		},
@@ -875,8 +939,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.WaitTestFunc(),
 					// added new service account to the resource though API
 					acctests.AddResourceServiceAccount(theResource, serviceAccountResource),
@@ -889,8 +952,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				PlanOnly: true,
 				Check: acctests.ComposeTestCheckFunc(
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
 				),
 			},
@@ -898,8 +960,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				// added new service account to the resource though terraform
 				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:2]),
 				Check: acctests.ComposeTestCheckFunc(
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "2"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "2"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "2"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 3),
 				),
 			},
@@ -907,8 +968,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				// remove one service account from the resource though terraform
 				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
 				),
 			},
@@ -917,8 +977,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				PlanOnly: true,
 				Check: acctests.ComposeTestCheckFunc(
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
 					// delete service account from the resource though API
 					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
@@ -931,8 +990,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				PlanOnly: true,
 				Check: acctests.ComposeTestCheckFunc(
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
@@ -990,8 +1048,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.WaitTestFunc(),
 					// added new service account to the resource though API
 					acctests.AddResourceServiceAccount(theResource, serviceAccountResource),
@@ -1004,8 +1061,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 			{
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
@@ -1013,8 +1069,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				// added 2 new service accounts to the resource though terraform
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
 				Check: acctests.ComposeTestCheckFunc(
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "3"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 3),
 				),
 			},
@@ -1025,8 +1080,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "3"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
 				),
 				// expecting drift - terraform going to restore deleted service account
 				ExpectNonEmptyPlan: true,
@@ -1035,8 +1089,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckResourceServiceAccountsLen(theResource, 3),
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "3"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
 				),
 			},
 			{
@@ -1044,8 +1097,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckResourceServiceAccountsLen(theResource, 1),
-					//sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, "access.service_account_ids.#", "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 				),
 			},
 		},

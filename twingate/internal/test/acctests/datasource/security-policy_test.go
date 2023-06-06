@@ -16,14 +16,14 @@ func TestAccDatasourceTwingateSecurityPolicyInvalidID(t *testing.T) {
 		randStr := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
 			Steps: []resource.TestStep{
 				{
 					Config:      testDatasourceTwingateSecurityPolicy(randStr),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read security policy with id"),
 				},
 			},
 		})
@@ -47,14 +47,14 @@ func TestAccDatasourceTwingateSecurityPolicyReadWithNameAndID(t *testing.T) {
 		randStr := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
 			Steps: []resource.TestStep{
 				{
 					Config:      testDatasourceTwingateSecurityPolicyWithNameAndID(randStr, randStr),
-					ExpectError: regexp.MustCompile("Error: Invalid combination of arguments"),
+					ExpectError: regexp.MustCompile("invalid combination of arguments"),
 				},
 			},
 		})
@@ -79,14 +79,14 @@ func TestAccDatasourceTwingateSecurityPolicyDoesNotExists(t *testing.T) {
 		securityPolicyID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("SecurityPolicy:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
 			Steps: []resource.TestStep{
 				{
 					Config:      testDatasourceTwingateSecurityPolicy(securityPolicyID),
-					ExpectError: regexp.MustCompile("Error: failed to read security policy with id"),
+					ExpectError: regexp.MustCompile("failed to read security policy with id"),
 				},
 			},
 		})
@@ -103,7 +103,7 @@ func TestAccDatasourceTwingateSecurityPolicyReadOkByID(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -141,7 +141,7 @@ func TestAccDatasourceTwingateSecurityPolicyReadOkByName(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},

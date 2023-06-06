@@ -19,9 +19,9 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 		resourceName := test.RandomResourceName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateResource(networkName, resourceName),
@@ -68,7 +68,7 @@ func TestAccDatasourceTwingateResource_negative(t *testing.T) {
 		resourceID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Resource:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -99,7 +99,7 @@ func TestAccDatasourceTwingateResource_invalidID(t *testing.T) {
 		networkID := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},

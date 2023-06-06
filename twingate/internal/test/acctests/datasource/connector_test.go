@@ -70,7 +70,7 @@ func TestAccDatasourceTwingateConnector_negative(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateConnectorDoesNotExists(connectorID),
-					ExpectError: regexp.MustCompile("Error: failed to read connector with id"),
+					ExpectError: regexp.MustCompile("failed to read connector with id"),
 				},
 			},
 		})
@@ -101,7 +101,7 @@ func TestAccDatasourceTwingateConnector_invalidID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateConnectorDoesNotExists(connectorID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read connector with id"),
 				},
 			},
 		})

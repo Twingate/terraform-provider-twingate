@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -47,22 +48,6 @@ type resourceModel struct {
 	Alias                    types.String `tfsdk:"alias"`
 }
 
-type protocolModel struct {
-	AllowIcmp types.Bool `tfsdk:"allow_icmp"`
-	TCP       portsModel `tfsdk:"tcp"`
-	UDP       portsModel `tfsdk:"udp"`
-}
-
-type portsModel struct {
-	Policy types.String `tfsdk:"policy"`
-	Ports  types.Set    `tfsdk:"ports"`
-}
-
-type accessModel struct {
-	GroupIDs          types.Set `tfsdk:"group_ids"`
-	ServiceAccountIDs types.Set `tfsdk:"service_account_ids"`
-}
-
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = TwingateResource
 }
@@ -81,54 +66,26 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	protocolSchema := schema.SingleNestedBlock{
-		//Required: true,
-
 		Attributes: map[string]schema.Attribute{
 			attr.Policy: schema.StringAttribute{
-				// tODO:
-				//Required: true,
 				Computed: true,
 				Optional: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.Policies...),
 				},
 				Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
-				//PlanModifiers: []planmodifier.String{
-				//	ProtocolDiff(),
-				//},
 			},
 			attr.Ports: schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
 				Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
-				// TODO:
-				//DiffSuppressOnRefresh: true,
-				//DiffSuppressFunc:      portsNotChanged,
 				PlanModifiers: []planmodifier.Set{
 					PortsDiff(),
 				},
 			},
 		},
 	}
-
-	//protocolSchema := schema.SingleNestedAttribute{
-	//	Optional: true,
-	//	Computed: true,
-	//	Attributes: map[string]schema.Attribute{
-	//		attr.AllowIcmp: schema.BoolAttribute{
-	//			Optional: true,
-	//			//Default: true,
-	//			Description: "Whether to allow ICMP (ping) traffic",
-	//		},
-	//		attr.TCP: portSchema,
-	//		attr.UDP: portSchema,
-	//	},
-	//	Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
-	//	// TODO:
-	//	//DiffSuppressOnRefresh: true,
-	//	//DiffSuppressFunc:      protocolDiff,
-	//}
 
 	resp.Schema = schema.Schema{
 		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
@@ -150,14 +107,18 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
+				PlanModifiers: []planmodifier.Bool{
+					UseStateForUnknownBool(),
+				},
 			},
-			//attr.Protocols: protocolSchema,
 
 			attr.Alias: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
+				Optional: true,
+				//Computed:    true,
 				Description: "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				//DiffSuppressFunc: aliasDiff,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 
 			// computed
@@ -165,28 +126,30 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
+				PlanModifiers: []planmodifier.Bool{
+					UseStateForUnknownBool(),
+				},
 			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
+				PlanModifiers: []planmodifier.Bool{
+					UseStateForUnknownBool(),
+				},
 			},
 
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: "Autogenerated ID of the Resource, encoded in base64",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 
 		Blocks: map[string]schema.Block{
 			attr.Access: schema.SingleNestedBlock{
-				//Validators: []validator.Object{
-				//	objectvalidator.AtLeastOneOf(path.Expressions{
-				//		path.MatchRoot("access.group_ids"),
-				//		path.MatchRoot("access.service_account_ids"),
-				//	}...),
-				//},
-
 				Description: "Restrict access to certain groups or service accounts",
 				Attributes: map[string]schema.Attribute{
 
@@ -194,17 +157,12 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Optional: true,
 						//Computed:    true,
 						ElementType: types.StringType,
-						// TODO:
-						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.ServiceAccountIDs)},
-
 						Description: "List of Group IDs that will have permission to access the Resource.",
 					},
 					attr.ServiceAccountIDs: schema.SetAttribute{
 						Optional: true,
 						//Computed:    true,
 						ElementType: types.StringType,
-						// TODO:
-						//AtLeastOneOf: []string{attr.Path(attr.Access, attr.GroupIDs)},
 						Description: "List of Service Account IDs that will have permission to access the Resource.",
 					},
 				},
@@ -213,20 +171,16 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.Protocols: schema.SingleNestedBlock{
 				Attributes: map[string]schema.Attribute{
 					attr.AllowIcmp: schema.BoolAttribute{
-						Computed: true,
-						Optional: true,
-						//Default: true,
+						Computed:    true,
+						Optional:    true,
 						Description: "Whether to allow ICMP (ping) traffic",
 					},
-					//attr.TCP: portSchema,
-					//attr.UDP: portSchema,
 				},
 				Blocks: map[string]schema.Block{
 					attr.TCP: protocolSchema,
 					attr.UDP: protocolSchema,
 				},
 				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
-				//PlanModifiers: []planmodifier.Object{},
 			},
 		},
 	}
@@ -247,6 +201,10 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	resource, err := r.client.CreateResource(ctx, input)
+	if err != nil {
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
+		return
+	}
 
 	if err = r.client.AddResourceServiceAccountIDs(ctx, resource.ID, resource.ServiceAccounts); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
@@ -269,19 +227,6 @@ func getAccessAttribute(obj *types.Object, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
-func isAccessAttributeKnown(obj *types.Object, attribute string) bool {
-	if obj == nil || obj.IsUnknown() {
-		return false
-	}
-
-	val := obj.Attributes()[attribute]
-	if val == nil || val.IsNull() || val.IsUnknown() {
-		return false
-	}
-
-	return true
-}
-
 func convertResource(plan *resourceModel) (*model.Resource, error) {
 	protocols, err := convertProtocols(&plan.Protocols)
 	if err != nil {
@@ -298,7 +243,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		return nil, fmt.Errorf("%w: '%s' attribute", ErrNotEnoughListItems, attr.BlockPath(attr.Access, attr.ServiceAccountIDs))
 	}
 
-	if plan.Access.IsUnknown() && groupIDs == nil && serviceAccountIDs == nil {
+	if !plan.Access.IsUnknown() && !plan.Access.IsNull() && groupIDs == nil && serviceAccountIDs == nil {
 		return nil, fmt.Errorf("%w: '%s' block", ErrMissingRequiredArgument, attr.Access)
 	}
 
@@ -311,6 +256,11 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		isBrowserShortcutEnabled = plan.IsBrowserShortcutEnabled.ValueBoolPointer()
 	}
 
+	var alias *string
+	if !plan.Alias.IsUnknown() && !plan.Alias.IsNull() {
+		alias = plan.Alias.ValueStringPointer()
+	}
+
 	return &model.Resource{
 		Name:                     plan.Name.ValueString(),
 		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
@@ -319,7 +269,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		Groups:                   groupIDs,
 		ServiceAccounts:          serviceAccountIDs,
 		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
-		Alias:                    plan.Alias.ValueStringPointer(),
+		Alias:                    alias,
 		IsVisible:                isVisible,
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 	}, nil
@@ -371,10 +321,6 @@ func convertProtocol(protocol tfattr.Value) (*model.Protocol, error) {
 	policy := obj.Attributes()[attr.Policy].(types.String).ValueString()
 
 	return model.NewProtocol(policy, ports), nil
-	//return &model.Protocol{
-	//	Policy: obj.Attributes()[attr.Policy].(types.String).ValueString(),
-	//	Ports:  ports,
-	//}, nil
 }
 
 func decodePorts(obj types.Object) ([]*model.PortRange, error) {
@@ -541,8 +487,12 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 		state.Alias = types.StringPointerValue(resource.Alias)
 	}
 
+	if state.Alias.IsUnknown() {
+		state.Alias = types.StringNull()
+	}
+
 	if !state.Protocols.IsNull() {
-		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &state.Protocols)
+		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &reference.Protocols)
 		diagnostics.Append(diags...)
 		if diagnostics.HasError() {
 			return
@@ -672,10 +622,17 @@ func (r *twingateResource) getOldIDsAuthoritative(ctx context.Context, input *mo
 func (r *twingateResource) getOldIDsNonAuthoritative(state *resourceModel, attribute string) []string {
 	switch attribute {
 	case attr.GroupIDs, attr.ServiceAccountIDs:
-		return convertIDs(state.Access.Attributes()[attribute].(types.Set))
-		//return convertIDs(state.Access.GroupIDs)
-		//case attr.ServiceAccountIDs:
-		//	return convertIDs(state.Access.Attributes()[attr.ServiceAccountIDs].(types.Set))
+		val := state.Access.Attributes()[attribute]
+		if val == nil {
+			return nil
+		}
+
+		values, ok := val.(types.Set)
+		if !ok {
+			return nil
+		}
+
+		return convertIDs(values)
 	}
 
 	return nil
@@ -687,25 +644,16 @@ func (r *twingateResource) deleteResourceServiceAccountIDs(ctx context.Context, 
 	return r.client.DeleteResourceServiceAccounts(ctx, input.ID, idsToDelete) //nolint
 }
 
-func convertProtocolsToTerraform(protocols *model.Protocols, state *types.Object) (types.Object, diag.Diagnostics) {
+func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {
 	if protocols == nil {
 		return defaultProtocolsModelToTerraform()
-		//return protocolModel{
-		//	AllowIcmp: types.BoolValue(true),
-		//	TCP: portsModel{
-		//		Policy: types.StringValue(model.PolicyAllowAll),
-		//	},
-		//	UDP: portsModel{
-		//		Policy: types.StringValue(model.PolicyAllowAll),
-		//	},
-		//}
 	}
 
 	var diagnostics diag.Diagnostics
-	tcp, diags := convertProtocolModelToTerraform(protocols.TCP, state.Attributes()[attr.TCP])
+	tcp, diags := convertProtocolModelToTerraform(protocols.TCP, reference.Attributes()[attr.TCP])
 	diagnostics.Append(diags...)
 
-	udp, diags := convertProtocolModelToTerraform(protocols.UDP, state.Attributes()[attr.UDP])
+	udp, diags := convertProtocolModelToTerraform(protocols.UDP, reference.Attributes()[attr.UDP])
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
@@ -719,11 +667,6 @@ func convertProtocolsToTerraform(protocols *model.Protocols, state *types.Object
 	}
 
 	return types.ObjectValue(protocolsAttributeTypes(), attributes)
-	//return protocolModel{
-	//	AllowIcmp: types.BoolValue(protocols.AllowIcmp),
-	//	TCP:       convertProtocolToTerraform(protocols.TCP),
-	//	UDP:       convertProtocolToTerraform(protocols.UDP),
-	//}
 }
 
 func protocolsAttributeTypes() map[string]tfattr.Type {
@@ -776,40 +719,39 @@ func defaultProtocolModelToTerraform() (basetypes.ObjectValue, diag.Diagnostics)
 	return types.ObjectValue(protocolAttributeTypes(), attributes)
 }
 
-func convertProtocolModelToTerraform(protocol *model.Protocol, state tfattr.Value) (types.Object, diag.Diagnostics) {
+func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.Value) (types.Object, diag.Diagnostics) {
 	if protocol == nil {
 		return types.ObjectNull(protocolAttributeTypes()), nil
 	}
 
 	policy := protocol.Policy
-	statePolicy := state.(types.Object).Attributes()[attr.Policy].(types.String).ValueString()
+	statePolicy := reference.(types.Object).Attributes()[attr.Policy].(types.String).ValueString()
 	if statePolicy == model.PolicyDenyAll && policy == model.PolicyRestricted {
 		policy = model.PolicyDenyAll
 	}
 
+	var statePorts = types.Set{}
+	statePortsVal := reference.(types.Object).Attributes()[attr.Ports]
+	if statePortsVal != nil && !statePortsVal.IsUnknown() {
+		statePortsSet, ok := statePortsVal.(types.Set)
+		if ok {
+			statePorts = statePortsSet
+		}
+	}
+
+	ports := convertPortsToTerraform(protocol.Ports)
+	if equalPorts(ports, statePorts) && !statePorts.IsNull() {
+		ports = statePorts
+	}
+
 	attributes := map[string]tfattr.Value{
 		attr.Policy: types.StringValue(policy),
-		attr.Ports:  convertPortsToTerraform(protocol.Ports),
+		attr.Ports:  ports,
 	}
 	return types.ObjectValue(protocolAttributeTypes(), attributes)
 }
 
-func convertProtocolToTerraform(protocol *model.Protocol) portsModel {
-	if protocol == nil {
-		return portsModel{}
-	}
-
-	return portsModel{
-		Policy: types.StringValue(protocol.Policy),
-		Ports:  convertPortsToTerraform(protocol.Ports),
-	}
-}
-
 func convertPortsToTerraform(ports []*model.PortRange) types.Set {
-	//if len(ports) == 0 {
-	//	return resu, types.ListValue(types.StringType, nil)
-	//}
-
 	elements := make([]tfattr.Value, 0, len(ports))
 	for _, port := range ports {
 		elements = append(elements, types.StringValue(port.String()))
@@ -817,43 +759,6 @@ func convertPortsToTerraform(ports []*model.PortRange) types.Set {
 
 	list, _ := types.SetValue(types.StringType, elements)
 	return list
-}
-
-func ProtocolDiff() planmodifier.String {
-	return protocolDiff{}
-}
-
-// protocolDiff implements the plan modifier.
-type protocolDiff struct{}
-
-// Description returns a human-readable description of the plan modifier.
-func (m protocolDiff) Description(_ context.Context) string {
-	return "Handles protocol policy difference."
-}
-
-// MarkdownDescription returns a markdown description of the plan modifier.
-func (m protocolDiff) MarkdownDescription(_ context.Context) string {
-	return "Handles protocol policy difference."
-}
-
-// PlanModifyString implements the plan modification logic.
-func (m protocolDiff) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	// Do nothing if there is no state value.
-	if req.StateValue.IsNull() {
-		return
-	}
-
-	// Do nothing if there is a known planned value.
-	if !req.PlanValue.IsUnknown() {
-		return
-	}
-
-	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
-	if req.ConfigValue.IsUnknown() {
-		return
-	}
-
-	resp.PlanValue = req.StateValue
 }
 
 func PortsDiff() planmodifier.Set {
@@ -879,19 +784,8 @@ func (m portsDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest,
 		return
 	}
 
-	//// Do nothing if there is a known planned value.
-	//if !req.PlanValue.IsUnknown() {
-	//	return
-	//}
-	//
-	//// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
-	//if req.ConfigValue.IsUnknown() {
-	//	return
-	//}
-
 	if equalPorts(req.StateValue, req.PlanValue) {
 		resp.PlanValue = req.StateValue
-		//resp.PlanValue = req.ConfigValue
 	}
 
 }
@@ -929,4 +823,49 @@ func convertPortsRangeToMap(portsRange []*model.PortRange) map[int]struct{} {
 	}
 
 	return out
+}
+
+// UseStateForUnknownBool returns a plan modifier that copies a known prior state
+// value into the planned value. Use this when it is known that an unconfigured
+// value will remain the same after a resource update.
+//
+// To prevent Terraform errors, the framework automatically sets unconfigured
+// and Computed attributes to an unknown value "(known after apply)" on update.
+// Using this plan modifier will instead display the prior state value in the
+// plan, unless a prior plan modifier adjusts the value.
+func UseStateForUnknownBool() planmodifier.Bool {
+	return useStateForUnknownBoolModifier{}
+}
+
+// useStateForUnknownModifier implements the plan modifier.
+type useStateForUnknownBoolModifier struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m useStateForUnknownBoolModifier) Description(_ context.Context) string {
+	return "Once set, the value of this attribute in state will not change."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m useStateForUnknownBoolModifier) MarkdownDescription(_ context.Context) string {
+	return "Once set, the value of this attribute in state will not change."
+}
+
+// PlanModifyBool implements the plan modification logic.
+func (m useStateForUnknownBoolModifier) PlanModifyBool(_ context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is a known planned value.
+	if !req.PlanValue.IsUnknown() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	resp.PlanValue = req.StateValue
 }
