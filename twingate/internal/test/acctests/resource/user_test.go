@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -252,7 +252,7 @@ func TestAccTwingateUserReCreateAfterDeletion(t *testing.T) {
 					Config: terraformResourceTwingateUser(terraformResourceName, email),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						acctests.DeleteTwingateResource(theResource, resource.TwingateUser),
+						acctests.DeleteTwingateResource(theResource, resources.TwingateUser),
 					),
 					ExpectNonEmptyPlan: true,
 				},

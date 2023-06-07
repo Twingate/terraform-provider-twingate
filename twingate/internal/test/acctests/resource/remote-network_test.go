@@ -6,7 +6,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -125,7 +125,7 @@ func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
 					Config: terraformResourceRemoteNetwork(terraformResourceName, remoteNetworkName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
-						acctests.DeleteTwingateResource(theResource, resource.TwingateRemoteNetwork),
+						acctests.DeleteTwingateResource(theResource, resources.TwingateRemoteNetwork),
 					),
 					ExpectNonEmptyPlan: true,
 				},

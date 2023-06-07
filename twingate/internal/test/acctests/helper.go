@@ -14,7 +14,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
@@ -127,7 +127,7 @@ func CheckTwingateResourceDoesNotExists(resourceName string) sdk.TestCheckFunc {
 
 func CheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 	for _, res := range s.RootModule().Resources {
-		if res.Type != resource.TwingateConnectorTokens {
+		if res.Type != resources.TwingateConnectorTokens {
 			continue
 		}
 
@@ -171,7 +171,7 @@ func CheckTwingateConnectorTokensSet(connectorNameTokens string) sdk.TestCheckFu
 
 func CheckTwingateServiceAccountDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateServiceAccount {
+		if rs.Type != resources.TwingateServiceAccount {
 			continue
 		}
 
@@ -207,35 +207,35 @@ func ResourceName(resource, name string) string {
 }
 
 func TerraformResource(name string) string {
-	return ResourceName(resource.TwingateResource, name)
+	return ResourceName(resources.TwingateResource, name)
 }
 
 func TerraformRemoteNetwork(name string) string {
-	return ResourceName(resource.TwingateRemoteNetwork, name)
+	return ResourceName(resources.TwingateRemoteNetwork, name)
 }
 
 func TerraformGroup(name string) string {
-	return ResourceName(resource.TwingateGroup, name)
+	return ResourceName(resources.TwingateGroup, name)
 }
 
 func TerraformConnector(name string) string {
-	return ResourceName(resource.TwingateConnector, name)
+	return ResourceName(resources.TwingateConnector, name)
 }
 
 func TerraformConnectorTokens(name string) string {
-	return ResourceName(resource.TwingateConnectorTokens, name)
+	return ResourceName(resources.TwingateConnectorTokens, name)
 }
 
 func TerraformServiceAccount(name string) string {
-	return ResourceName(resource.TwingateServiceAccount, name)
+	return ResourceName(resources.TwingateServiceAccount, name)
 }
 
 func TerraformServiceKey(name string) string {
-	return ResourceName(resource.TwingateServiceAccountKey, name)
+	return ResourceName(resources.TwingateServiceAccountKey, name)
 }
 
 func TerraformUser(name string) string {
-	return ResourceName(resource.TwingateUser, name)
+	return ResourceName(resources.TwingateUser, name)
 }
 
 func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc {
@@ -263,19 +263,19 @@ func deleteResource(resourceType, resourceID string) error {
 	var err error
 
 	switch resourceType {
-	case resource.TwingateResource:
+	case resources.TwingateResource:
 		err = providerClient.DeleteResource(context.Background(), resourceID)
-	case resource.TwingateRemoteNetwork:
+	case resources.TwingateRemoteNetwork:
 		err = providerClient.DeleteRemoteNetwork(context.Background(), resourceID)
-	case resource.TwingateGroup:
+	case resources.TwingateGroup:
 		err = providerClient.DeleteGroup(context.Background(), resourceID)
-	case resource.TwingateConnector:
+	case resources.TwingateConnector:
 		err = providerClient.DeleteConnector(context.Background(), resourceID)
-	case resource.TwingateServiceAccount:
+	case resources.TwingateServiceAccount:
 		err = providerClient.DeleteServiceAccount(context.Background(), resourceID)
-	case resource.TwingateServiceAccountKey:
+	case resources.TwingateServiceAccountKey:
 		err = providerClient.DeleteServiceKey(context.Background(), resourceID)
-	case resource.TwingateUser:
+	case resources.TwingateUser:
 		err = providerClient.DeleteUser(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
@@ -286,7 +286,7 @@ func deleteResource(resourceType, resourceID string) error {
 
 func CheckTwingateResourceDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateResource {
+		if rs.Type != resources.TwingateResource {
 			continue
 		}
 
@@ -373,7 +373,7 @@ func CheckImportState(attributes map[string]string) func(data []*terraform.Insta
 
 func CheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateRemoteNetwork {
+		if rs.Type != resources.TwingateRemoteNetwork {
 			continue
 		}
 
@@ -391,7 +391,7 @@ func CheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 func CheckTwingateGroupDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateGroup {
+		if rs.Type != resources.TwingateGroup {
 			continue
 		}
 
@@ -408,7 +408,7 @@ func CheckTwingateGroupDestroy(s *terraform.State) error {
 
 func CheckTwingateConnectorDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateConnector {
+		if rs.Type != resources.TwingateConnector {
 			continue
 		}
 
@@ -721,7 +721,7 @@ func GetTestUsers() ([]*model.User, error) {
 
 func CheckTwingateUserDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateUser {
+		if rs.Type != resources.TwingateUser {
 			continue
 		}
 

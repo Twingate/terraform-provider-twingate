@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	twingate "github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	twingate "github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 

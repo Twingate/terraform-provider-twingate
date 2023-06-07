@@ -8,6 +8,10 @@ type GenerateConnectorTokens struct {
 	ConnectorTokensResponse `graphql:"connectorGenerateTokens(connectorId: $connectorId)"`
 }
 
+func (q GenerateConnectorTokens) IsEmpty() bool {
+	return q.ConnectorTokens.RefreshToken == "" && q.ConnectorTokens.AccessToken == ""
+}
+
 type ConnectorTokensResponse struct {
 	ConnectorTokens gqlConnectorTokens
 	OkError

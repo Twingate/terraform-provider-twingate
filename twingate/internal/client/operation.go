@@ -13,6 +13,7 @@ type resource string
 
 const (
 	resourceConnector      resource = "connector"
+	resourceConnectorToken resource = "connector token"
 	resourceGroup          resource = "group"
 	resourceRemoteNetwork  resource = "remote network"
 	resourceResource       resource = "resource"
@@ -23,11 +24,12 @@ const (
 )
 
 const (
-	operationCreate = "create"
-	operationRead   = "read"
-	operationUpdate = "update"
-	operationDelete = "delete"
-	operationRevoke = "revoke"
+	operationCreate   = "create"
+	operationRead     = "read"
+	operationUpdate   = "update"
+	operationDelete   = "delete"
+	operationRevoke   = "revoke"
+	operationGenerate = "generate"
 )
 
 type operation struct {
@@ -68,6 +70,13 @@ func (r resource) revoke() operation {
 	return operation{
 		resource: string(r),
 		name:     operationRevoke,
+	}
+}
+
+func (r resource) generate() operation {
+	return operation{
+		resource: string(r),
+		name:     operationGenerate,
 	}
 }
 
