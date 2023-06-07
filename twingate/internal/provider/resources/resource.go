@@ -10,6 +10,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -23,9 +24,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
-
-var ErrNotEnoughListItems = errors.New("not enough list items")
-var ErrMissingRequiredArgument = errors.New("missing required argument")
 
 func NewResourceResource() resource.Resource {
 	return &twingateResource{}
@@ -152,18 +150,27 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.Access: schema.SingleNestedBlock{
 				Description: "Restrict access to certain groups or service accounts",
 				Attributes: map[string]schema.Attribute{
-
 					attr.GroupIDs: schema.SetAttribute{
-						Optional: true,
-						//Computed:    true,
+						Optional:    true,
 						ElementType: types.StringType,
 						Description: "List of Group IDs that will have permission to access the Resource.",
+						Validators: []validator.Set{
+							setvalidator.SizeAtLeast(1),
+							setvalidator.AtLeastOneOf(path.Expressions{
+								path.MatchRelative().AtParent().AtName(attr.ServiceAccountIDs),
+							}...),
+						},
 					},
 					attr.ServiceAccountIDs: schema.SetAttribute{
-						Optional: true,
-						//Computed:    true,
+						Optional:    true,
 						ElementType: types.StringType,
 						Description: "List of Service Account IDs that will have permission to access the Resource.",
+						Validators: []validator.Set{
+							setvalidator.SizeAtLeast(1),
+							setvalidator.AtLeastOneOf(path.Expressions{
+								path.MatchRelative().AtParent().AtName(attr.GroupIDs),
+							}...),
+						},
 					},
 				},
 			},
@@ -234,18 +241,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 	}
 
 	groupIDs := getAccessAttribute(&plan.Access, attr.GroupIDs)
-	if groupIDs != nil && len(groupIDs) == 0 {
-		return nil, fmt.Errorf("%w: '%s' attribute", ErrNotEnoughListItems, attr.BlockPath(attr.Access, attr.GroupIDs))
-	}
-
 	serviceAccountIDs := getAccessAttribute(&plan.Access, attr.ServiceAccountIDs)
-	if serviceAccountIDs != nil && len(serviceAccountIDs) == 0 {
-		return nil, fmt.Errorf("%w: '%s' attribute", ErrNotEnoughListItems, attr.BlockPath(attr.Access, attr.ServiceAccountIDs))
-	}
-
-	if !plan.Access.IsUnknown() && !plan.Access.IsNull() && groupIDs == nil && serviceAccountIDs == nil {
-		return nil, fmt.Errorf("%w: '%s' block", ErrMissingRequiredArgument, attr.Access)
-	}
 
 	var isVisible, isBrowserShortcutEnabled *bool
 	if !plan.IsVisible.IsUnknown() {

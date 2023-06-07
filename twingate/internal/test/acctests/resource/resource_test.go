@@ -1148,7 +1148,7 @@ func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource18(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("not enough list items"),
+				ExpectError: regexp.MustCompile("Attribute access.group_ids set must contain at least 1 elements"),
 			},
 		},
 	})
@@ -1195,7 +1195,7 @@ func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource19(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("not enough list items"),
+				ExpectError: regexp.MustCompile("Attribute access.service_account_ids set must contain at least 1 elements"),
 			},
 		},
 	})
@@ -1242,7 +1242,7 @@ func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource20(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("missing required argument"),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 			},
 		},
 	})
