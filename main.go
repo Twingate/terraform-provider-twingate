@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -14,7 +15,10 @@ var (
 )
 
 func main() {
-	providerserver.Serve(context.Background(), twingate.New(version), providerserver.ServeOpts{
+	err := providerserver.Serve(context.Background(), twingate.New(version), providerserver.ServeOpts{
 		Address: registry,
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
