@@ -97,8 +97,9 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 
 func (t Twingate) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
 	var config twingateProviderModel
-	diags := request.Config.Get(ctx, &config)
-	response.Diagnostics.Append(diags...)
+
+	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
+
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -109,6 +110,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	apiToken := os.Getenv(EnvAPIToken)
 	network := os.Getenv(EnvNetwork)
 	url := withDefault(os.Getenv(EnvURL), DefaultURL)
+
 	var httpTimeout, httpMaxRetry int
 
 	if val, err := strconv.Atoi(withDefault(os.Getenv(EnvHTTPTimeout), DefaultHTTPTimeout)); err == nil {
@@ -120,15 +122,15 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	}
 
 	if !config.APIToken.IsNull() {
-		apiToken = config.APIToken.String()
+		apiToken = config.APIToken.ValueString()
 	}
 
 	if !config.Network.IsNull() {
-		network = config.Network.String()
+		network = config.Network.ValueString()
 	}
 
 	if !config.URL.IsNull() {
-		url = config.URL.String()
+		url = config.URL.ValueString()
 	}
 
 	if !config.HTTPTimeout.IsNull() {
@@ -147,6 +149,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 				"Set the %s value in the configuration or use the %s environment variable. "+
 				"If either is already set, ensure the value is not empty.", attr.Network, attr.Network, EnvNetwork),
 		)
+
 		return
 	}
 
@@ -161,7 +164,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	response.ResourceData = client
 }
 
-func withDefault[T comparable](val, defaultVal T) T {
+func withDefault[T comparable](val, defaultVal T) T { //nolint:ireturn
 	var zeroValue T
 	if val == zeroValue {
 		return defaultVal
@@ -200,111 +203,3 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		resources.NewResourceResource,
 	}
 }
-
-//func Provider(version string) *schema.Provider {
-//	provider := &schema.Provider{
-//		Schema: providerOptions(),
-//		ResourcesMap: map[string]*schema.Resource{
-//			resource.TwingateRemoteNetwork: resource.RemoteNetwork(),
-//			resource.TwingateConnector:         resource.Connector(),
-//			resource.TwingateConnectorTokens:   resource.ConnectorTokens(),
-//			resource.TwingateGroup:             resource.Group(),
-//			resource.TwingateResource:          resource.Resource(),
-//			resource.TwingateServiceAccount:    resource.ServiceAccount(),
-//			resource.TwingateServiceAccountKey: resource.ServiceKey(),
-//			resource.TwingateUser:              resource.User(),
-//		},
-//		DataSourcesMap: map[string]*schema.Resource{
-//			datasource.TwingateGroup:            datasource.Group(),
-//			datasource.TwingateGroups:           datasource.Groups(),
-//			datasource.TwingateRemoteNetwork:    datasource.RemoteNetwork(),
-//			datasource.TwingateRemoteNetworks:   datasource.RemoteNetworks(),
-//			datasource.TwingateUser:             datasource.User(),
-//			datasource.TwingateUsers:            datasource.Users(),
-//			datasource.TwingateConnector:        datasource.Connector(),
-//			datasource.TwingateConnectors:       datasource.Connectors(),
-//			datasource.TwingateResource:         datasource.Resource(),
-//			datasource.TwingateResources:        datasource.Resources(),
-//			datasource.TwingateServiceAccounts:  datasource.ServiceAccounts(),
-//			datasource.TwingateSecurityPolicy:   datasource.SecurityPolicy(),
-//			datasource.TwingateSecurityPolicies: datasource.SecurityPolicies(),
-//		},
-//	}
-//	provider.ConfigureContextFunc = configure(version, provider)
-//
-//	return provider
-//}
-
-//func providerOptions() map[string]*schema.Schema {
-//	return map[string]*schema.Schema{
-//		attr.APIToken: {
-//			Type:        schema.TypeString,
-//			Optional:    true,
-//			Sensitive:   true,
-//			DefaultFunc: schema.EnvDefaultFunc(EnvAPIToken, nil),
-//			Description: fmt.Sprintf("The access key for API operations. You can retrieve this\n"+
-//				"from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).\n"+
-//				"Alternatively, this can be specified using the %s environment variable.", EnvAPIToken),
-//		},
-//		attr.Network: {
-//			Type:        schema.TypeString,
-//			Optional:    true,
-//			Sensitive:   false,
-//			DefaultFunc: schema.EnvDefaultFunc(EnvNetwork, nil),
-//			Description: fmt.Sprintf("Your Twingate network ID for API operations.\n"+
-//				"You can find it in the Admin Console URL, for example:\n"+
-//				"`autoco.twingate.com`, where `autoco` is your network ID\n"+
-//				"Alternatively, this can be specified using the %s environment variable.", EnvNetwork),
-//		},
-//		attr.URL: {
-//			Type:        schema.TypeString,
-//			Optional:    true,
-//			Sensitive:   false,
-//			DefaultFunc: schema.EnvDefaultFunc(EnvURL, DefaultURL),
-//			Description: fmt.Sprintf("The default is '%s'\n"+
-//				"This is optional and shouldn't be changed under normal circumstances.", DefaultURL),
-//		},
-//		attr.HTTPTimeout: {
-//			Type:        schema.TypeInt,
-//			Optional:    true,
-//			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPTimeout, DefaultHTTPTimeout),
-//			Description: fmt.Sprintf("Specifies a time limit in seconds for the http requests made. The default value is %s seconds.\n"+
-//				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPTimeout, EnvHTTPTimeout),
-//		},
-//		attr.HTTPMaxRetry: {
-//			Type:        schema.TypeInt,
-//			Optional:    true,
-//			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPMaxRetry, DefaultHTTPMaxRetry),
-//			Description: fmt.Sprintf("Specifies a retry limit for the http requests made. The default value is %s.\n"+
-//				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPMaxRetry, EnvHTTPMaxRetry),
-//		},
-//	}
-//}
-
-//func configure(version string, _ *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-//	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-//		apiToken := d.Get(attr.APIToken).(string)
-//		network := d.Get(attr.Network).(string)
-//		url := d.Get(attr.URL).(string)
-//		httpTimeout := d.Get(attr.HTTPTimeout).(int)
-//		httpMaxRetry := d.Get(attr.HTTPMaxRetry).(int)
-//
-//		if network != "" {
-//			return client.NewClient(url,
-//					apiToken,
-//					network,
-//					time.Duration(httpTimeout)*time.Second,
-//					httpMaxRetry,
-//					version),
-//				nil
-//		}
-//
-//		return nil, diag.Diagnostics{
-//			diag.Diagnostic{
-//				Severity: diag.Error,
-//				Summary:  "Unable to create Twingate client",
-//				Detail:   "Unable to create anonymous Twingate client, network has to be provided",
-//			},
-//		}
-//	}
-//}

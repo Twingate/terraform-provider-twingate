@@ -86,13 +86,15 @@ func (d *group) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	group, err := d.client.ReadGroup(ctx, data.ID.ValueString())
 	if err != nil {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateGroup)
+		addErr(&resp.Diagnostics, err, TwingateGroup)
+
 		return
 	}
 

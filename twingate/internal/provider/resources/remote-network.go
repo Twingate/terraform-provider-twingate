@@ -76,7 +76,9 @@ func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp
 
 func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan remoteNetworkModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -97,7 +99,9 @@ func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, 
 
 func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state remoteNetworkModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -109,6 +113,7 @@ func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp
 
 func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var state, plan remoteNetworkModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -133,7 +138,9 @@ func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, 
 
 func (r *remoteNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state remoteNetworkModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}

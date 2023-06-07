@@ -88,7 +88,9 @@ func (r *group) Schema(_ context.Context, _ resource.SchemaRequest, resp *resour
 
 func (r *group) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan groupModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -100,7 +102,9 @@ func (r *group) Create(ctx context.Context, req resource.CreateRequest, resp *re
 
 func (r *group) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state groupModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -115,6 +119,7 @@ func (r *group) Read(ctx context.Context, req resource.ReadRequest, resp *resour
 
 func (r *group) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state groupModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -129,6 +134,7 @@ func (r *group) Update(ctx context.Context, req resource.UpdateRequest, resp *re
 	oldIDs := getOldGroupUserIDs(&state, group, remoteGroup)
 	if err := r.client.DeleteGroupUsers(ctx, state.ID.ValueString(), setDifference(oldIDs, group.Users)); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateGroup)
+
 		return
 	}
 
@@ -148,13 +154,16 @@ func getOldGroupUserIDs(state *groupModel, group, remoteGroup *model.Group) []st
 
 func (r *group) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state groupModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if _, err := r.isAllowedToChangeGroup(ctx, state.ID.ValueString()); err != nil {
 		addErr(&resp.Diagnostics, err, operationDelete, TwingateGroup)
+
 		return
 	}
 
@@ -202,6 +211,7 @@ func (r *group) helper(ctx context.Context, group *model.Group, state *groupMode
 		userIDs, diags := types.SetValueFrom(ctx, types.StringType, group.Users)
 
 		diagnostics.Append(diags...)
+
 		if diagnostics.HasError() {
 			return
 		}

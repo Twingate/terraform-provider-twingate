@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewServiceKeyResource() resource.Resource {
+func NewServiceKeyResource() resource.Resource { //nolint:ireturn
 	return &serviceKey{}
 }
 
@@ -78,6 +78,7 @@ func (r *serviceKey) Create(ctx context.Context, req resource.CreateRequest, res
 	var plan serviceKeyModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -98,6 +99,7 @@ func (r *serviceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	var state serviceKeyModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -109,6 +111,7 @@ func (r *serviceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 func (r *serviceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state serviceKeyModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -130,6 +133,7 @@ func (r *serviceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 	var state serviceKeyModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -137,12 +141,14 @@ func (r *serviceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 	serviceKey, err := r.client.ReadServiceKey(ctx, state.ID.ValueString())
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
+
 		return
 	}
 
 	if serviceKey.IsActive() {
 		if err = r.client.RevokeServiceKey(ctx, state.ID.ValueString()); err != nil {
 			addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
+
 			return
 		}
 	}
@@ -168,11 +174,13 @@ func (r *serviceKey) helper(ctx context.Context, serviceKey *model.ServiceKey, s
 	if !serviceKey.IsActive() {
 		if err = r.client.DeleteServiceKey(ctx, state.ID.ValueString()); err != nil {
 			addErr(diagnostics, err, operationDelete, TwingateServiceAccountKey)
+
 			return
 		}
 
 		// clear state
 		respState.RemoveResource(ctx)
+
 		return
 	}
 

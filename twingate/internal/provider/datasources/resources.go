@@ -127,13 +127,15 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	resources, err := d.client.ReadResourcesByName(ctx, data.Name.ValueString())
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateResources)
+		addErr(&resp.Diagnostics, err, TwingateResources)
+
 		return
 	}
 

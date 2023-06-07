@@ -119,6 +119,7 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -127,7 +128,8 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 
 	groups, err := d.client.ReadGroups(ctx, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateGroups)
+		addErr(&resp.Diagnostics, err, TwingateGroups)
+
 		return
 	}
 

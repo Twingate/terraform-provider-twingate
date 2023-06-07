@@ -17,7 +17,7 @@ func (q ReadServiceAccountKey) IsEmpty() bool {
 
 func (q ReadServiceAccountKey) ToModel() (*model.ServiceKey, error) {
 	if q.ServiceAccountKey == nil {
-		return nil, nil //nolint
+		return nil, nil
 	}
 
 	return q.ServiceAccountKey.ToModel()

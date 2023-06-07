@@ -101,13 +101,15 @@ func (d *user) Read(ctx context.Context, req datasource.ReadRequest, resp *datas
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	user, err := d.client.ReadUser(ctx, data.ID.ValueString())
 	if err != nil {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateUser)
+		addErr(&resp.Diagnostics, err, TwingateUser)
+
 		return
 	}
 

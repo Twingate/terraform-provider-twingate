@@ -106,13 +106,15 @@ func (d *serviceAccounts) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	accounts, err := d.client.ReadServiceAccounts(ctx, data.Name.ValueString())
 	if err != nil {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateServiceAccounts)
+		addErr(&resp.Diagnostics, err, TwingateServiceAccounts)
+
 		return
 	}
 
@@ -128,10 +130,10 @@ func convertServicesToTerraform(accounts []*model.ServiceAccount) []serviceAccou
 		return serviceAccountModel{
 			ID:   types.StringValue(account.ID),
 			Name: types.StringValue(account.Name),
-			ResourceIDs: utils.Map(account.Resources, func(item string) types.String {
+			ResourceIDs: utils.Map(account.Resources, func(item string) types.String { //nolint:gocritic
 				return types.StringValue(item)
 			}),
-			KeyIDs: utils.Map(account.Keys, func(item string) types.String {
+			KeyIDs: utils.Map(account.Keys, func(item string) types.String { //nolint:gocritic
 				return types.StringValue(item)
 			}),
 		}

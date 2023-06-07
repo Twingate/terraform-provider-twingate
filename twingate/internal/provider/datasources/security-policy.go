@@ -70,18 +70,21 @@ func (d *securityPolicy) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if !data.ID.IsNull() && !data.Name.IsNull() {
-		addErr(&resp.Diagnostics, ErrArgumentsInvalidCombination, operationRead, TwingateSecurityPolicy)
+		addErr(&resp.Diagnostics, ErrArgumentsInvalidCombination, TwingateSecurityPolicy)
+
 		return
 	}
 
 	policy, err := d.client.ReadSecurityPolicy(ctx, data.ID.ValueString(), data.Name.ValueString())
 	if err != nil {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateSecurityPolicy)
+		addErr(&resp.Diagnostics, err, TwingateSecurityPolicy)
+
 		return
 	}
 

@@ -29,18 +29,21 @@ var (
 	ErrResourceFoundInState     = errors.New("this resource should not be here")
 	ErrUnknownResourceType      = errors.New("unknown resource type")
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
+	ErrRefreshTokenNotSet       = errors.New("no refresh token set")
+	ErrAccessTokenNotSet        = errors.New("no access token set")
+	ErrConnectorTokenIDNotSet   = errors.New("no connectorTokensID set")
 )
 
 func ErrServiceAccountsLenMismatch(expected, actual int) error {
-	return fmt.Errorf("expected %d service accounts, actual - %d", expected, actual) //nolint
+	return fmt.Errorf("expected %d service accounts, actual - %d", expected, actual)
 }
 
 func ErrGroupsLenMismatch(expected, actual int) error {
-	return fmt.Errorf("expected %d groups, actual - %d", expected, actual) //nolint
+	return fmt.Errorf("expected %d groups, actual - %d", expected, actual)
 }
 
 func ErrUsersLenMismatch(expected, actual int) error {
-	return fmt.Errorf("expected %d users, actual - %d", expected, actual) //nolint
+	return fmt.Errorf("expected %d users, actual - %d", expected, actual)
 }
 
 var providerClient *client.Client                                         //nolint:gochecknoglobals
@@ -52,6 +55,7 @@ func init() {
 	if err != nil {
 		log.Fatal("failed to init client:", err)
 	}
+
 	providerClient = client
 
 	ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
@@ -122,19 +126,19 @@ func CheckTwingateResourceDoesNotExists(resourceName string) sdk.TestCheckFunc {
 }
 
 func CheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateConnectorTokens {
+	for _, res := range s.RootModule().Resources {
+		if res.Type != resource.TwingateConnectorTokens {
 			continue
 		}
 
-		connectorId := rs.Primary.ID
-		accessToken := rs.Primary.Attributes[attr.AccessToken]
-		refreshToken := rs.Primary.Attributes[attr.RefreshToken]
+		connectorID := res.Primary.ID
+		accessToken := res.Primary.Attributes[attr.AccessToken]
+		refreshToken := res.Primary.Attributes[attr.RefreshToken]
 
 		err := providerClient.VerifyConnectorTokens(context.Background(), refreshToken, accessToken)
 		// expecting error here , Since tokens invalidated
 		if err == nil {
-			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active", connectorId)
+			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active", connectorID)
 		}
 	}
 
@@ -150,15 +154,15 @@ func CheckTwingateConnectorTokensSet(connectorNameTokens string) sdk.TestCheckFu
 		}
 
 		if connectorTokens.Primary.ID == "" {
-			return fmt.Errorf("no connectorTokensID set")
+			return ErrConnectorTokenIDNotSet
 		}
 
 		if connectorTokens.Primary.Attributes[attr.AccessToken] == "" {
-			return fmt.Errorf("no access token set")
+			return ErrAccessTokenNotSet
 		}
 
 		if connectorTokens.Primary.Attributes[attr.RefreshToken] == "" {
-			return fmt.Errorf("no refresh token set")
+			return ErrRefreshTokenNotSet
 		}
 
 		return nil
@@ -623,21 +627,6 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
-
-		//serviceAccounts, err := providerClient.ReadServiceAccounts(context.Background())
-		//if err != nil {
-		//	return fmt.Errorf("failed to read service accounts: %w", err)
-		//}
-		//
-		//serviceAccountIDs := make(map[string]bool)
-		//
-		//for _, account := range serviceAccounts {
-		//	if utils.Contains(account.Resources, resource.ID) {
-		//		serviceAccountIDs[account.ID] = true
-		//	}
-		//}
-		//
-		//resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
 
 		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
 			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))

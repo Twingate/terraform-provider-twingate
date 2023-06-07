@@ -9,14 +9,21 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 )
 
+const (
+	testTimeoutDuration = 30 * time.Second
+	testHTTPRetry       = 2
+)
+
 func getHTTPTimeout(key string, duration time.Duration) time.Duration {
 	if value, ok := os.LookupEnv(key); ok {
 		parsedDuration, err := time.ParseDuration(value)
 		if err != nil {
 			return duration
 		}
+
 		return parsedDuration
 	}
+
 	return duration
 }
 
@@ -37,8 +44,8 @@ func TwingateClient() (*client.Client, error) {
 			os.Getenv(twingate.EnvURL),
 			os.Getenv(twingate.EnvAPIToken),
 			os.Getenv(twingate.EnvNetwork),
-			getHTTPTimeout(twingate.EnvHTTPTimeout, 30*time.Second),
-			2,
+			getHTTPTimeout(twingate.EnvHTTPTimeout, testTimeoutDuration),
+			testHTTPRetry,
 			"test"),
 		nil
 }

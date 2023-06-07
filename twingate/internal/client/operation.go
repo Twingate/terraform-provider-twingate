@@ -78,7 +78,7 @@ type attr struct {
 
 func (o operation) apiError(err error, attrs ...attr) *APIError {
 	// prevent double wrapping
-	if e, ok := err.(*APIError); ok { //nolint
+	if e, ok := err.(*APIError); ok {
 		return e
 	}
 

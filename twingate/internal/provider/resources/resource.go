@@ -197,6 +197,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	var plan resourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -204,21 +205,24 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	input, err := convertResource(&plan)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
+
 		return
 	}
 
 	resource, err := r.client.CreateResource(ctx, input)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
+
 		return
 	}
 
 	if err = r.client.AddResourceServiceAccountIDs(ctx, resource.ID, resource.ServiceAccounts); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
+
 		return
 	}
 
-	r.resourceResourceReadHelper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func getAccessAttribute(obj *types.Object, attribute string) []string {
@@ -335,6 +339,7 @@ func decodePorts(obj types.Object) ([]*model.PortRange, error) {
 
 func convertPorts(list types.Set) ([]*model.PortRange, error) {
 	items := list.Elements()
+
 	var ports = make([]*model.PortRange, 0, len(items))
 
 	for _, port := range items {
@@ -353,6 +358,7 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	var state resourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -362,11 +368,12 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 	}
 
-	r.resourceResourceReadHelper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *twingateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state resourceModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -377,6 +384,7 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	input, err := convertResource(&plan)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
+
 		return
 	}
 
@@ -384,35 +392,40 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 
 	if err = r.deleteResourceGroupIDs(ctx, &state, input); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
+
 		return
 	}
 
 	if err = r.deleteResourceServiceAccountIDs(ctx, &state, input); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
+
 		return
 	}
 
 	resource, err := r.client.UpdateResource(ctx, input)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
+
 		return
 	}
 
 	addServiceAccountIDs := setDifference(input.ServiceAccounts, resource.ServiceAccounts)
 	if err = r.client.AddResourceServiceAccountIDs(ctx, resource.ID, addServiceAccountIDs); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
+
 		return
 	}
 
 	resource.ServiceAccounts = setJoin(resource.ServiceAccounts, input.ServiceAccounts)
 
-	r.resourceResourceReadHelper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, nil, operationUpdate)
+	r.helper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, nil, operationUpdate)
 }
 
 func (r *twingateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state resourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -421,7 +434,7 @@ func (r *twingateResource) Delete(ctx context.Context, req resource.DeleteReques
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateResource)
 }
 
-func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resource *model.Resource, state, reference *resourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *twingateResource) helper(ctx context.Context, resource *model.Resource, state, reference *resourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) { //nolint:cyclop
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -448,6 +461,7 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 
 		if err != nil {
 			addErr(diagnostics, err, operationUpdate, TwingateResource)
+
 			return
 		}
 	}
@@ -455,6 +469,7 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 	remoteServiceAccounts, err := r.client.ReadResourceServiceAccounts(ctx, resource.ID)
 	if err != nil {
 		addErr(diagnostics, err, operationRead, TwingateServiceAccount)
+
 		return
 	}
 
@@ -490,6 +505,7 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 	if !state.Protocols.IsNull() {
 		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &reference.Protocols)
 		diagnostics.Append(diags...)
+
 		if diagnostics.HasError() {
 			return
 		}
@@ -503,6 +519,7 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 			state.Access.Attributes()[attr.ServiceAccountIDs])
 
 		diagnostics.Append(diags...)
+
 		if diagnostics.HasError() {
 			return
 		}
@@ -516,6 +533,7 @@ func (r *twingateResource) resourceResourceReadHelper(ctx context.Context, resou
 
 func convertAccessBlockToTerraform(resource *model.Resource, stateGroupIDs, stateServiceAccounts tfattr.Value) (types.Object, diag.Diagnostics) {
 	var diagnostics, diags diag.Diagnostics
+
 	groupIDs, serviceAccountIDs := types.SetNull(types.StringType), types.SetNull(types.StringType)
 
 	if len(resource.Groups) > 0 {
@@ -562,7 +580,11 @@ func makeSet(list []string) (basetypes.SetValue, diag.Diagnostics) {
 }
 
 func stringsToTerraformValue(list []string) []tfattr.Value {
-	var out []tfattr.Value
+	if len(list) == 0 {
+		return nil
+	}
+
+	out := make([]tfattr.Value, 0, len(list))
 	for _, item := range list {
 		out = append(out, types.StringValue(item))
 	}
@@ -646,6 +668,7 @@ func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Ob
 	}
 
 	var diagnostics diag.Diagnostics
+
 	tcp, diags := convertProtocolModelToTerraform(protocols.TCP, reference.Attributes()[attr.TCP])
 	diagnostics.Append(diags...)
 
@@ -690,6 +713,7 @@ func defaultProtocolsModelToTerraform() (types.Object, diag.Diagnostics) {
 	attributeTypes := protocolsAttributeTypes()
 
 	var diagnostics diag.Diagnostics
+
 	defaultPorts, diags := defaultProtocolModelToTerraform()
 	diagnostics.Append(diags...)
 
@@ -721,13 +745,16 @@ func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.
 	}
 
 	policy := protocol.Policy
+
 	statePolicy := reference.(types.Object).Attributes()[attr.Policy].(types.String).ValueString()
 	if statePolicy == model.PolicyDenyAll && policy == model.PolicyRestricted {
 		policy = model.PolicyDenyAll
 	}
 
 	var statePorts = types.Set{}
+
 	statePortsVal := reference.(types.Object).Attributes()[attr.Ports]
+
 	if statePortsVal != nil && !statePortsVal.IsUnknown() {
 		statePortsSet, ok := statePortsVal.(types.Set)
 		if ok {
@@ -744,6 +771,7 @@ func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.
 		attr.Policy: types.StringValue(policy),
 		attr.Ports:  ports,
 	}
+
 	return types.ObjectValue(protocolAttributeTypes(), attributes)
 }
 
@@ -753,8 +781,7 @@ func convertPortsToTerraform(ports []*model.PortRange) types.Set {
 		elements = append(elements, types.StringValue(port.String()))
 	}
 
-	list, _ := types.SetValue(types.StringType, elements)
-	return list
+	return types.SetValueMust(types.StringType, elements)
 }
 
 func PortsDiff() planmodifier.Set {
@@ -783,16 +810,15 @@ func (m portsDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest,
 	if equalPorts(req.StateValue, req.PlanValue) {
 		resp.PlanValue = req.StateValue
 	}
-
 }
 
-func equalPorts(a, b types.Set) bool {
-	oldPortsRange, err := convertPorts(a)
+func equalPorts(one, another types.Set) bool {
+	oldPortsRange, err := convertPorts(one)
 	if err != nil {
 		return false
 	}
 
-	newPortsRange, err := convertPorts(b)
+	newPortsRange, err := convertPorts(another)
 	if err != nil {
 		return false
 	}

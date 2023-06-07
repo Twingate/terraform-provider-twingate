@@ -94,7 +94,8 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 func (d *connectors) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	connectors, err := d.client.ReadConnectors(ctx)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateConnectors)
+		addErr(&resp.Diagnostics, err, TwingateConnectors)
+
 		return
 	}
 

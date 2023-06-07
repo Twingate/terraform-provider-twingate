@@ -86,13 +86,15 @@ func (d *connector) Read(ctx context.Context, req datasource.ReadRequest, resp *
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	connector, err := d.client.ReadConnector(ctx, data.ID.ValueString())
 	if err != nil {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateConnector)
+		addErr(&resp.Diagnostics, err, TwingateConnector)
+
 		return
 	}
 
@@ -104,13 +106,13 @@ func (d *connector) Read(ctx context.Context, req datasource.ReadRequest, resp *
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func addErr(diagnostics *diag.Diagnostics, err error, operation, resource string) {
+func addErr(diagnostics *diag.Diagnostics, err error, resource string) {
 	if err == nil {
 		return
 	}
 
 	diagnostics.AddError(
-		fmt.Sprintf("failed to %s %s", operation, resource),
+		fmt.Sprintf("failed to %s %s", operationRead, resource),
 		err.Error(),
 	)
 }

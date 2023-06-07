@@ -19,7 +19,7 @@ type ServiceAccountKeyEntityCreateResponse struct {
 
 func (q CreateServiceAccountKey) ToModel() (*model.ServiceKey, error) {
 	if q.Entity == nil {
-		return nil, nil //nolint
+		return nil, nil
 	}
 
 	serviceKey, err := q.Entity.ToModel()

@@ -58,7 +58,9 @@ func (r *serviceAccount) Schema(_ context.Context, _ resource.SchemaRequest, res
 
 func (r *serviceAccount) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan serviceAccountModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -70,7 +72,9 @@ func (r *serviceAccount) Create(ctx context.Context, req resource.CreateRequest,
 
 func (r *serviceAccount) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state serviceAccountModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -82,6 +86,7 @@ func (r *serviceAccount) Read(ctx context.Context, req resource.ReadRequest, res
 
 func (r *serviceAccount) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state serviceAccountModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -101,7 +106,9 @@ func (r *serviceAccount) Update(ctx context.Context, req resource.UpdateRequest,
 
 func (r *serviceAccount) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state serviceAccountModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -19,7 +19,7 @@ type ServiceAccountKeyEntityResponse struct {
 
 func (q UpdateServiceAccountKey) ToModel() (*model.ServiceKey, error) {
 	if q.Entity == nil {
-		return nil, nil //nolint
+		return nil, nil
 	}
 
 	return q.Entity.ToModel()

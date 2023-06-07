@@ -22,7 +22,7 @@ import (
 
 var ErrAllowedToChangeOnlyManualUsers = fmt.Errorf("only users of type %s may be modified", model.UserTypeManual)
 
-func NewUserResource() resource.Resource {
+func NewUserResource() resource.Resource { //nolint:ireturn
 	return &user{}
 }
 
@@ -110,6 +110,7 @@ func (r *user) Create(ctx context.Context, req resource.CreateRequest, resp *res
 	var plan userModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -156,6 +157,7 @@ func (r *user) Read(ctx context.Context, req resource.ReadRequest, resp *resourc
 	var state userModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -167,6 +169,7 @@ func (r *user) Read(ctx context.Context, req resource.ReadRequest, resp *resourc
 
 func (r *user) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state userModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	addErr(&resp.Diagnostics, isAllowedToChangeUser(&state), operationUpdate, TwingateUser)
@@ -214,6 +217,7 @@ func (r *user) Delete(ctx context.Context, req resource.DeleteRequest, resp *res
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	addErr(&resp.Diagnostics, isAllowedToChangeUser(&state), operationDelete, TwingateUser)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}

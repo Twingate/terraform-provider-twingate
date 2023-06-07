@@ -111,7 +111,9 @@ func (r *connector) Schema(_ context.Context, _ resource.SchemaRequest, resp *re
 
 func (r *connector) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan connectorModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -126,7 +128,9 @@ func (r *connector) Create(ctx context.Context, req resource.CreateRequest, resp
 
 func (r *connector) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state connectorModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -138,6 +142,7 @@ func (r *connector) Read(ctx context.Context, req resource.ReadRequest, resp *re
 
 func (r *connector) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var state, plan connectorModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -167,7 +172,9 @@ func (r *connector) Update(ctx context.Context, req resource.UpdateRequest, resp
 
 func (r *connector) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state connectorModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}

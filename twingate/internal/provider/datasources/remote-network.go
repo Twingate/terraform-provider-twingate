@@ -80,18 +80,21 @@ func (d *remoteNetwork) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if !data.ID.IsNull() && !data.Name.IsNull() {
-		addErr(&resp.Diagnostics, ErrArgumentsInvalidCombination, operationRead, TwingateRemoteNetwork)
+		addErr(&resp.Diagnostics, ErrArgumentsInvalidCombination, TwingateRemoteNetwork)
+
 		return
 	}
 
 	network, err := d.client.ReadRemoteNetwork(ctx, data.ID.ValueString(), data.Name.ValueString())
 	if err != nil {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateRemoteNetwork)
+		addErr(&resp.Diagnostics, err, TwingateRemoteNetwork)
+
 		return
 	}
 

@@ -103,7 +103,8 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	users, err := d.client.ReadUsers(ctx)
 	if err != nil {
-		addErr(&resp.Diagnostics, err, operationRead, TwingateUsers)
+		addErr(&resp.Diagnostics, err, TwingateUsers)
+
 		return
 	}
 

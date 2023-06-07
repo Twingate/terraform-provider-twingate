@@ -53,6 +53,13 @@ linters:
     - structcheck
     - varcheck
     - revive
+    - ireturn
+    - nilnil
+    - goerr113
+    - gochecknoglobals
+    - errorlint
+    - depguard
+    - funlen
   disable-all: false
   fast: false
 
