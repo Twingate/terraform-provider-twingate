@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -70,24 +69,10 @@ func (r *serviceKey) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 			attr.IsActive: schema.BoolAttribute{
 				Computed:    true,
 				Description: "If the value of this attribute changes to false, Terraform will destroy and recreate the resource.",
-				PlanModifiers: []planmodifier.Bool{
-					RequiresReplaceWhenFalse("If the value of this attribute changes to false, Terraform will destroy and recreate the resource."),
-				},
 			},
 		},
 	}
 }
-
-//func (r *serviceKey) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-//	var isActive types.Bool
-//	diags := req.State.GetAttribute(ctx, path.Root(attr.IsActive), &isActive)
-//	resp.Diagnostics.Append(diags...)
-//
-//	if !isActive.IsNull() && !isActive.IsUnknown() && !isActive.ValueBool() {
-//		resp.RequiresReplace.Append(path.Root("id"))
-//		resp.Plan.SetAttribute(ctx, path.Root("id"), types.StringNull())
-//	}
-//}
 
 func (r *serviceKey) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan serviceKeyModel
@@ -106,7 +91,7 @@ func (r *serviceKey) Create(ctx context.Context, req resource.CreateRequest, res
 		plan.Token = types.StringValue(serviceKey.Token)
 	}
 
-	resourceServiceKeyReadHelper(ctx, serviceKey, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	r.helper(ctx, serviceKey, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *serviceKey) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -119,7 +104,7 @@ func (r *serviceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 	serviceKey, err := r.client.ReadServiceKey(ctx, state.ID.ValueString())
 
-	resourceServiceKeyReadHelper(ctx, serviceKey, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.helper(ctx, serviceKey, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *serviceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -138,7 +123,7 @@ func (r *serviceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 		},
 	)
 
-	resourceServiceKeyReadHelper(ctx, serviceKey, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
+	r.helper(ctx, serviceKey, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *serviceKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -166,7 +151,7 @@ func (r *serviceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccountKey)
 }
 
-func resourceServiceKeyReadHelper(ctx context.Context, serviceKey *model.ServiceKey, state *serviceKeyModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *serviceKey) helper(ctx context.Context, serviceKey *model.ServiceKey, state *serviceKeyModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -180,6 +165,17 @@ func resourceServiceKeyReadHelper(ctx context.Context, serviceKey *model.Service
 		return
 	}
 
+	if !serviceKey.IsActive() {
+		if err = r.client.DeleteServiceKey(ctx, state.ID.ValueString()); err != nil {
+			addErr(diagnostics, err, operationDelete, TwingateServiceAccountKey)
+			return
+		}
+
+		// clear state
+		respState.RemoveResource(ctx)
+		return
+	}
+
 	state.ID = types.StringValue(serviceKey.ID)
 	state.Name = types.StringValue(serviceKey.Name)
 	state.ServiceAccountID = types.StringValue(serviceKey.Service)
@@ -188,42 +184,4 @@ func resourceServiceKeyReadHelper(ctx context.Context, serviceKey *model.Service
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
 	diagnostics.Append(diags...)
-}
-
-func RequiresReplaceWhenFalse(description string) *requiresReplaceWhenFalse {
-	return &requiresReplaceWhenFalse{description: description}
-}
-
-type requiresReplaceWhenFalse struct {
-	description string
-}
-
-// Description returns a human-readable description of the plan modifier.
-func (m requiresReplaceWhenFalse) Description(_ context.Context) string {
-	return m.description
-}
-
-// MarkdownDescription returns a markdown description of the plan modifier.
-func (m requiresReplaceWhenFalse) MarkdownDescription(_ context.Context) string {
-	return m.description
-}
-
-// PlanModifyBool implements the plan modification logic.
-func (m requiresReplaceWhenFalse) PlanModifyBool(ctx context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
-	// Do not replace on resource creation.
-	if req.State.Raw.IsNull() {
-		return
-	}
-
-	// Do not replace on resource destroy.
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
-	// Do not replace if state is true.
-	if req.StateValue.ValueBool() {
-		return
-	}
-
-	resp.RequiresReplace = true
 }
