@@ -1242,7 +1242,7 @@ func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource20(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+				ExpectError: regexp.MustCompile("invalid attribute combination"),
 			},
 		},
 	})

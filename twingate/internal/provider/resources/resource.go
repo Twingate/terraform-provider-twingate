@@ -25,6 +25,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
+var ErrInvalidAttributeCombination = errors.New("invalid attribute combination")
+
 func NewResourceResource() resource.Resource {
 	return &twingateResource{}
 }
@@ -156,9 +158,9 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Description: "List of Group IDs that will have permission to access the Resource.",
 						Validators: []validator.Set{
 							setvalidator.SizeAtLeast(1),
-							setvalidator.AtLeastOneOf(path.Expressions{
-								path.MatchRelative().AtParent().AtName(attr.ServiceAccountIDs),
-							}...),
+							//setvalidator.AtLeastOneOf(path.Expressions{
+							//	path.MatchRelative().AtParent().AtName(attr.ServiceAccountIDs),
+							//}...),
 						},
 					},
 					attr.ServiceAccountIDs: schema.SetAttribute{
@@ -167,9 +169,9 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Description: "List of Service Account IDs that will have permission to access the Resource.",
 						Validators: []validator.Set{
 							setvalidator.SizeAtLeast(1),
-							setvalidator.AtLeastOneOf(path.Expressions{
-								path.MatchRelative().AtParent().AtName(attr.GroupIDs),
-							}...),
+							//setvalidator.AtLeastOneOf(path.Expressions{
+							//	path.MatchRelative().AtParent().AtName(attr.GroupIDs),
+							//}...),
 						},
 					},
 				},
@@ -246,6 +248,10 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 
 	groupIDs := getAccessAttribute(&plan.Access, attr.GroupIDs)
 	serviceAccountIDs := getAccessAttribute(&plan.Access, attr.ServiceAccountIDs)
+
+	if !plan.Access.IsNull() && groupIDs == nil && serviceAccountIDs == nil {
+		return nil, ErrInvalidAttributeCombination
+	}
 
 	var isVisible, isBrowserShortcutEnabled *bool
 	if !plan.IsVisible.IsUnknown() {

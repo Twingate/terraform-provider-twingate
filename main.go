@@ -7,12 +7,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
+const registry = "registry.terraform.io/Twingate/twingate"
+
 var (
 	version = "dev"
 )
 
 func main() {
 	providerserver.Serve(context.Background(), twingate.New(version), providerserver.ServeOpts{
-		Address: "registry.terraform.io/Twingate/twingate",
+		Address: registry,
 	})
 }
