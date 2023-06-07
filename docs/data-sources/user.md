@@ -31,7 +31,7 @@ data "twingate_user" "foo" {
 - `first_name` (String) The first name of the User
 - `is_admin` (Boolean, Deprecated) Indicates whether the User is an admin
 - `last_name` (String) The last name of the User
-- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER
-- `type` (String) Indicates the User's type. Either MANUAL or SYNCED.
+- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT or MEMBER
+- `type` (String) Indicates the User's type. Either MANUAL or SYNCED
 
 

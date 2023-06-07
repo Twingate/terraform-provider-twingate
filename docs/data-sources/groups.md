@@ -26,21 +26,21 @@ data "twingate_groups" "foo" {
 
 ### Optional
 
+- `groups` (Attributes List) List of Groups (see [below for nested schema](#nestedatt--groups))
 - `is_active` (Boolean) Returns only Groups matching the specified state.
 - `name` (String) Returns only Groups that exactly match this name.
-- `type` (String) Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
+- `type` (String) Returns only Groups of the specified type (valid: MANUAL, SYNCED or SYSTEM).
 
 ### Read-Only
 
-- `groups` (Block List) List of Groups (see [below for nested schema](#nestedblock--groups))
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the Groups datasource
 
-<a id="nestedblock--groups"></a>
+<a id="nestedatt--groups"></a>
 ### Nested Schema for `groups`
 
 Read-Only:
 
-- `id` (String) The ID of the Group
+- `id` (String) The ID of the Group. The ID for the Group can be obtained from the Admin API or the URL string in the Admin Console.
 - `is_active` (Boolean) Indicates if the Group is active
 - `name` (String) The name of the Group
 - `security_policy_id` (String) The Security Policy assigned to the Group.
