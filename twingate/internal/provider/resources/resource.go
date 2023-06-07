@@ -158,9 +158,6 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Description: "List of Group IDs that will have permission to access the Resource.",
 						Validators: []validator.Set{
 							setvalidator.SizeAtLeast(1),
-							//setvalidator.AtLeastOneOf(path.Expressions{
-							//	path.MatchRelative().AtParent().AtName(attr.ServiceAccountIDs),
-							//}...),
 						},
 					},
 					attr.ServiceAccountIDs: schema.SetAttribute{
@@ -169,9 +166,6 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Description: "List of Service Account IDs that will have permission to access the Resource.",
 						Validators: []validator.Set{
 							setvalidator.SizeAtLeast(1),
-							//setvalidator.AtLeastOneOf(path.Expressions{
-							//	path.MatchRelative().AtParent().AtName(attr.GroupIDs),
-							//}...),
 						},
 					},
 				},
