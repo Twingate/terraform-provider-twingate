@@ -2,19 +2,19 @@ package datasources
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-var ErrArgumentsInvalidCombination = errors.New("invalid combination of arguments")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &remoteNetwork{}
@@ -62,10 +62,20 @@ func (d *remoteNetwork) Schema(ctx context.Context, req datasource.SchemaRequest
 			attr.ID: schema.StringAttribute{
 				Optional:    true,
 				Description: "The ID of the Remote Network",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.Expressions{
+						path.MatchRoot(attr.Name),
+					}...),
+				},
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,
 				Description: "The name of the Remote Network",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.Expressions{
+						path.MatchRoot(attr.ID),
+					}...),
+				},
 			},
 			attr.Location: schema.StringAttribute{
 				Computed:    true,
@@ -82,12 +92,6 @@ func (d *remoteNetwork) Read(ctx context.Context, req datasource.ReadRequest, re
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !data.ID.IsNull() && !data.Name.IsNull() {
-		addErr(&resp.Diagnostics, ErrArgumentsInvalidCombination, TwingateRemoteNetwork)
-
 		return
 	}
 

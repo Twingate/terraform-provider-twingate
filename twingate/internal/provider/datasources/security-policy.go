@@ -6,8 +6,11 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -56,10 +59,20 @@ func (d *securityPolicy) Schema(ctx context.Context, req datasource.SchemaReques
 			attr.ID: schema.StringAttribute{
 				Optional:    true,
 				Description: "Return a Security Policy by its ID. The ID for the Security Policy can be obtained from the Admin API or the URL string in the Admin Console.",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.Expressions{
+						path.MatchRoot(attr.Name),
+					}...),
+				},
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,
 				Description: "Return a Security Policy that exactly matches this name.",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.Expressions{
+						path.MatchRoot(attr.ID),
+					}...),
+				},
 			},
 		},
 	}
@@ -72,12 +85,6 @@ func (d *securityPolicy) Read(ctx context.Context, req datasource.ReadRequest, r
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !data.ID.IsNull() && !data.Name.IsNull() {
-		addErr(&resp.Diagnostics, ErrArgumentsInvalidCombination, TwingateSecurityPolicy)
-
 		return
 	}
 

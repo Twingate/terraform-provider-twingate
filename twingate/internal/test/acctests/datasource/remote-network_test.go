@@ -147,7 +147,7 @@ func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkValidationFailed(networkID, networkName),
-					ExpectError: regexp.MustCompile("invalid combination of arguments"),
+					ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 				},
 			},
 		})

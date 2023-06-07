@@ -54,7 +54,7 @@ func TestAccDatasourceTwingateSecurityPolicyReadWithNameAndID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testDatasourceTwingateSecurityPolicyWithNameAndID(randStr, randStr),
-					ExpectError: regexp.MustCompile("invalid combination of arguments"),
+					ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 				},
 			},
 		})
