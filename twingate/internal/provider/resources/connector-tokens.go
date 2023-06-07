@@ -106,7 +106,7 @@ func (r *connectorTokens) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	resourceConnectorTokensReadHelper(ctx, r.client, plan.ID.ValueString(), tokens.AccessToken, tokens.RefreshToken, &resp.State, resp.Diagnostics)
+	r.helper(ctx, r.client, plan.ID.ValueString(), tokens.AccessToken, tokens.RefreshToken, &resp.State, resp.Diagnostics)
 }
 
 func (r *connectorTokens) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -116,7 +116,7 @@ func (r *connectorTokens) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	resourceConnectorTokensReadHelper(ctx, r.client, state.ID.ValueString(), state.AccessToken.ValueString(), state.RefreshToken.ValueString(), &resp.State, resp.Diagnostics)
+	r.helper(ctx, r.client, state.ID.ValueString(), state.AccessToken.ValueString(), state.RefreshToken.ValueString(), &resp.State, resp.Diagnostics)
 }
 
 func (r *connectorTokens) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -135,7 +135,7 @@ func (r *connectorTokens) Delete(ctx context.Context, req resource.DeleteRequest
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateConnectorTokens)
 }
 
-func resourceConnectorTokensReadHelper(ctx context.Context, client *client.Client, id, accessToken, refreshToken string, state *tfsdk.State, diagnostics diag.Diagnostics) {
+func (r *connectorTokens) helper(ctx context.Context, client *client.Client, id, accessToken, refreshToken string, state *tfsdk.State, diagnostics diag.Diagnostics) {
 	err := client.VerifyConnectorTokens(ctx, refreshToken, accessToken)
 	if err != nil {
 		state.RemoveResource(ctx)

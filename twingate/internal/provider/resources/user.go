@@ -123,7 +123,7 @@ func (r *user) Create(ctx context.Context, req resource.CreateRequest, resp *res
 		IsActive:   convertIsActiveFlag(plan.IsActive),
 	})
 
-	resourceUserReadHelper(ctx, user, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	r.helper(ctx, user, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func withDefaultValue(str, defaultValue string) string {
@@ -162,7 +162,7 @@ func (r *user) Read(ctx context.Context, req resource.ReadRequest, resp *resourc
 
 	user, err := r.client.ReadUser(ctx, state.ID.ValueString())
 
-	resourceUserReadHelper(ctx, user, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.helper(ctx, user, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *user) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -198,7 +198,7 @@ func (r *user) Update(ctx context.Context, req resource.UpdateRequest, resp *res
 
 	user, err := r.client.UpdateUser(ctx, userUpdateReq)
 
-	resourceUserReadHelper(ctx, user, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
+	r.helper(ctx, user, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func isAllowedToChangeUser(state *userModel) error {
@@ -222,7 +222,7 @@ func (r *user) Delete(ctx context.Context, req resource.DeleteRequest, resp *res
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateUser)
 }
 
-func resourceUserReadHelper(ctx context.Context, user *model.User, state *userModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *user) helper(ctx context.Context, user *model.User, state *userModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state

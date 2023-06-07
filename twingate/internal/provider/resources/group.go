@@ -95,7 +95,7 @@ func (r *group) Create(ctx context.Context, req resource.CreateRequest, resp *re
 
 	group, err := r.client.CreateGroup(ctx, convertGroup(&plan))
 
-	resourceGroupReadHelper(ctx, group, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	r.helper(ctx, group, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *group) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -110,7 +110,7 @@ func (r *group) Read(ctx context.Context, req resource.ReadRequest, resp *resour
 		group.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 	}
 
-	resourceGroupReadHelper(ctx, group, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.helper(ctx, group, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *group) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -135,7 +135,7 @@ func (r *group) Update(ctx context.Context, req resource.UpdateRequest, resp *re
 	group.ID = state.ID.ValueString()
 	group, err = r.client.UpdateGroup(ctx, group)
 
-	resourceGroupReadHelper(ctx, group, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+	r.helper(ctx, group, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func getOldGroupUserIDs(state *groupModel, group, remoteGroup *model.Group) []string {
@@ -175,7 +175,7 @@ func (r *group) isAllowedToChangeGroup(ctx context.Context, groupID string) (*mo
 	return group, nil
 }
 
-func resourceGroupReadHelper(ctx context.Context, group *model.Group, state *groupModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *group) helper(ctx context.Context, group *model.Group, state *groupModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state

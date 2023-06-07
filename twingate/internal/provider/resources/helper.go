@@ -36,6 +36,9 @@ func setDifference(a, b []string) []string {
 	return result
 }
 
+// setJoin - joins two sets.
+// The join of sets A and set B denoted as A + B.
+// If A = {1, 2, 3, 4} and B = {3, 4, 5, 7}, then the join of sets A and B is given by A + B = {1, 2, 3, 4, 5, 7}.
 func setJoin(a, b []string) []string {
 	result := make([]string, 0, len(a)+len(b))
 	result = append(result, a...)

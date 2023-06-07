@@ -121,7 +121,7 @@ func (r *connector) Create(ctx context.Context, req resource.CreateRequest, resp
 		NetworkID: plan.RemoteNetworkID.ValueString(),
 	})
 
-	resourceConnectorReadHelper(ctx, conn, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	r.helper(ctx, conn, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *connector) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -133,7 +133,7 @@ func (r *connector) Read(ctx context.Context, req resource.ReadRequest, resp *re
 
 	conn, err := r.client.ReadConnector(ctx, state.ID.ValueString())
 
-	resourceConnectorReadHelper(ctx, conn, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.helper(ctx, conn, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *connector) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -162,7 +162,7 @@ func (r *connector) Update(ctx context.Context, req resource.UpdateRequest, resp
 
 	conn, err := r.client.UpdateConnector(ctx, conn)
 
-	resourceConnectorReadHelper(ctx, conn, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+	r.helper(ctx, conn, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *connector) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -176,7 +176,7 @@ func (r *connector) Delete(ctx context.Context, req resource.DeleteRequest, resp
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateConnector)
 }
 
-func resourceConnectorReadHelper(ctx context.Context, conn *model.Connector, state *connectorModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *connector) helper(ctx context.Context, conn *model.Connector, state *connectorModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state

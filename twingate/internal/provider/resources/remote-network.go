@@ -92,7 +92,7 @@ func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, 
 		Location: location,
 	})
 
-	resourceRemoteNetworkReadHelper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	r.helper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -104,7 +104,7 @@ func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp
 
 	network, err := r.client.ReadRemoteNetworkByID(ctx, state.ID.ValueString())
 
-	resourceRemoteNetworkReadHelper(ctx, network, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.helper(ctx, network, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -128,7 +128,7 @@ func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, 
 
 	network, err := r.client.UpdateRemoteNetwork(ctx, network)
 
-	resourceRemoteNetworkReadHelper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+	r.helper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *remoteNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -142,7 +142,7 @@ func (r *remoteNetwork) Delete(ctx context.Context, req resource.DeleteRequest, 
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateRemoteNetwork)
 }
 
-func resourceRemoteNetworkReadHelper(ctx context.Context, network *model.RemoteNetwork, state *remoteNetworkModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *remoteNetwork) helper(ctx context.Context, network *model.RemoteNetwork, state *remoteNetworkModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state

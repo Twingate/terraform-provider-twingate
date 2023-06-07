@@ -65,7 +65,7 @@ func (r *serviceAccount) Create(ctx context.Context, req resource.CreateRequest,
 
 	serviceAccount, err := r.client.CreateServiceAccount(ctx, plan.Name.ValueString())
 
-	resourceServiceAccountReadHelper(ctx, serviceAccount, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+	r.helper(ctx, serviceAccount, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
 func (r *serviceAccount) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -77,7 +77,7 @@ func (r *serviceAccount) Read(ctx context.Context, req resource.ReadRequest, res
 
 	serviceAccount, err := r.client.ReadShallowServiceAccount(ctx, state.ID.ValueString())
 
-	resourceServiceAccountReadHelper(ctx, serviceAccount, &state, &resp.State, &resp.Diagnostics, err, operationRead)
+	r.helper(ctx, serviceAccount, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
 func (r *serviceAccount) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -96,7 +96,7 @@ func (r *serviceAccount) Update(ctx context.Context, req resource.UpdateRequest,
 		},
 	)
 
-	resourceServiceAccountReadHelper(ctx, serviceAccount, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
+	r.helper(ctx, serviceAccount, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func (r *serviceAccount) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -110,7 +110,7 @@ func (r *serviceAccount) Delete(ctx context.Context, req resource.DeleteRequest,
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateServiceAccount)
 }
 
-func resourceServiceAccountReadHelper(ctx context.Context, serviceAccount *model.ServiceAccount, state *serviceAccountModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *serviceAccount) helper(ctx context.Context, serviceAccount *model.ServiceAccount, state *serviceAccountModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
