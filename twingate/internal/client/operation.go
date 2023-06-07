@@ -1,8 +1,11 @@
 package client
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/iancoleman/strcase"
 )
 
@@ -77,6 +80,15 @@ func (o operation) apiError(err error, attrs ...attr) *APIError {
 	// prevent double wrapping
 	if e, ok := err.(*APIError); ok { //nolint
 		return e
+	}
+
+	if errs, ok := err.(graphql.Errors); ok {
+		var errMsgs []string
+		for _, e := range errs {
+			errMsgs = append(errMsgs, e.Message)
+		}
+
+		err = errors.New(strings.Join(errMsgs, "; "))
 	}
 
 	if len(attrs) == 0 {

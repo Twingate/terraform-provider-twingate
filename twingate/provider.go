@@ -182,6 +182,9 @@ func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSourc
 		datasources.NewUsersDatasource,
 		datasources.NewServiceAccountsDatasource,
 		datasources.NewSecurityPolicyDatasource,
+		datasources.NewSecurityPoliciesDatasource,
+		datasources.NewResourceDatasource,
+		datasources.NewResourcesDatasource,
 	}
 }
 
