@@ -1837,10 +1837,10 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 				),
 			},
 			{
-				// alias attr commented out, means state keeps the same value without changes
+				// alias attr commented out, means it has nil state
 				Config: createResource29WithoutAlias(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
+					sdk.TestCheckNoResourceAttr(theResource, attr.Alias),
 				),
 			},
 			{

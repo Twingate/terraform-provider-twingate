@@ -114,7 +114,6 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 			attr.Alias: schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
 			},
 
@@ -491,12 +490,8 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 		state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
 	}
 
-	if resource.Alias != nil {
-		state.Alias = types.StringPointerValue(resource.Alias)
-	}
-
-	if state.Alias.IsUnknown() {
-		state.Alias = types.StringNull()
+	if !state.Alias.IsNull() || !reference.Alias.IsUnknown() {
+		state.Alias = reference.Alias
 	}
 
 	if !state.Protocols.IsNull() {
