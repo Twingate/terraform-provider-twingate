@@ -2,6 +2,7 @@ package datasources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -112,7 +113,7 @@ func (d *serviceAccounts) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 
 	accounts, err := d.client.ReadServiceAccounts(ctx, data.Name.ValueString())
-	if err != nil {
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateServiceAccounts)
 
 		return

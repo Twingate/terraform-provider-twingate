@@ -2,6 +2,7 @@ package datasources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -96,7 +97,7 @@ func (d *remoteNetworks) Read(ctx context.Context, req datasource.ReadRequest, r
 	}
 
 	networks, err := d.client.ReadRemoteNetworks(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateRemoteNetworks)
 
 		return

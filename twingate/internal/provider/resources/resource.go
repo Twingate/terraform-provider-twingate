@@ -114,10 +114,8 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 			attr.Alias: schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 
 			// computed

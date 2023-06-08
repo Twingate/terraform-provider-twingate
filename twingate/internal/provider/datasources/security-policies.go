@@ -2,6 +2,7 @@ package datasources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -81,7 +82,7 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 
 func (d *securityPolicies) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	policies, err := d.client.ReadSecurityPolicies(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateSecurityPolicy)
 
 		return

@@ -2,6 +2,7 @@ package datasources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -102,7 +103,7 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 
 func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	users, err := d.client.ReadUsers(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateUsers)
 
 		return
