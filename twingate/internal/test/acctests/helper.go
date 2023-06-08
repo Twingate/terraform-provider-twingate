@@ -108,7 +108,7 @@ func PreCheck(t *testing.T) {
 	t.Run("Test Twingate Resource : AccPreCheck", func(t *testing.T) {
 		for _, requiredEnvironmentVariable := range requiredEnvironmentVariables {
 			if value := os.Getenv(requiredEnvironmentVariable); value == "" {
-				t.Skipf("%s must be set before running acceptance tests.", requiredEnvironmentVariable)
+				t.Fatalf("%s must be set before running acceptance tests.", requiredEnvironmentVariable)
 			}
 		}
 	})
