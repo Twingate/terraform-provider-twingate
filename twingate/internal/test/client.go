@@ -1,7 +1,6 @@
 package test
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -28,18 +27,6 @@ func getHTTPTimeout(key string, duration time.Duration) time.Duration {
 }
 
 func TwingateClient() (*client.Client, error) {
-	if os.Getenv(twingate.EnvAPIToken) == "" {
-		return nil, fmt.Errorf("must provide environment variable %s", twingate.EnvAPIToken)
-	}
-
-	if os.Getenv(twingate.EnvNetwork) == "" {
-		return nil, fmt.Errorf("must provide environment variable %s", twingate.EnvNetwork)
-	}
-
-	if os.Getenv(twingate.EnvURL) == "" {
-		return nil, fmt.Errorf("must provide environment variable %s", twingate.EnvURL)
-	}
-
 	return client.NewClient(
 			os.Getenv(twingate.EnvURL),
 			os.Getenv(twingate.EnvAPIToken),
