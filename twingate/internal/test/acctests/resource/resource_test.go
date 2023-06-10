@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	tcpPolicy                  = attr.BlockPath(attr.Protocols, attr.TCP, attr.Policy)
-	udpPolicy                  = attr.BlockPath(attr.Protocols, attr.UDP, attr.Policy)
-	firstTCPPort               = attr.BlockFirst(attr.Protocols, attr.TCP, attr.Ports)
-	firstUDPPort               = attr.BlockFirst(attr.Protocols, attr.UDP, attr.Ports)
-	tcpPortsLen                = attr.BlockLen(attr.Protocols, attr.TCP, attr.Ports)
-	udpPortsLen                = attr.BlockLen(attr.Protocols, attr.UDP, attr.Ports)
-	accessGroupIdsLen          = attr.BlockLen(attr.Access, attr.GroupIDs)
-	accessServiceAccountIdsLen = attr.BlockLen(attr.Access, attr.ServiceAccountIDs)
+	tcpPolicy                  = attr.Path(attr.Protocols, attr.TCP, attr.Policy)
+	udpPolicy                  = attr.Path(attr.Protocols, attr.UDP, attr.Policy)
+	firstTCPPort               = attr.First(attr.Protocols, attr.TCP, attr.Ports)
+	firstUDPPort               = attr.First(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPortsLen                = attr.Len(attr.Protocols, attr.TCP, attr.Ports)
+	udpPortsLen                = attr.Len(attr.Protocols, attr.UDP, attr.Ports)
+	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
+	accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
@@ -1148,7 +1148,7 @@ func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource18(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Attribute access.group_ids set must contain at least 1 elements"),
+				ExpectError: regexp.MustCompile("Attribute access\\[0\\].group_ids set must contain at least 1 elements"),
 			},
 		},
 	})
@@ -1195,7 +1195,7 @@ func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource19(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Attribute access.service_account_ids set must contain at least 1 elements"),
+				ExpectError: regexp.MustCompile("Attribute access\\[0\\].service_account_ids set must contain at least 1 elements"),
 			},
 		},
 	})

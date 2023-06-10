@@ -1,12 +1,14 @@
 package resources
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
@@ -15,23 +17,23 @@ import (
 func TestConvertProtocol(t *testing.T) {
 
 	cases := []struct {
-		input       types.Object
+		input       types.List
 		expected    *model.Protocol
 		expectedErr error
 	}{
 		{},
 		{
-			input: types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
+			input: makeObjectsListMust(types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
 				attr.Policy: types.StringValue(model.PolicyAllowAll),
 				attr.Ports:  makeTestSet("-"),
-			}),
+			})),
 			expectedErr: errors.New("failed to parse protocols port range"),
 		},
 		{
-			input: types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
+			input: makeObjectsListMust(types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
 				attr.Policy: types.StringValue(model.PolicyRestricted),
 				attr.Ports:  makeTestSet("80-88"),
-			}),
+			})),
 			expected: &model.Protocol{
 				Policy: model.PolicyRestricted,
 				Ports: []*model.PortRange{
@@ -53,6 +55,17 @@ func TestConvertProtocol(t *testing.T) {
 
 		})
 	}
+
+}
+
+func makeObjectsListMust(objects ...types.Object) types.List {
+	obj := objects[0]
+
+	items := utils.Map(objects, func(item types.Object) tfattr.Value {
+		return tfattr.Value(item)
+	})
+
+	return types.ListValueMust(obj.Type(context.Background()), items)
 
 }
 

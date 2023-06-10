@@ -10,6 +10,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -41,8 +42,8 @@ type resourceModel struct {
 	Address                  types.String `tfsdk:"address"`
 	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
 	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
-	Protocols                types.Object `tfsdk:"protocols"`
-	Access                   types.Object `tfsdk:"access"`
+	Protocols                types.List   `tfsdk:"protocols"`
+	Access                   types.List   `tfsdk:"access"`
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
@@ -65,23 +66,28 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 }
 
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	protocolSchema := schema.SingleNestedBlock{
-		Attributes: map[string]schema.Attribute{
-			attr.Policy: schema.StringAttribute{
-				Computed: true,
-				Optional: true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(model.Policies...),
+	protocolSchema := schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.Policy: schema.StringAttribute{
+					Computed: true,
+					Optional: true,
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.Policies...),
+					},
+					Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
 				},
-				Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
-			},
-			attr.Ports: schema.SetAttribute{
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
-				Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
-				PlanModifiers: []planmodifier.Set{
-					PortsDiff(),
+				attr.Ports: schema.SetAttribute{
+					Optional:    true,
+					Computed:    true,
+					ElementType: types.StringType,
+					Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
+					PlanModifiers: []planmodifier.Set{
+						PortsDiff(),
+					},
 				},
 			},
 		},
@@ -145,39 +151,49 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		},
 
 		Blocks: map[string]schema.Block{
-			attr.Access: schema.SingleNestedBlock{
+			attr.Access: schema.ListNestedBlock{
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
 				Description: "Restrict access to certain groups or service accounts",
-				Attributes: map[string]schema.Attribute{
-					attr.GroupIDs: schema.SetAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
-						Description: "List of Group IDs that will have permission to access the Resource.",
-						Validators: []validator.Set{
-							setvalidator.SizeAtLeast(1),
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						attr.GroupIDs: schema.SetAttribute{
+							Optional:    true,
+							ElementType: types.StringType,
+							Description: "List of Group IDs that will have permission to access the Resource.",
+							Validators: []validator.Set{
+								setvalidator.SizeAtLeast(1),
+							},
 						},
-					},
-					attr.ServiceAccountIDs: schema.SetAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
-						Description: "List of Service Account IDs that will have permission to access the Resource.",
-						Validators: []validator.Set{
-							setvalidator.SizeAtLeast(1),
+						attr.ServiceAccountIDs: schema.SetAttribute{
+							Optional:    true,
+							ElementType: types.StringType,
+							Description: "List of Service Account IDs that will have permission to access the Resource.",
+							Validators: []validator.Set{
+								setvalidator.SizeAtLeast(1),
+							},
 						},
 					},
 				},
 			},
 
-			attr.Protocols: schema.SingleNestedBlock{
-				Attributes: map[string]schema.Attribute{
-					attr.AllowIcmp: schema.BoolAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Whether to allow ICMP (ping) traffic",
-					},
+			attr.Protocols: schema.ListNestedBlock{
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
 				},
-				Blocks: map[string]schema.Block{
-					attr.TCP: protocolSchema,
-					attr.UDP: protocolSchema,
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						attr.AllowIcmp: schema.BoolAttribute{
+							Computed:    true,
+							Optional:    true,
+							Description: "Whether to allow ICMP (ping) traffic",
+						},
+					},
+					Blocks: map[string]schema.Block{
+						attr.TCP: protocolSchema,
+						attr.UDP: protocolSchema,
+					},
 				},
 				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
 			},
@@ -217,8 +233,13 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
-func getAccessAttribute(obj *types.Object, attribute string) []string {
-	if obj == nil || obj.IsUnknown() {
+func getAccessAttribute(list types.List, attribute string) []string {
+	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+		return nil
+	}
+
+	obj := list.Elements()[0].(types.Object)
+	if obj.IsNull() || obj.IsUnknown() {
 		return nil
 	}
 
@@ -236,8 +257,8 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		return nil, err
 	}
 
-	groupIDs := getAccessAttribute(&plan.Access, attr.GroupIDs)
-	serviceAccountIDs := getAccessAttribute(&plan.Access, attr.ServiceAccountIDs)
+	groupIDs := getAccessAttribute(plan.Access, attr.GroupIDs)
+	serviceAccountIDs := getAccessAttribute(plan.Access, attr.ServiceAccountIDs)
 
 	if !plan.Access.IsNull() && groupIDs == nil && serviceAccountIDs == nil {
 		return nil, ErrInvalidAttributeCombination
@@ -277,29 +298,41 @@ func convertIDs(list types.Set) []string {
 	})
 }
 
-func convertProtocols(protocols *types.Object) (*model.Protocols, error) {
-	if protocols == nil || protocols.IsNull() {
+func convertProtocols(protocols *types.List) (*model.Protocols, error) {
+	if protocols == nil || protocols.IsNull() || len(protocols.Elements()) == 0 {
 		return model.DefaultProtocols(), nil
 	}
 
-	udp, err := convertProtocol(protocols.Attributes()[attr.UDP])
+	udp, err := convertProtocol(protocols.Elements()[0].(types.Object).Attributes()[attr.UDP])
 	if err != nil {
 		return nil, err
 	}
 
-	tcp, err := convertProtocol(protocols.Attributes()[attr.TCP])
+	tcp, err := convertProtocol(protocols.Elements()[0].(types.Object).Attributes()[attr.TCP])
 	if err != nil {
 		return nil, err
 	}
 
 	return &model.Protocols{
-		AllowIcmp: protocols.Attributes()[attr.AllowIcmp].(types.Bool).ValueBool(),
+		AllowIcmp: protocols.Elements()[0].(types.Object).Attributes()[attr.AllowIcmp].(types.Bool).ValueBool(),
 		UDP:       udp,
 		TCP:       tcp,
 	}, nil
 }
 
-func convertProtocol(protocol tfattr.Value) (*model.Protocol, error) {
+func convertProtocol(listVal tfattr.Value) (*model.Protocol, error) {
+	if listVal == nil || listVal.IsNull() {
+		return nil, nil //nolint:nilnil
+	}
+
+	list := listVal.(types.List)
+
+	if list.IsNull() || len(list.Elements()) == 0 {
+		return nil, nil
+	}
+
+	protocol := list.Elements()[0]
+
 	if protocol == nil || protocol.IsNull() {
 		return nil, nil //nolint:nilnil
 	}
@@ -472,8 +505,8 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	resource.ServiceAccounts = remoteServiceAccounts
 
 	if !resource.IsAuthoritative {
-		resource.Groups = setIntersection(getAccessAttribute(&reference.Access, attr.GroupIDs), resource.Groups)
-		resource.ServiceAccounts = setIntersection(getAccessAttribute(&reference.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
+		resource.Groups = setIntersection(getAccessAttribute(reference.Access, attr.GroupIDs), resource.Groups)
+		resource.ServiceAccounts = setIntersection(getAccessAttribute(reference.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
 	}
 
 	state.ID = types.StringValue(resource.ID)
@@ -495,7 +528,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	}
 
 	if !state.Protocols.IsNull() {
-		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &reference.Protocols)
+		protocols, diags := convertProtocolsToTerraform(ctx, resource.Protocols, reference.Protocols)
 		diagnostics.Append(diags...)
 
 		if diagnostics.HasError() {
@@ -506,9 +539,9 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	}
 
 	if !state.Access.IsNull() {
-		access, diags := convertAccessBlockToTerraform(resource,
-			state.Access.Attributes()[attr.GroupIDs],
-			state.Access.Attributes()[attr.ServiceAccountIDs])
+		access, diags := convertAccessBlockToTerraform(ctx, resource,
+			state.Access.Elements()[0].(types.Object).Attributes()[attr.GroupIDs],
+			state.Access.Elements()[0].(types.Object).Attributes()[attr.ServiceAccountIDs])
 
 		diagnostics.Append(diags...)
 
@@ -523,7 +556,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	diagnostics.Append(respState.Set(ctx, state)...)
 }
 
-func convertAccessBlockToTerraform(resource *model.Resource, stateGroupIDs, stateServiceAccounts tfattr.Value) (types.Object, diag.Diagnostics) {
+func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource, stateGroupIDs, stateServiceAccounts tfattr.Value) (types.List, diag.Diagnostics) {
 	var diagnostics, diags diag.Diagnostics
 
 	groupIDs, serviceAccountIDs := types.SetNull(types.StringType), types.SetNull(types.StringType)
@@ -538,17 +571,8 @@ func convertAccessBlockToTerraform(resource *model.Resource, stateGroupIDs, stat
 		diagnostics.Append(diags...)
 	}
 
-	attributeTypes := map[string]tfattr.Type{
-		attr.GroupIDs: types.SetType{
-			ElemType: types.StringType,
-		},
-		attr.ServiceAccountIDs: types.SetType{
-			ElemType: types.StringType,
-		},
-	}
-
 	if diagnostics.HasError() {
-		return types.ObjectNull(attributeTypes), diagnostics
+		return makeObjectsListNull(ctx, accessAttributeTypes()), diagnostics
 	}
 
 	attributes := map[string]tfattr.Value{
@@ -564,10 +588,42 @@ func convertAccessBlockToTerraform(resource *model.Resource, stateGroupIDs, stat
 		attributes[attr.ServiceAccountIDs] = serviceAccountIDs
 	}
 
-	return types.ObjectValue(attributeTypes, attributes)
+	obj, diags := types.ObjectValue(accessAttributeTypes(), attributes)
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return makeObjectsListNull(ctx, accessAttributeTypes()), diagnostics
+	}
+
+	return makeObjectsList(ctx, obj)
 }
 
-func makeSet(list []string) (basetypes.SetValue, diag.Diagnostics) {
+func accessAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.GroupIDs: types.SetType{
+			ElemType: types.StringType,
+		},
+		attr.ServiceAccountIDs: types.SetType{
+			ElemType: types.StringType,
+		},
+	}
+}
+
+func makeObjectsListNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.List {
+	return types.ListNull(types.ObjectNull(attributeTypes).Type(ctx))
+}
+
+func makeObjectsList(ctx context.Context, objects ...types.Object) (types.List, diag.Diagnostics) {
+	obj := objects[0]
+
+	items := utils.Map(objects, func(item types.Object) tfattr.Value {
+		return tfattr.Value(item)
+	})
+
+	return types.ListValue(obj.Type(ctx), items)
+}
+
+func makeSet(list []string) (types.Set, diag.Diagnostics) {
 	return types.SetValue(types.StringType, stringsToTerraformValue(list))
 }
 
@@ -632,7 +688,7 @@ func (r *twingateResource) getOldIDsAuthoritative(ctx context.Context, input *mo
 func (r *twingateResource) getOldIDsNonAuthoritative(state *resourceModel, attribute string) []string {
 	switch attribute {
 	case attr.GroupIDs, attr.ServiceAccountIDs:
-		val := state.Access.Attributes()[attribute]
+		val := state.Access.Elements()[0].(types.Object).Attributes()[attribute]
 		if val == nil {
 			return nil
 		}
@@ -654,40 +710,47 @@ func (r *twingateResource) deleteResourceServiceAccountIDs(ctx context.Context, 
 	return r.client.DeleteResourceServiceAccounts(ctx, input.ID, idsToDelete) //nolint
 }
 
-func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {
+func convertProtocolsToTerraform(ctx context.Context, protocols *model.Protocols, reference types.List) (types.List, diag.Diagnostics) {
 	if protocols == nil {
-		return defaultProtocolsModelToTerraform()
+		return defaultProtocolsModelToTerraform(ctx)
 	}
 
 	var diagnostics diag.Diagnostics
 
-	tcp, diags := convertProtocolModelToTerraform(protocols.TCP, reference.Attributes()[attr.TCP])
+	tcp, diags := convertProtocolModelToTerraform(protocols.TCP, reference.Elements()[0].(types.Object).Attributes()[attr.TCP])
 	diagnostics.Append(diags...)
 
-	udp, diags := convertProtocolModelToTerraform(protocols.UDP, reference.Attributes()[attr.UDP])
+	udp, diags := convertProtocolModelToTerraform(protocols.UDP, reference.Elements()[0].(types.Object).Attributes()[attr.UDP])
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
-		return types.ObjectNull(protocolsAttributeTypes()), diagnostics
+		return types.ListNull(types.ObjectNull(protocolsAttributeTypes()).Type(ctx)), diagnostics
 	}
 
 	attributes := map[string]tfattr.Value{
 		attr.AllowIcmp: types.BoolValue(protocols.AllowIcmp),
-		attr.TCP:       tcp,
-		attr.UDP:       udp,
+		attr.TCP:       types.ListValueMust(tcp.Type(ctx), []tfattr.Value{tcp}),
+		attr.UDP:       types.ListValueMust(udp.Type(ctx), []tfattr.Value{udp}),
 	}
 
-	return types.ObjectValue(protocolsAttributeTypes(), attributes)
+	obj := types.ObjectValueMust(protocolsAttributeTypes(), attributes)
+	list := []tfattr.Value{obj}
+
+	return types.ListValue(obj.Type(ctx), list)
 }
 
 func protocolsAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.AllowIcmp: types.BoolType,
-		attr.TCP: types.ObjectType{
-			AttrTypes: protocolAttributeTypes(),
+		attr.TCP: types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: protocolAttributeTypes(),
+			},
 		},
-		attr.UDP: types.ObjectType{
-			AttrTypes: protocolAttributeTypes(),
+		attr.UDP: types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: protocolAttributeTypes(),
+			},
 		},
 	}
 }
@@ -701,7 +764,7 @@ func protocolAttributeTypes() map[string]tfattr.Type {
 	}
 }
 
-func defaultProtocolsModelToTerraform() (types.Object, diag.Diagnostics) {
+func defaultProtocolsModelToTerraform(ctx context.Context) (types.List, diag.Diagnostics) {
 	attributeTypes := protocolsAttributeTypes()
 
 	var diagnostics diag.Diagnostics
@@ -710,16 +773,29 @@ func defaultProtocolsModelToTerraform() (types.Object, diag.Diagnostics) {
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
-		return types.ObjectNull(attributeTypes), diagnostics
+		return makeObjectsListNull(ctx, attributeTypes), diagnostics
 	}
+
+	tcp, diags := makeObjectsList(ctx, defaultPorts)
+	diagnostics.Append(diags...)
+
+	udp, diags := makeObjectsList(ctx, defaultPorts)
+	diagnostics.Append(diags...)
 
 	attributes := map[string]tfattr.Value{
 		attr.AllowIcmp: types.BoolValue(true),
-		attr.TCP:       defaultPorts,
-		attr.UDP:       defaultPorts,
+		attr.TCP:       tcp,
+		attr.UDP:       udp,
 	}
 
-	return types.ObjectValue(attributeTypes, attributes)
+	obj, diags := types.ObjectValue(attributeTypes, attributes)
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return makeObjectsListNull(ctx, attributeTypes), diagnostics
+	}
+
+	return makeObjectsList(ctx, obj)
 }
 
 func defaultProtocolModelToTerraform() (basetypes.ObjectValue, diag.Diagnostics) {
@@ -738,14 +814,14 @@ func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.
 
 	policy := protocol.Policy
 
-	statePolicy := reference.(types.Object).Attributes()[attr.Policy].(types.String).ValueString()
+	statePolicy := reference.(types.List).Elements()[0].(types.Object).Attributes()[attr.Policy].(types.String).ValueString()
 	if statePolicy == model.PolicyDenyAll && policy == model.PolicyRestricted {
 		policy = model.PolicyDenyAll
 	}
 
 	var statePorts = types.Set{}
 
-	statePortsVal := reference.(types.Object).Attributes()[attr.Ports]
+	statePortsVal := reference.(types.List).Elements()[0].(types.Object).Attributes()[attr.Ports]
 
 	if statePortsVal != nil && !statePortsVal.IsUnknown() {
 		statePortsSet, ok := statePortsVal.(types.Set)
