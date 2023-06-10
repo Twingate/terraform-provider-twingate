@@ -14,8 +14,8 @@ Resources in Twingate represent servers on the private network that clients can 
 
 ```terraform
 provider "twingate" {
-  api_token = "1234567890abcdef"
-  network   = "mynetwork"
+#  api_token = "1234567890abcdef"
+#  network   = "mynetwork"
 }
 
 resource "twingate_remote_network" "aws_network" {
@@ -64,12 +64,12 @@ resource "twingate_resource" "resource" {
 
 ### Optional
 
-- `access` (Block, Optional) Restrict access to certain groups or service accounts (see [below for nested schema](#nestedblock--access))
+- `access` (Block List) Restrict access to certain groups or service accounts (see [below for nested schema](#nestedblock--access))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client.
-- `protocols` (Block, Optional) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedblock--protocols))
+- `protocols` (Block List) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedblock--protocols))
 
 ### Read-Only
 
@@ -90,8 +90,8 @@ Optional:
 Optional:
 
 - `allow_icmp` (Boolean) Whether to allow ICMP (ping) traffic
-- `tcp` (Block, Optional) (see [below for nested schema](#nestedblock--protocols--tcp))
-- `udp` (Block, Optional) (see [below for nested schema](#nestedblock--protocols--udp))
+- `tcp` (Block List) (see [below for nested schema](#nestedblock--protocols--tcp))
+- `udp` (Block List) (see [below for nested schema](#nestedblock--protocols--udp))
 
 <a id="nestedblock--protocols--tcp"></a>
 ### Nested Schema for `protocols.tcp`

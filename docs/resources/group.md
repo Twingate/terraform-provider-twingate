@@ -14,12 +14,12 @@ Groups are how users are authorized to access Resources. For more information, s
 
 ```terraform
 provider "twingate" {
-  api_token = "1234567890abcdef"
-  network   = "mynetwork"
+#  api_token = "1234567890abcdef"
+#  network   = "mynetwork"
 }
 
-resource "twingate_group" "aws" {
-  name = "aws_group"
+resource "twingate_group" "aws-test" {
+  name = "aws_group-test-group"
 }
 ```
 
