@@ -69,7 +69,7 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Remote Network",
+							Description: "The ID of the Remote Network resource.",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,
