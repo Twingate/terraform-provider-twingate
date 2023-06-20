@@ -79,7 +79,7 @@ func (d *serviceAccounts) Schema(ctx context.Context, req datasource.SchemaReque
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "ID of the Service Account resource",
+							Description: "The ID of the Service Account resource.",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,

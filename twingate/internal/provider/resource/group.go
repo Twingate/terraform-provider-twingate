@@ -80,7 +80,7 @@ func (r *group) Schema(_ context.Context, _ resource.SchemaRequest, resp *resour
 			// computed
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the Group",
+				Description: "The ID of the Group resource.",
 			},
 		},
 	}

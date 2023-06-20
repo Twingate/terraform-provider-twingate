@@ -38,7 +38,7 @@ resource "twingate_group" "aws" {
 
 ### Read-Only
 
-- `id` (String) The ID of the Group
+- `id` (String) The ID of the Group resource.
 
 ## Import
 

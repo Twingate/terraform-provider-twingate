@@ -32,7 +32,7 @@ data "twingate_security_policies" "all" {}
 
 Read-Only:
 
-- `id` (String) Return a matching Security Policy by its ID. The ID for the Security Policy can be obtained from the Admin API or the URL string in the Admin Console.
+- `id` (String) The ID of the Security Policy resource.
 - `name` (String) Return a Security Policy that exactly matches this name.
 
 

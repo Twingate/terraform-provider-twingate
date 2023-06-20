@@ -89,7 +89,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Resource. The ID for the Resource can be obtained from the Admin API or the URL string in the Admin Console.",
+							Description: "The ID of the Resource.",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,

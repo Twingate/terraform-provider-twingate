@@ -39,7 +39,7 @@ data "twingate_resources" "foo" {
 Read-Only:
 
 - `address` (String) The Resource's address, which may be an IP address, CIDR range, or DNS address
-- `id` (String) The ID of the Resource. The ID for the Resource can be obtained from the Admin API or the URL string in the Admin Console.
+- `id` (String) The ID of the Resource.
 - `name` (String) The name of the Resource
 - `protocols` (Attributes) By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--resources--protocols))
 - `remote_network_id` (String) The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
