@@ -1,4 +1,4 @@
-package datasources
+package datasource
 
 import (
 	"context"
@@ -59,7 +59,7 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the Remote Networks datasource",
+				Description: computedDatasourceIDDescription,
 			},
 
 			attr.RemoteNetworks: schema.ListNestedAttribute{

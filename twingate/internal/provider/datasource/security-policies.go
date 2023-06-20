@@ -1,4 +1,4 @@
-package datasources
+package datasource
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "Security Policy datasource ID.",
+				Description: computedDatasourceIDDescription,
 			},
 			attr.SecurityPolicies: schema.ListNestedAttribute{
 				Computed: true,

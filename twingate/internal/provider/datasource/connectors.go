@@ -1,4 +1,4 @@
-package datasources
+package datasource
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the Connectors datasource.",
+				Description: computedDatasourceIDDescription,
 			},
 
 			// computed
@@ -70,7 +70,7 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Connector. The ID for the Connector can be obtained from the Admin API or the URL string in the Admin Console.",
+							Description: "The ID of the Connector resource.",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,

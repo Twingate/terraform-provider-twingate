@@ -27,7 +27,7 @@ data "twingate_service_accounts" "foo" {
 
 ### Read-Only
 
-- `id` (String) The ID of the Service Accounts datasource.
+- `id` (String) The ID of the data source result
 - `service_accounts` (Attributes List) List of Service Accounts (see [below for nested schema](#nestedatt--service_accounts))
 
 <a id="nestedatt--service_accounts"></a>

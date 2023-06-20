@@ -1,4 +1,4 @@
-package resources
+package resource
 
 const (
 	TwingateRemoteNetwork     = "twingate_remote_network"

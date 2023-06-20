@@ -7,7 +7,6 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -193,7 +192,7 @@ func TestAccTwingateServiceKeyReCreateAfterDeletion(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
 						acctests.RevokeTwingateServiceKey(serviceKey),
-						acctests.DeleteTwingateResource(serviceKey, resources.TwingateServiceAccountKey),
+						acctests.DeleteTwingateResource(serviceKey, resource.TwingateServiceAccountKey),
 					),
 					ExpectNonEmptyPlan: true,
 				},

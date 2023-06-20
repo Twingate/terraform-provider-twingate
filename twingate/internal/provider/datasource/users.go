@@ -1,4 +1,4 @@
-package datasources
+package datasource
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the Users datasource.",
+				Description: computedDatasourceIDDescription,
 			},
 
 			attr.Users: schema.ListNestedAttribute{

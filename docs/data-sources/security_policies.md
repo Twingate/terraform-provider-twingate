@@ -25,7 +25,7 @@ data "twingate_security_policies" "all" {}
 
 ### Read-Only
 
-- `id` (String) Security Policy datasource ID.
+- `id` (String) The ID of the data source result
 
 <a id="nestedatt--security_policies"></a>
 ### Nested Schema for `security_policies`

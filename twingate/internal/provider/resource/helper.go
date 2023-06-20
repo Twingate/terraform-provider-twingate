@@ -1,4 +1,4 @@
-package resources
+package resource
 
 import "github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 

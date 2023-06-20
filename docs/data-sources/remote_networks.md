@@ -21,7 +21,7 @@ data "twingate_remote_networks" "all" {}
 
 ### Read-Only
 
-- `id` (String) The ID of the Remote Networks datasource
+- `id` (String) The ID of the data source result
 - `remote_networks` (Attributes List) List of Remote Networks (see [below for nested schema](#nestedatt--remote_networks))
 
 <a id="nestedatt--remote_networks"></a>

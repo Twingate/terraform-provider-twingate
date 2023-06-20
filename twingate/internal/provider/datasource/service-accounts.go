@@ -1,4 +1,4 @@
-package datasources
+package datasource
 
 import (
 	"context"
@@ -66,7 +66,7 @@ func (d *serviceAccounts) Schema(ctx context.Context, req datasource.SchemaReque
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the Service Accounts datasource.",
+				Description: computedDatasourceIDDescription,
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,

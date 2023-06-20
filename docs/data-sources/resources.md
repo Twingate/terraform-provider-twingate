@@ -30,7 +30,7 @@ data "twingate_resources" "foo" {
 
 ### Read-Only
 
-- `id` (String) The ID of the Resource. The ID for the Resource can be obtained from the Admin API or the URL string in the Admin Console.
+- `id` (String) The ID of the data source result
 - `resources` (Attributes List) List of Resources (see [below for nested schema](#nestedatt--resources))
 
 <a id="nestedatt--resources"></a>

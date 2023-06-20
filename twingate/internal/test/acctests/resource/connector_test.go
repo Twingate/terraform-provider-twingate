@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -115,7 +114,7 @@ func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
 				},
 				{
 					Config:      terraformResourceTwingateConnector(terraformRemoteNetworkName2, terraformConnectorName, remoteNetworkName2),
-					ExpectError: regexp.MustCompile(resources.ErrNotAllowChangeRemoteNetworkID.Error()),
+					ExpectError: regexp.MustCompile(resource.ErrNotAllowChangeRemoteNetworkID.Error()),
 				},
 			},
 		})
@@ -137,7 +136,7 @@ func TestAccTwingateConnectorReCreateAfterDeletion(t *testing.T) {
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
 					Check: acctests.ComposeTestCheckFunc(
 						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-						acctests.DeleteTwingateResource(theResource, resources.TwingateConnector),
+						acctests.DeleteTwingateResource(theResource, resource.TwingateConnector),
 					),
 					ExpectNonEmptyPlan: true,
 				},

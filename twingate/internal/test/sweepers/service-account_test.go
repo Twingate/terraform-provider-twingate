@@ -5,14 +5,14 @@ import (
 	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func init() {
-	sdk.AddTestSweepers(resources.TwingateServiceAccount, &sdk.Sweeper{
-		Name: resources.TwingateServiceAccount,
-		F: newTestSweeper(resources.TwingateServiceAccount,
+	sdk.AddTestSweepers(resource.TwingateServiceAccount, &sdk.Sweeper{
+		Name: resource.TwingateServiceAccount,
+		F: newTestSweeper(resource.TwingateServiceAccount,
 			func(providerClient *client.Client, ctx context.Context) ([]Resource, error) {
 				resources, err := providerClient.ReadShallowServiceAccounts(ctx)
 				if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {

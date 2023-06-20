@@ -9,13 +9,13 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasources"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resources"
-	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
+	tfDatasource "github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
+	tfResource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -173,33 +173,33 @@ func withDefault[T comparable](val, defaultVal T) T { //nolint:ireturn
 	return val
 }
 
-func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		datasources.NewConnectorDatasource,
-		datasources.NewConnectorsDatasource,
-		datasources.NewGroupDatasource,
-		datasources.NewGroupsDatasource,
-		datasources.NewRemoteNetworkDatasource,
-		datasources.NewRemoteNetworksDatasource,
-		datasources.NewUserDatasource,
-		datasources.NewUsersDatasource,
-		datasources.NewServiceAccountsDatasource,
-		datasources.NewSecurityPolicyDatasource,
-		datasources.NewSecurityPoliciesDatasource,
-		datasources.NewResourceDatasource,
-		datasources.NewResourcesDatasource,
+func (t Twingate) DataSources(ctx context.Context) []func() tfDatasource.DataSource {
+	return []func() tfDatasource.DataSource{
+		datasource.NewConnectorDatasource,
+		datasource.NewConnectorsDatasource,
+		datasource.NewGroupDatasource,
+		datasource.NewGroupsDatasource,
+		datasource.NewRemoteNetworkDatasource,
+		datasource.NewRemoteNetworksDatasource,
+		datasource.NewUserDatasource,
+		datasource.NewUsersDatasource,
+		datasource.NewServiceAccountsDatasource,
+		datasource.NewSecurityPolicyDatasource,
+		datasource.NewSecurityPoliciesDatasource,
+		datasource.NewResourceDatasource,
+		datasource.NewResourcesDatasource,
 	}
 }
 
-func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		resources.NewConnectorResource,
-		resources.NewRemoteNetworkResource,
-		resources.NewConnectorTokensResource,
-		resources.NewGroupResource,
-		resources.NewServiceAccountResource,
-		resources.NewServiceKeyResource,
-		resources.NewUserResource,
-		resources.NewResourceResource,
+func (t Twingate) Resources(ctx context.Context) []func() tfResource.Resource {
+	return []func() tfResource.Resource{
+		resource.NewConnectorResource,
+		resource.NewRemoteNetworkResource,
+		resource.NewConnectorTokensResource,
+		resource.NewGroupResource,
+		resource.NewServiceAccountResource,
+		resource.NewServiceKeyResource,
+		resource.NewUserResource,
+		resource.NewResourceResource,
 	}
 }

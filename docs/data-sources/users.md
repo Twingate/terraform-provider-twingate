@@ -21,7 +21,7 @@ data "twingate_users" "all" {}
 
 ### Read-Only
 
-- `id` (String) The ID of the Users datasource.
+- `id` (String) The ID of the data source result
 - `users` (Attributes List) (see [below for nested schema](#nestedatt--users))
 
 <a id="nestedatt--users"></a>

@@ -25,14 +25,14 @@ data "twingate_connectors" "all" {}
 
 ### Read-Only
 
-- `id` (String) The ID of the Connectors datasource.
+- `id` (String) The ID of the data source result
 
 <a id="nestedatt--connectors"></a>
 ### Nested Schema for `connectors`
 
 Read-Only:
 
-- `id` (String) The ID of the Connector. The ID for the Connector can be obtained from the Admin API or the URL string in the Admin Console.
+- `id` (String) The ID of the Connector resource.
 - `name` (String) The name of the Connector.
 - `remote_network_id` (String) The ID of the Remote Network the Connector is attached to.
 - `status_updates_enabled` (Boolean) Determines whether status notifications are enabled for the Connector.

@@ -1,4 +1,4 @@
-package datasources
+package datasource
 
 import (
 	"context"
@@ -63,7 +63,7 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the Groups datasource",
+				Description: computedDatasourceIDDescription,
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,
@@ -75,7 +75,7 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 			},
 			attr.Type: schema.StringAttribute{
 				Optional:    true,
-				Description: fmt.Sprintf("Returns only Groups of the specified type (valid: %s).", utils.DocList(model.GroupTypes)),
+				Description: fmt.Sprintf("Returns only Groups of the specified type (valid options: %s).", utils.DocList(model.GroupTypes)),
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.GroupTypes...),
 				},
