@@ -73,8 +73,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		NestedObject: schema.NestedBlockObject{
 			Attributes: map[string]schema.Attribute{
 				attr.Policy: schema.StringAttribute{
-					Computed: true,
-					Optional: true,
+					Required: true,
 					Validators: []validator.String{
 						stringvalidator.OneOf(model.Policies...),
 					},

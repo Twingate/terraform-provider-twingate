@@ -40,7 +40,7 @@ data "twingate_groups" "foo" {
 
 Read-Only:
 
-- `id` (String) The ID of the Group.
+- `id` (String) The ID of the Group
 - `is_active` (Boolean) Indicates if the Group is active
 - `name` (String) The name of the Group
 - `security_policy_id` (String) The Security Policy assigned to the Group.

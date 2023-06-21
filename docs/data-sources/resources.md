@@ -38,11 +38,11 @@ data "twingate_resources" "foo" {
 
 Read-Only:
 
-- `address` (String) The Resource's address, which may be an IP address, CIDR range, or DNS address
-- `id` (String) The ID of the Resource.
+- `address` (String) The Resource's IP/CIDR or FQDN/DNS zone
+- `id` (String) The id of the Resource
 - `name` (String) The name of the Resource
-- `protocols` (Attributes) By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--resources--protocols))
-- `remote_network_id` (String) The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
+- `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--resources--protocols))
+- `remote_network_id` (String) Remote Network ID where the Resource lives
 
 <a id="nestedatt--resources--protocols"></a>
 ### Nested Schema for `resources.protocols`

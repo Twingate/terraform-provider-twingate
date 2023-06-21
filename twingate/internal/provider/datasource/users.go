@@ -66,8 +66,8 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the User. The ID for the User can be obtained from the Admin API or the URL string in the Admin Console.",
+							Computed:    true,
+							Description: "The ID of the User",
 						},
 						attr.FirstName: schema.StringAttribute{
 							Computed:    true,
@@ -88,11 +88,11 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 						},
 						attr.Role: schema.StringAttribute{
 							Computed:    true,
-							Description: fmt.Sprintf("Indicates the User's role. Either %s", utils.DocList(model.UserRoles)),
+							Description: fmt.Sprintf("Indicates the User's role. Either %s.", utils.DocList(model.UserRoles)),
 						},
 						attr.Type: schema.StringAttribute{
 							Computed:    true,
-							Description: fmt.Sprintf("Indicates the User's type. Either %s", utils.DocList(model.UserTypes)),
+							Description: fmt.Sprintf("Indicates the User's type. Either %s.", utils.DocList(model.UserTypes)),
 						},
 					},
 				},

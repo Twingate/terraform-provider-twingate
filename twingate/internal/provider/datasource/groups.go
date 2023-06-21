@@ -89,7 +89,7 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Group.",
+							Description: "The ID of the Group",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,

@@ -61,6 +61,7 @@ func (r *connectorTokens) Schema(_ context.Context, _ resource.SchemaRequest, re
 					RequiresMapReplace("If the value of this attribute changes, Terraform will destroy and recreate the resource."),
 				},
 				ElementType: types.StringType,
+				Description: "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate Connector tokens on a schedule.",
 			},
 			// computed
 			attr.AccessToken: schema.StringAttribute{
@@ -75,7 +76,7 @@ func (r *connectorTokens) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "ID of the Connector Tokens.",
+				Description: "The ID of this resource.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},

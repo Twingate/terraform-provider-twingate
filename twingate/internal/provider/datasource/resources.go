@@ -89,7 +89,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Resource.",
+							Description: "The id of the Resource",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,
@@ -97,14 +97,14 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 						},
 						attr.Address: schema.StringAttribute{
 							Computed:    true,
-							Description: "The Resource's address, which may be an IP address, CIDR range, or DNS address",
+							Description: "The Resource's IP/CIDR or FQDN/DNS zone",
 						},
 						attr.RemoteNetworkID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.",
+							Description: "Remote Network ID where the Resource lives",
 						},
 						attr.Protocols: schema.SingleNestedAttribute{
-							Description: "By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.",
+							Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
 							Computed:    true,
 							Attributes: map[string]schema.Attribute{
 								attr.AllowIcmp: schema.BoolAttribute{

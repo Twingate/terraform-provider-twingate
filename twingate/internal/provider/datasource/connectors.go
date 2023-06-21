@@ -74,11 +74,11 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,
-							Description: "The name of the Connector.",
+							Description: "The Name of the Connector.",
 						},
 						attr.RemoteNetworkID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Remote Network the Connector is attached to.",
+							Description: "The ID of the Remote Network attached to the Connector.",
 						},
 						attr.StatusUpdatesEnabled: schema.BoolAttribute{
 							Computed:    true,
