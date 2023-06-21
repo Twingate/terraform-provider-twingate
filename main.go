@@ -13,6 +13,7 @@ var (
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
+		ProviderAddr: "registry.terraform.io/Twingate/twingate",
 		ProviderFunc: func() *schema.Provider {
 			return twingate.Provider(version)
 		},
