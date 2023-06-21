@@ -29,10 +29,22 @@ linters-settings:
     min-len: 3
     min-occurrences: 3
   depguard:
-    list-type: blacklist
-    include-go-root: false
-    packages:
-      - github.com/davecgh/go-spew/spew
+    rules:
+      - main:
+          files:
+            - $all
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/Twingate/terraform-provider-twingate/twingate
+            - github.com/hasura/go-graphql-client
+            - github.com/hashicorp/
+            - github.com/iancoleman/strcase
+      - test:
+          files:
+            - $test
+          allow:
+            - $gostd
   nestif:
     min-complexity: 7
 linters:
@@ -53,6 +65,7 @@ linters:
     - structcheck
     - varcheck
     - revive
+    - gomoddirectives
   disable-all: false
   fast: false
 
