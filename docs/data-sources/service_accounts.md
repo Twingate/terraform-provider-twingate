@@ -39,5 +39,3 @@ Read-Only:
 - `key_ids` (Set of String) List of twingate_service_account_key IDs that are assigned to the Service Account.
 - `name` (String) Name of the Service Account
 - `resource_ids` (Set of String) List of twingate_resource IDs that the Service Account is assigned to.
-
-

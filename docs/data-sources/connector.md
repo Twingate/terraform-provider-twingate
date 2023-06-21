@@ -30,5 +30,3 @@ data "twingate_connector" "foo" {
 - `name` (String) The name of the Connector.
 - `remote_network_id` (String) The ID of the Remote Network the Connector is attached to.
 - `status_updates_enabled` (Boolean) Determines whether status notifications are enabled for the Connector.
-
-

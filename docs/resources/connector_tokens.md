@@ -47,5 +47,3 @@ resource "twingate_connector_tokens" "aws_connector_tokens" {
 - `access_token` (String, Sensitive) The Access Token of the parent Connector
 - `id` (String) The ID of this resource.
 - `refresh_token` (String, Sensitive) The Refresh Token of the parent Connector
-
-

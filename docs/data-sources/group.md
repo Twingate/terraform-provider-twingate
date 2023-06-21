@@ -31,5 +31,3 @@ data "twingate_group" "foo" {
 - `name` (String) The name of the Group
 - `security_policy_id` (String) The Security Policy assigned to the Group.
 - `type` (String) The type of the Group
-
-
