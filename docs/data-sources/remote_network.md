@@ -35,5 +35,3 @@ data "twingate_remote_network" "foo" {
 ### Read-Only
 
 - `location` (String) The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
-
-

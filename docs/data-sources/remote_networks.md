@@ -32,5 +32,3 @@ Read-Only:
 - `id` (String) The ID of the Remote Network
 - `location` (String) The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
 - `name` (String) The name of the Remote Network
-
-

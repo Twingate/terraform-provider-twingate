@@ -85,7 +85,7 @@ sec: tools
 
 .PHONY: doc-tools
 docs: doc-tools
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --tf-version 1.2.3
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
 
 .PHONY: tools
 tools:

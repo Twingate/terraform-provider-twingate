@@ -31,5 +31,3 @@ Read-Only:
 
 - `id` (String) Return a matching Security Policy by its ID. The ID for the Security Policy can be obtained from the Admin API or the URL string in the Admin Console.
 - `name` (String) Return a Security Policy that exactly matches this name.
-
-
