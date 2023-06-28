@@ -247,7 +247,7 @@ func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
 				Config: createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
+					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyDenyAll),
 				),
 			},
 			// expecting no changes - empty plan
@@ -304,7 +304,7 @@ func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
 				Config: createResourceWithUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyRestricted),
+					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyDenyAll),
 				),
 			},
 			// expecting no changes - empty plan
@@ -346,7 +346,7 @@ func createResourceWithUdpDenyAllPolicy(networkName, groupName, resourceName str
 	`, networkName, groupName, resourceName, model.PolicyAllowAll, model.PolicyDenyAll)
 }
 
-func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) {
+func TestAccTwingateResourceWithDenyAllPolicyAndEmptyPortsList(t *testing.T) {
 	const theResource = "twingate_resource.test7"
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
@@ -358,12 +358,12 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithRestrictedPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
+				Config: createResourceWithDenyAllPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
-					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
+					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyDenyAll),
 					sdk.TestCheckNoResourceAttr(theResource, tcpPortsLen),
-					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyRestricted),
+					sdk.TestCheckResourceAttr(theResource, udpPolicy, model.PolicyDenyAll),
 					sdk.TestCheckNoResourceAttr(theResource, udpPortsLen),
 				),
 			},
@@ -371,7 +371,7 @@ func TestAccTwingateResourceWithRestrictedPolicyAndEmptyPortsList(t *testing.T) 
 	})
 }
 
-func createResourceWithRestrictedPolicyAndEmptyPortsList(networkName, groupName, resourceName string) string {
+func createResourceWithDenyAllPolicyAndEmptyPortsList(networkName, groupName, resourceName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test7" {
 	  name = "%s"
@@ -399,7 +399,7 @@ func createResourceWithRestrictedPolicyAndEmptyPortsList(networkName, groupName,
 	    }
 	  }
 	}
-	`, networkName, groupName, resourceName, model.PolicyRestricted, model.PolicyRestricted)
+	`, networkName, groupName, resourceName, model.PolicyDenyAll, model.PolicyDenyAll)
 }
 
 func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
