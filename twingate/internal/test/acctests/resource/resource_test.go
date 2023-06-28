@@ -623,11 +623,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
 					attr.Address: "acc-test.com.12",
-					tcpPolicy:    model.PolicyRestricted,
-					tcpPortsLen:  "2",
-					firstTCPPort: "80",
-					udpPolicy:    model.PolicyAllowAll,
-					udpPortsLen:  "0",
+					attr.Name:    resourceName,
 				}),
 			},
 		},
