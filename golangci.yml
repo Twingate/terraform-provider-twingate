@@ -13,6 +13,11 @@ output:
   print-linter-name: true
 
 linters-settings:
+  ireturn:
+    allow:
+      - empty
+      - error
+      - generic
   errcheck:
     check-type-assertions: false
     check-blank: false
