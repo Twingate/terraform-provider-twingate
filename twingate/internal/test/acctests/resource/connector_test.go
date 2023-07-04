@@ -22,9 +22,9 @@ func TestAccRemoteConnectorCreate(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
@@ -46,9 +46,9 @@ func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 		connectorName := test.RandomConnectorName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
@@ -70,9 +70,9 @@ func TestAccRemoteConnectorImport(t *testing.T) {
 		connectorName := test.RandomConnectorName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
@@ -103,9 +103,9 @@ func TestAccRemoteConnectorNotAllowedToChangeRemoteNetworkId(t *testing.T) {
 		remoteNetworkName2 := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnector(terraformRemoteNetworkName1, terraformConnectorName, remoteNetworkName1),
@@ -129,9 +129,9 @@ func TestAccTwingateConnectorReCreateAfterDeletion(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
@@ -205,9 +205,9 @@ func TestAccRemoteConnectorUpdateName(t *testing.T) {
 		connectorName := test.RandomConnectorName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),
@@ -234,9 +234,9 @@ func TestAccRemoteConnectorCreateWithNotificationStatus(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName),

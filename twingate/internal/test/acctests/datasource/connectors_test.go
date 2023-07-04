@@ -22,9 +22,9 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 		connectorName := test.RandomConnectorName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName, connectorName),
@@ -70,8 +70,8 @@ func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
 		prefix := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config: testTwingateConnectorsDoesNotExists(prefix),

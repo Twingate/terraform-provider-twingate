@@ -19,8 +19,8 @@ func TestAccDatasourceTwingateSecurityPoliciesBasic(t *testing.T) {
 		}
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []sdk.TestStep{
 				{
 					Config: testDatasourceTwingateSecurityPolicies(),

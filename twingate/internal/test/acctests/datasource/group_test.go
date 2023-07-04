@@ -24,9 +24,9 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroup(groupName, testPolicy.ID),
@@ -76,7 +76,7 @@ func TestAccDatasourceTwingateGroup_negative(t *testing.T) {
 		groupID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Group:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -103,7 +103,7 @@ func TestAccDatasourceTwingateGroup_invalidGroupID(t *testing.T) {
 		groupID := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
