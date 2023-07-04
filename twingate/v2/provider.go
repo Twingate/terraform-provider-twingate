@@ -9,6 +9,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	twingateResource "github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -181,6 +182,6 @@ func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSourc
 
 func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		// add resources
+		twingateResource.NewConnectorTokensResource,
 	}
 }
