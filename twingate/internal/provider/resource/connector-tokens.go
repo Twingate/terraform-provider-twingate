@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// compile check to satisfy interface.
+// Ensure the implementation satisfies the desired interfaces.
 var _ resource.Resource = &connectorTokens{}
 
 func NewConnectorTokensResource() resource.Resource {

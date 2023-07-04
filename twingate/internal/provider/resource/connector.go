@@ -19,7 +19,7 @@ import (
 
 var ErrNotAllowChangeRemoteNetworkID = errors.New("connectors cannot be moved between Remote Networks: you must either create a new Connector or destroy and recreate the existing one")
 
-// compile check to satisfy interface.
+// Ensure the implementation satisfies the desired interfaces.
 var _ resource.Resource = &connector{}
 var _ resource.ResourceWithImportState = &connector{}
 

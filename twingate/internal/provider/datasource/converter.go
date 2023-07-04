@@ -2,16 +2,18 @@ package datasource
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func convertConnectorsToTerraform(connectors []*model.Connector) []interface{} {
-	out := make([]interface{}, 0, len(connectors))
-
-	for _, connector := range connectors {
-		out = append(out, connector.ToTerraform())
-	}
-
-	return out
+func convertConnectorsToTerraform(connectors []*model.Connector) []connectorModel {
+	return utils.Map(connectors, func(connector *model.Connector) connectorModel {
+		return connectorModel{
+			Name:                 types.StringValue(connector.Name),
+			RemoteNetworkID:      types.StringValue(connector.NetworkID),
+			StatusUpdatesEnabled: types.BoolPointerValue(connector.StatusUpdatesEnabled),
+		}
+	})
 }
 
 func convertGroupsToTerraform(groups []*model.Group) []interface{} {

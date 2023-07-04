@@ -9,6 +9,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	twingateDatasource "github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
 	twingateResource "github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -176,7 +177,8 @@ func withDefault[T comparable](val, defaultVal T) T {
 
 func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		// add datasources
+		twingateDatasource.NewConnectorDatasource,
+		twingateDatasource.NewConnectorsDatasource,
 	}
 }
 
