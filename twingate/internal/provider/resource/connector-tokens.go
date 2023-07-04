@@ -16,7 +16,7 @@ import (
 )
 
 // compile check to satisfy interface.
-var _ resource.Resource = NewConnectorTokensResource()
+var _ resource.Resource = &connectorTokens{}
 
 func NewConnectorTokensResource() resource.Resource {
 	return &connectorTokens{}
