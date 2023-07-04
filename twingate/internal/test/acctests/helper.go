@@ -760,3 +760,11 @@ func GetTestUser() (*model.User, error) {
 
 	return users[0], nil
 }
+
+func CheckTwingateConnectorAndRemoteNetworkDestroy(s *terraform.State) error {
+	if err := CheckTwingateConnectorDestroy(s); err != nil {
+		return err
+	}
+
+	return CheckTwingateRemoteNetworkDestroy(s)
+}
