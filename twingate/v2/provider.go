@@ -186,5 +186,6 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		twingateResource.NewConnectorTokensResource,
 		twingateResource.NewConnectorResource,
+		twingateResource.NewGroupResource,
 	}
 }
