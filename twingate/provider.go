@@ -32,7 +32,6 @@ func Provider(version string) *schema.Provider {
 	provider := &schema.Provider{
 		Schema: providerOptions(),
 		ResourcesMap: map[string]*schema.Resource{
-			resource.TwingateRemoteNetwork:     resource.RemoteNetwork(),
 			resource.TwingateResource:          resource.Resource(),
 			resource.TwingateServiceAccount:    resource.ServiceAccount(),
 			resource.TwingateServiceAccountKey: resource.ServiceKey(),
