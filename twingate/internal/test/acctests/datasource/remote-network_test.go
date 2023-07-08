@@ -98,7 +98,7 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
-					ExpectError: regexp.MustCompile("Error: failed to read remote network with id"),
+					ExpectError: regexp.MustCompile("failed to read remote network with id"),
 				},
 			},
 		})
@@ -127,7 +127,7 @@ func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read remote network with id"),
 				},
 			},
 		})
@@ -147,7 +147,7 @@ func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkValidationFailed(networkID, networkName),
-					ExpectError: regexp.MustCompile("Invalid combination of arguments"),
+					ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
 				},
 			},
 		})
