@@ -148,7 +148,7 @@ func TestAccDatasourceTwingateGroupsWithFilters_ErrorNotSupportedTypes(t *testin
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateGroupsWithFilterNotSupportedType(),
-					ExpectError: regexp.MustCompile("Error: expected type to be one of"),
+					ExpectError: regexp.MustCompile("Attribute type value must be one of"),
 				},
 			},
 		})

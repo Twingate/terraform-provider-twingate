@@ -83,7 +83,7 @@ func TestAccDatasourceTwingateGroup_negative(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateGroupDoesNotExists(groupID),
-					ExpectError: regexp.MustCompile("Error: failed to read group with id"),
+					ExpectError: regexp.MustCompile("failed to read group with id"),
 				},
 			},
 		})
@@ -110,7 +110,7 @@ func TestAccDatasourceTwingateGroup_invalidGroupID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateGroupDoesNotExists(groupID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read group with id"),
 				},
 			},
 		})
