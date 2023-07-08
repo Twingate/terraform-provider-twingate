@@ -2,56 +2,79 @@ package datasource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func datasourceRemoteNetworksRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+// Ensure the implementation satisfies the desired interfaces.
+var _ datasource.DataSource = &remoteNetworks{}
 
-	remoteNetworks, err := client.ReadRemoteNetworks(ctx)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := resourceData.Set(attr.RemoteNetworks, convertRemoteNetworksToTerraform(remoteNetworks)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	resourceData.SetId("all-remote-networks")
-
-	return nil
+func NewRemoteNetworksDatasource() datasource.DataSource {
+	return &remoteNetworks{}
 }
 
-func RemoteNetworks() *schema.Resource {
-	return &schema.Resource{
+type remoteNetworks struct {
+	client *client.Client
+}
+
+type remoteNetworksModel struct {
+	ID             types.String         `tfsdk:"id"`
+	RemoteNetworks []remoteNetworkModel `tfsdk:"remote_networks"`
+}
+
+func (d *remoteNetworks) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = TwingateRemoteNetworks
+}
+
+func (d *remoteNetworks) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*client.Client)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = client
+}
+
+func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).",
-		ReadContext: datasourceRemoteNetworksRead,
-		Schema: map[string]*schema.Schema{
-			attr.RemoteNetworks: {
-				Type:        schema.TypeList,
-				Optional:    true,
+		Attributes: map[string]schema.Attribute{
+			attr.ID: schema.StringAttribute{
+				Computed:    true,
+				Description: computedDatasourceIDDescription,
+			},
+
+			attr.RemoteNetworks: schema.ListNestedAttribute{
+				Computed:    true,
 				Description: "List of Remote Networks",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						attr.ID: {
-							Type:        schema.TypeString,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Remote Network",
+							Description: "The ID of the Remote Network resource.",
 						},
-						attr.Name: {
-							Type:        schema.TypeString,
+						attr.Name: schema.StringAttribute{
 							Computed:    true,
 							Description: "The name of the Remote Network",
 						},
-						attr.Location: {
-							Type:        schema.TypeString,
+						attr.Location: schema.StringAttribute{
 							Computed:    true,
 							Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
 						},
@@ -60,4 +83,28 @@ func RemoteNetworks() *schema.Resource {
 			},
 		},
 	}
+}
+
+func (d *remoteNetworks) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data remoteNetworksModel
+
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	networks, err := d.client.ReadRemoteNetworks(ctx)
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
+		addErr(&resp.Diagnostics, err, TwingateRemoteNetworks)
+
+		return
+	}
+
+	data.ID = types.StringValue("all-remote-networks")
+	data.RemoteNetworks = convertRemoteNetworksToTerraform(networks)
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
