@@ -9,6 +9,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/terraform-plugin-docs v0.15.0
 	github.com/hashicorp/terraform-plugin-framework v1.3.2
+	github.com/hashicorp/terraform-plugin-framework-validators v0.10.0
 	github.com/hashicorp/terraform-plugin-go v0.17.0
 	github.com/hashicorp/terraform-plugin-mux v0.11.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1

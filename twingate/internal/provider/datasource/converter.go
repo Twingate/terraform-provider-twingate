@@ -16,14 +16,16 @@ func convertConnectorsToTerraform(connectors []*model.Connector) []connectorMode
 	})
 }
 
-func convertGroupsToTerraform(groups []*model.Group) []interface{} {
-	out := make([]interface{}, 0, len(groups))
-
-	for _, group := range groups {
-		out = append(out, group.ToTerraform())
-	}
-
-	return out
+func convertGroupsToTerraform(groups []*model.Group) []groupModel {
+	return utils.Map(groups, func(group *model.Group) groupModel {
+		return groupModel{
+			ID:               types.StringValue(group.ID),
+			Name:             types.StringValue(group.Name),
+			Type:             types.StringValue(group.Type),
+			IsActive:         types.BoolValue(group.IsActive),
+			SecurityPolicyID: types.StringValue(group.SecurityPolicyID),
+		}
+	})
 }
 
 func convertResourcesToTerraform(resources []*model.Resource) []interface{} {
