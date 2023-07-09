@@ -274,11 +274,11 @@ func TestConvertServicesToTerraform(t *testing.T) {
 func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.SecurityPolicy
-		expected []interface{}
+		expected []securityPolicyModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []securityPolicyModel{},
 		},
 		{
 			input: []*model.SecurityPolicy{
@@ -287,10 +287,10 @@ func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
 					Name: "policy-name",
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:   "policy-id",
-					attr.Name: "policy-name",
+			expected: []securityPolicyModel{
+				{
+					ID:   types.StringValue("policy-id"),
+					Name: types.StringValue("policy-name"),
 				},
 			},
 		},
