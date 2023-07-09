@@ -2,81 +2,118 @@ package datasource
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func datasourceUsersRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
+// Ensure the implementation satisfies the desired interfaces.
+var _ datasource.DataSource = &users{}
 
-	users, err := c.ReadUsers(ctx)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	data := convertUsersToTerraform(users)
-
-	if err := resourceData.Set(attr.Users, data); err != nil {
-		return diag.FromErr(err)
-	}
-
-	resourceData.SetId("users-all")
-
-	return nil
+func NewUsersDatasource() datasource.DataSource {
+	return &users{}
 }
 
-func Users() *schema.Resource {
-	return &schema.Resource{
+type users struct {
+	client *client.Client
+}
+
+type usersModel struct {
+	ID    types.String `tfsdk:"id"`
+	Users []userModel  `tfsdk:"users"`
+}
+
+func (d *users) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = TwingateUsers
+}
+
+func (d *users) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*client.Client)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = client
+}
+
+func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: userDescription,
-		ReadContext: datasourceUsersRead,
-		Schema: map[string]*schema.Schema{
-			attr.Users: {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						attr.ID: {
-							Type:        schema.TypeString,
+		Attributes: map[string]schema.Attribute{
+			attr.ID: schema.StringAttribute{
+				Computed:    true,
+				Description: computedDatasourceIDDescription,
+			},
+
+			attr.Users: schema.ListNestedAttribute{
+				Computed: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						attr.ID: schema.StringAttribute{
 							Computed:    true,
 							Description: "The ID of the User",
 						},
-						attr.FirstName: {
-							Type:        schema.TypeString,
+						attr.FirstName: schema.StringAttribute{
 							Computed:    true,
 							Description: "The first name of the User",
 						},
-						attr.LastName: {
-							Type:        schema.TypeString,
+						attr.LastName: schema.StringAttribute{
 							Computed:    true,
 							Description: "The last name of the User",
 						},
-						attr.Email: {
-							Type:        schema.TypeString,
+						attr.Email: schema.StringAttribute{
 							Computed:    true,
 							Description: "The email address of the User",
 						},
-						attr.IsAdmin: {
-							Type:        schema.TypeBool,
-							Computed:    true,
-							Description: "Indicates whether the User is an admin",
-							Deprecated:  "This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.",
+						attr.IsAdmin: schema.BoolAttribute{
+							Computed:           true,
+							Description:        "Indicates whether the User is an admin",
+							DeprecationMessage: "This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.",
 						},
-						attr.Role: {
-							Type:        schema.TypeString,
+						attr.Role: schema.StringAttribute{
 							Computed:    true,
-							Description: "Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.",
+							Description: fmt.Sprintf("Indicates the User's role. Either %s.", utils.DocList(model.UserRoles)),
 						},
-						attr.Type: {
-							Type:        schema.TypeString,
+						attr.Type: schema.StringAttribute{
 							Computed:    true,
-							Description: "Indicates the User's type. Either MANUAL or SYNCED.",
+							Description: fmt.Sprintf("Indicates the User's type. Either %s.", utils.DocList(model.UserTypes)),
 						},
 					},
 				},
 			},
 		},
 	}
+}
+
+func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	users, err := d.client.ReadUsers(ctx)
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
+		addErr(&resp.Diagnostics, err, TwingateUsers)
+
+		return
+	}
+
+	data := usersModel{
+		ID:    types.StringValue("users-all"),
+		Users: convertUsersToTerraform(users),
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

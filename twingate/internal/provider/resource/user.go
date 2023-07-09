@@ -4,228 +4,245 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var ErrAllowedToChangeOnlyManualUsers = fmt.Errorf("only users of type %s may be modified", model.UserTypeManual)
 
-func User() *schema.Resource { //nolint:funlen
-	return &schema.Resource{
-		Description:   "Users provides different levels of write capabilities across the Twingate Admin Console. For more information, see Twingate's [documentation](https://www.twingate.com/docs/users).",
-		CreateContext: userCreate,
-		ReadContext:   userRead,
-		DeleteContext: userDelete,
-		UpdateContext: userUpdate,
-		Schema: map[string]*schema.Schema{
-			attr.Email: {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+// Ensure the implementation satisfies the desired interfaces.
+var _ resource.Resource = &user{}
+
+func NewUserResource() resource.Resource {
+	return &user{}
+}
+
+type user struct {
+	client *client.Client
+}
+
+type userModel struct {
+	ID         types.String `tfsdk:"id"`
+	Email      types.String `tfsdk:"email"`
+	FirstName  types.String `tfsdk:"first_name"`
+	LastName   types.String `tfsdk:"last_name"`
+	SendInvite types.Bool   `tfsdk:"send_invite"`
+	IsActive   types.Bool   `tfsdk:"is_active"`
+	Role       types.String `tfsdk:"role"`
+	Type       types.String `tfsdk:"type"`
+}
+
+func (r *user) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = TwingateUser
+}
+
+func (r *user) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	r.client = req.ProviderData.(*client.Client)
+}
+
+func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Users provides different levels of write capabilities across the Twingate Admin Console. For more information, see Twingate's [documentation](https://www.twingate.com/docs/users).",
+		Attributes: map[string]schema.Attribute{
+			attr.Email: schema.StringAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 				Description: "The User's email address",
 			},
 			// optional
-			attr.FirstName: {
-				Type:        schema.TypeString,
+			attr.FirstName: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "The User's first name",
 			},
-			attr.LastName: {
-				Type:        schema.TypeString,
+			attr.LastName: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "The User's last name",
 			},
-			attr.SendInvite: {
-				Type:        schema.TypeBool,
+			attr.SendInvite: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "Determines whether to send an email invitation to the User. True by default.",
 			},
-			attr.IsActive: {
-				Type:        schema.TypeBool,
+			attr.IsActive: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "Determines whether the User is active or not. Inactive users will be not able to sign in.",
 			},
-			attr.Role: {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				Description:  fmt.Sprintf("Determines the User's role. Either %s.", utils.DocList(model.UserRoles)),
-				ValidateFunc: validation.StringInSlice(model.UserRoles, false),
+			attr.Role: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: fmt.Sprintf("Determines the User's role. Either %s.", utils.DocList(model.UserRoles)),
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.UserRoles...),
+				},
 			},
 			// computed
-			attr.Type: {
-				Type:        schema.TypeString,
+			attr.Type: schema.StringAttribute{
 				Computed:    true,
 				Description: fmt.Sprintf("Indicates the User's type. Either %s.", utils.DocList(model.UserTypes)),
 			},
-			attr.ID: {
-				Type:        schema.TypeString,
+			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: "Autogenerated ID of the User, encoded in base64.",
 			},
 		},
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
 	}
 }
 
-func userCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+func (r *user) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan userModel
 
-	user, err := client.CreateUser(ctx, convertUser(resourceData))
-	if err != nil {
-		return diag.FromErr(err)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	log.Printf("[INFO] User %s created with id %v", user.Email, user.ID)
+	user, err := r.client.CreateUser(ctx, &model.User{
+		Email:      plan.Email.ValueString(),
+		FirstName:  plan.FirstName.ValueString(),
+		LastName:   plan.LastName.ValueString(),
+		SendInvite: convertSendInviteFlag(plan.SendInvite),
+		Role:       withDefaultValue(plan.Role.ValueString(), model.UserRoleMember),
+		IsActive:   convertIsActiveFlag(plan.IsActive),
+	})
 
-	return resourceUserReadHelper(resourceData, user, nil)
+	r.helper(ctx, user, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
-func userUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
-
-	err := isAllowedToChangeUser(resourceData)
-	if err != nil {
-		return diag.FromErr(err)
+func convertSendInviteFlag(val types.Bool) bool {
+	if !val.IsUnknown() {
+		return val.ValueBool()
 	}
 
-	user, err := client.UpdateUser(ctx, convertUserUpdate(resourceData))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	log.Printf("[INFO] Updated user id %v", user.ID)
-
-	return resourceUserReadHelper(resourceData, user, err)
+	// default value
+	return true
 }
 
-func userDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
-
-	err := isAllowedToChangeUser(resourceData)
-	if err != nil {
-		return diag.FromErr(err)
+func convertIsActiveFlag(val types.Bool) bool {
+	if !val.IsUnknown() {
+		return val.ValueBool()
 	}
 
-	if err := client.DeleteUser(ctx, resourceData.Id()); err != nil {
-		return diag.FromErr(err)
-	}
-
-	log.Printf("[INFO] Deleted user id %s", resourceData.Id())
-
-	return nil
+	// default value
+	return true
 }
 
-func userRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
+func (r *user) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state userModel
 
-	user, err := c.ReadUser(ctx, resourceData.Id())
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	return resourceUserReadHelper(resourceData, user, err)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	user, err := r.client.ReadUser(ctx, state.ID.ValueString())
+
+	r.helper(ctx, user, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
-func resourceUserReadHelper(resourceData *schema.ResourceData, user *model.User, err error) diag.Diagnostics {
-	if err != nil {
-		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
-			// clear state
-			resourceData.SetId("")
+func (r *user) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state userModel
 
-			return nil
-		}
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	addErr(&resp.Diagnostics, isAllowedToChangeUser(&state), operationUpdate, TwingateUser)
 
-		return diag.FromErr(err)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	resourceData.SetId(user.ID)
-
-	if err := resourceData.Set(attr.Email, user.Email); err != nil {
-		return ErrAttributeSet(err, attr.Email)
+	userUpdateReq := &model.UserUpdate{
+		ID: state.ID.ValueString(),
 	}
 
-	if err := resourceData.Set(attr.FirstName, user.FirstName); err != nil {
-		return ErrAttributeSet(err, attr.FirstName)
+	if plan.FirstName.ValueString() != "" && state.FirstName != plan.FirstName {
+		userUpdateReq.FirstName = plan.FirstName.ValueStringPointer()
 	}
 
-	if err := resourceData.Set(attr.LastName, user.LastName); err != nil {
-		return ErrAttributeSet(err, attr.LastName)
+	if plan.LastName.ValueString() != "" && state.LastName != plan.LastName {
+		userUpdateReq.LastName = plan.LastName.ValueStringPointer()
 	}
 
-	if err := resourceData.Set(attr.Role, user.Role); err != nil {
-		return ErrAttributeSet(err, attr.Role)
+	if plan.Role.ValueString() != "" && state.Role != plan.Role {
+		userUpdateReq.Role = plan.Role.ValueStringPointer()
 	}
 
-	if err := resourceData.Set(attr.Type, user.Type); err != nil {
-		return ErrAttributeSet(err, attr.Type)
+	isActive := convertIsActiveFlag(plan.IsActive)
+	if state.IsActive.ValueBool() != isActive {
+		userUpdateReq.IsActive = &isActive
 	}
 
-	if err := resourceData.Set(attr.IsActive, user.IsActive); err != nil {
-		return ErrAttributeSet(err, attr.IsActive)
-	}
+	user, err := r.client.UpdateUser(ctx, userUpdateReq)
 
-	return nil
+	r.helper(ctx, user, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func isAllowedToChangeUser(data *schema.ResourceData) error {
-	userType := data.Get(attr.Type).(string)
-	if userType != model.UserTypeManual {
+func isAllowedToChangeUser(state *userModel) error {
+	if state.Type.ValueString() != model.UserTypeManual {
 		return ErrAllowedToChangeOnlyManualUsers
 	}
 
 	return nil
 }
 
-func convertUser(data *schema.ResourceData) *model.User {
-	return &model.User{
-		ID:         data.Id(),
-		Email:      data.Get(attr.Email).(string),
-		FirstName:  data.Get(attr.FirstName).(string),
-		LastName:   data.Get(attr.LastName).(string),
-		SendInvite: convertSendInviteFlag(data),
-		Role:       withDefaultValue(data.Get(attr.Role).(string), model.UserRoleMember),
-		Type:       data.Get(attr.Type).(string),
-		IsActive:   convertIsActiveFlag(data),
+func (r *user) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state userModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	addErr(&resp.Diagnostics, isAllowedToChangeUser(&state), operationDelete, TwingateUser)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
+
+	err := r.client.DeleteUser(ctx, state.ID.ValueString())
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateUser)
 }
 
-func convertUserUpdate(data *schema.ResourceData) *model.UserUpdate {
-	req := &model.UserUpdate{ID: data.Id()}
+func (r *user) helper(ctx context.Context, user *model.User, state *userModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+	if err != nil {
+		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
+			// clear state
+			respState.RemoveResource(ctx)
 
-	if data.HasChange(attr.FirstName) {
-		req.FirstName = stringPtr(data.Get(attr.FirstName).(string))
+			return
+		}
+
+		addErr(diagnostics, err, operation, TwingateUser)
+
+		return
 	}
 
-	if data.HasChange(attr.LastName) {
-		req.LastName = stringPtr(data.Get(attr.LastName).(string))
-	}
+	state.ID = types.StringValue(user.ID)
+	state.FirstName = types.StringValue(user.FirstName)
+	state.LastName = types.StringValue(user.LastName)
+	state.Role = types.StringValue(user.Role)
+	state.Type = types.StringValue(user.Type)
+	state.IsActive = types.BoolValue(user.IsActive)
 
-	if data.HasChange(attr.Role) {
-		req.Role = stringPtr(data.Get(attr.Role).(string))
-	}
-
-	if data.HasChange(attr.IsActive) {
-		req.IsActive = boolPtr(convertIsActiveFlag(data))
-	}
-
-	return req
-}
-
-func convertSendInviteFlag(data *schema.ResourceData) bool {
-	return getBooleanFlag(data, attr.SendInvite, true)
-}
-
-func convertIsActiveFlag(data *schema.ResourceData) bool {
-	return getBooleanFlag(data, attr.IsActive, true)
+	// Set refreshed state
+	diags := respState.Set(ctx, state)
+	diagnostics.Append(diags...)
 }
