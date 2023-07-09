@@ -237,11 +237,11 @@ func TestTerraformServicesDatasourceID(t *testing.T) {
 func TestConvertServicesToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.ServiceAccount
-		expected []interface{}
+		expected []serviceAccountModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []serviceAccountModel{},
 		},
 		{
 			input: []*model.ServiceAccount{
@@ -252,12 +252,12 @@ func TestConvertServicesToTerraform(t *testing.T) {
 					Keys:      []string{"key-1", "key-2"},
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:          "service-account-id",
-					attr.Name:        "service-account-name",
-					attr.ResourceIDs: []string{"res-1", "res-2"},
-					attr.KeyIDs:      []string{"key-1", "key-2"},
+			expected: []serviceAccountModel{
+				{
+					ID:          types.StringValue("service-account-id"),
+					Name:        types.StringValue("service-account-name"),
+					ResourceIDs: []types.String{types.StringValue("res-1"), types.StringValue("res-2")},
+					KeyIDs:      []types.String{types.StringValue("key-1"), types.StringValue("key-2")},
 				},
 			},
 		},
