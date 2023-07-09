@@ -139,6 +139,7 @@ func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
 						acctests.WaitTestFunc(),
 						acctests.CheckTwingateServiceKeyStatus(serviceKey, model.StatusRevoked),
 					),
+					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
