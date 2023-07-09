@@ -197,7 +197,7 @@ func TestAccTwingateUserUpdateState(t *testing.T) {
 				},
 				{
 					Config:      terraformResourceTwingateUserDisabled(terraformResourceName, email),
-					ExpectError: regexp.MustCompile("User in PENDING state cannot be updated to the state: DISABLED"),
+					ExpectError: regexp.MustCompile(`User in PENDING state`),
 				},
 			},
 		})
@@ -277,7 +277,7 @@ func TestAccTwingateUserCreateWithUnknownRole(t *testing.T) {
 			Steps: []sdk.TestStep{
 				{
 					Config:      terraformResourceTwingateUserWithRole(terraformResourceName, test.RandomEmail(), "UnknownRole"),
-					ExpectError: regexp.MustCompile(`Error: expected role to be one of \[ADMIN DEVOPS SUPPORT MEMBER\], got UnknownRole`),
+					ExpectError: regexp.MustCompile(`Attribute role value must be one of`),
 				},
 			},
 		})

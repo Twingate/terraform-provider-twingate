@@ -57,7 +57,7 @@ func TestAccDatasourceTwingateUser_negative(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateUserDoesNotExists(userID),
-					ExpectError: regexp.MustCompile("Error: failed to read user with id"),
+					ExpectError: regexp.MustCompile("failed to read user with id"),
 				},
 			},
 		})
@@ -84,7 +84,7 @@ func TestAccDatasourceTwingateUser_invalidID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateUserDoesNotExists(userID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read user with id"),
 				},
 			},
 		})
