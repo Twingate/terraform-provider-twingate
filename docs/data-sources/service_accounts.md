@@ -27,15 +27,15 @@ data "twingate_service_accounts" "foo" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `service_accounts` (Block List) List of Service Accounts (see [below for nested schema](#nestedblock--service_accounts))
+- `id` (String) The ID of the data source result
+- `service_accounts` (Attributes List) List of Service Accounts (see [below for nested schema](#nestedatt--service_accounts))
 
-<a id="nestedblock--service_accounts"></a>
+<a id="nestedatt--service_accounts"></a>
 ### Nested Schema for `service_accounts`
 
 Read-Only:
 
-- `id` (String) ID of the Service Account resource
+- `id` (String) The ID of the Service Account resource.
 - `key_ids` (Set of String) List of twingate_service_account_key IDs that are assigned to the Service Account.
 - `name` (String) Name of the Service Account
 - `resource_ids` (Set of String) List of twingate_resource IDs that the Service Account is assigned to.

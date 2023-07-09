@@ -33,7 +33,6 @@ func Provider(version string) *schema.Provider {
 		Schema: providerOptions(),
 		ResourcesMap: map[string]*schema.Resource{
 			resource.TwingateResource:          resource.Resource(),
-			resource.TwingateServiceAccount:    resource.ServiceAccount(),
 			resource.TwingateServiceAccountKey: resource.ServiceKey(),
 			resource.TwingateUser:              resource.User(),
 		},
@@ -42,7 +41,6 @@ func Provider(version string) *schema.Provider {
 			datasource.TwingateUsers:            datasource.Users(),
 			datasource.TwingateResource:         datasource.Resource(),
 			datasource.TwingateResources:        datasource.Resources(),
-			datasource.TwingateServiceAccounts:  datasource.ServiceAccounts(),
 			datasource.TwingateSecurityPolicy:   datasource.SecurityPolicy(),
 			datasource.TwingateSecurityPolicies: datasource.SecurityPolicies(),
 		},
