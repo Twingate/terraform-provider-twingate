@@ -23,7 +23,7 @@ func TestAccDatasourceTwingateSecurityPolicyInvalidID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testDatasourceTwingateSecurityPolicy(randStr),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read security policy"),
 				},
 			},
 		})
@@ -54,7 +54,7 @@ func TestAccDatasourceTwingateSecurityPolicyReadWithNameAndID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testDatasourceTwingateSecurityPolicyWithNameAndID(randStr, randStr),
-					ExpectError: regexp.MustCompile("Error: Invalid combination of arguments"),
+					ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 				},
 			},
 		})
@@ -86,7 +86,7 @@ func TestAccDatasourceTwingateSecurityPolicyDoesNotExists(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testDatasourceTwingateSecurityPolicy(securityPolicyID),
-					ExpectError: regexp.MustCompile("Error: failed to read security policy with id"),
+					ExpectError: regexp.MustCompile("failed to read security policy with id"),
 				},
 			},
 		})
