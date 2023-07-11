@@ -16,6 +16,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+var (
+	ErrUnnecessaryPortsWithPolicyAllowAll = errors.New("no need to set ports with policy " + model.PolicyAllowAll)
+	ErrUnnecessaryPortsWithPolicyDenyAll  = errors.New("no need to set ports with policy " + model.PolicyDenyAll)
+	ErrRequiredPortsWithPolicyRestricted  = errors.New("required to set ports with policy " + model.PolicyRestricted)
+)
+
 func Resource() *schema.Resource { //nolint:funlen
 	portsSchema := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -26,14 +32,13 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description:  fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
 			},
 			attr.Ports: {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      portsNotChanged,
+				DiffSuppressFunc: portsNotChanged,
 			},
 		},
 	}
@@ -47,20 +52,16 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Whether to allow ICMP (ping) traffic",
 			},
 			attr.TCP: {
-				Type:                  schema.TypeList,
-				Required:              true,
-				MaxItems:              1,
-				Elem:                  portsSchema,
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolDiff,
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem:     portsSchema,
 			},
 			attr.UDP: {
-				Type:                  schema.TypeList,
-				Required:              true,
-				MaxItems:              1,
-				Elem:                  portsSchema,
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolDiff,
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem:     portsSchema,
 			},
 		},
 	}
@@ -118,13 +119,11 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.Protocols: {
-				Type:                  schema.TypeList,
-				Optional:              true,
-				MaxItems:              1,
-				Description:           "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolsDiff,
-				Elem:                  protocolsSchema,
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
+				Elem:        protocolsSchema,
 			},
 			attr.Access: {
 				Type:        schema.TypeList,
@@ -303,8 +302,10 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		return ErrAttributeSet(err, attr.Access)
 	}
 
-	if err := resourceData.Set(attr.Protocols, resource.Protocols.ToTerraform()); err != nil {
-		return ErrAttributeSet(err, attr.Protocols)
+	if _, exists := resourceData.GetOk(attr.Protocols); exists {
+		if err := resourceData.Set(attr.Protocols, resource.Protocols.ToTerraform()); err != nil {
+			return ErrAttributeSet(err, attr.Protocols)
+		}
 	}
 
 	if resource.IsVisible != nil {
@@ -331,42 +332,6 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 	return nil
 }
 
-func protocolDiff(attribute, oldValue, newValue string, data *schema.ResourceData) bool {
-	keys := []string{
-		attr.Path(attr.Protocols, attr.TCP, attr.Policy),
-		attr.Path(attr.Protocols, attr.UDP, attr.Policy),
-	}
-
-	for _, key := range keys {
-		if strings.HasPrefix(attribute, key) {
-			oldPolicy, newPolicy := castToStrings(data.GetChange(key))
-			if oldPolicy == model.PolicyRestricted && newPolicy == model.PolicyDenyAll {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func protocolsDiff(key, oldValue, newValue string, resourceData *schema.ResourceData) bool {
-	switch key {
-	case attr.Len(attr.Protocols),
-		attr.Len(attr.Protocols, attr.TCP),
-		attr.Len(attr.Protocols, attr.UDP):
-		return oldValue == "1" && newValue == "0"
-
-	case attr.Path(attr.Protocols, attr.TCP, attr.Policy),
-		attr.Path(attr.Protocols, attr.UDP, attr.Policy):
-		oldPolicy, newPolicy := castToStrings(resourceData.GetChange(key))
-
-		return oldPolicy == newPolicy
-
-	default:
-		return false
-	}
-}
-
 func aliasDiff(key, _, _ string, resourceData *schema.ResourceData) bool {
 	oldVal, newVal := castToStrings(resourceData.GetChange(key))
 
@@ -374,14 +339,14 @@ func aliasDiff(key, _, _ string, resourceData *schema.ResourceData) bool {
 }
 
 func equalPorts(a, b interface{}) bool {
-	oldPorts, newPorts := a.([]interface{}), b.([]interface{})
+	oldPorts, newPorts := a.(*schema.Set), b.(*schema.Set)
 
-	oldPortsRange, err := convertPorts(oldPorts)
+	oldPortsRange, err := convertPorts(oldPorts.List())
 	if err != nil {
 		return false
 	}
 
-	newPortsRange, err := convertPorts(newPorts)
+	newPortsRange, err := convertPorts(newPorts.List())
 	if err != nil {
 		return false
 	}
@@ -414,6 +379,10 @@ func portsNotChanged(attribute, oldValue, newValue string, data *schema.Resource
 	keys := []string{
 		attr.Path(attr.Protocols, attr.TCP, attr.Ports),
 		attr.Path(attr.Protocols, attr.UDP, attr.Ports),
+	}
+
+	if strings.HasSuffix(attribute, "#") && newValue == "0" {
+		return newValue == oldValue
 	}
 
 	for _, key := range keys {
@@ -557,7 +526,7 @@ func convertAuthoritativeFlag(data *schema.ResourceData) bool {
 func convertProtocols(data *schema.ResourceData) (*model.Protocols, error) {
 	rawList := data.Get(attr.Protocols).([]interface{})
 	if len(rawList) == 0 {
-		return model.DefaultProtocols(), nil
+		return nil, nil //nolint
 	}
 
 	rawMap := rawList[0].(map[string]interface{})
@@ -587,9 +556,30 @@ func convertProtocol(rawList []interface{}) (*model.Protocol, error) {
 	rawMap := rawList[0].(map[string]interface{})
 	policy := rawMap[attr.Policy].(string)
 
-	ports, err := convertPorts(rawMap[attr.Ports].([]interface{}))
+	ports, err := convertPorts(rawMap[attr.Ports].(*schema.Set).List())
 	if err != nil {
 		return nil, err
+	}
+
+	switch policy {
+	case model.PolicyAllowAll:
+		if len(ports) > 0 {
+			return nil, ErrUnnecessaryPortsWithPolicyAllowAll
+		}
+
+	case model.PolicyDenyAll:
+		if len(ports) > 0 {
+			return nil, ErrUnnecessaryPortsWithPolicyDenyAll
+		}
+
+	case model.PolicyRestricted:
+		if len(ports) == 0 {
+			return nil, ErrRequiredPortsWithPolicyRestricted
+		}
+	}
+
+	if policy == model.PolicyDenyAll {
+		policy = model.PolicyRestricted
 	}
 
 	return model.NewProtocol(policy, ports), nil

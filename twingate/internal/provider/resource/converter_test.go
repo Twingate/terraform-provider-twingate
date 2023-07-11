@@ -7,8 +7,13 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 )
+
+func newSet(values []interface{}) *schema.Set {
+	return schema.NewSet(schema.HashSchema(&schema.Schema{Type: schema.TypeString}), values)
+}
 
 func TestConvertProtocol(t *testing.T) {
 
@@ -22,9 +27,9 @@ func TestConvertProtocol(t *testing.T) {
 			input: []interface{}{
 				map[string]interface{}{
 					attr.Policy: model.PolicyAllowAll,
-					attr.Ports: []interface{}{
+					attr.Ports: newSet([]interface{}{
 						"-",
-					},
+					}),
 				},
 			},
 			expectedErr: errors.New("failed to parse protocols port range"),
@@ -33,9 +38,9 @@ func TestConvertProtocol(t *testing.T) {
 			input: []interface{}{
 				map[string]interface{}{
 					attr.Policy: model.PolicyRestricted,
-					attr.Ports: []interface{}{
+					attr.Ports: newSet([]interface{}{
 						"80-88",
-					},
+					}),
 				},
 			},
 			expected: &model.Protocol{
@@ -127,38 +132,38 @@ func TestConvertPortsRangeToMap(t *testing.T) {
 
 func TestEqualPorts(t *testing.T) {
 	cases := []struct {
-		inputA   []interface{}
-		inputB   []interface{}
+		inputA   *schema.Set
+		inputB   *schema.Set
 		expected bool
 	}{
 		{
-			inputA:   []interface{}{""},
-			inputB:   []interface{}{""},
+			inputA:   newSet([]interface{}{""}),
+			inputB:   newSet([]interface{}{""}),
 			expected: false,
 		},
 		{
-			inputA:   []interface{}{"80"},
-			inputB:   []interface{}{""},
+			inputA:   newSet([]interface{}{"80"}),
+			inputB:   newSet([]interface{}{""}),
 			expected: false,
 		},
 		{
-			inputA:   []interface{}{"80"},
-			inputB:   []interface{}{"90"},
+			inputA:   newSet([]interface{}{"80"}),
+			inputB:   newSet([]interface{}{"90"}),
 			expected: false,
 		},
 		{
-			inputA:   []interface{}{"80"},
-			inputB:   []interface{}{"80"},
+			inputA:   newSet([]interface{}{"80"}),
+			inputB:   newSet([]interface{}{"80"}),
 			expected: true,
 		},
 		{
-			inputA:   []interface{}{"80-81"},
-			inputB:   []interface{}{"80", "81"},
+			inputA:   newSet([]interface{}{"80-81"}),
+			inputB:   newSet([]interface{}{"80", "81"}),
 			expected: true,
 		},
 		{
-			inputA:   []interface{}{"80-81", "70"},
-			inputB:   []interface{}{"70", "80", "81"},
+			inputA:   newSet([]interface{}{"80-81", "70"}),
+			inputB:   newSet([]interface{}{"70", "80", "81"}),
 			expected: true,
 		},
 	}
