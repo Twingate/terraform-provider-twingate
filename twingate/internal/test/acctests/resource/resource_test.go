@@ -1894,22 +1894,20 @@ func createResourceWithPort(networkName, resourceName, port string) string {
 	resource "twingate_remote_network" "test30" {
 	  name = "%s"
 	}
-
 	resource "twingate_resource" "test30" {
 	  name = "%s"
 	  address = "new-acc-test.com"
 	  remote_network_id = twingate_remote_network.test30.id
-
-      protocols {
+	  protocols {
 		allow_icmp = true
-        tcp  {
+		tcp  {
 			policy = "%s"
-            ports = ["%s"]
-        }
-		udp {
- 			policy = "%s"
+			ports = ["%s"]
 		}
-      }
+		udp {
+			policy = "%s"
+		}
+	  }
 	}
 	`, networkName, resourceName, model.PolicyRestricted, port, model.PolicyAllowAll)
 }
