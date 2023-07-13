@@ -172,15 +172,13 @@ func TestNewProtocol(t *testing.T) {
 			ports:  []*model.PortRange{{Start: 80, End: 80}},
 			expected: &model.Protocol{
 				Policy: model.PolicyAllowAll,
-				Ports:  []*model.PortRange{{Start: 80, End: 80}},
 			},
 		},
 		{
 			policy: model.PolicyDenyAll,
 			ports:  []*model.PortRange{{Start: 80, End: 80}},
 			expected: &model.Protocol{
-				Policy: model.PolicyDenyAll,
-				Ports:  []*model.PortRange{{Start: 80, End: 80}},
+				Policy: model.PolicyRestricted,
 			},
 		},
 		{

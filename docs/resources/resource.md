@@ -105,7 +105,7 @@ Required:
 
 Optional:
 
-- `ports` (Set of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
+- `ports` (List of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
 
 
 <a id="nestedblock--protocols--udp"></a>
@@ -117,7 +117,7 @@ Required:
 
 Optional:
 
-- `ports` (Set of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
+- `ports` (List of String) List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port
 
 ## Import
 
