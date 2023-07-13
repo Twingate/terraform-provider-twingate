@@ -63,7 +63,7 @@ func TestNewPortRange(t *testing.T) {
 		},
 		{
 			input:       "0-65536",
-			expectedErr: errors.New("failed to parse protocols port range \"0-65536\": port 65536 not in the range of 0-65535"),
+			expectedErr: errors.New("failed to parse protocols port range \"0-65536\": port 0 not in the range of 1-65535"),
 		},
 	}
 

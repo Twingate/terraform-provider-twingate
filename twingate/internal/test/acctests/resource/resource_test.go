@@ -1859,3 +1859,79 @@ func createResourceWithGroupsAndServiceAccounts(name, networkName, resourceName 
 	}
 	`, name, networkName, strings.Join(groups, "\n"), strings.Join(serviceAccounts, "\n"), name, resourceName, name, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), strings.Join(serviceAccountIDs, ", "))
 }
+
+func TestAccTwingateResourceCreateWithPort(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0"),
+				ExpectError: regexp.MustCompile("port 0 not in the range of 1-65535"),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "65536"),
+				ExpectError: regexp.MustCompile("port 65536 not in the range of 1-65535"),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0-10"),
+				ExpectError: regexp.MustCompile("port 0 not in the range of 1-65535"),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "65535-65536"),
+				ExpectError: regexp.MustCompile("port 65536 not in the range of 1-65535"),
+			},
+		},
+	})
+}
+
+func createResourceWithPort(networkName, resourceName, port string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test30" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "test30" {
+	  name = "%s"
+	  address = "new-acc-test.com"
+	  remote_network_id = twingate_remote_network.test30.id
+	  protocols {
+		allow_icmp = true
+		tcp  {
+			policy = "%s"
+			ports = ["%s"]
+		}
+		udp {
+			policy = "%s"
+		}
+	  }
+	}
+	`, networkName, resourceName, model.PolicyRestricted, port, model.PolicyAllowAll)
+}
+
+func TestAccTwingateResourceUpdateWithPort(t *testing.T) {
+	theResource := acctests.TerraformResource("test30")
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithPort(remoteNetworkName, resourceName, "1"),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "1"),
+				),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0"),
+				ExpectError: regexp.MustCompile("port 0 not in the range of 1-65535"),
+			},
+		},
+	})
+}
