@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.27.0
 	github.com/hashicorp/terraform-plugin-testing v1.3.0
 	github.com/hasura/go-graphql-client v0.9.3
-	github.com/iancoleman/strcase v0.2.0
+	github.com/iancoleman/strcase v0.3.0
 	github.com/jarcoal/httpmock v1.3.0
 	github.com/mattn/goveralls v0.0.12
 	github.com/securego/gosec/v2 v2.16.0
