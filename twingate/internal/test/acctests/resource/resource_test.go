@@ -1725,7 +1725,7 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	const aliasName = "test.com"
+	aliasName := test.RandomName()
 
 	sdk.Test(t, sdk.TestCase{
 		ProviderFactories: acctests.ProviderFactories,

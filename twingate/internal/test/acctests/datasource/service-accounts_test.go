@@ -295,14 +295,13 @@ func datasourceServicesConfig(prefix string) string {
     }
     
     data "twingate_service_accounts" "out" {
-    	depends_on = [twingate_resource.%s_1, twingate_resource.%s_2]
+    
     }
     
     output "my_services" {
       value = [for c in data.twingate_service_accounts.out.service_accounts : c if length(regexall("^%s", c.name)) > 0]
-      depends_on = [data.twingate_service_accounts.out]
     }
-`, duplicate(prefix, 34)...)
+`, duplicate(prefix, 32)...)
 }
 
 func duplicate(val string, n int) []any {
