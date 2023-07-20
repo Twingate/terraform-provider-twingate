@@ -16,6 +16,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+var (
+	ErrUnnecessaryPortsWithPolicyAllowAll = errors.New("no need to set ports with policy " + model.PolicyAllowAll)
+	ErrUnnecessaryPortsWithPolicyDenyAll  = errors.New("no need to set ports with policy " + model.PolicyDenyAll)
+	ErrRequiredPortsWithPolicyRestricted  = errors.New("required to set ports with policy " + model.PolicyRestricted)
+)
+
 func Resource() *schema.Resource { //nolint:funlen
 	portsSchema := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -590,6 +596,27 @@ func convertProtocol(rawList []interface{}) (*model.Protocol, error) {
 	ports, err := convertPorts(rawMap[attr.Ports].([]interface{}))
 	if err != nil {
 		return nil, err
+	}
+
+	switch policy {
+	case model.PolicyAllowAll:
+		if len(ports) > 0 {
+			return nil, ErrUnnecessaryPortsWithPolicyAllowAll
+		}
+
+	case model.PolicyDenyAll:
+		if len(ports) > 0 {
+			return nil, ErrUnnecessaryPortsWithPolicyDenyAll
+		}
+
+	case model.PolicyRestricted:
+		if len(ports) == 0 {
+			return nil, ErrRequiredPortsWithPolicyRestricted
+		}
+	}
+
+	if policy == model.PolicyDenyAll {
+		policy = model.PolicyRestricted
 	}
 
 	return model.NewProtocol(policy, ports), nil
