@@ -119,11 +119,13 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.Protocols: {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
-				Elem:        protocolsSchema,
+				Type:                  schema.TypeList,
+				Optional:              true,
+				MaxItems:              1,
+				Description:           "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
+				Elem:                  protocolsSchema,
+				DiffSuppressOnRefresh: true,
+				DiffSuppressFunc:      protocolsNotChanged,
 			},
 			attr.Access: {
 				Type:        schema.TypeList,
@@ -387,6 +389,20 @@ func portsNotChanged(attribute, oldValue, newValue string, data *schema.Resource
 		if strings.HasPrefix(attribute, key) {
 			return equalPorts(data.GetChange(key))
 		}
+	}
+
+	return false
+}
+
+// protocolsNotChanged - suppress protocols change when uses default value.
+func protocolsNotChanged(attribute, oldValue, newValue string, data *schema.ResourceData) bool {
+	switch attribute {
+	case attr.Len(attr.Protocols):
+		return newValue == "0"
+	case attr.Len(attr.Protocols, attr.TCP), attr.Len(attr.Protocols, attr.UDP):
+		return newValue == "0"
+	case attr.Path(attr.Protocols, attr.TCP, attr.Policy), attr.Path(attr.Protocols, attr.UDP, attr.Policy):
+		return oldValue == model.PolicyAllowAll && newValue == ""
 	}
 
 	return false
