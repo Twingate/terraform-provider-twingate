@@ -38,8 +38,7 @@ func Resource() *schema.Resource { //nolint:funlen
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      portsNotChanged,
+				DiffSuppressFunc: portsNotChanged,
 			},
 		},
 	}
@@ -53,20 +52,16 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Whether to allow ICMP (ping) traffic",
 			},
 			attr.TCP: {
-				Type:                  schema.TypeList,
-				Required:              true,
-				MaxItems:              1,
-				Elem:                  portsSchema,
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolDiff,
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem:     portsSchema,
 			},
 			attr.UDP: {
-				Type:                  schema.TypeList,
-				Required:              true,
-				MaxItems:              1,
-				Elem:                  portsSchema,
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolDiff,
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem:     portsSchema,
 			},
 		},
 	}
@@ -124,13 +119,11 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 			},
 			attr.Protocols: {
-				Type:                  schema.TypeList,
-				Optional:              true,
-				MaxItems:              1,
-				Description:           "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolsDiff,
-				Elem:                  protocolsSchema,
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
+				Elem:        protocolsSchema,
 			},
 			attr.Access: {
 				Type:        schema.TypeList,
@@ -337,42 +330,6 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 	return nil
 }
 
-func protocolDiff(attribute, oldValue, newValue string, data *schema.ResourceData) bool {
-	keys := []string{
-		attr.Path(attr.Protocols, attr.TCP, attr.Policy),
-		attr.Path(attr.Protocols, attr.UDP, attr.Policy),
-	}
-
-	for _, key := range keys {
-		if strings.HasPrefix(attribute, key) {
-			oldPolicy, newPolicy := castToStrings(data.GetChange(key))
-			if oldPolicy == model.PolicyRestricted && newPolicy == model.PolicyDenyAll {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func protocolsDiff(key, oldValue, newValue string, resourceData *schema.ResourceData) bool {
-	switch key {
-	case attr.Len(attr.Protocols),
-		attr.Len(attr.Protocols, attr.TCP),
-		attr.Len(attr.Protocols, attr.UDP):
-		return oldValue == "1" && newValue == "0"
-
-	case attr.Path(attr.Protocols, attr.TCP, attr.Policy),
-		attr.Path(attr.Protocols, attr.UDP, attr.Policy):
-		oldPolicy, newPolicy := castToStrings(resourceData.GetChange(key))
-
-		return oldPolicy == newPolicy
-
-	default:
-		return false
-	}
-}
-
 func aliasDiff(key, _, _ string, resourceData *schema.ResourceData) bool {
 	oldVal, newVal := castToStrings(resourceData.GetChange(key))
 
@@ -420,6 +377,10 @@ func portsNotChanged(attribute, oldValue, newValue string, data *schema.Resource
 	keys := []string{
 		attr.Path(attr.Protocols, attr.TCP, attr.Ports),
 		attr.Path(attr.Protocols, attr.UDP, attr.Ports),
+	}
+
+	if strings.HasSuffix(attribute, "#") && newValue == "0" {
+		return newValue == oldValue
 	}
 
 	for _, key := range keys {
