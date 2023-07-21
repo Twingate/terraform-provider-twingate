@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	ErrUnnecessaryPortsWithPolicyAllowAll = errors.New("no need to set ports with policy " + model.PolicyAllowAll)
-	ErrUnnecessaryPortsWithPolicyDenyAll  = errors.New("no need to set ports with policy " + model.PolicyDenyAll)
-	ErrRequiredPortsWithPolicyRestricted  = errors.New("required to set ports with policy " + model.PolicyRestricted)
+	ErrPortsWithPolicyAllowAll      = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
+	ErrPortsWithPolicyDenyAll       = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
+	ErrPolicyRestrictedWithoutPorts = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -578,17 +578,17 @@ func convertProtocol(rawList []interface{}) (*model.Protocol, error) {
 	switch policy {
 	case model.PolicyAllowAll:
 		if len(ports) > 0 {
-			return nil, ErrUnnecessaryPortsWithPolicyAllowAll
+			return nil, ErrPortsWithPolicyAllowAll
 		}
 
 	case model.PolicyDenyAll:
 		if len(ports) > 0 {
-			return nil, ErrUnnecessaryPortsWithPolicyDenyAll
+			return nil, ErrPortsWithPolicyDenyAll
 		}
 
 	case model.PolicyRestricted:
 		if len(ports) == 0 {
-			return nil, ErrRequiredPortsWithPolicyRestricted
+			return nil, ErrPolicyRestrictedWithoutPorts
 		}
 	}
 

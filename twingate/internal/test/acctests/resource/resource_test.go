@@ -1948,11 +1948,11 @@ func TestAccTwingateResourceWithPortsFailsForAllowAllAndDenyAllPolicy(t *testing
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),
-				ExpectError: regexp.MustCompile(resource.ErrUnnecessaryPortsWithPolicyAllowAll.Error()),
+				ExpectError: regexp.MustCompile(resource.ErrPortsWithPolicyAllowAll.Error()),
 			},
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyDenyAll),
-				ExpectError: regexp.MustCompile(resource.ErrUnnecessaryPortsWithPolicyDenyAll.Error()),
+				ExpectError: regexp.MustCompile(resource.ErrPolicyRestrictedWithoutPorts.Error()),
 			},
 		},
 	})
@@ -2204,7 +2204,7 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAllWithPortsShouldF
 			},
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),
-				ExpectError: regexp.MustCompile(resource.ErrUnnecessaryPortsWithPolicyAllowAll.Error()),
+				ExpectError: regexp.MustCompile(resource.ErrPortsWithPolicyAllowAll.Error()),
 			},
 		},
 	})
