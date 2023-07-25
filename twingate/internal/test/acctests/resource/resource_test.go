@@ -1952,7 +1952,7 @@ func TestAccTwingateResourceWithPortsFailsForAllowAllAndDenyAllPolicy(t *testing
 			},
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyDenyAll),
-				ExpectError: regexp.MustCompile(resource.ErrPolicyRestrictedWithoutPorts.Error()),
+				ExpectError: regexp.MustCompile(resource.ErrPortsWithPolicyDenyAll.Error()),
 			},
 		},
 	})
