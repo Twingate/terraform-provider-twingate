@@ -153,7 +153,14 @@ func (p *Protocol) PortsToString() []string {
 }
 
 func NewProtocol(policy string, ports []*PortRange) *Protocol {
-	return &Protocol{Policy: policy, Ports: ports}
+	switch policy {
+	case PolicyAllowAll:
+		return &Protocol{Policy: PolicyAllowAll}
+	case PolicyDenyAll:
+		return &Protocol{Policy: PolicyRestricted}
+	default:
+		return &Protocol{Policy: policy, Ports: ports}
+	}
 }
 
 func DefaultProtocol() *Protocol {
@@ -200,14 +207,9 @@ func (p *Protocol) ToTerraform() []interface{} {
 		return nil
 	}
 
-	policy := p.Policy
-	if p.Policy == PolicyRestricted && len(p.Ports) == 0 {
-		policy = PolicyDenyAll
-	}
-
 	return []interface{}{
 		map[string]interface{}{
-			attr.Policy: policy,
+			attr.Policy: p.Policy,
 			attr.Ports:  p.PortsToString(),
 		},
 	}
