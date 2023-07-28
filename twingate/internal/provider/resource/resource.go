@@ -226,13 +226,13 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		resource, err = client.ReadResource(ctx, resource.ID)
 	}
 
-	if err != nil {
-		return diag.FromErr(err)
+	if resource != nil {
+		resource.IsAuthoritative = convertAuthoritativeFlag(resourceData)
 	}
 
 	log.Printf("[INFO] Updated resource %s", resource.Name)
 
-	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
