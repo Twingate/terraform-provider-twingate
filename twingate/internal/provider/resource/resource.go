@@ -197,19 +197,35 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 
 	resource.ID = resourceData.Id()
 
-	if err = deleteResourceGroupIDs(ctx, resourceData, resource, client); err != nil {
-		return diag.FromErr(err)
+	if resourceData.HasChange(attr.Access) {
+		idsToDelete, idsToAdd, err := getChangedAccessIDs(ctx, resourceData, resource, client)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if err := client.RemoveResourceAccess(ctx, resource.ID, idsToDelete); err != nil {
+			return diag.FromErr(err)
+		}
+
+		if err = client.AddResourceAccess(ctx, resource.ID, idsToAdd); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	if err = deleteResourceServiceAccountIDs(ctx, resourceData, resource, client); err != nil {
-		return diag.FromErr(err)
+	if resourceData.HasChanges(
+		attr.RemoteNetworkID,
+		attr.Name,
+		attr.Address,
+		attr.Protocols,
+		attr.IsVisible,
+		attr.IsBrowserShortcutEnabled,
+		attr.Alias,
+	) {
+		resource, err = client.UpdateResource(ctx, resource)
+	} else {
+		resource, err = client.ReadResource(ctx, resource.ID)
 	}
 
-	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
-		return diag.FromErr(err)
-	}
-
-	resource, err = client.UpdateResource(ctx, resource)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -408,63 +424,36 @@ func protocolsNotChanged(attribute, oldValue, newValue string, data *schema.Reso
 	return false
 }
 
-func deleteResourceGroupIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
-	groupIDs := getIDsToDelete(ctx, resourceData, resource.Groups, attr.GroupIDs, resource, client)
-
-	return client.DeleteResourceGroups(ctx, resource.ID, groupIDs) //nolint
-}
-
-func deleteResourceServiceAccountIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
-	idsToDelete := getIDsToDelete(ctx, resourceData, resource.ServiceAccounts, attr.ServiceAccountIDs, resource, client)
-
-	return client.DeleteResourceServiceAccounts(ctx, resource.ID, idsToDelete) //nolint
-}
-
-func getIDsToDelete(ctx context.Context, resourceData *schema.ResourceData, currentIDs []string, attribute string, resource *model.Resource, client *client.Client) []string {
-	oldIDs := getOldIDs(ctx, resourceData, attribute, resource, client)
-	if len(oldIDs) == 0 {
-		return nil
+func getChangedAccessIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) ([]string, []string, error) {
+	remote, err := client.ReadResource(ctx, resource.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get changedIDs: %w", err)
 	}
 
-	return setDifference(oldIDs, currentIDs)
-}
-
-func getOldIDs(ctx context.Context, resourceData *schema.ResourceData, attribute string, resource *model.Resource, client *client.Client) []string {
+	var oldGroups, oldServiceAccounts []string
 	if resource.IsAuthoritative {
-		return getOldIDsAuthoritative(ctx, resource, client, attribute)
+		oldGroups, oldServiceAccounts = remote.Groups, remote.ServiceAccounts
+	} else {
+		oldGroups = getOldIDsNonAuthoritative(resourceData, attr.GroupIDs)
+		oldServiceAccounts = getOldIDsNonAuthoritative(resourceData, attr.ServiceAccountIDs)
 	}
 
-	return getOldIDsNonAuthoritative(resourceData, attribute)
+	// ids to delete
+	groupsToDelete := setDifference(oldGroups, resource.Groups)
+	serviceAccountsToDelete := setDifference(oldServiceAccounts, resource.ServiceAccounts)
+
+	// ids to add
+	groupsToAdd := setDifference(resource.Groups, remote.Groups)
+	serviceAccountsToAdd := setDifference(resource.ServiceAccounts, remote.ServiceAccounts)
+
+	return append(groupsToDelete, serviceAccountsToDelete...), append(groupsToAdd, serviceAccountsToAdd...), nil
 }
 
 func getOldIDsNonAuthoritative(resourceData *schema.ResourceData, attribute string) []string {
-	if resourceData.HasChange(attribute) {
-		old, _ := resourceData.GetChange(attribute)
-
-		return convertIDs(old)
-	}
-
 	if resourceData.HasChange(attr.Path(attr.Access, attribute)) {
 		old, _ := resourceData.GetChange(attr.Path(attr.Access, attribute))
 
 		return convertIDs(old)
-	}
-
-	return nil
-}
-
-func getOldIDsAuthoritative(ctx context.Context, resource *model.Resource, client *client.Client, attribute string) []string {
-	res, err := client.ReadResource(ctx, resource.ID)
-	if err != nil {
-		return nil
-	}
-
-	switch attribute {
-	case attr.ServiceAccountIDs:
-		return res.ServiceAccounts
-
-	case attr.GroupIDs:
-		return res.Groups
 	}
 
 	return nil
