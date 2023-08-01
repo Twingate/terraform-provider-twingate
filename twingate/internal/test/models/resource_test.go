@@ -63,7 +63,7 @@ func TestNewPortRange(t *testing.T) {
 		},
 		{
 			input:       "0-65536",
-			expectedErr: errors.New("failed to parse protocols port range \"0-65536\": port 65536 not in the range of 0-65535"),
+			expectedErr: errors.New("failed to parse protocols port range \"0-65536\": port 0 not in the range of 1-65535"),
 		},
 	}
 
@@ -161,43 +161,6 @@ func TestResourceModel(t *testing.T) {
 	}
 }
 
-func TestNewProtocol(t *testing.T) {
-	cases := []struct {
-		policy   string
-		ports    []*model.PortRange
-		expected *model.Protocol
-	}{
-		{
-			policy: model.PolicyAllowAll,
-			ports:  []*model.PortRange{{Start: 80, End: 80}},
-			expected: &model.Protocol{
-				Policy: model.PolicyAllowAll,
-			},
-		},
-		{
-			policy: model.PolicyDenyAll,
-			ports:  []*model.PortRange{{Start: 80, End: 80}},
-			expected: &model.Protocol{
-				Policy: model.PolicyRestricted,
-			},
-		},
-		{
-			policy: model.PolicyRestricted,
-			ports:  []*model.PortRange{{Start: 80, End: 80}},
-			expected: &model.Protocol{
-				Policy: model.PolicyRestricted,
-				Ports:  []*model.PortRange{{Start: 80, End: 80}},
-			},
-		},
-	}
-
-	for n, c := range cases {
-		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
-			assert.Equal(t, c.expected, model.NewProtocol(c.policy, c.ports))
-		})
-	}
-}
-
 func TestProtocolToTerraform(t *testing.T) {
 	var emptySlice []interface{}
 	var emptyStringSlice []string
@@ -219,6 +182,31 @@ func TestProtocolToTerraform(t *testing.T) {
 				map[string]interface{}{
 					attr.Policy: "ALLOW_ALL",
 					attr.Ports:  emptyStringSlice,
+				},
+			},
+		},
+		{
+			protocol: &model.Protocol{
+				Policy: model.PolicyRestricted,
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					attr.Policy: "DENY_ALL",
+					attr.Ports:  emptyStringSlice,
+				},
+			},
+		},
+		{
+			protocol: &model.Protocol{
+				Policy: model.PolicyRestricted,
+				Ports: []*model.PortRange{
+					{Start: 80, End: 80},
+				},
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					attr.Policy: "RESTRICTED",
+					attr.Ports:  []string{"80"},
 				},
 			},
 		},
