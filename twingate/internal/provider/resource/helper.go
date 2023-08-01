@@ -45,9 +45,17 @@ func setIntersection(a, b []string) []string {
 // setDifference - difference between sets implies subtracting the elements from a set.
 // The difference between sets A and set B denoted as A − B.
 // If A = {1, 2, 3, 4} and B = {3, 4, 5, 7}, then the difference between sets A and B is given by A - B = {1, 2}.
-func setDifference(a, b []string) []string {
-	setA := utils.MakeLookupMap(a)
-	setB := utils.MakeLookupMap(b)
+func setDifference(inputA, inputB []string) []string {
+	if len(inputA) == 0 {
+		return nil
+	}
+
+	if len(inputB) == 0 {
+		return inputA
+	}
+
+	setA := utils.MakeLookupMap(inputA)
+	setB := utils.MakeLookupMap(inputB)
 	result := make([]string, 0, len(setA))
 
 	for key := range setA {

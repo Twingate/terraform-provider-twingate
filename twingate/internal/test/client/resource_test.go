@@ -1737,3 +1737,189 @@ func TestClientAddResourceServiceAccountIDsRequestError(t *testing.T) {
 		assert.EqualError(t, err, graphqlErr(client, "failed to update service account with id id-1", errBadRequest))
 	})
 }
+
+func TestClientRemoveResourceAccessOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Resource Access - Ok", func(t *testing.T) {
+		response := `{
+		  "data": {
+		    "resourceAccessRemove": {
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, response),
+		)
+
+		err := client.RemoveResourceAccess(context.Background(),
+			"resource-1",
+			[]string{"id-1", "id-2"},
+		)
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientRemoveResourceAccessWithEmptyList(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Resource Access - With Empty List", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.RemoveResourceAccess(context.Background(),
+			"resource-1",
+			[]string{},
+		)
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientRemoveResourceAccessWithoutID(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Resource Access - Without ID", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.RemoveResourceAccess(context.Background(),
+			"",
+			[]string{"id-1"},
+		)
+
+		assert.Error(t, err, "failed to delete resource access: id is empty")
+	})
+}
+
+func TestClientRemoveResourceAccessRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Resource Access - Request Error", func(t *testing.T) {
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		err := client.RemoveResourceAccess(context.Background(),
+			"resource-1",
+			[]string{"id-1", "id-2"},
+		)
+
+		assert.EqualError(t, err, graphqlErr(client, "failed to delete resource access with id resource-1", errBadRequest))
+	})
+}
+
+func TestClientRemoveResourceAccessResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Remove Resource Access - Response Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceAccessRemove": {
+		      "ok": false,
+		      "error": "response error"
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := client.RemoveResourceAccess(context.Background(),
+			"resource-1",
+			[]string{"id-1", "id-2"},
+		)
+		assert.EqualError(t, err, `failed to delete resource access with id resource-1: response error`)
+	})
+}
+
+func TestClientAddResourceAccessOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Access - Ok", func(t *testing.T) {
+		response := `{
+		  "data": {
+		    "resourceAccessAdd": {
+		      "ok": true,
+		      "error": null
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, response),
+		)
+
+		err := client.AddResourceAccess(context.Background(),
+			"resource-1",
+			[]string{"id-1", "id-2"},
+		)
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientAddResourceAccessWithEmptyList(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Access - With Empty List", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.AddResourceAccess(context.Background(),
+			"resource-1",
+			[]string{},
+		)
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestClientAddResourceAccessWithoutID(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Access - Without ID", func(t *testing.T) {
+		client := newHTTPMockClient()
+
+		err := client.AddResourceAccess(context.Background(),
+			"",
+			[]string{"id-1"},
+		)
+
+		assert.Error(t, err, "failed to update resource access: id is empty")
+	})
+}
+
+func TestClientAddResourceAccessRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Access - Request Error", func(t *testing.T) {
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		err := client.AddResourceAccess(context.Background(),
+			"resource-1",
+			[]string{"id-1", "id-2"},
+		)
+
+		assert.EqualError(t, err, graphqlErr(client, "failed to update resource access with id resource-1", errBadRequest))
+	})
+}
+
+func TestClientAddResourceAccessResponseError(t *testing.T) {
+	t.Run("Test Twingate Resource : Add Resource Access - Response Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resourceAccessAdd": {
+		      "ok": false,
+		      "error": "response error"
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+
+		err := client.AddResourceAccess(context.Background(),
+			"resource-1",
+			[]string{"id-1", "id-2"},
+		)
+		assert.EqualError(t, err, `failed to update resource access with id resource-1: response error`)
+	})
+}
