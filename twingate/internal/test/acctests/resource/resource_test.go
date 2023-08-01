@@ -623,7 +623,11 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
 					attr.Address: "acc-test.com.12",
-					attr.Name:    resourceName,
+					tcpPolicy:    model.PolicyRestricted,
+					tcpPortsLen:  "2",
+					firstTCPPort: "80",
+					udpPolicy:    model.PolicyAllowAll,
+					udpPortsLen:  "0",
 				}),
 			},
 		},
@@ -1725,7 +1729,7 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	aliasName := test.RandomName()
+	const aliasName = "test.com"
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -1856,6 +1860,82 @@ func createResourceWithGroupsAndServiceAccounts(name, networkName, resourceName 
 	`, name, networkName, strings.Join(groups, "\n"), strings.Join(serviceAccounts, "\n"), name, resourceName, name, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), strings.Join(serviceAccountIDs, ", "))
 }
 
+func TestAccTwingateResourceCreateWithPort(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0"),
+				ExpectError: regexp.MustCompile("port 0 not in the range of 1-65535"),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "65536"),
+				ExpectError: regexp.MustCompile("port 65536 not in the range of 1-65535"),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0-10"),
+				ExpectError: regexp.MustCompile("port 0 not in the range of 1-65535"),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "65535-65536"),
+				ExpectError: regexp.MustCompile("port 65536 not in the range of 1-65535"),
+			},
+		},
+	})
+}
+
+func createResourceWithPort(networkName, resourceName, port string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test30" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "test30" {
+	  name = "%s"
+	  address = "new-acc-test.com"
+	  remote_network_id = twingate_remote_network.test30.id
+	  protocols {
+		allow_icmp = true
+		tcp  {
+			policy = "%s"
+			ports = ["%s"]
+		}
+		udp {
+			policy = "%s"
+		}
+	  }
+	}
+	`, networkName, resourceName, model.PolicyRestricted, port, model.PolicyAllowAll)
+}
+
+func TestAccTwingateResourceUpdateWithPort(t *testing.T) {
+	theResource := acctests.TerraformResource("test30")
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProviderFactories: acctests.ProviderFactories,
+		PreCheck:          func() { acctests.PreCheck(t) },
+		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithPort(remoteNetworkName, resourceName, "1"),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "1"),
+				),
+			},
+			{
+				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0"),
+				ExpectError: regexp.MustCompile("port 0 not in the range of 1-65535"),
+			},
+		},
+	})
+}
+
 func TestAccTwingateResourceWithPortsFailsForAllowAllAndDenyAllPolicy(t *testing.T) {
 	const terraformResourceName = "test28"
 	remoteNetworkName := test.RandomName()
@@ -1868,11 +1948,11 @@ func TestAccTwingateResourceWithPortsFailsForAllowAllAndDenyAllPolicy(t *testing
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),
-				ExpectError: regexp.MustCompile(resource.ErrUnnecessaryPortsWithPolicyAllowAll.Error()),
+				ExpectError: regexp.MustCompile(resource.ErrPortsWithPolicyAllowAll.Error()),
 			},
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyDenyAll),
-				ExpectError: regexp.MustCompile(resource.ErrUnnecessaryPortsWithPolicyDenyAll.Error()),
+				ExpectError: regexp.MustCompile(resource.ErrPortsWithPolicyDenyAll.Error()),
 			},
 		},
 	})
@@ -1883,7 +1963,6 @@ func createResourceWithPorts(name, networkName, resourceName, policy string) str
 	resource "twingate_remote_network" "%[1]s" {
 	  name = "%[2]s"
 	}
-
 	resource "twingate_resource" "%[1]s" {
 	  name = "%[3]s"
 	  address = "acc-test-%[1]s.com"
@@ -1899,7 +1978,6 @@ func createResourceWithPorts(name, networkName, resourceName, policy string) str
 	      policy = "%[5]s"
 	    }
 	  }
-
 	}
 	`, name, networkName, resourceName, policy, model.PolicyAllowAll)
 }
@@ -1940,7 +2018,6 @@ func createResourceWithoutPorts(name, networkName, resourceName, policy string) 
 	resource "twingate_remote_network" "%[1]s" {
 	  name = "%[2]s"
 	}
-
 	resource "twingate_resource" "%[1]s" {
 	  name = "%[3]s"
 	  address = "acc-test-%[1]s.com"
@@ -1955,7 +2032,6 @@ func createResourceWithoutPorts(name, networkName, resourceName, policy string) 
 	      policy = "%[5]s"
 	    }
 	  }
-
 	}
 	`, name, networkName, resourceName, policy, model.PolicyAllowAll)
 }
@@ -2128,7 +2204,7 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAllWithPortsShouldF
 			},
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),
-				ExpectError: regexp.MustCompile(resource.ErrUnnecessaryPortsWithPolicyAllowAll.Error()),
+				ExpectError: regexp.MustCompile(resource.ErrPortsWithPolicyAllowAll.Error()),
 			},
 		},
 	})
