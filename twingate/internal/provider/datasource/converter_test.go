@@ -192,7 +192,7 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 							},
 							attr.UDP: []interface{}{
 								map[string]interface{}{
-									attr.Policy: model.PolicyRestricted,
+									attr.Policy: model.PolicyDenyAll,
 									attr.Ports:  emptyStringSlice,
 								},
 							},
