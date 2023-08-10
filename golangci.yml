@@ -80,11 +80,8 @@ issues:
   exclude:
     - should have comment
     - "shadow: declaration of \"err\" shadows declaration"
-
-  exclude-rules:
-    - linters:
-        - stylecheck
-      text: "ST1000:"
+    - "ST1000:"
+    - "ST1005:"
 
   exclude-use-default: false
   max-per-linter: 0
