@@ -198,7 +198,6 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 	variables := newVars(
 		gqlID(input.ID),
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(input.Groups, "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
@@ -394,4 +393,55 @@ func (client *Client) AddResourceServiceAccountIDs(ctx context.Context, resource
 	}
 
 	return nil
+}
+
+func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID string, principalIDs []string) error {
+	opr := resourceResourceAccess.delete()
+
+	if len(principalIDs) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return opr.apiError(ErrGraphqlIDIsEmpty)
+	}
+
+	variables := newVars(
+		gqlID(resourceID),
+		gqlIDs(principalIDs, "principalIds"),
+	)
+
+	response := query.RemoveResourceAccess{}
+
+	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
+}
+
+type AccessInput struct {
+	PrincipalID      string  `json:"principalId"`
+	SecurityPolicyID *string `json:"securityPolicyId"`
+}
+
+func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, principalIDs []string) error {
+	opr := resourceResourceAccess.update()
+
+	if len(principalIDs) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return opr.apiError(ErrGraphqlIDIsEmpty)
+	}
+
+	access := utils.Map(principalIDs, func(id string) AccessInput {
+		return AccessInput{PrincipalID: id}
+	})
+
+	variables := newVars(
+		gqlID(resourceID),
+		gqlNullable(access, "access"),
+	)
+
+	response := query.AddResourceAccess{}
+
+	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
 }

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	minPortValue = 0
+	minPortValue = 1
 	maxPortValue = 65535
 )
 
