@@ -16,6 +16,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+var (
+	ErrPortsWithPolicyAllowAll      = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
+	ErrPortsWithPolicyDenyAll       = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
+	ErrPolicyRestrictedWithoutPorts = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
+)
+
 func Resource() *schema.Resource { //nolint:funlen
 	portsSchema := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -32,8 +38,7 @@ func Resource() *schema.Resource { //nolint:funlen
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      portsNotChanged,
+				DiffSuppressFunc: portsNotChanged,
 			},
 		},
 	}
@@ -47,20 +52,16 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Whether to allow ICMP (ping) traffic",
 			},
 			attr.TCP: {
-				Type:                  schema.TypeList,
-				Required:              true,
-				MaxItems:              1,
-				Elem:                  portsSchema,
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolDiff,
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem:     portsSchema,
 			},
 			attr.UDP: {
-				Type:                  schema.TypeList,
-				Required:              true,
-				MaxItems:              1,
-				Elem:                  portsSchema,
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolDiff,
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem:     portsSchema,
 			},
 		},
 	}
@@ -122,9 +123,9 @@ func Resource() *schema.Resource { //nolint:funlen
 				Optional:              true,
 				MaxItems:              1,
 				Description:           "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
-				DiffSuppressOnRefresh: true,
-				DiffSuppressFunc:      protocolsDiff,
 				Elem:                  protocolsSchema,
+				DiffSuppressOnRefresh: true,
+				DiffSuppressFunc:      protocolsNotChanged,
 			},
 			attr.Access: {
 				Type:        schema.TypeList,
@@ -196,26 +197,42 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 
 	resource.ID = resourceData.Id()
 
-	if err = deleteResourceGroupIDs(ctx, resourceData, resource, client); err != nil {
-		return diag.FromErr(err)
+	if resourceData.HasChange(attr.Access) {
+		idsToDelete, idsToAdd, err := getChangedAccessIDs(ctx, resourceData, resource, client)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if err := client.RemoveResourceAccess(ctx, resource.ID, idsToDelete); err != nil {
+			return diag.FromErr(err)
+		}
+
+		if err = client.AddResourceAccess(ctx, resource.ID, idsToAdd); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	if err = deleteResourceServiceAccountIDs(ctx, resourceData, resource, client); err != nil {
-		return diag.FromErr(err)
+	if resourceData.HasChanges(
+		attr.RemoteNetworkID,
+		attr.Name,
+		attr.Address,
+		attr.Protocols,
+		attr.IsVisible,
+		attr.IsBrowserShortcutEnabled,
+		attr.Alias,
+	) {
+		resource, err = client.UpdateResource(ctx, resource)
+	} else {
+		resource, err = client.ReadResource(ctx, resource.ID)
 	}
 
-	if err = client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
-		return diag.FromErr(err)
-	}
-
-	resource, err = client.UpdateResource(ctx, resource)
-	if err != nil {
-		return diag.FromErr(err)
+	if resource != nil {
+		resource.IsAuthoritative = convertAuthoritativeFlag(resourceData)
 	}
 
 	log.Printf("[INFO] Updated resource %s", resource.Name)
 
-	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
+	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -331,42 +348,6 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 	return nil
 }
 
-func protocolDiff(attribute, oldValue, newValue string, data *schema.ResourceData) bool {
-	keys := []string{
-		attr.Path(attr.Protocols, attr.TCP, attr.Policy),
-		attr.Path(attr.Protocols, attr.UDP, attr.Policy),
-	}
-
-	for _, key := range keys {
-		if strings.HasPrefix(attribute, key) {
-			oldPolicy, newPolicy := castToStrings(data.GetChange(key))
-			if oldPolicy == model.PolicyRestricted && newPolicy == model.PolicyDenyAll {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func protocolsDiff(key, oldValue, newValue string, resourceData *schema.ResourceData) bool {
-	switch key {
-	case attr.Len(attr.Protocols),
-		attr.Len(attr.Protocols, attr.TCP),
-		attr.Len(attr.Protocols, attr.UDP):
-		return oldValue == "1" && newValue == "0"
-
-	case attr.Path(attr.Protocols, attr.TCP, attr.Policy),
-		attr.Path(attr.Protocols, attr.UDP, attr.Policy):
-		oldPolicy, newPolicy := castToStrings(resourceData.GetChange(key))
-
-		return oldPolicy == newPolicy
-
-	default:
-		return false
-	}
-}
-
 func aliasDiff(key, _, _ string, resourceData *schema.ResourceData) bool {
 	oldVal, newVal := castToStrings(resourceData.GetChange(key))
 
@@ -416,6 +397,10 @@ func portsNotChanged(attribute, oldValue, newValue string, data *schema.Resource
 		attr.Path(attr.Protocols, attr.UDP, attr.Ports),
 	}
 
+	if strings.HasSuffix(attribute, "#") && newValue == "0" {
+		return newValue == oldValue
+	}
+
 	for _, key := range keys {
 		if strings.HasPrefix(attribute, key) {
 			return equalPorts(data.GetChange(key))
@@ -425,63 +410,50 @@ func portsNotChanged(attribute, oldValue, newValue string, data *schema.Resource
 	return false
 }
 
-func deleteResourceGroupIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
-	groupIDs := getIDsToDelete(ctx, resourceData, resource.Groups, attr.GroupIDs, resource, client)
-
-	return client.DeleteResourceGroups(ctx, resource.ID, groupIDs) //nolint
-}
-
-func deleteResourceServiceAccountIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) error {
-	idsToDelete := getIDsToDelete(ctx, resourceData, resource.ServiceAccounts, attr.ServiceAccountIDs, resource, client)
-
-	return client.DeleteResourceServiceAccounts(ctx, resource.ID, idsToDelete) //nolint
-}
-
-func getIDsToDelete(ctx context.Context, resourceData *schema.ResourceData, currentIDs []string, attribute string, resource *model.Resource, client *client.Client) []string {
-	oldIDs := getOldIDs(ctx, resourceData, attribute, resource, client)
-	if len(oldIDs) == 0 {
-		return nil
+// protocolsNotChanged - suppress protocols change when uses default value.
+func protocolsNotChanged(attribute, oldValue, newValue string, data *schema.ResourceData) bool {
+	switch attribute {
+	case attr.Len(attr.Protocols):
+		return newValue == "0"
+	case attr.Len(attr.Protocols, attr.TCP), attr.Len(attr.Protocols, attr.UDP):
+		return newValue == "0"
+	case attr.Path(attr.Protocols, attr.TCP, attr.Policy), attr.Path(attr.Protocols, attr.UDP, attr.Policy):
+		return oldValue == model.PolicyAllowAll && newValue == ""
 	}
 
-	return setDifference(oldIDs, currentIDs)
+	return false
 }
 
-func getOldIDs(ctx context.Context, resourceData *schema.ResourceData, attribute string, resource *model.Resource, client *client.Client) []string {
+func getChangedAccessIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) ([]string, []string, error) {
+	remote, err := client.ReadResource(ctx, resource.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get changedIDs: %w", err)
+	}
+
+	var oldGroups, oldServiceAccounts []string
 	if resource.IsAuthoritative {
-		return getOldIDsAuthoritative(ctx, resource, client, attribute)
+		oldGroups, oldServiceAccounts = remote.Groups, remote.ServiceAccounts
+	} else {
+		oldGroups = getOldIDsNonAuthoritative(resourceData, attr.GroupIDs)
+		oldServiceAccounts = getOldIDsNonAuthoritative(resourceData, attr.ServiceAccountIDs)
 	}
 
-	return getOldIDsNonAuthoritative(resourceData, attribute)
+	// ids to delete
+	groupsToDelete := setDifference(oldGroups, resource.Groups)
+	serviceAccountsToDelete := setDifference(oldServiceAccounts, resource.ServiceAccounts)
+
+	// ids to add
+	groupsToAdd := setDifference(resource.Groups, remote.Groups)
+	serviceAccountsToAdd := setDifference(resource.ServiceAccounts, remote.ServiceAccounts)
+
+	return append(groupsToDelete, serviceAccountsToDelete...), append(groupsToAdd, serviceAccountsToAdd...), nil
 }
 
 func getOldIDsNonAuthoritative(resourceData *schema.ResourceData, attribute string) []string {
-	if resourceData.HasChange(attribute) {
-		old, _ := resourceData.GetChange(attribute)
-
-		return convertIDs(old)
-	}
-
 	if resourceData.HasChange(attr.Path(attr.Access, attribute)) {
 		old, _ := resourceData.GetChange(attr.Path(attr.Access, attribute))
 
 		return convertIDs(old)
-	}
-
-	return nil
-}
-
-func getOldIDsAuthoritative(ctx context.Context, resource *model.Resource, client *client.Client, attribute string) []string {
-	res, err := client.ReadResource(ctx, resource.ID)
-	if err != nil {
-		return nil
-	}
-
-	switch attribute {
-	case attr.ServiceAccountIDs:
-		return res.ServiceAccounts
-
-	case attr.GroupIDs:
-		return res.Groups
 	}
 
 	return nil
@@ -590,6 +562,27 @@ func convertProtocol(rawList []interface{}) (*model.Protocol, error) {
 	ports, err := convertPorts(rawMap[attr.Ports].([]interface{}))
 	if err != nil {
 		return nil, err
+	}
+
+	switch policy {
+	case model.PolicyAllowAll:
+		if len(ports) > 0 {
+			return nil, ErrPortsWithPolicyAllowAll
+		}
+
+	case model.PolicyDenyAll:
+		if len(ports) > 0 {
+			return nil, ErrPortsWithPolicyDenyAll
+		}
+
+	case model.PolicyRestricted:
+		if len(ports) == 0 {
+			return nil, ErrPolicyRestrictedWithoutPorts
+		}
+	}
+
+	if policy == model.PolicyDenyAll {
+		policy = model.PolicyRestricted
 	}
 
 	return model.NewProtocol(policy, ports), nil
