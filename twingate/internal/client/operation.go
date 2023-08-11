@@ -13,6 +13,7 @@ const (
 	resourceGroup          resource = "group"
 	resourceRemoteNetwork  resource = "remote network"
 	resourceResource       resource = "resource"
+	resourceResourceAccess resource = "resource access"
 	resourceSecurityPolicy resource = "security policy"
 	resourceServiceAccount resource = "service account"
 	resourceServiceKey     resource = "service account key"
