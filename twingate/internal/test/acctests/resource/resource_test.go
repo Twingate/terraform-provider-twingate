@@ -33,9 +33,9 @@ func TestAccTwingateResourceCreate(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceOnlyWithNetwork(terraformResourceName, remoteNetworkName, resourceName),
@@ -72,9 +72,9 @@ func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithProtocolsAndGroups(remoteNetworkName, groupName1, groupName2, resourceName),
@@ -134,9 +134,9 @@ func TestAccTwingateResourceFullCreationFlow(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: resourceFullCreationFlow(remoteNetworkName, groupName, resourceName),
@@ -204,8 +204,8 @@ func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
 	networkName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithInvalidGroupId(networkName, resourceName),
@@ -239,9 +239,9 @@ func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
 	groupName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName),
@@ -296,9 +296,9 @@ func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithUdpDenyAllPolicy(remoteNetworkName, groupName, resourceName),
@@ -353,9 +353,9 @@ func TestAccTwingateResourceWithDenyAllPolicyAndEmptyPortsList(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithDenyAllPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
@@ -412,8 +412,8 @@ func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
 	}
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		Steps: []sdk.TestStep{
 			{
 				Config:      genConfig(`""`),
@@ -481,9 +481,9 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
@@ -548,9 +548,9 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceOnlyWithNetwork(terraformResourceName, remoteNetworkName, resourceName),
@@ -578,9 +578,9 @@ func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceOnlyWithNetwork(terraformResourceName, remoteNetworkName, resourceName),
@@ -608,9 +608,9 @@ func TestAccTwingateResourceImport(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource12(remoteNetworkName, groupName, groupName2, resourceName),
@@ -719,9 +719,9 @@ func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
 	serviceAccountName := test.RandomName("s15")
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource15(remoteNetworkName, resourceName, createServiceAccount(resourceName, serviceAccountName)),
@@ -774,9 +774,9 @@ func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
 	groups, groupsID := genNewGroups("g16", 1)
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource16(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, serviceAccountName)),
@@ -835,9 +835,9 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 	serviceAccountResource := getResourceNameFromID(serviceAccountIDs[2])
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
@@ -945,9 +945,9 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 	serviceAccountResource := getResourceNameFromID(serviceAccountIDs[2])
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
@@ -1047,9 +1047,9 @@ func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource18(remoteNetworkName, resourceName),
@@ -1094,9 +1094,9 @@ func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource19(remoteNetworkName, resourceName),
@@ -1141,9 +1141,9 @@ func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource20(remoteNetworkName, resourceName),
@@ -1192,9 +1192,9 @@ func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
 	groupResource := getResourceNameFromID(groupsID[2])
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource22(remoteNetworkName, resourceName, groups, groupsID[:1]),
@@ -1302,9 +1302,9 @@ func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
 	groupResource := getResourceNameFromID(groupsID[2])
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID[:1]),
@@ -1431,9 +1431,9 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
@@ -1510,9 +1510,9 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
@@ -1579,9 +1579,9 @@ func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
 	groupResource := getResourceNameFromID(groupsID[2])
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID[:1]),
@@ -1682,9 +1682,9 @@ func TestAccTwingateResourceDoesNotSupportOldGroups(t *testing.T) {
 	groups, groupsID := genNewGroups("g28", 2)
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource28(remoteNetworkName, resourceName, groups, groupsID),
@@ -1732,9 +1732,9 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 	const aliasName = "test.com"
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource29(terraformResourceName, remoteNetworkName, resourceName, aliasName),
@@ -1801,9 +1801,9 @@ func TestAccTwingateResourceGroupsCursor(t *testing.T) {
 	serviceAccounts, serviceAccountIDs := genNewServiceAccounts("s27", 3)
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithGroupsAndServiceAccounts(terraformResourceName, remoteNetworkName, resourceName, groups, groupsID, serviceAccounts, serviceAccountIDs),
@@ -1865,9 +1865,9 @@ func TestAccTwingateResourceCreateWithPort(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0"),
@@ -1918,9 +1918,9 @@ func TestAccTwingateResourceUpdateWithPort(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithPort(remoteNetworkName, resourceName, "1"),
@@ -1942,9 +1942,9 @@ func TestAccTwingateResourceWithPortsFailsForAllowAllAndDenyAllPolicy(t *testing
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),
@@ -1989,9 +1989,9 @@ func TestAccTwingateResourceWithoutPortsOkForAllowAllAndDenyAllPolicy(t *testing
 	theResource := acctests.TerraformResource(terraformResourceName)
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithoutPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),
@@ -2043,9 +2043,9 @@ func TestAccTwingateResourceWithRestrictedPolicy(t *testing.T) {
 	theResource := acctests.TerraformResource(terraformResourceName)
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyRestricted),
@@ -2066,9 +2066,9 @@ func TestAccTwingateResourcePolicyTransitionDenyAllToRestricted(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithoutPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyDenyAll),
@@ -2097,9 +2097,9 @@ func TestAccTwingateResourcePolicyTransitionDenyAllToAllowAll(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithoutPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyDenyAll),
@@ -2128,9 +2128,9 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToDenyAll(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyRestricted),
@@ -2159,9 +2159,9 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAll(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyRestricted),
@@ -2190,9 +2190,9 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAllWithPortsShouldF
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyRestricted),
@@ -2217,9 +2217,9 @@ func TestAccTwingateResourcePolicyTransitionAllowAllToRestricted(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithoutPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),
@@ -2248,9 +2248,9 @@ func TestAccTwingateResourcePolicyTransitionAllowAllToDenyAll(t *testing.T) {
 	resourceName := test.RandomResourceName()
 
 	sdk.Test(t, sdk.TestCase{
-		ProviderFactories: acctests.ProviderFactories,
-		PreCheck:          func() { acctests.PreCheck(t) },
-		CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: createResourceWithoutPorts(terraformResourceName, remoteNetworkName, resourceName, model.PolicyAllowAll),

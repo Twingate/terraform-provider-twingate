@@ -23,9 +23,9 @@ func TestAccDatasourceTwingateResources_basic(t *testing.T) {
 		const theDatasource = "data.twingate_resources.out_drs1"
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateResourceDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateResources(networkName, resourceName),
@@ -92,7 +92,7 @@ func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
 		resourceName := test.RandomResourceName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},

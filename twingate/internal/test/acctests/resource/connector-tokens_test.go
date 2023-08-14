@@ -1,13 +1,10 @@
 package resource
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -21,9 +18,9 @@ func TestAccRemoteConnectorWithTokens(t *testing.T) {
 		remoteNetworkName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      checkTwingateConnectorTokensInvalidated,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorTokensInvalidated,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetworkName),
@@ -47,28 +44,6 @@ func terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetwo
       }
 	}
 	`, terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName), terraformResourceName, terraformResourceName)
-}
-
-func checkTwingateConnectorTokensInvalidated(s *terraform.State) error {
-	c := acctests.Provider.Meta().(*client.Client)
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != resource.TwingateConnectorTokens {
-			continue
-		}
-
-		connectorId := rs.Primary.ID
-		accessToken := rs.Primary.Attributes[attr.AccessToken]
-		refreshToken := rs.Primary.Attributes[attr.RefreshToken]
-
-		err := c.VerifyConnectorTokens(context.Background(), refreshToken, accessToken)
-		// expecting error here , Since tokens invalidated
-		if err == nil {
-			return fmt.Errorf("connector with ID %s tokens that should be inactive are still active", connectorId)
-		}
-	}
-
-	return nil
 }
 
 func checkTwingateConnectorTokensSet(connectorNameTokens string) sdk.TestCheckFunc {

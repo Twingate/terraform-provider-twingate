@@ -3,6 +3,8 @@ package twingate
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -63,43 +65,38 @@ func Provider(version string) *schema.Provider {
 func providerOptions() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		attr.APIToken: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Sensitive:   true,
-			DefaultFunc: schema.EnvDefaultFunc(EnvAPIToken, nil),
+			Type:      schema.TypeString,
+			Optional:  true,
+			Sensitive: true,
 			Description: fmt.Sprintf("The access key for API operations. You can retrieve this\n"+
 				"from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).\n"+
 				"Alternatively, this can be specified using the %s environment variable.", EnvAPIToken),
 		},
 		attr.Network: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Sensitive:   false,
-			DefaultFunc: schema.EnvDefaultFunc(EnvNetwork, nil),
+			Type:      schema.TypeString,
+			Optional:  true,
+			Sensitive: false,
 			Description: fmt.Sprintf("Your Twingate network ID for API operations.\n"+
 				"You can find it in the Admin Console URL, for example:\n"+
 				"`autoco.twingate.com`, where `autoco` is your network ID\n"+
 				"Alternatively, this can be specified using the %s environment variable.", EnvNetwork),
 		},
 		attr.URL: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Sensitive:   false,
-			DefaultFunc: schema.EnvDefaultFunc(EnvURL, DefaultURL),
+			Type:      schema.TypeString,
+			Optional:  true,
+			Sensitive: false,
 			Description: fmt.Sprintf("The default is '%s'\n"+
 				"This is optional and shouldn't be changed under normal circumstances.", DefaultURL),
 		},
 		attr.HTTPTimeout: {
-			Type:        schema.TypeInt,
-			Optional:    true,
-			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPTimeout, DefaultHTTPTimeout),
+			Type:     schema.TypeInt,
+			Optional: true,
 			Description: fmt.Sprintf("Specifies a time limit in seconds for the http requests made. The default value is %s seconds.\n"+
 				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPTimeout, EnvHTTPTimeout),
 		},
 		attr.HTTPMaxRetry: {
-			Type:        schema.TypeInt,
-			Optional:    true,
-			DefaultFunc: schema.EnvDefaultFunc(EnvHTTPMaxRetry, DefaultHTTPMaxRetry),
+			Type:     schema.TypeInt,
+			Optional: true,
 			Description: fmt.Sprintf("Specifies a retry limit for the http requests made. The default value is %s.\n"+
 				"Alternatively, this can be specified using the %s environment variable", DefaultHTTPMaxRetry, EnvHTTPMaxRetry),
 		},
@@ -107,12 +104,18 @@ func providerOptions() map[string]*schema.Schema {
 }
 
 func configure(version string, _ *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		apiToken := d.Get(attr.APIToken).(string)
-		network := d.Get(attr.Network).(string)
-		url := d.Get(attr.URL).(string)
-		httpTimeout := d.Get(attr.HTTPTimeout).(int)
-		httpMaxRetry := d.Get(attr.HTTPMaxRetry).(int)
+	return func(ctx context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		apiToken := os.Getenv(EnvAPIToken)
+		network := os.Getenv(EnvNetwork)
+		url := withDefault(os.Getenv(EnvURL), DefaultURL)
+		httpTimeout := mustGetInt(withDefault(os.Getenv(EnvHTTPTimeout), DefaultHTTPTimeout))
+		httpMaxRetry := mustGetInt(withDefault(os.Getenv(EnvHTTPMaxRetry), DefaultHTTPMaxRetry))
+
+		apiToken = withDefault(data.Get(attr.APIToken).(string), apiToken)
+		network = withDefault(data.Get(attr.Network).(string), network)
+		url = withDefault(data.Get(attr.URL).(string), url)
+		httpTimeout = withDefault(data.Get(attr.HTTPTimeout).(int), httpTimeout)
+		httpMaxRetry = withDefault(data.Get(attr.HTTPMaxRetry).(int), httpMaxRetry)
 
 		if network != "" {
 			return client.NewClient(url,
@@ -132,4 +135,21 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 			},
 		}
 	}
+}
+
+func withDefault[T comparable](val, defaultVal T) T {
+	var zeroValue T
+	if val == zeroValue {
+		return defaultVal
+	}
+
+	return val
+}
+
+func mustGetInt(str string) int {
+	if val, err := strconv.Atoi(str); err == nil {
+		return val
+	}
+
+	return 0
 }

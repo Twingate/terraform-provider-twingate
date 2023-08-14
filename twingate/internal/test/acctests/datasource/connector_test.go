@@ -18,9 +18,9 @@ func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
 		connectorName := test.RandomConnectorName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateConnectorDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateConnector(networkName, connectorName),
@@ -63,7 +63,7 @@ func TestAccDatasourceTwingateConnector_negative(t *testing.T) {
 		connectorID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Connector:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -94,7 +94,7 @@ func TestAccDatasourceTwingateConnector_invalidID(t *testing.T) {
 		connectorID := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},

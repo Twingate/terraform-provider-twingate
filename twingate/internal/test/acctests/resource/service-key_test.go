@@ -52,9 +52,9 @@ func TestAccTwingateServiceKeyCreateUpdate(t *testing.T) {
 		serviceKey := acctests.TerraformServiceKey(terraformResourceName)
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
@@ -89,9 +89,9 @@ func TestAccTwingateServiceKeyCreateUpdateWithName(t *testing.T) {
 		afterName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: createServiceKeyWithName(terraformResourceName, serviceAccountName, beforeName),
@@ -126,9 +126,9 @@ func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
 		serviceKey := acctests.TerraformServiceKey(terraformResourceName)
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
@@ -160,9 +160,9 @@ func TestAccTwingateServiceKeyDelete(t *testing.T) {
 		serviceKey := acctests.TerraformServiceKey(terraformResourceName)
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config:  createServiceKey(terraformResourceName, serviceAccountName),
@@ -183,9 +183,9 @@ func TestAccTwingateServiceKeyReCreateAfterDeletion(t *testing.T) {
 		serviceKey := acctests.TerraformServiceKey(terraformResourceName)
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: createServiceKey(terraformResourceName, serviceAccountName),

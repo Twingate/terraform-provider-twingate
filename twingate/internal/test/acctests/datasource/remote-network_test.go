@@ -19,9 +19,9 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 		networkName := test.RandomName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateRemoteNetworkDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateRemoteNetwork(networkName),
@@ -56,9 +56,9 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 		networkName := test.RandomName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateRemoteNetworkDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateRemoteNetworkByName(networkName),
@@ -93,8 +93,8 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 		networkID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("RemoteNetwork:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
@@ -122,8 +122,8 @@ func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
 		networkID := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
@@ -140,7 +140,7 @@ func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
 		networkName := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},

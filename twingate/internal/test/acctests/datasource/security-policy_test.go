@@ -16,7 +16,7 @@ func TestAccDatasourceTwingateSecurityPolicyInvalidID(t *testing.T) {
 		randStr := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -47,7 +47,7 @@ func TestAccDatasourceTwingateSecurityPolicyReadWithNameAndID(t *testing.T) {
 		randStr := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -79,7 +79,7 @@ func TestAccDatasourceTwingateSecurityPolicyDoesNotExists(t *testing.T) {
 		securityPolicyID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("SecurityPolicy:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -103,7 +103,7 @@ func TestAccDatasourceTwingateSecurityPolicyReadOkByID(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
@@ -141,7 +141,7 @@ func TestAccDatasourceTwingateSecurityPolicyReadOkByName(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
