@@ -10,10 +10,10 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-framework v1.3.2
 	github.com/hashicorp/terraform-plugin-go v0.18.0
-	github.com/hashicorp/terraform-plugin-mux v0.11.1
+	github.com/hashicorp/terraform-plugin-mux v0.11.2
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.27.0
 	github.com/hashicorp/terraform-plugin-testing v1.4.0
-	github.com/hasura/go-graphql-client v0.9.3
+	github.com/hasura/go-graphql-client v0.10.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jarcoal/httpmock v1.3.0
 	github.com/mattn/goveralls v0.0.12
@@ -59,7 +59,7 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
-	github.com/klauspost/compress v1.11.2 // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mitchellh/cli v1.1.5 // indirect
