@@ -209,7 +209,7 @@ func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithInvalidGroupId(networkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: failed to create resource"),
+				ExpectError: regexp.MustCompile("failed to create resource: Field 'groupIds' Unable to parse global ID"),
 			},
 		},
 	})
@@ -405,7 +405,7 @@ func createResourceWithDenyAllPolicyAndEmptyPortsList(networkName, groupName, re
 func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	expectedError := regexp.MustCompile("Error: failed to parse protocols port range")
+	expectedError := regexp.MustCompile("failed to parse protocols port range")
 
 	genConfig := func(portRange string) string {
 		return createResourceWithRestrictedPolicyAndPortRange(remoteNetworkName, resourceName, portRange)
