@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	tfDiag "github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -99,4 +100,15 @@ func withDefaultValue(str, defaultValue string) string {
 	}
 
 	return defaultValue
+}
+
+func addErr(diagnostics *tfDiag.Diagnostics, err error, operation, resource string) {
+	if err == nil {
+		return
+	}
+
+	diagnostics.AddError(
+		fmt.Sprintf("failed to %s %s", operation, resource),
+		err.Error(),
+	)
 }
