@@ -18,6 +18,7 @@ linters-settings:
       - empty
       - error
       - generic
+      - github.com/hashicorp/terraform-plugin-framework/resource.Resource
   errcheck:
     check-type-assertions: false
     check-blank: false
