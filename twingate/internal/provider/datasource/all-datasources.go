@@ -14,4 +14,8 @@ const (
 	TwingateServiceAccounts  = "twingate_service_accounts"
 	TwingateSecurityPolicy   = "twingate_security_policy"
 	TwingateSecurityPolicies = "twingate_security_policies"
+
+	computedDatasourceIDDescription = "The ID of the data source result"
+
+	operationRead = "read"
 )

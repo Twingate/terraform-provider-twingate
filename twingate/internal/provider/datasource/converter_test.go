@@ -6,6 +6,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,26 +15,25 @@ func TestConverterConnectorsToTerraform(t *testing.T) {
 
 	cases := []struct {
 		input    []*model.Connector
-		expected []interface{}
+		expected []connectorModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []connectorModel{},
 		},
 		{
 			input:    []*model.Connector{},
-			expected: []interface{}{},
+			expected: []connectorModel{},
 		},
 		{
 			input: []*model.Connector{
 				{ID: "connector-id", Name: "connector-name", NetworkID: "network-id", StatusUpdatesEnabled: &boolTrue},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:                   "connector-id",
-					attr.Name:                 "connector-name",
-					attr.RemoteNetworkID:      "network-id",
-					attr.StatusUpdatesEnabled: true,
+			expected: []connectorModel{
+				{
+					Name:                 types.StringValue("connector-name"),
+					RemoteNetworkID:      types.StringValue("network-id"),
+					StatusUpdatesEnabled: types.BoolValue(true),
 				},
 			},
 		},

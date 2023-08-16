@@ -11,5 +11,7 @@ const (
 	TwingateUser              = "twingate_user"
 
 	operationCreate = "create"
+	operationRead   = "read"
+	operationUpdate = "update"
 	operationDelete = "delete"
 )
