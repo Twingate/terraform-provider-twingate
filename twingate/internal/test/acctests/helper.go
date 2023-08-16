@@ -150,8 +150,8 @@ func CheckTwingateServiceAccountDestroy(s *terraform.State) error {
 
 		serviceAccountID := rs.Primary.ID
 
-		_, err := providerClient.ReadShallowServiceAccount(context.Background(), serviceAccountID)
-		if err == nil {
+		serviceAccount, _ := providerClient.ReadShallowServiceAccount(context.Background(), serviceAccountID)
+		if serviceAccount != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, serviceAccountID)
 		}
 	}
@@ -265,9 +265,8 @@ func CheckTwingateResourceDestroy(s *terraform.State) error {
 
 		resourceID := rs.Primary.ID
 
-		err := providerClient.DeleteResource(context.Background(), resourceID)
-		// expecting error here , since the resource is already gone
-		if err == nil {
+		resource, _ := providerClient.ReadResource(context.Background(), resourceID)
+		if resource != nil {
 			return fmt.Errorf("%w: with ID %s", ErrResourceStillPresent, resourceID)
 		}
 	}
@@ -352,9 +351,8 @@ func CheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 		remoteNetworkID := rs.Primary.ID
 
-		err := providerClient.DeleteRemoteNetwork(context.Background(), remoteNetworkID)
-		// expecting error here, since the network is already gone
-		if err == nil {
+		remoteNetwork, _ := providerClient.ReadRemoteNetworkByID(context.Background(), remoteNetworkID)
+		if remoteNetwork != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, remoteNetworkID)
 		}
 	}
@@ -370,8 +368,8 @@ func CheckTwingateGroupDestroy(s *terraform.State) error {
 
 		groupID := rs.Primary.ID
 
-		err := providerClient.DeleteGroup(context.Background(), groupID)
-		if err == nil {
+		group, _ := providerClient.ReadGroup(context.Background(), groupID)
+		if group != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, groupID)
 		}
 	}
@@ -387,9 +385,8 @@ func CheckTwingateConnectorDestroy(s *terraform.State) error {
 
 		connectorID := rs.Primary.ID
 
-		err := providerClient.DeleteConnector(context.Background(), connectorID)
-		// expecting error here, since the network is already gone
-		if err == nil {
+		connector, _ := providerClient.ReadConnector(context.Background(), connectorID)
+		if connector != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, connectorID)
 		}
 	}
