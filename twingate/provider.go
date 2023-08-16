@@ -30,9 +30,7 @@ const (
 func Provider(version string) *schema.Provider {
 	provider := &schema.Provider{
 		Schema:       providerOptions(),
-		ResourcesMap: map[string]*schema.Resource{
-			//resource.TwingateResource: resource.Resource(),
-		},
+		ResourcesMap: map[string]*schema.Resource{},
 		DataSourcesMap: map[string]*schema.Resource{
 			datasource.TwingateResource:  datasource.Resource(),
 			datasource.TwingateResources: datasource.Resources(),

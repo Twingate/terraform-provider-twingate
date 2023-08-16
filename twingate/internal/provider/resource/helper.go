@@ -7,23 +7,6 @@ import (
 	tfDiag "github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
-//func ErrAttributeSet(err error, attribute string) diag.Diagnostics {
-//	return diag.FromErr(fmt.Errorf("error setting %s: %w ", attribute, err))
-//}
-//
-//func castToStrings(a, b interface{}) (string, string) {
-//	return a.(string), b.(string)
-//}
-
-//func convertIDs(data interface{}) []string {
-//	return utils.Map[interface{}, string](
-//		data.(*schema.Set).List(),
-//		func(elem interface{}) string {
-//			return elem.(string)
-//		},
-//	)
-//}
-
 // setIntersection - for given two sets A and B,
 // A ∩ B (read as A intersection B) is the set of common elements that belong to set A and B.
 // If A = {1, 2, 3, 4} and B = {3, 4, 5, 7}, then the intersection of A and B is given by A ∩ B = {3, 4}.
