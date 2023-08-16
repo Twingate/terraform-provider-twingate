@@ -32,7 +32,7 @@ data "twingate_connectors" "all" {}
 
 Read-Only:
 
-- `id` (String) The ID of the Connector resource.
+- `id` (String) The ID of the Connector.
 - `name` (String) The Name of the Connector.
 - `remote_network_id` (String) The ID of the Remote Network attached to the Connector.
 - `status_updates_enabled` (Boolean) Determines whether status notifications are enabled for the Connector.
