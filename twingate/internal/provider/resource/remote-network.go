@@ -4,119 +4,173 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func RemoteNetwork() *schema.Resource {
-	return &schema.Resource{
-		Description:   "A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).",
-		CreateContext: remoteNetworkCreate,
-		ReadContext:   remoteNetworkRead,
-		UpdateContext: remoteNetworkUpdate,
-		DeleteContext: remoteNetworkDelete,
+// Ensure the implementation satisfies the desired interfaces.
+var _ resource.Resource = &remoteNetwork{}
 
-		Schema: map[string]*schema.Schema{
-			attr.ID: {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The ID of the Remote Network",
-			},
-			attr.Name: {
-				Type:        schema.TypeString,
+func NewRemoteNetworkResource() resource.Resource {
+	return &remoteNetwork{}
+}
+
+type remoteNetwork struct {
+	client *client.Client
+}
+
+type remoteNetworkModel struct {
+	ID       types.String `tfsdk:"id"`
+	Name     types.String `tfsdk:"name"`
+	Location types.String `tfsdk:"location"`
+}
+
+func (r *remoteNetwork) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = TwingateRemoteNetwork
+}
+
+func (r *remoteNetwork) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	r.client = req.ProviderData.(*client.Client)
+}
+
+func (r *remoteNetwork) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+}
+
+func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).",
+		Attributes: map[string]schema.Attribute{
+			attr.Name: schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the Remote Network",
 			},
-			attr.Location: {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice(model.Locations, false),
-				Description:  fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
-				Default:      model.LocationOther,
+			attr.Location: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.Locations...),
+				},
+			},
+			// computed
+			attr.ID: schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the Remote Network",
 			},
 		},
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
 	}
 }
 
-func remoteNetworkCreate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
-	remoteNetwork, err := c.CreateRemoteNetwork(ctx, &model.RemoteNetwork{
-		Name:     resourceData.Get(attr.Name).(string),
-		Location: resourceData.Get(attr.Location).(string),
+func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan remoteNetworkModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// init with default value
+	location := model.LocationOther
+	if !plan.Location.IsUnknown() {
+		location = plan.Location.ValueString()
+	}
+
+	network, err := r.client.CreateRemoteNetwork(ctx, &model.RemoteNetwork{
+		Name:     plan.Name.ValueString(),
+		Location: location,
 	})
 
-	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
+	r.helper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
-func remoteNetworkUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[INFO] Updating remote network id %s", resourceData.Id())
+func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state remoteNetworkModel
 
-	var name string
-	if resourceData.HasChange(attr.Name) {
-		name = resourceData.Get(attr.Name).(string)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	c := meta.(*client.Client)
-	remoteNetwork, err := c.UpdateRemoteNetwork(ctx, &model.RemoteNetwork{
-		ID:       resourceData.Id(),
-		Name:     name,
-		Location: resourceData.Get(attr.Location).(string),
-	})
+	network, err := r.client.ReadRemoteNetworkByID(ctx, state.ID.ValueString())
 
-	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
+	r.helper(ctx, network, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
-func remoteNetworkDelete(ctx context.Context, resourceData *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*client.Client)
+func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var state, plan remoteNetworkModel
 
-	err := c.DeleteRemoteNetwork(ctx, resourceData.Id())
-	if err != nil {
-		return diag.FromErr(err)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	log.Printf("[INFO] Deleted remote network id %s", resourceData.Id())
+	network := &model.RemoteNetwork{
+		ID:       state.ID.ValueString(),
+		Name:     plan.Name.ValueString(),
+		Location: plan.Location.ValueString(),
+	}
 
-	return nil
+	if plan.Name == state.Name {
+		network.Name = ""
+	}
+
+	network, err := r.client.UpdateRemoteNetwork(ctx, network)
+
+	r.helper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func remoteNetworkRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
-	remoteNetwork, err := c.ReadRemoteNetworkByID(ctx, resourceData.Id())
+func (r *remoteNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state remoteNetworkModel
 
-	return resourceRemoteNetworkReadHelper(resourceData, remoteNetwork, err)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := r.client.DeleteRemoteNetwork(ctx, state.ID.ValueString())
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateRemoteNetwork)
 }
 
-func resourceRemoteNetworkReadHelper(resourceData *schema.ResourceData, remoteNetwork *model.RemoteNetwork, err error) diag.Diagnostics {
+func (r *remoteNetwork) helper(ctx context.Context, network *model.RemoteNetwork, state *remoteNetworkModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
-			resourceData.SetId("")
+			respState.RemoveResource(ctx)
 
-			return nil
+			return
 		}
 
-		return diag.FromErr(err)
+		addErr(diagnostics, err, operation, TwingateRemoteNetwork)
+
+		return
 	}
 
-	if err := resourceData.Set(attr.Name, remoteNetwork.Name); err != nil {
-		return ErrAttributeSet(err, attr.Name)
-	}
+	state.ID = types.StringValue(network.ID)
+	state.Name = types.StringValue(network.Name)
+	state.Location = types.StringValue(network.Location)
 
-	if err := resourceData.Set(attr.Location, remoteNetwork.Location); err != nil {
-		return ErrAttributeSet(err, attr.Location)
-	}
-
-	resourceData.SetId(remoteNetwork.ID)
-
-	return nil
+	// Set refreshed state
+	diags := respState.Set(ctx, state)
+	diagnostics.Append(diags...)
 }

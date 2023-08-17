@@ -181,6 +181,8 @@ func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSourc
 		twingateDatasource.NewConnectorsDatasource,
 		twingateDatasource.NewGroupDatasource,
 		twingateDatasource.NewGroupsDatasource,
+		twingateDatasource.NewRemoteNetworkDatasource,
+		twingateDatasource.NewRemoteNetworksDatasource,
 	}
 }
 
@@ -189,5 +191,6 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		twingateResource.NewConnectorTokensResource,
 		twingateResource.NewConnectorResource,
 		twingateResource.NewGroupResource,
+		twingateResource.NewRemoteNetworkResource,
 	}
 }
