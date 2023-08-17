@@ -104,32 +104,6 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 }
 
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	protocolSchema := schema.ListNestedBlock{
-		Validators: []validator.List{
-			listvalidator.SizeAtMost(1),
-		},
-		NestedObject: schema.NestedBlockObject{
-			Attributes: map[string]schema.Attribute{
-				attr.Policy: schema.StringAttribute{
-					Required: true,
-					Validators: []validator.String{
-						stringvalidator.OneOf(model.Policies...),
-					},
-					Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
-				},
-				attr.Ports: schema.SetAttribute{
-					Optional:    true,
-					Computed:    true,
-					ElementType: types.StringType,
-					Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
-					PlanModifiers: []planmodifier.Set{
-						PortsDiff(),
-					},
-				},
-			},
-		},
-	}
-
 	resp.Schema = schema.Schema{
 		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
 		Attributes: map[string]schema.Attribute{
@@ -162,20 +136,16 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 			// computed
 			attr.IsVisible: schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
-				PlanModifiers: []planmodifier.Bool{
-					UseStateForUnknownBool(),
-				},
+				Optional:      true,
+				Computed:      true,
+				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
+				PlanModifiers: []planmodifier.Bool{UseStateForUnknownBool()},
 			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
-				PlanModifiers: []planmodifier.Bool{
-					UseStateForUnknownBool(),
-				},
+				Optional:      true,
+				Computed:      true,
+				Description:   `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
+				PlanModifiers: []planmodifier.Bool{UseStateForUnknownBool()},
 			},
 
 			attr.ID: schema.StringAttribute{
@@ -188,51 +158,86 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		},
 
 		Blocks: map[string]schema.Block{
-			attr.Access: schema.ListNestedBlock{
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
+			attr.Access:    accessBlock(),
+			attr.Protocols: protocolsBlock(),
+		},
+	}
+}
+
+func accessBlock() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+		Description: "Restrict access to certain groups or service accounts",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.GroupIDs: schema.SetAttribute{
+					Optional:    true,
+					ElementType: types.StringType,
+					Description: "List of Group IDs that will have permission to access the Resource.",
+					Validators: []validator.Set{
+						setvalidator.SizeAtLeast(1),
+					},
 				},
-				Description: "Restrict access to certain groups or service accounts",
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						attr.GroupIDs: schema.SetAttribute{
-							Optional:    true,
-							ElementType: types.StringType,
-							Description: "List of Group IDs that will have permission to access the Resource.",
-							Validators: []validator.Set{
-								setvalidator.SizeAtLeast(1),
-							},
-						},
-						attr.ServiceAccountIDs: schema.SetAttribute{
-							Optional:    true,
-							ElementType: types.StringType,
-							Description: "List of Service Account IDs that will have permission to access the Resource.",
-							Validators: []validator.Set{
-								setvalidator.SizeAtLeast(1),
-							},
-						},
+				attr.ServiceAccountIDs: schema.SetAttribute{
+					Optional:    true,
+					ElementType: types.StringType,
+					Description: "List of Service Account IDs that will have permission to access the Resource.",
+					Validators: []validator.Set{
+						setvalidator.SizeAtLeast(1),
 					},
 				},
 			},
+		},
+	}
+}
 
-			attr.Protocols: schema.ListNestedBlock{
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
+func protocolsBlock() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.AllowIcmp: schema.BoolAttribute{
+					Computed:    true,
+					Optional:    true,
+					Description: "Whether to allow ICMP (ping) traffic",
 				},
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						attr.AllowIcmp: schema.BoolAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "Whether to allow ICMP (ping) traffic",
-						},
+			},
+			Blocks: map[string]schema.Block{
+				attr.TCP: protocolSchema(),
+				attr.UDP: protocolSchema(),
+			},
+		},
+		Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
+	}
+}
+
+func protocolSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.Policy: schema.StringAttribute{
+					Required: true,
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.Policies...),
 					},
-					Blocks: map[string]schema.Block{
-						attr.TCP: protocolSchema,
-						attr.UDP: protocolSchema,
+					Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
+				},
+				attr.Ports: schema.SetAttribute{
+					Optional:    true,
+					Computed:    true,
+					ElementType: types.StringType,
+					Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
+					PlanModifiers: []planmodifier.Set{
+						PortsDiff(),
 					},
 				},
-				Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
 			},
 		},
 	}
@@ -589,7 +594,7 @@ func (r *twingateResource) Delete(ctx context.Context, req resource.DeleteReques
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateResource)
 }
 
-func (r *twingateResource) helper(ctx context.Context, resource *model.Resource, state, reference *resourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) { //nolint:cyclop
+func (r *twingateResource) helper(ctx context.Context, resource *model.Resource, state, reference *resourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -635,6 +640,17 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 		resource.ServiceAccounts = setIntersection(getAccessAttribute(reference.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
 	}
 
+	setState(ctx, state, reference, resource, diagnostics)
+
+	if diagnostics.HasError() {
+		return
+	}
+
+	// Set refreshed state
+	diagnostics.Append(respState.Set(ctx, state)...)
+}
+
+func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) { //nolint:cyclop
 	state.ID = types.StringValue(resource.ID)
 	state.Name = types.StringValue(resource.Name)
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
@@ -677,9 +693,6 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 
 		state.Access = access
 	}
-
-	// Set refreshed state
-	diagnostics.Append(respState.Set(ctx, state)...)
 }
 
 func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource, stateGroupIDs, stateServiceAccounts tfattr.Value) (types.List, diag.Diagnostics) {
