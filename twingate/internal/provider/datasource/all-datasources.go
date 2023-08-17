@@ -15,7 +15,7 @@ const (
 	TwingateSecurityPolicy   = "twingate_security_policy" // #nosec G101
 	TwingateSecurityPolicies = "twingate_security_policies"
 
-	computedDatasourceIDDescription = "The ID of the data source result"
+	computedDatasourceIDDescription = "The ID of this resource."
 
 	operationRead = "read"
 )
