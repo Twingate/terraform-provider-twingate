@@ -68,7 +68,7 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Connector resource.",
+							Description: "The ID of the Connector.",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,
