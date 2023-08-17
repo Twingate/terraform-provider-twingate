@@ -25,7 +25,7 @@ data "twingate_connectors" "all" {}
 
 ### Read-Only
 
-- `id` (String) The ID of the data source result
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--connectors"></a>
 ### Nested Schema for `connectors`

@@ -25,7 +25,7 @@ const (
 	DefaultURL          = "twingate.com"
 
 	// EnvAPIToken env var for Token.
-	EnvAPIToken     = "TWINGATE_API_TOKEN" //#nosec
+	EnvAPIToken     = "TWINGATE_API_TOKEN" // #nosec G101
 	EnvNetwork      = "TWINGATE_NETWORK"
 	EnvURL          = "TWINGATE_URL"
 	EnvHTTPTimeout  = "TWINGATE_HTTP_TIMEOUT"
