@@ -22,7 +22,7 @@ import (
 
 const (
 	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
-	EnvAPIToken  = "TWINGATE_API_TOKEN" //#nosec
+	EnvAPIToken  = "TWINGATE_API_TOKEN" // #nosec G101
 
 	headerAPIKey        = "X-API-KEY"
 	headerAgent         = "User-Agent"

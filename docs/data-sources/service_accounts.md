@@ -27,7 +27,7 @@ data "twingate_service_accounts" "foo" {
 
 ### Read-Only
 
-- `id` (String) The ID of the data source result
+- `id` (String) The ID of this resource.
 - `service_accounts` (Attributes List) List of Service Accounts (see [below for nested schema](#nestedatt--service_accounts))
 
 <a id="nestedatt--service_accounts"></a>
@@ -35,7 +35,7 @@ data "twingate_service_accounts" "foo" {
 
 Read-Only:
 
-- `id` (String) The ID of the Service Account resource.
+- `id` (String) ID of the Service Account resource
 - `key_ids` (Set of String) List of twingate_service_account_key IDs that are assigned to the Service Account.
 - `name` (String) Name of the Service Account
 - `resource_ids` (Set of String) List of twingate_resource IDs that the Service Account is assigned to.
