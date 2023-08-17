@@ -29,11 +29,11 @@ data "twingate_groups" "foo" {
 - `groups` (Attributes List) List of Groups (see [below for nested schema](#nestedatt--groups))
 - `is_active` (Boolean) Returns only Groups matching the specified state.
 - `name` (String) Returns only Groups that exactly match this name.
-- `type` (String) Returns only Groups of the specified type (valid options: MANUAL, SYNCED or SYSTEM).
+- `type` (String) Returns only Groups of the specified type (valid: `MANUAL`, `SYNCED`, `SYSTEM`).
 
 ### Read-Only
 
-- `id` (String) The ID of the data source result
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--groups"></a>
 ### Nested Schema for `groups`

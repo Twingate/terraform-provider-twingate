@@ -65,7 +65,7 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
 							Computed:    true,
-							Description: "The ID of the Security Policy resource.",
+							Description: "Return a matching Security Policy by its ID. The ID for the Security Policy can be obtained from the Admin API or the URL string in the Admin Console.",
 						},
 						attr.Name: schema.StringAttribute{
 							Computed:    true,
