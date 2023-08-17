@@ -63,13 +63,13 @@ func convertServicesToTerraform(accounts []*model.ServiceAccount) []serviceAccou
 	})
 }
 
-func convertSecurityPoliciesToTerraform(securityPolicies []*model.SecurityPolicy) []interface{} {
-	out := make([]interface{}, 0, len(securityPolicies))
-	for _, policy := range securityPolicies {
-		out = append(out, policy.ToTerraform())
-	}
-
-	return out
+func convertSecurityPoliciesToTerraform(policies []*model.SecurityPolicy) []securityPolicyModel {
+	return utils.Map(policies, func(policy *model.SecurityPolicy) securityPolicyModel {
+		return securityPolicyModel{
+			ID:   types.StringValue(policy.ID),
+			Name: types.StringValue(policy.Name),
+		}
+	})
 }
 
 func convertRemoteNetworksToTerraform(networks []*model.RemoteNetwork) []remoteNetworkModel {
