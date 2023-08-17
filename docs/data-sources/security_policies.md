@@ -25,12 +25,12 @@ data "twingate_security_policies" "all" {}
 
 ### Read-Only
 
-- `id` (String) The ID of the data source result
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--security_policies"></a>
 ### Nested Schema for `security_policies`
 
 Read-Only:
 
-- `id` (String) The ID of the Security Policy resource.
+- `id` (String) Return a matching Security Policy by its ID. The ID for the Security Policy can be obtained from the Admin API or the URL string in the Admin Console.
 - `name` (String) Return a Security Policy that exactly matches this name.
