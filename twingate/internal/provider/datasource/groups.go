@@ -74,7 +74,7 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 			},
 			attr.Type: schema.StringAttribute{
 				Optional:    true,
-				Description: fmt.Sprintf("Returns only Groups of the specified type (valid options: %s, %s or %s).", model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem),
+				Description: fmt.Sprintf("Returns only Groups of the specified type (valid: `%s`, `%s`, `%s`).", model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem),
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem),
 				},
