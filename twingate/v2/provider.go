@@ -194,5 +194,6 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		twingateResource.NewGroupResource,
 		twingateResource.NewRemoteNetworkResource,
 		twingateResource.NewServiceAccountResource,
+		twingateResource.NewServiceKeyResource,
 	}
 }
