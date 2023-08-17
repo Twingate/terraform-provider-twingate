@@ -68,32 +68,6 @@ func setDifference(inputA, inputB []string) []string {
 	return result
 }
 
-func getOptionalBoolFlag(data *schema.ResourceData, attribute string) *bool {
-	flag, ok := data.GetOkExists(attribute) //nolint:staticcheck
-	if val := flag.(bool); ok {
-		return &val
-	}
-
-	return nil
-}
-
-func getBooleanFlag(data *schema.ResourceData, attribute string, defaultValue bool) bool {
-	val := getOptionalBoolFlag(data, attribute)
-	if val != nil {
-		return *val
-	}
-
-	return defaultValue
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 func withDefaultValue(str, defaultValue string) string {
 	if str != "" {
 		return str

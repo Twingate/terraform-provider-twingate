@@ -87,39 +87,39 @@ func TestConverterGroupsToTerraform(t *testing.T) {
 func TestConverterUsersToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.User
-		expected []interface{}
+		expected []userModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []userModel{},
 		},
 		{
 			input:    []*model.User{},
-			expected: []interface{}{},
+			expected: []userModel{},
 		},
 		{
 			input: []*model.User{
 				{ID: "user-id", FirstName: "Name", LastName: "Last", Email: "user@email.com", Role: "USER", Type: "SYNCED"},
 				{ID: "admin-id", FirstName: "Admin", LastName: "Last", Email: "admin@email.com", Role: model.UserRoleAdmin, Type: "MANUAL"},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:        "user-id",
-					attr.FirstName: "Name",
-					attr.LastName:  "Last",
-					attr.Email:     "user@email.com",
-					attr.IsAdmin:   false,
-					attr.Role:      "USER",
-					attr.Type:      "SYNCED",
+			expected: []userModel{
+				{
+					ID:        types.StringValue("user-id"),
+					FirstName: types.StringValue("Name"),
+					LastName:  types.StringValue("Last"),
+					Email:     types.StringValue("user@email.com"),
+					IsAdmin:   types.BoolValue(false),
+					Role:      types.StringValue("USER"),
+					Type:      types.StringValue("SYNCED"),
 				},
-				map[string]interface{}{
-					attr.ID:        "admin-id",
-					attr.FirstName: "Admin",
-					attr.LastName:  "Last",
-					attr.Email:     "admin@email.com",
-					attr.IsAdmin:   true,
-					attr.Role:      model.UserRoleAdmin,
-					attr.Type:      "MANUAL",
+				{
+					ID:        types.StringValue("admin-id"),
+					FirstName: types.StringValue("Admin"),
+					LastName:  types.StringValue("Last"),
+					Email:     types.StringValue("admin@email.com"),
+					IsAdmin:   types.BoolValue(true),
+					Role:      types.StringValue(model.UserRoleAdmin),
+					Type:      types.StringValue("MANUAL"),
 				},
 			},
 		},
