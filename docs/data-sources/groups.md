@@ -33,7 +33,7 @@ data "twingate_groups" "foo" {
 
 ### Read-Only
 
-- `id` (String) The ID of the data source result
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--groups"></a>
 ### Nested Schema for `groups`

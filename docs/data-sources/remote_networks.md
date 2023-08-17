@@ -21,7 +21,7 @@ data "twingate_remote_networks" "all" {}
 
 ### Read-Only
 
-- `id` (String) The ID of the data source result
+- `id` (String) The ID of this resource.
 - `remote_networks` (Attributes List) List of Remote Networks (see [below for nested schema](#nestedatt--remote_networks))
 
 <a id="nestedatt--remote_networks"></a>
@@ -29,6 +29,6 @@ data "twingate_remote_networks" "all" {}
 
 Read-Only:
 
-- `id` (String) The ID of the Remote Network resource.
+- `id` (String) The ID of the Remote Network.
 - `location` (String) The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
 - `name` (String) The name of the Remote Network
