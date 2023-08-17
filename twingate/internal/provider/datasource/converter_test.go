@@ -50,27 +50,27 @@ func TestConverterConnectorsToTerraform(t *testing.T) {
 func TestConverterGroupsToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.Group
-		expected []interface{}
+		expected []groupModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []groupModel{},
 		},
 		{
 			input:    []*model.Group{},
-			expected: []interface{}{},
+			expected: []groupModel{},
 		},
 		{
 			input: []*model.Group{
 				{ID: "group-id", Name: "group-name", Type: model.GroupTypeManual, IsActive: true, SecurityPolicyID: "policy-id"},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:               "group-id",
-					attr.Name:             "group-name",
-					attr.Type:             model.GroupTypeManual,
-					attr.IsActive:         true,
-					attr.SecurityPolicyID: "policy-id",
+			expected: []groupModel{
+				{
+					ID:               types.StringValue("group-id"),
+					Name:             types.StringValue("group-name"),
+					Type:             types.StringValue(model.GroupTypeManual),
+					SecurityPolicyID: types.StringValue("policy-id"),
+					IsActive:         types.BoolValue(true),
 				},
 			},
 		},

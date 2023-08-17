@@ -607,11 +607,3 @@ func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
 
 	return ports, nil
 }
-
-func convertUsers(data *schema.ResourceData) []string {
-	if ids, ok := data.GetOk(attr.UserIDs); ok {
-		return convertIDs(ids)
-	}
-
-	return nil
-}
