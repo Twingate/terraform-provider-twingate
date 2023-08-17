@@ -47,14 +47,15 @@ func convertUsersToTerraform(users []*model.User) []interface{} {
 	return out
 }
 
-func convertServicesToTerraform(services []*model.ServiceAccount) []interface{} {
-	out := make([]interface{}, 0, len(services))
-
-	for _, service := range services {
-		out = append(out, service.ToTerraform())
-	}
-
-	return out
+func convertServicesToTerraform(accounts []*model.ServiceAccount) []serviceAccountModel {
+	return utils.Map(accounts, func(account *model.ServiceAccount) serviceAccountModel {
+		return serviceAccountModel{
+			ID:          types.StringValue(account.ID),
+			Name:        types.StringValue(account.Name),
+			ResourceIDs: utils.Map(account.Resources, types.StringValue),
+			KeyIDs:      utils.Map(account.Keys, types.StringValue),
+		}
+	})
 }
 
 func convertSecurityPoliciesToTerraform(securityPolicies []*model.SecurityPolicy) []interface{} {

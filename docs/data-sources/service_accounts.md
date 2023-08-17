@@ -28,9 +28,9 @@ data "twingate_service_accounts" "foo" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `service_accounts` (Block List) List of Service Accounts (see [below for nested schema](#nestedblock--service_accounts))
+- `service_accounts` (Attributes List) List of Service Accounts (see [below for nested schema](#nestedatt--service_accounts))
 
-<a id="nestedblock--service_accounts"></a>
+<a id="nestedatt--service_accounts"></a>
 ### Nested Schema for `service_accounts`
 
 Read-Only:
