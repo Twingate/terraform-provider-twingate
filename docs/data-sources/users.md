@@ -21,7 +21,7 @@ data "twingate_users" "all" {}
 
 ### Read-Only
 
-- `id` (String) The ID of the data source result
+- `id` (String) The ID of this resource.
 - `users` (Attributes List) (see [below for nested schema](#nestedatt--users))
 
 <a id="nestedatt--users"></a>
@@ -34,5 +34,5 @@ Read-Only:
 - `id` (String) The ID of the User
 - `is_admin` (Boolean, Deprecated) Indicates whether the User is an admin
 - `last_name` (String) The last name of the User
-- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT or MEMBER.
+- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER
 - `type` (String) Indicates the User's type. Either MANUAL or SYNCED.
