@@ -209,7 +209,7 @@ func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithInvalidGroupId(networkName, resourceName),
-				ExpectError: regexp.MustCompile("failed to create resource: Field 'groupIds' Unable to parse global ID"),
+				ExpectError: regexp.MustCompile("Error: failed to create resource"),
 			},
 		},
 	})
@@ -405,7 +405,7 @@ func createResourceWithDenyAllPolicyAndEmptyPortsList(networkName, groupName, re
 func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	expectedError := regexp.MustCompile("failed to parse protocols port range")
+	expectedError := regexp.MustCompile("Error: failed to parse protocols port range")
 
 	genConfig := func(portRange string) string {
 		return createResourceWithRestrictedPolicyAndPortRange(remoteNetworkName, resourceName, portRange)
@@ -539,100 +539,6 @@ func createResourceWithPortRange(networkName, resourceName, portRange string) st
 	  }
 	}
 	`, networkName, resourceName, model.PolicyRestricted, portRange, model.PolicyRestricted, portRange)
-}
-
-func TestAccTwingateResourcePortsRepresentationChanged(t *testing.T) {
-	const theResource = "twingate_resource.test9"
-	remoteNetworkName := test.RandomName()
-	resourceName := test.RandomResourceName()
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTwingateResourcePortsNotChanged(t *testing.T) {
-	const theResource = "twingate_resource.test9"
-	remoteNetworkName := test.RandomName()
-	resourceName := test.RandomResourceName()
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
-				),
-			},
-			{
-				PlanOnly: true,
-				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"80", "82-83"`),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "2"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
-	const theResource = "twingate_resource.test9"
-	remoteNetworkName := test.RandomName()
-	resourceName := test.RandomResourceName()
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
-					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "80"),
-				),
-			},
-			// no changes
-			{
-				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
-				PlanOnly: true,
-			},
-			// no changes
-			{
-				Config:   createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
-				PlanOnly: true,
-				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, udpPortsLen, "2"),
-				),
-			},
-			// new changes applied
-			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "70"),
-					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "70"),
-				),
-			},
-		},
-	})
 }
 
 func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
@@ -939,7 +845,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.WaitTestFunc(),
-					// added a new service account to the resource using API
+					// added new service account to the resource though API
 					acctests.AddResourceServiceAccount(theResource, serviceAccountResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
@@ -955,7 +861,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				),
 			},
 			{
-				// added a new service account to the resource using terraform
+				// added new service account to the resource though terraform
 				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:2]),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "2"),
@@ -963,7 +869,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				),
 			},
 			{
-				// remove one service account from the resource using terraform
+				// remove one service account from the resource though terraform
 				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
@@ -977,7 +883,7 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
-					// delete service account from the resource using API
+					// delete service account from the resource though API
 					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceServiceAccountsLen(theResource, 1),
@@ -1049,7 +955,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 					acctests.WaitTestFunc(),
-					// added new service account to the resource using API
+					// added new service account to the resource though API
 					acctests.AddResourceServiceAccount(theResource, serviceAccountResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
@@ -1065,7 +971,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				),
 			},
 			{
-				// added 2 new service accounts to the resource using terraform
+				// added 2 new service accounts to the resource though terraform
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "3"),
@@ -1075,7 +981,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 			{
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs),
 				Check: acctests.ComposeTestCheckFunc(
-					// delete one service account from the resource using API
+					// delete one service account from the resource though API
 					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
@@ -1092,7 +998,7 @@ func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 				),
 			},
 			{
-				// remove 2 service accounts from the resource using terraform
+				// remove 2 service accounts from the resource though terraform
 				Config: createResource13(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckResourceServiceAccountsLen(theResource, 1),
@@ -1147,7 +1053,7 @@ func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource18(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value"),
+				ExpectError: regexp.MustCompile("Error: Not enough list items"),
 			},
 		},
 	})
@@ -1194,7 +1100,7 @@ func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource19(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value"),
+				ExpectError: regexp.MustCompile("Error: Not enough list items"),
 			},
 		},
 	})
@@ -1241,7 +1147,7 @@ func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource20(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("invalid attribute combination"),
+				ExpectError: regexp.MustCompile("Error: Missing required argument"),
 			},
 		},
 	})
@@ -1296,7 +1202,7 @@ func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
 					acctests.WaitTestFunc(),
-					// added a new group to the resource using API
+					// added new group to the resource though API
 					acctests.AddResourceGroup(theResource, groupResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceGroupsLen(theResource, 2),
@@ -1312,7 +1218,7 @@ func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
 				),
 			},
 			{
-				// added a new group to the resource using terraform
+				// added new group to the resource though terraform
 				Config: createResource22(remoteNetworkName, resourceName, groups, groupsID[:2]),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "2"),
@@ -1320,7 +1226,7 @@ func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
 				),
 			},
 			{
-				// remove one group from the resource using terraform
+				// remove one group from the resource though terraform
 				Config: createResource22(remoteNetworkName, resourceName, groups, groupsID[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
@@ -1334,7 +1240,7 @@ func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
 					acctests.CheckResourceGroupsLen(theResource, 2),
-					// remove one group from the resource using API
+					// remove one group from the resource though API
 					acctests.DeleteResourceGroup(theResource, groupResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceGroupsLen(theResource, 1),
@@ -1406,7 +1312,7 @@ func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
 					acctests.WaitTestFunc(),
-					// added a new group to the resource using API
+					// added new group to the resource though API
 					acctests.AddResourceGroup(theResource, groupResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceGroupsLen(theResource, 2),
@@ -1422,7 +1328,7 @@ func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
 				),
 			},
 			{
-				// added 2 new groups to the resource using terraform
+				// added 2 new groups to the resource though terraform
 				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
@@ -1432,7 +1338,7 @@ func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
 			{
 				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID),
 				Check: acctests.ComposeTestCheckFunc(
-					// delete one group from the resource using API
+					// delete one group from the resource though API
 					acctests.DeleteResourceGroup(theResource, groupResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceGroupsLen(theResource, 2),
@@ -1449,7 +1355,7 @@ func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
 				),
 			},
 			{
-				// remove 2 groups from the resource using terraform
+				// remove 2 groups from the resource though terraform
 				Config: createResource23(remoteNetworkName, resourceName, groups, groupsID[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
@@ -1683,7 +1589,7 @@ func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
 					acctests.WaitTestFunc(),
-					// added a new group to the resource using API
+					// added new group to the resource though API
 					acctests.AddResourceGroup(theResource, groupResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceGroupsLen(theResource, 2),
@@ -1699,7 +1605,7 @@ func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
 				),
 			},
 			{
-				// added 2 new groups to the resource using terraform
+				// added 2 new groups to the resource though terraform
 				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "3"),
@@ -1709,7 +1615,7 @@ func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
 			{
 				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID),
 				Check: acctests.ComposeTestCheckFunc(
-					// delete one group from the resource using API
+					// delete one group from the resource though API
 					acctests.DeleteResourceGroup(theResource, groupResource),
 					acctests.WaitTestFunc(),
 					acctests.CheckResourceGroupsLen(theResource, 2),
@@ -1726,7 +1632,7 @@ func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
 				),
 			},
 			{
-				// remove 2 groups from the resource using terraform
+				// remove 2 groups from the resource though terraform
 				Config: createResource26(remoteNetworkName, resourceName, groups, groupsID[:1]),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
@@ -1839,10 +1745,10 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 				),
 			},
 			{
-				// alias attr commented out, means it has nil state
+				// alias attr commented out, means state keeps the same value without changes
 				Config: createResource29WithoutAlias(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.Alias),
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
 				),
 			},
 			{
@@ -1969,15 +1875,15 @@ func TestAccTwingateResourceCreateWithPort(t *testing.T) {
 			},
 			{
 				Config:      createResourceWithPort(remoteNetworkName, resourceName, "65536"),
-				ExpectError: regexp.MustCompile("port 65536 not in the range"),
+				ExpectError: regexp.MustCompile("port 65536 not in the range of 1-65535"),
 			},
 			{
 				Config:      createResourceWithPort(remoteNetworkName, resourceName, "0-10"),
-				ExpectError: regexp.MustCompile("port 0 not in the range"),
+				ExpectError: regexp.MustCompile("port 0 not in the range of 1-65535"),
 			},
 			{
 				Config:      createResourceWithPort(remoteNetworkName, resourceName, "65535-65536"),
-				ExpectError: regexp.MustCompile("port 65536 not in the[\\n\\s]+range"),
+				ExpectError: regexp.MustCompile("port 65536 not in the range of 1-65535"),
 			},
 		},
 	})

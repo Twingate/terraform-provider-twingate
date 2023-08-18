@@ -114,7 +114,7 @@ func (r *group) Read(ctx context.Context, req resource.ReadRequest, resp *resour
 
 	group, err := r.client.ReadGroup(ctx, state.ID.ValueString())
 	if group != nil {
-		group.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
+		group.IsAuthoritative = convertGroupAuthoritativeFlag(state.IsAuthoritative)
 	}
 
 	r.helper(ctx, group, &state, &resp.State, &resp.Diagnostics, err, operationRead)
@@ -232,7 +232,7 @@ func convertGroup(data *groupModel) *model.Group {
 		ID:               data.ID.ValueString(),
 		Name:             data.Name.ValueString(),
 		Users:            convertUsers(data.UserIDs.Elements()),
-		IsAuthoritative:  convertAuthoritativeFlag(data.IsAuthoritative),
+		IsAuthoritative:  convertGroupAuthoritativeFlag(data.IsAuthoritative),
 		SecurityPolicyID: data.SecurityPolicyID.ValueString(),
 	}
 }
@@ -243,7 +243,7 @@ func convertUsers(userIDs []tfattr.Value) []string {
 	})
 }
 
-func convertAuthoritativeFlag(val types.Bool) bool {
+func convertGroupAuthoritativeFlag(val types.Bool) bool {
 	if !val.IsUnknown() {
 		return val.ValueBool()
 	}
