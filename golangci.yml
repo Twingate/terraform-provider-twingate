@@ -20,6 +20,8 @@ linters-settings:
       - generic
       - github.com/hashicorp/terraform-plugin-framework/resource.Resource
       - github.com/hashicorp/terraform-plugin-framework/datasource.DataSource
+      - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Set
+      - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Bool
   errcheck:
     check-type-assertions: false
     check-blank: false

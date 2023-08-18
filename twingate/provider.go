@@ -10,7 +10,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -30,10 +29,8 @@ const (
 
 func Provider(version string) *schema.Provider {
 	provider := &schema.Provider{
-		Schema: providerOptions(),
-		ResourcesMap: map[string]*schema.Resource{
-			resource.TwingateResource: resource.Resource(),
-		},
+		Schema:       providerOptions(),
+		ResourcesMap: map[string]*schema.Resource{},
 		DataSourcesMap: map[string]*schema.Resource{
 			datasource.TwingateResource:  datasource.Resource(),
 			datasource.TwingateResources: datasource.Resources(),

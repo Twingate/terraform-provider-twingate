@@ -5,26 +5,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	tfDiag "github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-func ErrAttributeSet(err error, attribute string) diag.Diagnostics {
-	return diag.FromErr(fmt.Errorf("error setting %s: %w ", attribute, err))
-}
-
-func castToStrings(a, b interface{}) (string, string) {
-	return a.(string), b.(string)
-}
-
-func convertIDs(data interface{}) []string {
-	return utils.Map[interface{}, string](
-		data.(*schema.Set).List(),
-		func(elem interface{}) string {
-			return elem.(string)
-		},
-	)
-}
 
 // setIntersection - for given two sets A and B,
 // A ∩ B (read as A intersection B) is the set of common elements that belong to set A and B.
