@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
@@ -134,20 +133,20 @@ func TestConverterUsersToTerraform(t *testing.T) {
 }
 
 func TestConverterResourcesToTerraform(t *testing.T) {
-	var emptySlice []interface{}
-	var emptyStringSlice []string
+	//var emptySlice []interface{}
+	//var emptyStringSlice []string
 
 	cases := []struct {
 		input    []*model.Resource
-		expected []interface{}
+		expected []resourceModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []resourceModel{},
 		},
 		{
 			input:    []*model.Resource{},
-			expected: []interface{}{},
+			expected: []resourceModel{},
 		},
 		{
 			input: []*model.Resource{
@@ -164,38 +163,33 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 						},
 						UDP: &model.Protocol{
 							Policy: model.PolicyRestricted,
+							Ports:  []*model.PortRange{},
 						},
 					},
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:              "resource-id",
-					attr.Name:            "name",
-					attr.Address:         "address",
-					attr.RemoteNetworkID: "network-id",
-					attr.Protocols:       emptySlice,
+			expected: []resourceModel{
+				{
+					ID:              types.StringValue("resource-id"),
+					Name:            types.StringValue("name"),
+					Address:         types.StringValue("address"),
+					RemoteNetworkID: types.StringValue("network-id"),
+					Protocols:       nil,
 				},
-				map[string]interface{}{
-					attr.ID:              "resource-1",
-					attr.Name:            "",
-					attr.Address:         "",
-					attr.RemoteNetworkID: "",
-					attr.Protocols: []interface{}{
-						map[string]interface{}{
-							attr.AllowIcmp: true,
-							attr.TCP: []interface{}{
-								map[string]interface{}{
-									attr.Policy: model.PolicyRestricted,
-									attr.Ports:  []string{"8000-8080"},
-								},
-							},
-							attr.UDP: []interface{}{
-								map[string]interface{}{
-									attr.Policy: model.PolicyDenyAll,
-									attr.Ports:  emptyStringSlice,
-								},
-							},
+				{
+					ID:              types.StringValue("resource-1"),
+					Name:            types.StringValue(""),
+					Address:         types.StringValue(""),
+					RemoteNetworkID: types.StringValue(""),
+					Protocols: &protocolsModel{
+						AllowIcmp: types.BoolValue(true),
+						TCP: &protocolModel{
+							Policy: types.StringValue(model.PolicyRestricted),
+							Ports:  []types.String{types.StringValue("8000-8080")},
+						},
+						UDP: &protocolModel{
+							Policy: types.StringValue(model.PolicyRestricted),
+							Ports:  []types.String{},
 						},
 					},
 				},

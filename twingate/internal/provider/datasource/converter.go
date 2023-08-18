@@ -28,14 +28,16 @@ func convertGroupsToTerraform(groups []*model.Group) []groupModel {
 	})
 }
 
-func convertResourcesToTerraform(resources []*model.Resource) []interface{} {
-	out := make([]interface{}, 0, len(resources))
-
-	for _, res := range resources {
-		out = append(out, res.ToTerraform())
-	}
-
-	return out
+func convertResourcesToTerraform(resources []*model.Resource) []resourceModel {
+	return utils.Map(resources, func(resource *model.Resource) resourceModel {
+		return resourceModel{
+			ID:              types.StringValue(resource.ID),
+			Name:            types.StringValue(resource.Name),
+			Address:         types.StringValue(resource.Address),
+			RemoteNetworkID: types.StringValue(resource.RemoteNetworkID),
+			Protocols:       convertProtocolsToTerraform(resource.Protocols),
+		}
+	})
 }
 
 func convertUsersToTerraform(users []*model.User) []userModel {

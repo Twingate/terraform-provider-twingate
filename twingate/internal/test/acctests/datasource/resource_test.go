@@ -75,7 +75,7 @@ func TestAccDatasourceTwingateResource_negative(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateResourceDoesNotExists(resourceID),
-					ExpectError: regexp.MustCompile("Error: failed to read resource with id"),
+					ExpectError: regexp.MustCompile("failed to read resource with id"),
 				},
 			},
 		})
@@ -106,7 +106,7 @@ func TestAccDatasourceTwingateResource_invalidID(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateResourceDoesNotExists(networkID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read resource with id"),
 				},
 			},
 		})
