@@ -133,9 +133,6 @@ func TestConverterUsersToTerraform(t *testing.T) {
 }
 
 func TestConverterResourcesToTerraform(t *testing.T) {
-	//var emptySlice []interface{}
-	//var emptyStringSlice []string
-
 	cases := []struct {
 		input    []*model.Resource
 		expected []resourceModel
