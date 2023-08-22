@@ -35,5 +35,5 @@ func MultipleResponders(responses ...httpmock.Responder) httpmock.Responder {
 }
 
 func graphqlErr(client *client.Client, message string, err error) string {
-	return fmt.Sprintf(`%s: Message: Post "%s": %v, Locations: [], Extensions: map[code:request_error]`, message, client.GraphqlServerURL, err)
+	return fmt.Sprintf(`%s: Post "%s": %v`, message, client.GraphqlServerURL, err)
 }
