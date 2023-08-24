@@ -28,3 +28,7 @@ func (q gqlConnectorTokens) ToModel() *model.ConnectorTokens {
 func (q GenerateConnectorTokens) ToModel() *model.ConnectorTokens {
 	return q.ConnectorTokens.ToModel()
 }
+
+func (q GenerateConnectorTokens) IsEmpty() bool {
+	return q.ConnectorTokens.RefreshToken == "" && q.ConnectorTokens.AccessToken == ""
+}
