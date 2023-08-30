@@ -10,9 +10,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+var ErrInvalidExpirationTime = errors.New("Invalid key expiration time. A value from 0-365 is required.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ resource.Resource = &serviceKey{}
@@ -31,6 +36,7 @@ type serviceKeyModel struct {
 	Name             types.String `tfsdk:"name"`
 	Token            types.String `tfsdk:"token"`
 	IsActive         types.Bool   `tfsdk:"is_active"`
+	ExpirationTime   types.Int64  `tfsdk:"expiration_time"`
 }
 
 func (r *serviceKey) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -59,6 +65,15 @@ func (r *serviceKey) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 				Computed:    true,
 				Description: "The name of the Service Key",
 			},
+			attr.ExpirationTime: schema.Int64Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing the number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.",
+				Default:     int64default.StaticInt64(0),
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
+			},
 			// computed
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
@@ -86,9 +101,17 @@ func (r *serviceKey) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
+	expirationTime := int(plan.ExpirationTime.ValueInt64())
+	if expirationTime > 365 || expirationTime < 0 {
+		addErr(&resp.Diagnostics, ErrInvalidExpirationTime, operationCreate, TwingateServiceAccountKey)
+
+		return
+	}
+
 	serviceKey, err := r.client.CreateServiceKey(ctx, &model.ServiceKey{
-		Service: plan.ServiceAccountID.ValueString(),
-		Name:    plan.Name.ValueString(),
+		Service:        plan.ServiceAccountID.ValueString(),
+		Name:           plan.Name.ValueString(),
+		ExpirationTime: expirationTime,
 	})
 
 	if err == nil && serviceKey != nil {

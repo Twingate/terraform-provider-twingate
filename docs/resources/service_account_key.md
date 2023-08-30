@@ -37,6 +37,7 @@ resource "twingate_service_account_key" "github_key" {
 
 ### Optional
 
+- `expiration_time` (Number) Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing the number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.
 - `name` (String) The name of the Service Key
 
 ### Read-Only

@@ -153,6 +153,25 @@ func CheckTwingateResourceExists(resourceName string) sdk.TestCheckFunc {
 	}
 }
 
+func GetTwingateResourceID(resourceName string, resourceID **string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resource, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resource.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		id := resource.Primary.ID
+		*resourceID = &id
+
+		return nil
+	}
+}
+
 func ResourceName(resource, name string) string {
 	return fmt.Sprintf("%s.%s", resource, name)
 }
