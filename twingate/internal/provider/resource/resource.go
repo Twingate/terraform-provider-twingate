@@ -266,7 +266,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if err = r.client.AddResourceServiceAccountIDs(ctx, resource); err != nil {
+	if err = r.client.AddResourceAccess(ctx, resource.ID, resource.ServiceAccounts); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
 
 		return
@@ -625,15 +625,6 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 			return
 		}
 	}
-
-	remoteServiceAccounts, err := r.client.ReadResourceServiceAccounts(ctx, resource.ID)
-	if err != nil {
-		addErr(diagnostics, err, operationRead, TwingateServiceAccount)
-
-		return
-	}
-
-	resource.ServiceAccounts = remoteServiceAccounts
 
 	if !resource.IsAuthoritative {
 		resource.Groups = setIntersection(getAccessAttribute(reference.Access, attr.GroupIDs), resource.Groups)
