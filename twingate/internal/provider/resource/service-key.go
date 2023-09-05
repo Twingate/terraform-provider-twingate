@@ -37,6 +37,7 @@ type serviceKeyModel struct {
 	Token            types.String `tfsdk:"token"`
 	IsActive         types.Bool   `tfsdk:"is_active"`
 	ExpirationTime   types.Int64  `tfsdk:"expiration_time"`
+	Status           types.String `tfsdk:"status"`
 }
 
 func (r *serviceKey) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -87,6 +88,10 @@ func (r *serviceKey) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 			attr.IsActive: schema.BoolAttribute{
 				Computed:    true,
 				Description: "If the value of this attribute changes to false, Terraform will destroy and recreate the resource.",
+			},
+			attr.Status: schema.StringAttribute{
+				Computed:    true,
+				Description: "Service Key status.",
 			},
 		},
 	}
@@ -214,6 +219,7 @@ func (r *serviceKey) helper(ctx context.Context, serviceKey *model.ServiceKey, s
 	state.Name = types.StringValue(serviceKey.Name)
 	state.ServiceAccountID = types.StringValue(serviceKey.Service)
 	state.IsActive = types.BoolValue(serviceKey.IsActive())
+	state.Status = types.StringValue(serviceKey.Status)
 
 	// Set refreshed state
 	diags := respState.Set(ctx, state)

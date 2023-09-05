@@ -157,7 +157,7 @@ func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
-						acctests.CheckTwingateServiceKeyStatus(serviceKey, model.StatusActive),
+						sdk.TestCheckResourceAttr(serviceKey, attr.Status, model.StatusActive),
 						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
@@ -262,7 +262,7 @@ func TestAccTwingateServiceKeyCreateWithExpiration(t *testing.T) {
 						acctests.CheckTwingateResourceExists(serviceAccount),
 						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						acctests.CheckTwingateServiceKeyStatus(serviceKey, model.StatusActive),
+						sdk.TestCheckResourceAttr(serviceKey, attr.Status, model.StatusActive),
 						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
@@ -289,7 +289,7 @@ func TestAccTwingateServiceKeyReCreateAfterChangingExpirationTime(t *testing.T) 
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
 						acctests.GetTwingateResourceID(serviceKey, &resourceID),
-						acctests.CheckTwingateServiceKeyStatus(serviceKey, model.StatusActive),
+						sdk.TestCheckResourceAttr(serviceKey, attr.Status, model.StatusActive),
 						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
