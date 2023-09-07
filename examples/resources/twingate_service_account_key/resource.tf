@@ -13,7 +13,7 @@ resource "twingate_service_account_key" "github_key" {
 }
 
 
-// Key rotation using the [time](https://registry.terraform.io/providers/hashicorp/time/latest) provider**
+// Key rotation using the time provider (see https://registry.terraform.io/providers/hashicorp/time/latest)
 
 resource "time_rotating" "key_rotation" {
   rotation_days = 30
