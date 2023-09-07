@@ -14,10 +14,10 @@ resource "twingate_service_account_key" "github_key" {
 
 **Key rotation using the [time](https://registry.terraform.io/providers/hashicorp/time/latest) provider**
 
-```terraform
 resource "time_rotating" "key_rotation" {
   rotation_days = 30
 }
+
 resource "twingate_service_account_key" "github_key" {
   name = "Github Actions PROD key"
   service_account_id = twingate_service_account.github_actions_prod.id
@@ -25,4 +25,3 @@ resource "twingate_service_account_key" "github_key" {
     replace_triggered_by = [time_rotating.key_rotation.rfc3339]
   }
 }
-```m
