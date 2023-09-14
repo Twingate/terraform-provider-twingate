@@ -605,8 +605,8 @@ func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
 				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
-					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "80"),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "82"),
+					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "82"),
 				),
 			},
 			// no changes
@@ -624,7 +624,7 @@ func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
 			},
 			// new changes applied
 			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"70", "82-83"`),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "70"),
