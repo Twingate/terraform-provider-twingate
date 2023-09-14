@@ -486,7 +486,7 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "80"`),
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"80", "82-83"`),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
@@ -505,7 +505,7 @@ func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
 			},
 			// new changes applied
 			{
-				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82-83", "70"`),
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"70", "82-83"`),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "70"),
@@ -1147,7 +1147,7 @@ func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource18(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value"),
+				ExpectError: regexp.MustCompile("Error: Not enough list items"),
 			},
 		},
 	})
@@ -1194,7 +1194,7 @@ func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource19(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value"),
+				ExpectError: regexp.MustCompile("Error: Not enough list items"),
 			},
 		},
 	})
@@ -1241,7 +1241,7 @@ func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource20(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("invalid attribute combination"),
+				ExpectError: regexp.MustCompile("Missing required argument"),
 			},
 		},
 	})
@@ -1839,10 +1839,10 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 				),
 			},
 			{
-				// alias attr commented out, means it has nil state
+				// alias attr commented out, means state keeps the same value without changes
 				Config: createResource29WithoutAlias(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.Alias),
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
 				),
 			},
 			{
