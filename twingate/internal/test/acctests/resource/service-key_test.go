@@ -131,11 +131,13 @@ func TestAccTwingateServiceKeyCreateUpdateWithName(t *testing.T) {
 	})
 }
 
-func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Service Key ReCreate After Inactive", func(t *testing.T) {
+func TestAccTwingateServiceKeyWontReCreateAfterInactive(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Service Key Won't ReCreate After Inactive", func(t *testing.T) {
 		serviceAccountName := test.RandomName()
 		terraformResourceName := test.TerraformRandName("test_key")
 		serviceKey := acctests.TerraformServiceKey(terraformResourceName)
+
+		resourceID := new(string)
 
 		sdk.Test(t, sdk.TestCase{
 			ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -146,19 +148,30 @@ func TestAccTwingateServiceKeyReCreateAfterInactive(t *testing.T) {
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
+						acctests.GetTwingateResourceID(serviceKey, &resourceID),
 						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 						acctests.RevokeTwingateServiceKey(serviceKey),
 						acctests.WaitTestFunc(),
 						acctests.CheckTwingateServiceKeyStatus(serviceKey, model.StatusRevoked),
 					),
-					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: createServiceKey(terraformResourceName, serviceAccountName),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttr(serviceKey, attr.Status, model.StatusActive),
+						sdk.TestCheckResourceAttr(serviceKey, attr.IsActive, "false"),
 						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.ID, func(value string) error {
+							if *resourceID == "" {
+								return errors.New("failed to fetch resource id")
+							}
+
+							if value != *resourceID {
+								return errors.New("resource was re-created")
+							}
+
+							return nil
+						}),
 					),
 				},
 			},
@@ -262,7 +275,7 @@ func TestAccTwingateServiceKeyCreateWithExpiration(t *testing.T) {
 						acctests.CheckTwingateResourceExists(serviceAccount),
 						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
 						acctests.CheckTwingateResourceExists(serviceKey),
-						sdk.TestCheckResourceAttr(serviceKey, attr.Status, model.StatusActive),
+						sdk.TestCheckResourceAttr(serviceKey, attr.IsActive, "true"),
 						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
@@ -289,7 +302,6 @@ func TestAccTwingateServiceKeyReCreateAfterChangingExpirationTime(t *testing.T) 
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(serviceKey),
 						acctests.GetTwingateResourceID(serviceKey, &resourceID),
-						sdk.TestCheckResourceAttr(serviceKey, attr.Status, model.StatusActive),
 						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
 					),
 				},
