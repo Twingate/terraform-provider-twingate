@@ -1,39 +1,43 @@
 package resource
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertProtocol(t *testing.T) {
 
 	cases := []struct {
-		input       types.List
+		input       []interface{}
 		expected    *model.Protocol
 		expectedErr error
 	}{
 		{},
 		{
-			input: makeObjectsListMust(types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
-				attr.Policy: types.StringValue(model.PolicyAllowAll),
-				attr.Ports:  makeTestSet("-"),
-			})),
+			input: []interface{}{
+				map[string]interface{}{
+					attr.Policy: model.PolicyAllowAll,
+					attr.Ports: []interface{}{
+						"-",
+					},
+				},
+			},
 			expectedErr: errors.New("failed to parse protocols port range"),
 		},
 		{
-			input: makeObjectsListMust(types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
-				attr.Policy: types.StringValue(model.PolicyRestricted),
-				attr.Ports:  makeTestSet("80-88"),
-			})),
+			input: []interface{}{
+				map[string]interface{}{
+					attr.Policy: model.PolicyRestricted,
+					attr.Ports: []interface{}{
+						"80-88",
+					},
+				},
+			},
 			expected: &model.Protocol{
 				Policy: model.PolicyRestricted,
 				Ports: []*model.PortRange{
@@ -55,17 +59,6 @@ func TestConvertProtocol(t *testing.T) {
 
 		})
 	}
-
-}
-
-func makeObjectsListMust(objects ...types.Object) types.List {
-	obj := objects[0]
-
-	items := utils.Map(objects, func(item types.Object) tfattr.Value {
-		return tfattr.Value(item)
-	})
-
-	return types.ListValueMust(obj.Type(context.Background()), items)
 
 }
 
@@ -132,49 +125,40 @@ func TestConvertPortsRangeToMap(t *testing.T) {
 	}
 }
 
-func makeTestSet(values ...string) types.Set {
-	elements := make([]tfattr.Value, 0, len(values))
-	for _, val := range values {
-		elements = append(elements, types.StringValue(val))
-	}
-
-	return types.SetValueMust(types.StringType, elements)
-}
-
 func TestEqualPorts(t *testing.T) {
 	cases := []struct {
-		inputA   types.Set
-		inputB   types.Set
+		inputA   []interface{}
+		inputB   []interface{}
 		expected bool
 	}{
 		{
-			inputA:   makeTestSet(""),
-			inputB:   makeTestSet(""),
+			inputA:   []interface{}{""},
+			inputB:   []interface{}{""},
 			expected: false,
 		},
 		{
-			inputA:   makeTestSet("80"),
-			inputB:   makeTestSet(""),
+			inputA:   []interface{}{"80"},
+			inputB:   []interface{}{""},
 			expected: false,
 		},
 		{
-			inputA:   makeTestSet("80"),
-			inputB:   makeTestSet("90"),
+			inputA:   []interface{}{"80"},
+			inputB:   []interface{}{"90"},
 			expected: false,
 		},
 		{
-			inputA:   makeTestSet("80"),
-			inputB:   makeTestSet("80"),
+			inputA:   []interface{}{"80"},
+			inputB:   []interface{}{"80"},
 			expected: true,
 		},
 		{
-			inputA:   makeTestSet("80-81"),
-			inputB:   makeTestSet("80", "81"),
+			inputA:   []interface{}{"80-81"},
+			inputB:   []interface{}{"80", "81"},
 			expected: true,
 		},
 		{
-			inputA:   makeTestSet("80-81", "70"),
-			inputB:   makeTestSet("70", "80", "81"),
+			inputA:   []interface{}{"80-81", "70"},
+			inputB:   []interface{}{"70", "80", "81"},
 			expected: true,
 		},
 	}
