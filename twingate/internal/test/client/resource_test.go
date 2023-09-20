@@ -668,11 +668,11 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		var defaultBool bool
 
 		expected := []*model.Resource{
-			{ID: "resource1", Name: "tf-acc-resource1", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
+			{ID: "resource1", Name: "tf-acc-resource1", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
 		}
 
 		// response JSON
