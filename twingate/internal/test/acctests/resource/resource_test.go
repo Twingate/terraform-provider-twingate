@@ -51,6 +51,39 @@ func TestAccTwingateResourceCreate(t *testing.T) {
 	})
 }
 
+func TestAccTwingateResourceUpdateProtocols(t *testing.T) {
+	const terraformResourceName = "test1u"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceOnlyWithNetwork(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceWithSimpleProtocols(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceOnlyWithNetwork(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+		},
+	})
+}
+
 func createResourceOnlyWithNetwork(terraformResourceName, networkName, resourceName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%s" {
@@ -60,6 +93,29 @@ func createResourceOnlyWithNetwork(terraformResourceName, networkName, resourceN
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.%s.id
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName)
+}
+
+func createResourceWithSimpleProtocols(terraformResourceName, networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+
+	  protocols {
+        allow_icmp = true
+        tcp  {
+            policy = "DENY_ALL"
+        }
+        udp {
+            policy = "DENY_ALL"
+        }
+      }
 	}
 	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName)
 }

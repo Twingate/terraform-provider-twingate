@@ -105,7 +105,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 
 func protocolsToModel(protocols *Protocols) *model.Protocols {
 	if protocols == nil {
-		return nil
+		return model.DefaultProtocols()
 	}
 
 	return &model.Protocols{
@@ -117,7 +117,7 @@ func protocolsToModel(protocols *Protocols) *model.Protocols {
 
 func protocolToModel(protocol *Protocol) *model.Protocol {
 	if protocol == nil {
-		return nil
+		return model.DefaultProtocol()
 	}
 
 	return &model.Protocol{

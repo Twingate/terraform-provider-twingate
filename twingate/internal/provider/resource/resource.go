@@ -228,9 +228,8 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlagLegacy(resourceData)
+		log.Printf("[INFO] Updated resource %s", resource.Name)
 	}
-
-	log.Printf("[INFO] Updated resource %s", resource.Name)
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
@@ -320,14 +319,15 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		return ErrAttributeSet(err, attr.Access)
 	}
 
-	protocols, _ := convertProtocols(resourceData)
+	protocols, err := convertProtocols(resourceData)
+	if err == nil && protocols != nil && protocols.TCP != nil && protocols.UDP != nil {
+		if portRangeEqual(protocols.TCP.Ports, resource.Protocols.TCP.Ports) {
+			resource.Protocols.TCP.Ports = protocols.TCP.Ports
+		}
 
-	if portRangeEqual(protocols.TCP.Ports, resource.Protocols.TCP.Ports) {
-		resource.Protocols.TCP.Ports = protocols.TCP.Ports
-	}
-
-	if portRangeEqual(protocols.UDP.Ports, resource.Protocols.UDP.Ports) {
-		resource.Protocols.UDP.Ports = protocols.UDP.Ports
+		if portRangeEqual(protocols.UDP.Ports, resource.Protocols.UDP.Ports) {
+			resource.Protocols.UDP.Ports = protocols.UDP.Ports
+		}
 	}
 
 	if err := resourceData.Set(attr.Protocols, resource.Protocols.ToTerraform()); err != nil {
@@ -573,26 +573,17 @@ func convertProtocol(rawList []interface{}) (*model.Protocol, error) {
 	rawMap := rawList[0].(map[string]interface{})
 	policy := rawMap[attr.Policy].(string)
 
+	if policy == "" {
+		policy = model.PolicyAllowAll
+	}
+
 	ports, err := convertPorts(rawMap[attr.Ports].([]interface{}))
 	if err != nil {
 		return nil, err
 	}
 
-	switch policy {
-	case model.PolicyAllowAll:
-		if len(ports) > 0 {
-			return nil, ErrPortsWithPolicyAllowAll
-		}
-
-	case model.PolicyDenyAll:
-		if len(ports) > 0 {
-			return nil, ErrPortsWithPolicyDenyAll
-		}
-
-	case model.PolicyRestricted:
-		if len(ports) == 0 {
-			return nil, ErrPolicyRestrictedWithoutPorts
-		}
+	if err := validateProtocol(policy, ports); err != nil {
+		return nil, err
 	}
 
 	if policy == model.PolicyDenyAll {
@@ -600,6 +591,27 @@ func convertProtocol(rawList []interface{}) (*model.Protocol, error) {
 	}
 
 	return model.NewProtocol(policy, ports), nil
+}
+
+func validateProtocol(policy string, ports []*model.PortRange) error {
+	switch policy {
+	case model.PolicyAllowAll:
+		if len(ports) > 0 {
+			return ErrPortsWithPolicyAllowAll
+		}
+
+	case model.PolicyDenyAll:
+		if len(ports) > 0 {
+			return ErrPortsWithPolicyDenyAll
+		}
+
+	case model.PolicyRestricted:
+		if len(ports) == 0 {
+			return ErrPolicyRestrictedWithoutPorts
+		}
+	}
+
+	return nil
 }
 
 func convertPorts(rawList []interface{}) ([]*model.PortRange, error) {
