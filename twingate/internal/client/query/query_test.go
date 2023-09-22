@@ -123,6 +123,7 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 					RemoteNetworkID:          "resource-network-id",
 					IsVisible:                &boolTrue,
 					IsBrowserShortcutEnabled: &boolFalse,
+					Protocols:                model.DefaultProtocols(),
 				},
 			},
 		},
@@ -796,7 +797,7 @@ func TestProtocolToModel(t *testing.T) {
 	}{
 		{
 			protocol: nil,
-			expected: nil,
+			expected: model.DefaultProtocol(),
 		},
 		{
 			protocol: &Protocol{
