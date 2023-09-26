@@ -25,6 +25,7 @@ func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*mod
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "userIds"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlNullable("", query.CursorUsers),
 	)
 	response := query.CreateGroup{}
 
@@ -49,7 +50,10 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 		return nil, NewAPIError(ErrGraphqlIDIsEmpty, "read", groupResourceName)
 	}
 
-	variables := newVars(gqlID(groupID))
+	variables := newVars(
+		gqlID(groupID),
+		gqlNullable("", query.CursorUsers),
+	)
 	response := query.ReadGroup{}
 
 	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readGroup"))
@@ -75,6 +79,7 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
 		gqlNullable("", query.CursorGroups),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readGroups"))
@@ -104,6 +109,7 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 
 func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
 	variables[query.CursorGroups] = cursor
+	variables = gqlNullable("", query.CursorUsers)(variables)
 	response := query.ReadGroups{}
 
 	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readGroups"))
@@ -132,6 +138,7 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "addedUserIds"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	response := query.UpdateGroup{}
@@ -200,6 +207,7 @@ func (client *Client) DeleteGroupUsers(ctx context.Context, groupID string, user
 	variables := newVars(
 		gqlID(groupID),
 		gqlIDs(userIDs, "removedUserIds"),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	response := query.UpdateGroupRemoveUsers{}
