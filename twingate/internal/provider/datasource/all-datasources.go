@@ -12,6 +12,6 @@ const (
 	TwingateResource         = "twingate_resource"
 	TwingateResources        = "twingate_resources"
 	TwingateServiceAccounts  = "twingate_service_accounts"
-	TwingateSecurityPolicy   = "twingate_security_policy"
+	TwingateSecurityPolicy   = "twingate_security_policy" //nolint:gosec
 	TwingateSecurityPolicies = "twingate_security_policies"
 )

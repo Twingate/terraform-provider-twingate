@@ -67,6 +67,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlIDs(input.Groups, "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
+		gqlNullable("", query.CursorUsers),
 	)
 	variables["protocols"] = newProtocolsInput(input.Protocols)
 
@@ -119,7 +120,10 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 	}
 
 	response := query.ReadResource{}
-	variables := newVars(gqlID(resourceID))
+	variables := newVars(
+		gqlID(resourceID),
+		gqlNullable("", query.CursorUsers),
+	)
 
 	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
 	if err != nil {
@@ -142,6 +146,7 @@ func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map
 	response := query.ReadResourceGroups{}
 	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorGroups] = cursor
+	variables = gqlNullable("", query.CursorUsers)(variables)
 
 	err := client.GraphqlClient.Query(ctx, &response, variables, graphql.OperationName("readResource"))
 	if err != nil {
@@ -196,6 +201,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	if input.IsVisible == nil {
@@ -389,6 +395,7 @@ func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID strin
 	variables := newVars(
 		gqlID(resourceID),
 		gqlIDs(deleteGroupIDs, "removedGroupIds"),
+		gqlNullable("", query.CursorUsers),
 	)
 
 	err := client.GraphqlClient.Mutate(ctx, &response, variables, graphql.OperationName("updateResource"))
