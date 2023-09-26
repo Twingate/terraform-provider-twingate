@@ -7,7 +7,6 @@ on:
   pull_request:
     branches:
       - main
-      - fix/user-cursor
     paths-ignore:
        - 'README.md'
 
@@ -16,7 +15,6 @@ on:
       - 'README.md'
     branches:
       - main
-      - fix/user-cursor
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
