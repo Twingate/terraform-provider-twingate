@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	DefaultHTTPTimeout  = "10"
+	DefaultHTTPTimeout  = "35"
 	DefaultHTTPMaxRetry = "10"
 	DefaultURL          = "twingate.com"
 
