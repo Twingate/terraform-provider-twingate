@@ -38,7 +38,7 @@ from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/
 Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
 - `http_max_retry` (Number) Specifies a retry limit for the http requests made. The default value is 10.
 Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable
-- `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 35 seconds.
+- `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 10 seconds.
 Alternatively, this can be specified using the TWINGATE_HTTP_TIMEOUT environment variable
 - `network` (String) Your Twingate network ID for API operations.
 You can find it in the Admin Console URL, for example:
