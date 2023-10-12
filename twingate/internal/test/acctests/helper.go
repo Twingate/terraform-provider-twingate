@@ -16,11 +16,8 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
-	twingateV2 "github.com/Twingate/terraform-provider-twingate/twingate/v2"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
-	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -57,26 +54,7 @@ var providerClient = func() *client.Client { //nolint
 }()
 
 var ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){ //nolint
-	"twingate": func() (tfprotov6.ProviderServer, error) {
-		upgradedSdkProvider, err := tf5to6server.UpgradeServer(context.Background(), twingate.Provider("test").GRPCProvider)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		providers := []func() tfprotov6.ProviderServer{
-			func() tfprotov6.ProviderServer {
-				return upgradedSdkProvider
-			},
-			providerserver.NewProtocol6(twingateV2.New("test")()),
-		}
-
-		provider, err := tf6muxserver.NewMuxServer(context.Background(), providers...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to run mux server: %w", err)
-		}
-
-		return provider, nil
-	},
+	"twingate": providerserver.NewProtocol6WithError(twingate.New("test")()),
 }
 
 func SetPageLimit(limit int) {

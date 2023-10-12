@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	tcpPolicy                  = attr.Path(attr.Protocols, attr.TCP, attr.Policy)
-	udpPolicy                  = attr.Path(attr.Protocols, attr.UDP, attr.Policy)
-	firstTCPPort               = attr.First(attr.Protocols, attr.TCP, attr.Ports)
-	firstUDPPort               = attr.First(attr.Protocols, attr.UDP, attr.Ports)
-	tcpPortsLen                = attr.Len(attr.Protocols, attr.TCP, attr.Ports)
-	udpPortsLen                = attr.Len(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPolicy                  = attr.PathAttr(attr.Protocols, attr.TCP, attr.Policy)
+	udpPolicy                  = attr.PathAttr(attr.Protocols, attr.UDP, attr.Policy)
+	firstTCPPort               = attr.FirstAttr(attr.Protocols, attr.TCP, attr.Ports)
+	firstUDPPort               = attr.FirstAttr(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPortsLen                = attr.LenAttr(attr.Protocols, attr.TCP, attr.Ports)
+	udpPortsLen                = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
 	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
 	accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
 )
@@ -107,12 +107,12 @@ func createResourceWithSimpleProtocols(terraformResourceName, networkName, resou
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.%s.id
 
-	  protocols {
+	  protocols = {
         allow_icmp = true
-        tcp  {
+        tcp = {
             policy = "DENY_ALL"
         }
-        udp {
+        udp = {
             policy = "DENY_ALL"
         }
       }
@@ -165,13 +165,13 @@ func createResourceWithProtocolsAndGroups(networkName, groupName1, groupName2, r
 	  address = "new-acc-test.com"
 	  remote_network_id = twingate_remote_network.test2.id
 
-      protocols {
+      protocols = {
 		allow_icmp = true
-        tcp  {
+        tcp = {
 			policy = "%s"
             ports = ["80", "82-83"]
         }
-		udp {
+		udp = {
  			policy = "%s"
 		}
       }
@@ -237,13 +237,13 @@ func resourceFullCreationFlow(networkName, groupName, resourceName string) strin
       address = "acc-test.com"
       remote_network_id = twingate_remote_network.test3.id
 
-      protocols {
+      protocols = {
         allow_icmp = true
-        tcp  {
+        tcp = {
             policy = "%s"
             ports = ["3306"]
         }
-        udp {
+        udp = {
             policy = "%s"
         }
       }
@@ -332,12 +332,12 @@ func createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName str
       access {
         group_ids = [twingate_group.g5.id]
       }
-      protocols {
+      protocols = {
         allow_icmp = true
-        tcp {
+        tcp = {
           policy = "%s"
         }
-        udp {
+        udp = {
           policy = "%s"
         }
       }
@@ -389,12 +389,12 @@ func createResourceWithUdpDenyAllPolicy(networkName, groupName, resourceName str
       access {
         group_ids = [twingate_group.g6.id]
       }
-      protocols {
+      protocols = {
         allow_icmp = true
-        tcp {
+        tcp = {
           policy = "%s"
         }
-        udp {
+        udp = {
           policy = "%s"
         }
       }
@@ -444,13 +444,13 @@ func createResourceWithDenyAllPolicyAndEmptyPortsList(networkName, groupName, re
 	  access {
 	    group_ids = [twingate_group.test7.id]
 	  }
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = []
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -517,13 +517,13 @@ func createResourceWithRestrictedPolicyAndPortRange(networkName, resourceName, p
 	  name = "%s"
 	  address = "new-acc-test.com"
 	  remote_network_id = twingate_remote_network.test8.id
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = [%s]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -582,13 +582,13 @@ func createResourceWithPortRange(networkName, resourceName, portRange string) st
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.test9.id
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = [%s]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	      ports = [%s]
 	    }
@@ -661,8 +661,8 @@ func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
 				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"82", "83", "80"`),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "82"),
-					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "82"),
+					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
+					sdk.TestCheckResourceAttr(theResource, firstUDPPort, "80"),
 				),
 			},
 			// no changes
@@ -772,12 +772,13 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ImportState:  true,
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
-					attr.Address: "acc-test.com.12",
-					tcpPolicy:    model.PolicyRestricted,
-					tcpPortsLen:  "2",
-					firstTCPPort: "80",
-					udpPolicy:    model.PolicyAllowAll,
-					udpPortsLen:  "0",
+					attr.Address:      "acc-test.com.12",
+					tcpPolicy:         model.PolicyRestricted,
+					tcpPortsLen:       "2",
+					firstTCPPort:      "80",
+					udpPolicy:         model.PolicyAllowAll,
+					udpPortsLen:       "0",
+					accessGroupIdsLen: "2",
 				}),
 			},
 		},
@@ -805,13 +806,13 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  access {
 	    group_ids = [twingate_group.g121.id, twingate_group.g122.id]
       }
-      protocols {
+      protocols = {
 		allow_icmp = true
-        tcp  {
+        tcp = {
 			policy = "%s"
             ports = ["80", "82-83"]
         }
-		udp {
+		udp = {
  			policy = "%s"
 		}
       }
@@ -897,13 +898,13 @@ func createResource15(networkName, resourceName string, terraformServiceAccount 
 	  address = "acc-test.com.15"
 	  remote_network_id = twingate_remote_network.test15.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -955,13 +956,13 @@ func createResource16(networkName, resourceName string, groups, groupsID []strin
 	  address = "acc-test.com.16"
 	  remote_network_id = twingate_remote_network.test16.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1065,13 +1066,13 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 	  address = "acc-test.com.17"
 	  remote_network_id = twingate_remote_network.test17.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1172,13 +1173,13 @@ func createResource13(networkName, resourceName string, serviceAccounts, service
 	  address = "acc-test.com.13"
 	  remote_network_id = twingate_remote_network.test13.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1203,7 +1204,7 @@ func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource18(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Not enough list items"),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value"),
 			},
 		},
 	})
@@ -1220,13 +1221,13 @@ func createResource18(networkName, resourceName string) string {
 	  address = "acc-test.com.18"
 	  remote_network_id = twingate_remote_network.test18.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1250,7 +1251,7 @@ func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource19(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Not enough list items"),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value"),
 			},
 		},
 	})
@@ -1267,13 +1268,13 @@ func createResource19(networkName, resourceName string) string {
 	  address = "acc-test.com.19"
 	  remote_network_id = twingate_remote_network.test19.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1297,7 +1298,7 @@ func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource20(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Missing required argument"),
+				ExpectError: regexp.MustCompile("invalid attribute combination"),
 			},
 		},
 	})
@@ -1314,13 +1315,13 @@ func createResource20(networkName, resourceName string) string {
 	  address = "acc-test.com.20"
 	  remote_network_id = twingate_remote_network.test20.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1422,13 +1423,13 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 	  address = "acc-test.com.22"
 	  remote_network_id = twingate_remote_network.test22.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1529,13 +1530,13 @@ func createResource23(networkName, resourceName string, groups, groupsID []strin
 	  address = "acc-test.com.23"
 	  remote_network_id = twingate_remote_network.test23.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1806,13 +1807,13 @@ func createResource26(networkName, resourceName string, groups, groupsID []strin
 	  address = "acc-test.com.26"
 	  remote_network_id = twingate_remote_network.test26.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1859,13 +1860,13 @@ func createResource28(networkName, resourceName string, groups, groupsID []strin
 	
 	  group_ids = [%s]
 
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -1895,10 +1896,10 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 				),
 			},
 			{
-				// alias attr commented out, means state keeps the same value without changes
+				// alias attr commented out, means it has nil state
 				Config: createResource29WithoutAlias(terraformResourceName, remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
+					sdk.TestCheckNoResourceAttr(theResource, attr.Alias),
 				),
 			},
 			{
@@ -1990,13 +1991,13 @@ func createResourceWithGroupsAndServiceAccounts(name, networkName, resourceName 
 	  address = "acc-test.com.26"
 	  remote_network_id = twingate_remote_network.%s.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%s"
 	    }
 	  }
@@ -2048,13 +2049,13 @@ func createResourceWithPort(networkName, resourceName, port string) string {
 	  name = "%s"
 	  address = "new-acc-test.com"
 	  remote_network_id = twingate_remote_network.test30.id
-	  protocols {
+	  protocols = {
 		allow_icmp = true
-		tcp  {
+		tcp = {
 			policy = "%s"
 			ports = ["%s"]
 		}
-		udp {
+		udp = {
 			policy = "%s"
 		}
 	  }
@@ -2118,13 +2119,13 @@ func createResourceWithPorts(name, networkName, resourceName, policy string) str
 	  address = "acc-test-%[1]s.com"
 	  remote_network_id = twingate_remote_network.%[1]s.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%[4]s"
 	      ports = ["80", "82-83"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "%[5]s"
 	    }
 	  }
@@ -2173,12 +2174,12 @@ func createResourceWithoutPorts(name, networkName, resourceName, policy string) 
 	  address = "acc-test-%[1]s.com"
 	  remote_network_id = twingate_remote_network.%[1]s.id
 	  
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "%[4]s"
 	    }
-	    udp {
+	    udp = {
 	      policy = "%[5]s"
 	    }
 	  }
@@ -2416,6 +2417,38 @@ func TestAccTwingateResourcePolicyTransitionAllowAllToDenyAll(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyDenyAll),
 					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "0"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceTestCaseInsensitiveAlias(t *testing.T) {
+	const terraformResourceName = "test38"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	const aliasName = "test.com"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource29(terraformResourceName, remoteNetworkName, resourceName, aliasName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
+				),
+			},
+			{
+				// expecting no changes
+				PlanOnly: true,
+				Config:   createResource29(terraformResourceName, remoteNetworkName, resourceName, strings.ToUpper(aliasName)),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
 				),
 			},
 		},
