@@ -18,7 +18,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/mattn/goveralls v0.0.12
-	github.com/securego/gosec/v2 v2.18.0
+	github.com/securego/gosec/v2 v2.18.1
 	github.com/stretchr/testify v1.8.4
 	gotest.tools/gotestsum v1.11.0
 )
