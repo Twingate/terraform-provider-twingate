@@ -128,7 +128,6 @@ func TestClientResourceReadOk(t *testing.T) {
 			Groups: []string{
 				"group1", "group2",
 			},
-			ServiceAccounts: []string{},
 			Protocols: &model.Protocols{
 				UDP: &model.Protocol{
 					Ports:  []*model.PortRange{},
@@ -158,18 +157,20 @@ func TestClientResourceReadOk(t *testing.T) {
 		      "remoteNetwork": {
 		        "id": "network1"
 		      },
-		      "groups": {
+		      "access": {
 		        "pageInfo": {
 		          "hasNextPage": false
 		        },
 		        "edges": [
 		          {
 		            "node": {
+		              "__typename": "Group",
 		              "id": "group1"
 		            }
 		          },
 		          {
 		            "node": {
+		              "__typename": "Group",
 		              "id": "group2"
 		            }
 		          }
@@ -222,8 +223,7 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 			Groups: []string{
 				"group1", "group2", "group3", "group4",
 			},
-			ServiceAccounts: []string{},
-			IsActive:        true,
+			IsActive: true,
 			Protocols: &model.Protocols{
 				UDP: &model.Protocol{
 					Ports:  []*model.PortRange{},
@@ -253,7 +253,7 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 		      "remoteNetwork": {
 		        "id": "network1"
 		      },
-		      "groups": {
+		      "access": {
 		        "pageInfo": {
 		          "endCursor": "cur001",
 		          "hasNextPage": true
@@ -261,14 +261,14 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 		        "edges": [
 		          {
 		            "node": {
-		              "id": "group1",
-		              "name": "Group1 name"
+		              "__typename": "Group",
+		              "id": "group1"
 		            }
 		          },
 		          {
 		            "node": {
-		              "id": "group2",
-		              "name": "Group2 name"
+		              "__typename": "Group",
+		              "id": "group2"
 		            }
 		          }
 		        ]
@@ -302,21 +302,21 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 		  "data": {
 		    "resource": {
 		      "id": "resource1",
-		      "groups": {
+		      "access": {
 		        "pageInfo": {
 		          "hasNextPage": false
 		        },
 		        "edges": [
 		          {
 		            "node": {
-		              "id": "group3",
-		              "name": "Group3 name"
+		              "__typename": "Group",
+		              "id": "group3"
 		            }
 		          },
 		          {
 		            "node": {
-		              "id": "group4",
-		              "name": "Group4 name"
+		              "__typename": "Group",
+		              "id": "group4"
 		            }
 		          }
 		        ]
@@ -402,7 +402,7 @@ func TestClientResourceReadGroupsRequestError(t *testing.T) {
 		  "data": {
 		    "resource": {
 		      "id": "resource1",
-		      "groups": {
+		      "access": {
 		        "pageInfo": {
 		          "endCursor": "cur001",
 		          "hasNextPage": true
@@ -434,7 +434,7 @@ func TestClientResourceReadGroupsEmptyResponse(t *testing.T) {
 		  "data": {
 		    "resource": {
 		      "id": "resource1",
-		      "groups": {
+		      "access": {
 		        "pageInfo": {
 		          "endCursor": "cur001",
 		          "hasNextPage": true
@@ -553,7 +553,7 @@ func TestClientResourceUpdateFetchGroupsError(t *testing.T) {
 		      "error" : null,
 		      "entity": {
 		        "id": "test",
-		        "groups": {
+		        "access": {
 		          "pageInfo": {
 		            "endCursor": "cur001",
 		            "hasNextPage": true
@@ -561,6 +561,7 @@ func TestClientResourceUpdateFetchGroupsError(t *testing.T) {
 		          "edges": [
 		            {
 		              "node": {
+		                "__typename": "Group",
 		                "id": "group-1"
 		              }
 		            }
@@ -667,11 +668,11 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		var defaultBool bool
 
 		expected := []*model.Resource{
-			{ID: "resource1", Name: "tf-acc-resource1", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
-			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool},
+			{ID: "resource1", Name: "tf-acc-resource1", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
 		}
 
 		// response JSON
@@ -1307,434 +1308,6 @@ func TestClientResourcesReadByNameAllRequestError(t *testing.T) {
 
 		assert.Nil(t, resources)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id All", errBadRequest))
-	})
-}
-
-func TestClientDeleteResourceServiceAccountsWithEmptyServiceAccounts(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Service Accounts - With Empty Service Accounts", func(t *testing.T) {
-		client := newHTTPMockClient()
-		for _, serviceAccounts := range [][]string{nil, {}} {
-			err := client.DeleteResourceServiceAccounts(context.Background(), "resource-test", serviceAccounts)
-
-			assert.NoError(t, err)
-		}
-	})
-}
-
-func TestClientDeleteResourceServiceAccountsWithEmptyResourceID(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Service Accounts - With Empty ResourceID", func(t *testing.T) {
-		client := newHTTPMockClient()
-		err := client.DeleteResourceServiceAccounts(context.Background(), "", []string{"serviceAccounts"})
-
-		assert.EqualError(t, err, "failed to update resource: id is empty")
-	})
-}
-
-func TestClientDeleteResourceServiceAccountsOk(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Service Accounts - Ok", func(t *testing.T) {
-		response1 := `{
-		  "data": {
-		    "serviceAccount": {
-		      "id": "serviceAccount1",
-		      "name": "test"
-		    }
-		  }
-		}`
-
-		response2 := `{
-		  "data": {
-		    "serviceAccountUpdate": {
-		      "entity": {
-		        "id": "serviceAccount1",
-		        "name": "tes"
-		      },
-		      "ok": true,
-		      "error": null
-		    }
-		  }
-		}`
-
-		response3 := `{
-		  "data": {
-		    "serviceAccount": {
-		      "id": "serviceAccount2",
-		      "name": "test"
-		    }
-		  }
-		}`
-
-		response4 := `{
-		  "data": {
-		    "serviceAccountUpdate": {
-		      "entity": {
-		        "id": "serviceAccount2",
-		        "name": "test"
-		      },
-		      "ok": true,
-		      "error": null
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			MultipleResponders(
-				httpmock.NewStringResponder(http.StatusOK, response1),
-				httpmock.NewStringResponder(http.StatusOK, response2),
-				httpmock.NewStringResponder(http.StatusOK, response3),
-				httpmock.NewStringResponder(http.StatusOK, response4),
-			),
-		)
-
-		err := client.DeleteResourceServiceAccounts(context.Background(), "resource1", []string{"serviceAccount1", "serviceAccount2"})
-
-		assert.NoError(t, err)
-	})
-}
-
-func TestClientDeleteResourceServiceAccountsWithError(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Service Accounts - With Error", func(t *testing.T) {
-		client := newHTTPMockClient()
-
-		err := client.DeleteResourceServiceAccounts(context.Background(), "resource1", []string{""})
-
-		assert.EqualError(t, err, `failed to update service account: id is empty`)
-	})
-}
-
-func TestClientResourcesAddResourceGroupsOk(t *testing.T) {
-	t.Run("Test Twingate Resource : Add Resource Groups - Ok", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "resourceUpdate": {
-		      "ok": true,
-		      "error": null
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
-
-		err := client.AddResourceGroups(context.Background(), &model.Resource{
-			ID:     "resource-id",
-			Groups: []string{"g-1"},
-		})
-
-		assert.NoError(t, err)
-	})
-}
-
-func TestClientResourcesAddResourceGroupsWithEmtpyGroups(t *testing.T) {
-	t.Run("Test Twingate Resource : Add Resource Groups - With Empty Groups", func(t *testing.T) {
-		client := newHTTPMockClient()
-
-		err := client.AddResourceGroups(context.Background(), &model.Resource{
-			ID: "resource-id",
-		})
-
-		assert.NoError(t, err)
-	})
-}
-
-func TestClientResourcesAddResourceGroupsWithEmtpyResourceID(t *testing.T) {
-	t.Run("Test Twingate Resource : Add Resource Groups - With Empty Resource ID", func(t *testing.T) {
-		client := newHTTPMockClient()
-
-		err := client.AddResourceGroups(context.Background(), &model.Resource{
-			Groups: []string{"g-1"},
-		})
-
-		assert.EqualError(t, err, "failed to update resource: id is empty")
-	})
-}
-
-func TestClientResourcesAddResourceGroupsRequestError(t *testing.T) {
-	t.Run("Test Twingate Resource : Add Resource Groups - Request Error", func(t *testing.T) {
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errBadRequest))
-
-		err := client.AddResourceGroups(context.Background(), &model.Resource{
-			ID:     "resource-id",
-			Groups: []string{"g-1"},
-		})
-
-		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id resource-id", errBadRequest))
-	})
-}
-
-func TestClientResourcesAddResourceGroupsResponseError(t *testing.T) {
-	t.Run("Test Twingate Resource : Add Resource Groups - Response Error", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "resourceUpdate": {
-		      "ok": false,
-		      "error": "response error"
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
-
-		err := client.AddResourceGroups(context.Background(), &model.Resource{
-			ID:     "resource-id",
-			Groups: []string{"g-1"},
-		})
-
-		assert.EqualError(t, err, `failed to update resource with id resource-id: response error`)
-	})
-}
-
-func TestClientResourcesDeleteResourceGroupsOk(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Groups - Ok", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "resourceUpdate": {
-		      "ok": true,
-		      "error": null,
-		      "entity": {
-		        "id": "resource-id"
-		      }
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
-
-		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
-
-		assert.NoError(t, err)
-	})
-}
-
-func TestClientResourcesDeleteResourceGroupsWithEmtpyGroups(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Groups - With Empty Groups", func(t *testing.T) {
-		client := newHTTPMockClient()
-
-		err := client.DeleteResourceGroups(context.Background(), "resource-id", nil)
-
-		assert.NoError(t, err)
-	})
-}
-
-func TestClientResourcesDeleteResourceGroupsWithEmtpyResourceID(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Groups - With Empty Resource ID", func(t *testing.T) {
-		client := newHTTPMockClient()
-
-		err := client.DeleteResourceGroups(context.Background(), "", []string{"g-1"})
-
-		assert.EqualError(t, err, "failed to update resource: id is empty")
-	})
-}
-
-func TestClientResourcesDeleteResourceGroupsRequestError(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Groups - Request Error", func(t *testing.T) {
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errBadRequest))
-
-		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
-
-		assert.EqualError(t, err, graphqlErr(client, "failed to update resource with id resource-id", errBadRequest))
-	})
-}
-
-func TestClientResourcesDeleteResourceGroupsResponseError(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Groups - Response Error", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "resourceUpdate": {
-		      "ok": false,
-		      "error": "response error"
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
-
-		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
-
-		assert.EqualError(t, err, `failed to update resource with id resource-id: response error`)
-	})
-}
-
-func TestClientResourcesDeleteResourceGroupsEmptyResponse(t *testing.T) {
-	t.Run("Test Twingate Resource : Delete Resource Groups - Empty Response", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "resourceUpdate": {
-		      "ok": true,
-		      "error": null,
-		      "entity": null
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
-
-		err := client.DeleteResourceGroups(context.Background(), "resource-id", []string{"g-1"})
-
-		assert.EqualError(t, err, `failed to update resource with id resource-id: query result is empty`)
-	})
-}
-
-func TestClientReadResourceServiceAccountsOk(t *testing.T) {
-	t.Run("Test Twingate Resource : Read Resource Service Accounts - Ok", func(t *testing.T) {
-		jsonResponse := `{
-		  "data": {
-		    "serviceAccounts": {
-		      "pageInfo": {
-		        "endCursor": "cursor-1",
-		        "hasNextPage": false
-		      },
-		      "edges": [
-		        {
-		          "node": {
-		            "id": "id-1",
-		            "name": "test-1",
-		            "resources": {
-		              "pageInfo": {
-		                "endCursor": null,
-		                "hasNextPage": false
-		              },
-		              "edges": []
-		            },
-		            "keys": null
-		          }
-		        },
-		        {
-		          "node": {
-		            "id": "id-2",
-		            "name": "test-2",
-		            "resources": {
-		              "pageInfo": {
-		                "endCursor": "cursor-2",
-		                "hasNextPage": false
-		              },
-		              "edges": [
-		                {
-		                  "node": {
-		                    "id": "resource-2-1",
-		                    "isActive": true
-		                  }
-		                }
-		              ]
-		            },
-		            "keys": null
-		          }
-		        }
-		      ]
-		    }
-		  }
-		}`
-
-		expected := []string{"id-2"}
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
-
-		serviceAccounts, err := client.ReadResourceServiceAccounts(context.Background(), "resource-2-1")
-
-		assert.NoError(t, err)
-		assert.ElementsMatch(t, expected, serviceAccounts)
-	})
-}
-
-func TestClientReadResourceServiceAccountsRequestError(t *testing.T) {
-	t.Run("Test Twingate Resource : Read Resource Service Accounts - Request Error", func(t *testing.T) {
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errBadRequest))
-
-		serviceAccounts, err := client.ReadResourceServiceAccounts(context.Background(), "resource-2-1")
-
-		assert.EqualError(t, err, graphqlErr(client, "failed to read service account with id All", errBadRequest))
-		assert.Nil(t, serviceAccounts)
-	})
-}
-
-func TestClientAddResourceServiceAccountIDsOk(t *testing.T) {
-	t.Run("Test Twingate Resource : Add Resource Service Account IDs - Ok", func(t *testing.T) {
-		response1 := `{
-		  "data": {
-		    "serviceAccountUpdate": {
-		      "entity": {
-		        "id": "id-1",
-		        "name": "name"
-		      },
-		      "ok": true,
-		      "error": null
-		    }
-		  }
-		}`
-
-		response2 := `{
-		  "data": {
-		    "serviceAccountUpdate": {
-		      "entity": {
-		        "id": "id-2",
-		        "name": "name"
-		      },
-		      "ok": true,
-		      "error": null
-		    }
-		  }
-		}`
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			MultipleResponders(
-				httpmock.NewStringResponder(http.StatusOK, response1),
-				httpmock.NewStringResponder(http.StatusOK, response2),
-			),
-		)
-
-		err := client.AddResourceServiceAccountIDs(context.Background(), &model.Resource{
-			ID:              "resource-1",
-			ServiceAccounts: []string{"id-1", "id-2"},
-		})
-
-		assert.NoError(t, err)
-	})
-}
-
-func TestClientAddResourceServiceAccountIDsRequestError(t *testing.T) {
-	t.Run("Test Twingate Resource : Add Resource Service Account IDs - Request Error", func(t *testing.T) {
-
-		client := newHTTPMockClient()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
-			httpmock.NewErrorResponder(errBadRequest))
-
-		err := client.AddResourceServiceAccountIDs(context.Background(), &model.Resource{
-			ID:              "resource-1",
-			ServiceAccounts: []string{"id-1", "id-2"},
-		})
-
-		assert.EqualError(t, err, graphqlErr(client, "failed to update service account with id id-1", errBadRequest))
 	})
 }
 

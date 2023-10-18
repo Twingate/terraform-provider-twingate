@@ -23,9 +23,9 @@ func TestAccTwingateUserCreateUpdate(t *testing.T) {
 		role := model.UserRoleSupport
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateUser(terraformResourceName, email),
@@ -115,9 +115,9 @@ func TestAccTwingateUserFullCreate(t *testing.T) {
 		role := test.RandomUserRole()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateUserFull(terraformResourceName, email, firstName, lastName, role),
@@ -154,9 +154,9 @@ func TestAccTwingateUserReCreation(t *testing.T) {
 		email2 := test.RandomEmail()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateUser(terraformResourceName, email1),
@@ -184,9 +184,9 @@ func TestAccTwingateUserUpdateState(t *testing.T) {
 		email := test.RandomEmail()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateUser(terraformResourceName, email),
@@ -197,7 +197,7 @@ func TestAccTwingateUserUpdateState(t *testing.T) {
 				},
 				{
 					Config:      terraformResourceTwingateUserDisabled(terraformResourceName, email),
-					ExpectError: regexp.MustCompile("User in PENDING state cannot be updated to the state: DISABLED"),
+					ExpectError: regexp.MustCompile(`User in PENDING state`),
 				},
 			},
 		})
@@ -220,9 +220,9 @@ func TestAccTwingateUserDelete(t *testing.T) {
 		theResource := acctests.TerraformUser(terraformResourceName)
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config:  terraformResourceTwingateUser(terraformResourceName, test.RandomEmail()),
@@ -243,9 +243,9 @@ func TestAccTwingateUserReCreateAfterDeletion(t *testing.T) {
 		email := test.RandomEmail()
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config: terraformResourceTwingateUser(terraformResourceName, email),
@@ -271,13 +271,13 @@ func TestAccTwingateUserCreateWithUnknownRole(t *testing.T) {
 		const terraformResourceName = "test007"
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config:      terraformResourceTwingateUserWithRole(terraformResourceName, test.RandomEmail(), "UnknownRole"),
-					ExpectError: regexp.MustCompile(`Error: expected role to be one of \[ADMIN DEVOPS SUPPORT MEMBER\], got UnknownRole`),
+					ExpectError: regexp.MustCompile(`Attribute role value must be one of`),
 				},
 			},
 		})
@@ -289,9 +289,9 @@ func TestAccTwingateUserCreateWithoutEmail(t *testing.T) {
 		const terraformResourceName = "test008"
 
 		sdk.Test(t, sdk.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateUserDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
 					Config:      terraformResourceTwingateUserWithoutEmail(terraformResourceName),

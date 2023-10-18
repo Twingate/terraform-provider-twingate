@@ -22,9 +22,9 @@ data "twingate_users" "all" {}
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `users` (Block List) (see [below for nested schema](#nestedblock--users))
+- `users` (Attributes List) (see [below for nested schema](#nestedatt--users))
 
-<a id="nestedblock--users"></a>
+<a id="nestedatt--users"></a>
 ### Nested Schema for `users`
 
 Read-Only:

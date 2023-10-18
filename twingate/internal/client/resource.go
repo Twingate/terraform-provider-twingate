@@ -70,9 +70,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
-		cursor(query.CursorUsers),
-		cursor(query.CursorGroups),
-		cursor(query.CursorServices),
+		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
 
@@ -106,9 +104,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 
 	variables := newVars(
 		gqlID(resourceID),
-		cursor(query.CursorUsers),
-		cursor(query.CursorGroups),
-		cursor(query.CursorServices),
+		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
 
@@ -117,46 +113,26 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, err
 	}
 
-	if err := response.Resource.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(resourceID))); err != nil {
-		return nil, err //nolint
-	}
-
-	if err := response.Resource.ServiceAccounts.FetchPages(ctx, client.readResourceServiceAccountsAfter, newVars(gqlID(resourceID))); err != nil {
+	if err := response.Resource.Access.FetchPages(ctx, client.readResourceAccessAfter, newVars(gqlID(resourceID))); err != nil {
 		return nil, err //nolint
 	}
 
 	return response.Resource.ToModel(), nil
 }
 
-func (client *Client) readResourceGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
+func (client *Client) readResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
 	opr := resourceResource.read()
 
 	resourceID := string(variables["id"].(graphql.ID))
-	variables[query.CursorGroups] = cursor
-	gqlNullable("", query.CursorUsers)(variables)
+	variables[query.CursorAccess] = cursor
 	pageLimit(client.pageLimit)(variables)
 
-	response := query.ReadResourceGroups{}
+	response := query.ReadResourceAccess{}
 	if err := client.query(ctx, &response, variables, opr, attr{id: resourceID}); err != nil {
 		return nil, err
 	}
 
-	return &response.Resource.Groups.PaginatedResource, nil
-}
-
-func (client *Client) readResourceServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
-	opr := resourceResource.read()
-
-	resourceID := string(variables["id"].(graphql.ID))
-	variables[query.CursorServices] = cursor
-	pageLimit(client.pageLimit)(variables)
-
-	response := query.ReadResourceServiceAccounts{}
-	if err := client.query(ctx, &response, variables, opr, attr{id: resourceID}); err != nil {
-		return nil, err
-	}
-
-	return &response.Resource.ServiceAccounts.PaginatedResource, nil
+	return &response.Resource.Access.PaginatedResource, nil
 }
 
 func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) {
@@ -204,9 +180,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
-		cursor(query.CursorUsers),
-		cursor(query.CursorGroups),
-		cursor(query.CursorServices),
+		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
 
@@ -215,11 +189,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, err
 	}
 
-	if err := response.Entity.Groups.FetchPages(ctx, client.readResourceGroupsAfter, newVars(gqlID(input.ID))); err != nil {
-		return nil, err //nolint
-	}
-
-	if err := response.Entity.ServiceAccounts.FetchPages(ctx, client.readResourceServiceAccountsAfter, newVars(gqlID(input.ID))); err != nil {
+	if err := response.Entity.Access.FetchPages(ctx, client.readResourceAccessAfter, newVars(gqlID(input.ID))); err != nil {
 		return nil, err //nolint
 	}
 
@@ -294,105 +264,6 @@ func (client *Client) readResourcesByNameAfter(ctx context.Context, variables ma
 	}
 
 	return &response.PaginatedResource, nil
-}
-
-func (client *Client) DeleteResourceServiceAccounts(ctx context.Context, resourceID string, deleteServiceAccountIDs []string) error {
-	opr := resourceResource.update()
-
-	if len(deleteServiceAccountIDs) == 0 {
-		return nil
-	}
-
-	if resourceID == "" {
-		return opr.apiError(ErrGraphqlIDIsEmpty)
-	}
-
-	resourcesToDelete := []string{resourceID}
-
-	for _, serviceAccountID := range deleteServiceAccountIDs {
-		if err := client.UpdateServiceAccountRemoveResources(ctx, serviceAccountID, resourcesToDelete); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (client *Client) AddResourceGroups(ctx context.Context, resource *model.Resource) error {
-	opr := resourceResource.update()
-
-	if len(resource.Groups) == 0 {
-		return nil
-	}
-
-	if resource.ID == "" {
-		return opr.apiError(ErrGraphqlIDIsEmpty)
-	}
-
-	variables := newVars(
-		gqlID(resource.ID),
-		gqlIDs(resource.Groups, "groupIds"),
-	)
-
-	response := query.AddResourceGroups{}
-
-	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
-}
-
-func (client *Client) DeleteResourceGroups(ctx context.Context, resourceID string, deleteGroupIDs []string) error {
-	opr := resourceResource.update()
-
-	if len(deleteGroupIDs) == 0 {
-		return nil
-	}
-
-	if resourceID == "" {
-		return opr.apiError(ErrGraphqlIDIsEmpty)
-	}
-
-	variables := newVars(
-		gqlID(resourceID),
-		gqlIDs(deleteGroupIDs, "removedGroupIds"),
-		cursor(query.CursorGroups),
-		cursor(query.CursorUsers),
-		cursor(query.CursorServices),
-		pageLimit(client.pageLimit),
-	)
-
-	response := query.UpdateResourceRemoveGroups{}
-
-	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
-}
-
-func (client *Client) ReadResourceServiceAccounts(ctx context.Context, resourceID string) ([]string, error) {
-	serviceAccounts, err := client.ReadServiceAccounts(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	serviceAccountIDs := make([]string, 0, len(serviceAccounts))
-
-	for _, account := range serviceAccounts {
-		if utils.Contains(account.Resources, resourceID) {
-			serviceAccountIDs = append(serviceAccountIDs, account.ID)
-		}
-	}
-
-	return serviceAccountIDs, nil
-}
-
-func (client *Client) AddResourceServiceAccountIDs(ctx context.Context, resource *model.Resource) error {
-	for _, serviceAccountID := range resource.ServiceAccounts {
-		_, err := client.UpdateServiceAccount(ctx, &model.ServiceAccount{
-			ID:        serviceAccountID,
-			Resources: []string{resource.ID},
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID string, principalIDs []string) error {

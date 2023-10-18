@@ -19,9 +19,9 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 		networkName := test.RandomName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateRemoteNetworkDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateRemoteNetwork(networkName),
@@ -56,9 +56,9 @@ func TestAccDatasourceTwingateRemoteNetworkByName_basic(t *testing.T) {
 		networkName := test.RandomName()
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateRemoteNetworkDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateRemoteNetworkByName(networkName),
@@ -93,12 +93,12 @@ func TestAccDatasourceTwingateRemoteNetwork_negative(t *testing.T) {
 		networkID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("RemoteNetwork:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
-					ExpectError: regexp.MustCompile("Error: failed to read remote network with id"),
+					ExpectError: regexp.MustCompile("failed to read remote network with id"),
 				},
 			},
 		})
@@ -122,12 +122,12 @@ func TestAccDatasourceTwingateRemoteNetwork_invalidNetworkID(t *testing.T) {
 		networkID := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkDoesNotExists(networkID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read remote network with id"),
 				},
 			},
 		})
@@ -140,14 +140,14 @@ func TestAccDatasourceTwingateRemoteNetwork_bothNetworkIDAndName(t *testing.T) {
 		networkName := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateRemoteNetworkValidationFailed(networkID, networkName),
-					ExpectError: regexp.MustCompile("Invalid combination of arguments"),
+					ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
 				},
 			},
 		})

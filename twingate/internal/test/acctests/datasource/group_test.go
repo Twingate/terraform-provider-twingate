@@ -24,9 +24,9 @@ func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
 		testPolicy := securityPolicies[0]
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateGroupDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: testDatasourceTwingateGroup(groupName, testPolicy.ID),
@@ -76,14 +76,14 @@ func TestAccDatasourceTwingateGroup_negative(t *testing.T) {
 		groupID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Group:%d", acctest.RandInt())))
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateGroupDoesNotExists(groupID),
-					ExpectError: regexp.MustCompile("Error: failed to read group with id"),
+					ExpectError: regexp.MustCompile("failed to read group with id"),
 				},
 			},
 		})
@@ -103,14 +103,14 @@ func TestAccDatasourceTwingateGroup_invalidGroupID(t *testing.T) {
 		groupID := acctest.RandString(10)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
 			PreCheck: func() {
 				acctests.PreCheck(t)
 			},
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateGroupDoesNotExists(groupID),
-					ExpectError: regexp.MustCompile("Unable to parse global ID"),
+					ExpectError: regexp.MustCompile("failed to read group with id"),
 				},
 			},
 		})

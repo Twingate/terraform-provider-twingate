@@ -11,11 +11,16 @@ import (
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
+	twingateV2 "github.com/Twingate/terraform-provider-twingate/twingate/v2"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -42,18 +47,36 @@ func ErrUsersLenMismatch(expected, actual int) error {
 	return fmt.Errorf("expected %d users, actual - %d", expected, actual) //nolint
 }
 
-var Provider *schema.Provider                                     //nolint:gochecknoglobals
-var ProviderFactories map[string]func() (*schema.Provider, error) //nolint:gochecknoglobals
-
-//nolint:gochecknoinits
-func init() {
-	Provider = twingate.Provider("test")
-
-	ProviderFactories = map[string]func() (*schema.Provider, error){
-		"twingate": func() (*schema.Provider, error) {
-			return Provider, nil
-		},
+var providerClient = func() *client.Client { //nolint
+	client, err := test.TwingateClient()
+	if err != nil {
+		log.Fatal("failed to init client:", err)
 	}
+
+	return client
+}()
+
+var ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){ //nolint
+	"twingate": func() (tfprotov6.ProviderServer, error) {
+		upgradedSdkProvider, err := tf5to6server.UpgradeServer(context.Background(), twingate.Provider("test").GRPCProvider)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		providers := []func() tfprotov6.ProviderServer{
+			func() tfprotov6.ProviderServer {
+				return upgradedSdkProvider
+			},
+			providerserver.NewProtocol6(twingateV2.New("test")()),
+		}
+
+		provider, err := tf6muxserver.NewMuxServer(context.Background(), providers...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to run mux server: %w", err)
+		}
+
+		return provider, nil
+	},
 }
 
 func SetPageLimit(limit int) {
@@ -119,8 +142,6 @@ func CheckTwingateResourceDoesNotExists(resourceName string) sdk.TestCheckFunc {
 }
 
 func CheckTwingateServiceAccountDestroy(s *terraform.State) error {
-	providerClient := Provider.Meta().(*client.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resource.TwingateServiceAccount {
 			continue
@@ -128,8 +149,8 @@ func CheckTwingateServiceAccountDestroy(s *terraform.State) error {
 
 		serviceAccountID := rs.Primary.ID
 
-		_, err := providerClient.ReadShallowServiceAccount(context.Background(), serviceAccountID)
-		if err == nil {
+		serviceAccount, _ := providerClient.ReadShallowServiceAccount(context.Background(), serviceAccountID)
+		if serviceAccount != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, serviceAccountID)
 		}
 	}
@@ -148,6 +169,25 @@ func CheckTwingateResourceExists(resourceName string) sdk.TestCheckFunc {
 		if resource.Primary.ID == "" {
 			return ErrResourceIDNotSet
 		}
+
+		return nil
+	}
+}
+
+func GetTwingateResourceID(resourceName string, resourceID **string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resource, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resource.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		id := resource.Primary.ID
+		*resourceID = &id
 
 		return nil
 	}
@@ -213,8 +253,6 @@ func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc
 func deleteResource(resourceType, resourceID string) error {
 	var err error
 
-	providerClient := Provider.Meta().(*client.Client)
-
 	switch resourceType {
 	case resource.TwingateResource:
 		err = providerClient.DeleteResource(context.Background(), resourceID)
@@ -238,8 +276,6 @@ func deleteResource(resourceType, resourceID string) error {
 }
 
 func CheckTwingateResourceDestroy(s *terraform.State) error {
-	providerClient := Provider.Meta().(*client.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resource.TwingateResource {
 			continue
@@ -247,9 +283,8 @@ func CheckTwingateResourceDestroy(s *terraform.State) error {
 
 		resourceID := rs.Primary.ID
 
-		err := providerClient.DeleteResource(context.Background(), resourceID)
-		// expecting error here , since the resource is already gone
-		if err == nil {
+		resource, _ := providerClient.ReadResource(context.Background(), resourceID)
+		if resource != nil {
 			return fmt.Errorf("%w: with ID %s", ErrResourceStillPresent, resourceID)
 		}
 	}
@@ -259,8 +294,6 @@ func CheckTwingateResourceDestroy(s *terraform.State) error {
 
 func DeactivateTwingateResource(resourceName string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceState, ok := s.RootModule().Resources[resourceName]
 
 		if !ok {
@@ -288,8 +321,6 @@ func DeactivateTwingateResource(resourceName string) sdk.TestCheckFunc {
 
 func CheckTwingateResourceActiveState(resourceName string, expectedActiveState bool) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceState, ok := s.RootModule().Resources[resourceName]
 
 		if !ok {
@@ -331,8 +362,6 @@ func CheckImportState(attributes map[string]string) func(data []*terraform.Insta
 }
 
 func CheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
-	providerClient := Provider.Meta().(*client.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resource.TwingateRemoteNetwork {
 			continue
@@ -340,9 +369,8 @@ func CheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 		remoteNetworkID := rs.Primary.ID
 
-		err := providerClient.DeleteRemoteNetwork(context.Background(), remoteNetworkID)
-		// expecting error here, since the network is already gone
-		if err == nil {
+		remoteNetwork, _ := providerClient.ReadRemoteNetworkByID(context.Background(), remoteNetworkID)
+		if remoteNetwork != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, remoteNetworkID)
 		}
 	}
@@ -351,8 +379,6 @@ func CheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 }
 
 func CheckTwingateGroupDestroy(s *terraform.State) error {
-	providerClient := Provider.Meta().(*client.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resource.TwingateGroup {
 			continue
@@ -360,8 +386,8 @@ func CheckTwingateGroupDestroy(s *terraform.State) error {
 
 		groupID := rs.Primary.ID
 
-		err := providerClient.DeleteGroup(context.Background(), groupID)
-		if err == nil {
+		group, _ := providerClient.ReadGroup(context.Background(), groupID)
+		if group != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, groupID)
 		}
 	}
@@ -370,8 +396,6 @@ func CheckTwingateGroupDestroy(s *terraform.State) error {
 }
 
 func CheckTwingateConnectorDestroy(s *terraform.State) error {
-	providerClient := Provider.Meta().(*client.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resource.TwingateConnector {
 			continue
@@ -379,9 +403,8 @@ func CheckTwingateConnectorDestroy(s *terraform.State) error {
 
 		connectorID := rs.Primary.ID
 
-		err := providerClient.DeleteConnector(context.Background(), connectorID)
-		// expecting error here, since the network is already gone
-		if err == nil {
+		connector, _ := providerClient.ReadConnector(context.Background(), connectorID)
+		if connector != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, connectorID)
 		}
 	}
@@ -401,9 +424,7 @@ func RevokeTwingateServiceKey(resourceName string) sdk.TestCheckFunc {
 			return ErrResourceIDNotSet
 		}
 
-		client := Provider.Meta().(*client.Client)
-
-		err := client.RevokeServiceKey(context.Background(), resourceID)
+		err := providerClient.RevokeServiceKey(context.Background(), resourceID)
 		if err != nil {
 			return fmt.Errorf("failed to revoke service account key with ID %s: %w", resourceID, err)
 		}
@@ -423,9 +444,7 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 			return ErrResourceIDNotSet
 		}
 
-		client := Provider.Meta().(*client.Client)
-
-		serviceAccountKey, err := client.ReadServiceKey(context.Background(), resourceState.Primary.ID)
+		serviceAccountKey, err := providerClient.ReadServiceKey(context.Background(), resourceState.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("failed to read service account key with ID %s: %w", resourceState.Primary.ID, err)
 		}
@@ -439,13 +458,11 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 }
 
 func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
-	if Provider.Meta() == nil {
+	if providerClient == nil {
 		return nil, ErrClientNotInited
 	}
 
-	client := Provider.Meta().(*client.Client)
-
-	securityPolicies, err := client.ReadSecurityPolicies(context.Background())
+	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all security policies: %w", err)
 	}
@@ -459,8 +476,6 @@ func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 
 func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceID, err := getResourceID(state, resourceName)
 		if err != nil {
 			return err
@@ -471,10 +486,7 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 			return err
 		}
 
-		err = providerClient.AddResourceGroups(context.Background(), &model.Resource{
-			ID:     resourceID,
-			Groups: []string{groupID},
-		})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{groupID})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add group with ID %s: %w", resourceID, groupID, err)
 		}
@@ -485,8 +497,6 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 
 func DeleteResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceID, err := getResourceID(state, resourceName)
 		if err != nil {
 			return err
@@ -497,7 +507,7 @@ func DeleteResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 			return err
 		}
 
-		err = providerClient.DeleteResourceGroups(context.Background(), resourceID, []string{groupID})
+		err = providerClient.RemoveResourceAccess(context.Background(), resourceID, []string{groupID})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to delete group with ID %s: %w", resourceID, groupID, err)
 		}
@@ -508,8 +518,6 @@ func DeleteResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 
 func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceID, err := getResourceID(state, resourceName)
 		if err != nil {
 			return err
@@ -546,8 +554,6 @@ func getResourceID(s *terraform.State, resourceName string) (string, error) {
 
 func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceID, err := getResourceID(state, resourceName)
 		if err != nil {
 			return err
@@ -558,10 +564,7 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 			return err
 		}
 
-		_, err = providerClient.UpdateServiceAccount(context.Background(), &model.ServiceAccount{
-			ID:        serviceAccountID,
-			Resources: []string{resourceID},
-		})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{serviceAccountID})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
 		}
@@ -572,8 +575,6 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 
 func DeleteResourceServiceAccount(resourceName, serviceAccountName string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceID, err := getResourceID(state, resourceName)
 		if err != nil {
 			return err
@@ -584,7 +585,7 @@ func DeleteResourceServiceAccount(resourceName, serviceAccountName string) sdk.T
 			return err
 		}
 
-		err = providerClient.DeleteResourceServiceAccounts(context.Background(), resourceID, []string{serviceAccountID})
+		err = providerClient.RemoveResourceAccess(context.Background(), resourceID, []string{serviceAccountID})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to delete service account with ID %s: %w", resourceID, serviceAccountID, err)
 		}
@@ -595,8 +596,6 @@ func DeleteResourceServiceAccount(resourceName, serviceAccountName string) sdk.T
 
 func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccountsLen int) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		resourceID, err := getResourceID(state, resourceName)
 		if err != nil {
 			return err
@@ -606,21 +605,6 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
-
-		serviceAccounts, err := providerClient.ReadServiceAccounts(context.Background())
-		if err != nil {
-			return fmt.Errorf("failed to read service accounts: %w", err)
-		}
-
-		serviceAccountIDs := make(map[string]bool)
-
-		for _, account := range serviceAccounts {
-			if utils.Contains(account.Resources, resource.ID) {
-				serviceAccountIDs[account.ID] = true
-			}
-		}
-
-		resource.ServiceAccounts = utils.MapKeys(serviceAccountIDs)
 
 		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
 			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))
@@ -632,8 +616,6 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 
 func AddGroupUser(groupResource, groupName, terraformUserID string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		userID, err := getResourceID(state, getResourceNameFromID(terraformUserID))
 		if err != nil {
 			return err
@@ -663,8 +645,6 @@ func getResourceNameFromID(terraformID string) string {
 
 func DeleteGroupUser(groupResource, terraformUserID string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		userID, err := getResourceID(state, getResourceNameFromID(terraformUserID))
 		if err != nil {
 			return err
@@ -686,8 +666,6 @@ func DeleteGroupUser(groupResource, terraformUserID string) sdk.TestCheckFunc {
 
 func CheckGroupUsersLen(resourceName string, expectedUsersLen int) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
-		providerClient := Provider.Meta().(*client.Client)
-
 		groupID, err := getResourceID(state, resourceName)
 		if err != nil {
 			return err
@@ -707,13 +685,11 @@ func CheckGroupUsersLen(resourceName string, expectedUsersLen int) sdk.TestCheck
 }
 
 func GetTestUsers() ([]*model.User, error) {
-	if Provider.Meta() == nil {
+	if providerClient == nil {
 		return nil, ErrClientNotInited
 	}
 
-	client := Provider.Meta().(*client.Client)
-
-	users, err := client.ReadUsers(context.Background())
+	users, err := providerClient.ReadUsers(context.Background())
 	if err != nil {
 		return nil, err //nolint
 	}
@@ -726,8 +702,6 @@ func GetTestUsers() ([]*model.User, error) {
 }
 
 func CheckTwingateUserDestroy(s *terraform.State) error {
-	providerClient := Provider.Meta().(*client.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resource.TwingateUser {
 			continue
@@ -742,4 +716,49 @@ func CheckTwingateUserDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func CheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
+	for _, res := range s.RootModule().Resources {
+		if res.Type != resource.TwingateConnectorTokens {
+			continue
+		}
+
+		connectorID := res.Primary.ID
+		accessToken := res.Primary.Attributes[attr.AccessToken]
+		refreshToken := res.Primary.Attributes[attr.RefreshToken]
+
+		err := providerClient.VerifyConnectorTokens(context.Background(), refreshToken, accessToken)
+		// expecting error here, since tokens invalidated
+		if err == nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, connectorID)
+		}
+	}
+
+	return nil
+}
+
+func GetTestUser() (*model.User, error) {
+	if providerClient == nil {
+		return nil, ErrClientNotInited
+	}
+
+	users, err := providerClient.ReadUsers(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get test users: %w", err)
+	}
+
+	if len(users) == 0 {
+		return nil, ErrResourceNotFound
+	}
+
+	return users[0], nil
+}
+
+func CheckTwingateConnectorAndRemoteNetworkDestroy(s *terraform.State) error {
+	if err := CheckTwingateConnectorDestroy(s); err != nil {
+		return err
+	}
+
+	return CheckTwingateRemoteNetworkDestroy(s)
 }

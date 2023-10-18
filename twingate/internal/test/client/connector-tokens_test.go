@@ -121,7 +121,7 @@ func TestClientConnectorCreateTokensError(t *testing.T) {
 	const connectorID = "test-id"
 	_, err := client.GenerateConnectorTokens(context.Background(), connectorID)
 
-	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector tokens with id %v: error_1`, connectorID))
+	assert.EqualError(t, err, fmt.Sprintf(`failed to generate connector token with id %v: error_1`, connectorID))
 }
 
 func TestClientConnectorTokensCreateRequestError(t *testing.T) {
@@ -133,5 +133,5 @@ func TestClientConnectorTokensCreateRequestError(t *testing.T) {
 
 	_, err := client.GenerateConnectorTokens(context.Background(), "connector-id")
 
-	assert.EqualError(t, err, graphqlErr(client, "failed to generate connector tokens", errBadRequest))
+	assert.EqualError(t, err, graphqlErr(client, "failed to generate connector token with id connector-id", errBadRequest))
 }

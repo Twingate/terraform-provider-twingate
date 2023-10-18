@@ -7,108 +7,161 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func datasourceResourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	c := meta.(*client.Client)
-	resourceID := resourceData.Get(attr.ID).(string)
+// Ensure the implementation satisfies the desired interfaces.
+var _ datasource.DataSource = &resource{}
 
-	resource, err := c.ReadResource(ctx, resourceID)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := resourceData.Set(attr.Name, resource.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := resourceData.Set(attr.Address, resource.Address); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := resourceData.Set(attr.RemoteNetworkID, resource.RemoteNetworkID); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := resourceData.Set(attr.Protocols, resource.Protocols.ToTerraform()); err != nil {
-		return diag.FromErr(err)
-	}
-
-	resourceData.SetId(resourceID)
-
-	return nil
+func NewResourceDatasource() datasource.DataSource {
+	return &resource{}
 }
 
-func Resource() *schema.Resource { //nolint:funlen
-	portsResource := schema.Resource{
-		Schema: map[string]*schema.Schema{
-			attr.Policy: {
-				Type:        schema.TypeString,
+type resource struct {
+	client *client.Client
+}
+
+type resourceModel struct {
+	ID              types.String    `tfsdk:"id"`
+	Name            types.String    `tfsdk:"name"`
+	Address         types.String    `tfsdk:"address"`
+	RemoteNetworkID types.String    `tfsdk:"remote_network_id"`
+	Protocols       *protocolsModel `tfsdk:"protocols"`
+}
+
+type protocolsModel struct {
+	AllowIcmp types.Bool     `tfsdk:"allow_icmp"`
+	TCP       *protocolModel `tfsdk:"tcp"`
+	UDP       *protocolModel `tfsdk:"udp"`
+}
+
+type protocolModel struct {
+	Policy types.String   `tfsdk:"policy"`
+	Ports  []types.String `tfsdk:"ports"`
+}
+
+func (d *resource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = TwingateResource
+}
+
+func (d *resource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*client.Client)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = client
+}
+
+func (d *resource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	protocolSchema := schema.SingleNestedBlock{
+		Attributes: map[string]schema.Attribute{
+			attr.Policy: schema.StringAttribute{
 				Computed:    true,
 				Description: fmt.Sprintf("Whether to allow or deny all ports, or restrict protocol access within certain port ranges: Can be `%s` (only listed ports are allowed), `%s`, or `%s`", model.PolicyRestricted, model.PolicyAllowAll, model.PolicyDenyAll),
 			},
-			attr.Ports: {
-				Type:        schema.TypeList,
+			attr.Ports: schema.SetAttribute{
 				Computed:    true,
+				ElementType: types.StringType,
 				Description: "List of port ranges between 1 and 65535 inclusive, in the format `100-200` for a range, or `8080` for a single port",
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
 			},
 		},
 	}
 
-	return &schema.Resource{
+	resp.Schema = schema.Schema{
 		Description: "Resources in Twingate represent any network destination address that you wish to provide private access to for users authorized via the Twingate Client application. Resources can be defined by either IP or DNS address, and all private DNS addresses will be automatically resolved with no client configuration changes. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
-		ReadContext: datasourceResourceRead,
-		Schema: map[string]*schema.Schema{
-			attr.ID: {
-				Type:        schema.TypeString,
+		Attributes: map[string]schema.Attribute{
+			attr.ID: schema.StringAttribute{
 				Required:    true,
 				Description: "The ID of the Resource. The ID for the Resource can be obtained from the Admin API or the URL string in the Admin Console.",
 			},
 			// computed
-			attr.Name: {
-				Type:        schema.TypeString,
+			attr.Name: schema.StringAttribute{
 				Computed:    true,
 				Description: "The name of the Resource",
 			},
-			attr.Address: {
-				Type:        schema.TypeString,
+			attr.Address: schema.StringAttribute{
 				Computed:    true,
 				Description: "The Resource's address, which may be an IP address, CIDR range, or DNS address",
 			},
-			attr.RemoteNetworkID: {
-				Type:        schema.TypeString,
+			attr.RemoteNetworkID: schema.StringAttribute{
 				Computed:    true,
 				Description: "The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.",
 			},
-			attr.Protocols: {
-				Type:        schema.TypeList,
-				Optional:    true,
+		},
+		Blocks: map[string]schema.Block{
+			attr.Protocols: schema.SingleNestedBlock{
 				Description: "By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						attr.AllowIcmp: {
-							Type:        schema.TypeBool,
-							Computed:    true,
-							Description: "Whether to allow ICMP (ping) traffic",
-						},
-						attr.TCP: {
-							Type:     schema.TypeList,
-							Optional: true,
-							Elem:     &portsResource,
-						},
-						attr.UDP: {
-							Type:     schema.TypeList,
-							Optional: true,
-							Elem:     &portsResource,
-						},
+				Attributes: map[string]schema.Attribute{
+					attr.AllowIcmp: schema.BoolAttribute{
+						Computed:    true,
+						Description: "Whether to allow ICMP (ping) traffic",
 					},
+				},
+				Blocks: map[string]schema.Block{
+					attr.TCP: &protocolSchema,
+					attr.UDP: &protocolSchema,
 				},
 			},
 		},
+	}
+}
+
+func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data resourceModel
+
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resource, err := d.client.ReadResource(ctx, data.ID.ValueString())
+	if err != nil {
+		addErr(&resp.Diagnostics, err, TwingateResource)
+
+		return
+	}
+
+	data.Name = types.StringValue(resource.Name)
+	data.Address = types.StringValue(resource.Address)
+	data.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
+	data.Protocols = convertProtocolsToTerraform(resource.Protocols)
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func convertProtocolsToTerraform(protocols *model.Protocols) *protocolsModel {
+	if protocols == nil {
+		return nil
+	}
+
+	return &protocolsModel{
+		AllowIcmp: types.BoolValue(protocols.AllowIcmp),
+		TCP:       convertProtocolToTerraform(protocols.TCP),
+		UDP:       convertProtocolToTerraform(protocols.UDP),
+	}
+}
+
+func convertProtocolToTerraform(protocol *model.Protocol) *protocolModel {
+	return &protocolModel{
+		Policy: types.StringValue(protocol.Policy),
+		Ports: utils.Map(protocol.Ports, func(port *model.PortRange) types.String {
+			return types.StringValue(port.String())
+		}),
 	}
 }

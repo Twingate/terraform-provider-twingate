@@ -2,49 +2,95 @@ package datasource
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ServiceAccounts() *schema.Resource {
-	return &schema.Resource{
+// Ensure the implementation satisfies the desired interfaces.
+var _ datasource.DataSource = &serviceAccounts{}
+
+func NewServiceAccountsDatasource() datasource.DataSource {
+	return &serviceAccounts{}
+}
+
+type serviceAccounts struct {
+	client *client.Client
+}
+
+type serviceAccountsModel struct {
+	ID              types.String          `tfsdk:"id"`
+	Name            types.String          `tfsdk:"name"`
+	ServiceAccounts []serviceAccountModel `tfsdk:"service_accounts"`
+}
+
+type serviceAccountModel struct {
+	ID          types.String   `tfsdk:"id"`
+	Name        types.String   `tfsdk:"name"`
+	ResourceIDs []types.String `tfsdk:"resource_ids"`
+	KeyIDs      []types.String `tfsdk:"key_ids"`
+}
+
+func (d *serviceAccounts) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = TwingateServiceAccounts
+}
+
+func (d *serviceAccounts) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*client.Client)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = client
+}
+
+func (d *serviceAccounts) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "Service Accounts offer a way to provide programmatic, centrally-controlled, and consistent access controls.",
-		ReadContext: readServiceAccounts,
-		Schema: map[string]*schema.Schema{
-			attr.Name: {
-				Type:        schema.TypeString,
+		Attributes: map[string]schema.Attribute{
+			attr.ID: schema.StringAttribute{
+				Computed:    true,
+				Description: computedDatasourceIDDescription,
+			},
+			attr.Name: schema.StringAttribute{
 				Optional:    true,
 				Description: "Filter results by the name of the Service Account.",
 			},
-			attr.ServiceAccounts: {
-				Type:        schema.TypeList,
-				Optional:    true,
+			attr.ServiceAccounts: schema.ListNestedAttribute{
+				Computed:    true,
 				Description: "List of Service Accounts",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						attr.ID: {
-							Type:        schema.TypeString,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						attr.ID: schema.StringAttribute{
 							Computed:    true,
 							Description: "ID of the Service Account resource",
 						},
-						attr.Name: {
-							Type:        schema.TypeString,
+						attr.Name: schema.StringAttribute{
 							Computed:    true,
 							Description: "Name of the Service Account",
 						},
-						attr.ResourceIDs: {
-							Type:        schema.TypeSet,
-							Elem:        &schema.Schema{Type: schema.TypeString},
+						attr.ResourceIDs: schema.SetAttribute{
 							Computed:    true,
+							ElementType: types.StringType,
 							Description: "List of twingate_resource IDs that the Service Account is assigned to.",
 						},
-						attr.KeyIDs: {
-							Type:        schema.TypeSet,
-							Elem:        &schema.Schema{Type: schema.TypeString},
+						attr.KeyIDs: schema.SetAttribute{
 							Computed:    true,
+							ElementType: types.StringType,
 							Description: "List of twingate_service_account_key IDs that are assigned to the Service Account.",
 						},
 					},
@@ -54,23 +100,28 @@ func ServiceAccounts() *schema.Resource {
 	}
 }
 
-func readServiceAccounts(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*client.Client)
+func (d *serviceAccounts) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data serviceAccountsModel
 
-	name := resourceData.Get(attr.Name).(string)
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
-	services, err := client.ReadServiceAccounts(ctx, name)
-	if err != nil {
-		return diag.FromErr(err)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	if err := resourceData.Set(attr.ServiceAccounts, convertServicesToTerraform(services)); err != nil {
-		return diag.FromErr(err)
+	accounts, err := d.client.ReadServiceAccounts(ctx, data.Name.ValueString())
+	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
+		addErr(&resp.Diagnostics, err, TwingateServiceAccounts)
+
+		return
 	}
 
-	resourceData.SetId(terraformServicesDatasourceID(name))
+	data.ID = types.StringValue(terraformServicesDatasourceID(data.Name.ValueString()))
+	data.ServiceAccounts = convertServicesToTerraform(accounts)
 
-	return nil
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func terraformServicesDatasourceID(name string) string {

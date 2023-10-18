@@ -6,6 +6,13 @@ import (
 	"github.com/hasura/go-graphql-client"
 )
 
+const (
+	AccessGroup          = "Group"
+	AccessServiceAccount = "ServiceAccount"
+)
+
+const CursorAccess = "accessEndCursor"
+
 type ReadResource struct {
 	Resource *gqlResource `graphql:"resource(id: $id)"`
 }
@@ -16,8 +23,24 @@ func (q ReadResource) IsEmpty() bool {
 
 type gqlResource struct {
 	ResourceNode
-	Groups          Groups          `graphql:"groups(after: $groupsEndCursor, first: $pageLimit)"`
-	ServiceAccounts ServiceAccounts `graphql:"serviceAccounts(after: $servicesEndCursor, first: $pageLimit)"`
+	Access Access `graphql:"access(after: $accessEndCursor, first: $pageLimit)"`
+}
+
+type Access struct {
+	PaginatedResource[*AccessEdge]
+}
+
+type AccessEdge struct {
+	Node Principal
+}
+
+type Principal struct {
+	Type string `graphql:"__typename"`
+	Node `graphql:"... on Node"`
+}
+
+type Node struct {
+	ID graphql.ID `json:"id"`
 }
 
 type ResourceNode struct {
@@ -53,12 +76,15 @@ type PortRange struct {
 
 func (r gqlResource) ToModel() *model.Resource {
 	resource := r.ResourceNode.ToModel()
-	resource.Groups = utils.Map[*GroupEdge, string](r.Groups.Edges, func(edge *GroupEdge) string {
-		return string(edge.Node.ID)
-	})
-	resource.ServiceAccounts = utils.Map[*ServiceAccountEdge, string](r.ServiceAccounts.Edges, func(edge *ServiceAccountEdge) string {
-		return string(edge.Node.ID)
-	})
+
+	for _, access := range r.Access.Edges {
+		switch access.Node.Type {
+		case AccessGroup:
+			resource.Groups = append(resource.Groups, string(access.Node.ID))
+		case AccessServiceAccount:
+			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
+		}
+	}
 
 	return resource
 }
@@ -79,7 +105,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 
 func protocolsToModel(protocols *Protocols) *model.Protocols {
 	if protocols == nil {
-		return nil
+		return model.DefaultProtocols()
 	}
 
 	return &model.Protocols{
@@ -91,7 +117,7 @@ func protocolsToModel(protocols *Protocols) *model.Protocols {
 
 func protocolToModel(protocol *Protocol) *model.Protocol {
 	if protocol == nil {
-		return nil
+		return model.DefaultProtocol()
 	}
 
 	return &model.Protocol{

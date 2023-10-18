@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,26 +14,25 @@ func TestConverterConnectorsToTerraform(t *testing.T) {
 
 	cases := []struct {
 		input    []*model.Connector
-		expected []interface{}
+		expected []connectorModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []connectorModel{},
 		},
 		{
 			input:    []*model.Connector{},
-			expected: []interface{}{},
+			expected: []connectorModel{},
 		},
 		{
 			input: []*model.Connector{
 				{ID: "connector-id", Name: "connector-name", NetworkID: "network-id", StatusUpdatesEnabled: &boolTrue},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:                   "connector-id",
-					attr.Name:                 "connector-name",
-					attr.RemoteNetworkID:      "network-id",
-					attr.StatusUpdatesEnabled: true,
+			expected: []connectorModel{
+				{
+					Name:                 types.StringValue("connector-name"),
+					RemoteNetworkID:      types.StringValue("network-id"),
+					StatusUpdatesEnabled: types.BoolValue(true),
 				},
 			},
 		},
@@ -50,27 +49,27 @@ func TestConverterConnectorsToTerraform(t *testing.T) {
 func TestConverterGroupsToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.Group
-		expected []interface{}
+		expected []groupModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []groupModel{},
 		},
 		{
 			input:    []*model.Group{},
-			expected: []interface{}{},
+			expected: []groupModel{},
 		},
 		{
 			input: []*model.Group{
 				{ID: "group-id", Name: "group-name", Type: model.GroupTypeManual, IsActive: true, SecurityPolicyID: "policy-id"},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:               "group-id",
-					attr.Name:             "group-name",
-					attr.Type:             model.GroupTypeManual,
-					attr.IsActive:         true,
-					attr.SecurityPolicyID: "policy-id",
+			expected: []groupModel{
+				{
+					ID:               types.StringValue("group-id"),
+					Name:             types.StringValue("group-name"),
+					Type:             types.StringValue(model.GroupTypeManual),
+					SecurityPolicyID: types.StringValue("policy-id"),
+					IsActive:         types.BoolValue(true),
 				},
 			},
 		},
@@ -87,39 +86,39 @@ func TestConverterGroupsToTerraform(t *testing.T) {
 func TestConverterUsersToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.User
-		expected []interface{}
+		expected []userModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []userModel{},
 		},
 		{
 			input:    []*model.User{},
-			expected: []interface{}{},
+			expected: []userModel{},
 		},
 		{
 			input: []*model.User{
 				{ID: "user-id", FirstName: "Name", LastName: "Last", Email: "user@email.com", Role: "USER", Type: "SYNCED"},
 				{ID: "admin-id", FirstName: "Admin", LastName: "Last", Email: "admin@email.com", Role: model.UserRoleAdmin, Type: "MANUAL"},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:        "user-id",
-					attr.FirstName: "Name",
-					attr.LastName:  "Last",
-					attr.Email:     "user@email.com",
-					attr.IsAdmin:   false,
-					attr.Role:      "USER",
-					attr.Type:      "SYNCED",
+			expected: []userModel{
+				{
+					ID:        types.StringValue("user-id"),
+					FirstName: types.StringValue("Name"),
+					LastName:  types.StringValue("Last"),
+					Email:     types.StringValue("user@email.com"),
+					IsAdmin:   types.BoolValue(false),
+					Role:      types.StringValue("USER"),
+					Type:      types.StringValue("SYNCED"),
 				},
-				map[string]interface{}{
-					attr.ID:        "admin-id",
-					attr.FirstName: "Admin",
-					attr.LastName:  "Last",
-					attr.Email:     "admin@email.com",
-					attr.IsAdmin:   true,
-					attr.Role:      model.UserRoleAdmin,
-					attr.Type:      "MANUAL",
+				{
+					ID:        types.StringValue("admin-id"),
+					FirstName: types.StringValue("Admin"),
+					LastName:  types.StringValue("Last"),
+					Email:     types.StringValue("admin@email.com"),
+					IsAdmin:   types.BoolValue(true),
+					Role:      types.StringValue(model.UserRoleAdmin),
+					Type:      types.StringValue("MANUAL"),
 				},
 			},
 		},
@@ -134,20 +133,17 @@ func TestConverterUsersToTerraform(t *testing.T) {
 }
 
 func TestConverterResourcesToTerraform(t *testing.T) {
-	var emptySlice []interface{}
-	var emptyStringSlice []string
-
 	cases := []struct {
 		input    []*model.Resource
-		expected []interface{}
+		expected []resourceModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []resourceModel{},
 		},
 		{
 			input:    []*model.Resource{},
-			expected: []interface{}{},
+			expected: []resourceModel{},
 		},
 		{
 			input: []*model.Resource{
@@ -164,38 +160,33 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 						},
 						UDP: &model.Protocol{
 							Policy: model.PolicyRestricted,
+							Ports:  []*model.PortRange{},
 						},
 					},
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:              "resource-id",
-					attr.Name:            "name",
-					attr.Address:         "address",
-					attr.RemoteNetworkID: "network-id",
-					attr.Protocols:       emptySlice,
+			expected: []resourceModel{
+				{
+					ID:              types.StringValue("resource-id"),
+					Name:            types.StringValue("name"),
+					Address:         types.StringValue("address"),
+					RemoteNetworkID: types.StringValue("network-id"),
+					Protocols:       nil,
 				},
-				map[string]interface{}{
-					attr.ID:              "resource-1",
-					attr.Name:            "",
-					attr.Address:         "",
-					attr.RemoteNetworkID: "",
-					attr.Protocols: []interface{}{
-						map[string]interface{}{
-							attr.AllowIcmp: true,
-							attr.TCP: []interface{}{
-								map[string]interface{}{
-									attr.Policy: model.PolicyRestricted,
-									attr.Ports:  []string{"8000-8080"},
-								},
-							},
-							attr.UDP: []interface{}{
-								map[string]interface{}{
-									attr.Policy: model.PolicyDenyAll,
-									attr.Ports:  emptyStringSlice,
-								},
-							},
+				{
+					ID:              types.StringValue("resource-1"),
+					Name:            types.StringValue(""),
+					Address:         types.StringValue(""),
+					RemoteNetworkID: types.StringValue(""),
+					Protocols: &protocolsModel{
+						AllowIcmp: types.BoolValue(true),
+						TCP: &protocolModel{
+							Policy: types.StringValue(model.PolicyRestricted),
+							Ports:  []types.String{types.StringValue("8000-8080")},
+						},
+						UDP: &protocolModel{
+							Policy: types.StringValue(model.PolicyRestricted),
+							Ports:  []types.String{},
 						},
 					},
 				},
@@ -237,11 +228,11 @@ func TestTerraformServicesDatasourceID(t *testing.T) {
 func TestConvertServicesToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.ServiceAccount
-		expected []interface{}
+		expected []serviceAccountModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []serviceAccountModel{},
 		},
 		{
 			input: []*model.ServiceAccount{
@@ -252,12 +243,12 @@ func TestConvertServicesToTerraform(t *testing.T) {
 					Keys:      []string{"key-1", "key-2"},
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:          "service-account-id",
-					attr.Name:        "service-account-name",
-					attr.ResourceIDs: []string{"res-1", "res-2"},
-					attr.KeyIDs:      []string{"key-1", "key-2"},
+			expected: []serviceAccountModel{
+				{
+					ID:          types.StringValue("service-account-id"),
+					Name:        types.StringValue("service-account-name"),
+					ResourceIDs: []types.String{types.StringValue("res-1"), types.StringValue("res-2")},
+					KeyIDs:      []types.String{types.StringValue("key-1"), types.StringValue("key-2")},
 				},
 			},
 		},
@@ -274,11 +265,11 @@ func TestConvertServicesToTerraform(t *testing.T) {
 func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
 	cases := []struct {
 		input    []*model.SecurityPolicy
-		expected []interface{}
+		expected []securityPolicyModel
 	}{
 		{
 			input:    nil,
-			expected: []interface{}{},
+			expected: []securityPolicyModel{},
 		},
 		{
 			input: []*model.SecurityPolicy{
@@ -287,10 +278,10 @@ func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
 					Name: "policy-name",
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
-					attr.ID:   "policy-id",
-					attr.Name: "policy-name",
+			expected: []securityPolicyModel{
+				{
+					ID:   types.StringValue("policy-id"),
+					Name: types.StringValue("policy-name"),
 				},
 			},
 		},

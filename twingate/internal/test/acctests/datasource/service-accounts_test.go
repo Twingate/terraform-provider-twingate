@@ -39,9 +39,9 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 		}
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: terraformConfig(
@@ -79,9 +79,9 @@ func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 		}
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: filterDatasourceServices(prefix, config),
@@ -106,9 +106,9 @@ func TestAccDatasourceTwingateServicesEmptyResult(t *testing.T) {
 		const theDatasource = "data.twingate_service_accounts.out"
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: datasourceServices(test.RandomName(), nil),
@@ -205,9 +205,9 @@ func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
 		)
 
 		resource.Test(t, resource.TestCase{
-			ProviderFactories: acctests.ProviderFactories,
-			PreCheck:          func() { acctests.PreCheck(t) },
-			CheckDestroy:      acctests.CheckTwingateServiceAccountDestroy,
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
 			Steps: []resource.TestStep{
 				{
 					Config: datasourceServicesConfig(prefix),
