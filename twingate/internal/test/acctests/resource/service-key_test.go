@@ -326,3 +326,73 @@ func TestAccTwingateServiceKeyReCreateAfterChangingExpirationTime(t *testing.T) 
 		})
 	})
 }
+
+func TestAccTwingateServiceKeyAndServiceAccountLifecycle(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Service Key and Service Account Lifecycle", func(t *testing.T) {
+		serviceAccountName := test.RandomName()
+		terraformResourceName := test.TerraformRandName("test_lifecycle")
+		serviceAccount := acctests.TerraformServiceAccount(terraformResourceName)
+		serviceKey := acctests.TerraformServiceKey(terraformResourceName)
+
+		serviceKeyResourceID := new(string)
+		serviceAccountResourceID := new(string)
+
+		sdk.Test(t, sdk.TestCase{
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+			Steps: []sdk.TestStep{
+				{
+					Config: createServiceKey(terraformResourceName, serviceAccountName),
+					Check: acctests.ComposeTestCheckFunc(
+						acctests.CheckTwingateResourceExists(serviceAccount),
+						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
+						acctests.CheckTwingateResourceExists(serviceKey),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
+						acctests.GetTwingateResourceID(serviceKey, &serviceKeyResourceID),
+						acctests.GetTwingateResourceID(serviceKey, &serviceAccountResourceID),
+
+						// delete service account via API
+						acctests.DeleteTwingateResource(serviceAccount, resource.TwingateServiceAccount),
+						acctests.WaitTestFunc(),
+					),
+					ExpectNonEmptyPlan: true,
+				},
+				{
+					Config: createServiceKey(terraformResourceName, serviceAccountName),
+					Check: acctests.ComposeTestCheckFunc(
+						acctests.CheckTwingateResourceExists(serviceAccount),
+						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
+						acctests.CheckTwingateResourceExists(serviceKey),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
+
+						// test resources were re-created
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.ID, func(value string) error {
+							if *serviceKeyResourceID == "" {
+								return errors.New("failed to fetch service_key resource id")
+							}
+
+							if value == *serviceKeyResourceID {
+								return errors.New("service_key resource was not re-created")
+							}
+
+							return nil
+						}),
+
+						sdk.TestCheckResourceAttrWith(serviceAccount, attr.ID, func(value string) error {
+							if *serviceAccountResourceID == "" {
+								return errors.New("failed to fetch service_account resource id")
+							}
+
+							if value == *serviceAccountResourceID {
+								return errors.New("service_account resource was not re-created")
+							}
+
+							return nil
+						}),
+					),
+				},
+			},
+		})
+	})
+}
