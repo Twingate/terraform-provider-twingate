@@ -298,6 +298,16 @@ func TestUpdateServiceAccountEmptyResponse(t *testing.T) {
 
 func TestDeleteServiceAccountOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Delete Service Account - Ok", func(t *testing.T) {
+		readAccountResponse := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-account",
+		      "keys": null
+		    }
+		  }
+		}`
+
 		jsonResponse := `{
 		  "data": {
 		    "serviceAccountDelete": {
@@ -310,7 +320,11 @@ func TestDeleteServiceAccountOk(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, readAccountResponse),
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+			),
+		)
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
@@ -324,16 +338,30 @@ func TestDeleteServiceAccountWithEmptyID(t *testing.T) {
 
 		err := c.DeleteServiceAccount(context.Background(), "")
 
-		assert.EqualError(t, err, `failed to delete service account: id is empty`)
+		assert.EqualError(t, err, `failed to read service account: id is empty`)
 	})
 }
 
 func TestDeleteServiceAccountRequestError(t *testing.T) {
 	t.Run("Test Twingate Resource : Delete Service Account - Request Error", func(t *testing.T) {
+		readAccountResponse := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-account",
+		      "keys": null
+		    }
+		  }
+		}`
+
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errBadRequest))
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, readAccountResponse),
+				httpmock.NewErrorResponder(errBadRequest),
+			),
+		)
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
@@ -343,6 +371,16 @@ func TestDeleteServiceAccountRequestError(t *testing.T) {
 
 func TestDeleteServiceAccountResponseError(t *testing.T) {
 	t.Run("Test Twingate Resource : Delete Service Account - Response Error", func(t *testing.T) {
+		readAccountResponse := `{
+		  "data": {
+		    "serviceAccount": {
+		      "id": "account-id",
+		      "name": "test-account",
+		      "keys": null
+		    }
+		  }
+		}`
+
 		jsonResponse := `{
 		  "data": {
 		    "serviceAccountDelete": {
@@ -355,7 +393,11 @@ func TestDeleteServiceAccountResponseError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, readAccountResponse),
+				httpmock.NewStringResponder(http.StatusOK, jsonResponse),
+			),
+		)
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
