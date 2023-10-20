@@ -251,8 +251,8 @@ github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDN
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
 github.com/russross/blackfriday v1.6.0 h1:KqfZb0pUVN2lYqZUYRddxF4OR8ZMURnJIG5Y3VRLtww=
 github.com/russross/blackfriday v1.6.0/go.mod h1:ti0ldHuxg49ri4ksnFxlkCfN+hvslNlmVHqNRXXJNAY=
-github.com/securego/gosec/v2 v2.18.0 h1:PEQsNSe8NjGrQ6oF3LrmMhZTm2iqYKUOYf+OWXzo+XQ=
-github.com/securego/gosec/v2 v2.18.0/go.mod h1:06rgh4+5IrlRpi573DJRZ6y/tlIE+a0rFgMlJDxFIyQ=
+github.com/securego/gosec/v2 v2.18.1 h1:xnnehWg7dIW8qrRPGm8ykY21zp2MueKyC99Vlcuj96I=
+github.com/securego/gosec/v2 v2.18.1/go.mod h1:ZUTcKD9gAFip1lLGHWCjkoBQJyaEzePTNzjwlL2HHoE=
 github.com/sergi/go-diff v1.2.0 h1:XU+rvMAioB0UC3q1MFrIQy4Vo5/4VsRDQQXHsEya6xQ=
 github.com/sergi/go-diff v1.2.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=
 github.com/shopspring/decimal v1.2.0/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=

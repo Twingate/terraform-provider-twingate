@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -58,7 +59,7 @@ var ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){ //n
 }
 
 func SetPageLimit(limit int) {
-	if err := os.Setenv(client.EnvPageLimit, fmt.Sprintf("%d", limit)); err != nil {
+	if err := os.Setenv(client.EnvPageLimit, strconv.Itoa(limit)); err != nil {
 		log.Fatal("failed to set page limit", err)
 	}
 }

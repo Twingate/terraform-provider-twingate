@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -77,7 +78,7 @@ type PortRange struct {
 
 func (p PortRange) String() string {
 	if p.Start == p.End {
-		return fmt.Sprintf("%d", p.Start)
+		return strconv.Itoa(p.Start)
 	}
 
 	return fmt.Sprintf("%d-%d", p.Start, p.End)

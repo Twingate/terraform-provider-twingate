@@ -326,3 +326,88 @@ func TestAccTwingateServiceKeyReCreateAfterChangingExpirationTime(t *testing.T) 
 		})
 	})
 }
+
+func TestAccTwingateServiceKeyAndServiceAccountLifecycle(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Service Key and Service Account Lifecycle", func(t *testing.T) {
+		serviceAccountName := test.RandomName()
+		serviceAccountNameV2 := test.RandomName()
+		terraformServiceAccountName := test.TerraformRandName("test_acc")
+		terraformServiceAccountNameV2 := test.TerraformRandName("test_acc_v2")
+		terraformServiceAccountKeyName := test.TerraformRandName("test_key")
+		serviceAccount := acctests.TerraformServiceAccount(terraformServiceAccountName)
+		serviceAccountV2 := acctests.TerraformServiceAccount(terraformServiceAccountNameV2)
+		serviceKey := acctests.TerraformServiceKey(terraformServiceAccountKeyName)
+
+		serviceKeyResourceID := new(string)
+		serviceAccountResourceID := new(string)
+
+		sdk.Test(t, sdk.TestCase{
+			ProtoV6ProviderFactories: acctests.ProviderFactories,
+			PreCheck:                 func() { acctests.PreCheck(t) },
+			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+			Steps: []sdk.TestStep{
+				{
+					Config: createServiceKeyV1(terraformServiceAccountName, serviceAccountName, terraformServiceAccountNameV2, serviceAccountNameV2, terraformServiceAccountKeyName, terraformServiceAccountName),
+					Check: acctests.ComposeTestCheckFunc(
+						acctests.CheckTwingateResourceExists(serviceAccount),
+						sdk.TestCheckResourceAttr(serviceAccount, attr.Name, serviceAccountName),
+						acctests.CheckTwingateResourceExists(serviceKey),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
+						acctests.GetTwingateResourceID(serviceKey, &serviceKeyResourceID),
+						acctests.GetTwingateResourceID(serviceKey, &serviceAccountResourceID),
+					),
+				},
+				{
+					Config: createServiceKeyV1(terraformServiceAccountName, serviceAccountName, terraformServiceAccountNameV2, serviceAccountNameV2, terraformServiceAccountKeyName, terraformServiceAccountNameV2),
+					Check: acctests.ComposeTestCheckFunc(
+						acctests.CheckTwingateResourceExists(serviceAccountV2),
+						sdk.TestCheckResourceAttr(serviceAccountV2, attr.Name, serviceAccountNameV2),
+						acctests.CheckTwingateResourceExists(serviceKey),
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.Token, nonEmptyValue),
+
+						// test resources were re-created
+						sdk.TestCheckResourceAttrWith(serviceKey, attr.ID, func(value string) error {
+							if *serviceKeyResourceID == "" {
+								return errors.New("failed to fetch service_key resource id")
+							}
+
+							if value == *serviceKeyResourceID {
+								return errors.New("service_key resource was not re-created")
+							}
+
+							return nil
+						}),
+
+						sdk.TestCheckResourceAttrWith(serviceAccountV2, attr.ID, func(value string) error {
+							if *serviceAccountResourceID == "" {
+								return errors.New("failed to fetch service_account resource id")
+							}
+
+							if value == *serviceAccountResourceID {
+								return errors.New("service_account resource was not re-created")
+							}
+
+							return nil
+						}),
+					),
+				},
+			},
+		})
+	})
+}
+
+func createServiceKeyV1(terraformServiceAccountName, serviceAccountName, terraformServiceAccountNameV2, serviceAccountNameV2, terraformServiceAccountKeyName, serviceAccount string) string {
+	return fmt.Sprintf(`
+	resource "twingate_service_account" "%s" {
+	  name = "%s"
+	}
+
+	resource "twingate_service_account" "%s" {
+	  name = "%s"
+	}
+
+	resource "twingate_service_account_key" "%s" {
+	  service_account_id = twingate_service_account.%s.id
+	}
+	`, terraformServiceAccountName, serviceAccountName, terraformServiceAccountNameV2, serviceAccountNameV2, terraformServiceAccountKeyName, serviceAccount)
+}
