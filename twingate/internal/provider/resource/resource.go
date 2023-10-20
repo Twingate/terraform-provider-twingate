@@ -496,7 +496,7 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		res.IsVisible = &val
 	}
 
-	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint:staticcheck
+	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
 	if val := isBrowserShortcutEnabled.(bool); ok {
 		res.IsBrowserShortcutEnabled = &val
 	}
@@ -530,7 +530,7 @@ func convertAccess(data *schema.ResourceData) ([]string, []string) {
 }
 
 func convertAuthoritativeFlagLegacy(data *schema.ResourceData) bool {
-	flag, hasFlag := data.GetOkExists(attr.IsAuthoritative) //nolint:staticcheck
+	flag, hasFlag := data.GetOkExists(attr.IsAuthoritative) //nolint
 
 	if hasFlag {
 		return flag.(bool)
