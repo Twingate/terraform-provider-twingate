@@ -310,8 +310,7 @@ func TestDeleteServiceAccountOk(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse),
-		)
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
@@ -334,8 +333,7 @@ func TestDeleteServiceAccountRequestError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewErrorResponder(errBadRequest),
-		)
+			httpmock.NewErrorResponder(errBadRequest))
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
@@ -357,8 +355,7 @@ func TestDeleteServiceAccountResponseError(t *testing.T) {
 		c := newHTTPMockClient()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
-			httpmock.NewStringResponder(http.StatusOK, jsonResponse),
-		)
+			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
 		err := c.DeleteServiceAccount(context.Background(), "account-id")
 
