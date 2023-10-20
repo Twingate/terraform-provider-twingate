@@ -72,19 +72,6 @@ func (client *Client) UpdateServiceAccount(ctx context.Context, serviceAccount *
 }
 
 func (client *Client) DeleteServiceAccount(ctx context.Context, serviceAccountID string) error {
-	serviceAccount, err := client.ReadServiceAccount(ctx, serviceAccountID)
-	if err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
-		return err
-	}
-
-	if serviceAccount != nil {
-		for _, key := range serviceAccount.Keys {
-			if err := client.RevokeServiceKey(ctx, key); err != nil {
-				return err
-			}
-		}
-	}
-
 	opr := resourceServiceAccount.delete()
 
 	if serviceAccountID == "" {

@@ -353,6 +353,7 @@ func TestAccTwingateServiceKeyAndServiceAccountLifecycle(t *testing.T) {
 						acctests.GetTwingateResourceID(serviceKey, &serviceAccountResourceID),
 
 						// delete service account via API
+						acctests.RevokeTwingateServiceKey(serviceKey),
 						acctests.DeleteTwingateResource(serviceAccount, resource.TwingateServiceAccount),
 						acctests.WaitTestFunc(),
 					),
