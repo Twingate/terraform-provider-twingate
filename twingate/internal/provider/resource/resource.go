@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	ErrPortsWithPolicyAllowAll      = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
-	ErrPortsWithPolicyDenyAll       = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
-	ErrPolicyRestrictedWithoutPorts = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
+	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
+	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
+	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
+	ErrWildcardAddressWithEnabledShortcut = errors.New("not allowed to have both: wildcard address and enabled browser shortcut, please choose one of it")
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -499,6 +500,10 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
 	if val := isBrowserShortcutEnabled.(bool); ok {
 		res.IsBrowserShortcutEnabled = &val
+	}
+
+	if res.IsBrowserShortcutEnabled != nil && *res.IsBrowserShortcutEnabled && strings.HasPrefix(res.Address, "*.") {
+		return nil, ErrWildcardAddressWithEnabledShortcut
 	}
 
 	return res, nil

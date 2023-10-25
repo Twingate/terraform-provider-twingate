@@ -2427,51 +2427,89 @@ func TestAccTwingateResourceWithBrowserOption(t *testing.T) {
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
+	wildcardAddress := "*.acc-test.com"
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
-			//{
-			//	Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName),
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		acctests.CheckTwingateResourceExists(theResource),
-			//	),
-			//},
 			{
-				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, false),
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
+			},
+			{
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config:      createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
+				ExpectError: regexp.MustCompile(resource.ErrWildcardAddressWithEnabledShortcut.Error()),
 			},
 		},
 	})
 }
 
-func createResourceWithoutBrowserOption(name, networkName, resourceName string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "%[1]s" {
-	  name = "%[2]s"
-	}
-	resource "twingate_resource" "%[1]s" {
-	  name = "%[3]s"
-	  address = "*.acc-test-%[1]s.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	}
-	`, name, networkName, resourceName)
+func TestAccTwingateResourceWithBrowserOptionFailOnUpdate(t *testing.T) {
+	const terraformResourceName = "test41"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	wildcardAddress := "*.acc-test.com"
+	simpleAddress := "acc-test.com"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, simpleAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, simpleAddress, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config:      createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
+				ExpectError: regexp.MustCompile(resource.ErrWildcardAddressWithEnabledShortcut.Error()),
+			},
+		},
+	})
 }
 
-func createResourceWithBrowserOption(name, networkName, resourceName string, browserOption bool) string {
+func createResourceWithoutBrowserOption(name, networkName, resourceName, address string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%[1]s" {
 	  name = "%[2]s"
 	}
 	resource "twingate_resource" "%[1]s" {
 	  name = "%[3]s"
-	  address = "*.acc-test-%[1]s.com"
+	  address = "%[4]s"
 	  remote_network_id = twingate_remote_network.%[1]s.id
-	  is_browser_shortcut_enabled = %[4]v
 	}
-	`, name, networkName, resourceName, browserOption)
+	`, name, networkName, resourceName, address)
+}
+
+func createResourceWithBrowserOption(name, networkName, resourceName, address string, browserOption bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[2]s"
+	}
+	resource "twingate_resource" "%[1]s" {
+	  name = "%[3]s"
+	  address = "%[4]s"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  is_browser_shortcut_enabled = %[5]v
+	}
+	`, name, networkName, resourceName, address, browserOption)
 }
