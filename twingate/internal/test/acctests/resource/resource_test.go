@@ -2487,6 +2487,35 @@ func TestAccTwingateResourceWithBrowserOptionFailOnUpdate(t *testing.T) {
 	})
 }
 
+func TestAccTwingateResourceWithBrowserOptionRecovered(t *testing.T) {
+	const terraformResourceName = "test42"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	wildcardAddress := "*.acc-test.com"
+	simpleAddress := "acc-test.com"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, simpleAddress, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+		},
+	})
+}
+
 func createResourceWithoutBrowserOption(name, networkName, resourceName, address string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%[1]s" {

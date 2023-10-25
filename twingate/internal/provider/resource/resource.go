@@ -498,7 +498,7 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 	}
 
 	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
-	if val := isBrowserShortcutEnabled.(bool); ok {
+	if val := isBrowserShortcutEnabled.(bool); ok && isAttrKnown(data, attr.IsBrowserShortcutEnabled) {
 		res.IsBrowserShortcutEnabled = &val
 	}
 
@@ -507,6 +507,13 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 	}
 
 	return res, nil
+}
+
+func isAttrKnown(data *schema.ResourceData, attr string) bool {
+	cfg := data.GetRawConfig()
+	val := cfg.GetAttr(attr)
+
+	return !val.IsNull() && val.IsKnown()
 }
 
 func getOptionalString(data *schema.ResourceData, attr string) *string {
