@@ -11,7 +11,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -61,6 +60,7 @@ type resourceModel struct {
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
+	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
 }
 
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -141,6 +141,11 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 					CaseInsensitiveDiff(),
 				},
 			},
+			attr.SecurityPolicyID: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID of a twingate_security_policy to set as this Resource's Security Policy.",
+			},
 			attr.Protocols: protocols(),
 			// computed
 			attr.IsVisible: schema.BoolAttribute{
@@ -219,21 +224,31 @@ func protocol() schema.SingleNestedAttribute {
 	}
 }
 
-func accessBlock() schema.ListNestedBlock {
-	return schema.ListNestedBlock{
-		Validators: []validator.List{
-			listvalidator.SizeAtMost(1),
-		},
+func accessBlock() schema.SetNestedBlock {
+	return schema.SetNestedBlock{
 		Description: "Restrict access to certain groups or service accounts",
 		NestedObject: schema.NestedBlockObject{
 			Attributes: map[string]schema.Attribute{
-				attr.GroupIDs: schema.SetAttribute{
+				attr.SecurityPolicyID: schema.StringAttribute{
 					Optional:    true,
-					ElementType: types.StringType,
-					Description: "List of Group IDs that will have permission to access the Resource.",
-					Validators: []validator.Set{
-						setvalidator.SizeAtLeast(1),
+					Description: "The ID of a twingate_security_policy to use as the access policy for the group IDs in the access block",
+					Validators: []validator.String{
+						stringvalidator.ConflictsWith(
+							// TODO
+							path.Expressions{
+								path.MatchRoot(attr.ServiceAccountIDs),
+							}...,
+						),
+						stringvalidator.AlsoRequires(
+							path.Expressions{
+								path.MatchRoot(attr.GroupID),
+							}...,
+						),
 					},
+				},
+				attr.GroupID: schema.StringAttribute{
+					Optional:    true,
+					Description: "Group ID that will have permission to access the Resource.",
 				},
 				attr.ServiceAccountIDs: schema.SetAttribute{
 					Optional:    true,
@@ -241,6 +256,11 @@ func accessBlock() schema.ListNestedBlock {
 					Description: "List of Service Account IDs that will have permission to access the Resource.",
 					Validators: []validator.Set{
 						setvalidator.SizeAtLeast(1),
+						setvalidator.ConflictsWith(
+							path.Expressions{
+								path.MatchRoot(attr.SecurityPolicyID),
+							}...,
+						),
 					},
 				},
 			},
@@ -388,7 +408,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		return nil, err
 	}
 
-	groupIDs := getAccessAttribute(plan.Access, attr.GroupIDs)
+	groupIDs := getAccessAttribute(plan.Access, attr.GroupID)
 	serviceAccountIDs := getAccessAttribute(plan.Access, attr.ServiceAccountIDs)
 
 	if !plan.Access.IsNull() && groupIDs == nil && serviceAccountIDs == nil {
@@ -409,6 +429,11 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		alias = plan.Alias.ValueStringPointer()
 	}
 
+	var securityPolicyID *string
+	if !plan.SecurityPolicyID.IsUnknown() && !plan.SecurityPolicyID.IsNull() {
+		securityPolicyID = plan.SecurityPolicyID.ValueStringPointer()
+	}
+
 	return &model.Resource{
 		Name:                     plan.Name.ValueString(),
 		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
@@ -420,6 +445,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		Alias:                    alias,
 		IsVisible:                isVisible,
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
+		SecurityPolicyID:         securityPolicyID,
 	}, nil
 }
 
@@ -644,7 +670,7 @@ func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state 
 	if resource.IsAuthoritative {
 		oldGroups, oldServiceAccounts = remote.Groups, remote.ServiceAccounts
 	} else {
-		oldGroups = getOldIDsNonAuthoritative(plan, state, attr.GroupIDs)
+		oldGroups = getOldIDsNonAuthoritative(plan, state, attr.GroupID)
 		oldServiceAccounts = getOldIDsNonAuthoritative(plan, state, attr.ServiceAccountIDs)
 	}
 
@@ -713,7 +739,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	}
 
 	if !resource.IsAuthoritative {
-		resource.Groups = setIntersection(getAccessAttribute(reference.Access, attr.GroupIDs), resource.Groups)
+		resource.Groups = setIntersection(getAccessAttribute(reference.Access, attr.GroupID), resource.Groups)
 		resource.ServiceAccounts = setIntersection(getAccessAttribute(reference.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
 	}
 
@@ -761,7 +787,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 
 	if !state.Access.IsNull() {
 		access, diags := convertAccessBlockToTerraform(ctx, resource,
-			state.Access.Elements()[0].(types.Object).Attributes()[attr.GroupIDs],
+			state.Access.Elements()[0].(types.Object).Attributes()[attr.GroupID],
 			state.Access.Elements()[0].(types.Object).Attributes()[attr.ServiceAccountIDs])
 
 		diagnostics.Append(diags...)
@@ -970,12 +996,12 @@ func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource
 	}
 
 	attributes := map[string]tfattr.Value{
-		attr.GroupIDs:          stateGroupIDs,
+		attr.GroupID:           stateGroupIDs,
 		attr.ServiceAccountIDs: stateServiceAccounts,
 	}
 
 	if !groupIDs.IsNull() {
-		attributes[attr.GroupIDs] = groupIDs
+		attributes[attr.GroupID] = groupIDs
 	}
 
 	if !serviceAccountIDs.IsNull() {
@@ -994,7 +1020,7 @@ func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource
 
 func accessAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
-		attr.GroupIDs: types.SetType{
+		attr.GroupID: types.SetType{
 			ElemType: types.StringType,
 		},
 		attr.ServiceAccountIDs: types.SetType{

@@ -22,7 +22,7 @@ var (
 	firstUDPPort               = attr.FirstAttr(attr.Protocols, attr.UDP, attr.Ports)
 	tcpPortsLen                = attr.LenAttr(attr.Protocols, attr.TCP, attr.Ports)
 	udpPortsLen                = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
-	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
+	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupID)
 	accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
 )
 
@@ -2453,4 +2453,59 @@ func TestAccTwingateResourceTestCaseInsensitiveAlias(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccTwingateResourceTestMultipleAccessBlock(t *testing.T) {
+	const terraformResourceName = "test39"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource39(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+				),
+			},
+		},
+	})
+}
+
+func createResource39(terraformResourceName, networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "devops" {
+	  name = "DevOps"
+	}
+	
+	resource "twingate_group" "security" {
+	  name = "Security"
+	}
+	
+	data "twingate_security_policy" "mfa" {
+	  name = "Default Policy"
+	}
+
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%s.id
+	  dynamic "access" {
+		for_each = [twingate_group.devops.id, twingate_group.security.id]
+		content {
+		  security_policy_id = data.twingate_security_policy.mfa.id
+		  group_ids = [access.value]
+		}
+	  }
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName)
 }

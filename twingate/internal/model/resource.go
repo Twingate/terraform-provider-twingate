@@ -34,12 +34,13 @@ type Resource struct {
 	IsVisible                *bool
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
+	SecurityPolicyID         *string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {
 	rawMap := make(map[string]interface{})
 	if len(r.Groups) != 0 {
-		rawMap[attr.GroupIDs] = r.Groups
+		rawMap[attr.GroupID] = r.Groups
 	}
 
 	if len(r.ServiceAccounts) != 0 {
