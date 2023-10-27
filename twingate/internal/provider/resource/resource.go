@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -17,9 +18,10 @@ import (
 )
 
 var (
-	ErrPortsWithPolicyAllowAll      = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
-	ErrPortsWithPolicyDenyAll       = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
-	ErrPolicyRestrictedWithoutPorts = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
+	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
+	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
+	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
+	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -497,11 +499,28 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 	}
 
 	isBrowserShortcutEnabled, ok := data.GetOkExists(attr.IsBrowserShortcutEnabled) //nolint
-	if val := isBrowserShortcutEnabled.(bool); ok {
+	if val := isBrowserShortcutEnabled.(bool); ok && isAttrKnown(data, attr.IsBrowserShortcutEnabled) {
 		res.IsBrowserShortcutEnabled = &val
 	}
 
+	if res.IsBrowserShortcutEnabled != nil && *res.IsBrowserShortcutEnabled && isWildcardAddress(res.Address) {
+		return nil, ErrWildcardAddressWithEnabledShortcut
+	}
+
 	return res, nil
+}
+
+var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)?`)
+
+func isWildcardAddress(address string) bool {
+	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
+}
+
+func isAttrKnown(data *schema.ResourceData, attr string) bool {
+	cfg := data.GetRawConfig()
+	val := cfg.GetAttr(attr)
+
+	return !val.IsNull() && val.IsKnown()
 }
 
 func getOptionalString(data *schema.ResourceData, attr string) *string {
