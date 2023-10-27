@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -20,7 +21,7 @@ var (
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
-	ErrWildcardAddressWithEnabledShortcut = errors.New("not allowed to have both: wildcard address and enabled browser shortcut, please choose one of it")
+	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -502,11 +503,17 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		res.IsBrowserShortcutEnabled = &val
 	}
 
-	if res.IsBrowserShortcutEnabled != nil && *res.IsBrowserShortcutEnabled && strings.HasPrefix(res.Address, "*.") {
+	if res.IsBrowserShortcutEnabled != nil && *res.IsBrowserShortcutEnabled && isWildcardAddress(res.Address) {
 		return nil, ErrWildcardAddressWithEnabledShortcut
 	}
 
 	return res, nil
+}
+
+var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)?`)
+
+func isWildcardAddress(address string) bool {
+	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
 }
 
 func isAttrKnown(data *schema.ResourceData, attr string) bool {
