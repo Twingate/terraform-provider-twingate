@@ -155,6 +155,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
+				Default:     booldefault.StaticBool(false),
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
