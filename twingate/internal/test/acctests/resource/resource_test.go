@@ -2454,3 +2454,124 @@ func TestAccTwingateResourceTestCaseInsensitiveAlias(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateResourceWithBrowserOption(t *testing.T) {
+	const terraformResourceName = "test40"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	wildcardAddress := "*.acc-test.com"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config:      createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
+				ExpectError: regexp.MustCompile("Resources with a CIDR range or wildcard"),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceWithBrowserOptionFailOnUpdate(t *testing.T) {
+	const terraformResourceName = "test41"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	wildcardAddress := "*.acc-test.com"
+	simpleAddress := "acc-test.com"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, simpleAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, simpleAddress, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config:      createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
+				ExpectError: regexp.MustCompile("Resources with a CIDR range or wildcard"),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceWithBrowserOptionRecovered(t *testing.T) {
+	const terraformResourceName = "test42"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	wildcardAddress := "*.acc-test.com"
+	simpleAddress := "acc-test.com"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, simpleAddress, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithoutBrowserOption(name, networkName, resourceName, address string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[2]s"
+	}
+	resource "twingate_resource" "%[1]s" {
+	  name = "%[3]s"
+	  address = "%[4]s"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	}
+	`, name, networkName, resourceName, address)
+}
+
+func createResourceWithBrowserOption(name, networkName, resourceName, address string, browserOption bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[2]s"
+	}
+	resource "twingate_resource" "%[1]s" {
+	  name = "%[3]s"
+	  address = "%[4]s"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  is_browser_shortcut_enabled = %[5]v
+	}
+	`, name, networkName, resourceName, address, browserOption)
+}

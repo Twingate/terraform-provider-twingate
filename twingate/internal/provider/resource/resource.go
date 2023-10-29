@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -33,10 +34,11 @@ import (
 )
 
 var (
-	ErrPortsWithPolicyAllowAll      = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
-	ErrPortsWithPolicyDenyAll       = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
-	ErrPolicyRestrictedWithoutPorts = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
-	ErrInvalidAttributeCombination  = errors.New("invalid attribute combination")
+	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
+	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
+	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
+	ErrInvalidAttributeCombination        = errors.New("invalid attribute combination")
+	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -150,10 +152,9 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
-				Optional:      true,
-				Computed:      true,
-				Description:   `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
-				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+				Optional:    true,
+				Computed:    true,
+				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
@@ -395,18 +396,10 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		return nil, ErrInvalidAttributeCombination
 	}
 
-	var isVisible, isBrowserShortcutEnabled *bool
-	if !plan.IsVisible.IsUnknown() {
-		isVisible = plan.IsVisible.ValueBoolPointer()
-	}
+	isBrowserShortcutEnabled := getOptionalBool(plan.IsBrowserShortcutEnabled)
 
-	if !plan.IsBrowserShortcutEnabled.IsUnknown() {
-		isBrowserShortcutEnabled = plan.IsBrowserShortcutEnabled.ValueBoolPointer()
-	}
-
-	var alias *string
-	if !plan.Alias.IsUnknown() && !plan.Alias.IsNull() {
-		alias = plan.Alias.ValueStringPointer()
+	if isBrowserShortcutEnabled != nil && *isBrowserShortcutEnabled && isWildcardAddress(plan.Address.ValueString()) {
+		return nil, ErrWildcardAddressWithEnabledShortcut
 	}
 
 	return &model.Resource{
@@ -417,10 +410,26 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		Groups:                   groupIDs,
 		ServiceAccounts:          serviceAccountIDs,
 		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
-		Alias:                    alias,
-		IsVisible:                isVisible,
+		Alias:                    getOptionalString(plan.Alias),
+		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 	}, nil
+}
+
+func getOptionalBool(val types.Bool) *bool {
+	if !val.IsUnknown() {
+		return val.ValueBoolPointer()
+	}
+
+	return nil
+}
+
+func getOptionalString(val types.String) *string {
+	if !val.IsUnknown() && !val.IsNull() {
+		return val.ValueStringPointer()
+	}
+
+	return nil
 }
 
 func convertIDs(list types.Set) []string {
@@ -1074,4 +1083,10 @@ func (m caseInsensitiveDiffModifier) PlanModifyString(ctx context.Context, req p
 	if strings.EqualFold(strings.ToLower(req.PlanValue.ValueString()), strings.ToLower(req.StateValue.ValueString())) {
 		resp.PlanValue = req.StateValue
 	}
+}
+
+var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)?`)
+
+func isWildcardAddress(address string) bool {
+	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
 }
