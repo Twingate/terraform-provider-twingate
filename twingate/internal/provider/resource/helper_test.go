@@ -153,3 +153,37 @@ func stringPtr(s string) *string {
 func boolPtr(b bool) *bool {
 	return &b
 }
+
+func TestIsWildcardAddress(t *testing.T) {
+	cases := []struct {
+		address  string
+		expected bool
+	}{
+		{
+			address:  "hello.com",
+			expected: false,
+		},
+		{
+			address:  "*.hello.com",
+			expected: true,
+		},
+		{
+			address:  "redis-?-blah.internal",
+			expected: true,
+		},
+		{
+			address:  "redis-*-blah.internal",
+			expected: true,
+		},
+		{
+			address:  "10.0.0.0/16",
+			expected: true,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, isWildcardAddress(c.address))
+		})
+	}
+}
