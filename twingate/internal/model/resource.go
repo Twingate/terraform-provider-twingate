@@ -28,23 +28,44 @@ type Resource struct {
 	Name                     string
 	Protocols                *Protocols
 	IsActive                 bool
-	Groups                   []string
-	ServiceAccounts          []string
 	IsAuthoritative          bool
 	IsVisible                *bool
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
 	SecurityPolicyID         *string
+	Access                   []ResourceAccess
+}
+
+type ResourceAccess struct {
+	SecurityPolicyID  *string
+	GroupID           *string
+	ServiceAccountIDs []string
+}
+
+func (a ResourceAccess) IsEmpty() bool {
+	return a.SecurityPolicyID == nil && a.GroupID == nil && len(a.ServiceAccountIDs) == 0
 }
 
 func (r Resource) AccessToTerraform() []interface{} {
-	rawMap := make(map[string]interface{})
-	if len(r.Groups) != 0 {
-		rawMap[attr.GroupID] = r.Groups
+	var groups, serviceAccounts []string
+
+	for _, edge := range r.Access {
+		if edge.GroupID != nil {
+			groups = append(groups, *edge.GroupID)
+
+			continue
+		}
+
+		serviceAccounts = append(serviceAccounts, edge.ServiceAccountIDs...)
 	}
 
-	if len(r.ServiceAccounts) != 0 {
-		rawMap[attr.ServiceAccountIDs] = r.ServiceAccounts
+	rawMap := make(map[string]interface{})
+	if len(groups) != 0 {
+		rawMap[attr.GroupID] = groups
+	}
+
+	if len(serviceAccounts) != 0 {
+		rawMap[attr.ServiceAccountIDs] = serviceAccounts
 	}
 
 	if len(rawMap) == 0 {

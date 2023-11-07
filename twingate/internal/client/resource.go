@@ -63,12 +63,12 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	variables := newVars(
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(input.Groups, "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
+		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlNullable(input.Alias, "alias"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
@@ -80,9 +80,8 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	}
 
 	resource := response.Entity.ToModel()
-	resource.Groups = input.Groups
-	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
+	resource.Access = input.Access
 
 	if input.IsVisible == nil {
 		resource.IsVisible = nil
@@ -179,6 +178,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
+		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlNullable(input.Alias, "alias"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
@@ -292,10 +292,10 @@ type AccessInput struct {
 	SecurityPolicyID *string `json:"securityPolicyId"`
 }
 
-func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, principalIDs []string) error {
+func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, inputAccess []model.ResourceAccess) error {
 	opr := resourceResourceAccess.update()
 
-	if len(principalIDs) == 0 {
+	if len(inputAccess) == 0 {
 		return nil
 	}
 
@@ -303,9 +303,27 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	access := utils.Map(principalIDs, func(id string) AccessInput {
-		return AccessInput{PrincipalID: id}
-	})
+	var access []AccessInput
+
+	for _, input := range inputAccess {
+		if input.IsEmpty() {
+			continue
+		}
+
+		if input.GroupID != nil {
+			access = append(access, AccessInput{PrincipalID: *input.GroupID, SecurityPolicyID: input.SecurityPolicyID})
+
+			continue
+		}
+
+		for _, serviceAccountID := range input.ServiceAccountIDs {
+			access = append(access, AccessInput{PrincipalID: serviceAccountID})
+		}
+	}
+
+	if len(access) == 0 {
+		return nil
+	}
 
 	variables := newVars(
 		gqlID(resourceID),

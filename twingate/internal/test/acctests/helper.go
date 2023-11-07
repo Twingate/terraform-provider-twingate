@@ -465,7 +465,9 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{groupID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []model.ResourceAccess{
+			{GroupID: &groupID},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add group with ID %s: %w", resourceID, groupID, err)
 		}
@@ -507,8 +509,16 @@ func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.Test
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
 
-		if len(resource.Groups) != expectedGroupsLen {
-			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.Groups))
+		var groups []string
+
+		for _, edge := range resource.Access {
+			if edge.GroupID != nil {
+				groups = append(groups, *edge.GroupID)
+			}
+		}
+
+		if len(groups) != expectedGroupsLen {
+			return ErrGroupsLenMismatch(expectedGroupsLen, len(groups))
 		}
 
 		return nil
@@ -543,7 +553,11 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{serviceAccountID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []model.ResourceAccess{
+			{
+				ServiceAccountIDs: []string{serviceAccountID},
+			},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
 		}
@@ -585,8 +599,16 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
 
-		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
-			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))
+		var serviceAccounts []string
+
+		for _, edge := range resource.Access {
+			if len(edge.ServiceAccountIDs) > 0 {
+				serviceAccounts = append(serviceAccounts, edge.ServiceAccountIDs...)
+			}
+		}
+
+		if len(serviceAccounts) != expectedServiceAccountsLen {
+			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(serviceAccounts))
 		}
 
 		return nil

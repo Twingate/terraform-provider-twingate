@@ -26,8 +26,16 @@ resource "twingate_group" "aws" {
   name = "aws_group"
 }
 
+resource "twingate_group" "devops" {
+  name = "DevOps"
+}
+
 resource "twingate_service_account" "github_actions_prod" {
   name = "Github Actions PROD"
+}
+
+data "twingate_security_policy" "mfa" {
+  name = "Default Policy"
 }
 
 resource "twingate_resource" "resource" {
@@ -35,19 +43,26 @@ resource "twingate_resource" "resource" {
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
-  protocols {
+  protocols = {
     allow_icmp = true
-    tcp  {
+    tcp = {
       policy = "RESTRICTED"
       ports = ["80", "82-83"]
     }
-    udp {
+    udp = {
       policy = "ALLOW_ALL"
     }
   }
 
+  dynamic "access" {
+    for_each = [twingate_group.devops.id, twingate_group.aws.id]
+    content {
+      security_policy_id = data.twingate_security_policy.mfa.id
+      group_id = access.value
+    }
+  }
+
   access {
-    group_ids = [twingate_group.aws.id]
     service_account_ids = [twingate_service_account.github_actions_prod.id]
   }
 }
@@ -64,12 +79,13 @@ resource "twingate_resource" "resource" {
 
 ### Optional
 
-- `access` (Block List) Restrict access to certain groups or service accounts (see [below for nested schema](#nestedblock--access))
+- `access` (Block Set) Restrict access to certain groups or service accounts (see [below for nested schema](#nestedblock--access))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
+- `security_policy_id` (String) The ID of a twingate_security_policy to set as this Resource's Security Policy.
 
 ### Read-Only
 
@@ -80,7 +96,8 @@ resource "twingate_resource" "resource" {
 
 Optional:
 
-- `group_ids` (Set of String) List of Group IDs that will have permission to access the Resource.
+- `group_id` (String) Group ID that will have permission to access the Resource.
+- `security_policy_id` (String) The ID of a twingate_security_policy to use as the access policy for the group IDs in the access block
 - `service_account_ids` (Set of String) List of Service Account IDs that will have permission to access the Resource.
 
 

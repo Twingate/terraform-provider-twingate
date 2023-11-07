@@ -250,7 +250,11 @@ func TestResourceAccessToTerraform(t *testing.T) {
 		},
 		{
 			resource: model.Resource{
-				Groups: []string{"group-1"},
+				Access: []model.ResourceAccess{
+					{
+						GroupID: stringPtr("group-1"),
+					},
+				},
 			},
 			expected: []interface{}{
 				map[string]interface{}{
@@ -260,7 +264,11 @@ func TestResourceAccessToTerraform(t *testing.T) {
 		},
 		{
 			resource: model.Resource{
-				ServiceAccounts: []string{"service-1"},
+				Access: []model.ResourceAccess{
+					{
+						ServiceAccountIDs: []string{"service-1"},
+					},
+				},
 				IsAuthoritative: true,
 			},
 			expected: []interface{}{
@@ -276,4 +284,8 @@ func TestResourceAccessToTerraform(t *testing.T) {
 			assert.Equal(t, c.expected, c.resource.AccessToTerraform())
 		})
 	}
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
