@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/client9/misspell v0.3.4
 	github.com/google/go-cmp v0.6.0
-	github.com/hashicorp/go-retryablehttp v0.7.4
+	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-framework v1.4.2
