@@ -56,6 +56,7 @@ type ResourceNode struct {
 	IsVisible                bool
 	IsBrowserShortcutEnabled bool
 	Alias                    string
+	SecurityPolicy           *gqlSecurityPolicy
 }
 
 type Protocols struct {
@@ -90,6 +91,11 @@ func (r gqlResource) ToModel() *model.Resource {
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
+	var securityPolicy string
+	if r.SecurityPolicy != nil {
+		securityPolicy = string(r.SecurityPolicy.ID)
+	}
+
 	return &model.Resource{
 		ID:                       string(r.ID),
 		Name:                     r.Name,
@@ -100,6 +106,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsVisible:                &r.IsVisible,
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
+		SecurityPolicyID:         optionalString(securityPolicy),
 	}
 }
 

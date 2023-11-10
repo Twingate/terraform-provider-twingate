@@ -136,6 +136,11 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Restrict access to certain groups or service accounts",
 				Elem:        accessSchema,
 			},
+			attr.SecurityPolicyID: {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
+			},
 			// computed
 			attr.IsVisible: {
 				Type:        schema.TypeBool,
@@ -222,6 +227,7 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		attr.IsVisible,
 		attr.IsBrowserShortcutEnabled,
 		attr.Alias,
+		attr.SecurityPolicyID,
 	) {
 		resource, err = client.UpdateResource(ctx, resource)
 	} else {
@@ -239,9 +245,15 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
+	securityPolicyID := resourceData.Get(attr.SecurityPolicyID)
+
 	resource, err := client.ReadResource(ctx, resourceData.Id())
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlagLegacy(resourceData)
+
+		if securityPolicyID == "" {
+			resource.SecurityPolicyID = nil
+		}
 	}
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
@@ -348,13 +360,12 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		}
 	}
 
-	var alias interface{}
-	if resource.Alias != nil {
-		alias = *resource.Alias
+	if err := resourceData.Set(attr.Alias, resource.Alias); err != nil {
+		return ErrAttributeSet(err, attr.Alias)
 	}
 
-	if err := resourceData.Set(attr.Alias, alias); err != nil {
-		return ErrAttributeSet(err, attr.Alias)
+	if err := resourceData.Set(attr.SecurityPolicyID, resource.SecurityPolicyID); err != nil {
+		return ErrAttributeSet(err, attr.SecurityPolicyID)
 	}
 
 	return nil
@@ -483,14 +494,15 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 
 	groups, serviceAccounts := convertAccess(data)
 	res := &model.Resource{
-		Name:            data.Get(attr.Name).(string),
-		RemoteNetworkID: data.Get(attr.RemoteNetworkID).(string),
-		Address:         data.Get(attr.Address).(string),
-		Protocols:       protocols,
-		Groups:          groups,
-		ServiceAccounts: serviceAccounts,
-		IsAuthoritative: convertAuthoritativeFlagLegacy(data),
-		Alias:           getOptionalString(data, attr.Alias),
+		Name:             data.Get(attr.Name).(string),
+		RemoteNetworkID:  data.Get(attr.RemoteNetworkID).(string),
+		Address:          data.Get(attr.Address).(string),
+		Protocols:        protocols,
+		Groups:           groups,
+		ServiceAccounts:  serviceAccounts,
+		IsAuthoritative:  convertAuthoritativeFlagLegacy(data),
+		Alias:            getOptionalString(data, attr.Alias),
+		SecurityPolicyID: getOptionalString(data, attr.SecurityPolicyID),
 	}
 
 	isVisible, ok := data.GetOkExists(attr.IsVisible) //nolint
@@ -524,9 +536,17 @@ func isAttrKnown(data *schema.ResourceData, attr string) bool {
 }
 
 func getOptionalString(data *schema.ResourceData, attr string) *string {
+	if data == nil {
+		return nil
+	}
+
 	var result *string
 
 	cfg := data.GetRawConfig()
+	if cfg.IsNull() {
+		return nil
+	}
+
 	val := cfg.GetAttr(attr)
 
 	if !val.IsNull() {
