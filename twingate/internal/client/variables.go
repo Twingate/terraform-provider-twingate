@@ -105,12 +105,17 @@ func getValue(val any) any {
 	}
 }
 
+//nolint:unparam
 func gqlNullableID(val interface{}, name string) gqlVarOption {
 	return func(values map[string]interface{}) map[string]interface{} {
 		var (
 			gqlValue  interface{}
 			defaultID *graphql.ID
 		)
+
+		if value, ok := val.(*string); ok && value != nil {
+			val = *value
+		}
 
 		if isZeroValue(val) {
 			gqlValue = defaultID
