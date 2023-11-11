@@ -1,0 +1,21 @@
+config:
+  azure-native:location: uksouth
+  demo-connector:data:
+    active: true
+    connectors: 2
+    nat_association_name: application_nat_association
+    nat_name: application_nat
+    network_interface_name: twingate_nic
+    network_profile_name: twingate_network_profile
+    container_group_name: twingate_connector_group
+    pub_ip_name: application_pub_ip
+    resource_group_name: application_resource_group
+    security_group_name: twingate_security_group
+    ssh_key_local_path: ./id_rsa.pub
+    subnet_cidr: 10.0.1.0/24
+    subnet_name: twingate_subnet
+    tg_remote_network: azure_application_vpc
+    vnet_cidr: 10.0.0.0/16
+    vnet_name: azure_application_vpc
+    container_cpu: 1
+    container_memory: 2

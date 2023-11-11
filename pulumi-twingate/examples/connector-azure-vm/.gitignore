@@ -1,0 +1,4 @@
+/bin/
+/__pycache__/
+*.pub
+/id_rsa.pub

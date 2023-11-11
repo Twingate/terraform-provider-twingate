@@ -1,0 +1,19 @@
+config:
+  demo-connector:data:
+    active: true
+    connectors: 2
+    nat_name: nat
+    router_name: router
+    subnet_cidr: 10.0.1.0/24
+    subnet_name: subnet
+    tg_remote_network: gke-application-vnet
+    vpc_name: gke-application-vnet
+    cluster_name: gke-application-cluster
+    node_pool_name: gke-application-node-pool
+    node_count: 3
+    node_machine_type: e2-small
+    master_version: "1.24"
+    namespace: default
+  gcp:project: twingate-labs
+  gcp:region: europe-west2
+  gcp:zone: europe-west2-c
