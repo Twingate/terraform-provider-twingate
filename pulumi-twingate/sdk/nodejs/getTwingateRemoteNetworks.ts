@@ -6,39 +6,20 @@ import * as inputs from "./types/input";
 import * as outputs from "./types/output";
 import * as utilities from "./utilities";
 
-export function getTwingateRemoteNetworks(args?: GetTwingateRemoteNetworksArgs, opts?: pulumi.InvokeOptions): Promise<GetTwingateRemoteNetworksResult> {
-    args = args || {};
+export function getTwingateRemoteNetworks(opts?: pulumi.InvokeOptions): Promise<GetTwingateRemoteNetworksResult> {
 
     opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts || {});
     return pulumi.runtime.invoke("twingate:index/getTwingateRemoteNetworks:getTwingateRemoteNetworks", {
-        "remoteNetworks": args.remoteNetworks,
     }, opts);
-}
-
-/**
- * A collection of arguments for invoking getTwingateRemoteNetworks.
- */
-export interface GetTwingateRemoteNetworksArgs {
-    remoteNetworks?: inputs.GetTwingateRemoteNetworksRemoteNetwork[];
 }
 
 /**
  * A collection of values returned by getTwingateRemoteNetworks.
  */
 export interface GetTwingateRemoteNetworksResult {
-    /**
-     * The provider-assigned unique ID for this managed resource.
-     */
     readonly id: string;
-    readonly remoteNetworks?: outputs.GetTwingateRemoteNetworksRemoteNetwork[];
+    readonly remoteNetworks: outputs.GetTwingateRemoteNetworksRemoteNetwork[];
 }
-export function getTwingateRemoteNetworksOutput(args?: GetTwingateRemoteNetworksOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateRemoteNetworksResult> {
-    return pulumi.output(args).apply((a: any) => getTwingateRemoteNetworks(a, opts))
-}
-
-/**
- * A collection of arguments for invoking getTwingateRemoteNetworks.
- */
-export interface GetTwingateRemoteNetworksOutputArgs {
-    remoteNetworks?: pulumi.Input<pulumi.Input<inputs.GetTwingateRemoteNetworksRemoteNetworkArgs>[]>;
+export function getTwingateRemoteNetworksOutput(opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateRemoteNetworksResult> {
+    return pulumi.output(getTwingateRemoteNetworks(opts))
 }

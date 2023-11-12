@@ -25,14 +25,6 @@ namespace TwingateLabs.Twingate
         [Input("name")]
         public string? Name { get; set; }
 
-        [Input("serviceAccounts")]
-        private List<Inputs.GetTwingateServiceAccountsServiceAccountArgs>? _serviceAccounts;
-        public List<Inputs.GetTwingateServiceAccountsServiceAccountArgs> ServiceAccounts
-        {
-            get => _serviceAccounts ?? (_serviceAccounts = new List<Inputs.GetTwingateServiceAccountsServiceAccountArgs>());
-            set => _serviceAccounts = value;
-        }
-
         public GetTwingateServiceAccountsArgs()
         {
         }
@@ -44,14 +36,6 @@ namespace TwingateLabs.Twingate
         [Input("name")]
         public Input<string>? Name { get; set; }
 
-        [Input("serviceAccounts")]
-        private InputList<Inputs.GetTwingateServiceAccountsServiceAccountInputArgs>? _serviceAccounts;
-        public InputList<Inputs.GetTwingateServiceAccountsServiceAccountInputArgs> ServiceAccounts
-        {
-            get => _serviceAccounts ?? (_serviceAccounts = new InputList<Inputs.GetTwingateServiceAccountsServiceAccountInputArgs>());
-            set => _serviceAccounts = value;
-        }
-
         public GetTwingateServiceAccountsInvokeArgs()
         {
         }
@@ -62,9 +46,6 @@ namespace TwingateLabs.Twingate
     [OutputType]
     public sealed class GetTwingateServiceAccountsResult
     {
-        /// <summary>
-        /// The provider-assigned unique ID for this managed resource.
-        /// </summary>
         public readonly string Id;
         public readonly string? Name;
         public readonly ImmutableArray<Outputs.GetTwingateServiceAccountsServiceAccountResult> ServiceAccounts;

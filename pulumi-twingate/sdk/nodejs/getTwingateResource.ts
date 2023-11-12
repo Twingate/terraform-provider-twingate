@@ -20,7 +20,7 @@ export function getTwingateResource(args: GetTwingateResourceArgs, opts?: pulumi
  */
 export interface GetTwingateResourceArgs {
     id: string;
-    protocols?: inputs.GetTwingateResourceProtocol[];
+    protocols?: inputs.GetTwingateResourceProtocols;
 }
 
 /**
@@ -30,7 +30,7 @@ export interface GetTwingateResourceResult {
     readonly address: string;
     readonly id: string;
     readonly name: string;
-    readonly protocols?: outputs.GetTwingateResourceProtocol[];
+    readonly protocols?: outputs.GetTwingateResourceProtocols;
     readonly remoteNetworkId: string;
 }
 export function getTwingateResourceOutput(args: GetTwingateResourceOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateResourceResult> {
@@ -42,5 +42,5 @@ export function getTwingateResourceOutput(args: GetTwingateResourceOutputArgs, o
  */
 export interface GetTwingateResourceOutputArgs {
     id: pulumi.Input<string>;
-    protocols?: pulumi.Input<pulumi.Input<inputs.GetTwingateResourceProtocolArgs>[]>;
+    protocols?: pulumi.Input<inputs.GetTwingateResourceProtocolsArgs>;
 }

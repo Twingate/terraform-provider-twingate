@@ -26,12 +26,7 @@ namespace TwingateLabs.Twingate
         public string Id { get; set; } = null!;
 
         [Input("protocols")]
-        private List<Inputs.GetTwingateResourceProtocolArgs>? _protocols;
-        public List<Inputs.GetTwingateResourceProtocolArgs> Protocols
-        {
-            get => _protocols ?? (_protocols = new List<Inputs.GetTwingateResourceProtocolArgs>());
-            set => _protocols = value;
-        }
+        public Inputs.GetTwingateResourceProtocolsArgs? Protocols { get; set; }
 
         public GetTwingateResourceArgs()
         {
@@ -45,12 +40,7 @@ namespace TwingateLabs.Twingate
         public Input<string> Id { get; set; } = null!;
 
         [Input("protocols")]
-        private InputList<Inputs.GetTwingateResourceProtocolInputArgs>? _protocols;
-        public InputList<Inputs.GetTwingateResourceProtocolInputArgs> Protocols
-        {
-            get => _protocols ?? (_protocols = new InputList<Inputs.GetTwingateResourceProtocolInputArgs>());
-            set => _protocols = value;
-        }
+        public Input<Inputs.GetTwingateResourceProtocolsInputArgs>? Protocols { get; set; }
 
         public GetTwingateResourceInvokeArgs()
         {
@@ -65,7 +55,7 @@ namespace TwingateLabs.Twingate
         public readonly string Address;
         public readonly string Id;
         public readonly string Name;
-        public readonly ImmutableArray<Outputs.GetTwingateResourceProtocolResult> Protocols;
+        public readonly Outputs.GetTwingateResourceProtocolsResult? Protocols;
         public readonly string RemoteNetworkId;
 
         [OutputConstructor]
@@ -76,7 +66,7 @@ namespace TwingateLabs.Twingate
 
             string name,
 
-            ImmutableArray<Outputs.GetTwingateResourceProtocolResult> protocols,
+            Outputs.GetTwingateResourceProtocolsResult? protocols,
 
             string remoteNetworkId)
         {

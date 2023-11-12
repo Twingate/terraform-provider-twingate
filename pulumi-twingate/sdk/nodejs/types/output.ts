@@ -26,18 +26,18 @@ export interface GetTwingateRemoteNetworksRemoteNetwork {
     name: string;
 }
 
-export interface GetTwingateResourceProtocol {
+export interface GetTwingateResourceProtocols {
     allowIcmp: boolean;
-    tcps?: outputs.GetTwingateResourceProtocolTcp[];
-    udps?: outputs.GetTwingateResourceProtocolUdp[];
+    tcp?: outputs.GetTwingateResourceProtocolsTcp;
+    udp?: outputs.GetTwingateResourceProtocolsUdp;
 }
 
-export interface GetTwingateResourceProtocolTcp {
+export interface GetTwingateResourceProtocolsTcp {
     policy: string;
     ports: string[];
 }
 
-export interface GetTwingateResourceProtocolUdp {
+export interface GetTwingateResourceProtocolsUdp {
     policy: string;
     ports: string[];
 }
@@ -46,22 +46,22 @@ export interface GetTwingateResourcesResource {
     address: string;
     id: string;
     name: string;
-    protocols?: outputs.GetTwingateResourcesResourceProtocol[];
+    protocols: outputs.GetTwingateResourcesResourceProtocols;
     remoteNetworkId: string;
 }
 
-export interface GetTwingateResourcesResourceProtocol {
+export interface GetTwingateResourcesResourceProtocols {
     allowIcmp: boolean;
-    tcps?: outputs.GetTwingateResourcesResourceProtocolTcp[];
-    udps?: outputs.GetTwingateResourcesResourceProtocolUdp[];
+    tcp: outputs.GetTwingateResourcesResourceProtocolsTcp;
+    udp: outputs.GetTwingateResourcesResourceProtocolsUdp;
 }
 
-export interface GetTwingateResourcesResourceProtocolTcp {
+export interface GetTwingateResourcesResourceProtocolsTcp {
     policy: string;
     ports: string[];
 }
 
-export interface GetTwingateResourcesResourceProtocolUdp {
+export interface GetTwingateResourcesResourceProtocolsUdp {
     policy: string;
     ports: string[];
 }
@@ -97,18 +97,18 @@ export interface TwingateResourceAccess {
 }
 
 export interface TwingateResourceProtocols {
-    allowIcmp?: boolean;
+    allowIcmp: boolean;
     tcp: outputs.TwingateResourceProtocolsTcp;
     udp: outputs.TwingateResourceProtocolsUdp;
 }
 
 export interface TwingateResourceProtocolsTcp {
     policy: string;
-    ports?: string[];
+    ports: string[];
 }
 
 export interface TwingateResourceProtocolsUdp {
     policy: string;
-    ports?: string[];
+    ports: string[];
 }
 

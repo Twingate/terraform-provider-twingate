@@ -30,7 +30,7 @@ export const getTwingateRemoteNetwork: typeof import("./getTwingateRemoteNetwork
 export const getTwingateRemoteNetworkOutput: typeof import("./getTwingateRemoteNetwork").getTwingateRemoteNetworkOutput = null as any;
 utilities.lazyLoad(exports, ["getTwingateRemoteNetwork","getTwingateRemoteNetworkOutput"], () => require("./getTwingateRemoteNetwork"));
 
-export { GetTwingateRemoteNetworksArgs, GetTwingateRemoteNetworksResult, GetTwingateRemoteNetworksOutputArgs } from "./getTwingateRemoteNetworks";
+export { GetTwingateRemoteNetworksResult } from "./getTwingateRemoteNetworks";
 export const getTwingateRemoteNetworks: typeof import("./getTwingateRemoteNetworks").getTwingateRemoteNetworks = null as any;
 export const getTwingateRemoteNetworksOutput: typeof import("./getTwingateRemoteNetworks").getTwingateRemoteNetworksOutput = null as any;
 utilities.lazyLoad(exports, ["getTwingateRemoteNetworks","getTwingateRemoteNetworksOutput"], () => require("./getTwingateRemoteNetworks"));
@@ -65,7 +65,7 @@ export const getTwingateUser: typeof import("./getTwingateUser").getTwingateUser
 export const getTwingateUserOutput: typeof import("./getTwingateUser").getTwingateUserOutput = null as any;
 utilities.lazyLoad(exports, ["getTwingateUser","getTwingateUserOutput"], () => require("./getTwingateUser"));
 
-export { GetTwingateUsersArgs, GetTwingateUsersResult, GetTwingateUsersOutputArgs } from "./getTwingateUsers";
+export { GetTwingateUsersResult } from "./getTwingateUsers";
 export const getTwingateUsers: typeof import("./getTwingateUsers").getTwingateUsers = null as any;
 export const getTwingateUsersOutput: typeof import("./getTwingateUsers").getTwingateUsersOutput = null as any;
 utilities.lazyLoad(exports, ["getTwingateUsers","getTwingateUsersOutput"], () => require("./getTwingateUsers"));

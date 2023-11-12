@@ -12,48 +12,31 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumix"
 )
 
-func GetTwingateRemoteNetworks(ctx *pulumi.Context, args *GetTwingateRemoteNetworksArgs, opts ...pulumi.InvokeOption) (*GetTwingateRemoteNetworksResult, error) {
+func GetTwingateRemoteNetworks(ctx *pulumi.Context, opts ...pulumi.InvokeOption) (*GetTwingateRemoteNetworksResult, error) {
 	opts = internal.PkgInvokeDefaultOpts(opts)
 	var rv GetTwingateRemoteNetworksResult
-	err := ctx.Invoke("twingate:index/getTwingateRemoteNetworks:getTwingateRemoteNetworks", args, &rv, opts...)
+	err := ctx.Invoke("twingate:index/getTwingateRemoteNetworks:getTwingateRemoteNetworks", nil, &rv, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &rv, nil
 }
 
-// A collection of arguments for invoking getTwingateRemoteNetworks.
-type GetTwingateRemoteNetworksArgs struct {
-	RemoteNetworks []GetTwingateRemoteNetworksRemoteNetwork `pulumi:"remoteNetworks"`
-}
-
 // A collection of values returned by getTwingateRemoteNetworks.
 type GetTwingateRemoteNetworksResult struct {
-	// The provider-assigned unique ID for this managed resource.
 	Id             string                                   `pulumi:"id"`
 	RemoteNetworks []GetTwingateRemoteNetworksRemoteNetwork `pulumi:"remoteNetworks"`
 }
 
-func GetTwingateRemoteNetworksOutput(ctx *pulumi.Context, args GetTwingateRemoteNetworksOutputArgs, opts ...pulumi.InvokeOption) GetTwingateRemoteNetworksResultOutput {
-	return pulumi.ToOutputWithContext(context.Background(), args).
-		ApplyT(func(v interface{}) (GetTwingateRemoteNetworksResult, error) {
-			args := v.(GetTwingateRemoteNetworksArgs)
-			r, err := GetTwingateRemoteNetworks(ctx, &args, opts...)
-			var s GetTwingateRemoteNetworksResult
-			if r != nil {
-				s = *r
-			}
-			return s, err
-		}).(GetTwingateRemoteNetworksResultOutput)
-}
-
-// A collection of arguments for invoking getTwingateRemoteNetworks.
-type GetTwingateRemoteNetworksOutputArgs struct {
-	RemoteNetworks GetTwingateRemoteNetworksRemoteNetworkArrayInput `pulumi:"remoteNetworks"`
-}
-
-func (GetTwingateRemoteNetworksOutputArgs) ElementType() reflect.Type {
-	return reflect.TypeOf((*GetTwingateRemoteNetworksArgs)(nil)).Elem()
+func GetTwingateRemoteNetworksOutput(ctx *pulumi.Context, opts ...pulumi.InvokeOption) GetTwingateRemoteNetworksResultOutput {
+	return pulumi.ToOutput(0).ApplyT(func(int) (GetTwingateRemoteNetworksResult, error) {
+		r, err := GetTwingateRemoteNetworks(ctx, opts...)
+		var s GetTwingateRemoteNetworksResult
+		if r != nil {
+			s = *r
+		}
+		return s, err
+	}).(GetTwingateRemoteNetworksResultOutput)
 }
 
 // A collection of values returned by getTwingateRemoteNetworks.
@@ -77,7 +60,6 @@ func (o GetTwingateRemoteNetworksResultOutput) ToOutput(ctx context.Context) pul
 	}
 }
 
-// The provider-assigned unique ID for this managed resource.
 func (o GetTwingateRemoteNetworksResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateRemoteNetworksResult) string { return v.Id }).(pulumi.StringOutput)
 }

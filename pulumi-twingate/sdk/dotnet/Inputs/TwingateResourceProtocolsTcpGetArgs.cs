@@ -13,8 +13,8 @@ namespace TwingateLabs.Twingate.Inputs
 
     public sealed class TwingateResourceProtocolsTcpGetArgs : global::Pulumi.ResourceArgs
     {
-        [Input("policy", required: true)]
-        public Input<string> Policy { get; set; } = null!;
+        [Input("policy")]
+        public Input<string>? Policy { get; set; }
 
         [Input("ports")]
         private InputList<string>? _ports;

@@ -12,7 +12,6 @@ export function getTwingateServiceAccounts(args?: GetTwingateServiceAccountsArgs
     opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts || {});
     return pulumi.runtime.invoke("twingate:index/getTwingateServiceAccounts:getTwingateServiceAccounts", {
         "name": args.name,
-        "serviceAccounts": args.serviceAccounts,
     }, opts);
 }
 
@@ -21,19 +20,15 @@ export function getTwingateServiceAccounts(args?: GetTwingateServiceAccountsArgs
  */
 export interface GetTwingateServiceAccountsArgs {
     name?: string;
-    serviceAccounts?: inputs.GetTwingateServiceAccountsServiceAccount[];
 }
 
 /**
  * A collection of values returned by getTwingateServiceAccounts.
  */
 export interface GetTwingateServiceAccountsResult {
-    /**
-     * The provider-assigned unique ID for this managed resource.
-     */
     readonly id: string;
     readonly name?: string;
-    readonly serviceAccounts?: outputs.GetTwingateServiceAccountsServiceAccount[];
+    readonly serviceAccounts: outputs.GetTwingateServiceAccountsServiceAccount[];
 }
 export function getTwingateServiceAccountsOutput(args?: GetTwingateServiceAccountsOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateServiceAccountsResult> {
     return pulumi.output(args).apply((a: any) => getTwingateServiceAccounts(a, opts))
@@ -44,5 +39,4 @@ export function getTwingateServiceAccountsOutput(args?: GetTwingateServiceAccoun
  */
 export interface GetTwingateServiceAccountsOutputArgs {
     name?: pulumi.Input<string>;
-    serviceAccounts?: pulumi.Input<pulumi.Input<inputs.GetTwingateServiceAccountsServiceAccountArgs>[]>;
 }

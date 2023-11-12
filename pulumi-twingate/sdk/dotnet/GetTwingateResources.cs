@@ -25,14 +25,6 @@ namespace TwingateLabs.Twingate
         [Input("name", required: true)]
         public string Name { get; set; } = null!;
 
-        [Input("resources")]
-        private List<Inputs.GetTwingateResourcesResourceArgs>? _resources;
-        public List<Inputs.GetTwingateResourcesResourceArgs> Resources
-        {
-            get => _resources ?? (_resources = new List<Inputs.GetTwingateResourcesResourceArgs>());
-            set => _resources = value;
-        }
-
         public GetTwingateResourcesArgs()
         {
         }
@@ -44,14 +36,6 @@ namespace TwingateLabs.Twingate
         [Input("name", required: true)]
         public Input<string> Name { get; set; } = null!;
 
-        [Input("resources")]
-        private InputList<Inputs.GetTwingateResourcesResourceInputArgs>? _resources;
-        public InputList<Inputs.GetTwingateResourcesResourceInputArgs> Resources
-        {
-            get => _resources ?? (_resources = new InputList<Inputs.GetTwingateResourcesResourceInputArgs>());
-            set => _resources = value;
-        }
-
         public GetTwingateResourcesInvokeArgs()
         {
         }
@@ -62,9 +46,6 @@ namespace TwingateLabs.Twingate
     [OutputType]
     public sealed class GetTwingateResourcesResult
     {
-        /// <summary>
-        /// The provider-assigned unique ID for this managed resource.
-        /// </summary>
         public readonly string Id;
         public readonly string Name;
         public readonly ImmutableArray<Outputs.GetTwingateResourcesResourceResult> Resources;

@@ -33,9 +33,11 @@ type TwingateResource struct {
 	Name pulumi.StringOutput `pulumi:"name"`
 	// Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no
 	// restriction, and all protocols and ports are allowed.
-	Protocols TwingateResourceProtocolsPtrOutput `pulumi:"protocols"`
+	Protocols TwingateResourceProtocolsOutput `pulumi:"protocols"`
 	// Remote Network ID where the Resource lives
 	RemoteNetworkId pulumi.StringOutput `pulumi:"remoteNetworkId"`
+	// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+	SecurityPolicyId pulumi.StringOutput `pulumi:"securityPolicyId"`
 }
 
 // NewTwingateResource registers a new resource with the given unique name, arguments, and options.
@@ -94,6 +96,8 @@ type twingateResourceState struct {
 	Protocols *TwingateResourceProtocols `pulumi:"protocols"`
 	// Remote Network ID where the Resource lives
 	RemoteNetworkId *string `pulumi:"remoteNetworkId"`
+	// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+	SecurityPolicyId *string `pulumi:"securityPolicyId"`
 }
 
 type TwingateResourceState struct {
@@ -117,6 +121,8 @@ type TwingateResourceState struct {
 	Protocols TwingateResourceProtocolsPtrInput
 	// Remote Network ID where the Resource lives
 	RemoteNetworkId pulumi.StringPtrInput
+	// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+	SecurityPolicyId pulumi.StringPtrInput
 }
 
 func (TwingateResourceState) ElementType() reflect.Type {
@@ -144,6 +150,8 @@ type twingateResourceArgs struct {
 	Protocols *TwingateResourceProtocols `pulumi:"protocols"`
 	// Remote Network ID where the Resource lives
 	RemoteNetworkId string `pulumi:"remoteNetworkId"`
+	// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+	SecurityPolicyId *string `pulumi:"securityPolicyId"`
 }
 
 // The set of arguments for constructing a TwingateResource resource.
@@ -168,6 +176,8 @@ type TwingateResourceArgs struct {
 	Protocols TwingateResourceProtocolsPtrInput
 	// Remote Network ID where the Resource lives
 	RemoteNetworkId pulumi.StringInput
+	// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+	SecurityPolicyId pulumi.StringPtrInput
 }
 
 func (TwingateResourceArgs) ElementType() reflect.Type {
@@ -319,13 +329,18 @@ func (o TwingateResourceOutput) Name() pulumi.StringOutput {
 
 // Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no
 // restriction, and all protocols and ports are allowed.
-func (o TwingateResourceOutput) Protocols() TwingateResourceProtocolsPtrOutput {
-	return o.ApplyT(func(v *TwingateResource) TwingateResourceProtocolsPtrOutput { return v.Protocols }).(TwingateResourceProtocolsPtrOutput)
+func (o TwingateResourceOutput) Protocols() TwingateResourceProtocolsOutput {
+	return o.ApplyT(func(v *TwingateResource) TwingateResourceProtocolsOutput { return v.Protocols }).(TwingateResourceProtocolsOutput)
 }
 
 // Remote Network ID where the Resource lives
 func (o TwingateResourceOutput) RemoteNetworkId() pulumi.StringOutput {
 	return o.ApplyT(func(v *TwingateResource) pulumi.StringOutput { return v.RemoteNetworkId }).(pulumi.StringOutput)
+}
+
+// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+func (o TwingateResourceOutput) SecurityPolicyId() pulumi.StringOutput {
+	return o.ApplyT(func(v *TwingateResource) pulumi.StringOutput { return v.SecurityPolicyId }).(pulumi.StringOutput)
 }
 
 type TwingateResourceArrayOutput struct{ *pulumi.OutputState }

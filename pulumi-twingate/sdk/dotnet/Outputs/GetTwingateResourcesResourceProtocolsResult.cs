@@ -12,23 +12,23 @@ namespace TwingateLabs.Twingate.Outputs
 {
 
     [OutputType]
-    public sealed class GetTwingateResourceProtocolResult
+    public sealed class GetTwingateResourcesResourceProtocolsResult
     {
         public readonly bool AllowIcmp;
-        public readonly ImmutableArray<Outputs.GetTwingateResourceProtocolTcpResult> Tcps;
-        public readonly ImmutableArray<Outputs.GetTwingateResourceProtocolUdpResult> Udps;
+        public readonly Outputs.GetTwingateResourcesResourceProtocolsTcpResult Tcp;
+        public readonly Outputs.GetTwingateResourcesResourceProtocolsUdpResult Udp;
 
         [OutputConstructor]
-        private GetTwingateResourceProtocolResult(
+        private GetTwingateResourcesResourceProtocolsResult(
             bool allowIcmp,
 
-            ImmutableArray<Outputs.GetTwingateResourceProtocolTcpResult> tcps,
+            Outputs.GetTwingateResourcesResourceProtocolsTcpResult tcp,
 
-            ImmutableArray<Outputs.GetTwingateResourceProtocolUdpResult> udps)
+            Outputs.GetTwingateResourcesResourceProtocolsUdpResult udp)
         {
             AllowIcmp = allowIcmp;
-            Tcps = tcps;
-            Udps = udps;
+            Tcp = tcp;
+            Udp = udp;
         }
     }
 }

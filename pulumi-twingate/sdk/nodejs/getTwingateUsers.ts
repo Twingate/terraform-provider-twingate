@@ -6,39 +6,20 @@ import * as inputs from "./types/input";
 import * as outputs from "./types/output";
 import * as utilities from "./utilities";
 
-export function getTwingateUsers(args?: GetTwingateUsersArgs, opts?: pulumi.InvokeOptions): Promise<GetTwingateUsersResult> {
-    args = args || {};
+export function getTwingateUsers(opts?: pulumi.InvokeOptions): Promise<GetTwingateUsersResult> {
 
     opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts || {});
     return pulumi.runtime.invoke("twingate:index/getTwingateUsers:getTwingateUsers", {
-        "users": args.users,
     }, opts);
-}
-
-/**
- * A collection of arguments for invoking getTwingateUsers.
- */
-export interface GetTwingateUsersArgs {
-    users?: inputs.GetTwingateUsersUser[];
 }
 
 /**
  * A collection of values returned by getTwingateUsers.
  */
 export interface GetTwingateUsersResult {
-    /**
-     * The provider-assigned unique ID for this managed resource.
-     */
     readonly id: string;
-    readonly users?: outputs.GetTwingateUsersUser[];
+    readonly users: outputs.GetTwingateUsersUser[];
 }
-export function getTwingateUsersOutput(args?: GetTwingateUsersOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateUsersResult> {
-    return pulumi.output(args).apply((a: any) => getTwingateUsers(a, opts))
-}
-
-/**
- * A collection of arguments for invoking getTwingateUsers.
- */
-export interface GetTwingateUsersOutputArgs {
-    users?: pulumi.Input<pulumi.Input<inputs.GetTwingateUsersUserArgs>[]>;
+export function getTwingateUsersOutput(opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateUsersResult> {
+    return pulumi.output(getTwingateUsers(opts))
 }

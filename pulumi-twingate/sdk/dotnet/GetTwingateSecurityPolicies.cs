@@ -56,9 +56,6 @@ namespace TwingateLabs.Twingate
     [OutputType]
     public sealed class GetTwingateSecurityPoliciesResult
     {
-        /// <summary>
-        /// The provider-assigned unique ID for this managed resource.
-        /// </summary>
         public readonly string Id;
         public readonly ImmutableArray<Outputs.GetTwingateSecurityPoliciesSecurityPolicyResult> SecurityPolicies;
 

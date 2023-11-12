@@ -17,7 +17,7 @@ namespace TwingateLabs.Twingate.Outputs
         public readonly string Address;
         public readonly string Id;
         public readonly string Name;
-        public readonly ImmutableArray<Outputs.GetTwingateResourcesResourceProtocolResult> Protocols;
+        public readonly Outputs.GetTwingateResourcesResourceProtocolsResult Protocols;
         public readonly string RemoteNetworkId;
 
         [OutputConstructor]
@@ -28,7 +28,7 @@ namespace TwingateLabs.Twingate.Outputs
 
             string name,
 
-            ImmutableArray<Outputs.GetTwingateResourcesResourceProtocolResult> protocols,
+            Outputs.GetTwingateResourcesResourceProtocolsResult protocols,
 
             string remoteNetworkId)
         {

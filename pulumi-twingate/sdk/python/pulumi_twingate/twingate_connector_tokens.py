@@ -6,7 +6,7 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 
 __all__ = ['TwingateConnectorTokensArgs', 'TwingateConnectorTokens']
@@ -15,27 +15,16 @@ __all__ = ['TwingateConnectorTokensArgs', 'TwingateConnectorTokens']
 class TwingateConnectorTokensArgs:
     def __init__(__self__, *,
                  connector_id: pulumi.Input[str],
-                 keepers: Optional[pulumi.Input[Mapping[str, Any]]] = None):
+                 keepers: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]] = None):
         """
         The set of arguments for constructing a TwingateConnectorTokens resource.
         :param pulumi.Input[str] connector_id: The ID of the parent Connector
-        :param pulumi.Input[Mapping[str, Any]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
+        :param pulumi.Input[Mapping[str, pulumi.Input[str]]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
                Connector tokens on a schedule.
         """
-        TwingateConnectorTokensArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            connector_id=connector_id,
-            keepers=keepers,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             connector_id: pulumi.Input[str],
-             keepers: Optional[pulumi.Input[Mapping[str, Any]]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("connector_id", connector_id)
+        pulumi.set(__self__, "connector_id", connector_id)
         if keepers is not None:
-            _setter("keepers", keepers)
+            pulumi.set(__self__, "keepers", keepers)
 
     @property
     @pulumi.getter(name="connectorId")
@@ -51,7 +40,7 @@ class TwingateConnectorTokensArgs:
 
     @property
     @pulumi.getter
-    def keepers(self) -> Optional[pulumi.Input[Mapping[str, Any]]]:
+    def keepers(self) -> Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]]:
         """
         Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
         Connector tokens on a schedule.
@@ -59,7 +48,7 @@ class TwingateConnectorTokensArgs:
         return pulumi.get(self, "keepers")
 
     @keepers.setter
-    def keepers(self, value: Optional[pulumi.Input[Mapping[str, Any]]]):
+    def keepers(self, value: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]]):
         pulumi.set(self, "keepers", value)
 
 
@@ -68,39 +57,24 @@ class _TwingateConnectorTokensState:
     def __init__(__self__, *,
                  access_token: Optional[pulumi.Input[str]] = None,
                  connector_id: Optional[pulumi.Input[str]] = None,
-                 keepers: Optional[pulumi.Input[Mapping[str, Any]]] = None,
+                 keepers: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]] = None,
                  refresh_token: Optional[pulumi.Input[str]] = None):
         """
         Input properties used for looking up and filtering TwingateConnectorTokens resources.
         :param pulumi.Input[str] access_token: The Access Token of the parent Connector
         :param pulumi.Input[str] connector_id: The ID of the parent Connector
-        :param pulumi.Input[Mapping[str, Any]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
+        :param pulumi.Input[Mapping[str, pulumi.Input[str]]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
                Connector tokens on a schedule.
         :param pulumi.Input[str] refresh_token: The Refresh Token of the parent Connector
         """
-        _TwingateConnectorTokensState._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            access_token=access_token,
-            connector_id=connector_id,
-            keepers=keepers,
-            refresh_token=refresh_token,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             access_token: Optional[pulumi.Input[str]] = None,
-             connector_id: Optional[pulumi.Input[str]] = None,
-             keepers: Optional[pulumi.Input[Mapping[str, Any]]] = None,
-             refresh_token: Optional[pulumi.Input[str]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
         if access_token is not None:
-            _setter("access_token", access_token)
+            pulumi.set(__self__, "access_token", access_token)
         if connector_id is not None:
-            _setter("connector_id", connector_id)
+            pulumi.set(__self__, "connector_id", connector_id)
         if keepers is not None:
-            _setter("keepers", keepers)
+            pulumi.set(__self__, "keepers", keepers)
         if refresh_token is not None:
-            _setter("refresh_token", refresh_token)
+            pulumi.set(__self__, "refresh_token", refresh_token)
 
     @property
     @pulumi.getter(name="accessToken")
@@ -128,7 +102,7 @@ class _TwingateConnectorTokensState:
 
     @property
     @pulumi.getter
-    def keepers(self) -> Optional[pulumi.Input[Mapping[str, Any]]]:
+    def keepers(self) -> Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]]:
         """
         Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
         Connector tokens on a schedule.
@@ -136,7 +110,7 @@ class _TwingateConnectorTokensState:
         return pulumi.get(self, "keepers")
 
     @keepers.setter
-    def keepers(self, value: Optional[pulumi.Input[Mapping[str, Any]]]):
+    def keepers(self, value: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]]):
         pulumi.set(self, "keepers", value)
 
     @property
@@ -158,14 +132,14 @@ class TwingateConnectorTokens(pulumi.CustomResource):
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
                  connector_id: Optional[pulumi.Input[str]] = None,
-                 keepers: Optional[pulumi.Input[Mapping[str, Any]]] = None,
+                 keepers: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]] = None,
                  __props__=None):
         """
         Create a TwingateConnectorTokens resource with the given unique name, props, and options.
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[str] connector_id: The ID of the parent Connector
-        :param pulumi.Input[Mapping[str, Any]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
+        :param pulumi.Input[Mapping[str, pulumi.Input[str]]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
                Connector tokens on a schedule.
         """
         ...
@@ -186,17 +160,13 @@ class TwingateConnectorTokens(pulumi.CustomResource):
         if resource_args is not None:
             __self__._internal_init(resource_name, opts, **resource_args.__dict__)
         else:
-            kwargs = kwargs or {}
-            def _setter(key, value):
-                kwargs[key] = value
-            TwingateConnectorTokensArgs._configure(_setter, **kwargs)
             __self__._internal_init(resource_name, *args, **kwargs)
 
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
                  connector_id: Optional[pulumi.Input[str]] = None,
-                 keepers: Optional[pulumi.Input[Mapping[str, Any]]] = None,
+                 keepers: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -226,7 +196,7 @@ class TwingateConnectorTokens(pulumi.CustomResource):
             opts: Optional[pulumi.ResourceOptions] = None,
             access_token: Optional[pulumi.Input[str]] = None,
             connector_id: Optional[pulumi.Input[str]] = None,
-            keepers: Optional[pulumi.Input[Mapping[str, Any]]] = None,
+            keepers: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]] = None,
             refresh_token: Optional[pulumi.Input[str]] = None) -> 'TwingateConnectorTokens':
         """
         Get an existing TwingateConnectorTokens resource's state with the given name, id, and optional extra
@@ -237,7 +207,7 @@ class TwingateConnectorTokens(pulumi.CustomResource):
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[str] access_token: The Access Token of the parent Connector
         :param pulumi.Input[str] connector_id: The ID of the parent Connector
-        :param pulumi.Input[Mapping[str, Any]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
+        :param pulumi.Input[Mapping[str, pulumi.Input[str]]] keepers: Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
                Connector tokens on a schedule.
         :param pulumi.Input[str] refresh_token: The Refresh Token of the parent Connector
         """
@@ -269,7 +239,7 @@ class TwingateConnectorTokens(pulumi.CustomResource):
 
     @property
     @pulumi.getter
-    def keepers(self) -> pulumi.Output[Optional[Mapping[str, Any]]]:
+    def keepers(self) -> pulumi.Output[Optional[Mapping[str, str]]]:
         """
         Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
         Connector tokens on a schedule.

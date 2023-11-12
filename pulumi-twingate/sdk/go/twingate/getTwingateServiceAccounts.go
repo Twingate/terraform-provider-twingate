@@ -24,13 +24,11 @@ func GetTwingateServiceAccounts(ctx *pulumi.Context, args *GetTwingateServiceAcc
 
 // A collection of arguments for invoking getTwingateServiceAccounts.
 type GetTwingateServiceAccountsArgs struct {
-	Name            *string                                    `pulumi:"name"`
-	ServiceAccounts []GetTwingateServiceAccountsServiceAccount `pulumi:"serviceAccounts"`
+	Name *string `pulumi:"name"`
 }
 
 // A collection of values returned by getTwingateServiceAccounts.
 type GetTwingateServiceAccountsResult struct {
-	// The provider-assigned unique ID for this managed resource.
 	Id              string                                     `pulumi:"id"`
 	Name            *string                                    `pulumi:"name"`
 	ServiceAccounts []GetTwingateServiceAccountsServiceAccount `pulumi:"serviceAccounts"`
@@ -51,8 +49,7 @@ func GetTwingateServiceAccountsOutput(ctx *pulumi.Context, args GetTwingateServi
 
 // A collection of arguments for invoking getTwingateServiceAccounts.
 type GetTwingateServiceAccountsOutputArgs struct {
-	Name            pulumi.StringPtrInput                              `pulumi:"name"`
-	ServiceAccounts GetTwingateServiceAccountsServiceAccountArrayInput `pulumi:"serviceAccounts"`
+	Name pulumi.StringPtrInput `pulumi:"name"`
 }
 
 func (GetTwingateServiceAccountsOutputArgs) ElementType() reflect.Type {
@@ -80,7 +77,6 @@ func (o GetTwingateServiceAccountsResultOutput) ToOutput(ctx context.Context) pu
 	}
 }
 
-// The provider-assigned unique ID for this managed resource.
 func (o GetTwingateServiceAccountsResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateServiceAccountsResult) string { return v.Id }).(pulumi.StringOutput)
 }

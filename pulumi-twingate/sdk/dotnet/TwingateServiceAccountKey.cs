@@ -14,6 +14,19 @@ namespace TwingateLabs.Twingate
     public partial class TwingateServiceAccountKey : global::Pulumi.CustomResource
     {
         /// <summary>
+        /// Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing
+        /// the number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.
+        /// </summary>
+        [Output("expirationTime")]
+        public Output<int> ExpirationTime { get; private set; } = null!;
+
+        /// <summary>
+        /// If the value of this attribute changes to false, Terraform will destroy and recreate the resource.
+        /// </summary>
+        [Output("isActive")]
+        public Output<bool> IsActive { get; private set; } = null!;
+
+        /// <summary>
         /// The name of the Service Key
         /// </summary>
         [Output("name")]
@@ -83,6 +96,13 @@ namespace TwingateLabs.Twingate
     public sealed class TwingateServiceAccountKeyArgs : global::Pulumi.ResourceArgs
     {
         /// <summary>
+        /// Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing
+        /// the number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.
+        /// </summary>
+        [Input("expirationTime")]
+        public Input<int>? ExpirationTime { get; set; }
+
+        /// <summary>
         /// The name of the Service Key
         /// </summary>
         [Input("name")]
@@ -102,6 +122,19 @@ namespace TwingateLabs.Twingate
 
     public sealed class TwingateServiceAccountKeyState : global::Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing
+        /// the number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.
+        /// </summary>
+        [Input("expirationTime")]
+        public Input<int>? ExpirationTime { get; set; }
+
+        /// <summary>
+        /// If the value of this attribute changes to false, Terraform will destroy and recreate the resource.
+        /// </summary>
+        [Input("isActive")]
+        public Input<bool>? IsActive { get; set; }
+
         /// <summary>
         /// The name of the Service Key
         /// </summary>

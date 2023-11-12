@@ -6,10 +6,9 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 from . import outputs
-from ._inputs import *
 
 __all__ = [
     'GetTwingateUsersResult',
@@ -34,14 +33,11 @@ class GetTwingateUsersResult:
     @property
     @pulumi.getter
     def id(self) -> str:
-        """
-        The provider-assigned unique ID for this managed resource.
-        """
         return pulumi.get(self, "id")
 
     @property
     @pulumi.getter
-    def users(self) -> Optional[Sequence['outputs.GetTwingateUsersUserResult']]:
+    def users(self) -> Sequence['outputs.GetTwingateUsersUserResult']:
         return pulumi.get(self, "users")
 
 
@@ -55,13 +51,11 @@ class AwaitableGetTwingateUsersResult(GetTwingateUsersResult):
             users=self.users)
 
 
-def get_twingate_users(users: Optional[Sequence[pulumi.InputType['GetTwingateUsersUserArgs']]] = None,
-                       opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateUsersResult:
+def get_twingate_users(opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateUsersResult:
     """
     Use this data source to access information about an existing resource.
     """
     __args__ = dict()
-    __args__['users'] = users
     opts = pulumi.InvokeOptions.merge(_utilities.get_invoke_opts_defaults(), opts)
     __ret__ = pulumi.runtime.invoke('twingate:index/getTwingateUsers:getTwingateUsers', __args__, opts=opts, typ=GetTwingateUsersResult).value
 
@@ -71,8 +65,7 @@ def get_twingate_users(users: Optional[Sequence[pulumi.InputType['GetTwingateUse
 
 
 @_utilities.lift_output_func(get_twingate_users)
-def get_twingate_users_output(users: Optional[pulumi.Input[Optional[Sequence[pulumi.InputType['GetTwingateUsersUserArgs']]]]] = None,
-                              opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateUsersResult]:
+def get_twingate_users_output(opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateUsersResult]:
     """
     Use this data source to access information about an existing resource.
     """

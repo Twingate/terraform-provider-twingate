@@ -67,11 +67,15 @@ export class TwingateResource extends pulumi.CustomResource {
      * Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no
      * restriction, and all protocols and ports are allowed.
      */
-    public readonly protocols!: pulumi.Output<outputs.TwingateResourceProtocols | undefined>;
+    public readonly protocols!: pulumi.Output<outputs.TwingateResourceProtocols>;
     /**
      * Remote Network ID where the Resource lives
      */
     public readonly remoteNetworkId!: pulumi.Output<string>;
+    /**
+     * The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+     */
+    public readonly securityPolicyId!: pulumi.Output<string>;
 
     /**
      * Create a TwingateResource resource with the given unique name, arguments, and options.
@@ -95,6 +99,7 @@ export class TwingateResource extends pulumi.CustomResource {
             resourceInputs["name"] = state ? state.name : undefined;
             resourceInputs["protocols"] = state ? state.protocols : undefined;
             resourceInputs["remoteNetworkId"] = state ? state.remoteNetworkId : undefined;
+            resourceInputs["securityPolicyId"] = state ? state.securityPolicyId : undefined;
         } else {
             const args = argsOrState as TwingateResourceArgs | undefined;
             if ((!args || args.address === undefined) && !opts.urn) {
@@ -112,6 +117,7 @@ export class TwingateResource extends pulumi.CustomResource {
             resourceInputs["name"] = args ? args.name : undefined;
             resourceInputs["protocols"] = args ? args.protocols : undefined;
             resourceInputs["remoteNetworkId"] = args ? args.remoteNetworkId : undefined;
+            resourceInputs["securityPolicyId"] = args ? args.securityPolicyId : undefined;
         }
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
         super(TwingateResource.__pulumiType, name, resourceInputs, opts);
@@ -160,6 +166,10 @@ export interface TwingateResourceState {
      * Remote Network ID where the Resource lives
      */
     remoteNetworkId?: pulumi.Input<string>;
+    /**
+     * The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+     */
+    securityPolicyId?: pulumi.Input<string>;
 }
 
 /**
@@ -204,4 +214,8 @@ export interface TwingateResourceArgs {
      * Remote Network ID where the Resource lives
      */
     remoteNetworkId: pulumi.Input<string>;
+    /**
+     * The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+     */
+    securityPolicyId?: pulumi.Input<string>;
 }

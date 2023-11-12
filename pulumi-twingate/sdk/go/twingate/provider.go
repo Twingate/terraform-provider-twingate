@@ -68,7 +68,7 @@ type providerArgs struct {
 	// Specifies a retry limit for the http requests made. The default value is 10. Alternatively, this can be specified using
 	// the TWINGATE_HTTP_MAX_RETRY environment variable
 	HttpMaxRetry *int `pulumi:"httpMaxRetry"`
-	// Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can
+	// Specifies a time limit in seconds for the http requests made. The default value is 35 seconds. Alternatively, this can
 	// be specified using the TWINGATE_HTTP_TIMEOUT environment variable
 	HttpTimeout *int `pulumi:"httpTimeout"`
 	// Your Twingate network ID for API operations. You can find it in the Admin Console URL, for example:
@@ -88,7 +88,7 @@ type ProviderArgs struct {
 	// Specifies a retry limit for the http requests made. The default value is 10. Alternatively, this can be specified using
 	// the TWINGATE_HTTP_MAX_RETRY environment variable
 	HttpMaxRetry pulumi.IntPtrInput
-	// Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can
+	// Specifies a time limit in seconds for the http requests made. The default value is 35 seconds. Alternatively, this can
 	// be specified using the TWINGATE_HTTP_TIMEOUT environment variable
 	HttpTimeout pulumi.IntPtrInput
 	// Your Twingate network ID for API operations. You can find it in the Admin Console URL, for example:

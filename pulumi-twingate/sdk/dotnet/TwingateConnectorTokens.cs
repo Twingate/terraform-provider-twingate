@@ -30,7 +30,7 @@ namespace TwingateLabs.Twingate
         /// Connector tokens on a schedule.
         /// </summary>
         [Output("keepers")]
-        public Output<ImmutableDictionary<string, object>?> Keepers { get; private set; } = null!;
+        public Output<ImmutableDictionary<string, string>?> Keepers { get; private set; } = null!;
 
         /// <summary>
         /// The Refresh Token of the parent Connector
@@ -97,15 +97,15 @@ namespace TwingateLabs.Twingate
         public Input<string> ConnectorId { get; set; } = null!;
 
         [Input("keepers")]
-        private InputMap<object>? _keepers;
+        private InputMap<string>? _keepers;
 
         /// <summary>
         /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
         /// Connector tokens on a schedule.
         /// </summary>
-        public InputMap<object> Keepers
+        public InputMap<string> Keepers
         {
-            get => _keepers ?? (_keepers = new InputMap<object>());
+            get => _keepers ?? (_keepers = new InputMap<string>());
             set => _keepers = value;
         }
 
@@ -140,15 +140,15 @@ namespace TwingateLabs.Twingate
         public Input<string>? ConnectorId { get; set; }
 
         [Input("keepers")]
-        private InputMap<object>? _keepers;
+        private InputMap<string>? _keepers;
 
         /// <summary>
         /// Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate
         /// Connector tokens on a schedule.
         /// </summary>
-        public InputMap<object> Keepers
+        public InputMap<string> Keepers
         {
-            get => _keepers ?? (_keepers = new InputMap<object>());
+            get => _keepers ?? (_keepers = new InputMap<string>());
             set => _keepers = value;
         }
 

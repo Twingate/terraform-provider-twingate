@@ -11,7 +11,7 @@ using Pulumi;
 namespace TwingateLabs.Twingate.Inputs
 {
 
-    public sealed class GetTwingateResourceProtocolUdpArgs : global::Pulumi.InvokeArgs
+    public sealed class GetTwingateResourceProtocolsTcpArgs : global::Pulumi.InvokeArgs
     {
         [Input("policy", required: true)]
         public string Policy { get; set; } = null!;
@@ -24,9 +24,9 @@ namespace TwingateLabs.Twingate.Inputs
             set => _ports = value;
         }
 
-        public GetTwingateResourceProtocolUdpArgs()
+        public GetTwingateResourceProtocolsTcpArgs()
         {
         }
-        public static new GetTwingateResourceProtocolUdpArgs Empty => new GetTwingateResourceProtocolUdpArgs();
+        public static new GetTwingateResourceProtocolsTcpArgs Empty => new GetTwingateResourceProtocolsTcpArgs();
     }
 }

@@ -6,7 +6,7 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 from . import outputs
 from ._inputs import *
@@ -34,14 +34,11 @@ class GetTwingateSecurityPoliciesResult:
     @property
     @pulumi.getter
     def id(self) -> str:
-        """
-        The provider-assigned unique ID for this managed resource.
-        """
         return pulumi.get(self, "id")
 
     @property
     @pulumi.getter(name="securityPolicies")
-    def security_policies(self) -> Optional[Sequence['outputs.GetTwingateSecurityPoliciesSecurityPolicyResult']]:
+    def security_policies(self) -> Sequence['outputs.GetTwingateSecurityPoliciesSecurityPolicyResult']:
         return pulumi.get(self, "security_policies")
 
 

@@ -30,8 +30,7 @@ type GetTwingateConnectorsArgs struct {
 // A collection of values returned by getTwingateConnectors.
 type GetTwingateConnectorsResult struct {
 	Connectors []GetTwingateConnectorsConnector `pulumi:"connectors"`
-	// The provider-assigned unique ID for this managed resource.
-	Id string `pulumi:"id"`
+	Id         string                           `pulumi:"id"`
 }
 
 func GetTwingateConnectorsOutput(ctx *pulumi.Context, args GetTwingateConnectorsOutputArgs, opts ...pulumi.InvokeOption) GetTwingateConnectorsResultOutput {
@@ -81,7 +80,6 @@ func (o GetTwingateConnectorsResultOutput) Connectors() GetTwingateConnectorsCon
 	return o.ApplyT(func(v GetTwingateConnectorsResult) []GetTwingateConnectorsConnector { return v.Connectors }).(GetTwingateConnectorsConnectorArrayOutput)
 }
 
-// The provider-assigned unique ID for this managed resource.
 func (o GetTwingateConnectorsResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateConnectorsResult) string { return v.Id }).(pulumi.StringOutput)
 }

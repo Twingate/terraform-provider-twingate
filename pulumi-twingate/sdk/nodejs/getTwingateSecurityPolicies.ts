@@ -26,11 +26,8 @@ export interface GetTwingateSecurityPoliciesArgs {
  * A collection of values returned by getTwingateSecurityPolicies.
  */
 export interface GetTwingateSecurityPoliciesResult {
-    /**
-     * The provider-assigned unique ID for this managed resource.
-     */
     readonly id: string;
-    readonly securityPolicies?: outputs.GetTwingateSecurityPoliciesSecurityPolicy[];
+    readonly securityPolicies: outputs.GetTwingateSecurityPoliciesSecurityPolicy[];
 }
 export function getTwingateSecurityPoliciesOutput(args?: GetTwingateSecurityPoliciesOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateSecurityPoliciesResult> {
     return pulumi.output(args).apply((a: any) => getTwingateSecurityPolicies(a, opts))

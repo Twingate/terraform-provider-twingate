@@ -32,12 +32,11 @@ type GetTwingateGroupsArgs struct {
 
 // A collection of values returned by getTwingateGroups.
 type GetTwingateGroupsResult struct {
-	Groups []GetTwingateGroupsGroup `pulumi:"groups"`
-	// The provider-assigned unique ID for this managed resource.
-	Id       string  `pulumi:"id"`
-	IsActive *bool   `pulumi:"isActive"`
-	Name     *string `pulumi:"name"`
-	Type     *string `pulumi:"type"`
+	Groups   []GetTwingateGroupsGroup `pulumi:"groups"`
+	Id       string                   `pulumi:"id"`
+	IsActive *bool                    `pulumi:"isActive"`
+	Name     *string                  `pulumi:"name"`
+	Type     *string                  `pulumi:"type"`
 }
 
 func GetTwingateGroupsOutput(ctx *pulumi.Context, args GetTwingateGroupsOutputArgs, opts ...pulumi.InvokeOption) GetTwingateGroupsResultOutput {
@@ -90,7 +89,6 @@ func (o GetTwingateGroupsResultOutput) Groups() GetTwingateGroupsGroupArrayOutpu
 	return o.ApplyT(func(v GetTwingateGroupsResult) []GetTwingateGroupsGroup { return v.Groups }).(GetTwingateGroupsGroupArrayOutput)
 }
 
-// The provider-assigned unique ID for this managed resource.
 func (o GetTwingateGroupsResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateGroupsResult) string { return v.Id }).(pulumi.StringOutput)
 }

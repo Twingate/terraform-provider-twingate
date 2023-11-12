@@ -26,10 +26,7 @@ export interface GetTwingateConnectorsArgs {
  * A collection of values returned by getTwingateConnectors.
  */
 export interface GetTwingateConnectorsResult {
-    readonly connectors?: outputs.GetTwingateConnectorsConnector[];
-    /**
-     * The provider-assigned unique ID for this managed resource.
-     */
+    readonly connectors: outputs.GetTwingateConnectorsConnector[];
     readonly id: string;
 }
 export function getTwingateConnectorsOutput(args?: GetTwingateConnectorsOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateConnectorsResult> {

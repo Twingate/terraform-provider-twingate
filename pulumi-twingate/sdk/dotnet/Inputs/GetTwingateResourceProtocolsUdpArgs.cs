@@ -11,22 +11,22 @@ using Pulumi;
 namespace TwingateLabs.Twingate.Inputs
 {
 
-    public sealed class GetTwingateResourceProtocolTcpArgs : global::Pulumi.InvokeArgs
+    public sealed class GetTwingateResourceProtocolsUdpInputArgs : global::Pulumi.ResourceArgs
     {
         [Input("policy", required: true)]
-        public string Policy { get; set; } = null!;
+        public Input<string> Policy { get; set; } = null!;
 
         [Input("ports", required: true)]
-        private List<string>? _ports;
-        public List<string> Ports
+        private InputList<string>? _ports;
+        public InputList<string> Ports
         {
-            get => _ports ?? (_ports = new List<string>());
+            get => _ports ?? (_ports = new InputList<string>());
             set => _ports = value;
         }
 
-        public GetTwingateResourceProtocolTcpArgs()
+        public GetTwingateResourceProtocolsUdpInputArgs()
         {
         }
-        public static new GetTwingateResourceProtocolTcpArgs Empty => new GetTwingateResourceProtocolTcpArgs();
+        public static new GetTwingateResourceProtocolsUdpInputArgs Empty => new GetTwingateResourceProtocolsUdpInputArgs();
     }
 }

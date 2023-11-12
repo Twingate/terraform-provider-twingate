@@ -32,10 +32,7 @@ export interface GetTwingateGroupsArgs {
  * A collection of values returned by getTwingateGroups.
  */
 export interface GetTwingateGroupsResult {
-    readonly groups?: outputs.GetTwingateGroupsGroup[];
-    /**
-     * The provider-assigned unique ID for this managed resource.
-     */
+    readonly groups: outputs.GetTwingateGroupsGroup[];
     readonly id: string;
     readonly isActive?: boolean;
     readonly name?: string;

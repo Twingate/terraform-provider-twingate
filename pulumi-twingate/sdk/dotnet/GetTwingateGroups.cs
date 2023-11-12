@@ -75,9 +75,6 @@ namespace TwingateLabs.Twingate
     public sealed class GetTwingateGroupsResult
     {
         public readonly ImmutableArray<Outputs.GetTwingateGroupsGroupResult> Groups;
-        /// <summary>
-        /// The provider-assigned unique ID for this managed resource.
-        /// </summary>
         public readonly string Id;
         public readonly bool? IsActive;
         public readonly string? Name;

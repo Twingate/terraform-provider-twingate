@@ -12,13 +12,13 @@ namespace TwingateLabs.Twingate.Outputs
 {
 
     [OutputType]
-    public sealed class GetTwingateResourcesResourceProtocolTcpResult
+    public sealed class GetTwingateResourcesResourceProtocolsTcpResult
     {
         public readonly string Policy;
         public readonly ImmutableArray<string> Ports;
 
         [OutputConstructor]
-        private GetTwingateResourcesResourceProtocolTcpResult(
+        private GetTwingateResourcesResourceProtocolsTcpResult(
             string policy,
 
             ImmutableArray<string> ports)

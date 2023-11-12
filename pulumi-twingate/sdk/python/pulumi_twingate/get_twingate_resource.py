@@ -6,7 +6,7 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 from . import outputs
 from ._inputs import *
@@ -33,8 +33,8 @@ class GetTwingateResourceResult:
         if name and not isinstance(name, str):
             raise TypeError("Expected argument 'name' to be a str")
         pulumi.set(__self__, "name", name)
-        if protocols and not isinstance(protocols, list):
-            raise TypeError("Expected argument 'protocols' to be a list")
+        if protocols and not isinstance(protocols, dict):
+            raise TypeError("Expected argument 'protocols' to be a dict")
         pulumi.set(__self__, "protocols", protocols)
         if remote_network_id and not isinstance(remote_network_id, str):
             raise TypeError("Expected argument 'remote_network_id' to be a str")
@@ -57,7 +57,7 @@ class GetTwingateResourceResult:
 
     @property
     @pulumi.getter
-    def protocols(self) -> Optional[Sequence['outputs.GetTwingateResourceProtocolResult']]:
+    def protocols(self) -> Optional['outputs.GetTwingateResourceProtocolsResult']:
         return pulumi.get(self, "protocols")
 
     @property
@@ -80,7 +80,7 @@ class AwaitableGetTwingateResourceResult(GetTwingateResourceResult):
 
 
 def get_twingate_resource(id: Optional[str] = None,
-                          protocols: Optional[Sequence[pulumi.InputType['GetTwingateResourceProtocolArgs']]] = None,
+                          protocols: Optional[pulumi.InputType['GetTwingateResourceProtocolsArgs']] = None,
                           opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateResourceResult:
     """
     Use this data source to access information about an existing resource.
@@ -101,7 +101,7 @@ def get_twingate_resource(id: Optional[str] = None,
 
 @_utilities.lift_output_func(get_twingate_resource)
 def get_twingate_resource_output(id: Optional[pulumi.Input[str]] = None,
-                                 protocols: Optional[pulumi.Input[Optional[Sequence[pulumi.InputType['GetTwingateResourceProtocolArgs']]]]] = None,
+                                 protocols: Optional[pulumi.Input[Optional[pulumi.InputType['GetTwingateResourceProtocolsArgs']]]] = None,
                                  opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateResourceResult]:
     """
     Use this data source to access information about an existing resource.

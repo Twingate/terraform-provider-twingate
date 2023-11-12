@@ -14,12 +14,12 @@ namespace TwingateLabs.Twingate.Outputs
     [OutputType]
     public sealed class TwingateResourceProtocolsTcp
     {
-        public readonly string Policy;
+        public readonly string? Policy;
         public readonly ImmutableArray<string> Ports;
 
         [OutputConstructor]
         private TwingateResourceProtocolsTcp(
-            string policy,
+            string? policy,
 
             ImmutableArray<string> ports)
         {

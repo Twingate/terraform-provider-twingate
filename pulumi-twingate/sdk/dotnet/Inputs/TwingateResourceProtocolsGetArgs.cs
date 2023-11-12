@@ -16,11 +16,11 @@ namespace TwingateLabs.Twingate.Inputs
         [Input("allowIcmp")]
         public Input<bool>? AllowIcmp { get; set; }
 
-        [Input("tcp", required: true)]
-        public Input<Inputs.TwingateResourceProtocolsTcpGetArgs> Tcp { get; set; } = null!;
+        [Input("tcp")]
+        public Input<Inputs.TwingateResourceProtocolsTcpGetArgs>? Tcp { get; set; }
 
-        [Input("udp", required: true)]
-        public Input<Inputs.TwingateResourceProtocolsUdpGetArgs> Udp { get; set; } = null!;
+        [Input("udp")]
+        public Input<Inputs.TwingateResourceProtocolsUdpGetArgs>? Udp { get; set; }
 
         public TwingateResourceProtocolsGetArgs()
         {

@@ -6,7 +6,7 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 
 __all__ = ['TwingateUserArgs', 'TwingateUser']
@@ -29,36 +29,17 @@ class TwingateUserArgs:
         :param pulumi.Input[str] role: Determines the User's role. Either ADMIN, DEVOPS, SUPPORT or MEMBER.
         :param pulumi.Input[bool] send_invite: Determines whether to send an email invitation to the User. True by default.
         """
-        TwingateUserArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            email=email,
-            first_name=first_name,
-            is_active=is_active,
-            last_name=last_name,
-            role=role,
-            send_invite=send_invite,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             email: pulumi.Input[str],
-             first_name: Optional[pulumi.Input[str]] = None,
-             is_active: Optional[pulumi.Input[bool]] = None,
-             last_name: Optional[pulumi.Input[str]] = None,
-             role: Optional[pulumi.Input[str]] = None,
-             send_invite: Optional[pulumi.Input[bool]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("email", email)
+        pulumi.set(__self__, "email", email)
         if first_name is not None:
-            _setter("first_name", first_name)
+            pulumi.set(__self__, "first_name", first_name)
         if is_active is not None:
-            _setter("is_active", is_active)
+            pulumi.set(__self__, "is_active", is_active)
         if last_name is not None:
-            _setter("last_name", last_name)
+            pulumi.set(__self__, "last_name", last_name)
         if role is not None:
-            _setter("role", role)
+            pulumi.set(__self__, "role", role)
         if send_invite is not None:
-            _setter("send_invite", send_invite)
+            pulumi.set(__self__, "send_invite", send_invite)
 
     @property
     @pulumi.getter
@@ -153,41 +134,20 @@ class _TwingateUserState:
         :param pulumi.Input[bool] send_invite: Determines whether to send an email invitation to the User. True by default.
         :param pulumi.Input[str] type: Indicates the User's type. Either MANUAL or SYNCED.
         """
-        _TwingateUserState._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            email=email,
-            first_name=first_name,
-            is_active=is_active,
-            last_name=last_name,
-            role=role,
-            send_invite=send_invite,
-            type=type,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             email: Optional[pulumi.Input[str]] = None,
-             first_name: Optional[pulumi.Input[str]] = None,
-             is_active: Optional[pulumi.Input[bool]] = None,
-             last_name: Optional[pulumi.Input[str]] = None,
-             role: Optional[pulumi.Input[str]] = None,
-             send_invite: Optional[pulumi.Input[bool]] = None,
-             type: Optional[pulumi.Input[str]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
         if email is not None:
-            _setter("email", email)
+            pulumi.set(__self__, "email", email)
         if first_name is not None:
-            _setter("first_name", first_name)
+            pulumi.set(__self__, "first_name", first_name)
         if is_active is not None:
-            _setter("is_active", is_active)
+            pulumi.set(__self__, "is_active", is_active)
         if last_name is not None:
-            _setter("last_name", last_name)
+            pulumi.set(__self__, "last_name", last_name)
         if role is not None:
-            _setter("role", role)
+            pulumi.set(__self__, "role", role)
         if send_invite is not None:
-            _setter("send_invite", send_invite)
+            pulumi.set(__self__, "send_invite", send_invite)
         if type is not None:
-            _setter("type", type)
+            pulumi.set(__self__, "type", type)
 
     @property
     @pulumi.getter
@@ -315,10 +275,6 @@ class TwingateUser(pulumi.CustomResource):
         if resource_args is not None:
             __self__._internal_init(resource_name, opts, **resource_args.__dict__)
         else:
-            kwargs = kwargs or {}
-            def _setter(key, value):
-                kwargs[key] = value
-            TwingateUserArgs._configure(_setter, **kwargs)
             __self__._internal_init(resource_name, *args, **kwargs)
 
     def _internal_init(__self__,

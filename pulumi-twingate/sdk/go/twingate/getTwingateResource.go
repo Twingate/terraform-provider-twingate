@@ -25,7 +25,7 @@ func LookupTwingateResource(ctx *pulumi.Context, args *LookupTwingateResourceArg
 // A collection of arguments for invoking getTwingateResource.
 type LookupTwingateResourceArgs struct {
 	Id        string                        `pulumi:"id"`
-	Protocols []GetTwingateResourceProtocol `pulumi:"protocols"`
+	Protocols *GetTwingateResourceProtocols `pulumi:"protocols"`
 }
 
 // A collection of values returned by getTwingateResource.
@@ -33,7 +33,7 @@ type LookupTwingateResourceResult struct {
 	Address         string                        `pulumi:"address"`
 	Id              string                        `pulumi:"id"`
 	Name            string                        `pulumi:"name"`
-	Protocols       []GetTwingateResourceProtocol `pulumi:"protocols"`
+	Protocols       *GetTwingateResourceProtocols `pulumi:"protocols"`
 	RemoteNetworkId string                        `pulumi:"remoteNetworkId"`
 }
 
@@ -52,8 +52,8 @@ func LookupTwingateResourceOutput(ctx *pulumi.Context, args LookupTwingateResour
 
 // A collection of arguments for invoking getTwingateResource.
 type LookupTwingateResourceOutputArgs struct {
-	Id        pulumi.StringInput                    `pulumi:"id"`
-	Protocols GetTwingateResourceProtocolArrayInput `pulumi:"protocols"`
+	Id        pulumi.StringInput                   `pulumi:"id"`
+	Protocols GetTwingateResourceProtocolsPtrInput `pulumi:"protocols"`
 }
 
 func (LookupTwingateResourceOutputArgs) ElementType() reflect.Type {
@@ -93,8 +93,8 @@ func (o LookupTwingateResourceResultOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupTwingateResourceResult) string { return v.Name }).(pulumi.StringOutput)
 }
 
-func (o LookupTwingateResourceResultOutput) Protocols() GetTwingateResourceProtocolArrayOutput {
-	return o.ApplyT(func(v LookupTwingateResourceResult) []GetTwingateResourceProtocol { return v.Protocols }).(GetTwingateResourceProtocolArrayOutput)
+func (o LookupTwingateResourceResultOutput) Protocols() GetTwingateResourceProtocolsPtrOutput {
+	return o.ApplyT(func(v LookupTwingateResourceResult) *GetTwingateResourceProtocols { return v.Protocols }).(GetTwingateResourceProtocolsPtrOutput)
 }
 
 func (o LookupTwingateResourceResultOutput) RemoteNetworkId() pulumi.StringOutput {

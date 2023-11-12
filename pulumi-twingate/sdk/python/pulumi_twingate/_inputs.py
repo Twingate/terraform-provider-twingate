@@ -6,7 +6,7 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 
 __all__ = [
@@ -16,17 +16,10 @@ __all__ = [
     'TwingateResourceProtocolsUdpArgs',
     'GetTwingateConnectorsConnectorArgs',
     'GetTwingateGroupsGroupArgs',
-    'GetTwingateRemoteNetworksRemoteNetworkArgs',
-    'GetTwingateResourceProtocolArgs',
-    'GetTwingateResourceProtocolTcpArgs',
-    'GetTwingateResourceProtocolUdpArgs',
-    'GetTwingateResourcesResourceArgs',
-    'GetTwingateResourcesResourceProtocolArgs',
-    'GetTwingateResourcesResourceProtocolTcpArgs',
-    'GetTwingateResourcesResourceProtocolUdpArgs',
+    'GetTwingateResourceProtocolsArgs',
+    'GetTwingateResourceProtocolsTcpArgs',
+    'GetTwingateResourceProtocolsUdpArgs',
     'GetTwingateSecurityPoliciesSecurityPolicyArgs',
-    'GetTwingateServiceAccountsServiceAccountArgs',
-    'GetTwingateUsersUserArgs',
 ]
 
 @pulumi.input_type
@@ -34,21 +27,10 @@ class TwingateResourceAccessArgs:
     def __init__(__self__, *,
                  group_ids: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
                  service_account_ids: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None):
-        TwingateResourceAccessArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            group_ids=group_ids,
-            service_account_ids=service_account_ids,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             group_ids: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
-             service_account_ids: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
         if group_ids is not None:
-            _setter("group_ids", group_ids)
+            pulumi.set(__self__, "group_ids", group_ids)
         if service_account_ids is not None:
-            _setter("service_account_ids", service_account_ids)
+            pulumi.set(__self__, "service_account_ids", service_account_ids)
 
     @property
     @pulumi.getter(name="groupIds")
@@ -72,44 +54,15 @@ class TwingateResourceAccessArgs:
 @pulumi.input_type
 class TwingateResourceProtocolsArgs:
     def __init__(__self__, *,
-                 tcp: pulumi.Input['TwingateResourceProtocolsTcpArgs'],
-                 udp: pulumi.Input['TwingateResourceProtocolsUdpArgs'],
-                 allow_icmp: Optional[pulumi.Input[bool]] = None):
-        TwingateResourceProtocolsArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            tcp=tcp,
-            udp=udp,
-            allow_icmp=allow_icmp,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             tcp: pulumi.Input['TwingateResourceProtocolsTcpArgs'],
-             udp: pulumi.Input['TwingateResourceProtocolsUdpArgs'],
-             allow_icmp: Optional[pulumi.Input[bool]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("tcp", tcp)
-        _setter("udp", udp)
+                 allow_icmp: Optional[pulumi.Input[bool]] = None,
+                 tcp: Optional[pulumi.Input['TwingateResourceProtocolsTcpArgs']] = None,
+                 udp: Optional[pulumi.Input['TwingateResourceProtocolsUdpArgs']] = None):
         if allow_icmp is not None:
-            _setter("allow_icmp", allow_icmp)
-
-    @property
-    @pulumi.getter
-    def tcp(self) -> pulumi.Input['TwingateResourceProtocolsTcpArgs']:
-        return pulumi.get(self, "tcp")
-
-    @tcp.setter
-    def tcp(self, value: pulumi.Input['TwingateResourceProtocolsTcpArgs']):
-        pulumi.set(self, "tcp", value)
-
-    @property
-    @pulumi.getter
-    def udp(self) -> pulumi.Input['TwingateResourceProtocolsUdpArgs']:
-        return pulumi.get(self, "udp")
-
-    @udp.setter
-    def udp(self, value: pulumi.Input['TwingateResourceProtocolsUdpArgs']):
-        pulumi.set(self, "udp", value)
+            pulumi.set(__self__, "allow_icmp", allow_icmp)
+        if tcp is not None:
+            pulumi.set(__self__, "tcp", tcp)
+        if udp is not None:
+            pulumi.set(__self__, "udp", udp)
 
     @property
     @pulumi.getter(name="allowIcmp")
@@ -120,34 +73,42 @@ class TwingateResourceProtocolsArgs:
     def allow_icmp(self, value: Optional[pulumi.Input[bool]]):
         pulumi.set(self, "allow_icmp", value)
 
+    @property
+    @pulumi.getter
+    def tcp(self) -> Optional[pulumi.Input['TwingateResourceProtocolsTcpArgs']]:
+        return pulumi.get(self, "tcp")
+
+    @tcp.setter
+    def tcp(self, value: Optional[pulumi.Input['TwingateResourceProtocolsTcpArgs']]):
+        pulumi.set(self, "tcp", value)
+
+    @property
+    @pulumi.getter
+    def udp(self) -> Optional[pulumi.Input['TwingateResourceProtocolsUdpArgs']]:
+        return pulumi.get(self, "udp")
+
+    @udp.setter
+    def udp(self, value: Optional[pulumi.Input['TwingateResourceProtocolsUdpArgs']]):
+        pulumi.set(self, "udp", value)
+
 
 @pulumi.input_type
 class TwingateResourceProtocolsTcpArgs:
     def __init__(__self__, *,
-                 policy: pulumi.Input[str],
+                 policy: Optional[pulumi.Input[str]] = None,
                  ports: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None):
-        TwingateResourceProtocolsTcpArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            policy=policy,
-            ports=ports,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             policy: pulumi.Input[str],
-             ports: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("policy", policy)
+        if policy is not None:
+            pulumi.set(__self__, "policy", policy)
         if ports is not None:
-            _setter("ports", ports)
+            pulumi.set(__self__, "ports", ports)
 
     @property
     @pulumi.getter
-    def policy(self) -> pulumi.Input[str]:
+    def policy(self) -> Optional[pulumi.Input[str]]:
         return pulumi.get(self, "policy")
 
     @policy.setter
-    def policy(self, value: pulumi.Input[str]):
+    def policy(self, value: Optional[pulumi.Input[str]]):
         pulumi.set(self, "policy", value)
 
     @property
@@ -163,30 +124,20 @@ class TwingateResourceProtocolsTcpArgs:
 @pulumi.input_type
 class TwingateResourceProtocolsUdpArgs:
     def __init__(__self__, *,
-                 policy: pulumi.Input[str],
+                 policy: Optional[pulumi.Input[str]] = None,
                  ports: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None):
-        TwingateResourceProtocolsUdpArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            policy=policy,
-            ports=ports,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             policy: pulumi.Input[str],
-             ports: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("policy", policy)
+        if policy is not None:
+            pulumi.set(__self__, "policy", policy)
         if ports is not None:
-            _setter("ports", ports)
+            pulumi.set(__self__, "ports", ports)
 
     @property
     @pulumi.getter
-    def policy(self) -> pulumi.Input[str]:
+    def policy(self) -> Optional[pulumi.Input[str]]:
         return pulumi.get(self, "policy")
 
     @policy.setter
-    def policy(self, value: pulumi.Input[str]):
+    def policy(self, value: Optional[pulumi.Input[str]]):
         pulumi.set(self, "policy", value)
 
     @property
@@ -206,25 +157,10 @@ class GetTwingateConnectorsConnectorArgs:
                  name: str,
                  remote_network_id: str,
                  status_updates_enabled: bool):
-        GetTwingateConnectorsConnectorArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            id=id,
-            name=name,
-            remote_network_id=remote_network_id,
-            status_updates_enabled=status_updates_enabled,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             id: str,
-             name: str,
-             remote_network_id: str,
-             status_updates_enabled: bool,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("id", id)
-        _setter("name", name)
-        _setter("remote_network_id", remote_network_id)
-        _setter("status_updates_enabled", status_updates_enabled)
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "name", name)
+        pulumi.set(__self__, "remote_network_id", remote_network_id)
+        pulumi.set(__self__, "status_updates_enabled", status_updates_enabled)
 
     @property
     @pulumi.getter
@@ -271,28 +207,11 @@ class GetTwingateGroupsGroupArgs:
                  name: str,
                  security_policy_id: str,
                  type: str):
-        GetTwingateGroupsGroupArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            id=id,
-            is_active=is_active,
-            name=name,
-            security_policy_id=security_policy_id,
-            type=type,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             id: str,
-             is_active: bool,
-             name: str,
-             security_policy_id: str,
-             type: str,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("id", id)
-        _setter("is_active", is_active)
-        _setter("name", name)
-        _setter("security_policy_id", security_policy_id)
-        _setter("type", type)
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "is_active", is_active)
+        pulumi.set(__self__, "name", name)
+        pulumi.set(__self__, "security_policy_id", security_policy_id)
+        pulumi.set(__self__, "type", type)
 
     @property
     @pulumi.getter
@@ -341,80 +260,16 @@ class GetTwingateGroupsGroupArgs:
 
 
 @pulumi.input_type
-class GetTwingateRemoteNetworksRemoteNetworkArgs:
-    def __init__(__self__, *,
-                 id: str,
-                 location: str,
-                 name: str):
-        GetTwingateRemoteNetworksRemoteNetworkArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            id=id,
-            location=location,
-            name=name,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             id: str,
-             location: str,
-             name: str,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("id", id)
-        _setter("location", location)
-        _setter("name", name)
-
-    @property
-    @pulumi.getter
-    def id(self) -> str:
-        return pulumi.get(self, "id")
-
-    @id.setter
-    def id(self, value: str):
-        pulumi.set(self, "id", value)
-
-    @property
-    @pulumi.getter
-    def location(self) -> str:
-        return pulumi.get(self, "location")
-
-    @location.setter
-    def location(self, value: str):
-        pulumi.set(self, "location", value)
-
-    @property
-    @pulumi.getter
-    def name(self) -> str:
-        return pulumi.get(self, "name")
-
-    @name.setter
-    def name(self, value: str):
-        pulumi.set(self, "name", value)
-
-
-@pulumi.input_type
-class GetTwingateResourceProtocolArgs:
+class GetTwingateResourceProtocolsArgs:
     def __init__(__self__, *,
                  allow_icmp: bool,
-                 tcps: Optional[Sequence['GetTwingateResourceProtocolTcpArgs']] = None,
-                 udps: Optional[Sequence['GetTwingateResourceProtocolUdpArgs']] = None):
-        GetTwingateResourceProtocolArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            allow_icmp=allow_icmp,
-            tcps=tcps,
-            udps=udps,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             allow_icmp: bool,
-             tcps: Optional[Sequence['GetTwingateResourceProtocolTcpArgs']] = None,
-             udps: Optional[Sequence['GetTwingateResourceProtocolUdpArgs']] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("allow_icmp", allow_icmp)
-        if tcps is not None:
-            _setter("tcps", tcps)
-        if udps is not None:
-            _setter("udps", udps)
+                 tcp: Optional['GetTwingateResourceProtocolsTcpArgs'] = None,
+                 udp: Optional['GetTwingateResourceProtocolsUdpArgs'] = None):
+        pulumi.set(__self__, "allow_icmp", allow_icmp)
+        if tcp is not None:
+            pulumi.set(__self__, "tcp", tcp)
+        if udp is not None:
+            pulumi.set(__self__, "udp", udp)
 
     @property
     @pulumi.getter(name="allowIcmp")
@@ -427,41 +282,30 @@ class GetTwingateResourceProtocolArgs:
 
     @property
     @pulumi.getter
-    def tcps(self) -> Optional[Sequence['GetTwingateResourceProtocolTcpArgs']]:
-        return pulumi.get(self, "tcps")
+    def tcp(self) -> Optional['GetTwingateResourceProtocolsTcpArgs']:
+        return pulumi.get(self, "tcp")
 
-    @tcps.setter
-    def tcps(self, value: Optional[Sequence['GetTwingateResourceProtocolTcpArgs']]):
-        pulumi.set(self, "tcps", value)
+    @tcp.setter
+    def tcp(self, value: Optional['GetTwingateResourceProtocolsTcpArgs']):
+        pulumi.set(self, "tcp", value)
 
     @property
     @pulumi.getter
-    def udps(self) -> Optional[Sequence['GetTwingateResourceProtocolUdpArgs']]:
-        return pulumi.get(self, "udps")
+    def udp(self) -> Optional['GetTwingateResourceProtocolsUdpArgs']:
+        return pulumi.get(self, "udp")
 
-    @udps.setter
-    def udps(self, value: Optional[Sequence['GetTwingateResourceProtocolUdpArgs']]):
-        pulumi.set(self, "udps", value)
+    @udp.setter
+    def udp(self, value: Optional['GetTwingateResourceProtocolsUdpArgs']):
+        pulumi.set(self, "udp", value)
 
 
 @pulumi.input_type
-class GetTwingateResourceProtocolTcpArgs:
+class GetTwingateResourceProtocolsTcpArgs:
     def __init__(__self__, *,
                  policy: str,
                  ports: Sequence[str]):
-        GetTwingateResourceProtocolTcpArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            policy=policy,
-            ports=ports,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             policy: str,
-             ports: Sequence[str],
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("policy", policy)
-        _setter("ports", ports)
+        pulumi.set(__self__, "policy", policy)
+        pulumi.set(__self__, "ports", ports)
 
     @property
     @pulumi.getter
@@ -483,230 +327,12 @@ class GetTwingateResourceProtocolTcpArgs:
 
 
 @pulumi.input_type
-class GetTwingateResourceProtocolUdpArgs:
+class GetTwingateResourceProtocolsUdpArgs:
     def __init__(__self__, *,
                  policy: str,
                  ports: Sequence[str]):
-        GetTwingateResourceProtocolUdpArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            policy=policy,
-            ports=ports,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             policy: str,
-             ports: Sequence[str],
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("policy", policy)
-        _setter("ports", ports)
-
-    @property
-    @pulumi.getter
-    def policy(self) -> str:
-        return pulumi.get(self, "policy")
-
-    @policy.setter
-    def policy(self, value: str):
-        pulumi.set(self, "policy", value)
-
-    @property
-    @pulumi.getter
-    def ports(self) -> Sequence[str]:
-        return pulumi.get(self, "ports")
-
-    @ports.setter
-    def ports(self, value: Sequence[str]):
-        pulumi.set(self, "ports", value)
-
-
-@pulumi.input_type
-class GetTwingateResourcesResourceArgs:
-    def __init__(__self__, *,
-                 address: str,
-                 id: str,
-                 name: str,
-                 remote_network_id: str,
-                 protocols: Optional[Sequence['GetTwingateResourcesResourceProtocolArgs']] = None):
-        GetTwingateResourcesResourceArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            address=address,
-            id=id,
-            name=name,
-            remote_network_id=remote_network_id,
-            protocols=protocols,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             address: str,
-             id: str,
-             name: str,
-             remote_network_id: str,
-             protocols: Optional[Sequence['GetTwingateResourcesResourceProtocolArgs']] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("address", address)
-        _setter("id", id)
-        _setter("name", name)
-        _setter("remote_network_id", remote_network_id)
-        if protocols is not None:
-            _setter("protocols", protocols)
-
-    @property
-    @pulumi.getter
-    def address(self) -> str:
-        return pulumi.get(self, "address")
-
-    @address.setter
-    def address(self, value: str):
-        pulumi.set(self, "address", value)
-
-    @property
-    @pulumi.getter
-    def id(self) -> str:
-        return pulumi.get(self, "id")
-
-    @id.setter
-    def id(self, value: str):
-        pulumi.set(self, "id", value)
-
-    @property
-    @pulumi.getter
-    def name(self) -> str:
-        return pulumi.get(self, "name")
-
-    @name.setter
-    def name(self, value: str):
-        pulumi.set(self, "name", value)
-
-    @property
-    @pulumi.getter(name="remoteNetworkId")
-    def remote_network_id(self) -> str:
-        return pulumi.get(self, "remote_network_id")
-
-    @remote_network_id.setter
-    def remote_network_id(self, value: str):
-        pulumi.set(self, "remote_network_id", value)
-
-    @property
-    @pulumi.getter
-    def protocols(self) -> Optional[Sequence['GetTwingateResourcesResourceProtocolArgs']]:
-        return pulumi.get(self, "protocols")
-
-    @protocols.setter
-    def protocols(self, value: Optional[Sequence['GetTwingateResourcesResourceProtocolArgs']]):
-        pulumi.set(self, "protocols", value)
-
-
-@pulumi.input_type
-class GetTwingateResourcesResourceProtocolArgs:
-    def __init__(__self__, *,
-                 allow_icmp: bool,
-                 tcps: Optional[Sequence['GetTwingateResourcesResourceProtocolTcpArgs']] = None,
-                 udps: Optional[Sequence['GetTwingateResourcesResourceProtocolUdpArgs']] = None):
-        GetTwingateResourcesResourceProtocolArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            allow_icmp=allow_icmp,
-            tcps=tcps,
-            udps=udps,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             allow_icmp: bool,
-             tcps: Optional[Sequence['GetTwingateResourcesResourceProtocolTcpArgs']] = None,
-             udps: Optional[Sequence['GetTwingateResourcesResourceProtocolUdpArgs']] = None,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("allow_icmp", allow_icmp)
-        if tcps is not None:
-            _setter("tcps", tcps)
-        if udps is not None:
-            _setter("udps", udps)
-
-    @property
-    @pulumi.getter(name="allowIcmp")
-    def allow_icmp(self) -> bool:
-        return pulumi.get(self, "allow_icmp")
-
-    @allow_icmp.setter
-    def allow_icmp(self, value: bool):
-        pulumi.set(self, "allow_icmp", value)
-
-    @property
-    @pulumi.getter
-    def tcps(self) -> Optional[Sequence['GetTwingateResourcesResourceProtocolTcpArgs']]:
-        return pulumi.get(self, "tcps")
-
-    @tcps.setter
-    def tcps(self, value: Optional[Sequence['GetTwingateResourcesResourceProtocolTcpArgs']]):
-        pulumi.set(self, "tcps", value)
-
-    @property
-    @pulumi.getter
-    def udps(self) -> Optional[Sequence['GetTwingateResourcesResourceProtocolUdpArgs']]:
-        return pulumi.get(self, "udps")
-
-    @udps.setter
-    def udps(self, value: Optional[Sequence['GetTwingateResourcesResourceProtocolUdpArgs']]):
-        pulumi.set(self, "udps", value)
-
-
-@pulumi.input_type
-class GetTwingateResourcesResourceProtocolTcpArgs:
-    def __init__(__self__, *,
-                 policy: str,
-                 ports: Sequence[str]):
-        GetTwingateResourcesResourceProtocolTcpArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            policy=policy,
-            ports=ports,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             policy: str,
-             ports: Sequence[str],
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("policy", policy)
-        _setter("ports", ports)
-
-    @property
-    @pulumi.getter
-    def policy(self) -> str:
-        return pulumi.get(self, "policy")
-
-    @policy.setter
-    def policy(self, value: str):
-        pulumi.set(self, "policy", value)
-
-    @property
-    @pulumi.getter
-    def ports(self) -> Sequence[str]:
-        return pulumi.get(self, "ports")
-
-    @ports.setter
-    def ports(self, value: Sequence[str]):
-        pulumi.set(self, "ports", value)
-
-
-@pulumi.input_type
-class GetTwingateResourcesResourceProtocolUdpArgs:
-    def __init__(__self__, *,
-                 policy: str,
-                 ports: Sequence[str]):
-        GetTwingateResourcesResourceProtocolUdpArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            policy=policy,
-            ports=ports,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             policy: str,
-             ports: Sequence[str],
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("policy", policy)
-        _setter("ports", ports)
+        pulumi.set(__self__, "policy", policy)
+        pulumi.set(__self__, "ports", ports)
 
     @property
     @pulumi.getter
@@ -732,19 +358,8 @@ class GetTwingateSecurityPoliciesSecurityPolicyArgs:
     def __init__(__self__, *,
                  id: str,
                  name: str):
-        GetTwingateSecurityPoliciesSecurityPolicyArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            id=id,
-            name=name,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             id: str,
-             name: str,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("id", id)
-        _setter("name", name)
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "name", name)
 
     @property
     @pulumi.getter
@@ -763,178 +378,5 @@ class GetTwingateSecurityPoliciesSecurityPolicyArgs:
     @name.setter
     def name(self, value: str):
         pulumi.set(self, "name", value)
-
-
-@pulumi.input_type
-class GetTwingateServiceAccountsServiceAccountArgs:
-    def __init__(__self__, *,
-                 id: str,
-                 key_ids: Sequence[str],
-                 name: str,
-                 resource_ids: Sequence[str]):
-        GetTwingateServiceAccountsServiceAccountArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            id=id,
-            key_ids=key_ids,
-            name=name,
-            resource_ids=resource_ids,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             id: str,
-             key_ids: Sequence[str],
-             name: str,
-             resource_ids: Sequence[str],
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("id", id)
-        _setter("key_ids", key_ids)
-        _setter("name", name)
-        _setter("resource_ids", resource_ids)
-
-    @property
-    @pulumi.getter
-    def id(self) -> str:
-        return pulumi.get(self, "id")
-
-    @id.setter
-    def id(self, value: str):
-        pulumi.set(self, "id", value)
-
-    @property
-    @pulumi.getter(name="keyIds")
-    def key_ids(self) -> Sequence[str]:
-        return pulumi.get(self, "key_ids")
-
-    @key_ids.setter
-    def key_ids(self, value: Sequence[str]):
-        pulumi.set(self, "key_ids", value)
-
-    @property
-    @pulumi.getter
-    def name(self) -> str:
-        return pulumi.get(self, "name")
-
-    @name.setter
-    def name(self, value: str):
-        pulumi.set(self, "name", value)
-
-    @property
-    @pulumi.getter(name="resourceIds")
-    def resource_ids(self) -> Sequence[str]:
-        return pulumi.get(self, "resource_ids")
-
-    @resource_ids.setter
-    def resource_ids(self, value: Sequence[str]):
-        pulumi.set(self, "resource_ids", value)
-
-
-@pulumi.input_type
-class GetTwingateUsersUserArgs:
-    def __init__(__self__, *,
-                 email: str,
-                 first_name: str,
-                 id: str,
-                 is_admin: bool,
-                 last_name: str,
-                 role: str,
-                 type: str):
-        GetTwingateUsersUserArgs._configure(
-            lambda key, value: pulumi.set(__self__, key, value),
-            email=email,
-            first_name=first_name,
-            id=id,
-            is_admin=is_admin,
-            last_name=last_name,
-            role=role,
-            type=type,
-        )
-    @staticmethod
-    def _configure(
-             _setter: Callable[[Any, Any], None],
-             email: str,
-             first_name: str,
-             id: str,
-             is_admin: bool,
-             last_name: str,
-             role: str,
-             type: str,
-             opts: Optional[pulumi.ResourceOptions]=None):
-        _setter("email", email)
-        _setter("first_name", first_name)
-        _setter("id", id)
-        if is_admin is not None:
-            warnings.warn("""This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.""", DeprecationWarning)
-            pulumi.log.warn("""is_admin is deprecated: This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.""")
-        _setter("is_admin", is_admin)
-        _setter("last_name", last_name)
-        _setter("role", role)
-        _setter("type", type)
-
-    @property
-    @pulumi.getter
-    def email(self) -> str:
-        return pulumi.get(self, "email")
-
-    @email.setter
-    def email(self, value: str):
-        pulumi.set(self, "email", value)
-
-    @property
-    @pulumi.getter(name="firstName")
-    def first_name(self) -> str:
-        return pulumi.get(self, "first_name")
-
-    @first_name.setter
-    def first_name(self, value: str):
-        pulumi.set(self, "first_name", value)
-
-    @property
-    @pulumi.getter
-    def id(self) -> str:
-        return pulumi.get(self, "id")
-
-    @id.setter
-    def id(self, value: str):
-        pulumi.set(self, "id", value)
-
-    @property
-    @pulumi.getter(name="isAdmin")
-    def is_admin(self) -> bool:
-        warnings.warn("""This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.""", DeprecationWarning)
-        pulumi.log.warn("""is_admin is deprecated: This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.""")
-
-        return pulumi.get(self, "is_admin")
-
-    @is_admin.setter
-    def is_admin(self, value: bool):
-        pulumi.set(self, "is_admin", value)
-
-    @property
-    @pulumi.getter(name="lastName")
-    def last_name(self) -> str:
-        return pulumi.get(self, "last_name")
-
-    @last_name.setter
-    def last_name(self, value: str):
-        pulumi.set(self, "last_name", value)
-
-    @property
-    @pulumi.getter
-    def role(self) -> str:
-        return pulumi.get(self, "role")
-
-    @role.setter
-    def role(self, value: str):
-        pulumi.set(self, "role", value)
-
-    @property
-    @pulumi.getter
-    def type(self) -> str:
-        return pulumi.get(self, "type")
-
-    @type.setter
-    def type(self, value: str):
-        pulumi.set(self, "type", value)
 
 

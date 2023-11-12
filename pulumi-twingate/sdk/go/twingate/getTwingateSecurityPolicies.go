@@ -29,7 +29,6 @@ type GetTwingateSecurityPoliciesArgs struct {
 
 // A collection of values returned by getTwingateSecurityPolicies.
 type GetTwingateSecurityPoliciesResult struct {
-	// The provider-assigned unique ID for this managed resource.
 	Id               string                                      `pulumi:"id"`
 	SecurityPolicies []GetTwingateSecurityPoliciesSecurityPolicy `pulumi:"securityPolicies"`
 }
@@ -77,7 +76,6 @@ func (o GetTwingateSecurityPoliciesResultOutput) ToOutput(ctx context.Context) p
 	}
 }
 
-// The provider-assigned unique ID for this managed resource.
 func (o GetTwingateSecurityPoliciesResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateSecurityPoliciesResult) string { return v.Id }).(pulumi.StringOutput)
 }

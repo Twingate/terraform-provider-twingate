@@ -24,13 +24,11 @@ func GetTwingateResources(ctx *pulumi.Context, args *GetTwingateResourcesArgs, o
 
 // A collection of arguments for invoking getTwingateResources.
 type GetTwingateResourcesArgs struct {
-	Name      string                         `pulumi:"name"`
-	Resources []GetTwingateResourcesResource `pulumi:"resources"`
+	Name string `pulumi:"name"`
 }
 
 // A collection of values returned by getTwingateResources.
 type GetTwingateResourcesResult struct {
-	// The provider-assigned unique ID for this managed resource.
 	Id        string                         `pulumi:"id"`
 	Name      string                         `pulumi:"name"`
 	Resources []GetTwingateResourcesResource `pulumi:"resources"`
@@ -51,8 +49,7 @@ func GetTwingateResourcesOutput(ctx *pulumi.Context, args GetTwingateResourcesOu
 
 // A collection of arguments for invoking getTwingateResources.
 type GetTwingateResourcesOutputArgs struct {
-	Name      pulumi.StringInput                     `pulumi:"name"`
-	Resources GetTwingateResourcesResourceArrayInput `pulumi:"resources"`
+	Name pulumi.StringInput `pulumi:"name"`
 }
 
 func (GetTwingateResourcesOutputArgs) ElementType() reflect.Type {
@@ -80,7 +77,6 @@ func (o GetTwingateResourcesResultOutput) ToOutput(ctx context.Context) pulumix.
 	}
 }
 
-// The provider-assigned unique ID for this managed resource.
 func (o GetTwingateResourcesResultOutput) Id() pulumi.StringOutput {
 	return o.ApplyT(func(v GetTwingateResourcesResult) string { return v.Id }).(pulumi.StringOutput)
 }

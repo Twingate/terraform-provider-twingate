@@ -6,7 +6,7 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 from . import outputs
 from ._inputs import *
@@ -33,15 +33,12 @@ class GetTwingateConnectorsResult:
 
     @property
     @pulumi.getter
-    def connectors(self) -> Optional[Sequence['outputs.GetTwingateConnectorsConnectorResult']]:
+    def connectors(self) -> Sequence['outputs.GetTwingateConnectorsConnectorResult']:
         return pulumi.get(self, "connectors")
 
     @property
     @pulumi.getter
     def id(self) -> str:
-        """
-        The provider-assigned unique ID for this managed resource.
-        """
         return pulumi.get(self, "id")
 
 

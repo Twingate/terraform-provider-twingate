@@ -57,9 +57,6 @@ namespace TwingateLabs.Twingate
     public sealed class GetTwingateConnectorsResult
     {
         public readonly ImmutableArray<Outputs.GetTwingateConnectorsConnectorResult> Connectors;
-        /// <summary>
-        /// The provider-assigned unique ID for this managed resource.
-        /// </summary>
         public readonly string Id;
 
         [OutputConstructor]

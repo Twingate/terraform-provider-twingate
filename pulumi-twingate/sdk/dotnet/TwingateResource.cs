@@ -61,13 +61,19 @@ namespace TwingateLabs.Twingate
         /// restriction, and all protocols and ports are allowed.
         /// </summary>
         [Output("protocols")]
-        public Output<Outputs.TwingateResourceProtocols?> Protocols { get; private set; } = null!;
+        public Output<Outputs.TwingateResourceProtocols> Protocols { get; private set; } = null!;
 
         /// <summary>
         /// Remote Network ID where the Resource lives
         /// </summary>
         [Output("remoteNetworkId")]
         public Output<string> RemoteNetworkId { get; private set; } = null!;
+
+        /// <summary>
+        /// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+        /// </summary>
+        [Output("securityPolicyId")]
+        public Output<string> SecurityPolicyId { get; private set; } = null!;
 
 
         /// <summary>
@@ -172,6 +178,12 @@ namespace TwingateLabs.Twingate
         [Input("remoteNetworkId", required: true)]
         public Input<string> RemoteNetworkId { get; set; } = null!;
 
+        /// <summary>
+        /// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+        /// </summary>
+        [Input("securityPolicyId")]
+        public Input<string>? SecurityPolicyId { get; set; }
+
         public TwingateResourceArgs()
         {
         }
@@ -235,6 +247,12 @@ namespace TwingateLabs.Twingate
         /// </summary>
         [Input("remoteNetworkId")]
         public Input<string>? RemoteNetworkId { get; set; }
+
+        /// <summary>
+        /// The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+        /// </summary>
+        [Input("securityPolicyId")]
+        public Input<string>? SecurityPolicyId { get; set; }
 
         public TwingateResourceState()
         {

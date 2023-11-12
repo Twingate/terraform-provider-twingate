@@ -35,94 +35,34 @@ export interface GetTwingateGroupsGroupArgs {
     type?: pulumi.Input<string>;
 }
 
-export interface GetTwingateRemoteNetworksRemoteNetwork {
-    id?: string;
-    location?: string;
-    name?: string;
-}
-
-export interface GetTwingateRemoteNetworksRemoteNetworkArgs {
-    id?: pulumi.Input<string>;
-    location?: pulumi.Input<string>;
-    name?: pulumi.Input<string>;
-}
-
-export interface GetTwingateResourceProtocol {
+export interface GetTwingateResourceProtocols {
     allowIcmp?: boolean;
-    tcps?: inputs.GetTwingateResourceProtocolTcp[];
-    udps?: inputs.GetTwingateResourceProtocolUdp[];
+    tcp?: inputs.GetTwingateResourceProtocolsTcp;
+    udp?: inputs.GetTwingateResourceProtocolsUdp;
 }
 
-export interface GetTwingateResourceProtocolArgs {
+export interface GetTwingateResourceProtocolsArgs {
     allowIcmp?: pulumi.Input<boolean>;
-    tcps?: pulumi.Input<pulumi.Input<inputs.GetTwingateResourceProtocolTcpArgs>[]>;
-    udps?: pulumi.Input<pulumi.Input<inputs.GetTwingateResourceProtocolUdpArgs>[]>;
+    tcp?: pulumi.Input<inputs.GetTwingateResourceProtocolsTcpArgs>;
+    udp?: pulumi.Input<inputs.GetTwingateResourceProtocolsUdpArgs>;
 }
 
-export interface GetTwingateResourceProtocolTcp {
+export interface GetTwingateResourceProtocolsTcp {
     policy?: string;
     ports?: string[];
 }
 
-export interface GetTwingateResourceProtocolTcpArgs {
+export interface GetTwingateResourceProtocolsTcpArgs {
     policy?: pulumi.Input<string>;
     ports?: pulumi.Input<pulumi.Input<string>[]>;
 }
 
-export interface GetTwingateResourceProtocolUdp {
+export interface GetTwingateResourceProtocolsUdp {
     policy?: string;
     ports?: string[];
 }
 
-export interface GetTwingateResourceProtocolUdpArgs {
-    policy?: pulumi.Input<string>;
-    ports?: pulumi.Input<pulumi.Input<string>[]>;
-}
-
-export interface GetTwingateResourcesResource {
-    address?: string;
-    id?: string;
-    name?: string;
-    protocols?: inputs.GetTwingateResourcesResourceProtocol[];
-    remoteNetworkId?: string;
-}
-
-export interface GetTwingateResourcesResourceArgs {
-    address?: pulumi.Input<string>;
-    id?: pulumi.Input<string>;
-    name?: pulumi.Input<string>;
-    protocols?: pulumi.Input<pulumi.Input<inputs.GetTwingateResourcesResourceProtocolArgs>[]>;
-    remoteNetworkId?: pulumi.Input<string>;
-}
-
-export interface GetTwingateResourcesResourceProtocol {
-    allowIcmp?: boolean;
-    tcps?: inputs.GetTwingateResourcesResourceProtocolTcp[];
-    udps?: inputs.GetTwingateResourcesResourceProtocolUdp[];
-}
-
-export interface GetTwingateResourcesResourceProtocolArgs {
-    allowIcmp?: pulumi.Input<boolean>;
-    tcps?: pulumi.Input<pulumi.Input<inputs.GetTwingateResourcesResourceProtocolTcpArgs>[]>;
-    udps?: pulumi.Input<pulumi.Input<inputs.GetTwingateResourcesResourceProtocolUdpArgs>[]>;
-}
-
-export interface GetTwingateResourcesResourceProtocolTcp {
-    policy?: string;
-    ports?: string[];
-}
-
-export interface GetTwingateResourcesResourceProtocolTcpArgs {
-    policy?: pulumi.Input<string>;
-    ports?: pulumi.Input<pulumi.Input<string>[]>;
-}
-
-export interface GetTwingateResourcesResourceProtocolUdp {
-    policy?: string;
-    ports?: string[];
-}
-
-export interface GetTwingateResourcesResourceProtocolUdpArgs {
+export interface GetTwingateResourceProtocolsUdpArgs {
     policy?: pulumi.Input<string>;
     ports?: pulumi.Input<pulumi.Input<string>[]>;
 }
@@ -137,46 +77,6 @@ export interface GetTwingateSecurityPoliciesSecurityPolicyArgs {
     name?: pulumi.Input<string>;
 }
 
-export interface GetTwingateServiceAccountsServiceAccount {
-    id?: string;
-    keyIds?: string[];
-    name?: string;
-    resourceIds?: string[];
-}
-
-export interface GetTwingateServiceAccountsServiceAccountArgs {
-    id?: pulumi.Input<string>;
-    keyIds?: pulumi.Input<pulumi.Input<string>[]>;
-    name?: pulumi.Input<string>;
-    resourceIds?: pulumi.Input<pulumi.Input<string>[]>;
-}
-
-export interface GetTwingateUsersUser {
-    email?: string;
-    firstName?: string;
-    id?: string;
-    /**
-     * @deprecated This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.
-     */
-    isAdmin?: boolean;
-    lastName?: string;
-    role?: string;
-    type?: string;
-}
-
-export interface GetTwingateUsersUserArgs {
-    email?: pulumi.Input<string>;
-    firstName?: pulumi.Input<string>;
-    id?: pulumi.Input<string>;
-    /**
-     * @deprecated This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.
-     */
-    isAdmin?: pulumi.Input<boolean>;
-    lastName?: pulumi.Input<string>;
-    role?: pulumi.Input<string>;
-    type?: pulumi.Input<string>;
-}
-
 export interface TwingateResourceAccess {
     groupIds?: pulumi.Input<pulumi.Input<string>[]>;
     serviceAccountIds?: pulumi.Input<pulumi.Input<string>[]>;
@@ -184,16 +84,16 @@ export interface TwingateResourceAccess {
 
 export interface TwingateResourceProtocols {
     allowIcmp?: pulumi.Input<boolean>;
-    tcp: pulumi.Input<inputs.TwingateResourceProtocolsTcp>;
-    udp: pulumi.Input<inputs.TwingateResourceProtocolsUdp>;
+    tcp?: pulumi.Input<inputs.TwingateResourceProtocolsTcp>;
+    udp?: pulumi.Input<inputs.TwingateResourceProtocolsUdp>;
 }
 
 export interface TwingateResourceProtocolsTcp {
-    policy: pulumi.Input<string>;
+    policy?: pulumi.Input<string>;
     ports?: pulumi.Input<pulumi.Input<string>[]>;
 }
 
 export interface TwingateResourceProtocolsUdp {
-    policy: pulumi.Input<string>;
+    policy?: pulumi.Input<string>;
     ports?: pulumi.Input<pulumi.Input<string>[]>;
 }

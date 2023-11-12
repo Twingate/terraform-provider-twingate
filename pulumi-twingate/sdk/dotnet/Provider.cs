@@ -100,7 +100,7 @@ namespace TwingateLabs.Twingate
         public Input<int>? HttpMaxRetry { get; set; }
 
         /// <summary>
-        /// Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can
+        /// Specifies a time limit in seconds for the http requests made. The default value is 35 seconds. Alternatively, this can
         /// be specified using the TWINGATE_HTTP_TIMEOUT environment variable
         /// </summary>
         [Input("httpTimeout", json: true)]

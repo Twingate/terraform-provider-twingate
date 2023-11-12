@@ -11,7 +11,6 @@ export function getTwingateResources(args: GetTwingateResourcesArgs, opts?: pulu
     opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts || {});
     return pulumi.runtime.invoke("twingate:index/getTwingateResources:getTwingateResources", {
         "name": args.name,
-        "resources": args.resources,
     }, opts);
 }
 
@@ -20,19 +19,15 @@ export function getTwingateResources(args: GetTwingateResourcesArgs, opts?: pulu
  */
 export interface GetTwingateResourcesArgs {
     name: string;
-    resources?: inputs.GetTwingateResourcesResource[];
 }
 
 /**
  * A collection of values returned by getTwingateResources.
  */
 export interface GetTwingateResourcesResult {
-    /**
-     * The provider-assigned unique ID for this managed resource.
-     */
     readonly id: string;
     readonly name: string;
-    readonly resources?: outputs.GetTwingateResourcesResource[];
+    readonly resources: outputs.GetTwingateResourcesResource[];
 }
 export function getTwingateResourcesOutput(args: GetTwingateResourcesOutputArgs, opts?: pulumi.InvokeOptions): pulumi.Output<GetTwingateResourcesResult> {
     return pulumi.output(args).apply((a: any) => getTwingateResources(a, opts))
@@ -43,5 +38,4 @@ export function getTwingateResourcesOutput(args: GetTwingateResourcesOutputArgs,
  */
 export interface GetTwingateResourcesOutputArgs {
     name: pulumi.Input<string>;
-    resources?: pulumi.Input<pulumi.Input<inputs.GetTwingateResourcesResourceArgs>[]>;
 }

@@ -6,10 +6,9 @@ import copy
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Mapping, Optional, Sequence, Union, overload
 from . import _utilities
 from . import outputs
-from ._inputs import *
 
 __all__ = [
     'GetTwingateRemoteNetworksResult',
@@ -34,14 +33,11 @@ class GetTwingateRemoteNetworksResult:
     @property
     @pulumi.getter
     def id(self) -> str:
-        """
-        The provider-assigned unique ID for this managed resource.
-        """
         return pulumi.get(self, "id")
 
     @property
     @pulumi.getter(name="remoteNetworks")
-    def remote_networks(self) -> Optional[Sequence['outputs.GetTwingateRemoteNetworksRemoteNetworkResult']]:
+    def remote_networks(self) -> Sequence['outputs.GetTwingateRemoteNetworksRemoteNetworkResult']:
         return pulumi.get(self, "remote_networks")
 
 
@@ -55,13 +51,11 @@ class AwaitableGetTwingateRemoteNetworksResult(GetTwingateRemoteNetworksResult):
             remote_networks=self.remote_networks)
 
 
-def get_twingate_remote_networks(remote_networks: Optional[Sequence[pulumi.InputType['GetTwingateRemoteNetworksRemoteNetworkArgs']]] = None,
-                                 opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateRemoteNetworksResult:
+def get_twingate_remote_networks(opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetTwingateRemoteNetworksResult:
     """
     Use this data source to access information about an existing resource.
     """
     __args__ = dict()
-    __args__['remoteNetworks'] = remote_networks
     opts = pulumi.InvokeOptions.merge(_utilities.get_invoke_opts_defaults(), opts)
     __ret__ = pulumi.runtime.invoke('twingate:index/getTwingateRemoteNetworks:getTwingateRemoteNetworks', __args__, opts=opts, typ=GetTwingateRemoteNetworksResult).value
 
@@ -71,8 +65,7 @@ def get_twingate_remote_networks(remote_networks: Optional[Sequence[pulumi.Input
 
 
 @_utilities.lift_output_func(get_twingate_remote_networks)
-def get_twingate_remote_networks_output(remote_networks: Optional[pulumi.Input[Optional[Sequence[pulumi.InputType['GetTwingateRemoteNetworksRemoteNetworkArgs']]]]] = None,
-                                        opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateRemoteNetworksResult]:
+def get_twingate_remote_networks_output(opts: Optional[pulumi.InvokeOptions] = None) -> pulumi.Output[GetTwingateRemoteNetworksResult]:
     """
     Use this data source to access information about an existing resource.
     """
