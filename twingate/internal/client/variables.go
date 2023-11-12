@@ -113,6 +113,10 @@ func gqlNullableID(val interface{}, name string) gqlVarOption {
 			defaultID *graphql.ID
 		)
 
+		if value, ok := val.(*string); ok && value != nil {
+			val = *value
+		}
+
 		if isZeroValue(val) {
 			gqlValue = defaultID
 		} else {

@@ -32,8 +32,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-const defaultSecurityPolicy = "Default Policy"
-
 var (
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
@@ -129,28 +127,24 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			// optional
 			attr.IsAuthoritative: schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-				},
+				Optional:      true,
+				Computed:      true,
+				Description:   "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
+				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			attr.Alias: schema.StringAttribute{
-				Optional:    true,
-				Description: "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				PlanModifiers: []planmodifier.String{
-					CaseInsensitiveDiff(),
-				},
-			},
-			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The ID of a twingate_security_policy to set as this Resource's Security Policy.",
-				Default:     stringdefault.StaticString(""),
+				Optional:      true,
+				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
+				PlanModifiers: []planmodifier.String{CaseInsensitiveDiff()},
 			},
 			attr.Protocols: protocols(),
 			// computed
+			attr.SecurityPolicyID: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
+				Default:     stringdefault.StaticString(""),
+			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
 				Computed:      true,
@@ -360,7 +354,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	input, err := r.convertResource(ctx, &plan)
+	input, err := r.convertResource(&plan)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
 
@@ -421,7 +415,7 @@ func convertAccessBlock(obj types.Object) model.ResourceAccess {
 	return access
 }
 
-func (r *twingateResource) convertResource(ctx context.Context, plan *resourceModel) (*model.Resource, error) {
+func (r *twingateResource) convertResource(plan *resourceModel) (*model.Resource, error) {
 	protocols, err := convertProtocols(&plan.Protocols)
 	if err != nil {
 		return nil, err
@@ -437,15 +431,8 @@ func (r *twingateResource) convertResource(ctx context.Context, plan *resourceMo
 		return nil, ErrWildcardAddressWithEnabledShortcut
 	}
 
-	securityPolicyID := getOptionalString(plan.SecurityPolicyID)
-	if (securityPolicyID == nil || *securityPolicyID == "") && len(access) == 0 {
-		securityPolicy, err := r.client.ReadSecurityPolicy(ctx, "", defaultSecurityPolicy)
-		if err != nil {
-			return nil, fmt.Errorf("%w: failed to read security policy", err)
-		}
-
-		securityPolicyID = &securityPolicy.ID
-	}
+	securityPolicyID := plan.SecurityPolicyID.ValueString()
+	setDefaultSecurityPolicy(access, securityPolicyID)
 
 	return &model.Resource{
 		Name:                     plan.Name.ValueString(),
@@ -459,6 +446,18 @@ func (r *twingateResource) convertResource(ctx context.Context, plan *resourceMo
 		SecurityPolicyID:         securityPolicyID,
 		Access:                   access,
 	}, nil
+}
+
+func setDefaultSecurityPolicy(access []model.ResourceAccess, securityPolicyID string) {
+	if securityPolicyID == "" {
+		return
+	}
+
+	for i := range access {
+		if access[i].GroupID != nil && access[i].SecurityPolicyID == nil {
+			access[i].SecurityPolicyID = &securityPolicyID
+		}
+	}
 }
 
 func validateAccessBlocks(access []model.ResourceAccess) error {
@@ -624,6 +623,10 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	resource, err := r.client.ReadResource(ctx, state.ID.ValueString())
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
+
+		if state.SecurityPolicyID.ValueString() == "" {
+			resource.SecurityPolicyID = ""
+		}
 	}
 
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
@@ -639,7 +642,7 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	input, err := r.convertResource(ctx, &plan)
+	input, err := r.convertResource(&plan)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
 
@@ -887,6 +890,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
 	state.Address = types.StringValue(resource.Address)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
+	state.SecurityPolicyID = types.StringValue(resource.SecurityPolicyID)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
