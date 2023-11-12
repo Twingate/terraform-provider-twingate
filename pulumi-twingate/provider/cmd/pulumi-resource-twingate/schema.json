@@ -66,7 +66,7 @@
             },
             "httpTimeout": {
                 "type": "integer",
-                "description": "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n",
+                "description": "Specifies a time limit in seconds for the http requests made. The default value is 35 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n",
                 "default": 10
             },
             "network": {
@@ -110,10 +110,15 @@
                 }
             },
             "type": "object",
-            "required": [
-                "tcp",
-                "udp"
-            ]
+            "language": {
+                "nodejs": {
+                    "requiredOutputs": [
+                        "allowIcmp",
+                        "tcp",
+                        "udp"
+                    ]
+                }
+            }
         },
         "twingate:index/TwingateResourceProtocolsTcp:TwingateResourceProtocolsTcp": {
             "properties": {
@@ -128,9 +133,14 @@
                 }
             },
             "type": "object",
-            "required": [
-                "policy"
-            ]
+            "language": {
+                "nodejs": {
+                    "requiredOutputs": [
+                        "policy",
+                        "ports"
+                    ]
+                }
+            }
         },
         "twingate:index/TwingateResourceProtocolsUdp:TwingateResourceProtocolsUdp": {
             "properties": {
@@ -145,9 +155,14 @@
                 }
             },
             "type": "object",
-            "required": [
-                "policy"
-            ]
+            "language": {
+                "nodejs": {
+                    "requiredOutputs": [
+                        "policy",
+                        "ports"
+                    ]
+                }
+            }
         },
         "twingate:index/getTwingateConnectorsConnector:getTwingateConnectorsConnector": {
             "properties": {
@@ -233,22 +248,16 @@
                 }
             }
         },
-        "twingate:index/getTwingateResourceProtocol:getTwingateResourceProtocol": {
+        "twingate:index/getTwingateResourceProtocols:getTwingateResourceProtocols": {
             "properties": {
                 "allowIcmp": {
                     "type": "boolean"
                 },
-                "tcps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/types/twingate:index/getTwingateResourceProtocolTcp:getTwingateResourceProtocolTcp"
-                    }
+                "tcp": {
+                    "$ref": "#/types/twingate:index/getTwingateResourceProtocolsTcp:getTwingateResourceProtocolsTcp"
                 },
-                "udps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/types/twingate:index/getTwingateResourceProtocolUdp:getTwingateResourceProtocolUdp"
-                    }
+                "udp": {
+                    "$ref": "#/types/twingate:index/getTwingateResourceProtocolsUdp:getTwingateResourceProtocolsUdp"
                 }
             },
             "type": "object",
@@ -261,7 +270,7 @@
                 }
             }
         },
-        "twingate:index/getTwingateResourceProtocolTcp:getTwingateResourceProtocolTcp": {
+        "twingate:index/getTwingateResourceProtocolsTcp:getTwingateResourceProtocolsTcp": {
             "properties": {
                 "policy": {
                     "type": "string"
@@ -284,7 +293,7 @@
                 }
             }
         },
-        "twingate:index/getTwingateResourceProtocolUdp:getTwingateResourceProtocolUdp": {
+        "twingate:index/getTwingateResourceProtocolsUdp:getTwingateResourceProtocolsUdp": {
             "properties": {
                 "policy": {
                     "type": "string"
@@ -319,10 +328,7 @@
                     "type": "string"
                 },
                 "protocols": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocol:getTwingateResourcesResourceProtocol"
-                    }
+                    "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocols:getTwingateResourcesResourceProtocols"
                 },
                 "remoteNetworkId": {
                     "type": "string"
@@ -333,6 +339,7 @@
                 "address",
                 "id",
                 "name",
+                "protocols",
                 "remoteNetworkId"
             ],
             "language": {
@@ -341,27 +348,23 @@
                 }
             }
         },
-        "twingate:index/getTwingateResourcesResourceProtocol:getTwingateResourcesResourceProtocol": {
+        "twingate:index/getTwingateResourcesResourceProtocols:getTwingateResourcesResourceProtocols": {
             "properties": {
                 "allowIcmp": {
                     "type": "boolean"
                 },
-                "tcps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocolTcp:getTwingateResourcesResourceProtocolTcp"
-                    }
+                "tcp": {
+                    "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocolsTcp:getTwingateResourcesResourceProtocolsTcp"
                 },
-                "udps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocolUdp:getTwingateResourcesResourceProtocolUdp"
-                    }
+                "udp": {
+                    "$ref": "#/types/twingate:index/getTwingateResourcesResourceProtocolsUdp:getTwingateResourcesResourceProtocolsUdp"
                 }
             },
             "type": "object",
             "required": [
-                "allowIcmp"
+                "allowIcmp",
+                "tcp",
+                "udp"
             ],
             "language": {
                 "nodejs": {
@@ -369,7 +372,7 @@
                 }
             }
         },
-        "twingate:index/getTwingateResourcesResourceProtocolTcp:getTwingateResourcesResourceProtocolTcp": {
+        "twingate:index/getTwingateResourcesResourceProtocolsTcp:getTwingateResourcesResourceProtocolsTcp": {
             "properties": {
                 "policy": {
                     "type": "string"
@@ -392,7 +395,7 @@
                 }
             }
         },
-        "twingate:index/getTwingateResourcesResourceProtocolUdp:getTwingateResourcesResourceProtocolUdp": {
+        "twingate:index/getTwingateResourcesResourceProtocolsUdp:getTwingateResourcesResourceProtocolsUdp": {
             "properties": {
                 "policy": {
                     "type": "string"
@@ -525,7 +528,7 @@
             },
             "httpTimeout": {
                 "type": "integer",
-                "description": "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n"
+                "description": "Specifies a time limit in seconds for the http requests made. The default value is 35 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n"
             },
             "network": {
                 "type": "string",
@@ -549,7 +552,7 @@
             },
             "httpTimeout": {
                 "type": "integer",
-                "description": "Specifies a time limit in seconds for the http requests made. The default value is 10 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n",
+                "description": "Specifies a time limit in seconds for the http requests made. The default value is 35 seconds. Alternatively, this can\nbe specified using the TWINGATE_HTTP_TIMEOUT environment variable\n",
                 "default": 10
             },
             "network": {
@@ -590,8 +593,7 @@
                 },
                 "remoteNetworkId": {
                     "type": "string",
-                    "description": "The ID of the Remote Network the Connector is attached to.\n",
-                    "willReplaceOnChanges": true
+                    "description": "The ID of the Remote Network the Connector is attached to.\n"
                 },
                 "statusUpdatesEnabled": {
                     "type": "boolean",
@@ -610,8 +612,7 @@
                     },
                     "remoteNetworkId": {
                         "type": "string",
-                        "description": "The ID of the Remote Network the Connector is attached to.\n",
-                        "willReplaceOnChanges": true
+                        "description": "The ID of the Remote Network the Connector is attached to.\n"
                     },
                     "statusUpdatesEnabled": {
                         "type": "boolean",
@@ -635,7 +636,7 @@
                 "keepers": {
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "pulumi.json#/Any"
+                        "type": "string"
                     },
                     "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n"
                 },
@@ -653,16 +654,14 @@
             "inputProperties": {
                 "connectorId": {
                     "type": "string",
-                    "description": "The ID of the parent Connector\n",
-                    "willReplaceOnChanges": true
+                    "description": "The ID of the parent Connector\n"
                 },
                 "keepers": {
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "pulumi.json#/Any"
+                        "type": "string"
                     },
-                    "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n",
-                    "willReplaceOnChanges": true
+                    "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n"
                 }
             },
             "requiredInputs": [
@@ -678,16 +677,14 @@
                     },
                     "connectorId": {
                         "type": "string",
-                        "description": "The ID of the parent Connector\n",
-                        "willReplaceOnChanges": true
+                        "description": "The ID of the parent Connector\n"
                     },
                     "keepers": {
                         "type": "object",
                         "additionalProperties": {
-                            "$ref": "pulumi.json#/Any"
+                            "type": "string"
                         },
-                        "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n",
-                        "willReplaceOnChanges": true
+                        "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. Use this to automatically rotate\nConnector tokens on a schedule.\n"
                     },
                     "refreshToken": {
                         "type": "string",
@@ -784,6 +781,7 @@
                 }
             },
             "required": [
+                "location",
                 "name"
             ],
             "inputProperties": {
@@ -848,6 +846,10 @@
                 "remoteNetworkId": {
                     "type": "string",
                     "description": "Remote Network ID where the Resource lives\n"
+                },
+                "securityPolicyId": {
+                    "type": "string",
+                    "description": "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.\n"
                 }
             },
             "required": [
@@ -856,7 +858,9 @@
                 "isBrowserShortcutEnabled",
                 "isVisible",
                 "name",
-                "remoteNetworkId"
+                "protocols",
+                "remoteNetworkId",
+                "securityPolicyId"
             ],
             "inputProperties": {
                 "access": {
@@ -894,6 +898,10 @@
                 "remoteNetworkId": {
                     "type": "string",
                     "description": "Remote Network ID where the Resource lives\n"
+                },
+                "securityPolicyId": {
+                    "type": "string",
+                    "description": "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.\n"
                 }
             },
             "requiredInputs": [
@@ -938,6 +946,10 @@
                     "remoteNetworkId": {
                         "type": "string",
                         "description": "Remote Network ID where the Resource lives\n"
+                    },
+                    "securityPolicyId": {
+                        "type": "string",
+                        "description": "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.\n"
                     }
                 },
                 "type": "object"
@@ -972,6 +984,14 @@
         },
         "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey": {
             "properties": {
+                "expirationTime": {
+                    "type": "integer",
+                    "description": "Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing\nthe number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.\n"
+                },
+                "isActive": {
+                    "type": "boolean",
+                    "description": "If the value of this attribute changes to false, Terraform will destroy and recreate the resource.\n"
+                },
                 "name": {
                     "type": "string",
                     "description": "The name of the Service Key\n"
@@ -987,11 +1007,17 @@
                 }
             },
             "required": [
+                "expirationTime",
+                "isActive",
                 "name",
                 "serviceAccountId",
                 "token"
             ],
             "inputProperties": {
+                "expirationTime": {
+                    "type": "integer",
+                    "description": "Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing\nthe number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.\n"
+                },
                 "name": {
                     "type": "string",
                     "description": "The name of the Service Key\n"
@@ -1007,6 +1033,14 @@
             "stateInputs": {
                 "description": "Input properties used for looking up and filtering TwingateServiceAccountKey resources.\n",
                 "properties": {
+                    "expirationTime": {
+                        "type": "integer",
+                        "description": "Specifies how many days until a Service Account Key expires. This should be an integer between 0 and 365 representing\nthe number of days until the Service Account Key will expire. Defaults to 0, meaning the key will never expire.\n"
+                    },
+                    "isActive": {
+                        "type": "boolean",
+                        "description": "If the value of this attribute changes to false, Terraform will destroy and recreate the resource.\n"
+                    },
                     "name": {
                         "type": "string",
                         "description": "The name of the Service Key\n"
@@ -1067,8 +1101,7 @@
             "inputProperties": {
                 "email": {
                     "type": "string",
-                    "description": "The User's email address\n",
-                    "willReplaceOnChanges": true
+                    "description": "The User's email address\n"
                 },
                 "firstName": {
                     "type": "string",
@@ -1099,8 +1132,7 @@
                 "properties": {
                     "email": {
                         "type": "string",
-                        "description": "The User's email address\n",
-                        "willReplaceOnChanges": true
+                        "description": "The User's email address\n"
                     },
                     "firstName": {
                         "type": "string",
@@ -1193,12 +1225,12 @@
                         }
                     },
                     "id": {
-                        "type": "string",
-                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                        "type": "string"
                     }
                 },
                 "type": "object",
                 "required": [
+                    "connectors",
                     "id"
                 ]
             }
@@ -1277,8 +1309,7 @@
                         }
                     },
                     "id": {
-                        "type": "string",
-                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                        "type": "string"
                     },
                     "isActive": {
                         "type": "boolean"
@@ -1292,6 +1323,7 @@
                 },
                 "type": "object",
                 "required": [
+                    "groups",
                     "id"
                 ]
             }
@@ -1329,24 +1361,11 @@
             }
         },
         "twingate:index/getTwingateRemoteNetworks:getTwingateRemoteNetworks": {
-            "inputs": {
-                "description": "A collection of arguments for invoking getTwingateRemoteNetworks.\n",
-                "properties": {
-                    "remoteNetworks": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/types/twingate:index/getTwingateRemoteNetworksRemoteNetwork:getTwingateRemoteNetworksRemoteNetwork"
-                        }
-                    }
-                },
-                "type": "object"
-            },
             "outputs": {
                 "description": "A collection of values returned by getTwingateRemoteNetworks.\n",
                 "properties": {
                     "id": {
-                        "type": "string",
-                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                        "type": "string"
                     },
                     "remoteNetworks": {
                         "type": "array",
@@ -1357,7 +1376,8 @@
                 },
                 "type": "object",
                 "required": [
-                    "id"
+                    "id",
+                    "remoteNetworks"
                 ]
             }
         },
@@ -1369,10 +1389,7 @@
                         "type": "string"
                     },
                     "protocols": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/types/twingate:index/getTwingateResourceProtocol:getTwingateResourceProtocol"
-                        }
+                        "$ref": "#/types/twingate:index/getTwingateResourceProtocols:getTwingateResourceProtocols"
                     }
                 },
                 "type": "object",
@@ -1393,10 +1410,7 @@
                         "type": "string"
                     },
                     "protocols": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/types/twingate:index/getTwingateResourceProtocol:getTwingateResourceProtocol"
-                        }
+                        "$ref": "#/types/twingate:index/getTwingateResourceProtocols:getTwingateResourceProtocols"
                     },
                     "remoteNetworkId": {
                         "type": "string"
@@ -1417,12 +1431,6 @@
                 "properties": {
                     "name": {
                         "type": "string"
-                    },
-                    "resources": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/types/twingate:index/getTwingateResourcesResource:getTwingateResourcesResource"
-                        }
                     }
                 },
                 "type": "object",
@@ -1434,8 +1442,7 @@
                 "description": "A collection of values returned by getTwingateResources.\n",
                 "properties": {
                     "id": {
-                        "type": "string",
-                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
@@ -1449,8 +1456,9 @@
                 },
                 "type": "object",
                 "required": [
+                    "id",
                     "name",
-                    "id"
+                    "resources"
                 ]
             }
         },
@@ -1471,8 +1479,7 @@
                 "description": "A collection of values returned by getTwingateSecurityPolicies.\n",
                 "properties": {
                     "id": {
-                        "type": "string",
-                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                        "type": "string"
                     },
                     "securityPolicies": {
                         "type": "array",
@@ -1483,7 +1490,8 @@
                 },
                 "type": "object",
                 "required": [
-                    "id"
+                    "id",
+                    "securityPolicies"
                 ]
             }
         },
@@ -1519,12 +1527,6 @@
                 "properties": {
                     "name": {
                         "type": "string"
-                    },
-                    "serviceAccounts": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/types/twingate:index/getTwingateServiceAccountsServiceAccount:getTwingateServiceAccountsServiceAccount"
-                        }
                     }
                 },
                 "type": "object"
@@ -1533,8 +1535,7 @@
                 "description": "A collection of values returned by getTwingateServiceAccounts.\n",
                 "properties": {
                     "id": {
-                        "type": "string",
-                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
@@ -1548,7 +1549,8 @@
                 },
                 "type": "object",
                 "required": [
-                    "id"
+                    "id",
+                    "serviceAccounts"
                 ]
             }
         },
@@ -1604,24 +1606,11 @@
             }
         },
         "twingate:index/getTwingateUsers:getTwingateUsers": {
-            "inputs": {
-                "description": "A collection of arguments for invoking getTwingateUsers.\n",
-                "properties": {
-                    "users": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/types/twingate:index/getTwingateUsersUser:getTwingateUsersUser"
-                        }
-                    }
-                },
-                "type": "object"
-            },
             "outputs": {
                 "description": "A collection of values returned by getTwingateUsers.\n",
                 "properties": {
                     "id": {
-                        "type": "string",
-                        "description": "The provider-assigned unique ID for this managed resource.\n"
+                        "type": "string"
                     },
                     "users": {
                         "type": "array",
@@ -1632,7 +1621,8 @@
                 },
                 "type": "object",
                 "required": [
-                    "id"
+                    "id",
+                    "users"
                 ]
             }
         }

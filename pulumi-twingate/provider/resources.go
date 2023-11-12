@@ -44,10 +44,12 @@ func Provider() tfbridge.ProviderInfo {
 
 	// Create a Pulumi provider mapping
 	info := tfbridge.ProviderInfo{
-		P:            pf.ShimProvider(provider),
-		MetadataInfo: tfbridge.NewProviderMetadata(bridgeMetadata),
-		Name:         "twingate",
-		DisplayName:  "Twingate",
+		P:                       pf.ShimProvider(provider),
+		TFProviderModuleVersion: "6",
+		MetadataInfo:            tfbridge.NewProviderMetadata(bridgeMetadata),
+		Name:                    "twingate",
+		DisplayName:             "Twingate",
+		UpstreamRepoPath:        "https://github.com/Twingate/terraform-provider-twingate",
 		// The default publisher for all packages is Pulumi.
 		// Change this to your personal name (or a company name) that you
 		// would like to be shown in the Pulumi Registry if this package is published
@@ -137,7 +139,7 @@ func Provider() tfbridge.ProviderInfo {
 			},
 			RootNamespace: "TwingateLabs",
 		},
-		GitHubOrg: "Twingate-Labs",
+		GitHubOrg: "Twingate",
 	}
 
 	info.SetAutonaming(255, "-")
