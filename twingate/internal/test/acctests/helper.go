@@ -615,6 +615,26 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 	}
 }
 
+func CheckResourceSecurityPolicy(resourceName string, expectedSecurityPolicyID string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		resource, err := providerClient.ReadResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		if resource.SecurityPolicyID != nil && *resource.SecurityPolicyID != expectedSecurityPolicyID {
+			return fmt.Errorf("expected security_policy_id %s, got %s", expectedSecurityPolicyID, *resource.SecurityPolicyID) //nolint
+		}
+
+		return nil
+	}
+}
+
 func AddGroupUser(groupResource, groupName, terraformUserID string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		userID, err := getResourceID(state, getResourceNameFromID(terraformUserID))

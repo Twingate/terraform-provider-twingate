@@ -17,6 +17,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const defaultSecurityPolicyName = "Default Policy"
+
 var (
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
@@ -194,6 +196,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
+//nolint:cyclop
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
@@ -229,7 +232,16 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		attr.Alias,
 		attr.SecurityPolicyID,
 	) {
+		hasOverride, diagErr := overrideSecurityPolicy(ctx, resource, client)
+		if diagErr.HasError() {
+			return diagErr
+		}
+
 		resource, err = client.UpdateResource(ctx, resource)
+
+		if hasOverride && resource != nil {
+			resource.SecurityPolicyID = nil
+		}
 	} else {
 		resource, err = client.ReadResource(ctx, resource.ID)
 	}
@@ -240,6 +252,28 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 	}
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
+}
+
+func overrideSecurityPolicy(ctx context.Context, resource *model.Resource, client *client.Client) (bool, diag.Diagnostics) {
+	var securityPolicyOverride bool
+
+	remoteResource, err := client.ReadResource(ctx, resource.ID)
+	if err != nil {
+		return securityPolicyOverride, diag.FromErr(err)
+	}
+
+	defaultPolicy, err := client.ReadSecurityPolicy(ctx, "", defaultSecurityPolicyName)
+	if err != nil {
+		return securityPolicyOverride, diag.FromErr(err)
+	}
+
+	if remoteResource.SecurityPolicyID != nil && resource.SecurityPolicyID == nil &&
+		*remoteResource.SecurityPolicyID != defaultPolicy.ID {
+		securityPolicyOverride = true
+		resource.SecurityPolicyID = &defaultPolicy.ID
+	}
+
+	return securityPolicyOverride, nil
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
