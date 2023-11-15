@@ -96,13 +96,19 @@ func configure(version string, _ *schema.Provider) func(context.Context, *schema
 		httpMaxRetry = withDefault(data.Get(attr.HTTPMaxRetry).(int), httpMaxRetry)
 
 		if network != "" {
-			return client.NewClient(url,
-					apiToken,
-					network,
-					time.Duration(httpTimeout)*time.Second,
-					httpMaxRetry,
-					version),
-				nil
+			client := client.NewClient(url,
+				apiToken,
+				network,
+				time.Duration(httpTimeout)*time.Second,
+				httpMaxRetry,
+				version)
+
+			policy, _ := client.ReadSecurityPolicy(ctx, "", resource.DefaultSecurityPolicyName)
+			if policy != nil {
+				resource.DefaultSecurityPolicyID = policy.ID
+			}
+
+			return client, nil
 		}
 
 		return nil, diag.Diagnostics{

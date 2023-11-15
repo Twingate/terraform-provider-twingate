@@ -17,9 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const defaultSecurityPolicyName = "Default Policy"
+const DefaultSecurityPolicyName = "Default Policy"
 
 var (
+	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
@@ -139,9 +140,11 @@ func Resource() *schema.Resource { //nolint:funlen
 				Elem:        accessSchema,
 			},
 			attr.SecurityPolicyID: {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
+				Type:                  schema.TypeString,
+				Optional:              true,
+				Description:           "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
+				DiffSuppressOnRefresh: true,
+				DiffSuppressFunc:      defaultPolicyNotChanged,
 			},
 			// computed
 			attr.IsVisible: {
@@ -196,7 +199,6 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
 }
 
-//nolint:cyclop
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
 
@@ -232,16 +234,12 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		attr.Alias,
 		attr.SecurityPolicyID,
 	) {
-		hasOverride, diagErr := overrideSecurityPolicy(ctx, resource, client)
+		diagErr := setDefaultSecurityPolicy(ctx, resource, client)
 		if diagErr.HasError() {
 			return diagErr
 		}
 
 		resource, err = client.UpdateResource(ctx, resource)
-
-		if hasOverride && resource != nil {
-			resource.SecurityPolicyID = nil
-		}
 	} else {
 		resource, err = client.ReadResource(ctx, resource.ID)
 	}
@@ -254,26 +252,29 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
 
-func overrideSecurityPolicy(ctx context.Context, resource *model.Resource, client *client.Client) (bool, diag.Diagnostics) {
-	var securityPolicyOverride bool
+func setDefaultSecurityPolicy(ctx context.Context, resource *model.Resource, client *client.Client) diag.Diagnostics {
+	if DefaultSecurityPolicyID == "" {
+		policy, _ := client.ReadSecurityPolicy(ctx, "", DefaultSecurityPolicyName)
+		if policy != nil {
+			DefaultSecurityPolicyID = policy.ID
+		}
+	}
+
+	if DefaultSecurityPolicyID == "" {
+		return diag.Errorf("default policy not set")
+	}
 
 	remoteResource, err := client.ReadResource(ctx, resource.ID)
 	if err != nil {
-		return securityPolicyOverride, diag.FromErr(err)
+		return diag.FromErr(err)
 	}
 
-	defaultPolicy, err := client.ReadSecurityPolicy(ctx, "", defaultSecurityPolicyName)
-	if err != nil {
-		return securityPolicyOverride, diag.FromErr(err)
+	if remoteResource.SecurityPolicyID != nil && (resource.SecurityPolicyID == nil || *resource.SecurityPolicyID == "") &&
+		*remoteResource.SecurityPolicyID != DefaultSecurityPolicyID {
+		resource.SecurityPolicyID = &DefaultSecurityPolicyID
 	}
 
-	if remoteResource.SecurityPolicyID != nil && resource.SecurityPolicyID == nil &&
-		*remoteResource.SecurityPolicyID != defaultPolicy.ID {
-		securityPolicyOverride = true
-		resource.SecurityPolicyID = &defaultPolicy.ID
-	}
-
-	return securityPolicyOverride, nil
+	return nil
 }
 
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -483,6 +484,10 @@ func protocolsNotChanged(attribute, oldValue, newValue string, data *schema.Reso
 	}
 
 	return false
+}
+
+func defaultPolicyNotChanged(attribute, oldValue, newValue string, data *schema.ResourceData) bool {
+	return oldValue == DefaultSecurityPolicyID && (newValue == "" || newValue == DefaultSecurityPolicyID)
 }
 
 func getChangedAccessIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) ([]string, []string, error) {
