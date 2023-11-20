@@ -142,7 +142,7 @@ func Resource() *schema.Resource { //nolint:funlen
 			attr.SecurityPolicyID: {
 				Type:                  schema.TypeString,
 				Optional:              true,
-				Description:           "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
+				Description:           "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`",
 				DiffSuppressOnRefresh: true,
 				DiffSuppressFunc:      defaultPolicyNotChanged,
 			},
