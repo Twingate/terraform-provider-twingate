@@ -1164,7 +1164,7 @@ func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.
 	}
 
 	ports := convertPortsToTerraform(protocol.Ports)
-	if equalPorts(ports, statePorts) && !statePorts.IsNull() {
+	if equalPorts(ports, statePorts) {
 		ports = statePorts
 	}
 

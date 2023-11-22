@@ -2662,3 +2662,66 @@ func createResourceWithoutSecurityPolicy(remoteNetwork, resource string) string 
 	}
 	`, remoteNetwork, resource)
 }
+
+func TestAccTwingateResourceUpdateWithDefaultProtocols(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithProtocols(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				Config: createResourceWithoutProtocols(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithProtocols(remoteNetwork, resource string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  protocols = {
+	    allow_icmp = true
+	    tcp = {
+	      policy = "RESTRICTED"
+	      ports = ["80-83"]
+	    }
+	    udp = {
+	      policy = "RESTRICTED"
+	      ports = ["80"]
+	    }
+	  }
+	}
+	`, remoteNetwork, resource)
+}
+
+func createResourceWithoutProtocols(remoteNetwork, resource string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	}
+	`, remoteNetwork, resource)
+}
