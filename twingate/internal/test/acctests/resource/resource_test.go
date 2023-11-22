@@ -777,7 +777,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 					tcpPortsLen:       "2",
 					firstTCPPort:      "80",
 					udpPolicy:         model.PolicyAllowAll,
-					udpPortsLen:       "0",
+					udpPortsLen:       "",
 					accessGroupIdsLen: "2",
 				}),
 			},

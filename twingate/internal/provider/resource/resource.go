@@ -1138,6 +1138,10 @@ func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Ob
 }
 
 func convertPortsToTerraform(ports []*model.PortRange) types.Set {
+	if len(ports) == 0 {
+		return defaultEmptyPorts()
+	}
+
 	elements := make([]tfattr.Value, 0, len(ports))
 	for _, port := range ports {
 		elements = append(elements, types.StringValue(port.String()))
@@ -1146,27 +1150,12 @@ func convertPortsToTerraform(ports []*model.PortRange) types.Set {
 	return types.SetValueMust(types.StringType, elements)
 }
 
-func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.Value) (types.Object, diag.Diagnostics) {
+func convertProtocolModelToTerraform(protocol *model.Protocol, _ tfattr.Value) (types.Object, diag.Diagnostics) {
 	if protocol == nil {
 		return types.ObjectNull(protocolAttributeTypes()), nil
 	}
 
-	var statePorts = types.Set{}
-
-	if reference != nil {
-		statePortsVal := reference.(types.Object).Attributes()[attr.Ports]
-		if statePortsVal != nil && !statePortsVal.IsUnknown() {
-			statePortsSet, ok := statePortsVal.(types.Set)
-			if ok {
-				statePorts = statePortsSet
-			}
-		}
-	}
-
 	ports := convertPortsToTerraform(protocol.Ports)
-	if equalPorts(ports, statePorts) {
-		ports = statePorts
-	}
 
 	policy := protocol.Policy
 	if policy == model.PolicyRestricted && len(ports.Elements()) == 0 {
@@ -1238,9 +1227,7 @@ func defaultProtocolsObject() types.Object {
 }
 
 func defaultEmptyPorts() types.Set {
-	var elements []tfattr.Value
-
-	return types.SetValueMust(types.StringType, elements)
+	return types.SetNull(types.StringType)
 }
 
 func defaultProtocolModelToTerraform() (basetypes.ObjectValue, diag.Diagnostics) {
