@@ -460,11 +460,6 @@ func (m portsDiff) MarkdownDescription(_ context.Context) string {
 
 // PlanModifySet implements the plan modification logic.
 func (m portsDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
-	// Do nothing if there is no state value.
-	if req.StateValue.IsNull() {
-		return
-	}
-
 	if equalPorts(req.StateValue, req.PlanValue) {
 		resp.PlanValue = req.StateValue
 	}
