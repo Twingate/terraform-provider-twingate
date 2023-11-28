@@ -17,7 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const DefaultSecurityPolicyName = "Default Policy"
+
 var (
+	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
@@ -136,6 +139,13 @@ func Resource() *schema.Resource { //nolint:funlen
 				Description: "Restrict access to certain groups or service accounts",
 				Elem:        accessSchema,
 			},
+			attr.SecurityPolicyID: {
+				Type:                  schema.TypeString,
+				Optional:              true,
+				Description:           "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`",
+				DiffSuppressOnRefresh: true,
+				DiffSuppressFunc:      defaultPolicyNotChanged,
+			},
 			// computed
 			attr.IsVisible: {
 				Type:        schema.TypeBool,
@@ -222,7 +232,13 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		attr.IsVisible,
 		attr.IsBrowserShortcutEnabled,
 		attr.Alias,
+		attr.SecurityPolicyID,
 	) {
+		diagErr := setDefaultSecurityPolicy(ctx, resource, client)
+		if diagErr.HasError() {
+			return diagErr
+		}
+
 		resource, err = client.UpdateResource(ctx, resource)
 	} else {
 		resource, err = client.ReadResource(ctx, resource.ID)
@@ -236,12 +252,43 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
 }
 
+func setDefaultSecurityPolicy(ctx context.Context, resource *model.Resource, client *client.Client) diag.Diagnostics {
+	if DefaultSecurityPolicyID == "" {
+		policy, _ := client.ReadSecurityPolicy(ctx, "", DefaultSecurityPolicyName)
+		if policy != nil {
+			DefaultSecurityPolicyID = policy.ID
+		}
+	}
+
+	if DefaultSecurityPolicyID == "" {
+		return diag.Errorf("default policy not set")
+	}
+
+	remoteResource, err := client.ReadResource(ctx, resource.ID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if remoteResource.SecurityPolicyID != nil && (resource.SecurityPolicyID == nil || *resource.SecurityPolicyID == "") &&
+		*remoteResource.SecurityPolicyID != DefaultSecurityPolicyID {
+		resource.SecurityPolicyID = &DefaultSecurityPolicyID
+	}
+
+	return nil
+}
+
 func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*client.Client)
+
+	securityPolicyID := resourceData.Get(attr.SecurityPolicyID)
 
 	resource, err := client.ReadResource(ctx, resourceData.Id())
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlagLegacy(resourceData)
+
+		if securityPolicyID == "" {
+			resource.SecurityPolicyID = nil
+		}
 	}
 
 	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
@@ -348,13 +395,12 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 		}
 	}
 
-	var alias interface{}
-	if resource.Alias != nil {
-		alias = *resource.Alias
+	if err := resourceData.Set(attr.Alias, resource.Alias); err != nil {
+		return ErrAttributeSet(err, attr.Alias)
 	}
 
-	if err := resourceData.Set(attr.Alias, alias); err != nil {
-		return ErrAttributeSet(err, attr.Alias)
+	if err := resourceData.Set(attr.SecurityPolicyID, resource.SecurityPolicyID); err != nil {
+		return ErrAttributeSet(err, attr.SecurityPolicyID)
 	}
 
 	return nil
@@ -440,6 +486,10 @@ func protocolsNotChanged(attribute, oldValue, newValue string, data *schema.Reso
 	return false
 }
 
+func defaultPolicyNotChanged(attribute, oldValue, newValue string, data *schema.ResourceData) bool {
+	return oldValue == DefaultSecurityPolicyID && (newValue == "" || newValue == DefaultSecurityPolicyID)
+}
+
 func getChangedAccessIDs(ctx context.Context, resourceData *schema.ResourceData, resource *model.Resource, client *client.Client) ([]string, []string, error) {
 	remote, err := client.ReadResource(ctx, resource.ID)
 	if err != nil {
@@ -483,14 +533,15 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 
 	groups, serviceAccounts := convertAccess(data)
 	res := &model.Resource{
-		Name:            data.Get(attr.Name).(string),
-		RemoteNetworkID: data.Get(attr.RemoteNetworkID).(string),
-		Address:         data.Get(attr.Address).(string),
-		Protocols:       protocols,
-		Groups:          groups,
-		ServiceAccounts: serviceAccounts,
-		IsAuthoritative: convertAuthoritativeFlagLegacy(data),
-		Alias:           getOptionalString(data, attr.Alias),
+		Name:             data.Get(attr.Name).(string),
+		RemoteNetworkID:  data.Get(attr.RemoteNetworkID).(string),
+		Address:          data.Get(attr.Address).(string),
+		Protocols:        protocols,
+		Groups:           groups,
+		ServiceAccounts:  serviceAccounts,
+		IsAuthoritative:  convertAuthoritativeFlagLegacy(data),
+		Alias:            getOptionalString(data, attr.Alias),
+		SecurityPolicyID: getOptionalString(data, attr.SecurityPolicyID),
 	}
 
 	isVisible, ok := data.GetOkExists(attr.IsVisible) //nolint
@@ -524,9 +575,17 @@ func isAttrKnown(data *schema.ResourceData, attr string) bool {
 }
 
 func getOptionalString(data *schema.ResourceData, attr string) *string {
+	if data == nil {
+		return nil
+	}
+
 	var result *string
 
 	cfg := data.GetRawConfig()
+	if cfg.IsNull() {
+		return nil
+	}
+
 	val := cfg.GetAttr(attr)
 
 	if !val.IsNull() {
