@@ -460,6 +460,10 @@ func (m portsDiff) MarkdownDescription(_ context.Context) string {
 
 // PlanModifySet implements the plan modification logic.
 func (m portsDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	if req.StateValue.IsNull() {
+		return
+	}
+
 	if equalPorts(req.StateValue, req.PlanValue) {
 		resp.PlanValue = req.StateValue
 	}
@@ -1222,13 +1226,13 @@ func defaultProtocolsObject() types.Object {
 }
 
 func defaultEmptyPorts() types.Set {
-	return types.SetNull(types.StringType)
+	return types.SetValueMust(types.StringType, []tfattr.Value{})
 }
 
 func defaultProtocolModelToTerraform() (basetypes.ObjectValue, diag.Diagnostics) {
 	attributes := map[string]tfattr.Value{
 		attr.Policy: types.StringValue(model.PolicyAllowAll),
-		attr.Ports:  types.SetNull(types.StringType),
+		attr.Ports:  defaultEmptyPorts(),
 	}
 
 	return types.ObjectValue(protocolAttributeTypes(), attributes)

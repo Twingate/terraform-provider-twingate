@@ -423,6 +423,10 @@ func TestAccTwingateResourceWithDenyAllPolicyAndEmptyPortsList(t *testing.T) {
 					sdk.TestCheckNoResourceAttr(theResource, udpPortsLen),
 				),
 			},
+			{
+				Config:   createResourceWithDenyAllPolicyAndEmptyPortsList(remoteNetworkName, groupName, resourceName),
+				PlanOnly: true,
+			},
 		},
 	})
 }
@@ -2726,7 +2730,32 @@ func createResourceWithoutProtocols(remoteNetwork, resource string) string {
 	`, remoteNetwork, resource)
 }
 
-func TestAccTwingateResourceUpdatePortsWithEmptyList(t *testing.T) {
+func TestAccTwingateResourceUpdatePortsFromEmptyListToNull(t *testing.T) {
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithEmptyArrayPorts(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				// expect no changes
+				PlanOnly: true,
+				Config:   createResourceWithDefaultPorts(remoteNetworkName, resourceName),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceUpdatePortsFromNullToEmptyList(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 	theResource := acctests.TerraformResource(resourceName)
