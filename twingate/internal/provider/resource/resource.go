@@ -162,24 +162,23 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.Protocols: protocols(),
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.",
-				//Default:       stringdefault.StaticString(""),
+				Optional:      true,
+				Computed:      true,
+				Description:   "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.",
 				Default:       stringdefault.StaticString(DefaultSecurityPolicyID),
 				PlanModifiers: []planmodifier.String{UseDefaultPolicyForUnknownModifier()},
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
 				Computed:      true,
-				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
+				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is true.",
 				Default:       booldefault.StaticBool(true),
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
+				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is false.`,
 				Default:     booldefault.StaticBool(false),
 			},
 			attr.ID: schema.StringAttribute{

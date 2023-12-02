@@ -15,10 +15,16 @@ resource "twingate_service_account" "github_actions_prod" {
   name = "Github Actions PROD"
 }
 
+data "twingate_security_policy" "test_policy" {
+  name = "Test Policy"
+}
+
 resource "twingate_resource" "resource" {
   name = "network"
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
+
+  security_policy_id = data.twingate_security_policy.test_policy.id
 
   protocols = {
     allow_icmp = true
