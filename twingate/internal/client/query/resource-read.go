@@ -106,7 +106,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsVisible:                &r.IsVisible,
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
-		SecurityPolicyID:         securityPolicy,
+		SecurityPolicyID:         optionalString(securityPolicy),
 	}
 }
 

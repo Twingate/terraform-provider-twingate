@@ -2585,61 +2585,6 @@ func createResourceWithBrowserOption(name, networkName, resourceName, address st
 	`, name, networkName, resourceName, address, browserOption)
 }
 
-func TestAccTwingateResourceUpdateSecurityPolicy(t *testing.T) {
-	resourceName := test.RandomResourceName()
-	theResource := acctests.TerraformResource(resourceName)
-	remoteNetworkName := test.RandomName()
-
-	policies, err := acctests.ListSecurityPolicies()
-	if err != nil {
-		t.Skipf("failed to retrieve security policies: %v", err)
-	}
-
-	if len(policies) < 2 {
-		t.Skip("requires at least 2 security policy for the test")
-	}
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-				),
-			},
-			{
-				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, policies[0].ID),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, policies[0].ID),
-				),
-			},
-			{
-				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, policies[1].ID),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, policies[1].ID),
-				),
-			},
-			{
-				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, ""),
-				),
-			},
-			{
-				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, ""),
-				// no changes
-				PlanOnly: true,
-			},
-		},
-	})
-}
-
 func createResourceWithSecurityPolicy(remoteNetwork, resource, policyID string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%[1]s" {
@@ -2824,4 +2769,149 @@ func createResourceWithEmptyArrayPorts(remoteNetwork, resource string) string {
 	  }
 	}
 	`, remoteNetwork, resource)
+}
+
+func TestAccTwingateResourceUpdateSecurityPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	defaultPolicy, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, defaultPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, defaultPolicy),
+				),
+			},
+			{
+				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, testPolicy),
+				),
+			},
+			{
+				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, defaultPolicy),
+				),
+			},
+			{
+				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, ""),
+				// no changes
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func preparePolicies(t *testing.T) (string, string) {
+	policies, err := acctests.ListSecurityPolicies()
+	if err != nil {
+		t.Skipf("failed to retrieve security policies: %v", err)
+	}
+
+	if len(policies) < 2 {
+		t.Skip("requires at least 2 security policy for the test")
+	}
+
+	var defaultPolicy, testPolicy string
+	if policies[0].Name == resource.DefaultSecurityPolicyName {
+		defaultPolicy = policies[0].ID
+		testPolicy = policies[1].ID
+	} else {
+		testPolicy = policies[0].ID
+		defaultPolicy = policies[1].ID
+	}
+
+	return defaultPolicy, testPolicy
+}
+
+func TestAccTwingateResourceSetDefaultSecurityPolicyByDefault(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	defaultPolicy, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, testPolicy),
+				),
+			},
+			{
+				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, defaultPolicy),
+					acctests.CheckResourceSecurityPolicy(theResource, defaultPolicy),
+					// set new policy via API
+					acctests.UpdateResourceSecurityPolicy(theResource, testPolicy),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, ""),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckResourceSecurityPolicy(theResource, defaultPolicy),
+				),
+			},
+			{
+				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
+				// no changes
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceSecurityPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	_, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, attr.SecurityPolicyID),
+				),
+			},
+			{
+				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, testPolicy),
+				),
+			},
+		},
+	})
 }

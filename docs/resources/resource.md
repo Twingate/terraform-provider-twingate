@@ -35,13 +35,13 @@ resource "twingate_resource" "resource" {
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
-  protocols {
+  protocols = {
     allow_icmp = true
-    tcp  {
+    tcp = {
       policy = "RESTRICTED"
       ports = ["80", "82-83"]
     }
-    udp {
+    udp = {
       policy = "ALLOW_ALL"
     }
   }
@@ -70,7 +70,7 @@ resource "twingate_resource" "resource" {
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
-- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
 
 ### Read-Only
 

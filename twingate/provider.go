@@ -140,6 +140,11 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 
 	response.DataSourceData = client
 	response.ResourceData = client
+
+	policy, _ := client.ReadSecurityPolicy(ctx, "", twingateResource.DefaultSecurityPolicyName)
+	if policy != nil {
+		twingateResource.DefaultSecurityPolicyID = policy.ID
+	}
 }
 
 func mustGetInt(str string) int {

@@ -20,13 +20,13 @@ resource "twingate_resource" "resource" {
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
-  protocols {
+  protocols = {
     allow_icmp = true
-    tcp  {
+    tcp = {
       policy = "RESTRICTED"
       ports = ["80", "82-83"]
     }
-    udp {
+    udp = {
       policy = "ALLOW_ALL"
     }
   }

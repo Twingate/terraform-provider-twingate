@@ -33,12 +33,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
+const DefaultSecurityPolicyName = "Default Policy"
+
 var (
+	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
 	ErrInvalidAttributeCombination        = errors.New("invalid attribute combination")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
+	ErrDefaultPolicyNotSet                = errors.New("default policy not set")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -160,13 +164,16 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.SecurityPolicyID: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
-				Default:     stringdefault.StaticString(""),
+				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.",
+				//Default:       stringdefault.StaticString(""),
+				Default:       stringdefault.StaticString(DefaultSecurityPolicyID),
+				PlanModifiers: []planmodifier.String{UseDefaultPolicyForUnknownModifier()},
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
 				Computed:      true,
 				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
+				Default:       booldefault.StaticBool(true),
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
@@ -605,7 +612,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		Alias:                    getOptionalString(plan.Alias),
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
-		SecurityPolicyID:         plan.SecurityPolicyID.ValueString(),
+		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 	}, nil
 }
 
@@ -884,7 +891,8 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
 		if state.SecurityPolicyID.ValueString() == "" {
-			resource.SecurityPolicyID = ""
+			s := ""
+			resource.SecurityPolicyID = &s
 		}
 	}
 
@@ -908,6 +916,7 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
+	planSecurityPolicy := input.SecurityPolicyID
 	input.ID = state.ID.ValueString()
 
 	if !plan.Access.Equal(state.Access) {
@@ -921,6 +930,12 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	var resource *model.Resource
 
 	if isResourceChanged(&plan, &state) {
+		if err := r.setDefaultSecurityPolicy(ctx, input); err != nil {
+			addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
+
+			return
+		}
+
 		resource, err = r.client.UpdateResource(ctx, input)
 	} else {
 		resource, err = r.client.ReadResource(ctx, input.ID)
@@ -930,7 +945,36 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 		resource.IsAuthoritative = input.IsAuthoritative
 	}
 
+	if planSecurityPolicy != nil && *planSecurityPolicy == "" {
+		resource.SecurityPolicyID = planSecurityPolicy
+	}
+
 	r.helper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+}
+
+func (r *twingateResource) setDefaultSecurityPolicy(ctx context.Context, resource *model.Resource) error {
+	if DefaultSecurityPolicyID == "" {
+		policy, _ := r.client.ReadSecurityPolicy(ctx, "", DefaultSecurityPolicyName)
+		if policy != nil {
+			DefaultSecurityPolicyID = policy.ID
+		}
+	}
+
+	if DefaultSecurityPolicyID == "" {
+		return ErrDefaultPolicyNotSet
+	}
+
+	remoteResource, err := r.client.ReadResource(ctx, resource.ID)
+	if err != nil {
+		return err //nolint:wrapcheck
+	}
+
+	if remoteResource.SecurityPolicyID != nil && (resource.SecurityPolicyID == nil || *resource.SecurityPolicyID == "") &&
+		*remoteResource.SecurityPolicyID != DefaultSecurityPolicyID {
+		resource.SecurityPolicyID = &DefaultSecurityPolicyID
+	}
+
+	return nil
 }
 
 func isResourceChanged(plan, state *resourceModel) bool {
@@ -1060,7 +1104,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
 	state.Address = types.StringValue(resource.Address)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
-	state.SecurityPolicyID = types.StringValue(resource.SecurityPolicyID)
+	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
@@ -1395,4 +1439,51 @@ var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)?`)
 
 func isWildcardAddress(address string) bool {
 	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
+}
+
+func UseDefaultPolicyForUnknownModifier() planmodifier.String {
+	return useDefaultPolicyForUnknownModifier{}
+}
+
+// useDefaultPolicyForUnknownModifier implements the plan modifier.
+type useDefaultPolicyForUnknownModifier struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m useDefaultPolicyForUnknownModifier) Description(_ context.Context) string {
+	return "Once set, the value of this attribute will fallback to Default Policy on unset."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m useDefaultPolicyForUnknownModifier) MarkdownDescription(_ context.Context) string {
+	return "Once set, the value of this attribute will fallback to Default Policy on unset."
+}
+
+// PlanModifyString implements the plan modification logic.
+func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
+		resp.PlanValue = types.StringPointerValue(nil)
+
+		return
+	}
+
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	// Do nothing if there is a known planned value.
+	if req.ConfigValue.ValueString() != "" {
+		return
+	}
+
+	if req.StateValue.ValueString() == "" && req.PlanValue.ValueString() == DefaultSecurityPolicyID {
+		resp.PlanValue = types.StringValue("")
+	} else if req.StateValue.ValueString() == DefaultSecurityPolicyID && req.PlanValue.ValueString() == "" {
+		resp.PlanValue = types.StringValue(DefaultSecurityPolicyID)
+	}
 }
