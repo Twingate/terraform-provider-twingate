@@ -34,7 +34,7 @@ type Resource struct {
 	IsVisible                *bool
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
-	SecurityPolicyID         string
+	SecurityPolicyID         *string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {
