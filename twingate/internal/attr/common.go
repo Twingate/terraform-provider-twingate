@@ -6,4 +6,5 @@ const (
 	RemoteNetworkID = "remote_network_id"
 	Type            = "type"
 	IsActive        = "is_active"
+	GroupIDs        = "group_ids"
 )

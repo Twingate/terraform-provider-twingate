@@ -34,8 +34,13 @@ resource "twingate_service_account" "github_actions_prod" {
   name = "Github Actions PROD"
 }
 
+<<<<<<< HEAD
 data "twingate_security_policy" "mfa" {
   name = "Default Policy"
+=======
+data "twingate_security_policy" "test_policy" {
+  name = "Test Policy"
+>>>>>>> feature/convert-resource-object
 }
 
 resource "twingate_resource" "resource" {
@@ -43,6 +48,11 @@ resource "twingate_resource" "resource" {
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
+<<<<<<< HEAD
+=======
+  security_policy_id = data.twingate_security_policy.test_policy.id
+
+>>>>>>> feature/convert-resource-object
   protocols = {
     allow_icmp = true
     tcp = {
@@ -82,10 +92,10 @@ resource "twingate_resource" "resource" {
 - `access` (Block Set) Restrict access to certain groups or service accounts (see [below for nested schema](#nestedblock--access))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
-- `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.
-- `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client.
+- `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is false.
+- `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is true.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
-- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
+- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
 
 ### Read-Only
 

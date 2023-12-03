@@ -12,6 +12,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -32,12 +33,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
+const DefaultSecurityPolicyName = "Default Policy"
+
 var (
+	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
 	ErrInvalidAttributeCombination        = errors.New("invalid attribute combination")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
+	ErrDefaultPolicyNotSet                = errors.New("default policy not set")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -59,6 +64,34 @@ type resourceModel struct {
 	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                types.Object `tfsdk:"protocols"`
 	Access                   types.Set    `tfsdk:"access"`
+	IsVisible                types.Bool   `tfsdk:"is_visible"`
+	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
+	Alias                    types.String `tfsdk:"alias"`
+	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+}
+
+type resourceModelV0 struct {
+	ID                       types.String `tfsdk:"id"`
+	Name                     types.String `tfsdk:"name"`
+	Address                  types.String `tfsdk:"address"`
+	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
+	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
+	Protocols                types.List   `tfsdk:"protocols"`
+	Access                   types.List   `tfsdk:"access"`
+	IsVisible                types.Bool   `tfsdk:"is_visible"`
+	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
+	Alias                    types.String `tfsdk:"alias"`
+	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+}
+
+type resourceModelV1 struct {
+	ID                       types.String `tfsdk:"id"`
+	Name                     types.String `tfsdk:"name"`
+	Address                  types.String `tfsdk:"address"`
+	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
+	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
+	Protocols                types.Object `tfsdk:"protocols"`
+	Access                   types.List   `tfsdk:"access"`
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
@@ -111,6 +144,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version:     1,
 		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
 		Attributes: map[string]schema.Attribute{
 			attr.Name: schema.StringAttribute{
@@ -140,21 +174,23 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.Protocols: protocols(),
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
-				Default:     stringdefault.StaticString(""),
+				Optional:      true,
+				Computed:      true,
+				Description:   "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.",
+				Default:       stringdefault.StaticString(DefaultSecurityPolicyID),
+				PlanModifiers: []planmodifier.String{UseDefaultPolicyForUnknownModifier()},
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
 				Computed:      true,
-				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client.",
+				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is true.",
+				Default:       booldefault.StaticBool(true),
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client.`,
+				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is false.`,
 				Default:     booldefault.StaticBool(false),
 			},
 			attr.ID: schema.StringAttribute{
@@ -165,6 +201,184 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		},
 
 		Blocks: map[string]schema.Block{attr.Access: accessBlock()},
+	}
+}
+
+func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader { //nolint
+	return map[int64]resource.StateUpgrader{
+		// State upgrade implementation from 0 (prior state version) to 1 (Schema.Version)
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					attr.ID: schema.StringAttribute{
+						Computed: true,
+					},
+					attr.Name: schema.StringAttribute{
+						Required: true,
+					},
+					attr.Address: schema.StringAttribute{
+						Required: true,
+					},
+					attr.RemoteNetworkID: schema.StringAttribute{
+						Required: true,
+					},
+					attr.IsAuthoritative: schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					attr.Alias: schema.StringAttribute{
+						Optional: true,
+					},
+					attr.SecurityPolicyID: schema.StringAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					attr.IsVisible: schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+					},
+				},
+
+				Blocks: map[string]schema.Block{
+					attr.Access: schema.ListNestedBlock{
+						Validators: []validator.List{
+							listvalidator.SizeAtMost(1),
+						},
+						NestedObject: schema.NestedBlockObject{
+							Attributes: map[string]schema.Attribute{
+								attr.GroupIDs: schema.SetAttribute{
+									Optional:    true,
+									ElementType: types.StringType,
+									Validators: []validator.Set{
+										setvalidator.SizeAtLeast(1),
+									},
+								},
+								attr.ServiceAccountIDs: schema.SetAttribute{
+									Optional:    true,
+									ElementType: types.StringType,
+									Validators: []validator.Set{
+										setvalidator.SizeAtLeast(1),
+									},
+								},
+							},
+						},
+					},
+					attr.Protocols: schema.ListNestedBlock{
+						Validators: []validator.List{
+							listvalidator.SizeAtMost(1),
+						},
+						NestedObject: schema.NestedBlockObject{
+							Attributes: map[string]schema.Attribute{
+								attr.AllowIcmp: schema.BoolAttribute{
+									Optional: true,
+									Computed: true,
+								},
+							},
+							Blocks: map[string]schema.Block{
+								attr.UDP: schema.ListNestedBlock{
+									Validators: []validator.List{
+										listvalidator.SizeAtMost(1),
+									},
+									NestedObject: schema.NestedBlockObject{
+										Attributes: map[string]schema.Attribute{
+											attr.Policy: schema.StringAttribute{
+												Optional: true,
+												Computed: true,
+											},
+											attr.Ports: schema.SetAttribute{
+												Optional:    true,
+												Computed:    true,
+												ElementType: types.StringType,
+											},
+										},
+									},
+								},
+								attr.TCP: schema.ListNestedBlock{
+									Validators: []validator.List{
+										listvalidator.SizeAtMost(1),
+									},
+									NestedObject: schema.NestedBlockObject{
+										Attributes: map[string]schema.Attribute{
+											attr.Policy: schema.StringAttribute{
+												Optional: true,
+												Computed: true,
+											},
+											attr.Ports: schema.SetAttribute{
+												Optional:    true,
+												Computed:    true,
+												ElementType: types.StringType,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var priorState resourceModelV0
+
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
+
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				protocols, err := convertProtocolsV0(priorState.Protocols)
+				if err != nil {
+					resp.Diagnostics.AddError(
+						"failed to convert protocols for prior state version 0",
+						err.Error(),
+					)
+
+					return
+				}
+
+				protocolsState, diags := convertProtocolsToTerraform(protocols, nil)
+				resp.Diagnostics.Append(diags...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				upgradedState := resourceModelV1{
+					ID:              priorState.ID,
+					Name:            priorState.Name,
+					Address:         priorState.Address,
+					RemoteNetworkID: priorState.RemoteNetworkID,
+					Protocols:       protocolsState,
+					Access:          priorState.Access,
+				}
+
+				if !priorState.IsAuthoritative.IsNull() {
+					upgradedState.IsAuthoritative = priorState.IsAuthoritative
+				}
+
+				if !priorState.IsVisible.IsNull() {
+					upgradedState.IsVisible = priorState.IsVisible
+				}
+
+				if !priorState.IsBrowserShortcutEnabled.IsNull() {
+					upgradedState.IsBrowserShortcutEnabled = priorState.IsBrowserShortcutEnabled
+				}
+
+				if !priorState.Alias.IsNull() && priorState.Alias.ValueString() != "" {
+					upgradedState.Alias = priorState.Alias
+				}
+
+				if !priorState.SecurityPolicyID.IsNull() && priorState.SecurityPolicyID.ValueString() != "" {
+					upgradedState.SecurityPolicyID = priorState.SecurityPolicyID
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
+
+				resp.Diagnostics.AddWarning("Please upgrade protocols sections", "Follow this docs to update protocols from blocks to attributes")
+			},
+		},
 	}
 }
 
@@ -279,7 +493,6 @@ func (m portsDiff) MarkdownDescription(_ context.Context) string {
 
 // PlanModifySet implements the plan modification logic.
 func (m portsDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
-	// Do nothing if there is no state value.
 	if req.StateValue.IsNull() {
 		return
 	}
@@ -443,7 +656,7 @@ func (r *twingateResource) convertResource(plan *resourceModel) (*model.Resource
 		Alias:                    getOptionalString(plan.Alias),
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
-		SecurityPolicyID:         securityPolicyID,
+		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 		Access:                   access,
 	}, nil
 }
@@ -611,6 +824,126 @@ func isValidPolicy(policy string, ports []*model.PortRange) error {
 	return nil
 }
 
+func convertProtocolsV0(protocols types.List) (*model.Protocols, error) {
+	if protocols.IsNull() || protocols.IsUnknown() || len(protocols.Elements()) == 0 {
+		return model.DefaultProtocols(), nil
+	}
+
+	obj := protocols.Elements()[0].(types.Object)
+	if obj.IsNull() || obj.IsUnknown() {
+		return model.DefaultProtocols(), nil
+	}
+
+	udp, err := convertProtocolV0(obj.Attributes()[attr.UDP])
+	if err != nil {
+		return nil, err
+	}
+
+	tcp, err := convertProtocolV0(obj.Attributes()[attr.TCP])
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Protocols{
+		AllowIcmp: obj.Attributes()[attr.AllowIcmp].(types.Bool).ValueBool(),
+		UDP:       udp,
+		TCP:       tcp,
+	}, nil
+}
+
+func convertProtocolV0(protocol tfattr.Value) (*model.Protocol, error) {
+	obj := convertProtocolObjV0(protocol)
+	if obj.IsNull() {
+		return nil, nil //nolint:nilnil
+	}
+
+	ports, err := decodePortsV0(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	policy := obj.Attributes()[attr.Policy].(types.String).ValueString()
+	if err := isValidPolicyV0(policy, ports); err != nil {
+		return nil, err
+	}
+
+	if policy == model.PolicyDenyAll {
+		policy = model.PolicyRestricted
+	}
+
+	return model.NewProtocol(policy, ports), nil
+}
+
+func convertProtocolObjV0(protocol tfattr.Value) types.Object {
+	if protocol == nil || protocol.IsNull() {
+		return types.ObjectNull(nil)
+	}
+
+	list, ok := protocol.(types.List)
+	if !ok || list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+		return types.ObjectNull(nil)
+	}
+
+	obj := list.Elements()[0].(types.Object)
+	if obj.IsNull() || obj.IsUnknown() {
+		return types.ObjectNull(nil)
+	}
+
+	return obj
+}
+
+func decodePortsV0(obj types.Object) ([]*model.PortRange, error) {
+	portsVal := obj.Attributes()[attr.Ports]
+	if portsVal == nil || portsVal.IsNull() {
+		return nil, nil
+	}
+
+	portsList, ok := portsVal.(types.Set)
+	if !ok {
+		return nil, nil
+	}
+
+	return convertPortsV0(portsList)
+}
+
+func convertPortsV0(list types.Set) ([]*model.PortRange, error) {
+	items := list.Elements()
+
+	var ports = make([]*model.PortRange, 0, len(items))
+
+	for _, port := range items {
+		portRange, err := model.NewPortRange(port.(types.String).ValueString())
+		if err != nil {
+			return nil, err //nolint:wrapcheck
+		}
+
+		ports = append(ports, portRange)
+	}
+
+	return ports, nil
+}
+
+func isValidPolicyV0(policy string, ports []*model.PortRange) error {
+	switch policy {
+	case model.PolicyAllowAll:
+		if len(ports) > 0 {
+			return ErrPortsWithPolicyAllowAll
+		}
+
+	case model.PolicyDenyAll:
+		if len(ports) > 0 {
+			return ErrPortsWithPolicyDenyAll
+		}
+
+	case model.PolicyRestricted:
+		if len(ports) == 0 {
+			return ErrPolicyRestrictedWithoutPorts
+		}
+	}
+
+	return nil
+}
+
 func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state resourceModel
 
@@ -625,7 +958,8 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
 		if state.SecurityPolicyID.ValueString() == "" {
-			resource.SecurityPolicyID = ""
+			s := ""
+			resource.SecurityPolicyID = &s
 		}
 	}
 
@@ -649,6 +983,7 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
+	planSecurityPolicy := input.SecurityPolicyID
 	input.ID = state.ID.ValueString()
 
 	if !plan.Access.Equal(state.Access) {
@@ -662,6 +997,12 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	var resource *model.Resource
 
 	if isResourceChanged(&plan, &state) {
+		if err := r.setDefaultSecurityPolicy(ctx, input); err != nil {
+			addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
+
+			return
+		}
+
 		resource, err = r.client.UpdateResource(ctx, input)
 	} else {
 		resource, err = r.client.ReadResource(ctx, input.ID)
@@ -671,7 +1012,36 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 		resource.IsAuthoritative = input.IsAuthoritative
 	}
 
+	if planSecurityPolicy != nil && *planSecurityPolicy == "" {
+		resource.SecurityPolicyID = planSecurityPolicy
+	}
+
 	r.helper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+}
+
+func (r *twingateResource) setDefaultSecurityPolicy(ctx context.Context, resource *model.Resource) error {
+	if DefaultSecurityPolicyID == "" {
+		policy, _ := r.client.ReadSecurityPolicy(ctx, "", DefaultSecurityPolicyName)
+		if policy != nil {
+			DefaultSecurityPolicyID = policy.ID
+		}
+	}
+
+	if DefaultSecurityPolicyID == "" {
+		return ErrDefaultPolicyNotSet
+	}
+
+	remoteResource, err := r.client.ReadResource(ctx, resource.ID)
+	if err != nil {
+		return err //nolint:wrapcheck
+	}
+
+	if remoteResource.SecurityPolicyID != nil && (resource.SecurityPolicyID == nil || *resource.SecurityPolicyID == "") &&
+		*remoteResource.SecurityPolicyID != DefaultSecurityPolicyID {
+		resource.SecurityPolicyID = &DefaultSecurityPolicyID
+	}
+
+	return nil
 }
 
 func isResourceChanged(plan, state *resourceModel) bool {
@@ -890,7 +1260,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
 	state.Address = types.StringValue(resource.Address)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
-	state.SecurityPolicyID = types.StringValue(resource.SecurityPolicyID)
+	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
@@ -969,6 +1339,10 @@ func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Ob
 }
 
 func convertPortsToTerraform(ports []*model.PortRange) types.Set {
+	if len(ports) == 0 {
+		return defaultEmptyPorts()
+	}
+
 	elements := make([]tfattr.Value, 0, len(ports))
 	for _, port := range ports {
 		elements = append(elements, types.StringValue(port.String()))
@@ -977,27 +1351,12 @@ func convertPortsToTerraform(ports []*model.PortRange) types.Set {
 	return types.SetValueMust(types.StringType, elements)
 }
 
-func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.Value) (types.Object, diag.Diagnostics) {
+func convertProtocolModelToTerraform(protocol *model.Protocol, _ tfattr.Value) (types.Object, diag.Diagnostics) {
 	if protocol == nil {
 		return types.ObjectNull(protocolAttributeTypes()), nil
 	}
 
-	var statePorts = types.Set{}
-
-	if reference != nil {
-		statePortsVal := reference.(types.Object).Attributes()[attr.Ports]
-		if statePortsVal != nil && !statePortsVal.IsUnknown() {
-			statePortsSet, ok := statePortsVal.(types.Set)
-			if ok {
-				statePorts = statePortsSet
-			}
-		}
-	}
-
 	ports := convertPortsToTerraform(protocol.Ports)
-	if equalPorts(ports, statePorts) && !statePorts.IsNull() {
-		ports = statePorts
-	}
 
 	policy := protocol.Policy
 	if policy == model.PolicyRestricted && len(ports.Elements()) == 0 {
@@ -1069,15 +1428,13 @@ func defaultProtocolsObject() types.Object {
 }
 
 func defaultEmptyPorts() types.Set {
-	var elements []tfattr.Value
-
-	return types.SetValueMust(types.StringType, elements)
+	return types.SetValueMust(types.StringType, []tfattr.Value{})
 }
 
 func defaultProtocolModelToTerraform() (basetypes.ObjectValue, diag.Diagnostics) {
 	attributes := map[string]tfattr.Value{
 		attr.Policy: types.StringValue(model.PolicyAllowAll),
-		attr.Ports:  types.SetNull(types.StringType),
+		attr.Ports:  defaultEmptyPorts(),
 	}
 
 	return types.ObjectValue(protocolAttributeTypes(), attributes)
@@ -1241,4 +1598,51 @@ var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)?`)
 
 func isWildcardAddress(address string) bool {
 	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
+}
+
+func UseDefaultPolicyForUnknownModifier() planmodifier.String {
+	return useDefaultPolicyForUnknownModifier{}
+}
+
+// useDefaultPolicyForUnknownModifier implements the plan modifier.
+type useDefaultPolicyForUnknownModifier struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m useDefaultPolicyForUnknownModifier) Description(_ context.Context) string {
+	return "Once set, the value of this attribute will fallback to Default Policy on unset."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m useDefaultPolicyForUnknownModifier) MarkdownDescription(_ context.Context) string {
+	return "Once set, the value of this attribute will fallback to Default Policy on unset."
+}
+
+// PlanModifyString implements the plan modification logic.
+func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
+		resp.PlanValue = types.StringPointerValue(nil)
+
+		return
+	}
+
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	// Do nothing if there is a known planned value.
+	if req.ConfigValue.ValueString() != "" {
+		return
+	}
+
+	if req.StateValue.ValueString() == "" && req.PlanValue.ValueString() == DefaultSecurityPolicyID {
+		resp.PlanValue = types.StringValue("")
+	} else if req.StateValue.ValueString() == DefaultSecurityPolicyID && req.PlanValue.ValueString() == "" {
+		resp.PlanValue = types.StringValue(DefaultSecurityPolicyID)
+	}
 }
