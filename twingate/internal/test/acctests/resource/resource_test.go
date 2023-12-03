@@ -180,7 +180,7 @@ func createResourceWithProtocolsAndGroups(networkName, groupName1, groupName2, r
 
       dynamic "access" {
 		for_each = [twingate_group.g21.id, twingate_group.g22.id]
-		content = {
+		content {
 		  group_id = access.value
 		}
       }
@@ -255,7 +255,7 @@ func resourceFullCreationFlow(networkName, groupName, resourceName string) strin
 
       dynamic "access" {
         for_each = [twingate_group.test3.id]
-		content = {
+		content {
 		  group_id = access.value
 		}
       }
