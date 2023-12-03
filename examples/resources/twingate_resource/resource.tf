@@ -19,13 +19,12 @@ resource "twingate_service_account" "github_actions_prod" {
   name = "Github Actions PROD"
 }
 
-<<<<<<< HEAD
 data "twingate_security_policy" "mfa" {
   name = "Default Policy"
-=======
+}
+
 data "twingate_security_policy" "test_policy" {
   name = "Test Policy"
->>>>>>> feature/convert-resource-object
 }
 
 resource "twingate_resource" "resource" {
@@ -33,11 +32,8 @@ resource "twingate_resource" "resource" {
   address = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
-<<<<<<< HEAD
-=======
   security_policy_id = data.twingate_security_policy.test_policy.id
 
->>>>>>> feature/convert-resource-object
   protocols = {
     allow_icmp = true
     tcp = {
