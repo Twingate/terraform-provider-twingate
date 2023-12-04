@@ -171,14 +171,14 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
 				Computed:      true,
-				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is true.",
+				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.",
 				Default:       booldefault.StaticBool(true),
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: `Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is false.`,
+				Description: "Controls whether an \"Open in Browser\" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.",
 				Default:     booldefault.StaticBool(false),
 			},
 			attr.ID: schema.StringAttribute{
