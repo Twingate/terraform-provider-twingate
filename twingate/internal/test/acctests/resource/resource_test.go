@@ -3002,6 +3002,8 @@ func TestAccTwingateResourceSecurityPolicy(t *testing.T) {
 }
 
 func TestAccTwingateResourceTestAccessWithServiceAccountsAndSecurityPolicy(t *testing.T) {
+	t.Parallel()
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
@@ -3030,6 +3032,8 @@ func createResourceInvalidAccessWithServiceAccountsAndSecurityPolicy() string {
 }
 
 func TestAccTwingateResourceTestAccessBlockWithServiceAccountsAndGroupAndSecurityPolicy(t *testing.T) {
+	t.Parallel()
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
@@ -3059,6 +3063,8 @@ func createResourceInvalidAccessWithServiceAccountsAndGroupAndSecurityPolicy() s
 }
 
 func TestAccTwingateResourceTestAccessWithServiceAccountsAndGroup(t *testing.T) {
+	t.Parallel()
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
@@ -3087,6 +3093,8 @@ func createResourceInvalidAccessWithServiceAccountsAndGroup() string {
 }
 
 func TestAccTwingateResourceTestAccessWithSecurityPolicyOnly(t *testing.T) {
+	t.Parallel()
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
@@ -3114,6 +3122,8 @@ func createResourceInvalidAccessWithSecurityPolicyOnly() string {
 }
 
 func TestAccTwingateResourceTestAccessWithEmptyGroup(t *testing.T) {
+	t.Parallel()
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
