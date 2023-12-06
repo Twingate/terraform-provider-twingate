@@ -583,6 +583,14 @@ func equalProtocols(one, another *model.Protocols) bool {
 }
 
 func equalProtocol(one, another *model.Protocol) bool {
+	if one == nil && another == nil {
+		return true
+	}
+
+	if one == nil && another != nil || one != nil && another == nil {
+		return false
+	}
+
 	return one.Policy == another.Policy && portRangeEqual(one.Ports, another.Ports)
 }
 
