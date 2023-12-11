@@ -283,6 +283,9 @@ func accessBlock() schema.SetNestedBlock {
 	return schema.SetNestedBlock{
 		Description: "Restrict access to certain groups or service accounts",
 		NestedObject: schema.NestedBlockObject{
+			PlanModifiers: []planmodifier.Object{
+				AccessPlanModifier(),
+			},
 			Attributes: map[string]schema.Attribute{
 				attr.SecurityPolicyID: schema.StringAttribute{
 					Optional:    true,
@@ -456,6 +459,7 @@ func convertAccessBlocks(blocks types.Set) []model.ResourceAccess {
 	return access
 }
 
+//nolint:cyclop
 func convertAccessBlock(obj types.Object) model.ResourceAccess {
 	var access model.ResourceAccess
 
@@ -472,7 +476,7 @@ func convertAccessBlock(obj types.Object) model.ResourceAccess {
 	}
 
 	securityPolicyID := attributes[attr.SecurityPolicyID]
-	if securityPolicyID != nil && !securityPolicyID.IsNull() && !securityPolicyID.IsUnknown() {
+	if len(access.ServiceAccountIDs) == 0 && securityPolicyID != nil && !securityPolicyID.IsNull() && !securityPolicyID.IsUnknown() {
 		access.SecurityPolicyID = securityPolicyID.(types.String).ValueStringPointer()
 	}
 
@@ -495,13 +499,6 @@ func (r *twingateResource) convertResource(plan *resourceModel) (*model.Resource
 		return nil, ErrWildcardAddressWithEnabledShortcut
 	}
 
-	securityPolicyID := plan.SecurityPolicyID.ValueString()
-	if securityPolicyID == "" {
-		securityPolicyID = DefaultSecurityPolicyID
-	}
-
-	setDefaultSecurityPolicy(access, securityPolicyID)
-
 	return &model.Resource{
 		Name:                     plan.Name.ValueString(),
 		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
@@ -514,18 +511,6 @@ func (r *twingateResource) convertResource(plan *resourceModel) (*model.Resource
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 		Access:                   access,
 	}, nil
-}
-
-func setDefaultSecurityPolicy(access []model.ResourceAccess, securityPolicyID string) {
-	if securityPolicyID == "" {
-		return
-	}
-
-	for i := range access {
-		if access[i].GroupID != nil && access[i].SecurityPolicyID == nil {
-			access[i].SecurityPolicyID = &securityPolicyID
-		}
-	}
 }
 
 func validateAccessBlocks(access []model.ResourceAccess) error {
@@ -821,12 +806,15 @@ func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state 
 		return nil, nil, fmt.Errorf("failed to get changedIDs: %w", err)
 	}
 
-	var oldGroups, oldServiceAccounts []string
+	var (
+		oldGroups, oldServiceAccounts []string
+		oldGroupsMap                  map[string]model.ResourceAccess
+	)
 
 	if resource.IsAuthoritative {
-		oldServiceAccounts, oldGroups, _ = extractGroupsAndServiceAccounts(remote.Access)
+		oldServiceAccounts, oldGroups, oldGroupsMap = extractGroupsAndServiceAccounts(remote.Access)
 	} else {
-		oldServiceAccounts, oldGroups, _ = getOldIDsNonAuthoritative(plan, state)
+		oldServiceAccounts, oldGroups, oldGroupsMap = getOldIDsNonAuthoritative(plan, state)
 	}
 
 	// ids to delete
@@ -836,12 +824,13 @@ func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state 
 	serviceAccountsToDelete := setDifference(oldServiceAccounts, resServiceAccounts)
 
 	// ids to add
-	groupsToAdd := setDifference(resGroups, oldGroups)
 	serviceAccountsToAdd := setDifference(resServiceAccounts, oldServiceAccounts)
-	resultAccess := make([]model.ResourceAccess, 0, len(groupsToAdd))
+	resultAccess := make([]model.ResourceAccess, 0, min(len(oldGroupsMap), len(resGroupsMap)))
 
-	for _, group := range groupsToAdd {
-		resultAccess = append(resultAccess, resGroupsMap[group])
+	for group, access := range resGroupsMap {
+		if !access.Equal(oldGroupsMap[group]) {
+			resultAccess = append(resultAccess, access)
+		}
 	}
 
 	if len(serviceAccountsToAdd) > 0 {
@@ -1388,4 +1377,43 @@ func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context
 	} else if req.StateValue.ValueString() == DefaultSecurityPolicyID && req.PlanValue.ValueString() == "" {
 		resp.PlanValue = types.StringValue(DefaultSecurityPolicyID)
 	}
+}
+
+func AccessPlanModifier() planmodifier.Object {
+	return accessPlanModifier{}
+}
+
+type accessPlanModifier struct{}
+
+func (m accessPlanModifier) PlanModifyObject(ctx context.Context, req planmodifier.ObjectRequest, resp *planmodifier.ObjectResponse) {
+	access := req.ConfigValue
+	if access.Attributes()[attr.GroupID].(types.String).IsUnknown() ||
+		access.Attributes()[attr.SecurityPolicyID].(types.String).ValueString() != "" ||
+		len(access.Attributes()[attr.ServiceAccountIDs].(types.Set).Elements()) > 0 {
+		return
+	}
+
+	var rootSecurityPolicy types.String
+
+	req.Config.GetAttribute(ctx, path.Root(attr.SecurityPolicyID), &rootSecurityPolicy)
+
+	securityPolicy := rootSecurityPolicy.ValueString()
+	if securityPolicy == "" {
+		securityPolicy = DefaultSecurityPolicyID
+	}
+
+	obj, _ := creatAccessObj(model.ResourceAccess{
+		GroupID:          access.Attributes()[attr.GroupID].(types.String).ValueStringPointer(),
+		SecurityPolicyID: &securityPolicy,
+	})
+
+	resp.PlanValue = obj
+}
+
+func (m accessPlanModifier) Description(_ context.Context) string {
+	return ""
+}
+
+func (m accessPlanModifier) MarkdownDescription(_ context.Context) string {
+	return ""
 }

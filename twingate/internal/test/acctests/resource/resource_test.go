@@ -3149,3 +3149,233 @@ func createResourceInvalidAccessWithEmptyGroup() string {
 	}
 	`
 }
+
+func TestAccTwingateResourceGroupDefaultSecurityPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	defaultPolicy, _ := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: resourceWithAccessGroup(remoteNetworkName, groupName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstAccessSecurityPolicyID, defaultPolicy),
+				),
+			},
+			{
+				Config:   resourceWithAccessGroup(remoteNetworkName, groupName, resourceName),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func resourceWithAccessGroup(networkName, groupName, resourceName string) string {
+	return fmt.Sprintf(`
+    resource "twingate_remote_network" "%[1]s" {
+      name = "%[1]s"
+    }
+	
+	resource "twingate_group" "%[2]s" {
+      name = "%[2]s"
+    }
+
+    resource "twingate_resource" "%[3]s" {
+      name = "%[3]s"
+      address = "acc-test.com"
+      remote_network_id = twingate_remote_network.%[1]s.id
+
+      access {
+        group_id = twingate_group.%[2]s.id
+      }
+
+    }
+    `, networkName, groupName, resourceName)
+}
+
+func TestAccTwingateResourceGroupCustomResourceSecurityPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	defaultPolicy, testPolicy := preparePolicies(t)
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: resourceWithAccessGroupAndResourceSecurityPolicy(remoteNetworkName, groupName, resourceName, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstAccessSecurityPolicyID, testPolicy),
+				),
+			},
+			{
+				Config: resourceWithAccessGroupWithCustomSecurityPolicy(remoteNetworkName, groupName, resourceName, testPolicy, defaultPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstAccessSecurityPolicyID, defaultPolicy),
+				),
+			},
+			{
+				Config: resourceWithAccessGroupAndResourceSecurityPolicy(remoteNetworkName, groupName, resourceName, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstAccessSecurityPolicyID, testPolicy),
+				),
+			},
+		},
+	})
+}
+
+func resourceWithAccessGroupAndResourceSecurityPolicy(networkName, groupName, resourceName, resourceSecurityPolicy string) string {
+	return fmt.Sprintf(`
+    resource "twingate_remote_network" "%[1]s" {
+      name = "%[1]s"
+    }
+	
+	resource "twingate_group" "%[2]s" {
+      name = "%[2]s"
+    }
+
+    resource "twingate_resource" "%[3]s" {
+      name = "%[3]s"
+      address = "acc-test.com"
+      remote_network_id = twingate_remote_network.%[1]s.id
+      security_policy_id = "%[4]s"
+
+      access {
+        group_id = twingate_group.%[2]s.id
+      }
+
+    }
+    `, networkName, groupName, resourceName, resourceSecurityPolicy)
+}
+
+func TestAccTwingateResourceGroupCustomSecurityPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	defaultPolicy, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: resourceWithAccessGroupWithCustomSecurityPolicy(remoteNetworkName, groupName, resourceName, defaultPolicy, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstAccessSecurityPolicyID, testPolicy),
+				),
+			},
+			{
+				Config: resourceWithAccessGroupWithCustomSecurityPolicy(remoteNetworkName, groupName, resourceName, defaultPolicy, defaultPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstAccessSecurityPolicyID, defaultPolicy),
+				),
+			},
+		},
+	})
+}
+
+func resourceWithAccessGroupWithCustomSecurityPolicy(networkName, groupName, resourceName, resourceSecurityPolicy, groupSecurityPolicy string) string {
+	return fmt.Sprintf(`
+    resource "twingate_remote_network" "%[1]s" {
+      name = "%[1]s"
+    }
+	
+	resource "twingate_group" "%[2]s" {
+      name = "%[2]s"
+    }
+
+    resource "twingate_resource" "%[3]s" {
+      name = "%[3]s"
+      address = "acc-test.com"
+      remote_network_id = twingate_remote_network.%[1]s.id
+      security_policy_id = "%[4]s"
+
+      access {
+        group_id = twingate_group.%[2]s.id
+        security_policy_id = "%[5]s"
+      }
+
+    }
+    `, networkName, groupName, resourceName, resourceSecurityPolicy, groupSecurityPolicy)
+}
+
+func TestAccTwingateResourceAccessWithServiceAccountsAndGroups(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+	serviceAccountName := test.RandomName()
+
+	_, testPolicy := preparePolicies(t)
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: resourceAccessWithGroupAndServiceAccount(remoteNetworkName, groupName, resourceName, testPolicy, createServiceAccount(resourceName, serviceAccountName)),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, firstAccessSecurityPolicyID, testPolicy),
+				),
+			},
+		},
+	})
+}
+
+func resourceAccessWithGroupAndServiceAccount(networkName, groupName, resourceName, resourceSecurityPolicy, terraformServiceAccount string) string {
+	return fmt.Sprintf(`
+    resource "twingate_remote_network" "%[1]s" {
+      name = "%[1]s"
+    }
+	
+	%[5]s
+
+	resource "twingate_group" "%[2]s" {
+      name = "%[2]s"
+    }
+
+    resource "twingate_resource" "%[3]s" {
+      name = "%[3]s"
+      address = "acc-test.com"
+      remote_network_id = twingate_remote_network.%[1]s.id
+      security_policy_id = "%[4]s"
+
+      access {
+        group_id = twingate_group.%[2]s.id
+      }
+
+      access {
+        service_account_ids = [%[6]s]
+      }
+
+    }
+    `, networkName, groupName, resourceName, resourceSecurityPolicy, terraformServiceAccount, acctests.TerraformServiceAccount(resourceName)+".id")
+}

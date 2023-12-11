@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -44,6 +45,27 @@ type ResourceAccess struct {
 
 func (a ResourceAccess) IsEmpty() bool {
 	return a.SecurityPolicyID == nil && a.GroupID == nil && len(a.ServiceAccountIDs) == 0
+}
+
+func (a ResourceAccess) Equal(access ResourceAccess) bool {
+	if !optionalStringEqual(a.GroupID, access.GroupID) ||
+		!optionalStringEqual(a.SecurityPolicyID, access.SecurityPolicyID) {
+		return false
+	}
+
+	return reflect.DeepEqual(utils.MakeLookupMap(a.ServiceAccountIDs), utils.MakeLookupMap(access.ServiceAccountIDs))
+}
+
+func optionalStringEqual(str1, str2 *string) bool {
+	if str1 == nil && str2 == nil {
+		return true
+	}
+
+	if str1 == nil && str2 != nil || str1 != nil && str2 == nil {
+		return false
+	}
+
+	return strings.EqualFold(*str1, *str2)
 }
 
 func (r Resource) AccessToTerraform() []interface{} {
