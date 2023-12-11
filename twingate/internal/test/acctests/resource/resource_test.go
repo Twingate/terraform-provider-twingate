@@ -710,6 +710,8 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 					acctests.WaitTestFunc(),
 					acctests.CheckTwingateResourceActiveState(theResource, false),
 				),
+				// provider noticed drift and tried to change it to true
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: createResourceOnlyWithNetwork(terraformResourceName, remoteNetworkName, resourceName),
@@ -2692,6 +2694,68 @@ func TestAccTwingateResourceSetDefaultSecurityPolicyByDefault(t *testing.T) {
 				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
 				// no changes
 				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceCreateInactive(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithIsActiveFlag(remoteNetworkName, resourceName, false),
+				ExpectError: regexp.MustCompile(resource.ErrResourceInactiveOnCreation.Error()),
+			},
+		},
+	})
+}
+
+func createResourceWithIsActiveFlag(networkName, resourceName string, isActive bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  is_active = %[3]v
+	}
+	`, networkName, resourceName, isActive)
+}
+
+func TestAccTwingateResourceTestInactiveFlag(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithIsActiveFlag(remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsActive, "true"),
+				),
+			},
+			{
+				Config: createResourceWithIsActiveFlag(remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsActive, "false"),
+					acctests.CheckTwingateResourceActiveState(theResource, false),
+				),
 			},
 		},
 	})

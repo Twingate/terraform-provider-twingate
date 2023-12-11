@@ -25,6 +25,7 @@ var (
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
+	ErrResourceInactiveOnCreation         = errors.New("Resource cannot be disabled on creation.")
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -146,6 +147,12 @@ func Resource() *schema.Resource { //nolint:funlen
 				DiffSuppressOnRefresh: true,
 				DiffSuppressFunc:      defaultPolicyNotChanged,
 			},
+			attr.IsActive: {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Set the resource as active or inactive. Default is `true`.",
+				Default:     true,
+			},
 			// computed
 			attr.IsVisible: {
 				Type:        schema.TypeBool,
@@ -185,6 +192,10 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
+	if !resource.IsActive {
+		return diag.FromErr(ErrResourceInactiveOnCreation)
+	}
+
 	resource, err = client.CreateResource(ctx, resource)
 	if err != nil {
 		return diag.FromErr(err)
@@ -196,7 +207,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 
 	log.Printf("[INFO] Created resource %s", resource.Name)
 
-	return resourceResourceReadHelper(ctx, client, resourceData, resource, nil)
+	return resourceResourceReadHelper(resourceData, resource, nil)
 }
 
 func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -233,6 +244,7 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		attr.IsBrowserShortcutEnabled,
 		attr.Alias,
 		attr.SecurityPolicyID,
+		attr.IsActive,
 	) {
 		diagErr := setDefaultSecurityPolicy(ctx, resource, client)
 		if diagErr.HasError() {
@@ -249,7 +261,7 @@ func resourceUpdate(ctx context.Context, resourceData *schema.ResourceData, meta
 		log.Printf("[INFO] Updated resource %s", resource.Name)
 	}
 
-	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
+	return resourceResourceReadHelper(resourceData, resource, err)
 }
 
 func setDefaultSecurityPolicy(ctx context.Context, resource *model.Resource, client *client.Client) diag.Diagnostics {
@@ -291,7 +303,7 @@ func resourceRead(ctx context.Context, resourceData *schema.ResourceData, meta i
 		}
 	}
 
-	return resourceResourceReadHelper(ctx, client, resourceData, resource, err)
+	return resourceResourceReadHelper(resourceData, resource, err)
 }
 
 func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -308,7 +320,7 @@ func resourceDelete(ctx context.Context, resourceData *schema.ResourceData, meta
 	return nil
 }
 
-func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Client, resourceData *schema.ResourceData, resource *model.Resource, err error) diag.Diagnostics {
+func resourceResourceReadHelper(resourceData *schema.ResourceData, resource *model.Resource, err error) diag.Diagnostics {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -322,18 +334,6 @@ func resourceResourceReadHelper(ctx context.Context, resourceClient *client.Clie
 
 	if resource.Protocols == nil {
 		resource.Protocols = model.DefaultProtocols()
-	}
-
-	if !resource.IsActive {
-		// fix set active state for the resource on `terraform apply`
-		err = resourceClient.UpdateResourceActiveState(ctx, &model.Resource{
-			ID:       resource.ID,
-			IsActive: true,
-		})
-
-		if err != nil {
-			return diag.FromErr(err)
-		}
 	}
 
 	if !resource.IsAuthoritative {
@@ -401,6 +401,10 @@ func readDiagnostics(resourceData *schema.ResourceData, resource *model.Resource
 
 	if err := resourceData.Set(attr.SecurityPolicyID, resource.SecurityPolicyID); err != nil {
 		return ErrAttributeSet(err, attr.SecurityPolicyID)
+	}
+
+	if err := resourceData.Set(attr.IsActive, resource.IsActive); err != nil {
+		return ErrAttributeSet(err, attr.IsActive)
 	}
 
 	return nil
@@ -542,6 +546,7 @@ func convertResource(data *schema.ResourceData) (*model.Resource, error) {
 		IsAuthoritative:  convertAuthoritativeFlagLegacy(data),
 		Alias:            getOptionalString(data, attr.Alias),
 		SecurityPolicyID: getOptionalString(data, attr.SecurityPolicyID),
+		IsActive:         data.Get(attr.IsActive).(bool),
 	}
 
 	isVisible, ok := data.GetOkExists(attr.IsVisible) //nolint
