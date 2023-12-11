@@ -12,6 +12,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -2759,4 +2760,52 @@ func TestAccTwingateResourceTestInactiveFlag(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccTwingateResourceTestPlanOnDisabledResource(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource(remoteNetworkName, resourceName),
+			},
+			{
+				RefreshState: true,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.DeactivateTwingateResource(theResource),
+				),
+			},
+			{
+				Config: createResource(remoteNetworkName, resourceName),
+				ConfigPlanChecks: sdk.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectNonEmptyPlan(),
+						plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionUpdate),
+						acctests.CheckResourceActiveState(theResource, false),
+					},
+				},
+			},
+		},
+	})
+}
+
+func createResource(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	}
+	`, networkName, resourceName)
 }
