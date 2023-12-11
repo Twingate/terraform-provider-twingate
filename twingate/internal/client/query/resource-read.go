@@ -31,7 +31,8 @@ type Access struct {
 }
 
 type AccessEdge struct {
-	Node Principal
+	Node           Principal
+	SecurityPolicy *gqlSecurityPolicy
 }
 
 type Principal struct {
@@ -78,22 +79,42 @@ type PortRange struct {
 func (r gqlResource) ToModel() *model.Resource {
 	resource := r.ResourceNode.ToModel()
 
-	for _, access := range r.Access.Edges {
-		switch access.Node.Type {
+	var (
+		access          []model.ResourceAccess
+		serviceAccounts []string
+	)
+
+	for _, edge := range r.Access.Edges {
+		switch edge.Node.Type {
 		case AccessGroup:
-			resource.Groups = append(resource.Groups, string(access.Node.ID))
+			resAccess := model.ResourceAccess{
+				GroupID: optionalString(string(edge.Node.ID)),
+			}
+
+			if edge.SecurityPolicy != nil {
+				resAccess.SecurityPolicyID = optionalString(string(edge.SecurityPolicy.ID))
+			}
+
+			access = append(access, resAccess)
+
 		case AccessServiceAccount:
-			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
+			serviceAccounts = append(serviceAccounts, string(edge.Node.ID))
 		}
 	}
+
+	if len(serviceAccounts) > 0 {
+		access = append(access, model.ResourceAccess{ServiceAccountIDs: serviceAccounts})
+	}
+
+	resource.Access = access
 
 	return resource
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
-	var securityPolicy string
+	var securityPolicyID string
 	if r.SecurityPolicy != nil {
-		securityPolicy = string(r.SecurityPolicy.ID)
+		securityPolicyID = string(r.SecurityPolicy.ID)
 	}
 
 	return &model.Resource{
@@ -106,7 +127,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsVisible:                &r.IsVisible,
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
-		SecurityPolicyID:         optionalString(securityPolicy),
+		SecurityPolicyID:         optionalString(securityPolicyID),
 	}
 }
 

@@ -2,7 +2,7 @@ package attr
 
 const (
 	Access                   = "access"
-	GroupIDs                 = "group_ids"
+	GroupID                  = "group_id"
 	ServiceAccountIDs        = "service_account_ids"
 	IsAuthoritative          = "is_authoritative"
 	Policy                   = "policy"

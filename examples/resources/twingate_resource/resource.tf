@@ -11,8 +11,16 @@ resource "twingate_group" "aws" {
   name = "aws_group"
 }
 
+resource "twingate_group" "devops" {
+  name = "DevOps"
+}
+
 resource "twingate_service_account" "github_actions_prod" {
   name = "Github Actions PROD"
+}
+
+data "twingate_security_policy" "mfa" {
+  name = "Default Policy"
 }
 
 data "twingate_security_policy" "test_policy" {
@@ -26,19 +34,26 @@ resource "twingate_resource" "resource" {
 
   security_policy_id = data.twingate_security_policy.test_policy.id
 
-  protocols {
+  protocols = {
     allow_icmp = true
-    tcp  {
+    tcp = {
       policy = "RESTRICTED"
       ports = ["80", "82-83"]
     }
-    udp {
+    udp = {
       policy = "ALLOW_ALL"
     }
   }
 
+  dynamic "access" {
+    for_each = [twingate_group.devops.id, twingate_group.aws.id]
+    content {
+      security_policy_id = data.twingate_security_policy.mfa.id
+      group_id = access.value
+    }
+  }
+
   access {
-    group_ids = [twingate_group.aws.id]
     service_account_ids = [twingate_service_account.github_actions_prod.id]
   }
 }

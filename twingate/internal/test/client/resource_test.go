@@ -14,16 +14,20 @@ import (
 )
 
 func newTestResource() *model.Resource {
-	groups := []string{b64.StdEncoding.EncodeToString([]byte("testgroup"))}
+	group := b64.StdEncoding.EncodeToString([]byte("testgroup"))
 
 	return &model.Resource{
 		ID:              "test",
 		RemoteNetworkID: "test",
 		Address:         "test",
 		Name:            "testName",
-		Groups:          groups,
-		Protocols:       model.DefaultProtocols(),
-		IsActive:        true,
+		Access: []model.ResourceAccess{
+			{
+				GroupID: optionalString(group),
+			},
+		},
+		Protocols: model.DefaultProtocols(),
+		IsActive:  true,
 	}
 }
 
@@ -125,8 +129,9 @@ func TestClientResourceReadOk(t *testing.T) {
 			Name:            "test resource",
 			Address:         "test.com",
 			RemoteNetworkID: "network1",
-			Groups: []string{
-				"group1", "group2",
+			Access: []model.ResourceAccess{
+				{GroupID: optionalString("group1")},
+				{GroupID: optionalString("group2")},
 			},
 			Protocols: &model.Protocols{
 				UDP: &model.Protocol{
@@ -220,8 +225,11 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 			Name:            "test resource",
 			Address:         "test.com",
 			RemoteNetworkID: "network1",
-			Groups: []string{
-				"group1", "group2", "group3", "group4",
+			Access: []model.ResourceAccess{
+				{GroupID: optionalString("group1")},
+				{GroupID: optionalString("group2")},
+				{GroupID: optionalString("group3")},
+				{GroupID: optionalString("group4")},
 			},
 			IsActive: true,
 			Protocols: &model.Protocols{
@@ -1423,7 +1431,10 @@ func TestClientAddResourceAccessOk(t *testing.T) {
 
 		err := client.AddResourceAccess(context.Background(),
 			"resource-1",
-			[]string{"id-1", "id-2"},
+			[]model.ResourceAccess{
+				{GroupID: optionalString("id-1")},
+				{GroupID: optionalString("id-2")},
+			},
 		)
 
 		assert.NoError(t, err)
@@ -1436,7 +1447,7 @@ func TestClientAddResourceAccessWithEmptyList(t *testing.T) {
 
 		err := client.AddResourceAccess(context.Background(),
 			"resource-1",
-			[]string{},
+			[]model.ResourceAccess{},
 		)
 
 		assert.NoError(t, err)
@@ -1449,7 +1460,9 @@ func TestClientAddResourceAccessWithoutID(t *testing.T) {
 
 		err := client.AddResourceAccess(context.Background(),
 			"",
-			[]string{"id-1"},
+			[]model.ResourceAccess{
+				{GroupID: optionalString("id-1")},
+			},
 		)
 
 		assert.Error(t, err, "failed to update resource access: id is empty")
@@ -1466,7 +1479,9 @@ func TestClientAddResourceAccessRequestError(t *testing.T) {
 
 		err := client.AddResourceAccess(context.Background(),
 			"resource-1",
-			[]string{"id-1", "id-2"},
+			[]model.ResourceAccess{
+				{ServiceAccountIDs: []string{"id-1", "id-2"}},
+			},
 		)
 
 		assert.EqualError(t, err, graphqlErr(client, "failed to update resource access with id resource-1", errBadRequest))
@@ -1491,7 +1506,9 @@ func TestClientAddResourceAccessResponseError(t *testing.T) {
 
 		err := client.AddResourceAccess(context.Background(),
 			"resource-1",
-			[]string{"id-1", "id-2"},
+			[]model.ResourceAccess{
+				{ServiceAccountIDs: []string{"id-1", "id-2"}},
+			},
 		)
 		assert.EqualError(t, err, `failed to update resource access with id resource-1: response error`)
 	})

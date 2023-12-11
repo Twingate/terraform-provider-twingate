@@ -17,11 +17,8 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
-	twingateV2 "github.com/Twingate/terraform-provider-twingate/twingate/v2"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
-	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -58,26 +55,7 @@ var providerClient = func() *client.Client { //nolint
 }()
 
 var ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){ //nolint
-	"twingate": func() (tfprotov6.ProviderServer, error) {
-		upgradedSdkProvider, err := tf5to6server.UpgradeServer(context.Background(), twingate.Provider("test").GRPCProvider)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		providers := []func() tfprotov6.ProviderServer{
-			func() tfprotov6.ProviderServer {
-				return upgradedSdkProvider
-			},
-			providerserver.NewProtocol6(twingateV2.New("test")()),
-		}
-
-		provider, err := tf6muxserver.NewMuxServer(context.Background(), providers...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to run mux server: %w", err)
-		}
-
-		return provider, nil
-	},
+	"twingate": providerserver.NewProtocol6WithError(twingate.New("test")()),
 }
 
 func SetPageLimit(limit int) {
@@ -487,7 +465,9 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{groupID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []model.ResourceAccess{
+			{GroupID: &groupID},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add group with ID %s: %w", resourceID, groupID, err)
 		}
@@ -529,8 +509,16 @@ func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.Test
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
 
-		if len(resource.Groups) != expectedGroupsLen {
-			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.Groups))
+		var groups []string
+
+		for _, edge := range resource.Access {
+			if edge.GroupID != nil {
+				groups = append(groups, *edge.GroupID)
+			}
+		}
+
+		if len(groups) != expectedGroupsLen {
+			return ErrGroupsLenMismatch(expectedGroupsLen, len(groups))
 		}
 
 		return nil
@@ -565,7 +553,11 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{serviceAccountID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []model.ResourceAccess{
+			{
+				ServiceAccountIDs: []string{serviceAccountID},
+			},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
 		}
@@ -607,8 +599,16 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
 
-		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
-			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))
+		var serviceAccounts []string
+
+		for _, edge := range resource.Access {
+			if len(edge.ServiceAccountIDs) > 0 {
+				serviceAccounts = append(serviceAccounts, edge.ServiceAccountIDs...)
+			}
+		}
+
+		if len(serviceAccounts) != expectedServiceAccountsLen {
+			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(serviceAccounts))
 		}
 
 		return nil

@@ -44,13 +44,13 @@ func testDatasourceTwingateResource(networkName, resourceName string) string {
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.test_dr1.id
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "RESTRICTED"
 	      ports = ["80-83", "85"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "ALLOW_ALL"
 	      ports = []
 	    }
