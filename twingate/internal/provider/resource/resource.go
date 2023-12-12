@@ -25,7 +25,6 @@ var (
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
-	ErrResourceInactiveOnCreation         = errors.New("Resource cannot be disabled on creation.")
 )
 
 func Resource() *schema.Resource { //nolint:funlen
@@ -192,9 +191,7 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	if !resource.IsActive {
-		return diag.FromErr(ErrResourceInactiveOnCreation)
-	}
+	shouldBeDisabled := !resource.IsActive
 
 	resource, err = client.CreateResource(ctx, resource)
 	if err != nil {
@@ -203,6 +200,17 @@ func resourceCreate(ctx context.Context, resourceData *schema.ResourceData, meta
 
 	if err = client.AddResourceAccess(ctx, resource.ID, resource.ServiceAccounts); err != nil {
 		return diag.FromErr(err)
+	}
+
+	if shouldBeDisabled {
+		if err := client.UpdateResourceActiveState(ctx, &model.Resource{
+			ID:       resource.ID,
+			IsActive: false,
+		}); err != nil {
+			return diag.FromErr(err)
+		}
+
+		resource.IsActive = false
 	}
 
 	log.Printf("[INFO] Created resource %s", resource.Name)

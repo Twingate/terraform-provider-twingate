@@ -2704,6 +2704,7 @@ func TestAccTwingateResourceCreateInactive(t *testing.T) {
 	t.Parallel()
 
 	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
 	remoteNetworkName := test.RandomName()
 
 	sdk.Test(t, sdk.TestCase{
@@ -2712,8 +2713,11 @@ func TestAccTwingateResourceCreateInactive(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config:      createResourceWithIsActiveFlag(remoteNetworkName, resourceName, false),
-				ExpectError: regexp.MustCompile(resource.ErrResourceInactiveOnCreation.Error()),
+				Config: createResourceWithIsActiveFlag(remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsActive, "false"),
+					acctests.CheckTwingateResourceActiveState(theResource, false),
+				),
 			},
 		},
 	})
