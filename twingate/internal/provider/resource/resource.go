@@ -364,7 +364,8 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
 
-				resp.Diagnostics.AddWarning("Please upgrade protocols sections", "Follow this docs to update protocols from blocks to attributes")
+				resp.Diagnostics.AddWarning("Please update the protocols sections format from a block to an object",
+					"See the v1 to v2 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migrate-guide-v1-to-v2")
 			},
 		},
 	}
