@@ -32,10 +32,12 @@ resource "twingate_resource" "resource" {
 }
 ```
 
-Main changes are about:
-`protocols {` -> `protocols = {`
-`tcp {` -> `tcp = {`
-`udp {` -> `udp = {`
+The main changes are about:
+```
+protocols {   ->   protocols = {
+tcp {         ->   tcp = {
+udp {         ->   udp = {
+```
 
 After changes, your Resource will look like this:
 
