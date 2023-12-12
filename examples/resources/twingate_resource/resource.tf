@@ -41,5 +41,7 @@ resource "twingate_resource" "resource" {
     group_ids = [twingate_group.aws.id]
     service_account_ids = [twingate_service_account.github_actions_prod.id]
   }
+
+  is_active = true
 }
 
