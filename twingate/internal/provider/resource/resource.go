@@ -64,6 +64,7 @@ type resourceModel struct {
 	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                types.Object `tfsdk:"protocols"`
 	Access                   types.List   `tfsdk:"access"`
+	IsActive                 types.Bool   `tfsdk:"is_active"`
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
@@ -78,6 +79,7 @@ type resourceModelV0 struct {
 	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                types.List   `tfsdk:"protocols"`
 	Access                   types.List   `tfsdk:"access"`
+	IsActive                 types.Bool   `tfsdk:"is_active"`
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
@@ -130,6 +132,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 }
 
+//nolint:funlen
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Version:     1,
@@ -148,6 +151,12 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Remote Network ID where the Resource lives",
 			},
 			// optional
+			attr.IsActive: schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Set the resource as active or inactive. Default is `true`.",
+				Default:     booldefault.StaticBool(true),
+			},
 			attr.IsAuthoritative: schema.BoolAttribute{
 				Optional:      true,
 				Computed:      true,
@@ -209,6 +218,10 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 					},
 					attr.RemoteNetworkID: schema.StringAttribute{
 						Required: true,
+					},
+					attr.IsActive: schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
 					},
 					attr.IsAuthoritative: schema.BoolAttribute{
 						Optional: true,
@@ -340,6 +353,7 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 					RemoteNetworkID: priorState.RemoteNetworkID,
 					Protocols:       protocolsState,
 					Access:          priorState.Access,
+					IsActive:        priorState.IsActive,
 				}
 
 				if !priorState.IsAuthoritative.IsNull() {
@@ -561,6 +575,19 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
+	if !input.IsActive {
+		if err := r.client.UpdateResourceActiveState(ctx, &model.Resource{
+			ID:       resource.ID,
+			IsActive: false,
+		}); err != nil {
+			addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
+
+			return
+		}
+
+		resource.IsActive = false
+	}
+
 	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
@@ -608,6 +635,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		Protocols:                protocols,
 		Groups:                   groupIDs,
 		ServiceAccounts:          serviceAccountIDs,
+		IsActive:                 plan.IsActive.ValueBool(),
 		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
 		Alias:                    getOptionalString(plan.Alias),
 		IsVisible:                getOptionalBool(plan.IsVisible),
@@ -982,6 +1010,7 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.Name.Equal(state.Name) ||
 		!plan.Address.Equal(state.Address) ||
 		!equalProtocolsState(&plan.Protocols, &state.Protocols) ||
+		!plan.IsActive.Equal(state.IsActive) ||
 		!plan.IsVisible.Equal(state.IsVisible) ||
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
 		!plan.Alias.Equal(state.Alias) ||
@@ -1069,20 +1098,6 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 		resource.Protocols = model.DefaultProtocols()
 	}
 
-	if !resource.IsActive {
-		// fix set active state for the resource on `terraform apply`
-		err = r.client.UpdateResourceActiveState(ctx, &model.Resource{
-			ID:       resource.ID,
-			IsActive: true,
-		})
-
-		if err != nil {
-			addErr(diagnostics, err, operationUpdate, TwingateResource)
-
-			return
-		}
-	}
-
 	if !resource.IsAuthoritative {
 		resource.Groups = setIntersection(getAccessAttribute(reference.Access, attr.GroupIDs), resource.Groups)
 		resource.ServiceAccounts = setIntersection(getAccessAttribute(reference.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
@@ -1103,6 +1118,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.Name = types.StringValue(resource.Name)
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
 	state.Address = types.StringValue(resource.Address)
+	state.IsActive = types.BoolValue(resource.IsActive)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
 

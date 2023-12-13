@@ -20,7 +20,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 var (
@@ -320,6 +322,66 @@ func CheckTwingateResourceActiveState(resourceName string, expectedActiveState b
 		}
 
 		return nil
+	}
+}
+
+type checkResourceActiveState struct {
+	resourceAddress     string
+	expectedActiveState bool
+}
+
+// CheckPlan implements the plan check logic.
+func (e checkResourceActiveState) CheckPlan(ctx context.Context, req plancheck.CheckPlanRequest, resp *plancheck.CheckPlanResponse) {
+	var resourceID string
+
+	for _, rc := range req.Plan.ResourceChanges {
+		if e.resourceAddress != rc.Address {
+			continue
+		}
+
+		result, err := tfjsonpath.Traverse(rc.Change.Before, tfjsonpath.New(attr.ID))
+		if err != nil {
+			resp.Error = err
+
+			return
+		}
+
+		resultID, ok := result.(string)
+		if !ok {
+			resp.Error = fmt.Errorf("invalid path: the path value cannot be asserted as string") //nolint:goerr113
+
+			return
+		}
+
+		resourceID = resultID
+
+		break
+	}
+
+	if resourceID == "" {
+		resp.Error = fmt.Errorf("%s - Resource not found in plan ResourceChanges", e.resourceAddress) //nolint:goerr113
+
+		return
+	}
+
+	res, err := providerClient.ReadResource(ctx, resourceID)
+	if err != nil {
+		resp.Error = fmt.Errorf("failed to read resource: %w", err)
+
+		return
+	}
+
+	if res.IsActive != e.expectedActiveState {
+		resp.Error = fmt.Errorf("expected active state %v, got %v", e.expectedActiveState, res.IsActive) //nolint:goerr113
+
+		return
+	}
+}
+
+func CheckResourceActiveState(resourceAddress string, activeState bool) plancheck.PlanCheck {
+	return checkResourceActiveState{
+		resourceAddress:     resourceAddress,
+		expectedActiveState: activeState,
 	}
 }
 
