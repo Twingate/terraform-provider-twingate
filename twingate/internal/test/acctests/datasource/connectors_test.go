@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-// TestAccDatasourceTwingateConnectors_basic fails at latest with ExpectNonEmptyPlan: true
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Connectors Basic", func(t *testing.T) {
 		acctests.SetPageLimit(1)
