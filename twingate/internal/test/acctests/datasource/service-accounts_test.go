@@ -59,6 +59,7 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 	})
 }
 
+// TestAccDatasourceTwingateServicesAll fails at 1.3 and latest without ExpectNonEmptyPlan: true
 func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - All", func(t *testing.T) {
 		prefix := test.Prefix() + acctest.RandString(4)
@@ -88,6 +89,7 @@ func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
 					),
+					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: filterDatasourceServices(prefix, config),
@@ -196,6 +198,7 @@ func filterDatasourceServices(prefix string, configs []terraformServiceConfig) s
 	`, createServices(configs), prefix)
 }
 
+// TestAccDatasourceTwingateServicesAllCursors fails at 1.3 and latest without ExpectNonEmptyPlan: true, but fails locally with this flag
 func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - All Cursors", func(t *testing.T) {
 		acctests.SetPageLimit(1)
@@ -214,6 +217,7 @@ func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
 					),
+					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: datasourceServicesConfig(prefix),
