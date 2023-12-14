@@ -88,7 +88,6 @@ func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
 					),
-					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: filterDatasourceServices(prefix, config),
@@ -215,7 +214,6 @@ func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
 					),
-					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: datasourceServicesConfig(prefix),

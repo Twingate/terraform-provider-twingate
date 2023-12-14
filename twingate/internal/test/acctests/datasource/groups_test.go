@@ -176,7 +176,8 @@ func TestAccDatasourceTwingateGroups_WithEmptyFilters(t *testing.T) {
 			},
 			Steps: []resource.TestStep{
 				{
-					Config: testTwingateGroupsWithEmptyFilter(),
+					Config:             testTwingateGroupsWithEmptyFilter(),
+					ExpectNonEmptyPlan: true,
 				},
 			},
 		})

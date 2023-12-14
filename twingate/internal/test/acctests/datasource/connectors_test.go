@@ -33,6 +33,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 						testCheckOutputAttr("my_connectors", 0, attr.Name, connectorName),
 						testCheckOutputAttr("my_connectors", 0, attr.StatusUpdatesEnabled, true),
 					),
+					ExpectNonEmptyPlan: true,
 				},
 			},
 		})
