@@ -11,6 +11,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccTwingateUserCreateUpdate(t *testing.T) {
@@ -218,6 +219,7 @@ func TestAccTwingateUserDelete(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc User Delete", func(t *testing.T) {
 		const terraformResourceName = "test005"
 		theResource := acctests.TerraformUser(terraformResourceName)
+		userEmail := test.RandomEmail()
 
 		sdk.Test(t, sdk.TestCase{
 			ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -225,11 +227,16 @@ func TestAccTwingateUserDelete(t *testing.T) {
 			CheckDestroy:             acctests.CheckTwingateUserDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config:  terraformResourceTwingateUser(terraformResourceName, test.RandomEmail()),
+					Config:  terraformResourceTwingateUser(terraformResourceName, userEmail),
 					Destroy: true,
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceDoesNotExists(theResource),
-					),
+				},
+				{
+					Config: terraformResourceTwingateUser(terraformResourceName, userEmail),
+					ConfigPlanChecks: sdk.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionCreate),
+						},
+					},
 				},
 			},
 		})

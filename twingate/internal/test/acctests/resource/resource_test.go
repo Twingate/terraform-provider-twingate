@@ -1596,9 +1596,7 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				// expecting no changes - default value on the backend side is `true`
-				PlanOnly: true,
-				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.IsVisible, "true"),
 				),
@@ -1675,9 +1673,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				// expecting no changes - default value on the backend side is `true`
-				PlanOnly: true,
-				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, true),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.IsBrowserShortcutEnabled, "true"),
 				),
@@ -2780,17 +2776,14 @@ func TestAccTwingateResourceTestPlanOnDisabledResource(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource(remoteNetworkName, resourceName),
-			},
-			{
-				RefreshState: true,
 				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceActiveState(theResource, true),
 					acctests.DeactivateTwingateResource(theResource),
+					acctests.CheckTwingateResourceActiveState(theResource, false),
 				),
-			},
-			{
-				Config: createResource(remoteNetworkName, resourceName),
+				ExpectNonEmptyPlan: true,
 				ConfigPlanChecks: sdk.ConfigPlanChecks{
-					PreApply: []plancheck.PlanCheck{
+					PostApplyPostRefresh: []plancheck.PlanCheck{
 						plancheck.ExpectNonEmptyPlan(),
 						plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionUpdate),
 						acctests.CheckResourceActiveState(theResource, false),
