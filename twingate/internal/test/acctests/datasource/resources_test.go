@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
@@ -118,4 +119,151 @@ func testTwingateResourcesDoesNotExists(name string) string {
 	  value = data.twingate_resources.out_drs2.resources
 	}
 	`, name)
+}
+
+func TestAccDatasourceTwingateResourcesWithMultipleFilters(t *testing.T) {
+	t.Parallel()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testDatasourceResourcesWithMultipleFilters(test.RandomResourceName()),
+				ExpectError: regexp.MustCompile("Only one of name.*"),
+			},
+		},
+	})
+}
+
+func testDatasourceResourcesWithMultipleFilters(name string) string {
+	return fmt.Sprintf(`
+	data "twingate_resources" "with-multiple-filters" {
+	  name_regexp = "%[1]s"
+	  name_contains = "%[1]s"
+	}
+	`, name)
+}
+
+func TestAccDatasourceTwingateResourcesFilterByPrefix(t *testing.T) {
+	t.Parallel()
+
+	prefix := test.Prefix()
+	resourceName := test.RandomResourceName()
+	networkName := test.RandomName()
+	theDatasource := "data.twingate_resources." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResourcesFilter(resourceName, networkName, prefix+"_test_app", prefix+"_one", prefix+"_on", attr.FilterByPrefix),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, resourcesLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, prefix+"_one"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateResourcesFilterBySuffix(t *testing.T) {
+	t.Parallel()
+
+	prefix := test.Prefix()
+	resourceName := test.RandomResourceName()
+	networkName := test.RandomName()
+	theDatasource := "data.twingate_resources." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResourcesFilter(resourceName, networkName, "test_app_"+prefix, "one_"+prefix, "e_"+prefix, attr.FilterBySuffix),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, resourcesLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, "one_"+prefix),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateResourcesFilterByContains(t *testing.T) {
+	t.Parallel()
+
+	prefix := test.Prefix()
+	resourceName := test.RandomResourceName()
+	networkName := test.RandomName()
+	theDatasource := "data.twingate_resources." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResourcesFilter(resourceName, networkName, prefix+"_test_app", prefix+"_one", prefix+"_on", attr.FilterByContains),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, resourcesLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, prefix+"_one"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateResourcesFilterByRegexp(t *testing.T) {
+	t.Parallel()
+
+	prefix := test.Prefix()
+	resourceName := test.RandomResourceName()
+	networkName := test.RandomName()
+	theDatasource := "data.twingate_resources." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResourcesFilter(resourceName, networkName, prefix+"_test_app", prefix+"_one", prefix+".*app", attr.FilterByRegexp),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, resourcesLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, prefix+"_test_app"),
+				),
+			},
+		},
+	})
+}
+
+func testDatasourceTwingateResourcesFilter(resourceName, networkName, name1, name2, name, filter string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[2]s" {
+	  name = "%[2]s"
+	}
+
+	resource "twingate_resource" "%[1]s_1" {
+	  name = "%[3]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+	}
+
+	resource "twingate_resource" "%[1]s_2" {
+	  name = "%[4]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+	}
+
+	data "twingate_resources" "%[1]s" {
+	  name%[6]s = "%[5]s"
+
+	  depends_on = [twingate_resource.%[1]s_1, twingate_resource.%[1]s_2]
+	}
+	`, resourceName, networkName, name1, name2, name, filter)
 }

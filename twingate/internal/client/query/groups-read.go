@@ -36,7 +36,12 @@ type GroupFilterInput struct {
 }
 
 type StringFilterOperationInput struct {
-	Eq string `json:"eq"`
+	Eq         *string `json:"eq"`
+	Ne         *string `json:"ne"`
+	StartsWith *string `json:"startsWith"`
+	EndsWith   *string `json:"endsWith"`
+	Regexp     *string `json:"regexp"`
+	Contains   *string `json:"contains"`
 }
 
 type GroupTypeFilterOperatorInput struct {
@@ -66,7 +71,7 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 
 	if input.Name != nil {
 		filter.Name = &StringFilterOperationInput{
-			Eq: *input.Name,
+			Eq: input.Name,
 		}
 	}
 
