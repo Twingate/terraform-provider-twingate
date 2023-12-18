@@ -847,7 +847,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			filter: &model.GroupsFilter{Name: optionalString("Group")},
 			expected: &GroupFilterInput{
 				Name: &StringFilterOperationInput{
-					Eq: "Group",
+					Eq: optionalString("Group"),
 				},
 				Type:     defaultType,
 				IsActive: defaultActive,
