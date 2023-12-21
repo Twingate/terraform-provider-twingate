@@ -13,10 +13,9 @@ import (
 func TestClientUserReadOk(t *testing.T) {
 	testData := []struct {
 		role    string
-		isAdmin bool
 	}{
-		{role: "ADMIN", isAdmin: true},
-		{role: "DEVOPS", isAdmin: false},
+		{role: "ADMIN"},
+		{role: "DEVOPS"},
 	}
 
 	for _, td := range testData {
@@ -49,7 +48,6 @@ func TestClientUserReadOk(t *testing.T) {
 			assert.EqualValues(t, userID, user.ID)
 			assert.EqualValues(t, email, user.Email)
 			assert.EqualValues(t, td.role, user.Role)
-			assert.EqualValues(t, td.isAdmin, user.IsAdmin())
 		})
 	}
 }

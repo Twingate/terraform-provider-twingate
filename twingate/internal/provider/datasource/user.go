@@ -31,7 +31,6 @@ type userModel struct {
 	FirstName types.String `tfsdk:"first_name"`
 	LastName  types.String `tfsdk:"last_name"`
 	Email     types.String `tfsdk:"email"`
-	IsAdmin   types.Bool   `tfsdk:"is_admin"`
 	Role      types.String `tfsdk:"role"`
 	Type      types.String `tfsdk:"type"`
 }
@@ -79,11 +78,6 @@ func (d *user) Schema(ctx context.Context, req datasource.SchemaRequest, resp *d
 				Computed:    true,
 				Description: "The email address of the User",
 			},
-			attr.IsAdmin: schema.BoolAttribute{
-				Computed:           true,
-				Description:        "Indicates whether the User is an admin",
-				DeprecationMessage: "This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.",
-			},
 			attr.Role: schema.StringAttribute{
 				Computed:    true,
 				Description: fmt.Sprintf("Indicates the User's role. Either %s, %s, %s, or %s", model.UserRoleAdmin, model.UserRoleDevops, model.UserRoleSupport, model.UserRoleMember),
@@ -117,7 +111,6 @@ func (d *user) Read(ctx context.Context, req datasource.ReadRequest, resp *datas
 	data.FirstName = types.StringValue(user.FirstName)
 	data.LastName = types.StringValue(user.LastName)
 	data.Email = types.StringValue(user.Email)
-	data.IsAdmin = types.BoolValue(user.IsAdmin())
 	data.Role = types.StringValue(user.Role)
 	data.Type = types.StringValue(user.Type)
 
