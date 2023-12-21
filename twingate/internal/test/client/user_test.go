@@ -12,7 +12,7 @@ import (
 
 func TestClientUserReadOk(t *testing.T) {
 	testData := []struct {
-		role    string
+		role string
 	}{
 		{role: "ADMIN"},
 		{role: "DEVOPS"},
