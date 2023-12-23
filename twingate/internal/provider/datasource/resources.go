@@ -150,7 +150,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 	}
 }
 
-//nolint:funlen,cyclop
+//nolint:cyclop
 func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data resourcesModel
 
@@ -161,53 +161,38 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		return
 	}
 
-	var (
-		name, filter            string
-		countOptionalAttributes int
-	)
+	var name, filter string
 
 	if data.Name.ValueString() != "" {
-		countOptionalAttributes++
-
 		name = data.Name.ValueString()
 	}
 
 	if data.NameRegexp.ValueString() != "" {
-		countOptionalAttributes++
-
 		name = data.NameRegexp.ValueString()
 		filter = attr.FilterByRegexp
 	}
 
 	if data.NameContains.ValueString() != "" {
-		countOptionalAttributes++
-
 		name = data.NameContains.ValueString()
 		filter = attr.FilterByContains
 	}
 
 	if data.NameExclude.ValueString() != "" {
-		countOptionalAttributes++
-
 		name = data.NameExclude.ValueString()
 		filter = attr.FilterByExclude
 	}
 
 	if data.NamePrefix.ValueString() != "" {
-		countOptionalAttributes++
-
 		name = data.NamePrefix.ValueString()
 		filter = attr.FilterByPrefix
 	}
 
 	if data.NameSuffix.ValueString() != "" {
-		countOptionalAttributes++
-
 		name = data.NameSuffix.ValueString()
 		filter = attr.FilterBySuffix
 	}
 
-	if countOptionalAttributes != 1 {
+	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) != 1 {
 		addErr(&resp.Diagnostics, ErrResourcesDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
 
 		return
@@ -225,4 +210,16 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func countOptionalAttributes(attributes ...types.String) int {
+	var count int
+
+	for _, attr := range attributes {
+		if attr.ValueString() != "" {
+			count++
+		}
+	}
+
+	return count
 }
