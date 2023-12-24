@@ -119,13 +119,17 @@ func (client *Client) readServiceAccountsAfter(ctx context.Context, variables ma
 func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) ([]*model.ServiceAccount, error) {
 	opr := resourceServiceAccount.read()
 
-	var name string
+	var name, filter string
 	if len(input) > 0 {
 		name = input[0]
 	}
 
+	if len(input) > 1 {
+		filter = input[1]
+	}
+
 	variables := newVars(
-		gqlNullable(query.NewServiceAccountFilterInput(name), "filter"),
+		gqlNullable(query.NewServiceAccountFilterInput(name, filter), "filter"),
 		cursor(query.CursorServices),
 		cursor(query.CursorResources),
 		cursor(query.CursorServiceKeys),

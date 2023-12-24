@@ -1,6 +1,7 @@
 package query
 
 import (
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
@@ -42,6 +43,27 @@ type StringFilterOperationInput struct {
 	EndsWith   *string `json:"endsWith"`
 	Regexp     *string `json:"regexp"`
 	Contains   *string `json:"contains"`
+}
+
+func NewStringFilterOperationInput(name, filter string) *StringFilterOperationInput {
+	var stringFilter StringFilterOperationInput
+
+	switch filter {
+	case attr.FilterByRegexp:
+		stringFilter.Regexp = &name
+	case attr.FilterByContains:
+		stringFilter.Contains = &name
+	case attr.FilterByExclude:
+		stringFilter.Ne = &name
+	case attr.FilterByPrefix:
+		stringFilter.StartsWith = &name
+	case attr.FilterBySuffix:
+		stringFilter.EndsWith = &name
+	default:
+		stringFilter.Eq = &name
+	}
+
+	return &stringFilter
 }
 
 type GroupTypeFilterOperatorInput struct {
