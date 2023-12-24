@@ -211,15 +211,3 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
-
-func countOptionalAttributes(attributes ...types.String) int {
-	var count int
-
-	for _, attr := range attributes {
-		if attr.ValueString() != "" {
-			count++
-		}
-	}
-
-	return count
-}
