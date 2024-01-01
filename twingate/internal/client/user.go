@@ -8,10 +8,51 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 )
 
-func (client *Client) ReadUsers(ctx context.Context) ([]*model.User, error) {
+type StringFilter struct {
+	Name   string
+	Filter string
+}
+
+type UsersFilter struct {
+	Email     *StringFilter
+	FirstName *StringFilter
+	LastName  *StringFilter
+	Roles     []string
+}
+
+func NewUserFilterInput(filter *UsersFilter) *query.UserFilterInput {
+	if filter == nil {
+		return nil
+	}
+
+	queryFilter := &query.UserFilterInput{}
+
+	if filter.FirstName != nil {
+		queryFilter.FirstName = query.NewStringFilterOperationInput(filter.FirstName.Name, filter.FirstName.Filter)
+	}
+
+	if filter.LastName != nil {
+		queryFilter.LastName = query.NewStringFilterOperationInput(filter.LastName.Name, filter.LastName.Filter)
+	}
+
+	if filter.Email != nil {
+		queryFilter.Email = query.NewStringFilterOperationInput(filter.Email.Name, filter.Email.Filter)
+	}
+
+	if len(filter.Roles) > 0 {
+		queryFilter.Role = &query.StringFilterOperationInput{
+			In: filter.Roles,
+		}
+	}
+
+	return queryFilter
+}
+
+func (client *Client) ReadUsers(ctx context.Context, filter *UsersFilter) ([]*model.User, error) {
 	opr := resourceUser.read()
 
 	variables := newVars(
+		gqlNullable(NewUserFilterInput(filter), "filter"),
 		cursor(query.CursorUsers),
 		pageLimit(client.pageLimit),
 	)

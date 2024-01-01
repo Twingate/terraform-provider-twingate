@@ -6,6 +6,7 @@ const (
 	Email      = "email"
 	IsAdmin    = "is_admin"
 	Role       = "role"
+	Roles      = "roles"
 	Users      = "users"
 	SendInvite = "send_invite"
 	State      = "state"

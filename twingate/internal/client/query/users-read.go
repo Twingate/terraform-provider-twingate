@@ -8,7 +8,7 @@ import (
 const CursorUsers = "usersEndCursor"
 
 type ReadUsers struct {
-	Users `graphql:"users(after: $usersEndCursor, first: $pageLimit)"`
+	Users `graphql:"users(filter: $filter, after: $usersEndCursor, first: $pageLimit)"`
 }
 
 func (q ReadUsers) IsEmpty() bool {
@@ -27,4 +27,11 @@ func (u Users) ToModel() []*model.User {
 	return utils.Map[*UserEdge, *model.User](u.Edges, func(edge *UserEdge) *model.User {
 		return edge.Node.ToModel()
 	})
+}
+
+type UserFilterInput struct {
+	FirstName *StringFilterOperationInput `json:"firstName"`
+	LastName  *StringFilterOperationInput `json:"lastName"`
+	Email     *StringFilterOperationInput `json:"email"`
+	Role      *StringFilterOperationInput `json:"role"`
 }
