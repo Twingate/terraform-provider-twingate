@@ -75,7 +75,7 @@ func (d *serviceAccounts) Schema(ctx context.Context, req datasource.SchemaReque
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,
-				Description: "Returns only service accounts that exactly match this name.",
+				Description: "Returns only service accounts that exactly match this name. If no options are passed it will return all service accounts. Only one option can be used at a time.",
 			},
 			attr.Name + attr.FilterByRegexp: schema.StringAttribute{
 				Optional:    true,
