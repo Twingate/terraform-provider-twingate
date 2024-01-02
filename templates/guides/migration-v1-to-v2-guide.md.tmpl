@@ -70,4 +70,4 @@ resource "twingate_resource" "resource" {
 
 ## Migrating data sources
 
-The attribute `is_admin` has been removed from the `twingate_user` and `twingate_users` data sources . Similar information is now available via the [`role` attribute](https://registry.terraform.io/providers/Twingate/twingate/latest/docs/data-sources/users#role).
+The attribute `is_admin` has been removed from the `twingate_user` and `twingate_users` data sources. Similar information is now available via the [`role` attribute](https://registry.terraform.io/providers/Twingate/twingate/latest/docs/data-sources/users#role).
