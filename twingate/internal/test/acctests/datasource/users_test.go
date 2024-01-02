@@ -8,6 +8,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -106,6 +107,61 @@ func TestAccDatasourceTwingateUsers_filterByEmailPrefix(t *testing.T) {
 				Config: join(
 					terraformResourceTwingateUser(resourceName, email),
 					terraformDatasourceUsersByEmail(datasourceName, attr.FilterByPrefix, prefix, resourceName),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, attr.Len(attr.Users), "1"),
+					resource.TestCheckResourceAttr(theDatasource, attr.Path(attr.Users, attr.Email), email),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateUsers_filterByEmailSuffix(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomName()
+	datasourceName := test.RandomName()
+	const suffix = "suf"
+	email := test.RandomEmail() + "." + suffix
+	theDatasource := acctests.TerraformDatasourceUsers(datasourceName)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: join(
+					terraformResourceTwingateUser(resourceName, email),
+					terraformDatasourceUsersByEmail(datasourceName, attr.FilterBySuffix, suffix, resourceName),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, attr.Len(attr.Users), "1"),
+					resource.TestCheckResourceAttr(theDatasource, attr.Path(attr.Users, attr.Email), email),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateUsers_filterByEmailContains(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomName()
+	datasourceName := test.RandomName()
+
+	val := acctest.RandString(6)
+	email := test.TerraformRandName(val) + "_" + test.RandomEmail()
+	theDatasource := acctests.TerraformDatasourceUsers(datasourceName)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: join(
+					terraformResourceTwingateUser(resourceName, email),
+					terraformDatasourceUsersByEmail(datasourceName, attr.FilterByContains, val, resourceName),
 				),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, attr.Len(attr.Users), "1"),

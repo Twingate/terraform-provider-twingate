@@ -81,6 +81,7 @@ func (d *users) Configure(ctx context.Context, req datasource.ConfigureRequest, 
 	d.client = client
 }
 
+//nolint:funlen
 func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: userDescription,
@@ -220,6 +221,7 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 	}
 }
 
+//nolint:funlen
 func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data usersModel
 
