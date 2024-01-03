@@ -172,6 +172,34 @@ func TestAccDatasourceTwingateUsers_filterByEmailContains(t *testing.T) {
 	})
 }
 
+func TestAccDatasourceTwingateUsers_filterByEmailRegexp(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomName()
+	datasourceName := test.RandomName()
+
+	prefix := acctest.RandString(6)
+	email := test.TerraformRandName(prefix) + "_email_by_regexp_" + test.RandomEmail()
+	theDatasource := acctests.TerraformDatasourceUsers(datasourceName)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: join(
+					terraformResourceTwingateUser(resourceName, email),
+					terraformDatasourceUsersByEmail(datasourceName, attr.FilterByRegexp, prefix+".*_regexp_.*", resourceName),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, attr.Len(attr.Users), "1"),
+					resource.TestCheckResourceAttr(theDatasource, attr.Path(attr.Users, attr.Email), email),
+				),
+			},
+		},
+	})
+}
+
 func terraformResourceTwingateUser(terraformResourceName, email string) string {
 	return fmt.Sprintf(`
 	resource "twingate_user" "%s" {
