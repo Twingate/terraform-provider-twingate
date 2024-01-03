@@ -46,6 +46,10 @@ type StringFilterOperationInput struct {
 }
 
 func NewStringFilterOperationInput(name, filter string) *StringFilterOperationInput {
+	if filter == "" && name == "" {
+		return nil
+	}
+
 	var stringFilter StringFilterOperationInput
 
 	switch filter {
