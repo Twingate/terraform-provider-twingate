@@ -1601,9 +1601,10 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				// expecting no changes - default value is `true`
-				PlanOnly: true,
-				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsVisible, "true"),
+				),
 			},
 			{
 				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
@@ -1671,9 +1672,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				// expecting no changes - default value is `false`
-				PlanOnly: true,
-				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.IsBrowserShortcutEnabled, "false"),
 				),
@@ -2991,17 +2990,14 @@ func TestAccTwingateResourceTestPlanOnDisabledResource(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config: createResource(remoteNetworkName, resourceName),
-			},
-			{
-				RefreshState: true,
 				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceActiveState(theResource, true),
 					acctests.DeactivateTwingateResource(theResource),
+					acctests.CheckTwingateResourceActiveState(theResource, false),
 				),
-			},
-			{
-				Config: createResource(remoteNetworkName, resourceName),
+				ExpectNonEmptyPlan: true,
 				ConfigPlanChecks: sdk.ConfigPlanChecks{
-					PreApply: []plancheck.PlanCheck{
+					PostApplyPostRefresh: []plancheck.PlanCheck{
 						plancheck.ExpectNonEmptyPlan(),
 						plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionUpdate),
 						acctests.CheckResourceActiveState(theResource, false),
