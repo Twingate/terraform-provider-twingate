@@ -47,7 +47,6 @@ func convertUsersToTerraform(users []*model.User) []userModel {
 			FirstName: types.StringValue(user.FirstName),
 			LastName:  types.StringValue(user.LastName),
 			Email:     types.StringValue(user.Email),
-			IsAdmin:   types.BoolValue(user.IsAdmin()),
 			Role:      types.StringValue(user.Role),
 			Type:      types.StringValue(user.Type),
 		}
