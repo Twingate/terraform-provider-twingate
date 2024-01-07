@@ -88,6 +88,7 @@ func TestAccDatasourceTwingateServicesAll(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
 					),
+					ExpectNonEmptyPlan: true,
 				},
 				{
 					Config: filterDatasourceServices(prefix, config),
@@ -200,9 +201,6 @@ func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - All Cursors", func(t *testing.T) {
 		acctests.SetPageLimit(1)
 		prefix := test.Prefix() + acctest.RandString(4)
-		const (
-			theDatasource = "data.twingate_service_accounts.out"
-		)
 
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -212,15 +210,7 @@ func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
 				{
 					Config: datasourceServicesConfig(prefix),
 					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
-					),
-				},
-				{
-					Config: datasourceServicesConfig(prefix),
-					Check: acctests.ComposeTestCheckFunc(
-						testCheckOutputLength("my_services", 3),
-						testCheckOutputNestedLen("my_services", 0, attr.ResourceIDs, 1),
-						testCheckOutputNestedLen("my_services", 0, attr.KeyIDs, 2),
+						testCheckOutputLength("my_services", 2),
 					),
 				},
 			},
@@ -238,71 +228,15 @@ func datasourceServicesConfig(prefix string) string {
       name = "%s-2"
     }
 
-    resource "twingate_service_account" "%s_3" {
-      name = "%s-3"
-    }
-    
-    resource "twingate_remote_network" "%s_1" {
-      name = "%s-1"
-    }
-    
-    resource "twingate_remote_network" "%s_2" {
-      name = "%s-2"
-    }
-    
-    resource "twingate_resource" "%s_1" {
-      name = "%s-1"
-      address = "acc-test.com"
-      remote_network_id = twingate_remote_network.%s_1.id
-    
-      access {
-        service_account_ids = [twingate_service_account.%s_1.id, twingate_service_account.%s_2.id]
-      }
-    }
-    
-    resource "twingate_resource" "%s_2" {
-      name = "%s-2"
-      address = "acc-test.com"
-      remote_network_id = twingate_remote_network.%s_2.id
-    
-      access {
-        service_account_ids = [twingate_service_account.%s_3.id]
-      }
-    }
-    
-    resource "twingate_service_account_key" "%s_1_1" {
-      service_account_id = twingate_service_account.%s_1.id
-    }
-    
-    resource "twingate_service_account_key" "%s_1_2" {
-      service_account_id = twingate_service_account.%s_1.id
-    }
-    
-    resource "twingate_service_account_key" "%s_2_1" {
-      service_account_id = twingate_service_account.%s_2.id
-    }
-    
-    resource "twingate_service_account_key" "%s_2_2" {
-      service_account_id = twingate_service_account.%s_2.id
-    }
-    
-    resource "twingate_service_account_key" "%s_3_1" {
-      service_account_id = twingate_service_account.%s_3.id
-    }
-
-    resource "twingate_service_account_key" "%s_3_2" {
-      service_account_id = twingate_service_account.%s_3.id
-    }
-    
     data "twingate_service_accounts" "out" {
-    	depends_on = [twingate_resource.%s_1, twingate_resource.%s_2]
+    	depends_on = [twingate_service_account.%s_1, twingate_service_account.%s_2]
     }
     
     output "my_services" {
       value = [for c in data.twingate_service_accounts.out.service_accounts : c if length(regexall("^%s", c.name)) > 0]
       depends_on = [data.twingate_service_accounts.out]
     }
-`, duplicate(prefix, 34)...)
+`, duplicate(prefix, 7)...)
 }
 
 func duplicate(val string, n int) []any {

@@ -42,17 +42,12 @@ func (u User) GetName() string {
 	return u.Email
 }
 
-func (u User) IsAdmin() bool {
-	return u.Role == UserRoleAdmin
-}
-
 func (u User) ToTerraform() interface{} {
 	return map[string]interface{}{
 		attr.ID:        u.ID,
 		attr.FirstName: u.FirstName,
 		attr.LastName:  u.LastName,
 		attr.Email:     u.Email,
-		attr.IsAdmin:   u.IsAdmin(),
 		attr.Role:      u.Role,
 		attr.Type:      u.Type,
 	}

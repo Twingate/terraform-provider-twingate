@@ -9,6 +9,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func createServiceAccount(resourceName, serviceAccountName string) string {
@@ -64,9 +65,14 @@ func TestAccTwingateServiceAccountDeleteNonExisting(t *testing.T) {
 				{
 					Config:  createServiceAccount(terraformResourceName, name),
 					Destroy: true,
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceDoesNotExists(theResource),
-					),
+				},
+				{
+					Config: createServiceAccount(terraformResourceName, name),
+					ConfigPlanChecks: sdk.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionCreate),
+						},
+					},
 				},
 			},
 		})

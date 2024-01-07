@@ -182,6 +182,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
+		gqlVar(input.IsActive, "isActive"),
 		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),

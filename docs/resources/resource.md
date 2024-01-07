@@ -56,6 +56,8 @@ resource "twingate_resource" "resource" {
     group_ids = [twingate_group.aws.id]
     service_account_ids = [twingate_service_account.github_actions_prod.id]
   }
+
+  is_active = true
 }
 ```
 
@@ -72,9 +74,10 @@ resource "twingate_resource" "resource" {
 
 - `access` (Block List) Restrict access to certain groups or service accounts (see [below for nested schema](#nestedblock--access))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
+- `is_active` (Boolean) Set the resource as active or inactive. Default is `true`.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
-- `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is false.
-- `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is true.
+- `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.
+- `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
 

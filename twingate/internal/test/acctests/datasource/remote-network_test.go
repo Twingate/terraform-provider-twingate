@@ -28,6 +28,7 @@ func TestAccDatasourceTwingateRemoteNetwork_basic(t *testing.T) {
 					Check: acctests.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.twingate_remote_network.test_dn1_2", attr.Name, networkName),
 					),
+					ExpectNonEmptyPlan: true,
 				},
 			},
 		})

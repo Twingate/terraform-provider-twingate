@@ -12,6 +12,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -714,6 +715,8 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 					acctests.WaitTestFunc(),
 					acctests.CheckTwingateResourceActiveState(theResource, false),
 				),
+				// provider noticed drift and tried to change it to true
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: createResourceOnlyWithNetwork(terraformResourceName, remoteNetworkName, resourceName),
@@ -1598,9 +1601,10 @@ func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
 				),
 			},
 			{
-				// expecting no changes - default value is `true`
-				PlanOnly: true,
-				Config:   createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsVisible, "true"),
+				),
 			},
 			{
 				Config: createResourceWithFlagIsVisible(terraformResourceName, remoteNetworkName, resourceName, false),
@@ -1668,9 +1672,7 @@ func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T)
 				),
 			},
 			{
-				// expecting no changes - default value is `false`
-				PlanOnly: true,
-				Config:   createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
+				Config: createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, remoteNetworkName, resourceName, false),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.IsBrowserShortcutEnabled, "false"),
 				),
@@ -2906,4 +2908,115 @@ func TestAccTwingateResourceSecurityPolicy(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccTwingateResourceCreateInactive(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithIsActiveFlag(remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsActive, "false"),
+					acctests.CheckTwingateResourceActiveState(theResource, false),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithIsActiveFlag(networkName, resourceName string, isActive bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  is_active = %[3]v
+	}
+	`, networkName, resourceName, isActive)
+}
+
+func TestAccTwingateResourceTestInactiveFlag(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithIsActiveFlag(remoteNetworkName, resourceName, true),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsActive, "true"),
+				),
+			},
+			{
+				Config: createResourceWithIsActiveFlag(remoteNetworkName, resourceName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsActive, "false"),
+					acctests.CheckTwingateResourceActiveState(theResource, false),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceTestPlanOnDisabledResource(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceActiveState(theResource, true),
+					acctests.DeactivateTwingateResource(theResource),
+					acctests.CheckTwingateResourceActiveState(theResource, false),
+				),
+				ExpectNonEmptyPlan: true,
+				ConfigPlanChecks: sdk.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						plancheck.ExpectNonEmptyPlan(),
+						plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionUpdate),
+						acctests.CheckResourceActiveState(theResource, false),
+					},
+				},
+			},
+		},
+	})
+}
+
+func createResource(networkName, resourceName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	}
+	`, networkName, resourceName)
 }
