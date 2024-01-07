@@ -7,37 +7,31 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertProtocol(t *testing.T) {
 
 	cases := []struct {
-		input       []interface{}
+		input       types.Object
 		expected    *model.Protocol
 		expectedErr error
 	}{
 		{},
 		{
-			input: []interface{}{
-				map[string]interface{}{
-					attr.Policy: model.PolicyAllowAll,
-					attr.Ports: []interface{}{
-						"-",
-					},
-				},
-			},
+			input: types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
+				attr.Policy: types.StringValue(model.PolicyAllowAll),
+				attr.Ports:  makeTestSet("-"),
+			}),
 			expectedErr: errors.New("failed to parse protocols port range"),
 		},
 		{
-			input: []interface{}{
-				map[string]interface{}{
-					attr.Policy: model.PolicyRestricted,
-					attr.Ports: []interface{}{
-						"80-88",
-					},
-				},
-			},
+			input: types.ObjectValueMust(protocolAttributeTypes(), map[string]tfattr.Value{
+				attr.Policy: types.StringValue(model.PolicyRestricted),
+				attr.Ports:  makeTestSet("80-88"),
+			}),
 			expected: &model.Protocol{
 				Policy: model.PolicyRestricted,
 				Ports: []*model.PortRange{
@@ -125,40 +119,49 @@ func TestConvertPortsRangeToMap(t *testing.T) {
 	}
 }
 
+func makeTestSet(values ...string) types.Set {
+	elements := make([]tfattr.Value, 0, len(values))
+	for _, val := range values {
+		elements = append(elements, types.StringValue(val))
+	}
+
+	return types.SetValueMust(types.StringType, elements)
+}
+
 func TestEqualPorts(t *testing.T) {
 	cases := []struct {
-		inputA   []interface{}
-		inputB   []interface{}
+		inputA   types.Set
+		inputB   types.Set
 		expected bool
 	}{
 		{
-			inputA:   []interface{}{""},
-			inputB:   []interface{}{""},
+			inputA:   makeTestSet(""),
+			inputB:   makeTestSet(""),
 			expected: false,
 		},
 		{
-			inputA:   []interface{}{"80"},
-			inputB:   []interface{}{""},
+			inputA:   makeTestSet("80"),
+			inputB:   makeTestSet(""),
 			expected: false,
 		},
 		{
-			inputA:   []interface{}{"80"},
-			inputB:   []interface{}{"90"},
+			inputA:   makeTestSet("80"),
+			inputB:   makeTestSet("90"),
 			expected: false,
 		},
 		{
-			inputA:   []interface{}{"80"},
-			inputB:   []interface{}{"80"},
+			inputA:   makeTestSet("80"),
+			inputB:   makeTestSet("80"),
 			expected: true,
 		},
 		{
-			inputA:   []interface{}{"80-81"},
-			inputB:   []interface{}{"80", "81"},
+			inputA:   makeTestSet("80-81"),
+			inputB:   makeTestSet("80", "81"),
 			expected: true,
 		},
 		{
-			inputA:   []interface{}{"80-81", "70"},
-			inputB:   []interface{}{"70", "80", "81"},
+			inputA:   makeTestSet("80-81", "70"),
+			inputB:   makeTestSet("70", "80", "81"),
 			expected: true,
 		},
 	}

@@ -26,13 +26,13 @@ resource "twingate_resource" "resource" {
 
   security_policy_id = data.twingate_security_policy.test_policy.id
 
-  protocols {
+  protocols = {
     allow_icmp = true
-    tcp  {
+    tcp = {
       policy = "RESTRICTED"
       ports = ["80", "82-83"]
     }
-    udp {
+    udp = {
       policy = "ALLOW_ALL"
     }
   }
