@@ -15,6 +15,7 @@ on:
       - 'README.md'
     branches:
       - main
+      - fix/datasource-twingate-group-with-empty-filters
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
@@ -118,7 +119,7 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    if: "!github.event.pull_request.head.repo.fork"
+#    if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -170,7 +171,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    if: "!github.event.pull_request.head.repo.fork"
+#    if: "!github.event.pull_request.head.repo.fork"
     needs: tests-acceptance
     runs-on: ubuntu-latest
     timeout-minutes: 15
