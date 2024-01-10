@@ -176,22 +176,31 @@ func TestAccDatasourceTwingateGroups_WithEmptyFilters(t *testing.T) {
 			},
 			Steps: []resource.TestStep{
 				{
-					Config:             testTwingateGroupsWithEmptyFilter(),
+					Config:             testTwingateGroupsWithEmptyFilter(test.RandomGroupName()),
 					ExpectNonEmptyPlan: true,
+					Check: acctests.ComposeTestCheckFunc(
+						testCheckResourceAttrNotEqual("data.twingate_groups.all", groupsLen, "0"),
+					),
 				},
 			},
 		})
 	})
 }
 
-func testTwingateGroupsWithEmptyFilter() string {
-	return `
+func testTwingateGroupsWithEmptyFilter(name string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "test_group" {
+	  name = "%s"
+	}
+
 	data "twingate_groups" "all" {}
 
 	output "my_groups" {
 	  value = data.twingate_groups.all.groups
+
+	  depends_on = [twingate_group.test_group]
 	}
-	`
+	`, name)
 }
 
 func TestAccDatasourceTwingateGroups_withTwoDatasource(t *testing.T) {
