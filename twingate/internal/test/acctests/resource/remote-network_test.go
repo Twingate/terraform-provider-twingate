@@ -10,6 +10,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccTwingateRemoteNetworkCreate(t *testing.T) {
@@ -91,7 +92,7 @@ func TestAccTwingateRemoteNetworkDeleteNonExisting(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Network Delete NonExisting", func(t *testing.T) {
 		const terraformResourceName = "test002"
 		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
-		remoteNetworkNameBefore := test.RandomName()
+		networkName := test.RandomName()
 
 		sdk.Test(t, sdk.TestCase{
 			ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -99,11 +100,16 @@ func TestAccTwingateRemoteNetworkDeleteNonExisting(t *testing.T) {
 			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config:  terraformResourceRemoteNetwork(terraformResourceName, remoteNetworkNameBefore),
+					Config:  terraformResourceRemoteNetwork(terraformResourceName, networkName),
 					Destroy: true,
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceDoesNotExists(theResource),
-					),
+				},
+				{
+					Config: terraformResourceRemoteNetwork(terraformResourceName, networkName),
+					ConfigPlanChecks: sdk.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionCreate),
+						},
+					},
 				},
 			},
 		})

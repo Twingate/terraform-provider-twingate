@@ -201,11 +201,6 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 							Computed:    true,
 							Description: "The email address of the User",
 						},
-						attr.IsAdmin: schema.BoolAttribute{
-							Computed:           true,
-							Description:        "Indicates whether the User is an admin",
-							DeprecationMessage: "This read-only Boolean value will be deprecated in a future release. You may use the `role` value instead.",
-						},
 						attr.Role: schema.StringAttribute{
 							Computed:    true,
 							Description: fmt.Sprintf("Indicates the User's role. Either %s, %s, %s, or %s.", model.UserRoleAdmin, model.UserRoleDevops, model.UserRoleSupport, model.UserRoleMember),
