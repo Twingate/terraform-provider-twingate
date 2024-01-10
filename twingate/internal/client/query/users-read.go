@@ -30,8 +30,12 @@ func (u Users) ToModel() []*model.User {
 }
 
 type UserFilterInput struct {
-	FirstName *StringFilterOperationInput `json:"firstName"`
-	LastName  *StringFilterOperationInput `json:"lastName"`
-	Email     *StringFilterOperationInput `json:"email"`
-	Role      *StringFilterOperationInput `json:"role"`
+	FirstName *StringFilterOperationInput   `json:"firstName"`
+	LastName  *StringFilterOperationInput   `json:"lastName"`
+	Email     *StringFilterOperationInput   `json:"email"`
+	Role      *UserRoleFilterOperationInput `json:"role"`
+}
+
+type UserRoleFilterOperationInput struct {
+	In []UserRole `json:"in"`
 }

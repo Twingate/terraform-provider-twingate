@@ -216,8 +216,7 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 	}
 }
 
-//nolint:funlen
-func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) { //nolint
 	var data usersModel
 
 	// Read Terraform configuration data into the model

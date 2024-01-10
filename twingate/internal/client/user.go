@@ -6,6 +6,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
 
 type StringFilter struct {
@@ -40,8 +41,10 @@ func NewUserFilterInput(filter *UsersFilter) *query.UserFilterInput {
 	}
 
 	if len(filter.Roles) > 0 {
-		queryFilter.Role = &query.StringFilterOperationInput{
-			In: filter.Roles,
+		queryFilter.Role = &query.UserRoleFilterOperationInput{
+			In: utils.Map(filter.Roles, func(item string) query.UserRole {
+				return query.UserRole(item)
+			}),
 		}
 	}
 
