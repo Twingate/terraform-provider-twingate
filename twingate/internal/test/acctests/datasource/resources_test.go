@@ -50,13 +50,13 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.test_drs1.id
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "RESTRICTED"
 	      ports = ["80-83", "85"]
 	    }
-	    udp {
+	    udp = {
 	      policy = "ALLOW_ALL"
 	      ports = []
 	    }
@@ -67,13 +67,13 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.test_drs1.id
-	  protocols {
+	  protocols = {
 	    allow_icmp = true
-	    tcp {
+	    tcp = {
 	      policy = "ALLOW_ALL"
 	      ports = []
 	    }
-	    udp {
+	    udp = {
 	      policy = "ALLOW_ALL"
 	      ports = []
 	    }
