@@ -79,7 +79,7 @@ func TestClientUsersReadOk(t *testing.T) {
 			}),
 		)
 
-		users, err := client.ReadUsers(context.Background())
+		users, err := client.ReadUsers(context.Background(), nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, users)
@@ -99,7 +99,7 @@ func TestClientUsersReadEmptyResult(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		users, err := client.ReadUsers(context.Background())
+		users, err := client.ReadUsers(context.Background(), nil)
 
 		assert.Nil(t, err)
 		assert.Nil(t, users)
@@ -114,7 +114,7 @@ func TestClientUsersReadRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		users, err := client.ReadUsers(context.Background())
+		users, err := client.ReadUsers(context.Background(), nil)
 
 		assert.Nil(t, users)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read user with id All", errBadRequest))
@@ -169,7 +169,7 @@ func TestClientUsersReadNextPageEmptyResponse(t *testing.T) {
 			}),
 		)
 
-		users, err := client.ReadUsers(context.Background())
+		users, err := client.ReadUsers(context.Background(), nil)
 
 		assert.Nil(t, users)
 		assert.EqualError(t, err, "failed to read user with id All: query result is empty")
@@ -219,7 +219,7 @@ func TestClientReadUsersAfterRequestError(t *testing.T) {
 			),
 		)
 
-		users, err := client.ReadUsers(context.Background())
+		users, err := client.ReadUsers(context.Background(), nil)
 
 		assert.Nil(t, users)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read user with id All", errBadRequest))
