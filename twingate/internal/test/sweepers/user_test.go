@@ -14,7 +14,7 @@ func init() {
 		Name: name,
 		F: newTestSweeper(name,
 			func(client *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := client.ReadUsers(ctx)
+				resources, err := client.ReadUsers(ctx, nil)
 				if err != nil {
 					return nil, err
 				}
