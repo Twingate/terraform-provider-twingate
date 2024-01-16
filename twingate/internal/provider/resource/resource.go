@@ -444,22 +444,59 @@ func accessBlock() schema.ListNestedBlock {
 			Attributes: map[string]schema.Attribute{
 				attr.GroupIDs: schema.SetAttribute{
 					Optional:    true,
+					Computed:    true,
 					ElementType: types.StringType,
 					Description: "List of Group IDs that will have permission to access the Resource.",
 					Validators: []validator.Set{
 						setvalidator.SizeAtLeast(1),
 					},
+					PlanModifiers: []planmodifier.Set{
+						EmptySetDiff(),
+					},
+					Default: setdefault.StaticValue(types.SetNull(types.StringType)),
 				},
 				attr.ServiceAccountIDs: schema.SetAttribute{
 					Optional:    true,
+					Computed:    true,
 					ElementType: types.StringType,
 					Description: "List of Service Account IDs that will have permission to access the Resource.",
 					Validators: []validator.Set{
 						setvalidator.SizeAtLeast(1),
 					},
+					PlanModifiers: []planmodifier.Set{
+						EmptySetDiff(),
+					},
+					Default: setdefault.StaticValue(types.SetNull(types.StringType)),
 				},
 			},
 		},
+	}
+}
+
+func EmptySetDiff() planmodifier.Set {
+	return emptySetDiff{}
+}
+
+type emptySetDiff struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m emptySetDiff) Description(_ context.Context) string {
+	return ""
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m emptySetDiff) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+// PlanModifySet implements the plan modification logic.
+func (m emptySetDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	if req.ConfigValue.IsNull() && len(req.StateValue.Elements()) == 0 {
+		resp.PlanValue = req.StateValue
 	}
 }
 
