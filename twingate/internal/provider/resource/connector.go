@@ -115,8 +115,9 @@ func (r *connector) Create(ctx context.Context, req resource.CreateRequest, resp
 	}
 
 	conn, err := r.client.CreateConnector(ctx, &model.Connector{
-		Name:      plan.Name.ValueString(),
-		NetworkID: plan.RemoteNetworkID.ValueString(),
+		Name:                 plan.Name.ValueString(),
+		NetworkID:            plan.RemoteNetworkID.ValueString(),
+		StatusUpdatesEnabled: getOptionalBool(plan.StatusUpdatesEnabled),
 	})
 
 	r.helper(ctx, conn, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
