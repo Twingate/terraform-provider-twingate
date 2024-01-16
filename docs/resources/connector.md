@@ -24,6 +24,7 @@ resource "twingate_remote_network" "aws_network" {
 
 resource "twingate_connector" "aws_connector" {
   remote_network_id = twingate_remote_network.aws_network.id
+  status_updates_enabled = true
 }
 ```
 
