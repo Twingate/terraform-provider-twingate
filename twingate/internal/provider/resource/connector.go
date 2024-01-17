@@ -91,7 +91,7 @@ func (r *connector) Schema(_ context.Context, _ resource.SchemaRequest, resp *re
 			attr.StatusUpdatesEnabled: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Determines whether status notifications are enabled for the Connector.",
+				Description: "Determines whether status notifications are enabled for the Connector. Default is `true`.",
 			},
 			// computed
 			attr.ID: schema.StringAttribute{
