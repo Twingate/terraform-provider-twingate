@@ -379,7 +379,7 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
 
 				resp.Diagnostics.AddWarning("Please update the protocols sections format from a block to an object",
-					"See the v1 to v2 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migrate-guide-v1-to-v2")
+					"See the v1 to v2 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migration-v1-to-v2-guide")
 			},
 		},
 	}
@@ -444,22 +444,59 @@ func accessBlock() schema.ListNestedBlock {
 			Attributes: map[string]schema.Attribute{
 				attr.GroupIDs: schema.SetAttribute{
 					Optional:    true,
+					Computed:    true,
 					ElementType: types.StringType,
 					Description: "List of Group IDs that will have permission to access the Resource.",
 					Validators: []validator.Set{
 						setvalidator.SizeAtLeast(1),
 					},
+					PlanModifiers: []planmodifier.Set{
+						EmptySetDiff(),
+					},
+					Default: setdefault.StaticValue(types.SetNull(types.StringType)),
 				},
 				attr.ServiceAccountIDs: schema.SetAttribute{
 					Optional:    true,
+					Computed:    true,
 					ElementType: types.StringType,
 					Description: "List of Service Account IDs that will have permission to access the Resource.",
 					Validators: []validator.Set{
 						setvalidator.SizeAtLeast(1),
 					},
+					PlanModifiers: []planmodifier.Set{
+						EmptySetDiff(),
+					},
+					Default: setdefault.StaticValue(types.SetNull(types.StringType)),
 				},
 			},
 		},
+	}
+}
+
+func EmptySetDiff() planmodifier.Set {
+	return emptySetDiff{}
+}
+
+type emptySetDiff struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m emptySetDiff) Description(_ context.Context) string {
+	return ""
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m emptySetDiff) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+// PlanModifySet implements the plan modification logic.
+func (m emptySetDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	if req.ConfigValue.IsNull() && len(req.StateValue.Elements()) == 0 {
+		resp.PlanValue = req.StateValue
 	}
 }
 
