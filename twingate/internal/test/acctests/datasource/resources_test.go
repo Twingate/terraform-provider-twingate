@@ -267,3 +267,44 @@ func testDatasourceTwingateResourcesFilter(resourceName, networkName, name1, nam
 	}
 	`, resourceName, networkName, name1, name2, name, filter)
 }
+
+func TestAccDatasourceTwingateResourcesWithoutFilters(t *testing.T) {
+	t.Parallel()
+
+	prefix := test.Prefix()
+	resourceName := test.RandomResourceName()
+	networkName := test.RandomName()
+	theDatasource := "data.twingate_resources." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResourcesAll(resourceName, networkName, prefix+"_test_app"),
+				Check: acctests.ComposeTestCheckFunc(
+					testCheckResourceAttrNotEqual(theDatasource, resourcesLen, "0"),
+				),
+			},
+		},
+	})
+}
+
+func testDatasourceTwingateResourcesAll(resourceName, networkName, name string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[2]s" {
+	  name = "%[2]s"
+	}
+
+	resource "twingate_resource" "%[1]s" {
+	  name = "%[3]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+	}
+
+	data "twingate_resources" "%[1]s" {
+	  depends_on = [twingate_resource.%[1]s]
+	}
+	`, resourceName, networkName, name)
+}

@@ -87,7 +87,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,
-				Description: "Returns only resources that exactly match this name.",
+				Description: "Returns only resources that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.",
 			},
 			attr.Name + attr.FilterByRegexp: schema.StringAttribute{
 				Optional:    true,
@@ -192,7 +192,7 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		filter = attr.FilterBySuffix
 	}
 
-	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) != 1 {
+	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrResourcesDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
 
 		return
