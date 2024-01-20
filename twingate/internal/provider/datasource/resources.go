@@ -87,7 +87,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,
-				Description: "Returns only resources that exactly match this name. If no options are passed it will return all service accounts. Only one option can be used at a time.",
+				Description: "Returns only resources that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.",
 			},
 			attr.Name + attr.FilterByRegexp: schema.StringAttribute{
 				Optional:    true,
