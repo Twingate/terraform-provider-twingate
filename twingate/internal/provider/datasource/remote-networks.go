@@ -27,6 +27,12 @@ type remoteNetworks struct {
 
 type remoteNetworksModel struct {
 	ID             types.String         `tfsdk:"id"`
+	Name           types.String         `tfsdk:"name"`
+	NameRegexp     types.String         `tfsdk:"name_regexp"`
+	NameContains   types.String         `tfsdk:"name_contains"`
+	NameExclude    types.String         `tfsdk:"name_exclude"`
+	NamePrefix     types.String         `tfsdk:"name_prefix"`
+	NameSuffix     types.String         `tfsdk:"name_suffix"`
 	RemoteNetworks []remoteNetworkModel `tfsdk:"remote_networks"`
 }
 
@@ -71,8 +77,28 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 							Description: "The ID of the Remote Network.",
 						},
 						attr.Name: schema.StringAttribute{
-							Computed:    true,
-							Description: "The name of the Remote Network",
+							Optional:    true,
+							Description: "Returns only remote networks that exactly match this name. If no options are passed it will return all remote networks. Only one option can be used at a time.",
+						},
+						attr.Name + attr.FilterByRegexp: schema.StringAttribute{
+							Optional:    true,
+							Description: "The regular expression match of the name of the remote network.",
+						},
+						attr.Name + attr.FilterByContains: schema.StringAttribute{
+							Optional:    true,
+							Description: "Match when the value exist in the name of the remote network.",
+						},
+						attr.Name + attr.FilterByExclude: schema.StringAttribute{
+							Optional:    true,
+							Description: "Match when the value does not exist in the name of the remote network.",
+						},
+						attr.Name + attr.FilterByPrefix: schema.StringAttribute{
+							Optional:    true,
+							Description: "The name of the remote network must start with the value.",
+						},
+						attr.Name + attr.FilterBySuffix: schema.StringAttribute{
+							Optional:    true,
+							Description: "The name of the remote network must end with the value.",
 						},
 						attr.Location: schema.StringAttribute{
 							Computed:    true,
