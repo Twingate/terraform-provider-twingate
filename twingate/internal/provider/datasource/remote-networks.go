@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var ErrRemoteNetworksDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &remoteNetworks{}
 
@@ -67,6 +69,31 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 				Description: computedDatasourceIDDescription,
 			},
 
+			attr.Name: schema.StringAttribute{
+				Optional:    true,
+				Description: "Returns only remote networks that exactly match this name. If no options are passed it will return all remote networks. Only one option can be used at a time.",
+			},
+			attr.Name + attr.FilterByRegexp: schema.StringAttribute{
+				Optional:    true,
+				Description: "The regular expression match of the name of the remote network.",
+			},
+			attr.Name + attr.FilterByContains: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value exist in the name of the remote network.",
+			},
+			attr.Name + attr.FilterByExclude: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value does not exist in the name of the remote network.",
+			},
+			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the remote network must start with the value.",
+			},
+			attr.Name + attr.FilterBySuffix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the remote network must end with the value.",
+			},
+
 			attr.RemoteNetworks: schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "List of Remote Networks",
@@ -78,27 +105,7 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 						},
 						attr.Name: schema.StringAttribute{
 							Optional:    true,
-							Description: "Returns only remote networks that exactly match this name. If no options are passed it will return all remote networks. Only one option can be used at a time.",
-						},
-						attr.Name + attr.FilterByRegexp: schema.StringAttribute{
-							Optional:    true,
-							Description: "The regular expression match of the name of the remote network.",
-						},
-						attr.Name + attr.FilterByContains: schema.StringAttribute{
-							Optional:    true,
-							Description: "Match when the value exist in the name of the remote network.",
-						},
-						attr.Name + attr.FilterByExclude: schema.StringAttribute{
-							Optional:    true,
-							Description: "Match when the value does not exist in the name of the remote network.",
-						},
-						attr.Name + attr.FilterByPrefix: schema.StringAttribute{
-							Optional:    true,
-							Description: "The name of the remote network must start with the value.",
-						},
-						attr.Name + attr.FilterBySuffix: schema.StringAttribute{
-							Optional:    true,
-							Description: "The name of the remote network must end with the value.",
+							Description: "The name of the Remote Network.",
 						},
 						attr.Location: schema.StringAttribute{
 							Computed:    true,
@@ -111,6 +118,7 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 	}
 }
 
+//nolint:cyclop
 func (d *remoteNetworks) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data remoteNetworksModel
 
@@ -121,7 +129,44 @@ func (d *remoteNetworks) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	networks, err := d.client.ReadRemoteNetworks(ctx)
+	var name, filter string
+
+	if data.Name.ValueString() != "" {
+		name = data.Name.ValueString()
+	}
+
+	if data.NameRegexp.ValueString() != "" {
+		name = data.NameRegexp.ValueString()
+		filter = attr.FilterByRegexp
+	}
+
+	if data.NameContains.ValueString() != "" {
+		name = data.NameContains.ValueString()
+		filter = attr.FilterByContains
+	}
+
+	if data.NameExclude.ValueString() != "" {
+		name = data.NameExclude.ValueString()
+		filter = attr.FilterByExclude
+	}
+
+	if data.NamePrefix.ValueString() != "" {
+		name = data.NamePrefix.ValueString()
+		filter = attr.FilterByPrefix
+	}
+
+	if data.NameSuffix.ValueString() != "" {
+		name = data.NameSuffix.ValueString()
+		filter = attr.FilterBySuffix
+	}
+
+	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+		addErr(&resp.Diagnostics, ErrRemoteNetworksDatasourceShouldSetOneOptionalNameAttribute, TwingateRemoteNetworks)
+
+		return
+	}
+
+	networks, err := d.client.ReadRemoteNetworks(ctx, name, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateRemoteNetworks)
 

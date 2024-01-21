@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -89,11 +87,11 @@ func newTestSweeper(resourceName string, readResources readResourcesFunc, delete
 
 		var ids = make([]string, 0, len(resources))
 
-		testPrefix := test.Prefix()
+		//testPrefix := test.Prefix()
 		for _, elem := range resources {
-			if strings.HasPrefix(elem.GetName(), testPrefix) {
-				ids = append(ids, elem.GetID())
-			}
+			//if strings.HasPrefix(elem.GetName(), testPrefix) {
+			ids = append(ids, elem.GetID())
+			//}
 		}
 
 		if len(ids) == 0 {
