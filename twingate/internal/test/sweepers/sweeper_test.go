@@ -3,8 +3,10 @@ package sweepers
 import (
 	"context"
 	"fmt"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,11 +89,11 @@ func newTestSweeper(resourceName string, readResources readResourcesFunc, delete
 
 		var ids = make([]string, 0, len(resources))
 
-		//testPrefix := test.Prefix()
+		testPrefix := test.Prefix()
 		for _, elem := range resources {
-			//if strings.HasPrefix(elem.GetName(), testPrefix) {
-			ids = append(ids, elem.GetID())
-			//}
+			if strings.HasPrefix(elem.GetName(), testPrefix) {
+				ids = append(ids, elem.GetID())
+			}
 		}
 
 		if len(ids) == 0 {
