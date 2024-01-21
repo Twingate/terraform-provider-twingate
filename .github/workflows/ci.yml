@@ -18,6 +18,7 @@ on:
       - main
       - feature/add-filtering-for-twingate_remote_networks-datasource
 
+
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
