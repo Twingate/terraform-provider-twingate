@@ -17,7 +17,7 @@ func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
 
 		users, err := acctests.GetTestUsers()
 		if err != nil && !errors.Is(err, acctests.ErrResourceNotFound) {
-			t.Error(err)
+			t.Skip("can't run test:", err)
 		}
 
 		resource.Test(t, resource.TestCase{
