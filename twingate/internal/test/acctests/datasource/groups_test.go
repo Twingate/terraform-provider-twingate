@@ -130,7 +130,7 @@ func testDatasourceTwingateGroupsWithFilters(name string) string {
 
 	data "twingate_groups" "out_dgs2" {
 	  name = "%s"
-	  type = "MANUAL"
+	  types = ["MANUAL"]
 	  is_active = true
 
 	  depends_on = [twingate_group.test_dgs2_1, twingate_group.test_dgs2_2]
@@ -148,7 +148,7 @@ func TestAccDatasourceTwingateGroupsWithFilters_ErrorNotSupportedTypes(t *testin
 			Steps: []resource.TestStep{
 				{
 					Config:      testTwingateGroupsWithFilterNotSupportedType(),
-					ExpectError: regexp.MustCompile("Attribute type value must be one of"),
+					ExpectError: regexp.MustCompile("Attribute types.* value must be one of"),
 				},
 			},
 		})
@@ -158,7 +158,7 @@ func TestAccDatasourceTwingateGroupsWithFilters_ErrorNotSupportedTypes(t *testin
 func testTwingateGroupsWithFilterNotSupportedType() string {
 	return `
 	data "twingate_groups" "test" {
-	  type = "OTHER"
+	  types = ["OTHER"]
 	}
 
 	output "my_groups" {
