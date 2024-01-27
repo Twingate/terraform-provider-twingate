@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var ErrConnectorsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &connectors{}
 
@@ -24,8 +26,14 @@ type connectors struct {
 }
 
 type connectorsModel struct {
-	ID         types.String     `tfsdk:"id"`
-	Connectors []connectorModel `tfsdk:"connectors"`
+	ID           types.String     `tfsdk:"id"`
+	Name         types.String     `tfsdk:"name"`
+	NameRegexp   types.String     `tfsdk:"name_regexp"`
+	NameContains types.String     `tfsdk:"name_contains"`
+	NameExclude  types.String     `tfsdk:"name_exclude"`
+	NamePrefix   types.String     `tfsdk:"name_prefix"`
+	NameSuffix   types.String     `tfsdk:"name_suffix"`
+	Connectors   []connectorModel `tfsdk:"connectors"`
 }
 
 func (d *connectors) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -50,6 +58,7 @@ func (d *connectors) Configure(ctx context.Context, req datasource.ConfigureRequ
 	d.client = client
 }
 
+//nolint:funlen
 func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
@@ -57,6 +66,31 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: computedDatasourceIDDescription,
+			},
+
+			attr.Name: schema.StringAttribute{
+				Optional:    true,
+				Description: "Returns only connectors that exactly match this name. If no options are passed it will return all connectors. Only one option can be used at a time.",
+			},
+			attr.Name + attr.FilterByRegexp: schema.StringAttribute{
+				Optional:    true,
+				Description: "The regular expression match of the name of the connector.",
+			},
+			attr.Name + attr.FilterByContains: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value exist in the name of the connector.",
+			},
+			attr.Name + attr.FilterByExclude: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value does not exist in the name of the connector.",
+			},
+			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the connector must start with the value.",
+			},
+			attr.Name + attr.FilterBySuffix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the connector must end with the value.",
 			},
 
 			// computed
@@ -89,18 +123,63 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 	}
 }
 
+//nolint:cyclop
 func (d *connectors) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	connectors, err := d.client.ReadConnectors(ctx)
+	var data connectorsModel
+
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var name, filter string
+
+	if data.Name.ValueString() != "" {
+		name = data.Name.ValueString()
+	}
+
+	if data.NameRegexp.ValueString() != "" {
+		name = data.NameRegexp.ValueString()
+		filter = attr.FilterByRegexp
+	}
+
+	if data.NameContains.ValueString() != "" {
+		name = data.NameContains.ValueString()
+		filter = attr.FilterByContains
+	}
+
+	if data.NameExclude.ValueString() != "" {
+		name = data.NameExclude.ValueString()
+		filter = attr.FilterByExclude
+	}
+
+	if data.NamePrefix.ValueString() != "" {
+		name = data.NamePrefix.ValueString()
+		filter = attr.FilterByPrefix
+	}
+
+	if data.NameSuffix.ValueString() != "" {
+		name = data.NameSuffix.ValueString()
+		filter = attr.FilterBySuffix
+	}
+
+	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+		addErr(&resp.Diagnostics, ErrConnectorsDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
+
+		return
+	}
+
+	connectors, err := d.client.ReadConnectors(ctx, name, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateConnectors)
 
 		return
 	}
 
-	data := connectorsModel{
-		ID:         types.StringValue("all-connectors"),
-		Connectors: convertConnectorsToTerraform(connectors),
-	}
+	data.ID = types.StringValue("all-connectors")
+	data.Connectors = convertConnectorsToTerraform(connectors)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
