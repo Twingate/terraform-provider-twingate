@@ -282,3 +282,23 @@ func terraformResourceTwingateConnectorWithNotificationStatus(terraformRemoteNet
 	}
 	`, terraformResourceRemoteNetwork(terraformRemoteNetworkName, remoteNetworkName), terraformConnectorName, terraformRemoteNetworkName, notificationStatus)
 }
+
+func TestAccRemoteConnectorCreateWithNotificationStatusFalse(t *testing.T) {
+	const terraformResourceName = "test_c8"
+	theResource := acctests.TerraformConnector(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateConnectorAndRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceTwingateConnectorWithNotificationStatus(terraformResourceName, terraformResourceName, remoteNetworkName, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.StatusUpdatesEnabled, "false"),
+				),
+			},
+		},
+	})
+}
