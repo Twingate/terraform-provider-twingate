@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
 	github.com/hashicorp/terraform-plugin-go v0.21.0
 	github.com/hashicorp/terraform-plugin-testing v1.6.0
-	github.com/hasura/go-graphql-client v0.10.2
+	github.com/hasura/go-graphql-client v0.11.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/mattn/goveralls v0.0.12
