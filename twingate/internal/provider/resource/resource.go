@@ -120,7 +120,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 
 	if len(res.Groups) > 0 || len(res.ServiceAccounts) > 0 {
-		access, diags := convertAccessBlockToTerraform(ctx, res, types.SetNull(types.StringType), types.SetNull(types.StringType))
+		access, diags := convertAccessBlockToTerraform(ctx, res)
 
 		resp.Diagnostics.Append(diags...)
 
@@ -1184,19 +1184,15 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		}
 	}
 
-	if !state.Access.IsNull() {
-		access, diags := convertAccessBlockToTerraform(ctx, resource,
-			state.Access.Elements()[0].(types.Object).Attributes()[attr.GroupIDs],
-			state.Access.Elements()[0].(types.Object).Attributes()[attr.ServiceAccountIDs])
+	access, diags := convertAccessBlockToTerraform(ctx, resource)
 
-		diagnostics.Append(diags...)
+	diagnostics.Append(diags...)
 
-		if diagnostics.HasError() {
-			return
-		}
-
-		state.Access = access
+	if diagnostics.HasError() {
+		return
 	}
+
+	state.Access = access
 }
 
 func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {
@@ -1362,8 +1358,12 @@ func protocolAttributeTypes() map[string]tfattr.Type {
 	}
 }
 
-func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource, stateGroupIDs, stateServiceAccounts tfattr.Value) (types.List, diag.Diagnostics) {
+func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource) (types.List, diag.Diagnostics) {
 	var diagnostics, diags diag.Diagnostics
+
+	if len(resource.Groups) == 0 && len(resource.ServiceAccounts) == 0 {
+		return makeObjectsListNull(ctx, accessAttributeTypes()), diagnostics
+	}
 
 	groupIDs, serviceAccountIDs := types.SetNull(types.StringType), types.SetNull(types.StringType)
 
@@ -1382,16 +1382,8 @@ func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource
 	}
 
 	attributes := map[string]tfattr.Value{
-		attr.GroupIDs:          stateGroupIDs,
-		attr.ServiceAccountIDs: stateServiceAccounts,
-	}
-
-	if !groupIDs.IsNull() {
-		attributes[attr.GroupIDs] = groupIDs
-	}
-
-	if !serviceAccountIDs.IsNull() {
-		attributes[attr.ServiceAccountIDs] = serviceAccountIDs
+		attr.GroupIDs:          groupIDs,
+		attr.ServiceAccountIDs: serviceAccountIDs,
 	}
 
 	obj, diags := types.ObjectValue(accessAttributeTypes(), attributes)
