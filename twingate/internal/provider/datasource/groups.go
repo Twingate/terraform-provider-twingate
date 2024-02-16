@@ -114,7 +114,6 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 
 			attr.Groups: schema.ListNestedAttribute{
 				Computed:    true,
-				Optional:    true,
 				Description: "List of Groups",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
