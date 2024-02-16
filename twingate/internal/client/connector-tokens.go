@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
@@ -16,7 +15,7 @@ func (client *Client) VerifyConnectorTokens(ctx context.Context, refreshToken, a
 	}
 
 	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", accessToken),
+		"Authorization": "Bearer " + accessToken,
 	}
 
 	_, err := client.post(ctx, "/connector/validate_tokens", payload, headers)
