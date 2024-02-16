@@ -92,7 +92,6 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 			},
 			attr.SecurityPolicies: schema.ListNestedAttribute{
 				Computed: true,
-				Optional: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{

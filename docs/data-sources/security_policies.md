@@ -34,11 +34,11 @@ data "twingate_security_policies" "all" {
 - `name_prefix` (String) The name of the security policy must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the security policy.
 - `name_suffix` (String) The name of the security policy must end with the value.
-- `security_policies` (Attributes List) (see [below for nested schema](#nestedatt--security_policies))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `security_policies` (Attributes List) (see [below for nested schema](#nestedatt--security_policies))
 
 <a id="nestedatt--security_policies"></a>
 ### Nested Schema for `security_policies`
