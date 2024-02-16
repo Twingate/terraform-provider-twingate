@@ -96,7 +96,6 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 			// computed
 			attr.Connectors: schema.ListNestedAttribute{
 				Computed:    true,
-				Optional:    true,
 				Description: "List of Connectors",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{

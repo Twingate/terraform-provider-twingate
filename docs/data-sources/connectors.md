@@ -28,7 +28,6 @@ data "twingate_connectors" "all" {
 
 ### Optional
 
-- `connectors` (Attributes List) List of Connectors (see [below for nested schema](#nestedatt--connectors))
 - `name` (String) Returns only connectors that exactly match this name. If no options are passed it will return all connectors. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the connector.
 - `name_exclude` (String) Match when the value does not exist in the name of the connector.
@@ -38,6 +37,7 @@ data "twingate_connectors" "all" {
 
 ### Read-Only
 
+- `connectors` (Attributes List) List of Connectors (see [below for nested schema](#nestedatt--connectors))
 - `id` (String) The ID of this resource.
 
 <a id="nestedatt--connectors"></a>
