@@ -122,7 +122,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	if network == "" {
 		response.Diagnostics.AddAttributeError(
 			path.Root(attr.Network),
-			fmt.Sprintf("Missing Twingate %s", attr.Network),
+			"Missing Twingate "+attr.Network,
 			fmt.Sprintf("The provider cannot create the Twingate API client as there is a missing or empty value for the Twingate %s. "+
 				"Set the %s value in the configuration or use the %s environment variable. "+
 				"If either is already set, ensure the value is not empty.", attr.Network, attr.Network, EnvNetwork),
