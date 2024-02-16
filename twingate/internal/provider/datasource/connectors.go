@@ -58,7 +58,6 @@ func (d *connectors) Configure(ctx context.Context, req datasource.ConfigureRequ
 	d.client = client
 }
 
-//nolint:funlen
 func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
