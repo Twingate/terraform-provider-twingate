@@ -33,6 +33,7 @@ var (
 	ErrUnknownResourceType      = errors.New("unknown resource type")
 	ErrClientNotInited          = errors.New("meta client not inited")
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
+	ErrInvalidPath              = errors.New("invalid path: the path value cannot be asserted as string")
 )
 
 func ErrServiceAccountsLenMismatch(expected, actual int) error {
@@ -348,7 +349,7 @@ func (e checkResourceActiveState) CheckPlan(ctx context.Context, req plancheck.C
 
 		resultID, ok := result.(string)
 		if !ok {
-			resp.Error = fmt.Errorf("invalid path: the path value cannot be asserted as string") //nolint:goerr113
+			resp.Error = ErrInvalidPath
 
 			return
 		}
