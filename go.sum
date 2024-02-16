@@ -146,8 +146,8 @@ github.com/hashicorp/terraform-svchost v0.1.1 h1:EZZimZ1GxdqFRinZ1tpJwVxxt49xc/S
 github.com/hashicorp/terraform-svchost v0.1.1/go.mod h1:mNsjQfZyf/Jhz35v6/0LWcv26+X7JPS+buii2c9/ctc=
 github.com/hashicorp/yamux v0.1.1 h1:yrQxtgseBDrq9Y652vSRDvsKCJKOUD+GzTS4Y0Y8pvE=
 github.com/hashicorp/yamux v0.1.1/go.mod h1:CtWFDAQgb7dxtzFs4tWbplKIe2jSi3+5vKbgIO0SLnQ=
-github.com/hasura/go-graphql-client v0.10.2 h1:+/v5/gWYgWr0cpd0aCi4GNtiy8uAIxnkADHTKDM+boY=
-github.com/hasura/go-graphql-client v0.10.2/go.mod h1:eNNnmHAp6NgwKZ4xRbZEfywxr07qk34Y0QhbPsYIfhw=
+github.com/hasura/go-graphql-client v0.11.0 h1:EFEkpMZlkq5gLZj9oiI6TnHCOHV1oErxOroMc5qUHQI=
+github.com/hasura/go-graphql-client v0.11.0/go.mod h1:eNNnmHAp6NgwKZ4xRbZEfywxr07qk34Y0QhbPsYIfhw=
 github.com/huandu/xstrings v1.3.3 h1:/Gcsuc1x8JVbJ9/rlye4xZnVAbEkGauT8lbebqcQws4=
 github.com/huandu/xstrings v1.3.3/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/iancoleman/strcase v0.3.0 h1:nTXanmYxhfFAMjZL34Ov6gkzEsSJZ5DbhxWjvSASxEI=
