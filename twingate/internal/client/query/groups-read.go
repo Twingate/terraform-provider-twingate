@@ -37,12 +37,13 @@ type GroupFilterInput struct {
 }
 
 type StringFilterOperationInput struct {
-	Eq         *string `json:"eq"`
-	Ne         *string `json:"ne"`
-	StartsWith *string `json:"startsWith"`
-	EndsWith   *string `json:"endsWith"`
-	Regexp     *string `json:"regexp"`
-	Contains   *string `json:"contains"`
+	Eq         *string  `json:"eq"`
+	Ne         *string  `json:"ne"`
+	StartsWith *string  `json:"startsWith"`
+	EndsWith   *string  `json:"endsWith"`
+	Regexp     *string  `json:"regexp"`
+	Contains   *string  `json:"contains"`
+	In         []string `json:"in"`
 }
 
 func NewStringFilterOperationInput(name, filter string) *StringFilterOperationInput {
