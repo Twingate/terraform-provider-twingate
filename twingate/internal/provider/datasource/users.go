@@ -226,100 +226,8 @@ func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 		return
 	}
 
-	var email, emailFilter, firstName, firstNameFilter, lastName, lastNameFilter string
-
 	// email
-
-	if data.Email.ValueString() != "" {
-		email = data.Email.ValueString()
-	}
-
-	if data.EmailRegexp.ValueString() != "" {
-		email = data.EmailRegexp.ValueString()
-		emailFilter = attr.FilterByRegexp
-	}
-
-	if data.EmailContains.ValueString() != "" {
-		email = data.EmailContains.ValueString()
-		emailFilter = attr.FilterByContains
-	}
-
-	if data.EmailExclude.ValueString() != "" {
-		email = data.EmailExclude.ValueString()
-		emailFilter = attr.FilterByExclude
-	}
-
-	if data.EmailPrefix.ValueString() != "" {
-		email = data.EmailPrefix.ValueString()
-		emailFilter = attr.FilterByPrefix
-	}
-
-	if data.EmailSuffix.ValueString() != "" {
-		email = data.EmailSuffix.ValueString()
-		emailFilter = attr.FilterBySuffix
-	}
-
-	// first name
-
-	if data.FirstName.ValueString() != "" {
-		firstName = data.FirstName.ValueString()
-	}
-
-	if data.FirstNameRegexp.ValueString() != "" {
-		firstName = data.FirstNameRegexp.ValueString()
-		firstNameFilter = attr.FilterByRegexp
-	}
-
-	if data.FirstNameContains.ValueString() != "" {
-		firstName = data.FirstNameContains.ValueString()
-		firstNameFilter = attr.FilterByContains
-	}
-
-	if data.FirstNameExclude.ValueString() != "" {
-		firstName = data.FirstNameExclude.ValueString()
-		firstNameFilter = attr.FilterByExclude
-	}
-
-	if data.FirstNamePrefix.ValueString() != "" {
-		firstName = data.FirstNamePrefix.ValueString()
-		firstNameFilter = attr.FilterByPrefix
-	}
-
-	if data.FirstNameSuffix.ValueString() != "" {
-		firstName = data.FirstNameSuffix.ValueString()
-		firstNameFilter = attr.FilterBySuffix
-	}
-
-	// last name
-
-	if data.LastName.ValueString() != "" {
-		lastName = data.LastName.ValueString()
-	}
-
-	if data.LastNameRegexp.ValueString() != "" {
-		lastName = data.LastNameRegexp.ValueString()
-		lastNameFilter = attr.FilterByRegexp
-	}
-
-	if data.LastNameContains.ValueString() != "" {
-		lastName = data.LastNameContains.ValueString()
-		lastNameFilter = attr.FilterByContains
-	}
-
-	if data.LastNameExclude.ValueString() != "" {
-		lastName = data.LastNameExclude.ValueString()
-		lastNameFilter = attr.FilterByExclude
-	}
-
-	if data.LastNamePrefix.ValueString() != "" {
-		lastName = data.LastNamePrefix.ValueString()
-		lastNameFilter = attr.FilterByPrefix
-	}
-
-	if data.LastNameSuffix.ValueString() != "" {
-		lastName = data.LastNameSuffix.ValueString()
-		lastNameFilter = attr.FilterBySuffix
-	}
+	email, emailFilter := getNameFilter(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix)
 
 	if countOptionalAttributes(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalEmailAttribute, TwingateResources)
@@ -327,11 +235,17 @@ func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 		return
 	}
 
+	// first name
+	firstName, firstNameFilter := getNameFilter(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix)
+
 	if countOptionalAttributes(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute, TwingateResources)
 
 		return
 	}
+
+	// last name
+	lastName, lastNameFilter := getNameFilter(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix)
 
 	if countOptionalAttributes(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute, TwingateResources)
