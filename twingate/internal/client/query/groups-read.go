@@ -97,13 +97,11 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 	}
 
 	if input.Name != nil {
-		filter.Name = &StringFilterOperationInput{
-			Eq: input.Name,
-		}
+		filter.Name = NewStringFilterOperationInput(*input.Name, input.NameFilter)
 	}
 
-	if input.Type != nil {
-		filter.Type.In = []string{*input.Type}
+	if len(input.Types) > 0 {
+		filter.Type.In = input.Types
 	}
 
 	if input.IsActive != nil {
