@@ -510,7 +510,7 @@ func TestClientConnectorReadEmptyError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, emptyResponse))
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 
 		assert.Empty(t, connectors)
 		assert.EqualError(t, err, "failed to read connector with id All: query result is empty")
@@ -603,7 +603,7 @@ func TestClientConnectorReadAllOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 		assert.NoError(t, err)
 		assert.Equal(t, expected, connectors)
 	})
@@ -769,7 +769,7 @@ func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, connectors)
@@ -789,7 +789,7 @@ func TestClientReadConnectorsWithRemoteNetworkError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, "failed to read connector with id All: query result is empty")
@@ -803,7 +803,7 @@ func TestClientReadConnectorsWithRemoteNetworkRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read connector with id All", errBadRequest))
@@ -883,7 +883,7 @@ func TestClientReadConnectorsAllPagesOk(t *testing.T) {
 				}),
 		)
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 		assert.NoError(t, err)
 		assert.Equal(t, expected, connectors)
 	})
@@ -933,7 +933,7 @@ func TestClientReadConnectorsAllPagesEmptyResultOnFetching(t *testing.T) {
 			),
 		)
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, `failed to read connector with id All: query result is empty`)
 	})
@@ -972,7 +972,7 @@ func TestClientReadConnectorsAllPagesRequestErrorOnFetching(t *testing.T) {
 			),
 		)
 
-		connectors, err := client.ReadConnectors(context.Background())
+		connectors, err := client.ReadConnectors(context.Background(), "", "")
 		assert.Nil(t, connectors)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read connector with id All", errBadRequest))
 	})

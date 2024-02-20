@@ -513,7 +513,7 @@ func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 		return nil, ErrClientNotInited
 	}
 
-	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background())
+	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background(), "", "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all security policies: %w", err)
 	}

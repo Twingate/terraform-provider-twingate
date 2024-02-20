@@ -8,7 +8,7 @@ import (
 const CursorPolicies = "policiesEndCursor"
 
 type ReadSecurityPolicies struct {
-	SecurityPolicies `graphql:"securityPolicies(after: $policiesEndCursor, first: $pageLimit)"`
+	SecurityPolicies `graphql:"securityPolicies(filter: $filter, after: $policiesEndCursor, first: $pageLimit)"`
 }
 
 func (q ReadSecurityPolicies) IsEmpty() bool {
@@ -28,4 +28,14 @@ func (q ReadSecurityPolicies) ToModel() []*model.SecurityPolicy {
 		func(edge *SecurityPolicyEdge) *model.SecurityPolicy {
 			return edge.Node.ToModel()
 		})
+}
+
+type SecurityPolicyFilterField struct {
+	Name *StringFilterOperationInput `json:"name"`
+}
+
+func NewSecurityPolicyFilterField(name, filter string) *SecurityPolicyFilterField {
+	return &SecurityPolicyFilterField{
+		Name: NewStringFilterOperationInput(name, filter),
+	}
 }
