@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var ErrResourcesDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &resources{}
 
@@ -25,9 +27,14 @@ type resources struct {
 }
 
 type resourcesModel struct {
-	ID        types.String    `tfsdk:"id"`
-	Name      types.String    `tfsdk:"name"`
-	Resources []resourceModel `tfsdk:"resources"`
+	ID           types.String    `tfsdk:"id"`
+	Name         types.String    `tfsdk:"name"`
+	NameRegexp   types.String    `tfsdk:"name_regexp"`
+	NameContains types.String    `tfsdk:"name_contains"`
+	NameExclude  types.String    `tfsdk:"name_exclude"`
+	NamePrefix   types.String    `tfsdk:"name_prefix"`
+	NameSuffix   types.String    `tfsdk:"name_suffix"`
+	Resources    []resourceModel `tfsdk:"resources"`
 }
 
 func (d *resources) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -69,6 +76,7 @@ func protocolSchema() schema.SingleNestedAttribute {
 	}
 }
 
+//nolint:funlen
 func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
@@ -78,10 +86,29 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 				Description: computedDatasourceIDDescription,
 			},
 			attr.Name: schema.StringAttribute{
-				Required:    true,
-				Description: "The name of the Resource",
+				Optional:    true,
+				Description: "Returns only resources that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.",
 			},
-
+			attr.Name + attr.FilterByRegexp: schema.StringAttribute{
+				Optional:    true,
+				Description: "The regular expression match of the name of the resource.",
+			},
+			attr.Name + attr.FilterByContains: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value exist in the name of the resource.",
+			},
+			attr.Name + attr.FilterByExclude: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value does not exist in the name of the resource.",
+			},
+			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the resource must start with the value.",
+			},
+			attr.Name + attr.FilterBySuffix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the resource must end with the value.",
+			},
 			// computed
 			attr.Resources: schema.ListNestedAttribute{
 				Computed:    true,
@@ -123,6 +150,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 	}
 }
 
+//nolint:cyclop
 func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data resourcesModel
 
@@ -133,14 +161,51 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		return
 	}
 
-	resources, err := d.client.ReadResourcesByName(ctx, data.Name.ValueString())
+	var name, filter string
+
+	if data.Name.ValueString() != "" {
+		name = data.Name.ValueString()
+	}
+
+	if data.NameRegexp.ValueString() != "" {
+		name = data.NameRegexp.ValueString()
+		filter = attr.FilterByRegexp
+	}
+
+	if data.NameContains.ValueString() != "" {
+		name = data.NameContains.ValueString()
+		filter = attr.FilterByContains
+	}
+
+	if data.NameExclude.ValueString() != "" {
+		name = data.NameExclude.ValueString()
+		filter = attr.FilterByExclude
+	}
+
+	if data.NamePrefix.ValueString() != "" {
+		name = data.NamePrefix.ValueString()
+		filter = attr.FilterByPrefix
+	}
+
+	if data.NameSuffix.ValueString() != "" {
+		name = data.NameSuffix.ValueString()
+		filter = attr.FilterBySuffix
+	}
+
+	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+		addErr(&resp.Diagnostics, ErrResourcesDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
+
+		return
+	}
+
+	resources, err := d.client.ReadResourcesByName(ctx, name, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateResources)
 
 		return
 	}
 
-	data.ID = types.StringValue("query resources by name: " + data.Name.ValueString())
+	data.ID = types.StringValue("query resources by name: " + name)
 	data.Resources = convertResourcesToTerraform(resources)
 
 	// Save data into Terraform state
