@@ -8,6 +8,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -221,7 +222,7 @@ func TestAccDatasourceTwingateResourcesFilterByContains(t *testing.T) {
 func TestAccDatasourceTwingateResourcesFilterByRegexp(t *testing.T) {
 	t.Parallel()
 
-	prefix := test.Prefix()
+	prefix := acctest.RandString(6)
 	resourceName := test.RandomResourceName()
 	networkName := test.RandomName()
 	theDatasource := "data.twingate_resources." + resourceName
