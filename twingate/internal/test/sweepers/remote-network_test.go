@@ -14,7 +14,7 @@ func init() {
 		Name: resourceRemoteNetwork,
 		F: newTestSweeper(resourceRemoteNetwork,
 			func(client *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := client.ReadRemoteNetworks(ctx)
+				resources, err := client.ReadRemoteNetworks(ctx, "", "")
 				if err != nil {
 					return nil, err
 				}
