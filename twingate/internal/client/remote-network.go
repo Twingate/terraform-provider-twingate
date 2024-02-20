@@ -30,10 +30,11 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.Remote
 	return response.ToModel(), nil
 }
 
-func (client *Client) ReadRemoteNetworks(ctx context.Context) ([]*model.RemoteNetwork, error) {
+func (client *Client) ReadRemoteNetworks(ctx context.Context, name, filter string) ([]*model.RemoteNetwork, error) {
 	opr := resourceRemoteNetwork.read()
 
 	variables := newVars(
+		gqlNullable(query.NewRemoteNetworkFilterInput(name, filter), "filter"),
 		cursor(query.CursorRemoteNetworks),
 		pageLimit(client.pageLimit),
 	)
