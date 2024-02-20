@@ -30,10 +30,11 @@ func (client *Client) ReadSecurityPolicy(ctx context.Context, securityPolicyID, 
 	return response.ToModel(), nil
 }
 
-func (client *Client) ReadSecurityPolicies(ctx context.Context) ([]*model.SecurityPolicy, error) {
+func (client *Client) ReadSecurityPolicies(ctx context.Context, name, filter string) ([]*model.SecurityPolicy, error) {
 	opr := resourceSecurityPolicy.read()
 
 	variables := newVars(
+		gqlNullable(query.NewSecurityPolicyFilterField(name, filter), "filter"),
 		cursor(query.CursorPolicies),
 		pageLimit(client.pageLimit),
 	)
