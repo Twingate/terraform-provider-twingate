@@ -23,7 +23,7 @@ var (
 func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - Filter By Name", func(t *testing.T) {
 
-		name := test.Prefix("orange")
+		name := test.Prefix("orange") + acctest.RandString(5)
 		const (
 			terraformResourceName = "dts_service"
 			theDatasource         = "data.twingate_service_accounts.out"
@@ -35,7 +35,7 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 				terraformResourceName: test.TerraformRandName(terraformResourceName),
 			},
 			{
-				serviceName:           test.Prefix("lemon"),
+				serviceName:           test.Prefix("lemon") + acctest.RandString(5),
 				terraformResourceName: test.TerraformRandName(terraformResourceName),
 			},
 		}
@@ -340,14 +340,15 @@ func TestAccDatasourceTwingateServicesFilterBySuffix(t *testing.T) {
 		theDatasource         = "data.twingate_service_accounts.out"
 	)
 
-	name := test.Prefix("orange")
+	suffix := "orange-" + acctest.RandString(4)
+	name := test.Prefix() + suffix
 	config := []terraformServiceConfig{
 		{
 			serviceName:           name,
 			terraformResourceName: test.TerraformRandName(terraformResourceName),
 		},
 		{
-			serviceName:           test.Prefix("lemon"),
+			serviceName:           test.Prefix("lemon") + acctest.RandString(4),
 			terraformResourceName: test.TerraformRandName(terraformResourceName),
 		},
 	}
@@ -360,7 +361,7 @@ func TestAccDatasourceTwingateServicesFilterBySuffix(t *testing.T) {
 			{
 				Config: terraformConfig(
 					createServices(config),
-					datasourceServicesWithFilter(config, "orange", attr.FilterBySuffix),
+					datasourceServicesWithFilter(config, suffix, attr.FilterBySuffix),
 				),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
@@ -379,14 +380,16 @@ func TestAccDatasourceTwingateServicesFilterByContains(t *testing.T) {
 		theDatasource         = "data.twingate_service_accounts.out"
 	)
 
-	name := test.Prefix("orange")
+	contains := acctest.RandString(4)
+	name := test.Prefix("orange") + contains
+
 	config := []terraformServiceConfig{
 		{
 			serviceName:           name,
 			terraformResourceName: test.TerraformRandName(terraformResourceName),
 		},
 		{
-			serviceName:           test.Prefix("lemon"),
+			serviceName:           test.Prefix("lemon") + acctest.RandString(4),
 			terraformResourceName: test.TerraformRandName(terraformResourceName),
 		},
 	}
@@ -399,7 +402,7 @@ func TestAccDatasourceTwingateServicesFilterByContains(t *testing.T) {
 			{
 				Config: terraformConfig(
 					createServices(config),
-					datasourceServicesWithFilter(config, "rang", attr.FilterByContains),
+					datasourceServicesWithFilter(config, contains, attr.FilterByContains),
 				),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
@@ -418,7 +421,8 @@ func TestAccDatasourceTwingateServicesFilterByRegexp(t *testing.T) {
 		theDatasource         = "data.twingate_service_accounts.out"
 	)
 
-	name := test.Prefix("orange")
+	contains := acctest.RandString(5)
+	name := test.Prefix() + "-" + contains + "-" + acctest.RandString(3)
 	config := []terraformServiceConfig{
 		{
 			serviceName:           name,
@@ -438,7 +442,7 @@ func TestAccDatasourceTwingateServicesFilterByRegexp(t *testing.T) {
 			{
 				Config: terraformConfig(
 					createServices(config),
-					datasourceServicesWithFilter(config, ".*ora.*", attr.FilterByRegexp),
+					datasourceServicesWithFilter(config, ".*"+contains+".*", attr.FilterByRegexp),
 				),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),

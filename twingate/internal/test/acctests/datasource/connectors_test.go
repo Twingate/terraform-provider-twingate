@@ -238,9 +238,9 @@ func testDatasourceTwingateConnectorsFilter(resourceName, networkName, connector
 func TestAccDatasourceTwingateConnectorsFilterByPrefix(t *testing.T) {
 	t.Parallel()
 
-	prefix := test.Prefix()
 	resourceName := test.RandomResourceName()
 	connectorName := test.RandomConnectorName()
+	prefix := connectorName[:len(test.Prefix())+3]
 	theDatasource := "data.twingate_connectors." + resourceName
 
 	resource.Test(t, resource.TestCase{
@@ -288,7 +288,7 @@ func TestAccDatasourceTwingateConnectorsFilterByContains(t *testing.T) {
 	t.Parallel()
 
 	connectorName := test.RandomConnectorName()
-	contains := connectorName[len(connectorName)/2 : len(connectorName)/2+5]
+	contains := connectorName[len(connectorName)-7 : len(connectorName)-2]
 	resourceName := test.RandomResourceName()
 	theDatasource := "data.twingate_connectors." + resourceName
 
@@ -312,7 +312,7 @@ func TestAccDatasourceTwingateConnectorsFilterByRegexp(t *testing.T) {
 	t.Parallel()
 
 	connectorName := test.RandomConnectorName()
-	contains := connectorName[len(connectorName)/2 : len(connectorName)/2+5]
+	contains := connectorName[len(connectorName)-7 : len(connectorName)-2]
 	resourceName := test.RandomResourceName()
 	theDatasource := "data.twingate_connectors." + resourceName
 

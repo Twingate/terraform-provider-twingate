@@ -253,7 +253,7 @@ func testDatasourceTwingateGroupsWithDatasource(name string) string {
 func TestAccDatasourceTwingateGroupsWithFilterByPrefix(t *testing.T) {
 	t.Parallel()
 
-	prefix := test.Prefix()
+	prefix := test.Prefix() + "-" + acctest.RandString(5)
 	resourceName := test.RandomResourceName()
 
 	theDatasource := "data.twingate_groups." + resourceName
