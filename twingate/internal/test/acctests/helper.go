@@ -15,6 +15,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -33,6 +34,7 @@ var (
 	ErrUnknownResourceType      = errors.New("unknown resource type")
 	ErrClientNotInited          = errors.New("meta client not inited")
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
+	ErrInvalidPath              = errors.New("invalid path: the path value cannot be asserted as string")
 )
 
 func ErrServiceAccountsLenMismatch(expected, actual int) error {
@@ -174,6 +176,10 @@ func GetTwingateResourceID(resourceName string, resourceID **string) sdk.TestChe
 	}
 }
 
+func DatasourceName(resource, name string) string {
+	return fmt.Sprintf("data.%s.%s", resource, name)
+}
+
 func ResourceName(resource, name string) string {
 	return fmt.Sprintf("%s.%s", resource, name)
 }
@@ -208,6 +214,10 @@ func TerraformServiceKey(name string) string {
 
 func TerraformUser(name string) string {
 	return ResourceName(resource.TwingateUser, name)
+}
+
+func TerraformDatasourceUsers(name string) string {
+	return DatasourceName(datasource.TwingateUsers, name)
 }
 
 func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc {
@@ -348,7 +358,7 @@ func (e checkResourceActiveState) CheckPlan(ctx context.Context, req plancheck.C
 
 		resultID, ok := result.(string)
 		if !ok {
-			resp.Error = fmt.Errorf("invalid path: the path value cannot be asserted as string") //nolint:goerr113
+			resp.Error = ErrInvalidPath
 
 			return
 		}
@@ -503,7 +513,7 @@ func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 		return nil, ErrClientNotInited
 	}
 
-	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background())
+	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background(), "", "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all security policies: %w", err)
 	}
@@ -773,7 +783,7 @@ func GetTestUsers() ([]*model.User, error) {
 		return nil, ErrClientNotInited
 	}
 
-	users, err := providerClient.ReadUsers(context.Background())
+	users, err := providerClient.ReadUsers(context.Background(), nil)
 	if err != nil {
 		return nil, err //nolint
 	}
@@ -827,7 +837,7 @@ func GetTestUser() (*model.User, error) {
 		return nil, ErrClientNotInited
 	}
 
-	users, err := providerClient.ReadUsers(context.Background())
+	users, err := providerClient.ReadUsers(context.Background(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get test users: %w", err)
 	}

@@ -92,15 +92,15 @@ func newTransport(underlineRoundTripper http.RoundTripper, apiToken, version, co
 }
 
 func twingateAgentVersion(version string) string {
-	return fmt.Sprintf("TwingateTF/%s", version)
+	return "TwingateTF/" + version
 }
 
 func (s *serverURL) newGraphqlServerURL() string {
-	return fmt.Sprintf("%s/api/graphql/", s.url)
+	return s.url + "/api/graphql/"
 }
 
 func (s *serverURL) newAPIServerURL() string {
-	return fmt.Sprintf("%s/api/v4", s.url)
+	return s.url + "/api/v4"
 }
 
 type serverURL struct {

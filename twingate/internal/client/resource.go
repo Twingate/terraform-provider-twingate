@@ -243,11 +243,11 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
 }
 
-func (client *Client) ReadResourcesByName(ctx context.Context, name string) ([]*model.Resource, error) {
+func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string) ([]*model.Resource, error) {
 	opr := resourceResource.read()
 
 	variables := newVars(
-		gqlVar(name, "name"),
+		gqlNullable(query.NewResourceFilterInput(name, filter), "filter"),
 		cursor(query.CursorResources),
 		pageLimit(client.pageLimit),
 	)

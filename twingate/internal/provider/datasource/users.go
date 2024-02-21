@@ -9,9 +9,19 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+)
+
+var (
+	ErrUsersDatasourceShouldSetOneOptionalEmailAttribute     = errors.New("Only one of email, email_regex, email_contains, email_exclude, email_prefix or email_suffix must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute = errors.New("Only one of first_name, first_name_regex, first_name_contains, first_name_exclude, first_name_prefix or first_name_suffix must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute  = errors.New("Only one of last_name, last_name_regex, last_name_contains, last_name_exclude, last_name_prefix or last_name_suffix must be set.")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -26,8 +36,27 @@ type users struct {
 }
 
 type usersModel struct {
-	ID    types.String `tfsdk:"id"`
-	Users []userModel  `tfsdk:"users"`
+	ID                types.String `tfsdk:"id"`
+	Email             types.String `tfsdk:"email"`
+	EmailRegexp       types.String `tfsdk:"email_regexp"`
+	EmailContains     types.String `tfsdk:"email_contains"`
+	EmailExclude      types.String `tfsdk:"email_exclude"`
+	EmailPrefix       types.String `tfsdk:"email_prefix"`
+	EmailSuffix       types.String `tfsdk:"email_suffix"`
+	FirstName         types.String `tfsdk:"first_name"`
+	FirstNameRegexp   types.String `tfsdk:"first_name_regexp"`
+	FirstNameContains types.String `tfsdk:"first_name_contains"`
+	FirstNameExclude  types.String `tfsdk:"first_name_exclude"`
+	FirstNamePrefix   types.String `tfsdk:"first_name_prefix"`
+	FirstNameSuffix   types.String `tfsdk:"first_name_suffix"`
+	LastName          types.String `tfsdk:"last_name"`
+	LastNameRegexp    types.String `tfsdk:"last_name_regexp"`
+	LastNameContains  types.String `tfsdk:"last_name_contains"`
+	LastNameExclude   types.String `tfsdk:"last_name_exclude"`
+	LastNamePrefix    types.String `tfsdk:"last_name_prefix"`
+	LastNameSuffix    types.String `tfsdk:"last_name_suffix"`
+	Roles             types.Set    `tfsdk:"roles"`
+	Users             []userModel  `tfsdk:"users"`
 }
 
 func (d *users) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -52,6 +81,7 @@ func (d *users) Configure(ctx context.Context, req datasource.ConfigureRequest, 
 	d.client = client
 }
 
+//nolint:funlen
 func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: userDescription,
@@ -59,6 +89,96 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: computedDatasourceIDDescription,
+			},
+
+			// email
+
+			attr.Email: schema.StringAttribute{
+				Optional:    true,
+				Description: "Returns only users that exactly match this email.",
+			},
+			attr.Email + attr.FilterByRegexp: schema.StringAttribute{
+				Optional:    true,
+				Description: "The regular expression match of the email of the user.",
+			},
+			attr.Email + attr.FilterByContains: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value exist in the email of the user.",
+			},
+			attr.Email + attr.FilterByExclude: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value does not exist in the email of the user.",
+			},
+			attr.Email + attr.FilterByPrefix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The email of the user must start with the value.",
+			},
+			attr.Email + attr.FilterBySuffix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The email of the user must end with the value.",
+			},
+
+			// first name
+
+			attr.FirstName: schema.StringAttribute{
+				Optional:    true,
+				Description: "Returns only users that exactly match the first name.",
+			},
+			attr.FirstName + attr.FilterByRegexp: schema.StringAttribute{
+				Optional:    true,
+				Description: "The regular expression match of the first name of the user.",
+			},
+			attr.FirstName + attr.FilterByContains: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value exist in the first name of the user.",
+			},
+			attr.FirstName + attr.FilterByExclude: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value does not exist in the first name of the user.",
+			},
+			attr.FirstName + attr.FilterByPrefix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The first name of the user must start with the value.",
+			},
+			attr.FirstName + attr.FilterBySuffix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The first name of the user must end with the value.",
+			},
+
+			// last name
+
+			attr.LastName: schema.StringAttribute{
+				Optional:    true,
+				Description: "Returns only users that exactly match the last name.",
+			},
+			attr.LastName + attr.FilterByRegexp: schema.StringAttribute{
+				Optional:    true,
+				Description: "The regular expression match of the last name of the user.",
+			},
+			attr.LastName + attr.FilterByContains: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value exist in the last name of the user.",
+			},
+			attr.LastName + attr.FilterByExclude: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value does not exist in the last name of the user.",
+			},
+			attr.LastName + attr.FilterByPrefix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The last name of the user must start with the value.",
+			},
+			attr.LastName + attr.FilterBySuffix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The last name of the user must end with the value.",
+			},
+
+			attr.Roles: schema.SetAttribute{
+				Optional:    true,
+				ElementType: types.StringType,
+				Description: "Returns users that match a list of roles. Valid roles: `ADMIN`, `DEVOPS`, `SUPPORT`, `MEMBER`.",
+				Validators: []validator.Set{
+					setvalidator.ValueStringsAre(stringvalidator.OneOf(model.UserRoles...)),
+				},
 			},
 
 			attr.Users: schema.ListNestedAttribute{
@@ -96,18 +216,76 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 	}
 }
 
-func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	users, err := d.client.ReadUsers(ctx)
+func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) { //nolint
+	var data usersModel
+
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// email
+	email, emailFilter := getNameFilter(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix)
+
+	if countOptionalAttributes(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix) > 1 {
+		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalEmailAttribute, TwingateResources)
+
+		return
+	}
+
+	// first name
+	firstName, firstNameFilter := getNameFilter(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix)
+
+	if countOptionalAttributes(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix) > 1 {
+		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute, TwingateResources)
+
+		return
+	}
+
+	// last name
+	lastName, lastNameFilter := getNameFilter(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix)
+
+	if countOptionalAttributes(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix) > 1 {
+		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute, TwingateResources)
+
+		return
+	}
+
+	var filter *client.UsersFilter
+
+	if email != "" || firstName != "" || lastName != "" || len(data.Roles.Elements()) > 0 {
+		filter = &client.UsersFilter{}
+	}
+
+	if email != "" {
+		filter.Email = &client.StringFilter{Name: email, Filter: emailFilter}
+	}
+
+	if firstName != "" {
+		filter.FirstName = &client.StringFilter{Name: firstName, Filter: firstNameFilter}
+	}
+
+	if lastName != "" {
+		filter.LastName = &client.StringFilter{Name: lastName, Filter: lastNameFilter}
+	}
+
+	if len(data.Roles.Elements()) > 0 {
+		filter.Roles = utils.Map(data.Roles.Elements(), func(item tfattr.Value) string {
+			return item.(types.String).ValueString()
+		})
+	}
+
+	users, err := d.client.ReadUsers(ctx, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateUsers)
 
 		return
 	}
 
-	data := usersModel{
-		ID:    types.StringValue("users-all"),
-		Users: convertUsersToTerraform(users),
-	}
+	data.ID = types.StringValue("users-all")
+	data.Users = convertUsersToTerraform(users)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

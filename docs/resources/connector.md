@@ -24,6 +24,7 @@ resource "twingate_remote_network" "aws_network" {
 
 resource "twingate_connector" "aws_connector" {
   remote_network_id = twingate_remote_network.aws_network.id
+  status_updates_enabled = true
 }
 ```
 
@@ -37,7 +38,7 @@ resource "twingate_connector" "aws_connector" {
 ### Optional
 
 - `name` (String) Name of the Connector, if not provided one will be generated.
-- `status_updates_enabled` (Boolean) Determines whether status notifications are enabled for the Connector.
+- `status_updates_enabled` (Boolean) Determines whether status notifications are enabled for the Connector. Default is `true`.
 
 ### Read-Only
 

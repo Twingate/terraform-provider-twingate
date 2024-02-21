@@ -847,14 +847,14 @@ func TestBuildGroupsFilter(t *testing.T) {
 			filter: &model.GroupsFilter{Name: optionalString("Group")},
 			expected: &GroupFilterInput{
 				Name: &StringFilterOperationInput{
-					Eq: "Group",
+					Eq: optionalString("Group"),
 				},
 				Type:     defaultType,
 				IsActive: defaultActive,
 			},
 		},
 		{
-			filter: &model.GroupsFilter{Type: optionalString("MANUAL")},
+			filter: &model.GroupsFilter{Types: []string{"MANUAL"}},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeManual},
@@ -863,7 +863,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			},
 		},
 		{
-			filter: &model.GroupsFilter{Type: optionalString("SYSTEM")},
+			filter: &model.GroupsFilter{Types: []string{"SYSTEM"}},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeSystem},
@@ -872,7 +872,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 			},
 		},
 		{
-			filter: &model.GroupsFilter{Type: optionalString("SYNCED")},
+			filter: &model.GroupsFilter{Types: []string{"SYNCED"}},
 			expected: &GroupFilterInput{
 				Type: GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeSynced},
@@ -896,7 +896,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 		},
 		{
 			filter: &model.GroupsFilter{
-				Type:     optionalString("SYSTEM"),
+				Types:    []string{"SYSTEM"},
 				IsActive: optionalBool(false),
 			},
 			expected: &GroupFilterInput{
@@ -908,7 +908,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 		},
 		{
 			filter: &model.GroupsFilter{
-				Type:     optionalString("MANUAL"),
+				Types:    []string{"MANUAL"},
 				IsActive: optionalBool(true),
 			},
 			expected: &GroupFilterInput{
@@ -920,7 +920,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 		},
 		{
 			filter: &model.GroupsFilter{
-				Type:     optionalString("MANUAL"),
+				Types:    []string{"MANUAL"},
 				IsActive: optionalBool(false),
 			},
 			expected: &GroupFilterInput{

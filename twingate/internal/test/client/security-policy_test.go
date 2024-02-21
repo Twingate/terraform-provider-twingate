@@ -187,7 +187,7 @@ func TestClientSecurityPoliciesReadOk(t *testing.T) {
 			),
 		)
 
-		securityPolicies, err := c.ReadSecurityPolicies(context.Background())
+		securityPolicies, err := c.ReadSecurityPolicies(context.Background(), "", "")
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, securityPolicies)
@@ -201,7 +201,7 @@ func TestClientSecurityPoliciesReadRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		securityPolicies, err := c.ReadSecurityPolicies(context.Background())
+		securityPolicies, err := c.ReadSecurityPolicies(context.Background(), "", "")
 
 		assert.Nil(t, securityPolicies)
 		assert.EqualError(t, err, graphqlErr(c, "failed to read security policy", errBadRequest))
@@ -240,7 +240,7 @@ func TestClientSecurityPoliciesReadEmptyResponse(t *testing.T) {
 			httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 				httpmock.NewStringResponder(http.StatusOK, resp))
 
-			securityPolicies, err := c.ReadSecurityPolicies(context.Background())
+			securityPolicies, err := c.ReadSecurityPolicies(context.Background(), "", "")
 
 			httpmock.Reset()
 
@@ -281,7 +281,7 @@ func TestClientSecurityPoliciesReadRequestErrorOnFetching(t *testing.T) {
 			),
 		)
 
-		securityPolicies, err := c.ReadSecurityPolicies(context.Background())
+		securityPolicies, err := c.ReadSecurityPolicies(context.Background(), "", "")
 
 		assert.Nil(t, securityPolicies)
 		assert.EqualError(t, err, graphqlErr(c, "failed to read security policy", errBadRequest))
@@ -343,7 +343,7 @@ func TestClientSecurityPoliciesReadEmptyResultOnFetching(t *testing.T) {
 				),
 			)
 
-			securityPolicies, err := c.ReadSecurityPolicies(context.Background())
+			securityPolicies, err := c.ReadSecurityPolicies(context.Background(), "", "")
 
 			httpmock.Reset()
 

@@ -5,4 +5,5 @@ const (
 	SecurityPolicyID = "security_policy_id"
 	Groups           = "groups"
 	Alias            = "alias"
+	Types            = "types"
 )
