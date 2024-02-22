@@ -1184,7 +1184,7 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 			}),
 		)
 
-		resources, err := client.ReadResourcesByName(context.Background(), "resource-test")
+		resources, err := client.ReadResourcesByName(context.Background(), "resource-test", "")
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, resources)
@@ -1204,7 +1204,7 @@ func TestClientResourcesReadByNameEmptyResult(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		resources, err := client.ReadResourcesByName(context.Background(), "resource-name")
+		resources, err := client.ReadResourcesByName(context.Background(), "resource-name", "")
 
 		assert.Nil(t, resources)
 		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
@@ -1218,7 +1218,7 @@ func TestClientResourcesReadByNameRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		groups, err := client.ReadResourcesByName(context.Background(), "resource-name")
+		groups, err := client.ReadResourcesByName(context.Background(), "resource-name", "")
 
 		assert.Nil(t, groups)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id All", errBadRequest))
@@ -1238,7 +1238,7 @@ func TestClientResourcesReadByNameErrorEmptyName(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		groups, err := client.ReadResourcesByName(context.Background(), "")
+		groups, err := client.ReadResourcesByName(context.Background(), "", "")
 
 		assert.Nil(t, groups)
 		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
@@ -1274,7 +1274,7 @@ func TestClientResourcesReadByNameAllEmptyResult(t *testing.T) {
 			),
 		)
 
-		resources, err := client.ReadResourcesByName(context.Background(), "resource-name")
+		resources, err := client.ReadResourcesByName(context.Background(), "resource-name", "")
 
 		assert.Nil(t, resources)
 		assert.EqualError(t, err, "failed to read resource with id All: query result is empty")
@@ -1304,7 +1304,7 @@ func TestClientResourcesReadByNameAllRequestError(t *testing.T) {
 			),
 		)
 
-		resources, err := client.ReadResourcesByName(context.Background(), "resource-name")
+		resources, err := client.ReadResourcesByName(context.Background(), "resource-name", "")
 
 		assert.Nil(t, resources)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id All", errBadRequest))

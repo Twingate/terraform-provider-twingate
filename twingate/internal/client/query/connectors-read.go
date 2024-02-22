@@ -8,7 +8,7 @@ import (
 const CursorConnectors = "connectorsEndCursor"
 
 type ReadConnectors struct {
-	Connectors `graphql:"connectors(after: $connectorsEndCursor, first: $pageLimit)"`
+	Connectors `graphql:"connectors(filter: $filter, after: $connectorsEndCursor, first: $pageLimit)"`
 }
 
 type Connectors struct {
@@ -35,4 +35,14 @@ func (c Connectors) ToModel() []*model.Connector {
 	return utils.Map[*ConnectorEdge, *model.Connector](c.Edges, func(edge *ConnectorEdge) *model.Connector {
 		return edge.Node.ToModel()
 	})
+}
+
+type ConnectorFilterInput struct {
+	Name *StringFilterOperationInput `json:"name"`
+}
+
+func NewConnectorFilterInput(name, filter string) *ConnectorFilterInput {
+	return &ConnectorFilterInput{
+		Name: NewStringFilterOperationInput(name, filter),
+	}
 }

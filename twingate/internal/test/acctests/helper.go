@@ -15,6 +15,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/datasource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -175,6 +176,10 @@ func GetTwingateResourceID(resourceName string, resourceID **string) sdk.TestChe
 	}
 }
 
+func DatasourceName(resource, name string) string {
+	return fmt.Sprintf("data.%s.%s", resource, name)
+}
+
 func ResourceName(resource, name string) string {
 	return fmt.Sprintf("%s.%s", resource, name)
 }
@@ -209,6 +214,10 @@ func TerraformServiceKey(name string) string {
 
 func TerraformUser(name string) string {
 	return ResourceName(resource.TwingateUser, name)
+}
+
+func TerraformDatasourceUsers(name string) string {
+	return DatasourceName(datasource.TwingateUsers, name)
 }
 
 func DeleteTwingateResource(resourceName, resourceType string) sdk.TestCheckFunc {
@@ -504,7 +513,7 @@ func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 		return nil, ErrClientNotInited
 	}
 
-	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background())
+	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background(), "", "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all security policies: %w", err)
 	}
@@ -774,7 +783,7 @@ func GetTestUsers() ([]*model.User, error) {
 		return nil, ErrClientNotInited
 	}
 
-	users, err := providerClient.ReadUsers(context.Background())
+	users, err := providerClient.ReadUsers(context.Background(), nil)
 	if err != nil {
 		return nil, err //nolint
 	}
@@ -828,7 +837,7 @@ func GetTestUser() (*model.User, error) {
 		return nil, ErrClientNotInited
 	}
 
-	users, err := providerClient.ReadUsers(context.Background())
+	users, err := providerClient.ReadUsers(context.Background(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get test users: %w", err)
 	}

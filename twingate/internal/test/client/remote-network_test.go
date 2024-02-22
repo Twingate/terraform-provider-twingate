@@ -497,7 +497,7 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 			),
 		)
 
-		networks, err := client.ReadRemoteNetworks(context.Background())
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, networks)
@@ -511,7 +511,7 @@ func TestClientNetworkReadAllRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		networks, err := client.ReadRemoteNetworks(context.Background())
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
 
 		assert.Nil(t, networks)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read remote network with id All", errBadRequest))
@@ -552,7 +552,7 @@ func TestClientNetworkReadAllEmptyResponse(t *testing.T) {
 			),
 		)
 
-		networks, err := client.ReadRemoteNetworks(context.Background())
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
 
 		assert.Nil(t, networks)
 		assert.EqualError(t, err, `failed to read remote network: query result is empty`)
@@ -582,7 +582,7 @@ func TestClientNetworkReadAllRequestErrorOnPageFetch(t *testing.T) {
 			),
 		)
 
-		networks, err := client.ReadRemoteNetworks(context.Background())
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
 
 		assert.Nil(t, networks)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read remote network", errBadRequest))

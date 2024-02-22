@@ -1,6 +1,7 @@
 package query
 
 import (
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 )
@@ -36,7 +37,38 @@ type GroupFilterInput struct {
 }
 
 type StringFilterOperationInput struct {
-	Eq string `json:"eq"`
+	Eq         *string  `json:"eq"`
+	Ne         *string  `json:"ne"`
+	StartsWith *string  `json:"startsWith"`
+	EndsWith   *string  `json:"endsWith"`
+	Regexp     *string  `json:"regexp"`
+	Contains   *string  `json:"contains"`
+	In         []string `json:"in"`
+}
+
+func NewStringFilterOperationInput(name, filter string) *StringFilterOperationInput {
+	if filter == "" && name == "" {
+		return nil
+	}
+
+	var stringFilter StringFilterOperationInput
+
+	switch filter {
+	case attr.FilterByRegexp:
+		stringFilter.Regexp = &name
+	case attr.FilterByContains:
+		stringFilter.Contains = &name
+	case attr.FilterByExclude:
+		stringFilter.Ne = &name
+	case attr.FilterByPrefix:
+		stringFilter.StartsWith = &name
+	case attr.FilterBySuffix:
+		stringFilter.EndsWith = &name
+	default:
+		stringFilter.Eq = &name
+	}
+
+	return &stringFilter
 }
 
 type GroupTypeFilterOperatorInput struct {
@@ -65,13 +97,11 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 	}
 
 	if input.Name != nil {
-		filter.Name = &StringFilterOperationInput{
-			Eq: *input.Name,
-		}
+		filter.Name = NewStringFilterOperationInput(*input.Name, input.NameFilter)
 	}
 
-	if input.Type != nil {
-		filter.Type.In = []string{*input.Type}
+	if len(input.Types) > 0 {
+		filter.Type.In = input.Types
 	}
 
 	if input.IsActive != nil {
