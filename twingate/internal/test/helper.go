@@ -1,7 +1,7 @@
 package test
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec
 	"fmt"
 	"os"
 	"strings"
@@ -18,7 +18,8 @@ const (
 func RandomConnectorName() string {
 	const maxLength = 30
 
-	hash := fmt.Sprintf("%x", sha1.Sum([]byte(Prefix())))
+	// we can ignore this gosec warning, hash using only for text compression
+	hash := fmt.Sprintf("%x", sha1.Sum([]byte(Prefix()))) //nolint:gosec
 	name := fmt.Sprintf("%s-%s-", prefixName, hash[:15])
 	name += acctest.RandString(maxLength - len(name))
 
