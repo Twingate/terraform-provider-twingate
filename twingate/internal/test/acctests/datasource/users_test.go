@@ -16,12 +16,12 @@ import (
 
 func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Users Basic", func(t *testing.T) {
-		acctests.SetPageLimit(1)
-
 		users, err := acctests.GetTestUsers()
 		if err != nil && !errors.Is(err, acctests.ErrResourceNotFound) {
 			t.Skip("can't run test:", err)
 		}
+
+		acctests.SetPageLimit(len(users)/2 - 1)
 
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: acctests.ProviderFactories,
