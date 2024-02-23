@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -16,12 +17,13 @@ import (
 var (
 	serviceAccountsLen = attr.Len(attr.ServiceAccounts)
 	keyIDsLen          = attr.Len(attr.ServiceAccounts, attr.KeyIDs)
+	serviceAccountName = attr.Path(attr.ServiceAccounts, attr.Name)
 )
 
 func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 	t.Run("Test Twingate Datasource : Acc Services - Filter By Name", func(t *testing.T) {
 
-		name := test.Prefix("orange")
+		name := test.Prefix("orange") + acctest.RandString(5)
 		const (
 			terraformResourceName = "dts_service"
 			theDatasource         = "data.twingate_service_accounts.out"
@@ -33,7 +35,7 @@ func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
 				terraformResourceName: test.TerraformRandName(terraformResourceName),
 			},
 			{
-				serviceName:           test.Prefix("lemon"),
+				serviceName:           test.Prefix("lemon") + acctest.RandString(5),
 				terraformResourceName: test.TerraformRandName(terraformResourceName),
 			},
 		}
@@ -246,4 +248,207 @@ func duplicate(val string, n int) []any {
 	}
 
 	return result
+}
+
+func TestAccDatasourceTwingateServicesWithMultipleFilters(t *testing.T) {
+	t.Parallel()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testDatasourceServicesWithMultipleFilters(test.RandomName()),
+				ExpectError: regexp.MustCompile("Only one of name.*"),
+			},
+		},
+	})
+}
+
+func testDatasourceServicesWithMultipleFilters(name string) string {
+	return fmt.Sprintf(`
+	data "twingate_service_accounts" "with-multiple-filters" {
+	  name_regexp = "%[1]s"
+	  name_contains = "%[1]s"
+	}
+	`, name)
+}
+
+func TestAccDatasourceTwingateServicesFilterByPrefix(t *testing.T) {
+	t.Parallel()
+
+	const (
+		terraformResourceName = "dts_service"
+		theDatasource         = "data.twingate_service_accounts.out"
+	)
+
+	prefix := test.Prefix("orange") + acctest.RandString(5)
+	name := acctest.RandomWithPrefix(prefix)
+	config := []terraformServiceConfig{
+		{
+			serviceName:           name,
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+		{
+			serviceName:           test.Prefix("lemon") + acctest.RandString(5),
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: terraformConfig(
+					createServices(config),
+					datasourceServicesWithFilter(config, prefix, attr.FilterByPrefix),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountName, name),
+				),
+			},
+		},
+	})
+}
+
+func datasourceServicesWithFilter(configs []terraformServiceConfig, name, filter string) string {
+	var dependsOn string
+	ids := getTerraformServiceKeys(configs)
+
+	if ids != "" {
+		dependsOn = fmt.Sprintf("depends_on = [%s]", ids)
+	}
+
+	return fmt.Sprintf(`
+	data "twingate_service_accounts" "out" {
+	  name%s = "%s"
+
+	  %s
+	}
+	`, filter, name, dependsOn)
+}
+
+func TestAccDatasourceTwingateServicesFilterBySuffix(t *testing.T) {
+	t.Parallel()
+
+	const (
+		terraformResourceName = "dts_service"
+		theDatasource         = "data.twingate_service_accounts.out"
+	)
+
+	suffix := "orange-" + acctest.RandString(4)
+	name := test.Prefix() + suffix
+	config := []terraformServiceConfig{
+		{
+			serviceName:           name,
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+		{
+			serviceName:           test.Prefix("lemon") + acctest.RandString(4),
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: terraformConfig(
+					createServices(config),
+					datasourceServicesWithFilter(config, suffix, attr.FilterBySuffix),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountName, name),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateServicesFilterByContains(t *testing.T) {
+	t.Parallel()
+
+	const (
+		terraformResourceName = "dts_service"
+		theDatasource         = "data.twingate_service_accounts.out"
+	)
+
+	contains := acctest.RandString(4)
+	name := test.Prefix("orange") + contains
+
+	config := []terraformServiceConfig{
+		{
+			serviceName:           name,
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+		{
+			serviceName:           test.Prefix("lemon") + acctest.RandString(4),
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: terraformConfig(
+					createServices(config),
+					datasourceServicesWithFilter(config, contains, attr.FilterByContains),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountName, name),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateServicesFilterByRegexp(t *testing.T) {
+	t.Parallel()
+
+	const (
+		terraformResourceName = "dts_service"
+		theDatasource         = "data.twingate_service_accounts.out"
+	)
+
+	contains := acctest.RandString(5)
+	name := test.Prefix() + "-" + contains + "-" + acctest.RandString(3)
+	config := []terraformServiceConfig{
+		{
+			serviceName:           name,
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+		{
+			serviceName:           test.Prefix("lemon"),
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: terraformConfig(
+					createServices(config),
+					datasourceServicesWithFilter(config, ".*"+contains+".*", attr.FilterByRegexp),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountName, name),
+				),
+			},
+		},
+	})
 }

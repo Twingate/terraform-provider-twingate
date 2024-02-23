@@ -37,9 +37,10 @@ func (g Group) ToTerraform() interface{} {
 }
 
 type GroupsFilter struct {
-	Name     *string
-	Type     *string
-	IsActive *bool
+	Name       *string
+	NameFilter string
+	Types      []string
+	IsActive   *bool
 }
 
 func (f *GroupsFilter) HasName() bool {

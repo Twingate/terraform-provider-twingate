@@ -3,6 +3,8 @@ package sweepers
 import (
 	"context"
 	"errors"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -15,7 +17,7 @@ func init() {
 		Name: resourceConnector,
 		F: newTestSweeper(resourceConnector,
 			func(c *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := c.ReadConnectors(ctx)
+				resources, err := c.ReadConnectors(ctx, test.Prefix(), attr.FilterByPrefix)
 				if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 					return nil, err
 				}

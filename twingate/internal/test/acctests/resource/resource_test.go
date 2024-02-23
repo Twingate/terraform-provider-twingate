@@ -944,6 +944,22 @@ func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
 					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
 				),
 			},
+			{
+				Config: createResource16WithoutServiceAccounts(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, serviceAccountName)),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "0"),
+				),
+			},
+			{
+				Config: createResource16WithoutGroups(remoteNetworkName, resourceName, groups, groupsID, createServiceAccount(resourceName, serviceAccountName)),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "0"),
+					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+				),
+			},
 		},
 	})
 }
@@ -976,6 +992,76 @@ func createResource16(networkName, resourceName string, groups, groupsID []strin
 
 	  access {
 	    group_ids = [%s]
+	    service_account_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), acctests.TerraformServiceAccount(resourceName)+".id")
+}
+
+func createResource16WithoutServiceAccounts(networkName, resourceName string, groups, groupsID []string, terraformServiceAccount string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test16" {
+	  name = "%s"
+	}
+
+	%s
+
+	%s
+
+	resource "twingate_resource" "test16" {
+	  name = "%s"
+	  address = "acc-test.com.16"
+	  remote_network_id = twingate_remote_network.test16.id
+	  
+	  protocols = {
+	    allow_icmp = true
+	    tcp = {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp = {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    group_ids = [%s]
+	    # service_account_ids = [%s]
+	  }
+
+	}
+	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), acctests.TerraformServiceAccount(resourceName)+".id")
+}
+
+func createResource16WithoutGroups(networkName, resourceName string, groups, groupsID []string, terraformServiceAccount string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "test16" {
+	  name = "%s"
+	}
+
+	%s
+
+	%s
+
+	resource "twingate_resource" "test16" {
+	  name = "%s"
+	  address = "acc-test.com.16"
+	  remote_network_id = twingate_remote_network.test16.id
+	  
+	  protocols = {
+	    allow_icmp = true
+	    tcp = {
+	      policy = "%s"
+	      ports = ["80", "82-83"]
+	    }
+	    udp = {
+	      policy = "%s"
+	    }
+	  }
+
+	  access {
+	    # group_ids = [%s]
 	    service_account_ids = [%s]
 	  }
 

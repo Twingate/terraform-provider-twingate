@@ -99,21 +99,15 @@ func IsGqlKeyActive(item *GqlKeyIDEdge) bool {
 }
 
 type ServiceAccountFilterInput struct {
-	Name StringFilter `json:"name"`
+	Name *StringFilterOperationInput `json:"name"`
 }
 
-type StringFilter struct {
-	Eq string `json:"eq"`
-}
-
-func NewServiceAccountFilterInput(name string) *ServiceAccountFilterInput {
+func NewServiceAccountFilterInput(name, filter string) *ServiceAccountFilterInput {
 	if name == "" {
 		return nil
 	}
 
 	return &ServiceAccountFilterInput{
-		Name: StringFilter{
-			Eq: name,
-		},
+		Name: NewStringFilterOperationInput(name, filter),
 	}
 }

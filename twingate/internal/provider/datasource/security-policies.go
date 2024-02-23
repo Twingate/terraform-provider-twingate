@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var ErrSecurityPoliciesDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &securityPolicies{}
 
@@ -25,6 +27,12 @@ type securityPolicies struct {
 
 type securityPoliciesModel struct {
 	ID               types.String          `tfsdk:"id"`
+	Name             types.String          `tfsdk:"name"`
+	NameRegexp       types.String          `tfsdk:"name_regexp"`
+	NameContains     types.String          `tfsdk:"name_contains"`
+	NameExclude      types.String          `tfsdk:"name_exclude"`
+	NamePrefix       types.String          `tfsdk:"name_prefix"`
+	NameSuffix       types.String          `tfsdk:"name_suffix"`
 	SecurityPolicies []securityPolicyModel `tfsdk:"security_policies"`
 }
 
@@ -58,9 +66,32 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 				Computed:    true,
 				Description: computedDatasourceIDDescription,
 			},
+			attr.Name: schema.StringAttribute{
+				Optional:    true,
+				Description: "Returns only security policies that exactly match this name. If no options are passed it will return all security policies. Only one option can be used at a time.",
+			},
+			attr.Name + attr.FilterByRegexp: schema.StringAttribute{
+				Optional:    true,
+				Description: "The regular expression match of the name of the security policy.",
+			},
+			attr.Name + attr.FilterByContains: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value exist in the name of the security policy.",
+			},
+			attr.Name + attr.FilterByExclude: schema.StringAttribute{
+				Optional:    true,
+				Description: "Match when the value does not exist in the name of the security policy.",
+			},
+			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the security policy must start with the value.",
+			},
+			attr.Name + attr.FilterBySuffix: schema.StringAttribute{
+				Optional:    true,
+				Description: "The name of the security policy must end with the value.",
+			},
 			attr.SecurityPolicies: schema.ListNestedAttribute{
 				Computed: true,
-				Optional: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						attr.ID: schema.StringAttribute{
@@ -79,17 +110,32 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 }
 
 func (d *securityPolicies) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	policies, err := d.client.ReadSecurityPolicies(ctx)
+	var data securityPoliciesModel
+
+	// Read Terraform configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	name, filter := getNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+
+	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+		addErr(&resp.Diagnostics, ErrSecurityPoliciesDatasourceShouldSetOneOptionalNameAttribute, TwingateSecurityPolicies)
+
+		return
+	}
+
+	policies, err := d.client.ReadSecurityPolicies(ctx, name, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateSecurityPolicy)
 
 		return
 	}
 
-	data := securityPoliciesModel{
-		ID:               types.StringValue("security-policies-all"),
-		SecurityPolicies: convertSecurityPoliciesToTerraform(policies),
-	}
+	data.ID = types.StringValue("security-policies-all")
+	data.SecurityPolicies = convertSecurityPoliciesToTerraform(policies)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
