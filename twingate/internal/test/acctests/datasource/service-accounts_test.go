@@ -283,7 +283,7 @@ func TestAccDatasourceTwingateServicesFilterByPrefix(t *testing.T) {
 		theDatasource         = "data.twingate_service_accounts.out"
 	)
 
-	prefix := test.Prefix("orange")
+	prefix := test.Prefix("orange") + acctest.RandString(5)
 	name := acctest.RandomWithPrefix(prefix)
 	config := []terraformServiceConfig{
 		{
@@ -291,7 +291,7 @@ func TestAccDatasourceTwingateServicesFilterByPrefix(t *testing.T) {
 			terraformResourceName: test.TerraformRandName(terraformResourceName),
 		},
 		{
-			serviceName:           test.Prefix("lemon"),
+			serviceName:           test.Prefix("lemon") + acctest.RandString(5),
 			terraformResourceName: test.TerraformRandName(terraformResourceName),
 		},
 	}
