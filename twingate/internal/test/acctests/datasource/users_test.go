@@ -21,7 +21,7 @@ func TestAccDatasourceTwingateUsers_basic(t *testing.T) {
 			t.Skip("can't run test:", err)
 		}
 
-		acctests.SetPageLimit(len(users)/2 - 1)
+		acctests.SetPageLimit(len(users)/3 + 1)
 
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: acctests.ProviderFactories,
