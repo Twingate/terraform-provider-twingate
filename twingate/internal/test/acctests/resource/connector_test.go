@@ -13,8 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-var testRegexp = regexp.MustCompile(test.Prefix() + ".*")
-
 func TestAccRemoteConnectorCreate(t *testing.T) {
 	t.Run("Test Twingate Resource : Acc Remote Connector", func(t *testing.T) {
 		const terraformResourceName = "test_c1"
@@ -78,7 +76,7 @@ func TestAccRemoteConnectorImport(t *testing.T) {
 					Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
 					Check: acctests.ComposeTestCheckFunc(
 						checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-						sdk.TestMatchResourceAttr(theResource, attr.Name, testRegexp),
+						sdk.TestMatchResourceAttr(theResource, attr.Name, regexp.MustCompile(connectorName[:len(connectorName)-3]+".*")),
 					),
 				},
 				{
