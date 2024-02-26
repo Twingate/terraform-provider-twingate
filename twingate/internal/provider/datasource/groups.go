@@ -36,7 +36,7 @@ type groupsModel struct {
 	Name         types.String `tfsdk:"name"`
 	NameRegexp   types.String `tfsdk:"name_regexp"`
 	NameContains types.String `tfsdk:"name_contains"`
-	NameExclude  types.String `tfsdk:"name_exclude"`
+	NameExclude  types.String `tfsdk:"name_exclude_contains"`
 	NamePrefix   types.String `tfsdk:"name_prefix"`
 	NameSuffix   types.String `tfsdk:"name_suffix"`
 	Types        types.Set    `tfsdk:"types"`
@@ -89,7 +89,7 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 			},
 			attr.Name + attr.FilterByExclude: schema.StringAttribute{
 				Optional:    true,
-				Description: "Match when the value does not exist in the name of the group.",
+				Description: "Match when the exact value does not exist in the name of the group.",
 			},
 			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
 				Optional:    true,

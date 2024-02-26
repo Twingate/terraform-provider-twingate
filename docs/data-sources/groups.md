@@ -17,7 +17,7 @@ data "twingate_groups" "foo" {
   name = "<your group's name>"
   #  name_regexp = "<regular expression of group name>"
   #  name_contains = "<a string in the group name>"
-  #  name_exclude = "<your group's name to exclude>"
+  #  name_exclude_contains = "<your group's name to exclude>"
   #  name_prefix = "<prefix of resource name>"
   #  name_suffix = "<suffix of resource name>"
 }
@@ -34,7 +34,7 @@ data "twingate_groups" "foo" {
 - `is_active` (Boolean) Returns only Groups matching the specified state.
 - `name` (String) Returns only groups that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the group.
-- `name_exclude` (String) Match when the value does not exist in the name of the group.
+- `name_exclude_contains` (String) Match when the exact value does not exist in the name of the group.
 - `name_prefix` (String) The name of the group must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the group.
 - `name_suffix` (String) The name of the group must end with the value.

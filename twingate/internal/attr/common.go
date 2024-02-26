@@ -9,7 +9,7 @@ const (
 
 	FilterByRegexp   = "_regexp"
 	FilterByContains = "_contains"
-	FilterByExclude  = "_exclude"
+	FilterByExclude  = "_exclude_contains"
 	FilterByPrefix   = "_prefix"
 	FilterBySuffix   = "_suffix"
 )

@@ -17,7 +17,7 @@ data "twingate_service_accounts" "foo" {
   name = "<your service account's name>"
   #  name_regexp = "<regular expression of service account name>"
   #  name_contains = "<a string in the service account name>"
-  #  name_exclude = "<your service account's name to exclude>"
+  #  name_exclude_contains = "<your service account's name to exclude>"
   #  name_prefix = "<prefix of service account name>"
   #  name_suffix = "<suffix of service account name>"
 }
@@ -30,7 +30,7 @@ data "twingate_service_accounts" "foo" {
 
 - `name` (String) Returns only service accounts that exactly match this name. If no options are passed it will return all service accounts. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the service account.
-- `name_exclude` (String) Match when the value does not exist in the name of the service account.
+- `name_exclude_contains` (String) Match when the exact value does not exist in the name of the service account.
 - `name_prefix` (String) The name of the service account must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the service account.
 - `name_suffix` (String) The name of the service account must end with the value.

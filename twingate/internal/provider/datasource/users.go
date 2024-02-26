@@ -40,19 +40,19 @@ type usersModel struct {
 	Email             types.String `tfsdk:"email"`
 	EmailRegexp       types.String `tfsdk:"email_regexp"`
 	EmailContains     types.String `tfsdk:"email_contains"`
-	EmailExclude      types.String `tfsdk:"email_exclude"`
+	EmailExclude      types.String `tfsdk:"email_exclude_contains"`
 	EmailPrefix       types.String `tfsdk:"email_prefix"`
 	EmailSuffix       types.String `tfsdk:"email_suffix"`
 	FirstName         types.String `tfsdk:"first_name"`
 	FirstNameRegexp   types.String `tfsdk:"first_name_regexp"`
 	FirstNameContains types.String `tfsdk:"first_name_contains"`
-	FirstNameExclude  types.String `tfsdk:"first_name_exclude"`
+	FirstNameExclude  types.String `tfsdk:"first_name_exclude_contains"`
 	FirstNamePrefix   types.String `tfsdk:"first_name_prefix"`
 	FirstNameSuffix   types.String `tfsdk:"first_name_suffix"`
 	LastName          types.String `tfsdk:"last_name"`
 	LastNameRegexp    types.String `tfsdk:"last_name_regexp"`
 	LastNameContains  types.String `tfsdk:"last_name_contains"`
-	LastNameExclude   types.String `tfsdk:"last_name_exclude"`
+	LastNameExclude   types.String `tfsdk:"last_name_exclude_contains"`
 	LastNamePrefix    types.String `tfsdk:"last_name_prefix"`
 	LastNameSuffix    types.String `tfsdk:"last_name_suffix"`
 	Roles             types.Set    `tfsdk:"roles"`

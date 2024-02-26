@@ -32,7 +32,7 @@ type remoteNetworksModel struct {
 	Name           types.String         `tfsdk:"name"`
 	NameRegexp     types.String         `tfsdk:"name_regexp"`
 	NameContains   types.String         `tfsdk:"name_contains"`
-	NameExclude    types.String         `tfsdk:"name_exclude"`
+	NameExclude    types.String         `tfsdk:"name_exclude_contains"`
 	NamePrefix     types.String         `tfsdk:"name_prefix"`
 	NameSuffix     types.String         `tfsdk:"name_suffix"`
 	RemoteNetworks []remoteNetworkModel `tfsdk:"remote_networks"`
@@ -83,7 +83,7 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 			},
 			attr.Name + attr.FilterByExclude: schema.StringAttribute{
 				Optional:    true,
-				Description: "Match when the value does not exist in the name of the remote network.",
+				Description: "Match when the exact value does not exist in the name of the remote network.",
 			},
 			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
 				Optional:    true,

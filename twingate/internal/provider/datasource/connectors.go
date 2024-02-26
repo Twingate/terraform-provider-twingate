@@ -30,7 +30,7 @@ type connectorsModel struct {
 	Name         types.String     `tfsdk:"name"`
 	NameRegexp   types.String     `tfsdk:"name_regexp"`
 	NameContains types.String     `tfsdk:"name_contains"`
-	NameExclude  types.String     `tfsdk:"name_exclude"`
+	NameExclude  types.String     `tfsdk:"name_exclude_contains"`
 	NamePrefix   types.String     `tfsdk:"name_prefix"`
 	NameSuffix   types.String     `tfsdk:"name_suffix"`
 	Connectors   []connectorModel `tfsdk:"connectors"`
@@ -81,7 +81,7 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 			},
 			attr.Name + attr.FilterByExclude: schema.StringAttribute{
 				Optional:    true,
-				Description: "Match when the value does not exist in the name of the connector.",
+				Description: "Match when the exact value does not exist in the name of the connector.",
 			},
 			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
 				Optional:    true,
