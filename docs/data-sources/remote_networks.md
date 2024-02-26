@@ -17,7 +17,7 @@ data "twingate_remote_networks" "all" {
   name = "<your network's name>"
   #  name_regexp = "<regular expression of network name>"
   #  name_contains = "<a string in the network name>"
-  #  name_exclude_contains = "<your network's name to exclude>"
+  #  name_exclude = "<your network's name to exclude>"
   #  name_prefix = "<prefix of network name>"
   #  name_suffix = "<suffix of network name>"
 }
@@ -30,7 +30,7 @@ data "twingate_remote_networks" "all" {
 
 - `name` (String) Returns only remote networks that exactly match this name. If no options are passed it will return all remote networks. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the remote network.
-- `name_exclude_contains` (String) Match when the exact value does not exist in the name of the remote network.
+- `name_exclude` (String) Match when the exact value does not exist in the name of the remote network.
 - `name_prefix` (String) The name of the remote network must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the remote network.
 - `name_suffix` (String) The name of the remote network must end with the value.

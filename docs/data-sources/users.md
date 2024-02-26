@@ -17,21 +17,21 @@ data "twingate_users" "all" {
   #  email = "<your user's email>"
   #  email_regexp = "<regular expression of user email>"
   #  email_contains = "<a string in the user email>"
-  #  email_exclude_contains = "<your user's email to exclude>"
+  #  email_exclude = "<your user's email to exclude>"
   #  email_prefix = "<prefix of user email>"
   #  email_suffix = "<suffix of user email>"
 
   #  first_name = "<your user's first name>"
   #  first_name_regexp = "<regular expression of user first name>"
   #  first_name_contains = "<a string in the user first name>"
-  #  first_name_exclude_contains = "<your user's first name to exclude>"
+  #  first_name_exclude = "<your user's first name to exclude>"
   #  first_name_prefix = "<prefix of user first name>"
   #  first_name_suffix = "<suffix of user first name>"
 
   #  last_name = "<your user's last name>"
   #  last_name_regexp = "<regular expression of user last name>"
   #  last_name_contains = "<a string in the user last name>"
-  #  last_name_exclude_contains = "<your user's last name to exclude>"
+  #  last_name_exclude = "<your user's last name to exclude>"
   #  last_name_prefix = "<prefix of user last name>"
   #  last_name_suffix = "<suffix of user last name>"
 
@@ -46,19 +46,19 @@ data "twingate_users" "all" {
 
 - `email` (String) Returns only users that exactly match this email.
 - `email_contains` (String) Match when the value exist in the email of the user.
-- `email_exclude_contains` (String) Match when the value does not exist in the email of the user.
+- `email_exclude` (String) Match when the value does not exist in the email of the user.
 - `email_prefix` (String) The email of the user must start with the value.
 - `email_regexp` (String) The regular expression match of the email of the user.
 - `email_suffix` (String) The email of the user must end with the value.
 - `first_name` (String) Returns only users that exactly match the first name.
 - `first_name_contains` (String) Match when the value exist in the first name of the user.
-- `first_name_exclude_contains` (String) Match when the value does not exist in the first name of the user.
+- `first_name_exclude` (String) Match when the value does not exist in the first name of the user.
 - `first_name_prefix` (String) The first name of the user must start with the value.
 - `first_name_regexp` (String) The regular expression match of the first name of the user.
 - `first_name_suffix` (String) The first name of the user must end with the value.
 - `last_name` (String) Returns only users that exactly match the last name.
 - `last_name_contains` (String) Match when the value exist in the last name of the user.
-- `last_name_exclude_contains` (String) Match when the value does not exist in the last name of the user.
+- `last_name_exclude` (String) Match when the value does not exist in the last name of the user.
 - `last_name_prefix` (String) The last name of the user must start with the value.
 - `last_name_regexp` (String) The regular expression match of the last name of the user.
 - `last_name_suffix` (String) The last name of the user must end with the value.

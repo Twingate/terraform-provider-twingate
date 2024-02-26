@@ -31,7 +31,7 @@ type resourcesModel struct {
 	Name         types.String    `tfsdk:"name"`
 	NameRegexp   types.String    `tfsdk:"name_regexp"`
 	NameContains types.String    `tfsdk:"name_contains"`
-	NameExclude  types.String    `tfsdk:"name_exclude_contains"`
+	NameExclude  types.String    `tfsdk:"name_exclude"`
 	NamePrefix   types.String    `tfsdk:"name_prefix"`
 	NameSuffix   types.String    `tfsdk:"name_suffix"`
 	Resources    []resourceModel `tfsdk:"resources"`
