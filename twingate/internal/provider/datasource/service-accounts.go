@@ -87,7 +87,7 @@ func (d *serviceAccounts) Schema(ctx context.Context, req datasource.SchemaReque
 			},
 			attr.Name + attr.FilterByExclude: schema.StringAttribute{
 				Optional:    true,
-				Description: "Match when the value does not exist in the name of the service account.",
+				Description: "Match when the exact value does not exist in the name of the service account.",
 			},
 			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
 				Optional:    true,
