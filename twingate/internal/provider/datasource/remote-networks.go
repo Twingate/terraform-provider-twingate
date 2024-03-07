@@ -83,7 +83,7 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 			},
 			attr.Name + attr.FilterByExclude: schema.StringAttribute{
 				Optional:    true,
-				Description: "Match when the value does not exist in the name of the remote network.",
+				Description: "Match when the exact value does not exist in the name of the remote network.",
 			},
 			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
 				Optional:    true,

@@ -80,7 +80,7 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 			},
 			attr.Name + attr.FilterByExclude: schema.StringAttribute{
 				Optional:    true,
-				Description: "Match when the value does not exist in the name of the security policy.",
+				Description: "Match when the exact value does not exist in the name of the security policy.",
 			},
 			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
 				Optional:    true,

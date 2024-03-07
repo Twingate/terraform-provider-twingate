@@ -33,7 +33,7 @@ data "twingate_resources" "foo" {
 
 - `name` (String) Returns only resources that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the resource.
-- `name_exclude` (String) Match when the value does not exist in the name of the resource.
+- `name_exclude` (String) Match when the exact value does not exist in the name of the resource.
 - `name_prefix` (String) The name of the resource must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the resource.
 - `name_suffix` (String) The name of the resource must end with the value.

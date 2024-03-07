@@ -1,6 +1,7 @@
 package test
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"strings"
@@ -17,10 +18,10 @@ const (
 func RandomConnectorName() string {
 	const maxLength = 30
 
-	name := Prefix(acctest.RandString(maxLength))
-	if len(name) > maxLength {
-		name = name[:maxLength]
-	}
+	// hash using only for text compression
+	hash := fmt.Sprintf("%x", sha256.Sum224([]byte(Prefix())))
+	name := fmt.Sprintf("%s-%s-", prefixName, hash[:15])
+	name += acctest.RandString(maxLength - len(name))
 
 	return name
 }

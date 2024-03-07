@@ -238,7 +238,6 @@ func testDatasourceTwingateConnectorsFilter(resourceName, networkName, connector
 func TestAccDatasourceTwingateConnectorsFilterByPrefix(t *testing.T) {
 	t.Parallel()
 
-	prefix := test.Prefix()
 	resourceName := test.RandomResourceName()
 	connectorName := test.RandomConnectorName()
 	theDatasource := "data.twingate_connectors." + resourceName
@@ -249,7 +248,7 @@ func TestAccDatasourceTwingateConnectorsFilterByPrefix(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByPrefix, prefix),
+				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByPrefix, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
@@ -263,8 +262,6 @@ func TestAccDatasourceTwingateConnectorsFilterBySuffix(t *testing.T) {
 	t.Parallel()
 
 	connectorName := test.RandomConnectorName()
-	prefix := test.Prefix()
-	suffix := connectorName[len(prefix):]
 	resourceName := test.RandomResourceName()
 	theDatasource := "data.twingate_connectors." + resourceName
 
@@ -274,7 +271,7 @@ func TestAccDatasourceTwingateConnectorsFilterBySuffix(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterBySuffix, suffix),
+				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterBySuffix, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
@@ -288,7 +285,6 @@ func TestAccDatasourceTwingateConnectorsFilterByContains(t *testing.T) {
 	t.Parallel()
 
 	connectorName := test.RandomConnectorName()
-	contains := connectorName[len(connectorName)/2 : len(connectorName)/2+5]
 	resourceName := test.RandomResourceName()
 	theDatasource := "data.twingate_connectors." + resourceName
 
@@ -298,7 +294,7 @@ func TestAccDatasourceTwingateConnectorsFilterByContains(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByContains, contains),
+				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByContains, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
@@ -312,7 +308,6 @@ func TestAccDatasourceTwingateConnectorsFilterByRegexp(t *testing.T) {
 	t.Parallel()
 
 	connectorName := test.RandomConnectorName()
-	contains := connectorName[len(connectorName)/2 : len(connectorName)/2+5]
 	resourceName := test.RandomResourceName()
 	theDatasource := "data.twingate_connectors." + resourceName
 
@@ -322,7 +317,7 @@ func TestAccDatasourceTwingateConnectorsFilterByRegexp(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByRegexp, fmt.Sprintf(".*%s.*", contains)),
+				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByRegexp, fmt.Sprintf(".*%s.*", connectorName)),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),

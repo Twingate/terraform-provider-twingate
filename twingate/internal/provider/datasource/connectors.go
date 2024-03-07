@@ -81,7 +81,7 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 			},
 			attr.Name + attr.FilterByExclude: schema.StringAttribute{
 				Optional:    true,
-				Description: "Match when the value does not exist in the name of the connector.",
+				Description: "Match when the exact value does not exist in the name of the connector.",
 			},
 			attr.Name + attr.FilterByPrefix: schema.StringAttribute{
 				Optional:    true,

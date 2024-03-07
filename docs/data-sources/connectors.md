@@ -30,7 +30,7 @@ data "twingate_connectors" "all" {
 
 - `name` (String) Returns only connectors that exactly match this name. If no options are passed it will return all connectors. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the connector.
-- `name_exclude` (String) Match when the value does not exist in the name of the connector.
+- `name_exclude` (String) Match when the exact value does not exist in the name of the connector.
 - `name_prefix` (String) The name of the connector must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the connector.
 - `name_suffix` (String) The name of the connector must end with the value.
