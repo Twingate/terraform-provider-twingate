@@ -64,6 +64,23 @@ type resourceModel struct {
 	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                types.Object `tfsdk:"protocols"`
 	Access                   types.List   `tfsdk:"access"`
+	GroupAccess              types.List   `tfsdk:"access_group"`
+	ServiceAccess            types.List   `tfsdk:"access_service"`
+	IsActive                 types.Bool   `tfsdk:"is_active"`
+	IsVisible                types.Bool   `tfsdk:"is_visible"`
+	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
+	Alias                    types.String `tfsdk:"alias"`
+	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+}
+
+type resourceModelV1 struct {
+	ID                       types.String `tfsdk:"id"`
+	Name                     types.String `tfsdk:"name"`
+	Address                  types.String `tfsdk:"address"`
+	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
+	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
+	Protocols                types.Object `tfsdk:"protocols"`
+	Access                   types.List   `tfsdk:"access"`
 	IsActive                 types.Bool   `tfsdk:"is_active"`
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
@@ -197,7 +214,11 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 
-		Blocks: map[string]schema.Block{attr.Access: accessBlock()},
+		Blocks: map[string]schema.Block{
+			attr.Access:        accessBlock(),
+			attr.AccessGroup:   groupAccessBlock(),
+			attr.AccessService: serviceAccessBlock(),
+		},
 	}
 }
 
@@ -346,7 +367,7 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 					return
 				}
 
-				upgradedState := resourceModel{
+				upgradedState := resourceModelV1{
 					ID:              priorState.ID,
 					Name:            priorState.Name,
 					Address:         priorState.Address,
@@ -382,6 +403,9 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 					"See the v1 to v2 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migration-v1-to-v2-guide")
 			},
 		},
+
+		// TODO: add migration
+		//1: {},
 	}
 }
 
@@ -467,6 +491,53 @@ func accessBlock() schema.ListNestedBlock {
 						EmptySetDiff(),
 					},
 					Default: setdefault.StaticValue(types.SetNull(types.StringType)),
+				},
+			},
+		},
+	}
+}
+
+func groupAccessBlock() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+		Description: "Restrict access to certain groups",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.GroupID: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: "Group ID that will have permission to access the Resource.",
+					Validators: []validator.String{
+						stringvalidator.LengthAtLeast(1),
+					},
+				},
+				attr.SecurityPolicyID: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: "The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.",
+				},
+			},
+		},
+	}
+}
+
+func serviceAccessBlock() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+		Description: "Restrict access to certain service account",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.ServiceAccountID: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: "The ID of the service account that should have access to this Resource.",
+					Validators: []validator.String{
+						stringvalidator.LengthAtLeast(1),
+					},
 				},
 			},
 		},
