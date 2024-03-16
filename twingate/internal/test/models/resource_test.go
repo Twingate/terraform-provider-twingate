@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 

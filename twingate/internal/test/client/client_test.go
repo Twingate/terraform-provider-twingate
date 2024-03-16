@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client"
 	"github.com/jarcoal/httpmock"
 )
 
