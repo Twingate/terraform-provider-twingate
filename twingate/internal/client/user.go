@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
 )
 
 type StringFilter struct {

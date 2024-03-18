@@ -1,7 +1,7 @@
 package query
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
 )
 
 type UpdateServiceAccountKey struct {

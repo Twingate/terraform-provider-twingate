@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
 )
 
 const (

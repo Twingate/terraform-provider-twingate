@@ -1,6 +1,6 @@
 package model
 
-import "github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
+import "github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
 
 const (
 	LocationAWS         = "AWS"
