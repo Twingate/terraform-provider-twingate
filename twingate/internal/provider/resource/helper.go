@@ -3,7 +3,7 @@ package resource
 import (
 	"fmt"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 

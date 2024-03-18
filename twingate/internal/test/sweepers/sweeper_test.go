@@ -3,15 +3,15 @@ package sweepers
 import (
 	"context"
 	"fmt"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test"
 	"log"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 

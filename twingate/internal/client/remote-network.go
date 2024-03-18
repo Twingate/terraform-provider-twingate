@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
 )
 
 type RemoteNetworkLocation string

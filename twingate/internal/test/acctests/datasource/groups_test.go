@@ -6,9 +6,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
