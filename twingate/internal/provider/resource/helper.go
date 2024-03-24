@@ -1,7 +1,11 @@
 package resource
 
 import (
+	"context"
 	"fmt"
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -49,6 +53,39 @@ func setDifference(inputA, inputB []string) []string {
 	return result
 }
 
+func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
+	var setA, setB map[string]model.AccessGroup
+	for _, access := range inputA {
+		setA[access.GroupID] = access
+	}
+
+	for _, access := range inputB {
+		setB[access.GroupID] = access
+	}
+
+	result := make([]model.AccessGroup, 0, len(setA))
+
+	for key := range setA {
+		if val, exist := setB[key]; !exist {
+			result = append(result, val)
+		}
+	}
+
+	return result
+}
+
+func setDifferenceGroups(inputA, inputB []model.AccessGroup) []string {
+	groupsA := utils.Map(inputA, func(item model.AccessGroup) string {
+		return item.GroupID
+	})
+
+	groupsB := utils.Map(inputB, func(item model.AccessGroup) string {
+		return item.GroupID
+	})
+
+	return setDifference(groupsA, groupsB)
+}
+
 func withDefaultValue(str, defaultValue string) string {
 	if str != "" {
 		return str
@@ -66,4 +103,61 @@ func addErr(diagnostics *diag.Diagnostics, err error, operation, resource string
 		fmt.Sprintf("failed to %s %s", operation, resource),
 		err.Error(),
 	)
+}
+
+func stringToPointer(val string) *string {
+	if val == "" {
+		return nil
+	}
+
+	return &val
+}
+
+func makeNullObject(attributeTypes map[string]tfattr.Type) types.Object {
+	return types.ObjectNull(attributeTypes)
+}
+
+func makeObjectsListNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.List {
+	return types.ListNull(types.ObjectNull(attributeTypes).Type(ctx))
+}
+
+func makeObjectsSetNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.Set {
+	return types.SetNull(types.ObjectNull(attributeTypes).Type(ctx))
+}
+
+func makeObjectsList(ctx context.Context, objects ...types.Object) (types.List, diag.Diagnostics) {
+	obj := objects[0]
+
+	items := utils.Map(objects, func(item types.Object) tfattr.Value {
+		return tfattr.Value(item)
+	})
+
+	return types.ListValue(obj.Type(ctx), items)
+}
+
+func makeObjectsSet(ctx context.Context, objects ...types.Object) (types.Set, diag.Diagnostics) {
+	obj := objects[0]
+
+	items := utils.Map(objects, func(item types.Object) tfattr.Value {
+		return tfattr.Value(item)
+	})
+
+	return types.SetValue(obj.Type(ctx), items)
+}
+
+func makeSet(list []string) (types.Set, diag.Diagnostics) {
+	return types.SetValue(types.StringType, stringsToTerraformValue(list))
+}
+
+func stringsToTerraformValue(list []string) []tfattr.Value {
+	if len(list) == 0 {
+		return nil
+	}
+
+	out := make([]tfattr.Value, 0, len(list))
+	for _, item := range list {
+		out = append(out, types.StringValue(item))
+	}
+
+	return out
 }

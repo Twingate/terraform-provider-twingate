@@ -21,6 +21,11 @@ const (
 //nolint:gochecknoglobals
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
+type AccessGroup struct {
+	GroupID          string
+	SecurityPolicyID string
+}
+
 type Resource struct {
 	ID                       string
 	RemoteNetworkID          string
@@ -28,7 +33,7 @@ type Resource struct {
 	Name                     string
 	Protocols                *Protocols
 	IsActive                 bool
-	Groups                   []string
+	GroupsAccess             []AccessGroup
 	ServiceAccounts          []string
 	IsAuthoritative          bool
 	IsVisible                *bool
@@ -39,8 +44,10 @@ type Resource struct {
 
 func (r Resource) AccessToTerraform() []interface{} {
 	rawMap := make(map[string]interface{})
-	if len(r.Groups) != 0 {
-		rawMap[attr.GroupIDs] = r.Groups
+	if len(r.GroupsAccess) != 0 {
+		rawMap[attr.GroupIDs] = utils.Map(r.GroupsAccess, func(item AccessGroup) string {
+			return item.GroupID
+		})
 	}
 
 	if len(r.ServiceAccounts) != 0 {

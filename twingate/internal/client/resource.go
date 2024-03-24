@@ -303,10 +303,10 @@ type AccessInput struct {
 	SecurityPolicyID *string `json:"securityPolicyId"`
 }
 
-func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, principalIDs []string) error {
+func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, accessInput []string) error {
 	opr := resourceResourceAccess.update()
 
-	if len(principalIDs) == 0 {
+	if len(accessInput) == 0 {
 		return nil
 	}
 
@@ -314,7 +314,7 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	access := utils.Map(principalIDs, func(id string) AccessInput {
+	access := utils.Map(accessInput, func(id string) AccessInput {
 		return AccessInput{PrincipalID: id}
 	})
 
