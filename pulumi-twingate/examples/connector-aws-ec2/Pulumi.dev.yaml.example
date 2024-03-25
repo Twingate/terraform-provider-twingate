@@ -1,0 +1,22 @@
+config:
+  aws:region: eu-west-1
+  demo-connector:data:
+    active: true
+    tg_remote_network: aws_application_vpc
+    vpc_name: aws_application_vpc
+    vpc_cidr: 10.0.0.0/16
+    prv_subnet_name: private_subnet
+    pub_subnet_name: public_subnet
+    prv_cidr: 10.0.1.0/24
+    pub_cidr: 10.0.2.0/24
+    eip_name: eip
+    igw_name: igw
+    natgw_name: ngw
+    pubrttable_name: pubrttable
+    prvrttable_name: prvrttable
+    pubrtasst_name: pub_rt_asst
+    prvrtasst_name: prv_rt_asst
+    sec_grp_name: egress_sec_grp
+    key_name: connector_ssh_key
+    ec2_type: t2.micro
+    connectors: 2

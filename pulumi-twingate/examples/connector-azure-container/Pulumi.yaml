@@ -1,0 +1,4 @@
+name: demo-connector
+runtime:
+  name: python
+description: Example script for deploying multiple Twingate connectors to AWS

@@ -1,0 +1,14 @@
+config:
+  demo-connector:data:
+    active: true
+    connectors: 2
+    vm_type: e2-micro
+    subnet_cidr: 10.0.1.0/24
+    router_name: router
+    nat_name: nat
+    subnet_name: subnet
+    tg_remote_network: gcp-application-vpc
+    vpc_name: gcp-application-vpc
+  gcp:project: twingate-labs
+  gcp:region: europe-west2
+  gcp:zone: europe-west2-c

@@ -1,0 +1,134 @@
+{
+    "renames": {
+        "resources": {
+            "twingate:index/twingateConnector:TwingateConnector": "twingate_connector",
+            "twingate:index/twingateConnectorTokens:TwingateConnectorTokens": "twingate_connector_tokens",
+            "twingate:index/twingateGroup:TwingateGroup": "twingate_group",
+            "twingate:index/twingateRemoteNetwork:TwingateRemoteNetwork": "twingate_remote_network",
+            "twingate:index/twingateResource:TwingateResource": "twingate_resource",
+            "twingate:index/twingateServiceAccount:TwingateServiceAccount": "twingate_service_account",
+            "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey": "twingate_service_account_key",
+            "twingate:index/twingateUser:TwingateUser": "twingate_user"
+        },
+        "functions": {
+            "twingate:index/getTwingateConnector:getTwingateConnector": "twingate_connector",
+            "twingate:index/getTwingateConnectors:getTwingateConnectors": "twingate_connectors",
+            "twingate:index/getTwingateGroup:getTwingateGroup": "twingate_group",
+            "twingate:index/getTwingateGroups:getTwingateGroups": "twingate_groups",
+            "twingate:index/getTwingateRemoteNetwork:getTwingateRemoteNetwork": "twingate_remote_network",
+            "twingate:index/getTwingateRemoteNetworks:getTwingateRemoteNetworks": "twingate_remote_networks",
+            "twingate:index/getTwingateResource:getTwingateResource": "twingate_resource",
+            "twingate:index/getTwingateResources:getTwingateResources": "twingate_resources",
+            "twingate:index/getTwingateSecurityPolicies:getTwingateSecurityPolicies": "twingate_security_policies",
+            "twingate:index/getTwingateSecurityPolicy:getTwingateSecurityPolicy": "twingate_security_policy",
+            "twingate:index/getTwingateServiceAccounts:getTwingateServiceAccounts": "twingate_service_accounts",
+            "twingate:index/getTwingateUser:getTwingateUser": "twingate_user",
+            "twingate:index/getTwingateUsers:getTwingateUsers": "twingate_users"
+        },
+        "renamedProperties": {
+            "twingate:index/TwingateResourceAccess:TwingateResourceAccess": {
+                "groupIds": "group_ids",
+                "serviceAccountIds": "service_account_ids"
+            },
+            "twingate:index/TwingateResourceProtocols:TwingateResourceProtocols": {
+                "allowIcmp": "allow_icmp"
+            },
+            "twingate:index/getTwingateConnector:getTwingateConnector": {
+                "remoteNetworkId": "remote_network_id",
+                "statusUpdatesEnabled": "status_updates_enabled"
+            },
+            "twingate:index/getTwingateConnectorsConnector:getTwingateConnectorsConnector": {
+                "remoteNetworkId": "remote_network_id",
+                "statusUpdatesEnabled": "status_updates_enabled"
+            },
+            "twingate:index/getTwingateGroup:getTwingateGroup": {
+                "isActive": "is_active",
+                "securityPolicyId": "security_policy_id"
+            },
+            "twingate:index/getTwingateGroups:getTwingateGroups": {
+                "isActive": "is_active"
+            },
+            "twingate:index/getTwingateGroupsGroup:getTwingateGroupsGroup": {
+                "isActive": "is_active",
+                "securityPolicyId": "security_policy_id"
+            },
+            "twingate:index/getTwingateRemoteNetworks:getTwingateRemoteNetworks": {
+                "remoteNetworks": "remote_networks"
+            },
+            "twingate:index/getTwingateResource:getTwingateResource": {
+                "remoteNetworkId": "remote_network_id"
+            },
+            "twingate:index/getTwingateResourceProtocols:getTwingateResourceProtocols": {
+                "allowIcmp": "allow_icmp"
+            },
+            "twingate:index/getTwingateResourcesResource:getTwingateResourcesResource": {
+                "remoteNetworkId": "remote_network_id"
+            },
+            "twingate:index/getTwingateResourcesResourceProtocols:getTwingateResourcesResourceProtocols": {
+                "allowIcmp": "allow_icmp"
+            },
+            "twingate:index/getTwingateSecurityPolicies:getTwingateSecurityPolicies": {
+                "securityPolicies": "security_policies"
+            },
+            "twingate:index/getTwingateServiceAccounts:getTwingateServiceAccounts": {
+                "serviceAccounts": "service_accounts"
+            },
+            "twingate:index/getTwingateServiceAccountsServiceAccount:getTwingateServiceAccountsServiceAccount": {
+                "keyIds": "key_ids",
+                "resourceIds": "resource_ids"
+            },
+            "twingate:index/getTwingateUser:getTwingateUser": {
+                "firstName": "first_name",
+                "isAdmin": "is_admin",
+                "lastName": "last_name"
+            },
+            "twingate:index/getTwingateUsersUser:getTwingateUsersUser": {
+                "firstName": "first_name",
+                "isAdmin": "is_admin",
+                "lastName": "last_name"
+            },
+            "twingate:index/twingateConnector:TwingateConnector": {
+                "remoteNetworkId": "remote_network_id",
+                "statusUpdatesEnabled": "status_updates_enabled"
+            },
+            "twingate:index/twingateConnectorTokens:TwingateConnectorTokens": {
+                "accessToken": "access_token",
+                "connectorId": "connector_id",
+                "refreshToken": "refresh_token"
+            },
+            "twingate:index/twingateGroup:TwingateGroup": {
+                "isAuthoritative": "is_authoritative",
+                "securityPolicyId": "security_policy_id",
+                "userIds": "user_ids"
+            },
+            "twingate:index/twingateResource:TwingateResource": {
+                "isAuthoritative": "is_authoritative",
+                "isBrowserShortcutEnabled": "is_browser_shortcut_enabled",
+                "isVisible": "is_visible",
+                "remoteNetworkId": "remote_network_id",
+                "securityPolicyId": "security_policy_id"
+            },
+            "twingate:index/twingateServiceAccountKey:TwingateServiceAccountKey": {
+                "expirationTime": "expiration_time",
+                "isActive": "is_active",
+                "serviceAccountId": "service_account_id"
+            },
+            "twingate:index/twingateUser:TwingateUser": {
+                "firstName": "first_name",
+                "isActive": "is_active",
+                "lastName": "last_name",
+                "sendInvite": "send_invite"
+            },
+            "twingate:index:Provider": {
+                "apiToken": "api_token",
+                "httpMaxRetry": "http_max_retry",
+                "httpTimeout": "http_timeout"
+            }
+        },
+        "renamedConfigProperties": {
+            "apiToken": "api_token",
+            "httpMaxRetry": "http_max_retry",
+            "httpTimeout": "http_timeout"
+        }
+    }
+}

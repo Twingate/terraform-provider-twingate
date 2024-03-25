@@ -1,0 +1,5 @@
+{
+  "resource": true,
+  "name": "twingate",
+  "server": "github://api.github.com/twingate-labs"
+}

@@ -1,0 +1,3 @@
+name: twingate-example-ts
+runtime: nodejs
+description: Typescript example for twingate
