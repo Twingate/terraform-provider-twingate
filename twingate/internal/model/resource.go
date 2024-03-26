@@ -23,7 +23,7 @@ var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
 type AccessGroup struct {
 	GroupID          string
-	SecurityPolicyID string
+	SecurityPolicyID *string
 }
 
 type Resource struct {

@@ -63,7 +63,6 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	variables := newVars(
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(input.Groups, "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
@@ -81,7 +80,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	}
 
 	resource := response.Entity.ToModel()
-	resource.Groups = input.Groups
+	resource.GroupsAccess = input.GroupsAccess
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
 
@@ -298,12 +297,28 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
 }
 
-type AccessInput struct {
+type Access struct {
 	PrincipalID      string  `json:"principalId"`
 	SecurityPolicyID *string `json:"securityPolicyId"`
 }
 
-func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, accessInput []string) error {
+func (a *Access) GetPrincipalID() string {
+	return a.PrincipalID
+}
+
+type AccessWithoutSecurityPolicy struct {
+	PrincipalID string `json:"principalId"`
+}
+
+func (a *AccessWithoutSecurityPolicy) GetPrincipalID() string {
+	return a.PrincipalID
+}
+
+type AccessInput interface {
+	GetPrincipalID() string
+}
+
+func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, accessInput []Access) error {
 	opr := resourceResourceAccess.update()
 
 	if len(accessInput) == 0 {
@@ -314,9 +329,18 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	access := utils.Map(accessInput, func(id string) AccessInput {
-		return AccessInput{PrincipalID: id}
-	})
+	var access []AccessInput
+
+	for _, input := range accessInput {
+		var item AccessInput
+		if input.SecurityPolicyID != nil && *input.SecurityPolicyID == "" {
+			item = &AccessWithoutSecurityPolicy{PrincipalID: input.PrincipalID}
+		} else {
+			item = &input
+		}
+
+		access = append(access, item)
+	}
 
 	variables := newVars(
 		gqlID(resourceID),

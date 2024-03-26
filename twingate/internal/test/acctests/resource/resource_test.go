@@ -17,13 +17,14 @@ import (
 )
 
 var (
-	tcpPolicy                  = attr.PathAttr(attr.Protocols, attr.TCP, attr.Policy)
-	udpPolicy                  = attr.PathAttr(attr.Protocols, attr.UDP, attr.Policy)
-	firstTCPPort               = attr.FirstAttr(attr.Protocols, attr.TCP, attr.Ports)
-	firstUDPPort               = attr.FirstAttr(attr.Protocols, attr.UDP, attr.Ports)
-	tcpPortsLen                = attr.LenAttr(attr.Protocols, attr.TCP, attr.Ports)
-	udpPortsLen                = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
-	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
+	tcpPolicy         = attr.PathAttr(attr.Protocols, attr.TCP, attr.Policy)
+	udpPolicy         = attr.PathAttr(attr.Protocols, attr.UDP, attr.Policy)
+	firstTCPPort      = attr.FirstAttr(attr.Protocols, attr.TCP, attr.Ports)
+	firstUDPPort      = attr.FirstAttr(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPortsLen       = attr.LenAttr(attr.Protocols, attr.TCP, attr.Ports)
+	udpPortsLen       = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
+	accessGroupIdsLen = attr.Len(attr.AccessGroup)
+	//accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
 	accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
 )
 
@@ -177,8 +178,12 @@ func createResourceWithProtocolsAndGroups(networkName, groupName1, groupName2, r
 		}
       }
 
-      access {
-		group_ids = [twingate_group.g21.id, twingate_group.g22.id]
+      dynamic "access_group" {
+		for_each = [twingate_group.g21.id, twingate_group.g22.id]
+		content {
+			group_id = access_group.value
+			# security_policy_id = null
+		}
       }
 	}
 	`, networkName, groupName1, groupName2, resourceName, model.PolicyRestricted, model.PolicyAllowAll)

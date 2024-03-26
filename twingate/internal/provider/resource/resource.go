@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"reflect"
 	"regexp"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -106,20 +106,15 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		resp.State.SetAttribute(ctx, path.Root(attr.Protocols), protocols)
 	}
 
-	// todo:
 	if len(res.GroupsAccess) > 0 {
-		accessGroup, diags := convertAccessGroupsToTerraform(ctx, res.GroupsAccess)
-		resp.Diagnostics.Append(diags...)
-
-		access, diags := convertAccessGroupsToTerraform(ctx, res)
-
+		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess)
 		resp.Diagnostics.Append(diags...)
 
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		resp.State.SetAttribute(ctx, path.Root(attr.Access), access)
+		resp.State.SetAttribute(ctx, path.Root(attr.AccessGroup), accessGroup)
 	}
 
 	if len(res.ServiceAccounts) > 0 {
@@ -265,10 +260,10 @@ func protocol() schema.SingleNestedAttribute {
 	}
 }
 
-func groupAccessBlock() schema.ListNestedBlock {
-	return schema.ListNestedBlock{
-		Validators: []validator.List{
-			listvalidator.SizeAtMost(1),
+func groupAccessBlock() schema.SetNestedBlock {
+	return schema.SetNestedBlock{
+		Validators: []validator.Set{
+			setvalidator.SizeAtLeast(1),
 		},
 		Description: "Restrict access to certain group",
 		NestedObject: schema.NestedBlockObject{
@@ -288,16 +283,17 @@ func groupAccessBlock() schema.ListNestedBlock {
 					Validators: []validator.String{
 						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
 					},
+					Default: stringdefault.StaticString(""),
 				},
 			},
 		},
 	}
 }
 
-func serviceAccessBlock() schema.ListNestedBlock {
-	return schema.ListNestedBlock{
-		Validators: []validator.List{
-			listvalidator.SizeAtMost(1),
+func serviceAccessBlock() schema.SetNestedBlock {
+	return schema.SetNestedBlock{
+		Validators: []validator.Set{
+			setvalidator.SizeAtLeast(1),
 		},
 		Description: "Restrict access to certain service account",
 		NestedObject: schema.NestedBlockObject{
@@ -448,7 +444,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if err = r.client.AddResourceAccess(ctx, resource.ID, resource.ServiceAccounts); err != nil {
+	if err = r.client.AddResourceAccess(ctx, resource.ID, convertResourceAccess(resource.ServiceAccounts, resource.GroupsAccess)); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
 
 		return
@@ -468,6 +464,19 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
+}
+
+func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup) []client.Access {
+	var access []client.Access
+	for _, account := range serviceAccounts {
+		access = append(access, client.Access{PrincipalID: account})
+	}
+
+	for _, group := range groupsAccess {
+		access = append(access, client.Access{PrincipalID: group.GroupID, SecurityPolicyID: group.SecurityPolicyID})
+	}
+
+	return access
 }
 
 func getAccessAttribute(list types.List, attribute string) []string {
@@ -512,7 +521,7 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 
 		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
 		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
-			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueString()
+			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
 		}
 
 		access = append(access, accessGroup)
@@ -839,11 +848,9 @@ func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
-	if err := r.client.AddResourceAccess(ctx, input.ID, serviceAccountsToAdd); err != nil {
+	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd)); err != nil {
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
-
-	// todo
 
 	return nil
 }
@@ -924,9 +931,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	}
 
 	if !resource.IsAuthoritative {
-
-		resource.Groups = setIntersection(getAccessAttribute(reference.Access, attr.GroupIDs), resource.Groups)
-
+		resource.GroupsAccess = setIntersectionGroupAccess(getGroupAccessAttribute(reference.GroupAccess), resource.GroupsAccess)
 		resource.ServiceAccounts = setIntersection(getServiceAccountAccessAttribute(reference.ServiceAccess), resource.ServiceAccounts)
 	}
 
@@ -1186,8 +1191,9 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 	var objects []types.Object
 	for _, access := range groupAccess {
 		attributes := map[string]tfattr.Value{
-			attr.GroupID:          types.StringValue(access.GroupID),
-			attr.SecurityPolicyID: types.StringPointerValue(stringToPointer(access.SecurityPolicyID)),
+			attr.GroupID: types.StringValue(access.GroupID),
+			//attr.SecurityPolicyID: types.StringNull(),
+			attr.SecurityPolicyID: types.StringPointerValue(access.SecurityPolicyID),
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -1296,19 +1302,13 @@ func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context
 
 func accessGroupAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
-		attr.GroupID: types.SetType{
-			ElemType: types.StringType,
-		},
-		attr.SecurityPolicyID: types.SetType{
-			ElemType: types.StringType,
-		},
+		attr.GroupID:          types.StringType,
+		attr.SecurityPolicyID: types.StringType,
 	}
 }
 
 func accessServiceAccountAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
-		attr.ServiceAccountID: types.SetType{
-			ElemType: types.StringType,
-		},
+		attr.ServiceAccountID: types.StringType,
 	}
 }

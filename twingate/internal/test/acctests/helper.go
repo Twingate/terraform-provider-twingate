@@ -537,7 +537,9 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{groupID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.Access{
+			{PrincipalID: groupID},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add group with ID %s: %w", resourceID, groupID, err)
 		}
@@ -579,8 +581,8 @@ func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.Test
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
 
-		if len(resource.Groups) != expectedGroupsLen {
-			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.Groups))
+		if len(resource.GroupsAccess) != expectedGroupsLen {
+			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.GroupsAccess))
 		}
 
 		return nil
@@ -615,7 +617,9 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{serviceAccountID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.Access{
+			{PrincipalID: serviceAccountID},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
 		}

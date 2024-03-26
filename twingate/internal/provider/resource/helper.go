@@ -28,6 +28,27 @@ func setIntersection(a, b []string) []string {
 	return result
 }
 
+func setIntersectionGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
+	var setA, setB map[string]model.AccessGroup
+	for _, access := range inputA {
+		setA[access.GroupID] = access
+	}
+
+	for _, access := range inputB {
+		setB[access.GroupID] = access
+	}
+
+	result := make([]model.AccessGroup, 0, len(setA))
+
+	for key := range setA {
+		if val, exist := setB[key]; exist {
+			result = append(result, val)
+		}
+	}
+
+	return result
+}
+
 // setDifference - difference between sets implies subtracting the elements from a set.
 // The difference between sets A and set B denoted as A − B.
 // If A = {1, 2, 3, 4} and B = {3, 4, 5, 7}, then the difference between sets A and B is given by A - B = {1, 2}.
