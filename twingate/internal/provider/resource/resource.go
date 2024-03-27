@@ -283,7 +283,8 @@ func groupAccessBlock() schema.SetNestedBlock {
 					Validators: []validator.String{
 						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
 					},
-					Default: stringdefault.StaticString(""),
+					//Default: stringdefault.StaticString(""),
+					PlanModifiers: []planmodifier.String{PolicyForGroupAccess()},
 				},
 			},
 		},
@@ -1190,10 +1191,18 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 
 	var objects []types.Object
 	for _, access := range groupAccess {
+		var securityPolicy basetypes.StringValue
+		//if access.SecurityPolicyID == nil {
+		//	securityPolicy = types.StringValue("")
+		//} else {
+		securityPolicy = types.StringPointerValue(access.SecurityPolicyID)
+		//}
+
 		attributes := map[string]tfattr.Value{
 			attr.GroupID: types.StringValue(access.GroupID),
 			//attr.SecurityPolicyID: types.StringNull(),
-			attr.SecurityPolicyID: types.StringPointerValue(access.SecurityPolicyID),
+			//attr.SecurityPolicyID: types.StringPointerValue(access.SecurityPolicyID),
+			attr.SecurityPolicyID: securityPolicy,
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -1311,4 +1320,53 @@ func accessServiceAccountAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.ServiceAccountID: types.StringType,
 	}
+}
+
+func PolicyForGroupAccess() planmodifier.String {
+	return policyForGroupAccess{}
+}
+
+type policyForGroupAccess struct{}
+
+func (m policyForGroupAccess) Description(_ context.Context) string {
+	return ""
+}
+
+func (m policyForGroupAccess) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+func (m policyForGroupAccess) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
+		resp.PlanValue = types.StringNull()
+
+		return
+	}
+
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	// Do nothing if there is a known planned value.
+	if req.ConfigValue.ValueString() != "" {
+		return
+	}
+
+	if !req.StateValue.IsUnknown() && req.ConfigValue.IsNull() {
+		resp.PlanValue = types.StringNull()
+
+		return
+	}
+
+	//if req.StateValue.ValueString() == "" && req.PlanValue.ValueString() == DefaultSecurityPolicyID {
+	//	resp.PlanValue = types.StringValue("")
+	//} else if req.StateValue.ValueString() == DefaultSecurityPolicyID && req.PlanValue.ValueString() == "" {
+	//	resp.PlanValue = types.StringValue(DefaultSecurityPolicyID)
+	//}
 }

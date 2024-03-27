@@ -310,6 +310,68 @@ func DeactivateTwingateResource(resourceName string) sdk.TestCheckFunc {
 	}
 }
 
+func CheckTwingateResourceSecurityPolicyOnGroupAccess(resourceName string, expectedSecurityPolicy string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		res, err := providerClient.ReadResource(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if len(res.GroupsAccess) == 0 {
+			return errors.New("expected at least one group in GroupAccess")
+		}
+
+		if res.GroupsAccess[0].SecurityPolicyID == nil {
+			return errors.New("expected non nil security policy in GroupAccess")
+		}
+
+		if *res.GroupsAccess[0].SecurityPolicyID != expectedSecurityPolicy {
+			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, *res.GroupsAccess[0].SecurityPolicyID) //nolint:goerr113
+		}
+
+		return nil
+	}
+}
+
+func CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(resourceName string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		res, err := providerClient.ReadResource(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if len(res.GroupsAccess) == 0 {
+			return errors.New("expected at least one group in GroupAccess")
+		}
+
+		if res.GroupsAccess[0].SecurityPolicyID != nil {
+			return errors.New("expected nil security policy in GroupAccess, got non nil")
+		}
+
+		return nil
+	}
+}
+
 func CheckTwingateResourceActiveState(resourceName string, expectedActiveState bool) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resourceState, ok := s.RootModule().Resources[resourceName]

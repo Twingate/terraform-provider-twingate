@@ -6,6 +6,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -29,7 +30,9 @@ func setIntersection(a, b []string) []string {
 }
 
 func setIntersectionGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
-	var setA, setB map[string]model.AccessGroup
+	setA := map[string]model.AccessGroup{}
+	setB := map[string]model.AccessGroup{}
+
 	for _, access := range inputA {
 		setA[access.GroupID] = access
 	}
@@ -75,7 +78,9 @@ func setDifference(inputA, inputB []string) []string {
 }
 
 func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
-	var setA, setB map[string]model.AccessGroup
+	setA := map[string]model.AccessGroup{}
+	setB := map[string]model.AccessGroup{}
+
 	for _, access := range inputA {
 		setA[access.GroupID] = access
 	}
@@ -86,13 +91,25 @@ func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.Access
 
 	result := make([]model.AccessGroup, 0, len(setA))
 
-	for key := range setA {
-		if val, exist := setB[key]; !exist {
-			result = append(result, val)
+	for key, valA := range setA {
+		if valB, exist := setB[key]; !exist || !equalOptionalStrings(valA.SecurityPolicyID, valB.SecurityPolicyID) {
+			result = append(result, valA)
 		}
 	}
 
 	return result
+}
+
+func equalOptionalStrings(str1, str2 *string) bool {
+	if str1 == nil && str2 == nil {
+		return true
+	}
+
+	if str1 == nil && str2 != nil || str1 != nil && str2 == nil {
+		return false
+	}
+
+	return strings.EqualFold(*str1, *str2)
 }
 
 func setDifferenceGroups(inputA, inputB []model.AccessGroup) []string {
