@@ -752,7 +752,8 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
 		if state.SecurityPolicyID.ValueString() == "" {
-			resource.SecurityPolicyID = stringToPointer("")
+			emptyPolicy := ""
+			resource.SecurityPolicyID = &emptyPolicy
 		}
 	}
 
