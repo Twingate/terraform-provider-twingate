@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
 	"github.com/stretchr/testify/assert"
 )
 

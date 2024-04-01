@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )

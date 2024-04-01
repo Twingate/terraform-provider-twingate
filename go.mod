@@ -1,4 +1,4 @@
-module github.com/Twingate/terraform-provider-twingate/v2
+module github.com/Twingate/terraform-provider-twingate/v3
 
 go 1.22
 

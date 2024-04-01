@@ -4,11 +4,11 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
-	api "github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client"
+	api "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"net/http"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"

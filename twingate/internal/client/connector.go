@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 )
 
 func (client *Client) CreateConnector(ctx context.Context, input *model.Connector) (*model.Connector, error) {

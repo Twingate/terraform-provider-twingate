@@ -3,8 +3,8 @@ package sweepers
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client"
-	twingate "github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	twingate "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/resource"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 

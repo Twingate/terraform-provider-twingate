@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
 )
 
