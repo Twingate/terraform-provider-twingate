@@ -3,13 +3,12 @@ package resource
 import (
 	"context"
 	"fmt"
-	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
-	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 
+	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // setIntersection - for given two sets A and B,
@@ -92,24 +91,12 @@ func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.Access
 	result := make([]model.AccessGroup, 0, len(setA))
 
 	for key, valA := range setA {
-		if valB, exist := setB[key]; !exist || !equalOptionalStrings(valA.SecurityPolicyID, valB.SecurityPolicyID) {
+		if valB, exist := setB[key]; !exist || valA.SecurityPolicyID != valB.SecurityPolicyID {
 			result = append(result, valA)
 		}
 	}
 
 	return result
-}
-
-func equalOptionalStrings(str1, str2 *string) bool {
-	if str1 == nil && str2 == nil {
-		return true
-	}
-
-	if str1 == nil && str2 != nil || str1 != nil && str2 == nil {
-		return false
-	}
-
-	return strings.EqualFold(*str1, *str2)
 }
 
 func setDifferenceGroups(inputA, inputB []model.AccessGroup) []string {
@@ -155,22 +142,8 @@ func makeNullObject(attributeTypes map[string]tfattr.Type) types.Object {
 	return types.ObjectNull(attributeTypes)
 }
 
-func makeObjectsListNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.List {
-	return types.ListNull(types.ObjectNull(attributeTypes).Type(ctx))
-}
-
 func makeObjectsSetNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.Set {
 	return types.SetNull(types.ObjectNull(attributeTypes).Type(ctx))
-}
-
-func makeObjectsList(ctx context.Context, objects ...types.Object) (types.List, diag.Diagnostics) {
-	obj := objects[0]
-
-	items := utils.Map(objects, func(item types.Object) tfattr.Value {
-		return tfattr.Value(item)
-	})
-
-	return types.ListValue(obj.Type(ctx), items)
 }
 
 func makeObjectsSet(ctx context.Context, objects ...types.Object) (types.Set, diag.Diagnostics) {
@@ -181,21 +154,4 @@ func makeObjectsSet(ctx context.Context, objects ...types.Object) (types.Set, di
 	})
 
 	return types.SetValue(obj.Type(ctx), items)
-}
-
-func makeSet(list []string) (types.Set, diag.Diagnostics) {
-	return types.SetValue(types.StringType, stringsToTerraformValue(list))
-}
-
-func stringsToTerraformValue(list []string) []tfattr.Value {
-	if len(list) == 0 {
-		return nil
-	}
-
-	out := make([]tfattr.Value, 0, len(list))
-	for _, item := range list {
-		out = append(out, types.StringValue(item))
-	}
-
-	return out
 }

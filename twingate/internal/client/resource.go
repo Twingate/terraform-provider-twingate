@@ -329,14 +329,19 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	var access []AccessInput
+	access := make([]AccessInput, 0, len(accessInput))
 
 	for _, input := range accessInput {
 		var item AccessInput
-		if input.SecurityPolicyID != nil && *input.SecurityPolicyID == "" {
+
+		switch {
+		case input.SecurityPolicyID != nil && *input.SecurityPolicyID == "":
 			item = &AccessWithoutSecurityPolicy{PrincipalID: input.PrincipalID}
-		} else {
-			item = &input
+		case input.SecurityPolicyID != nil && *input.SecurityPolicyID == model.NullSecurityPolicy:
+			item = &Access{PrincipalID: input.PrincipalID}
+		default:
+			obj := input
+			item = &obj
 		}
 
 		access = append(access, item)

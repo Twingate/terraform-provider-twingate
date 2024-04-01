@@ -35,6 +35,8 @@ var (
 	ErrClientNotInited          = errors.New("meta client not inited")
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 	ErrInvalidPath              = errors.New("invalid path: the path value cannot be asserted as string")
+	ErrNotNilSecurityPolicy     = errors.New("expected nil security policy in GroupAccess, got non nil")
+	ErrEmptyGroupAccess         = errors.New("expected at least one group in GroupAccess")
 )
 
 func ErrServiceAccountsLenMismatch(expected, actual int) error {
@@ -328,15 +330,11 @@ func CheckTwingateResourceSecurityPolicyOnGroupAccess(resourceName string, expec
 		}
 
 		if len(res.GroupsAccess) == 0 {
-			return errors.New("expected at least one group in GroupAccess")
+			return ErrEmptyGroupAccess
 		}
 
-		if res.GroupsAccess[0].SecurityPolicyID == nil {
-			return errors.New("expected non nil security policy in GroupAccess")
-		}
-
-		if *res.GroupsAccess[0].SecurityPolicyID != expectedSecurityPolicy {
-			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, *res.GroupsAccess[0].SecurityPolicyID) //nolint:goerr113
+		if res.GroupsAccess[0].SecurityPolicyID != expectedSecurityPolicy {
+			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, res.GroupsAccess[0].SecurityPolicyID) //nolint:goerr113
 		}
 
 		return nil
@@ -361,11 +359,11 @@ func CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(resourceName string)
 		}
 
 		if len(res.GroupsAccess) == 0 {
-			return errors.New("expected at least one group in GroupAccess")
+			return ErrEmptyGroupAccess
 		}
 
-		if res.GroupsAccess[0].SecurityPolicyID != nil {
-			return errors.New("expected nil security policy in GroupAccess, got non nil")
+		if res.GroupsAccess[0].SecurityPolicyID != "" {
+			return ErrNotNilSecurityPolicy
 		}
 
 		return nil

@@ -37,9 +37,18 @@ resource "twingate_resource" "resource" {
     }
   }
 
-  access {
-    group_ids = [twingate_group.aws.id]
-    service_account_ids = [twingate_service_account.github_actions_prod.id]
+  dynamic "access_group" {
+    for_each = [twingate_group.aws.id]
+    content {
+      group_id = access_group.value
+    }
+  }
+
+  dynamic "access_service" {
+    for_each = [twingate_service_account.github_actions_prod.id]
+    content {
+      service_account_id = access_service.value
+    }
   }
 
   is_active = true

@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -28,184 +29,187 @@ type resourceModelV0 struct {
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
 }
 
-var stateUpgraderResourceV0 = resource.StateUpgrader{
-	PriorSchema: &schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			attr.ID: schema.StringAttribute{
-				Computed: true,
+//nolint:funlen,cyclop
+func upgradeResourceStateV0() resource.StateUpgrader {
+	return resource.StateUpgrader{
+		PriorSchema: &schema.Schema{
+			Attributes: map[string]schema.Attribute{
+				attr.ID: schema.StringAttribute{
+					Computed: true,
+				},
+				attr.Name: schema.StringAttribute{
+					Required: true,
+				},
+				attr.Address: schema.StringAttribute{
+					Required: true,
+				},
+				attr.RemoteNetworkID: schema.StringAttribute{
+					Required: true,
+				},
+				attr.IsActive: schema.BoolAttribute{
+					Optional: true,
+					Computed: true,
+				},
+				attr.IsAuthoritative: schema.BoolAttribute{
+					Optional: true,
+					Computed: true,
+				},
+				attr.Alias: schema.StringAttribute{
+					Optional: true,
+				},
+				attr.SecurityPolicyID: schema.StringAttribute{
+					Optional: true,
+					Computed: true,
+				},
+				attr.IsVisible: schema.BoolAttribute{
+					Optional: true,
+					Computed: true,
+				},
+				attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
+					Optional: true,
+					Computed: true,
+				},
 			},
-			attr.Name: schema.StringAttribute{
-				Required: true,
-			},
-			attr.Address: schema.StringAttribute{
-				Required: true,
-			},
-			attr.RemoteNetworkID: schema.StringAttribute{
-				Required: true,
-			},
-			attr.IsActive: schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-			},
-			attr.IsAuthoritative: schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-			},
-			attr.Alias: schema.StringAttribute{
-				Optional: true,
-			},
-			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-			},
-			attr.IsVisible: schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-			},
-			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-			},
-		},
 
-		Blocks: map[string]schema.Block{
-			attr.Access: schema.ListNestedBlock{
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
-				},
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						attr.GroupIDs: schema.SetAttribute{
-							Optional:    true,
-							ElementType: types.StringType,
-							Validators: []validator.Set{
-								setvalidator.SizeAtLeast(1),
-							},
-						},
-						attr.ServiceAccountIDs: schema.SetAttribute{
-							Optional:    true,
-							ElementType: types.StringType,
-							Validators: []validator.Set{
-								setvalidator.SizeAtLeast(1),
-							},
-						},
+			Blocks: map[string]schema.Block{
+				attr.Access: schema.ListNestedBlock{
+					Validators: []validator.List{
+						listvalidator.SizeAtMost(1),
 					},
-				},
-			},
-			attr.Protocols: schema.ListNestedBlock{
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
-				},
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						attr.AllowIcmp: schema.BoolAttribute{
-							Optional: true,
-							Computed: true,
-						},
-					},
-					Blocks: map[string]schema.Block{
-						attr.UDP: schema.ListNestedBlock{
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
-							},
-							NestedObject: schema.NestedBlockObject{
-								Attributes: map[string]schema.Attribute{
-									attr.Policy: schema.StringAttribute{
-										Optional: true,
-										Computed: true,
-									},
-									attr.Ports: schema.SetAttribute{
-										Optional:    true,
-										Computed:    true,
-										ElementType: types.StringType,
-									},
+					NestedObject: schema.NestedBlockObject{
+						Attributes: map[string]schema.Attribute{
+							attr.GroupIDs: schema.SetAttribute{
+								Optional:    true,
+								ElementType: types.StringType,
+								Validators: []validator.Set{
+									setvalidator.SizeAtLeast(1),
 								},
 							},
-						},
-						attr.TCP: schema.ListNestedBlock{
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
-							},
-							NestedObject: schema.NestedBlockObject{
-								Attributes: map[string]schema.Attribute{
-									attr.Policy: schema.StringAttribute{
-										Optional: true,
-										Computed: true,
-									},
-									attr.Ports: schema.SetAttribute{
-										Optional:    true,
-										Computed:    true,
-										ElementType: types.StringType,
-									},
+							attr.ServiceAccountIDs: schema.SetAttribute{
+								Optional:    true,
+								ElementType: types.StringType,
+								Validators: []validator.Set{
+									setvalidator.SizeAtLeast(1),
 								},
 							},
 						},
 					},
 				},
+				attr.Protocols: schema.ListNestedBlock{
+					Validators: []validator.List{
+						listvalidator.SizeAtMost(1),
+					},
+					NestedObject: schema.NestedBlockObject{
+						Attributes: map[string]schema.Attribute{
+							attr.AllowIcmp: schema.BoolAttribute{
+								Optional: true,
+								Computed: true,
+							},
+						},
+						Blocks: map[string]schema.Block{
+							attr.UDP: schema.ListNestedBlock{
+								Validators: []validator.List{
+									listvalidator.SizeAtMost(1),
+								},
+								NestedObject: schema.NestedBlockObject{
+									Attributes: map[string]schema.Attribute{
+										attr.Policy: schema.StringAttribute{
+											Optional: true,
+											Computed: true,
+										},
+										attr.Ports: schema.SetAttribute{
+											Optional:    true,
+											Computed:    true,
+											ElementType: types.StringType,
+										},
+									},
+								},
+							},
+							attr.TCP: schema.ListNestedBlock{
+								Validators: []validator.List{
+									listvalidator.SizeAtMost(1),
+								},
+								NestedObject: schema.NestedBlockObject{
+									Attributes: map[string]schema.Attribute{
+										attr.Policy: schema.StringAttribute{
+											Optional: true,
+											Computed: true,
+										},
+										attr.Ports: schema.SetAttribute{
+											Optional:    true,
+											Computed:    true,
+											ElementType: types.StringType,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
-	},
 
-	StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
-		var priorState resourceModelV0
+		StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+			var priorState resourceModelV0
 
-		resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
+			resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
 
-		if resp.Diagnostics.HasError() {
-			return
-		}
+			if resp.Diagnostics.HasError() {
+				return
+			}
 
-		protocols, err := convertProtocolsV0(priorState.Protocols)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"failed to convert protocols for prior state version 0",
-				err.Error(),
-			)
+			protocols, err := convertProtocolsV0(priorState.Protocols)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"failed to convert protocols for prior state version 0",
+					err.Error(),
+				)
 
-			return
-		}
+				return
+			}
 
-		protocolsState, diags := convertProtocolsToTerraform(protocols, nil)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
+			protocolsState, diags := convertProtocolsToTerraform(protocols, nil)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 
-		upgradedState := resourceModelV1{
-			ID:              priorState.ID,
-			Name:            priorState.Name,
-			Address:         priorState.Address,
-			RemoteNetworkID: priorState.RemoteNetworkID,
-			Protocols:       protocolsState,
-			Access:          priorState.Access,
-			IsActive:        priorState.IsActive,
-		}
+			upgradedState := resourceModelV1{
+				ID:              priorState.ID,
+				Name:            priorState.Name,
+				Address:         priorState.Address,
+				RemoteNetworkID: priorState.RemoteNetworkID,
+				Protocols:       protocolsState,
+				Access:          priorState.Access,
+				IsActive:        priorState.IsActive,
+			}
 
-		if !priorState.IsAuthoritative.IsNull() {
-			upgradedState.IsAuthoritative = priorState.IsAuthoritative
-		}
+			if !priorState.IsAuthoritative.IsNull() {
+				upgradedState.IsAuthoritative = priorState.IsAuthoritative
+			}
 
-		if !priorState.IsVisible.IsNull() {
-			upgradedState.IsVisible = priorState.IsVisible
-		}
+			if !priorState.IsVisible.IsNull() {
+				upgradedState.IsVisible = priorState.IsVisible
+			}
 
-		if !priorState.IsBrowserShortcutEnabled.IsNull() {
-			upgradedState.IsBrowserShortcutEnabled = priorState.IsBrowserShortcutEnabled
-		}
+			if !priorState.IsBrowserShortcutEnabled.IsNull() {
+				upgradedState.IsBrowserShortcutEnabled = priorState.IsBrowserShortcutEnabled
+			}
 
-		if !priorState.Alias.IsNull() && priorState.Alias.ValueString() != "" {
-			upgradedState.Alias = priorState.Alias
-		}
+			if !priorState.Alias.IsNull() && priorState.Alias.ValueString() != "" {
+				upgradedState.Alias = priorState.Alias
+			}
 
-		if !priorState.SecurityPolicyID.IsNull() && priorState.SecurityPolicyID.ValueString() != "" {
-			upgradedState.SecurityPolicyID = priorState.SecurityPolicyID
-		}
+			if !priorState.SecurityPolicyID.IsNull() && priorState.SecurityPolicyID.ValueString() != "" {
+				upgradedState.SecurityPolicyID = priorState.SecurityPolicyID
+			}
 
-		resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
+			resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
 
-		resp.Diagnostics.AddWarning("Please update the protocols sections format from a block to an object",
-			"See the v1 to v2 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migration-v1-to-v2-guide")
-	},
+			resp.Diagnostics.AddWarning("Please update the protocols sections format from a block to an object",
+				"See the v1 to v2 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migration-v1-to-v2-guide")
+		},
+	}
 }
 
 func convertProtocolsV0(protocols types.List) (*model.Protocols, error) {

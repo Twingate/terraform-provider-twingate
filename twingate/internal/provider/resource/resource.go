@@ -2,9 +2,9 @@ package resource
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"reflect"
 	"regexp"
 	"strings"
@@ -13,6 +13,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -32,11 +33,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-const DefaultSecurityPolicyName = "Default Policy"
+const (
+	DefaultSecurityPolicyName                = "Default Policy"
+	defaultResourceGroupSecurityPolicy       = ""
+	schemaVersion                      int64 = 2
+)
 
 var (
-	schemaVersion int64 = 2
-
 	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
@@ -44,6 +47,7 @@ var (
 	ErrInvalidAttributeCombination        = errors.New("invalid attribute combination")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
 	ErrDefaultPolicyNotSet                = errors.New("default policy not set")
+	ErrWrongGlobalID                      = errors.New("Unable to parse global ID")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -201,13 +205,12 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 	}
 }
 
-func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader { //nolint
+func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
 	return map[int64]resource.StateUpgrader{
 		// State upgrade implementation from 0 (prior state version) to 1 (Schema.Version)
-		0: stateUpgraderResourceV0,
-
-		// TODO: add migration
-		1: stateUpgraderResourceV1,
+		0: upgradeResourceStateV0(),
+		// State upgrade implementation from schema version 1 to 2
+		1: upgradeResourceStateV1(),
 	}
 }
 
@@ -283,8 +286,9 @@ func groupAccessBlock() schema.SetNestedBlock {
 					Validators: []validator.String{
 						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
 					},
-					//Default: stringdefault.StaticString(""),
-					PlanModifiers: []planmodifier.String{PolicyForGroupAccess()},
+					Default: stringdefault.StaticString(defaultResourceGroupSecurityPolicy),
+					//Default:       stringdefault.StaticString("<nil>"),
+					//PlanModifiers: []planmodifier.String{PolicyForGroupAccess()},
 				},
 			},
 		},
@@ -309,33 +313,6 @@ func serviceAccessBlock() schema.SetNestedBlock {
 				},
 			},
 		},
-	}
-}
-
-func EmptySetDiff() planmodifier.Set {
-	return emptySetDiff{}
-}
-
-type emptySetDiff struct{}
-
-// Description returns a human-readable description of the plan modifier.
-func (m emptySetDiff) Description(_ context.Context) string {
-	return ""
-}
-
-// MarkdownDescription returns a markdown description of the plan modifier.
-func (m emptySetDiff) MarkdownDescription(_ context.Context) string {
-	return ""
-}
-
-// PlanModifySet implements the plan modification logic.
-func (m emptySetDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
-	if req.StateValue.IsNull() {
-		return
-	}
-
-	if req.ConfigValue.IsNull() && len(req.StateValue.Elements()) == 0 {
-		resp.PlanValue = req.StateValue
 	}
 }
 
@@ -468,13 +445,14 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 }
 
 func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup) []client.Access {
-	var access []client.Access
+	access := make([]client.Access, 0, len(serviceAccounts)+len(groupsAccess))
 	for _, account := range serviceAccounts {
 		access = append(access, client.Access{PrincipalID: account})
 	}
 
 	for _, group := range groupsAccess {
-		access = append(access, client.Access{PrincipalID: group.GroupID, SecurityPolicyID: group.SecurityPolicyID})
+		securityPolicy := group.SecurityPolicyID
+		access = append(access, client.Access{PrincipalID: group.GroupID, SecurityPolicyID: &securityPolicy})
 	}
 
 	return access
@@ -498,12 +476,13 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
+//nolint:cyclop
 func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
 	}
 
-	var access []model.AccessGroup
+	access := make([]model.AccessGroup, 0, len(list.Elements()))
 
 	for _, item := range list.Elements() {
 		obj := item.(types.Object)
@@ -522,7 +501,7 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 
 		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
 		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
-			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
+			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueString()
 		}
 
 		access = append(access, accessGroup)
@@ -536,7 +515,7 @@ func getServiceAccountAccessAttribute(list types.Set) []string {
 		return nil
 	}
 
-	var serviceAccountIDs []string
+	serviceAccountIDs := make([]string, 0, len(list.Elements()))
 
 	for _, item := range list.Elements() {
 		obj := item.(types.Object)
@@ -564,6 +543,18 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 	accessGroups := getGroupAccessAttribute(plan.GroupAccess)
 	serviceAccountIDs := getServiceAccountAccessAttribute(plan.ServiceAccess)
 
+	for _, access := range accessGroups {
+		if err := checkGlobalID(access.GroupID); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, id := range serviceAccountIDs {
+		if err := checkGlobalID(id); err != nil {
+			return nil, err
+		}
+	}
+
 	isBrowserShortcutEnabled := getOptionalBool(plan.IsBrowserShortcutEnabled)
 
 	if isBrowserShortcutEnabled != nil && *isBrowserShortcutEnabled && isWildcardAddress(plan.Address.ValueString()) {
@@ -584,6 +575,28 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 	}, nil
+}
+
+func checkGlobalID(val string) error {
+	const expectedTokens = 2
+
+	data, err := base64.StdEncoding.DecodeString(val)
+	if err != nil {
+		return ErrWrongGlobalID
+	}
+
+	tokens := strings.Split(string(data), ":")
+	if len(tokens) != expectedTokens {
+		return ErrWrongGlobalID
+	}
+
+	name := tokens[0]
+
+	if name != "Group" && name != "ServiceAccount" {
+		return ErrWrongGlobalID
+	}
+
+	return nil
 }
 
 func getOptionalBool(val types.Bool) *bool {
@@ -741,14 +754,36 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
 		if state.SecurityPolicyID.ValueString() == "" {
-			s := ""
-			resource.SecurityPolicyID = &s
+			resource.SecurityPolicyID = stringToPointer("")
 		}
+
+		replaceNullSecurityPolicy(getGroupAccessAttribute(state.GroupAccess), resource)
 	}
 
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
+func replaceNullSecurityPolicy(inputAccessGroups []model.AccessGroup, resource *model.Resource) {
+	for _, access := range inputAccessGroups {
+		if access.SecurityPolicyID == model.NullSecurityPolicy {
+			for i := range resource.GroupsAccess {
+				if resource.GroupsAccess[i].GroupID == access.GroupID && resource.GroupsAccess[i].SecurityPolicyID == "" {
+					resource.GroupsAccess[i].SecurityPolicyID = model.NullSecurityPolicy
+				}
+			}
+		}
+
+		if access.SecurityPolicyID == defaultResourceGroupSecurityPolicy {
+			for i := range resource.GroupsAccess {
+				if resource.GroupsAccess[i].GroupID == access.GroupID && resource.GroupsAccess[i].SecurityPolicyID != defaultResourceGroupSecurityPolicy {
+					resource.GroupsAccess[i].SecurityPolicyID = defaultResourceGroupSecurityPolicy
+				}
+			}
+		}
+	}
+}
+
+//nolint:cyclop
 func (r *twingateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state resourceModel
 
@@ -769,7 +804,7 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	planSecurityPolicy := input.SecurityPolicyID
 	input.ID = state.ID.ValueString()
 
-	if !plan.GroupAccess.Equal(state.GroupAccess) {
+	if !plan.GroupAccess.Equal(state.GroupAccess) || !plan.ServiceAccess.Equal(state.ServiceAccess) {
 		if err := r.updateResourceAccess(ctx, &plan, &state, input); err != nil {
 			addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
 
@@ -798,6 +833,8 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	if planSecurityPolicy != nil && *planSecurityPolicy == "" {
 		resource.SecurityPolicyID = planSecurityPolicy
 	}
+
+	replaceNullSecurityPolicy(input.GroupsAccess, resource)
 
 	r.helper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
@@ -866,6 +903,7 @@ func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state 
 		oldServiceAccounts []string
 		oldGroups          []model.AccessGroup
 	)
+
 	if resource.IsAuthoritative {
 		oldGroups, oldServiceAccounts = remote.GroupsAccess, remote.ServiceAccounts
 	} else {
@@ -934,6 +972,18 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	if !resource.IsAuthoritative {
 		resource.GroupsAccess = setIntersectionGroupAccess(getGroupAccessAttribute(reference.GroupAccess), resource.GroupsAccess)
 		resource.ServiceAccounts = setIntersection(getServiceAccountAccessAttribute(reference.ServiceAccess), resource.ServiceAccounts)
+
+		serviceAccessIDs := utils.MakeLookupMap(getServiceAccountAccessAttribute(reference.ServiceAccess))
+
+		var filteredServiceAccess []string
+
+		for _, serviceAccessID := range resource.ServiceAccounts {
+			if serviceAccessIDs[serviceAccessID] {
+				filteredServiceAccess = append(filteredServiceAccess, serviceAccessID)
+			}
+		}
+
+		resource.ServiceAccounts = filteredServiceAccess
 	}
 
 	setState(ctx, state, reference, resource, diagnostics)
@@ -1163,7 +1213,8 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
-	var objects []types.Object
+	objects := make([]types.Object, 0, len(serviceAccounts))
+
 	for _, account := range serviceAccounts {
 		attributes := map[string]tfattr.Value{
 			attr.ServiceAccountID: types.StringValue(account),
@@ -1189,20 +1240,12 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
-	var objects []types.Object
-	for _, access := range groupAccess {
-		var securityPolicy basetypes.StringValue
-		//if access.SecurityPolicyID == nil {
-		//	securityPolicy = types.StringValue("")
-		//} else {
-		securityPolicy = types.StringPointerValue(access.SecurityPolicyID)
-		//}
+	objects := make([]types.Object, 0, len(groupAccess))
 
+	for _, access := range groupAccess {
 		attributes := map[string]tfattr.Value{
-			attr.GroupID: types.StringValue(access.GroupID),
-			//attr.SecurityPolicyID: types.StringNull(),
-			//attr.SecurityPolicyID: types.StringPointerValue(access.SecurityPolicyID),
-			attr.SecurityPolicyID: securityPolicy,
+			attr.GroupID:          types.StringValue(access.GroupID),
+			attr.SecurityPolicyID: types.StringValue(access.SecurityPolicyID),
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -1320,53 +1363,4 @@ func accessServiceAccountAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.ServiceAccountID: types.StringType,
 	}
-}
-
-func PolicyForGroupAccess() planmodifier.String {
-	return policyForGroupAccess{}
-}
-
-type policyForGroupAccess struct{}
-
-func (m policyForGroupAccess) Description(_ context.Context) string {
-	return ""
-}
-
-func (m policyForGroupAccess) MarkdownDescription(_ context.Context) string {
-	return ""
-}
-
-func (m policyForGroupAccess) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
-		resp.PlanValue = types.StringNull()
-
-		return
-	}
-
-	// Do nothing if there is no state value.
-	if req.StateValue.IsNull() {
-		return
-	}
-
-	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
-	if req.ConfigValue.IsUnknown() {
-		return
-	}
-
-	// Do nothing if there is a known planned value.
-	if req.ConfigValue.ValueString() != "" {
-		return
-	}
-
-	if !req.StateValue.IsUnknown() && req.ConfigValue.IsNull() {
-		resp.PlanValue = types.StringNull()
-
-		return
-	}
-
-	//if req.StateValue.ValueString() == "" && req.PlanValue.ValueString() == DefaultSecurityPolicyID {
-	//	resp.PlanValue = types.StringValue("")
-	//} else if req.StateValue.ValueString() == DefaultSecurityPolicyID && req.PlanValue.ValueString() == "" {
-	//	resp.PlanValue = types.StringValue(DefaultSecurityPolicyID)
-	//}
 }

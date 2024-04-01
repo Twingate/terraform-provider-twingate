@@ -80,10 +80,9 @@ func (r gqlResource) ToModel() *model.Resource {
 	resource := r.ResourceNode.ToModel()
 
 	for _, access := range r.Access.Edges {
-		var securityPolicyID *string
+		var securityPolicyID string
 		if access.SecurityPolicy != nil {
-			id := string(access.SecurityPolicy.ID)
-			securityPolicyID = &id
+			securityPolicyID = string(access.SecurityPolicy.ID)
 		}
 
 		switch access.Node.Type {
