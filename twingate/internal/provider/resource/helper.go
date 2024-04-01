@@ -130,14 +130,6 @@ func addErr(diagnostics *diag.Diagnostics, err error, operation, resource string
 	)
 }
 
-func stringToPointer(val string) *string {
-	if val == "" {
-		return nil
-	}
-
-	return &val
-}
-
 func makeNullObject(attributeTypes map[string]tfattr.Type) types.Object {
 	return types.ObjectNull(attributeTypes)
 }
