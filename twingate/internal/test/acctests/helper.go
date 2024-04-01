@@ -32,10 +32,11 @@ var (
 	ErrResourceStillPresent     = errors.New("resource still present")
 	ErrResourceFoundInState     = errors.New("this resource should not be here")
 	ErrUnknownResourceType      = errors.New("unknown resource type")
-	ErrClientNotInited          = errors.New("meta client not inited")
+	ErrClientNotInitialized     = errors.New("meta client not initialized")
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 	ErrInvalidPath              = errors.New("invalid path: the path value cannot be asserted as string")
-	ErrNotNilSecurityPolicy     = errors.New("expected nil security policy in GroupAccess, got non nil")
+	ErrNotNullSecurityPolicy    = errors.New("expected null security policy in GroupAccess, got non null")
+	ErrNullSecurityPolicy       = errors.New("expected non null security policy in GroupAccess, got null")
 	ErrEmptyGroupAccess         = errors.New("expected at least one group in GroupAccess")
 )
 
@@ -333,8 +334,12 @@ func CheckTwingateResourceSecurityPolicyOnGroupAccess(resourceName string, expec
 			return ErrEmptyGroupAccess
 		}
 
-		if res.GroupsAccess[0].SecurityPolicyID != expectedSecurityPolicy {
-			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, res.GroupsAccess[0].SecurityPolicyID) //nolint:goerr113
+		if res.GroupsAccess[0].SecurityPolicyID == nil {
+			return ErrNullSecurityPolicy
+		}
+
+		if *res.GroupsAccess[0].SecurityPolicyID != expectedSecurityPolicy {
+			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, *res.GroupsAccess[0].SecurityPolicyID) //nolint:goerr113
 		}
 
 		return nil
@@ -362,8 +367,8 @@ func CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(resourceName string)
 			return ErrEmptyGroupAccess
 		}
 
-		if res.GroupsAccess[0].SecurityPolicyID != "" {
-			return ErrNotNilSecurityPolicy
+		if res.GroupsAccess[0].SecurityPolicyID != nil {
+			return ErrNotNullSecurityPolicy
 		}
 
 		return nil
@@ -570,7 +575,7 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 
 func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 	if providerClient == nil {
-		return nil, ErrClientNotInited
+		return nil, ErrClientNotInitialized
 	}
 
 	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background(), "", "")
@@ -597,7 +602,7 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.Access{
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.AccessInput{
 			{PrincipalID: groupID},
 		})
 		if err != nil {
@@ -677,7 +682,7 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.Access{
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.AccessInput{
 			{PrincipalID: serviceAccountID},
 		})
 		if err != nil {
@@ -844,7 +849,7 @@ func CheckGroupUsersLen(resourceName string, expectedUsersLen int) sdk.TestCheck
 
 func GetTestUsers() ([]*model.User, error) {
 	if providerClient == nil {
-		return nil, ErrClientNotInited
+		return nil, ErrClientNotInitialized
 	}
 
 	users, err := providerClient.ReadUsers(context.Background(), nil)
@@ -898,7 +903,7 @@ func CheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 
 func GetTestUser() (*model.User, error) {
 	if providerClient == nil {
-		return nil, ErrClientNotInited
+		return nil, ErrClientNotInitialized
 	}
 
 	users, err := providerClient.ReadUsers(context.Background(), nil)

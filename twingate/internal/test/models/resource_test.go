@@ -250,7 +250,9 @@ func TestResourceAccessToTerraform(t *testing.T) {
 		},
 		{
 			resource: model.Resource{
-				Groups: []string{"group-1"},
+				GroupsAccess: []model.AccessGroup{
+					{GroupID: "group-1"},
+				},
 			},
 			expected: []interface{}{
 				map[string]interface{}{

@@ -297,54 +297,20 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
 }
 
-type Access struct {
+type AccessInput struct {
 	PrincipalID      string  `json:"principalId"`
 	SecurityPolicyID *string `json:"securityPolicyId"`
 }
 
-func (a *Access) GetPrincipalID() string {
-	return a.PrincipalID
-}
-
-type AccessWithoutSecurityPolicy struct {
-	PrincipalID string `json:"principalId"`
-}
-
-func (a *AccessWithoutSecurityPolicy) GetPrincipalID() string {
-	return a.PrincipalID
-}
-
-type AccessInput interface {
-	GetPrincipalID() string
-}
-
-func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, accessInput []Access) error {
+func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {
 	opr := resourceResourceAccess.update()
 
-	if len(accessInput) == 0 {
+	if len(access) == 0 {
 		return nil
 	}
 
 	if resourceID == "" {
 		return opr.apiError(ErrGraphqlIDIsEmpty)
-	}
-
-	access := make([]AccessInput, 0, len(accessInput))
-
-	for _, input := range accessInput {
-		var item AccessInput
-
-		switch {
-		case input.SecurityPolicyID != nil && *input.SecurityPolicyID == "":
-			item = &AccessWithoutSecurityPolicy{PrincipalID: input.PrincipalID}
-		case input.SecurityPolicyID != nil && *input.SecurityPolicyID == model.NullSecurityPolicy:
-			item = &Access{PrincipalID: input.PrincipalID}
-		default:
-			obj := input
-			item = &obj
-		}
-
-		access = append(access, item)
 	}
 
 	variables := newVars(

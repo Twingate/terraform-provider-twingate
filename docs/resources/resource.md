@@ -56,6 +56,7 @@ resource "twingate_resource" "resource" {
     for_each = [twingate_group.aws.id]
     content {
       group_id = access_group.value
+      security_policy_id = data.twingate_security_policy.test_policy.id
     }
   }
 

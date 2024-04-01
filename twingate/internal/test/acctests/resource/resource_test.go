@@ -17,15 +17,13 @@ import (
 )
 
 var (
-	tcpPolicy         = attr.PathAttr(attr.Protocols, attr.TCP, attr.Policy)
-	udpPolicy         = attr.PathAttr(attr.Protocols, attr.UDP, attr.Policy)
-	firstTCPPort      = attr.FirstAttr(attr.Protocols, attr.TCP, attr.Ports)
-	firstUDPPort      = attr.FirstAttr(attr.Protocols, attr.UDP, attr.Ports)
-	tcpPortsLen       = attr.LenAttr(attr.Protocols, attr.TCP, attr.Ports)
-	udpPortsLen       = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
-	accessGroupIdsLen = attr.Len(attr.AccessGroup)
-	//accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
-	//accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
+	tcpPolicy                  = attr.PathAttr(attr.Protocols, attr.TCP, attr.Policy)
+	udpPolicy                  = attr.PathAttr(attr.Protocols, attr.UDP, attr.Policy)
+	firstTCPPort               = attr.FirstAttr(attr.Protocols, attr.TCP, attr.Ports)
+	firstUDPPort               = attr.FirstAttr(attr.Protocols, attr.UDP, attr.Ports)
+	tcpPortsLen                = attr.LenAttr(attr.Protocols, attr.TCP, attr.Ports)
+	udpPortsLen                = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
+	accessGroupIdsLen          = attr.Len(attr.AccessGroup)
 	accessServiceAccountIdsLen = attr.Len(attr.AccessService)
 )
 
@@ -145,16 +143,6 @@ func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
 					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
 				),
 			},
-			{
-				Config: createResourceWithProtocolsAndGroups2(remoteNetworkName, groupName1, groupName2, resourceName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.Address, "new-acc-test.com"),
-					sdk.TestCheckResourceAttr(theResource, accessGroupIdsLen, "1"),
-					sdk.TestCheckResourceAttr(theResource, tcpPolicy, model.PolicyRestricted),
-					sdk.TestCheckResourceAttr(theResource, firstTCPPort, "80"),
-				),
-			},
 		},
 	})
 }
@@ -193,48 +181,6 @@ func createResourceWithProtocolsAndGroups(networkName, groupName1, groupName2, r
 		for_each = [twingate_group.g21.id, twingate_group.g22.id]
 		content {
 			group_id = access_group.value
-			# security_policy_id = "none"
-		}
-      }
-	}
-	`, networkName, groupName1, groupName2, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
-}
-
-func createResourceWithProtocolsAndGroups2(networkName, groupName1, groupName2, resourceName string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "test2" {
-	  name = "%s"
-	}
-
-    resource "twingate_group" "g21" {
-      name = "%s"
-    }
-
-    resource "twingate_group" "g22" {
-      name = "%s"
-    }
-
-	resource "twingate_resource" "test2" {
-	  name = "%s"
-	  address = "new-acc-test.com"
-	  remote_network_id = twingate_remote_network.test2.id
-
-      protocols = {
-		allow_icmp = true
-        tcp = {
-			policy = "%s"
-            ports = ["80", "82-83"]
-        }
-		udp = {
- 			policy = "%s"
-		}
-      }
-
-      dynamic "access_group" {
-		for_each = [twingate_group.g21.id]
-		content {
-			group_id = access_group.value
-			security_policy_id = "none"
 		}
       }
 	}
@@ -1472,9 +1418,6 @@ func createResource19(networkName, resourceName string) string {
 func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-
-	// TODO: fix test
-	t.Skip()
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -3249,7 +3192,7 @@ func TestAccTwingateResourceUpdateSecurityPolicyOnGroupAccess(t *testing.T) {
 			{
 				Config: createResourceWithoutSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceSecurityPolicyOnGroupAccess(theResource, defaultPolicy),
+					acctests.CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(theResource),
 				),
 			},
 		},
@@ -3318,7 +3261,6 @@ func createResourceWithNullSecurityPolicyOnGroupAccess(remoteNetwork, resource, 
 	  
 	  access_group {
 		group_id = twingate_group.g21.id
-		security_policy_id = "none"
       }
 	}
 	`, remoteNetwork, resource, groupName)
