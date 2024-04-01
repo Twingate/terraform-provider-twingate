@@ -1,6 +1,6 @@
 package query
 
-import "github.com/Twingate/terraform-provider-twingate/twingate/internal/model"
+import "github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
 
 type UserRole string
 type UserStateUpdateInput string
