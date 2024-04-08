@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
 )
 
@@ -63,7 +63,6 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	variables := newVars(
 		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlIDs(input.Groups, "groupIds"),
 		gqlVar(input.Name, "name"),
 		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
@@ -81,7 +80,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	}
 
 	resource := response.Entity.ToModel()
-	resource.Groups = input.Groups
+	resource.GroupsAccess = input.GroupsAccess
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
 
@@ -303,20 +302,16 @@ type AccessInput struct {
 	SecurityPolicyID *string `json:"securityPolicyId"`
 }
 
-func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, principalIDs []string) error {
+func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {
 	opr := resourceResourceAccess.update()
 
-	if len(principalIDs) == 0 {
+	if len(access) == 0 {
 		return nil
 	}
 
 	if resourceID == "" {
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
-
-	access := utils.Map(principalIDs, func(id string) AccessInput {
-		return AccessInput{PrincipalID: id}
-	})
 
 	variables := newVars(
 		gqlID(resourceID),

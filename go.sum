@@ -120,8 +120,8 @@ github.com/hashicorp/terraform-json v0.21.0 h1:9NQxbLNqPbEMze+S6+YluEdXgJmhQykRy
 github.com/hashicorp/terraform-json v0.21.0/go.mod h1:qdeBs11ovMzo5puhrRibdD6d2Dq6TyE/28JiU4tIQxk=
 github.com/hashicorp/terraform-plugin-docs v0.18.0 h1:2bINhzXc+yDeAcafurshCrIjtdu1XHn9zZ3ISuEhgpk=
 github.com/hashicorp/terraform-plugin-docs v0.18.0/go.mod h1:iIUfaJpdUmpi+rI42Kgq+63jAjI8aZVTyxp3Bvk9Hg8=
-github.com/hashicorp/terraform-plugin-framework v1.6.1 h1:hw2XrmUu8d8jVL52ekxim2IqDc+2Kpekn21xZANARLU=
-github.com/hashicorp/terraform-plugin-framework v1.6.1/go.mod h1:aJI+n/hBPhz1J+77GdgNfk5svW12y7fmtxe/5L5IuwI=
+github.com/hashicorp/terraform-plugin-framework v1.7.0 h1:wOULbVmfONnJo9iq7/q+iBOBJul5vRovaYJIu2cY/Pw=
+github.com/hashicorp/terraform-plugin-framework v1.7.0/go.mod h1:jY9Id+3KbZ17OMpulgnWLSfwxNVYSoYBQFTgsx044CI=
 github.com/hashicorp/terraform-plugin-framework-validators v0.12.0 h1:HOjBuMbOEzl7snOdOoUfE2Jgeto6JOjLVQ39Ls2nksc=
 github.com/hashicorp/terraform-plugin-framework-validators v0.12.0/go.mod h1:jfHGE/gzjxYz6XoUwi/aYiiKrJDeutQNUtGQXkaHklg=
 github.com/hashicorp/terraform-plugin-go v0.22.1 h1:iTS7WHNVrn7uhe3cojtvWWn83cm2Z6ryIUDTRO0EV7w=
@@ -360,8 +360,9 @@ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/warnings.v0 v0.1.2 h1:wFXVbFY8DY5/xOe1ECiWdKCzZlxgshcYVNkBHstARME=
 gopkg.in/warnings.v0 v0.1.2/go.mod h1:jksf8JmL6Qr/oQM2OXTHunEvvTAsrWBLb6OOjuVWRNI=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
-gopkg.in/yaml.v2 v2.3.0 h1:clyUAQHOM3G0M3f5vQj7LuJrETvjVot3Z5el9nffUtU=
 gopkg.in/yaml.v2 v2.3.0/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
+gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
+gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gotest.tools/gotestsum v1.11.0 h1:A88/QWw7acMjZH1dMe6KZFhw32odUOIjCiAU/Q4n3mI=

@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/provider/resource"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/assert"
@@ -23,8 +23,8 @@ var (
 	firstUDPPort               = attr.FirstAttr(attr.Protocols, attr.UDP, attr.Ports)
 	tcpPortsLen                = attr.LenAttr(attr.Protocols, attr.TCP, attr.Ports)
 	udpPortsLen                = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
-	accessGroupIdsLen          = attr.Len(attr.Access, attr.GroupIDs)
-	accessServiceAccountIdsLen = attr.Len(attr.Access, attr.ServiceAccountIDs)
+	accessGroupIdsLen          = attr.Len(attr.AccessGroup)
+	accessServiceAccountIdsLen = attr.Len(attr.AccessService)
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
@@ -177,8 +177,11 @@ func createResourceWithProtocolsAndGroups(networkName, groupName1, groupName2, r
 		}
       }
 
-      access {
-		group_ids = [twingate_group.g21.id, twingate_group.g22.id]
+      dynamic "access_group" {
+		for_each = [twingate_group.g21.id, twingate_group.g22.id]
+		content {
+			group_id = access_group.value
+		}
       }
 	}
 	`, networkName, groupName1, groupName2, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
@@ -249,8 +252,8 @@ func resourceFullCreationFlow(networkName, groupName, resourceName string) strin
         }
       }
 
-      access {
-        group_ids = [twingate_group.test3.id]
+      access_group {
+        group_id = twingate_group.test3.id
       }
     }
     `, networkName, groupName, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
@@ -266,7 +269,7 @@ func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResourceWithInvalidGroupId(networkName, resourceName),
-				ExpectError: regexp.MustCompile("failed to create resource: Field 'groupIds' Unable to parse global ID"),
+				ExpectError: regexp.MustCompile("Unable to parse global ID"),
 			},
 		},
 	})
@@ -281,9 +284,13 @@ func createResourceWithInvalidGroupId(networkName, resourceName string) string {
 	resource "twingate_resource" "test4" {
 	  name = "%s"
 	  address = "acc-test.com"
-	  access {
-	    group_ids = ["foo", "bar"]
-	  }
+
+	  dynamic "access_group" {
+		for_each = ["foo", "bar"]
+		content {
+			group_id = access_group.value
+		}
+      }
 	  remote_network_id = twingate_remote_network.test4.id
 	}
 	`, networkName, resourceName)
@@ -330,8 +337,8 @@ func createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName str
       name = "%s"
       address = "new-acc-test.com"
       remote_network_id = twingate_remote_network.test5.id
-      access {
-        group_ids = [twingate_group.g5.id]
+      access_group {
+        group_id = twingate_group.g5.id
       }
       protocols = {
         allow_icmp = true
@@ -387,8 +394,8 @@ func createResourceWithUdpDenyAllPolicy(networkName, groupName, resourceName str
       name = "%s"
       address = "acc-test.com"
       remote_network_id = twingate_remote_network.test6.id
-      access {
-        group_ids = [twingate_group.g6.id]
+      access_group {
+        group_id = twingate_group.g6.id
       }
       protocols = {
         allow_icmp = true
@@ -446,8 +453,8 @@ func createResourceWithDenyAllPolicyAndEmptyPortsList(networkName, groupName, re
 	  name = "%s"
 	  address = "new-acc-test.com"
 	  remote_network_id = twingate_remote_network.test7.id
-	  access {
-	    group_ids = [twingate_group.test7.id]
+	  access_group {
+	    group_id = twingate_group.test7.id
 	  }
 	  protocols = {
 	    allow_icmp = true
@@ -810,9 +817,14 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  name = "%s"
 	  address = "acc-test.com.12"
 	  remote_network_id = twingate_remote_network.test12.id
-	  access {
-	    group_ids = [twingate_group.g121.id, twingate_group.g122.id]
+	  
+      dynamic "access_group" {
+		for_each = [twingate_group.g121.id, twingate_group.g122.id]
+		content {
+			group_id = access_group.value
+		}
       }
+      
       protocols = {
 		allow_icmp = true
         tcp = {
@@ -916,9 +928,12 @@ func createResource15(networkName, resourceName string, terraformServiceAccount 
 	    }
 	  }
 
-	  access {
-	    service_account_ids = [%s]
-	  }
+	  dynamic "access_service" {
+		for_each = [%s]
+		content {
+			service_account_id = access_service.value
+		}
+      }
 
 	}
 	`, networkName, terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, acctests.TerraformServiceAccount(resourceName)+".id")
@@ -990,10 +1005,19 @@ func createResource16(networkName, resourceName string, groups, groupsID []strin
 	    }
 	  }
 
-	  access {
-	    group_ids = [%s]
-	    service_account_ids = [%s]
-	  }
+	  dynamic "access_group" {
+		for_each = [%s]
+		content {
+			group_id = access_group.value
+		}
+      }
+      
+	  dynamic "access_service" {
+		for_each = [%s]
+		content {
+			service_account_id = access_service.value
+		}
+      }
 
 	}
 	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), acctests.TerraformServiceAccount(resourceName)+".id")
@@ -1025,13 +1049,15 @@ func createResource16WithoutServiceAccounts(networkName, resourceName string, gr
 	    }
 	  }
 
-	  access {
-	    group_ids = [%s]
-	    # service_account_ids = [%s]
-	  }
+	  dynamic "access_group" {
+		for_each = [%s]
+		content {
+			group_id = access_group.value
+		}
+      }
 
 	}
-	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), acctests.TerraformServiceAccount(resourceName)+".id")
+	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
 }
 
 func createResource16WithoutGroups(networkName, resourceName string, groups, groupsID []string, terraformServiceAccount string) string {
@@ -1060,13 +1086,15 @@ func createResource16WithoutGroups(networkName, resourceName string, groups, gro
 	    }
 	  }
 
-	  access {
-	    # group_ids = [%s]
-	    service_account_ids = [%s]
-	  }
+	  dynamic "access_service" {
+		for_each = [%s]
+		content {
+			service_account_id = access_service.value
+		}
+      }
 
 	}
-	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), acctests.TerraformServiceAccount(resourceName)+".id")
+	`, networkName, strings.Join(groups, "\n"), terraformServiceAccount, resourceName, model.PolicyRestricted, model.PolicyAllowAll, acctests.TerraformServiceAccount(resourceName)+".id")
 }
 
 func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) {
@@ -1171,9 +1199,12 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 	  }
 
 	  is_authoritative = false
-	  access {
-	    service_account_ids = [%s]
-	  }
+	  dynamic "access_service" {
+		for_each = [%s]
+		content {
+			service_account_id = access_service.value
+		}
+      }
 
 	}
 	`, networkName, strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(serviceAccountIDs, ", "))
@@ -1278,9 +1309,13 @@ func createResource13(networkName, resourceName string, serviceAccounts, service
 	  }
 
 	  is_authoritative = true
-	  access {
-	    service_account_ids = [%s]
-	  }
+	  
+	  dynamic "access_service" {
+		for_each = [%s]
+		content {
+			service_account_id = access_service.value
+		}
+      }
 
 	}
 	`, networkName, strings.Join(serviceAccounts, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(serviceAccountIDs, ", "))
@@ -1325,8 +1360,8 @@ func createResource18(networkName, resourceName string) string {
 	    }
 	  }
 
-	  access {
-	    group_ids = []
+	  access_group {
+	    group_id = ""
 	  }
 
 	}
@@ -1372,8 +1407,8 @@ func createResource19(networkName, resourceName string) string {
 	    }
 	  }
 
-	  access {
-	    service_account_ids = []
+	  access_service {
+	    service_account_id = ""
 	  }
 
 	}
@@ -1419,7 +1454,7 @@ func createResource20(networkName, resourceName string) string {
 	    }
 	  }
 
-	  access {
+	  access_group {
 	  }
 
 	}
@@ -1528,9 +1563,12 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 	  }
 
 	  is_authoritative = false
-	  access {
-	    group_ids = [%s]
-	  }
+	  dynamic "access_group" {
+		for_each = [%s]
+		content {
+			group_id = access_group.value
+		}
+      }
 
 	}
 	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
@@ -1635,9 +1673,12 @@ func createResource23(networkName, resourceName string, groups, groupsID []strin
 	  }
 
 	  is_authoritative = true
-	  access {
-	    group_ids = [%s]
-	  }
+	  dynamic "access_group" {
+		for_each = [%s]
+		content {
+			group_id = access_group.value
+		}
+      }
 
 	}
 	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
@@ -1907,9 +1948,12 @@ func createResource26(networkName, resourceName string, groups, groupsID []strin
 	    }
 	  }
 
-	  access {
-	    group_ids = [%s]
-	  }
+	  dynamic "access_group" {
+		for_each = [%s]
+		content {
+			group_id = access_group.value
+		}
+      }
 
 	}
 	`, networkName, strings.Join(groups, "\n"), resourceName, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "))
@@ -2091,10 +2135,19 @@ func createResourceWithGroupsAndServiceAccounts(name, networkName, resourceName 
 	    }
 	  }
 
-	  access {
-	    group_ids = [%s]
-	    service_account_ids = [%s]
-	  }
+	  dynamic "access_group" {
+		for_each = [%s]
+		content {
+			group_id = access_group.value
+		}
+      }
+
+      dynamic "access_service" {
+		for_each = [%s]
+		content {
+			service_account_id = access_service.value
+		}
+      }
 
 	}
 	`, name, networkName, strings.Join(groups, "\n"), strings.Join(serviceAccounts, "\n"), name, resourceName, name, model.PolicyRestricted, model.PolicyAllowAll, strings.Join(groupsID, ", "), strings.Join(serviceAccountIDs, ", "))
@@ -3105,4 +3158,142 @@ func createResource(networkName, resourceName string) string {
 	  remote_network_id = twingate_remote_network.%[1]s.id
 	}
 	`, networkName, resourceName)
+}
+
+func TestAccTwingateResourceUpdateSecurityPolicyOnGroupAccess(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	defaultPolicy, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, testPolicy, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceSecurityPolicyOnGroupAccess(theResource, testPolicy),
+				),
+			},
+			{
+				Config: createResourceWithSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, defaultPolicy, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceSecurityPolicyOnGroupAccess(theResource, defaultPolicy),
+				),
+			},
+			{
+				Config: createResourceWithoutSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(theResource),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithSecurityPolicyOnGroupAccess(remoteNetwork, resource, policyID, groupName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[4]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_group {
+		group_id = twingate_group.g21.id
+		security_policy_id = "%[3]s"
+      }
+	}
+	`, remoteNetwork, resource, policyID, groupName)
+}
+
+func createResourceWithoutSecurityPolicyOnGroupAccess(remoteNetwork, resource, groupName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_group {
+		group_id = twingate_group.g21.id
+      }
+	}
+	`, remoteNetwork, resource, groupName)
+}
+
+func createResourceWithNullSecurityPolicyOnGroupAccess(remoteNetwork, resource, groupName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_group {
+		group_id = twingate_group.g21.id
+      }
+	}
+	`, remoteNetwork, resource, groupName)
+}
+
+func TestAccTwingateResourceUnsetSecurityPolicyOnGroupAccess(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	_, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, testPolicy, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceSecurityPolicyOnGroupAccess(theResource, testPolicy),
+				),
+			},
+			{
+				Config: createResourceWithNullSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(theResource),
+				),
+			},
+		},
+	})
 }

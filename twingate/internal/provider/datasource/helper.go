@@ -3,7 +3,7 @@ package datasource
 import (
 	"fmt"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )

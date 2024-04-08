@@ -1,8 +1,8 @@
 package query
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
 )
 
@@ -31,7 +31,8 @@ type Access struct {
 }
 
 type AccessEdge struct {
-	Node Principal
+	Node           Principal
+	SecurityPolicy *gqlSecurityPolicy
 }
 
 type Principal struct {
@@ -79,9 +80,17 @@ func (r gqlResource) ToModel() *model.Resource {
 	resource := r.ResourceNode.ToModel()
 
 	for _, access := range r.Access.Edges {
+		var securityPolicyID *string
+		if access.SecurityPolicy != nil {
+			securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
+		}
+
 		switch access.Node.Type {
 		case AccessGroup:
-			resource.Groups = append(resource.Groups, string(access.Node.ID))
+			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
+				GroupID:          string(access.Node.ID),
+				SecurityPolicyID: securityPolicyID,
+			})
 		case AccessServiceAccount:
 			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
 		}

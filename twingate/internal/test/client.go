@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 )
 
 const (

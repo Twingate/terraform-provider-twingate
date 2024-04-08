@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/provider/datasource"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/provider/resource"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/datasource"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -32,9 +32,12 @@ var (
 	ErrResourceStillPresent     = errors.New("resource still present")
 	ErrResourceFoundInState     = errors.New("this resource should not be here")
 	ErrUnknownResourceType      = errors.New("unknown resource type")
-	ErrClientNotInited          = errors.New("meta client not inited")
+	ErrClientNotInitialized     = errors.New("meta client not initialized")
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 	ErrInvalidPath              = errors.New("invalid path: the path value cannot be asserted as string")
+	ErrNotNullSecurityPolicy    = errors.New("expected null security policy in GroupAccess, got non null")
+	ErrNullSecurityPolicy       = errors.New("expected non null security policy in GroupAccess, got null")
+	ErrEmptyGroupAccess         = errors.New("expected at least one group in GroupAccess")
 )
 
 func ErrServiceAccountsLenMismatch(expected, actual int) error {
@@ -310,6 +313,68 @@ func DeactivateTwingateResource(resourceName string) sdk.TestCheckFunc {
 	}
 }
 
+func CheckTwingateResourceSecurityPolicyOnGroupAccess(resourceName string, expectedSecurityPolicy string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		res, err := providerClient.ReadResource(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if len(res.GroupsAccess) == 0 {
+			return ErrEmptyGroupAccess
+		}
+
+		if res.GroupsAccess[0].SecurityPolicyID == nil {
+			return ErrNullSecurityPolicy
+		}
+
+		if *res.GroupsAccess[0].SecurityPolicyID != expectedSecurityPolicy {
+			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, *res.GroupsAccess[0].SecurityPolicyID) //nolint:goerr113
+		}
+
+		return nil
+	}
+}
+
+func CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(resourceName string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		res, err := providerClient.ReadResource(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if len(res.GroupsAccess) == 0 {
+			return ErrEmptyGroupAccess
+		}
+
+		if res.GroupsAccess[0].SecurityPolicyID != nil {
+			return ErrNotNullSecurityPolicy
+		}
+
+		return nil
+	}
+}
+
 func CheckTwingateResourceActiveState(resourceName string, expectedActiveState bool) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resourceState, ok := s.RootModule().Resources[resourceName]
@@ -510,7 +575,7 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 
 func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 	if providerClient == nil {
-		return nil, ErrClientNotInited
+		return nil, ErrClientNotInitialized
 	}
 
 	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background(), "", "")
@@ -537,7 +602,9 @@ func AddResourceGroup(resourceName, groupName string) sdk.TestCheckFunc {
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{groupID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.AccessInput{
+			{PrincipalID: groupID},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add group with ID %s: %w", resourceID, groupID, err)
 		}
@@ -579,8 +646,8 @@ func CheckResourceGroupsLen(resourceName string, expectedGroupsLen int) sdk.Test
 			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
 		}
 
-		if len(resource.Groups) != expectedGroupsLen {
-			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.Groups))
+		if len(resource.GroupsAccess) != expectedGroupsLen {
+			return ErrGroupsLenMismatch(expectedGroupsLen, len(resource.GroupsAccess))
 		}
 
 		return nil
@@ -615,7 +682,9 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 			return err
 		}
 
-		err = providerClient.AddResourceAccess(context.Background(), resourceID, []string{serviceAccountID})
+		err = providerClient.AddResourceAccess(context.Background(), resourceID, []client.AccessInput{
+			{PrincipalID: serviceAccountID},
+		})
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to add service account with ID %s: %w", resourceID, serviceAccountID, err)
 		}
@@ -780,7 +849,7 @@ func CheckGroupUsersLen(resourceName string, expectedUsersLen int) sdk.TestCheck
 
 func GetTestUsers() ([]*model.User, error) {
 	if providerClient == nil {
-		return nil, ErrClientNotInited
+		return nil, ErrClientNotInitialized
 	}
 
 	users, err := providerClient.ReadUsers(context.Background(), nil)
@@ -834,7 +903,7 @@ func CheckTwingateConnectorTokensInvalidated(s *terraform.State) error {
 
 func GetTestUser() (*model.User, error) {
 	if providerClient == nil {
-		return nil, ErrClientNotInited
+		return nil, ErrClientNotInitialized
 	}
 
 	users, err := providerClient.ReadUsers(context.Background(), nil)

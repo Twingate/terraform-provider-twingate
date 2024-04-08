@@ -2,17 +2,17 @@ package resource
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -33,7 +33,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-const DefaultSecurityPolicyName = "Default Policy"
+const (
+	DefaultSecurityPolicyName       = "Default Policy"
+	schemaVersion             int64 = 2
+)
 
 var (
 	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
@@ -43,6 +46,7 @@ var (
 	ErrInvalidAttributeCombination        = errors.New("invalid attribute combination")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
 	ErrDefaultPolicyNotSet                = errors.New("default policy not set")
+	ErrWrongGlobalID                      = errors.New("Unable to parse global ID")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -63,22 +67,8 @@ type resourceModel struct {
 	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
 	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                types.Object `tfsdk:"protocols"`
-	Access                   types.List   `tfsdk:"access"`
-	IsActive                 types.Bool   `tfsdk:"is_active"`
-	IsVisible                types.Bool   `tfsdk:"is_visible"`
-	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
-	Alias                    types.String `tfsdk:"alias"`
-	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
-}
-
-type resourceModelV0 struct {
-	ID                       types.String `tfsdk:"id"`
-	Name                     types.String `tfsdk:"name"`
-	Address                  types.String `tfsdk:"address"`
-	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
-	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
-	Protocols                types.List   `tfsdk:"protocols"`
-	Access                   types.List   `tfsdk:"access"`
+	GroupAccess              types.Set    `tfsdk:"access_group"`
+	ServiceAccess            types.Set    `tfsdk:"access_service"`
 	IsActive                 types.Bool   `tfsdk:"is_active"`
 	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
@@ -119,23 +109,33 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		resp.State.SetAttribute(ctx, path.Root(attr.Protocols), protocols)
 	}
 
-	if len(res.Groups) > 0 || len(res.ServiceAccounts) > 0 {
-		access, diags := convertAccessBlockToTerraform(ctx, res)
-
+	if len(res.GroupsAccess) > 0 {
+		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess)
 		resp.Diagnostics.Append(diags...)
 
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		resp.State.SetAttribute(ctx, path.Root(attr.Access), access)
+		resp.State.SetAttribute(ctx, path.Root(attr.AccessGroup), accessGroup)
+	}
+
+	if len(res.ServiceAccounts) > 0 {
+		accessServiceAccount, diags := convertAccessServiceAccountsToTerraform(ctx, res.ServiceAccounts)
+		resp.Diagnostics.Append(diags...)
+
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		resp.State.SetAttribute(ctx, path.Root(attr.AccessService), accessServiceAccount)
 	}
 }
 
 //nolint:funlen
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version:     1,
+		Version:     schemaVersion,
 		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
 		Attributes: map[string]schema.Attribute{
 			attr.Name: schema.StringAttribute{
@@ -197,191 +197,19 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 
-		Blocks: map[string]schema.Block{attr.Access: accessBlock()},
+		Blocks: map[string]schema.Block{
+			attr.AccessGroup:   groupAccessBlock(),
+			attr.AccessService: serviceAccessBlock(),
+		},
 	}
 }
 
-func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader { //nolint
+func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
 	return map[int64]resource.StateUpgrader{
 		// State upgrade implementation from 0 (prior state version) to 1 (Schema.Version)
-		0: {
-			PriorSchema: &schema.Schema{
-				Attributes: map[string]schema.Attribute{
-					attr.ID: schema.StringAttribute{
-						Computed: true,
-					},
-					attr.Name: schema.StringAttribute{
-						Required: true,
-					},
-					attr.Address: schema.StringAttribute{
-						Required: true,
-					},
-					attr.RemoteNetworkID: schema.StringAttribute{
-						Required: true,
-					},
-					attr.IsActive: schema.BoolAttribute{
-						Optional: true,
-						Computed: true,
-					},
-					attr.IsAuthoritative: schema.BoolAttribute{
-						Optional: true,
-						Computed: true,
-					},
-					attr.Alias: schema.StringAttribute{
-						Optional: true,
-					},
-					attr.SecurityPolicyID: schema.StringAttribute{
-						Optional: true,
-						Computed: true,
-					},
-					attr.IsVisible: schema.BoolAttribute{
-						Optional: true,
-						Computed: true,
-					},
-					attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
-						Optional: true,
-						Computed: true,
-					},
-				},
-
-				Blocks: map[string]schema.Block{
-					attr.Access: schema.ListNestedBlock{
-						Validators: []validator.List{
-							listvalidator.SizeAtMost(1),
-						},
-						NestedObject: schema.NestedBlockObject{
-							Attributes: map[string]schema.Attribute{
-								attr.GroupIDs: schema.SetAttribute{
-									Optional:    true,
-									ElementType: types.StringType,
-									Validators: []validator.Set{
-										setvalidator.SizeAtLeast(1),
-									},
-								},
-								attr.ServiceAccountIDs: schema.SetAttribute{
-									Optional:    true,
-									ElementType: types.StringType,
-									Validators: []validator.Set{
-										setvalidator.SizeAtLeast(1),
-									},
-								},
-							},
-						},
-					},
-					attr.Protocols: schema.ListNestedBlock{
-						Validators: []validator.List{
-							listvalidator.SizeAtMost(1),
-						},
-						NestedObject: schema.NestedBlockObject{
-							Attributes: map[string]schema.Attribute{
-								attr.AllowIcmp: schema.BoolAttribute{
-									Optional: true,
-									Computed: true,
-								},
-							},
-							Blocks: map[string]schema.Block{
-								attr.UDP: schema.ListNestedBlock{
-									Validators: []validator.List{
-										listvalidator.SizeAtMost(1),
-									},
-									NestedObject: schema.NestedBlockObject{
-										Attributes: map[string]schema.Attribute{
-											attr.Policy: schema.StringAttribute{
-												Optional: true,
-												Computed: true,
-											},
-											attr.Ports: schema.SetAttribute{
-												Optional:    true,
-												Computed:    true,
-												ElementType: types.StringType,
-											},
-										},
-									},
-								},
-								attr.TCP: schema.ListNestedBlock{
-									Validators: []validator.List{
-										listvalidator.SizeAtMost(1),
-									},
-									NestedObject: schema.NestedBlockObject{
-										Attributes: map[string]schema.Attribute{
-											attr.Policy: schema.StringAttribute{
-												Optional: true,
-												Computed: true,
-											},
-											attr.Ports: schema.SetAttribute{
-												Optional:    true,
-												Computed:    true,
-												ElementType: types.StringType,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
-				var priorState resourceModelV0
-
-				resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
-
-				if resp.Diagnostics.HasError() {
-					return
-				}
-
-				protocols, err := convertProtocolsV0(priorState.Protocols)
-				if err != nil {
-					resp.Diagnostics.AddError(
-						"failed to convert protocols for prior state version 0",
-						err.Error(),
-					)
-
-					return
-				}
-
-				protocolsState, diags := convertProtocolsToTerraform(protocols, nil)
-				resp.Diagnostics.Append(diags...)
-				if resp.Diagnostics.HasError() {
-					return
-				}
-
-				upgradedState := resourceModel{
-					ID:              priorState.ID,
-					Name:            priorState.Name,
-					Address:         priorState.Address,
-					RemoteNetworkID: priorState.RemoteNetworkID,
-					Protocols:       protocolsState,
-					Access:          priorState.Access,
-					IsActive:        priorState.IsActive,
-				}
-
-				if !priorState.IsAuthoritative.IsNull() {
-					upgradedState.IsAuthoritative = priorState.IsAuthoritative
-				}
-
-				if !priorState.IsVisible.IsNull() {
-					upgradedState.IsVisible = priorState.IsVisible
-				}
-
-				if !priorState.IsBrowserShortcutEnabled.IsNull() {
-					upgradedState.IsBrowserShortcutEnabled = priorState.IsBrowserShortcutEnabled
-				}
-
-				if !priorState.Alias.IsNull() && priorState.Alias.ValueString() != "" {
-					upgradedState.Alias = priorState.Alias
-				}
-
-				if !priorState.SecurityPolicyID.IsNull() && priorState.SecurityPolicyID.ValueString() != "" {
-					upgradedState.SecurityPolicyID = priorState.SecurityPolicyID
-				}
-
-				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
-
-				resp.Diagnostics.AddWarning("Please update the protocols sections format from a block to an object",
-					"See the v1 to v2 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migration-v1-to-v2-guide")
-			},
-		},
+		0: upgradeResourceStateV0(),
+		// State upgrade implementation from schema version 1 to 2
+		1: upgradeResourceStateV1(),
 	}
 }
 
@@ -434,69 +262,56 @@ func protocol() schema.SingleNestedAttribute {
 	}
 }
 
-func accessBlock() schema.ListNestedBlock {
-	return schema.ListNestedBlock{
-		Validators: []validator.List{
-			listvalidator.SizeAtMost(1),
+func groupAccessBlock() schema.SetNestedBlock {
+	return schema.SetNestedBlock{
+		Validators: []validator.Set{
+			setvalidator.SizeAtLeast(1),
 		},
-		Description: "Restrict access to certain groups or service accounts",
+		Description: "Restrict access to certain group",
 		NestedObject: schema.NestedBlockObject{
 			Attributes: map[string]schema.Attribute{
-				attr.GroupIDs: schema.SetAttribute{
+				attr.GroupID: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					ElementType: types.StringType,
-					Description: "List of Group IDs that will have permission to access the Resource.",
-					Validators: []validator.Set{
-						setvalidator.SizeAtLeast(1),
+					Description: "Group ID that will have permission to access the Resource.",
+					Validators: []validator.String{
+						stringvalidator.RegexMatches(regexp.MustCompile(`\w+`), "Group ID can't be empty"),
 					},
-					PlanModifiers: []planmodifier.Set{
-						EmptySetDiff(),
-					},
-					Default: setdefault.StaticValue(types.SetNull(types.StringType)),
 				},
-				attr.ServiceAccountIDs: schema.SetAttribute{
+				attr.SecurityPolicyID: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					ElementType: types.StringType,
-					Description: "List of Service Account IDs that will have permission to access the Resource.",
-					Validators: []validator.Set{
-						setvalidator.SizeAtLeast(1),
+					Description: "The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.",
+					Validators: []validator.String{
+						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
 					},
-					PlanModifiers: []planmodifier.Set{
-						EmptySetDiff(),
+					PlanModifiers: []planmodifier.String{
+						UseNullPolicyForGroupAccessWhenValueOmitted(),
 					},
-					Default: setdefault.StaticValue(types.SetNull(types.StringType)),
 				},
 			},
 		},
 	}
 }
 
-func EmptySetDiff() planmodifier.Set {
-	return emptySetDiff{}
-}
-
-type emptySetDiff struct{}
-
-// Description returns a human-readable description of the plan modifier.
-func (m emptySetDiff) Description(_ context.Context) string {
-	return ""
-}
-
-// MarkdownDescription returns a markdown description of the plan modifier.
-func (m emptySetDiff) MarkdownDescription(_ context.Context) string {
-	return ""
-}
-
-// PlanModifySet implements the plan modification logic.
-func (m emptySetDiff) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
-	if req.StateValue.IsNull() {
-		return
-	}
-
-	if req.ConfigValue.IsNull() && len(req.StateValue.Elements()) == 0 {
-		resp.PlanValue = req.StateValue
+func serviceAccessBlock() schema.SetNestedBlock {
+	return schema.SetNestedBlock{
+		Validators: []validator.Set{
+			setvalidator.SizeAtLeast(1),
+		},
+		Description: "Restrict access to certain service account",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.ServiceAccountID: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: "The ID of the service account that should have access to this Resource.",
+					Validators: []validator.String{
+						stringvalidator.RegexMatches(regexp.MustCompile(`\w+`), "ServiceAccount ID can't be empty"),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -606,7 +421,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if err = r.client.AddResourceAccess(ctx, resource.ID, resource.ServiceAccounts); err != nil {
+	if err = r.client.AddResourceAccess(ctx, resource.ID, convertResourceAccess(resource.ServiceAccounts, resource.GroupsAccess)); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
 
 		return
@@ -628,6 +443,19 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
+func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup) []client.AccessInput {
+	access := make([]client.AccessInput, 0, len(serviceAccounts)+len(groupsAccess))
+	for _, account := range serviceAccounts {
+		access = append(access, client.AccessInput{PrincipalID: account})
+	}
+
+	for _, group := range groupsAccess {
+		access = append(access, client.AccessInput{PrincipalID: group.GroupID, SecurityPolicyID: group.SecurityPolicyID})
+	}
+
+	return access
+}
+
 func getAccessAttribute(list types.List, attribute string) []string {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
@@ -646,17 +474,83 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
+func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
+	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+		return nil
+	}
+
+	access := make([]model.AccessGroup, 0, len(list.Elements()))
+
+	for _, item := range list.Elements() {
+		obj := item.(types.Object)
+		if obj.IsNull() || obj.IsUnknown() {
+			continue
+		}
+
+		groupVal := obj.Attributes()[attr.GroupID]
+		accessGroup := model.AccessGroup{
+			GroupID: groupVal.(types.String).ValueString(),
+		}
+
+		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
+		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
+			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
+		}
+
+		access = append(access, accessGroup)
+	}
+
+	return access
+}
+
+func getServiceAccountAccessAttribute(list types.Set) []string {
+	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+		return nil
+	}
+
+	serviceAccountIDs := make([]string, 0, len(list.Elements()))
+
+	for _, item := range list.Elements() {
+		obj := item.(types.Object)
+		if obj.IsNull() || obj.IsUnknown() {
+			continue
+		}
+
+		val := obj.Attributes()[attr.ServiceAccountID]
+		if val == nil || val.IsNull() || val.IsUnknown() {
+			continue
+		}
+
+		serviceAccountIDs = append(serviceAccountIDs, val.(types.String).ValueString())
+	}
+
+	return serviceAccountIDs
+}
+
+//nolint:cyclop
 func convertResource(plan *resourceModel) (*model.Resource, error) {
 	protocols, err := convertProtocols(&plan.Protocols)
 	if err != nil {
 		return nil, err
 	}
 
-	groupIDs := getAccessAttribute(plan.Access, attr.GroupIDs)
-	serviceAccountIDs := getAccessAttribute(plan.Access, attr.ServiceAccountIDs)
+	accessGroups := getGroupAccessAttribute(plan.GroupAccess)
+	serviceAccountIDs := getServiceAccountAccessAttribute(plan.ServiceAccess)
 
-	if !plan.Access.IsNull() && groupIDs == nil && serviceAccountIDs == nil {
-		return nil, ErrInvalidAttributeCombination
+	for _, access := range accessGroups {
+		if access.SecurityPolicyID == nil && len(strings.TrimSpace(access.GroupID)) == 0 {
+			return nil, ErrInvalidAttributeCombination
+		}
+
+		if err := checkGlobalID(access.GroupID); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, id := range serviceAccountIDs {
+		if err := checkGlobalID(id); err != nil {
+			return nil, err
+		}
 	}
 
 	isBrowserShortcutEnabled := getOptionalBool(plan.IsBrowserShortcutEnabled)
@@ -670,7 +564,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
 		Address:                  plan.Address.ValueString(),
 		Protocols:                protocols,
-		Groups:                   groupIDs,
+		GroupsAccess:             accessGroups,
 		ServiceAccounts:          serviceAccountIDs,
 		IsActive:                 plan.IsActive.ValueBool(),
 		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
@@ -679,6 +573,28 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 	}, nil
+}
+
+func checkGlobalID(val string) error {
+	const expectedTokens = 2
+
+	data, err := base64.StdEncoding.DecodeString(val)
+	if err != nil {
+		return ErrWrongGlobalID
+	}
+
+	tokens := strings.Split(string(data), ":")
+	if len(tokens) != expectedTokens {
+		return ErrWrongGlobalID
+	}
+
+	name := tokens[0]
+
+	if name != "Group" && name != "ServiceAccount" {
+		return ErrWrongGlobalID
+	}
+
+	return nil
 }
 
 func getOptionalBool(val types.Bool) *bool {
@@ -822,126 +738,6 @@ func isValidPolicy(policy string, ports []*model.PortRange) error {
 	return nil
 }
 
-func convertProtocolsV0(protocols types.List) (*model.Protocols, error) {
-	if protocols.IsNull() || protocols.IsUnknown() || len(protocols.Elements()) == 0 {
-		return model.DefaultProtocols(), nil
-	}
-
-	obj := protocols.Elements()[0].(types.Object)
-	if obj.IsNull() || obj.IsUnknown() {
-		return model.DefaultProtocols(), nil
-	}
-
-	udp, err := convertProtocolV0(obj.Attributes()[attr.UDP])
-	if err != nil {
-		return nil, err
-	}
-
-	tcp, err := convertProtocolV0(obj.Attributes()[attr.TCP])
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.Protocols{
-		AllowIcmp: obj.Attributes()[attr.AllowIcmp].(types.Bool).ValueBool(),
-		UDP:       udp,
-		TCP:       tcp,
-	}, nil
-}
-
-func convertProtocolV0(protocol tfattr.Value) (*model.Protocol, error) {
-	obj := convertProtocolObjV0(protocol)
-	if obj.IsNull() {
-		return nil, nil //nolint:nilnil
-	}
-
-	ports, err := decodePortsV0(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	policy := obj.Attributes()[attr.Policy].(types.String).ValueString()
-	if err := isValidPolicyV0(policy, ports); err != nil {
-		return nil, err
-	}
-
-	if policy == model.PolicyDenyAll {
-		policy = model.PolicyRestricted
-	}
-
-	return model.NewProtocol(policy, ports), nil
-}
-
-func convertProtocolObjV0(protocol tfattr.Value) types.Object {
-	if protocol == nil || protocol.IsNull() {
-		return types.ObjectNull(nil)
-	}
-
-	list, ok := protocol.(types.List)
-	if !ok || list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return types.ObjectNull(nil)
-	}
-
-	obj := list.Elements()[0].(types.Object)
-	if obj.IsNull() || obj.IsUnknown() {
-		return types.ObjectNull(nil)
-	}
-
-	return obj
-}
-
-func decodePortsV0(obj types.Object) ([]*model.PortRange, error) {
-	portsVal := obj.Attributes()[attr.Ports]
-	if portsVal == nil || portsVal.IsNull() {
-		return nil, nil
-	}
-
-	portsList, ok := portsVal.(types.Set)
-	if !ok {
-		return nil, nil
-	}
-
-	return convertPortsV0(portsList)
-}
-
-func convertPortsV0(list types.Set) ([]*model.PortRange, error) {
-	items := list.Elements()
-
-	var ports = make([]*model.PortRange, 0, len(items))
-
-	for _, port := range items {
-		portRange, err := model.NewPortRange(port.(types.String).ValueString())
-		if err != nil {
-			return nil, err //nolint:wrapcheck
-		}
-
-		ports = append(ports, portRange)
-	}
-
-	return ports, nil
-}
-
-func isValidPolicyV0(policy string, ports []*model.PortRange) error {
-	switch policy {
-	case model.PolicyAllowAll:
-		if len(ports) > 0 {
-			return ErrPortsWithPolicyAllowAll
-		}
-
-	case model.PolicyDenyAll:
-		if len(ports) > 0 {
-			return ErrPortsWithPolicyDenyAll
-		}
-
-	case model.PolicyRestricted:
-		if len(ports) == 0 {
-			return ErrPolicyRestrictedWithoutPorts
-		}
-	}
-
-	return nil
-}
-
 func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state resourceModel
 
@@ -956,14 +752,15 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
 		if state.SecurityPolicyID.ValueString() == "" {
-			s := ""
-			resource.SecurityPolicyID = &s
+			emptyPolicy := ""
+			resource.SecurityPolicyID = &emptyPolicy
 		}
 	}
 
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
+//nolint:cyclop
 func (r *twingateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state resourceModel
 
@@ -984,7 +781,7 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	planSecurityPolicy := input.SecurityPolicyID
 	input.ID = state.ID.ValueString()
 
-	if !plan.Access.Equal(state.Access) {
+	if !plan.GroupAccess.Equal(state.GroupAccess) || !plan.ServiceAccess.Equal(state.ServiceAccess) {
 		if err := r.updateResourceAccess(ctx, &plan, &state, input); err != nil {
 			addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
 
@@ -1055,7 +852,7 @@ func isResourceChanged(plan, state *resourceModel) bool {
 }
 
 func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state *resourceModel, input *model.Resource) error {
-	idsToDelete, idsToAdd, err := r.getChangedAccessIDs(ctx, plan, state, input)
+	idsToDelete, serviceAccountsToAdd, groupsToAdd, err := r.getChangedAccessIDs(ctx, plan, state, input)
 	if err != nil {
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
@@ -1064,41 +861,53 @@ func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
-	if err := r.client.AddResourceAccess(ctx, input.ID, idsToAdd); err != nil {
+	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd)); err != nil {
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
 	return nil
 }
 
-func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state *resourceModel, resource *model.Resource) ([]string, []string, error) {
+func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state *resourceModel, resource *model.Resource) ([]string, []string, []model.AccessGroup, error) {
 	remote, err := r.client.ReadResource(ctx, resource.ID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get changedIDs: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to get changedIDs: %w", err)
 	}
 
-	var oldGroups, oldServiceAccounts []string
+	var (
+		oldServiceAccounts []string
+		oldGroups          []model.AccessGroup
+	)
+
 	if resource.IsAuthoritative {
-		oldGroups, oldServiceAccounts = remote.Groups, remote.ServiceAccounts
+		oldGroups, oldServiceAccounts = remote.GroupsAccess, remote.ServiceAccounts
 	} else {
-		oldGroups = getOldIDsNonAuthoritative(plan, state, attr.GroupIDs)
-		oldServiceAccounts = getOldIDsNonAuthoritative(plan, state, attr.ServiceAccountIDs)
+		oldGroups = getOldIDsNonAuthoritativeGroupAccess(plan, state)
+		oldServiceAccounts = getOldIDsNonAuthoritativeServiceAccountAccess(plan, state)
 	}
 
 	// ids to delete
-	groupsToDelete := setDifference(oldGroups, resource.Groups)
+	groupsToDelete := setDifferenceGroups(oldGroups, resource.GroupsAccess)
 	serviceAccountsToDelete := setDifference(oldServiceAccounts, resource.ServiceAccounts)
 
 	// ids to add
-	groupsToAdd := setDifference(resource.Groups, remote.Groups)
+	groupsToAdd := setDifferenceGroupAccess(resource.GroupsAccess, remote.GroupsAccess)
 	serviceAccountsToAdd := setDifference(resource.ServiceAccounts, remote.ServiceAccounts)
 
-	return append(groupsToDelete, serviceAccountsToDelete...), append(groupsToAdd, serviceAccountsToAdd...), nil
+	return append(groupsToDelete, serviceAccountsToDelete...), serviceAccountsToAdd, groupsToAdd, nil
 }
 
-func getOldIDsNonAuthoritative(plan, state *resourceModel, attribute string) []string {
-	if !plan.Access.Equal(state.Access) {
-		return getAccessAttribute(state.Access, attribute)
+func getOldIDsNonAuthoritativeServiceAccountAccess(plan, state *resourceModel) []string {
+	if !plan.ServiceAccess.Equal(state.ServiceAccess) {
+		return getServiceAccountAccessAttribute(state.ServiceAccess)
+	}
+
+	return nil
+}
+
+func getOldIDsNonAuthoritativeGroupAccess(plan, state *resourceModel) []model.AccessGroup {
+	if !plan.GroupAccess.Equal(state.GroupAccess) {
+		return getGroupAccessAttribute(state.GroupAccess)
 	}
 
 	return nil
@@ -1136,8 +945,20 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	}
 
 	if !resource.IsAuthoritative {
-		resource.Groups = setIntersection(getAccessAttribute(reference.Access, attr.GroupIDs), resource.Groups)
-		resource.ServiceAccounts = setIntersection(getAccessAttribute(reference.Access, attr.ServiceAccountIDs), resource.ServiceAccounts)
+		resource.GroupsAccess = setIntersectionGroupAccess(getGroupAccessAttribute(reference.GroupAccess), resource.GroupsAccess)
+		resource.ServiceAccounts = setIntersection(getServiceAccountAccessAttribute(reference.ServiceAccess), resource.ServiceAccounts)
+
+		serviceAccessIDs := utils.MakeLookupMap(getServiceAccountAccessAttribute(reference.ServiceAccess))
+
+		var filteredServiceAccess []string
+
+		for _, serviceAccessID := range resource.ServiceAccounts {
+			if serviceAccessIDs[serviceAccessID] {
+				filteredServiceAccess = append(filteredServiceAccess, serviceAccessID)
+			}
+		}
+
+		resource.ServiceAccounts = filteredServiceAccess
 	}
 
 	setState(ctx, state, reference, resource, diagnostics)
@@ -1184,15 +1005,17 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		}
 	}
 
-	access, diags := convertAccessBlockToTerraform(ctx, resource)
-
+	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess)
+	diagnostics.Append(diags...)
+	serviceAccess, diags := convertServiceAccessToTerraform(ctx, resource.ServiceAccounts)
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
 		return
 	}
 
-	state.Access = access
+	state.GroupAccess = groupAccess
+	state.ServiceAccess = serviceAccess
 }
 
 func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {
@@ -1358,88 +1181,59 @@ func protocolAttributeTypes() map[string]tfattr.Type {
 	}
 }
 
-func convertAccessBlockToTerraform(ctx context.Context, resource *model.Resource) (types.List, diag.Diagnostics) {
-	var diagnostics, diags diag.Diagnostics
+func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []string) (types.Set, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
 
-	if len(resource.Groups) == 0 && len(resource.ServiceAccounts) == 0 {
-		return makeObjectsListNull(ctx, accessAttributeTypes()), diagnostics
+	if len(serviceAccounts) == 0 {
+		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
-	groupIDs, serviceAccountIDs := types.SetNull(types.StringType), types.SetNull(types.StringType)
+	objects := make([]types.Object, 0, len(serviceAccounts))
 
-	if len(resource.Groups) > 0 {
-		groupIDs, diags = makeSet(resource.Groups)
-		diagnostics.Append(diags...)
-	}
+	for _, account := range serviceAccounts {
+		attributes := map[string]tfattr.Value{
+			attr.ServiceAccountID: types.StringValue(account),
+		}
 
-	if len(resource.ServiceAccounts) > 0 {
-		serviceAccountIDs, diags = makeSet(resource.ServiceAccounts)
+		obj, diags := types.ObjectValue(accessServiceAccountAttributeTypes(), attributes)
 		diagnostics.Append(diags...)
+
+		objects = append(objects, obj)
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsListNull(ctx, accessAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
-	attributes := map[string]tfattr.Value{
-		attr.GroupIDs:          groupIDs,
-		attr.ServiceAccountIDs: serviceAccountIDs,
+	return makeObjectsSet(ctx, objects...)
+}
+
+func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup) (types.Set, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if len(groupAccess) == 0 {
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
-	obj, diags := types.ObjectValue(accessAttributeTypes(), attributes)
-	diagnostics.Append(diags...)
+	objects := make([]types.Object, 0, len(groupAccess))
+
+	for _, access := range groupAccess {
+		attributes := map[string]tfattr.Value{
+			attr.GroupID:          types.StringValue(access.GroupID),
+			attr.SecurityPolicyID: types.StringPointerValue(access.SecurityPolicyID),
+		}
+
+		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
+		diagnostics.Append(diags...)
+
+		objects = append(objects, obj)
+	}
 
 	if diagnostics.HasError() {
-		return makeObjectsListNull(ctx, accessAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
-	return makeObjectsList(ctx, obj)
-}
-
-func accessAttributeTypes() map[string]tfattr.Type {
-	return map[string]tfattr.Type{
-		attr.GroupIDs: types.SetType{
-			ElemType: types.StringType,
-		},
-		attr.ServiceAccountIDs: types.SetType{
-			ElemType: types.StringType,
-		},
-	}
-}
-
-func makeNullObject(attributeTypes map[string]tfattr.Type) types.Object {
-	return types.ObjectNull(attributeTypes)
-}
-
-func makeObjectsListNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.List {
-	return types.ListNull(types.ObjectNull(attributeTypes).Type(ctx))
-}
-
-func makeObjectsList(ctx context.Context, objects ...types.Object) (types.List, diag.Diagnostics) {
-	obj := objects[0]
-
-	items := utils.Map(objects, func(item types.Object) tfattr.Value {
-		return tfattr.Value(item)
-	})
-
-	return types.ListValue(obj.Type(ctx), items)
-}
-
-func makeSet(list []string) (types.Set, diag.Diagnostics) {
-	return types.SetValue(types.StringType, stringsToTerraformValue(list))
-}
-
-func stringsToTerraformValue(list []string) []tfattr.Value {
-	if len(list) == 0 {
-		return nil
-	}
-
-	out := make([]tfattr.Value, 0, len(list))
-	for _, item := range list {
-		out = append(out, types.StringValue(item))
-	}
-
-	return out
+	return makeObjectsSet(ctx, objects...)
 }
 
 func CaseInsensitiveDiff() planmodifier.String {
@@ -1530,5 +1324,54 @@ func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context
 		resp.PlanValue = types.StringValue("")
 	} else if req.StateValue.ValueString() == DefaultSecurityPolicyID && req.PlanValue.ValueString() == "" {
 		resp.PlanValue = types.StringValue(DefaultSecurityPolicyID)
+	}
+}
+
+func accessGroupAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.GroupID:          types.StringType,
+		attr.SecurityPolicyID: types.StringType,
+	}
+}
+
+func accessServiceAccountAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.ServiceAccountID: types.StringType,
+	}
+}
+
+func UseNullPolicyForGroupAccessWhenValueOmitted() planmodifier.String {
+	return useNullPolicyForGroupAccessWhenValueOmitted{}
+}
+
+type useNullPolicyForGroupAccessWhenValueOmitted struct{}
+
+func (m useNullPolicyForGroupAccessWhenValueOmitted) Description(_ context.Context) string {
+	return ""
+}
+
+func (m useNullPolicyForGroupAccessWhenValueOmitted) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+func (m useNullPolicyForGroupAccessWhenValueOmitted) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
+		resp.PlanValue = types.StringNull()
+
+		return
+	}
+
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
+		resp.PlanValue = types.StringNull()
 	}
 }

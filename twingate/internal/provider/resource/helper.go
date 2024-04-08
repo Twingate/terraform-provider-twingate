@@ -1,10 +1,14 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // setIntersection - for given two sets A and B,
@@ -18,6 +22,29 @@ func setIntersection(a, b []string) []string {
 	for key := range setA {
 		if setB[key] {
 			result = append(result, key)
+		}
+	}
+
+	return result
+}
+
+func setIntersectionGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
+	setA := map[string]model.AccessGroup{}
+	setB := map[string]model.AccessGroup{}
+
+	for _, access := range inputA {
+		setA[access.GroupID] = access
+	}
+
+	for _, access := range inputB {
+		setB[access.GroupID] = access
+	}
+
+	result := make([]model.AccessGroup, 0, len(setA))
+
+	for key := range setA {
+		if val, exist := setB[key]; exist {
+			result = append(result, val)
 		}
 	}
 
@@ -49,6 +76,41 @@ func setDifference(inputA, inputB []string) []string {
 	return result
 }
 
+func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
+	setA := map[string]model.AccessGroup{}
+	setB := map[string]model.AccessGroup{}
+
+	for _, access := range inputA {
+		setA[access.GroupID] = access
+	}
+
+	for _, access := range inputB {
+		setB[access.GroupID] = access
+	}
+
+	result := make([]model.AccessGroup, 0, len(setA))
+
+	for key, valA := range setA {
+		if valB, exist := setB[key]; !exist || valA.SecurityPolicyID != valB.SecurityPolicyID {
+			result = append(result, valA)
+		}
+	}
+
+	return result
+}
+
+func setDifferenceGroups(inputA, inputB []model.AccessGroup) []string {
+	groupsA := utils.Map(inputA, func(item model.AccessGroup) string {
+		return item.GroupID
+	})
+
+	groupsB := utils.Map(inputB, func(item model.AccessGroup) string {
+		return item.GroupID
+	})
+
+	return setDifference(groupsA, groupsB)
+}
+
 func withDefaultValue(str, defaultValue string) string {
 	if str != "" {
 		return str
@@ -66,4 +128,22 @@ func addErr(diagnostics *diag.Diagnostics, err error, operation, resource string
 		fmt.Sprintf("failed to %s %s", operation, resource),
 		err.Error(),
 	)
+}
+
+func makeNullObject(attributeTypes map[string]tfattr.Type) types.Object {
+	return types.ObjectNull(attributeTypes)
+}
+
+func makeObjectsSetNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.Set {
+	return types.SetNull(types.ObjectNull(attributeTypes).Type(ctx))
+}
+
+func makeObjectsSet(ctx context.Context, objects ...types.Object) (types.Set, diag.Diagnostics) {
+	obj := objects[0]
+
+	items := utils.Map(objects, func(item types.Object) tfattr.Value {
+		return tfattr.Value(item)
+	})
+
+	return types.SetValue(obj.Type(ctx), items)
 }

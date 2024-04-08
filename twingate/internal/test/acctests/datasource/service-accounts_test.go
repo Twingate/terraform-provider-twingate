@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/test/acctests"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )

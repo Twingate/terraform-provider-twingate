@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v2/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -250,7 +250,9 @@ func TestResourceAccessToTerraform(t *testing.T) {
 		},
 		{
 			resource: model.Resource{
-				Groups: []string{"group-1"},
+				GroupsAccess: []model.AccessGroup{
+					{GroupID: "group-1"},
+				},
 			},
 			expected: []interface{}{
 				map[string]interface{}{
