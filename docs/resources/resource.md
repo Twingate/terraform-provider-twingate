@@ -57,6 +57,7 @@ resource "twingate_resource" "resource" {
     content {
       group_id = access_group.value
       security_policy_id = data.twingate_security_policy.test_policy.id
+      usage_based_autolock_duration_days = 30
     }
   }
 
@@ -103,6 +104,7 @@ Optional:
 
 - `group_id` (String) Group ID that will have permission to access the Resource.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.
+- `usage_based_autolock_duration_days` (Number) The usage-based auto-lock duration configured on the edge (in days).
 
 
 <a id="nestedblock--access_service"></a>

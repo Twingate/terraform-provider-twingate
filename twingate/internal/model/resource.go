@@ -16,16 +16,33 @@ const (
 	PolicyRestricted = "RESTRICTED"
 	PolicyAllowAll   = "ALLOW_ALL"
 	PolicyDenyAll    = "DENY_ALL"
-
-	NullSecurityPolicy = "none"
 )
 
 //nolint:gochecknoglobals
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
 type AccessGroup struct {
-	GroupID          string
-	SecurityPolicyID *string
+	GroupID            string
+	SecurityPolicyID   *string
+	UsageBasedDuration *int64
+}
+
+func (g AccessGroup) Equals(another AccessGroup) bool {
+	if g.GroupID == another.GroupID &&
+		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
+		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) {
+		return true
+	}
+
+	return false
+}
+
+func equalsOptionalString(s1, s2 *string) bool {
+	return s1 == nil && s2 == nil || s1 != nil && s2 != nil && strings.EqualFold(*s1, *s2)
+}
+
+func equalsOptionalInt64(i1, i2 *int64) bool {
+	return i1 == nil && i2 == nil || i1 != nil && i2 != nil && *i1 == *i2
 }
 
 type Resource struct {

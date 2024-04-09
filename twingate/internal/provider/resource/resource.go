@@ -13,6 +13,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -289,6 +290,17 @@ func groupAccessBlock() schema.SetNestedBlock {
 						UseNullPolicyForGroupAccessWhenValueOmitted(),
 					},
 				},
+				attr.UsageBasedAutolockDurationDays: schema.Int64Attribute{
+					Optional:    true,
+					Computed:    true,
+					Description: "The usage-based auto-lock duration configured on the edge (in days).",
+					Validators: []validator.Int64{
+						int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
+					},
+					PlanModifiers: []planmodifier.Int64{
+						UseNullIntWhenValueOmitted(),
+					},
+				},
 			},
 		},
 	}
@@ -450,7 +462,11 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 	}
 
 	for _, group := range groupsAccess {
-		access = append(access, client.AccessInput{PrincipalID: group.GroupID, SecurityPolicyID: group.SecurityPolicyID})
+		access = append(access, client.AccessInput{
+			PrincipalID:                    group.GroupID,
+			SecurityPolicyID:               group.SecurityPolicyID,
+			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
+		})
 	}
 
 	return access
@@ -474,6 +490,7 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
+//nolint:cyclop
 func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
@@ -495,6 +512,11 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
 		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
 			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
+		}
+
+		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
+		if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
+			accessGroup.UsageBasedDuration = usageBasedDuration.(types.Int64).ValueInt64Pointer()
 		}
 
 		access = append(access, accessGroup)
@@ -538,7 +560,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 	serviceAccountIDs := getServiceAccountAccessAttribute(plan.ServiceAccess)
 
 	for _, access := range accessGroups {
-		if access.SecurityPolicyID == nil && len(strings.TrimSpace(access.GroupID)) == 0 {
+		if access.SecurityPolicyID == nil && access.UsageBasedDuration == nil && len(strings.TrimSpace(access.GroupID)) == 0 {
 			return nil, ErrInvalidAttributeCombination
 		}
 
@@ -1219,8 +1241,9 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 
 	for _, access := range groupAccess {
 		attributes := map[string]tfattr.Value{
-			attr.GroupID:          types.StringValue(access.GroupID),
-			attr.SecurityPolicyID: types.StringPointerValue(access.SecurityPolicyID),
+			attr.GroupID:                        types.StringValue(access.GroupID),
+			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
+			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(access.UsageBasedDuration),
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -1329,8 +1352,9 @@ func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context
 
 func accessGroupAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
-		attr.GroupID:          types.StringType,
-		attr.SecurityPolicyID: types.StringType,
+		attr.GroupID:                        types.StringType,
+		attr.SecurityPolicyID:               types.StringType,
+		attr.UsageBasedAutolockDurationDays: types.Int64Type,
 	}
 }
 
@@ -1373,5 +1397,41 @@ func (m useNullPolicyForGroupAccessWhenValueOmitted) PlanModifyString(ctx contex
 
 	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
 		resp.PlanValue = types.StringNull()
+	}
+}
+
+func UseNullIntWhenValueOmitted() planmodifier.Int64 {
+	return useNullIntWhenValueOmitted{}
+}
+
+type useNullIntWhenValueOmitted struct{}
+
+func (m useNullIntWhenValueOmitted) Description(_ context.Context) string {
+	return ""
+}
+
+func (m useNullIntWhenValueOmitted) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+func (m useNullIntWhenValueOmitted) PlanModifyInt64(ctx context.Context, req planmodifier.Int64Request, resp *planmodifier.Int64Response) {
+	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
+		resp.PlanValue = types.Int64Null()
+
+		return
+	}
+
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
+		resp.PlanValue = types.Int64Null()
 	}
 }

@@ -42,6 +42,7 @@ resource "twingate_resource" "resource" {
     content {
       group_id = access_group.value
       security_policy_id = data.twingate_security_policy.test_policy.id
+      usage_based_autolock_duration_days = 30
     }
   }
 

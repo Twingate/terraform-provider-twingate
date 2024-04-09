@@ -36,7 +36,9 @@ var (
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 	ErrInvalidPath              = errors.New("invalid path: the path value cannot be asserted as string")
 	ErrNotNullSecurityPolicy    = errors.New("expected null security policy in GroupAccess, got non null")
+	ErrNotNullUsageBased        = errors.New("expected null usage based duration in GroupAccess, got non null")
 	ErrNullSecurityPolicy       = errors.New("expected non null security policy in GroupAccess, got null")
+	ErrNullUsageBased           = errors.New("expected non null usage based duration in GroupAccess, got null")
 	ErrEmptyGroupAccess         = errors.New("expected at least one group in GroupAccess")
 )
 
@@ -346,6 +348,39 @@ func CheckTwingateResourceSecurityPolicyOnGroupAccess(resourceName string, expec
 	}
 }
 
+func CheckTwingateResourceUsageBasedOnGroupAccess(resourceName string, expectedUsageBased int64) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		res, err := providerClient.ReadResource(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if len(res.GroupsAccess) == 0 {
+			return ErrEmptyGroupAccess
+		}
+
+		if res.GroupsAccess[0].UsageBasedDuration == nil {
+			return ErrNullUsageBased
+		}
+
+		if *res.GroupsAccess[0].UsageBasedDuration != expectedUsageBased {
+			return fmt.Errorf("expected usage based duration %v, got %v", expectedUsageBased, *res.GroupsAccess[0].UsageBasedDuration) //nolint:goerr113
+		}
+
+		return nil
+	}
+}
+
 func CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(resourceName string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resourceState, ok := s.RootModule().Resources[resourceName]
@@ -369,6 +404,35 @@ func CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(resourceName string)
 
 		if res.GroupsAccess[0].SecurityPolicyID != nil {
 			return ErrNotNullSecurityPolicy
+		}
+
+		return nil
+	}
+}
+
+func CheckTwingateResourceUsageBasedIsNullOnGroupAccess(resourceName string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		res, err := providerClient.ReadResource(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if len(res.GroupsAccess) == 0 {
+			return ErrEmptyGroupAccess
+		}
+
+		if res.GroupsAccess[0].UsageBasedDuration != nil {
+			return ErrNotNullUsageBased
 		}
 
 		return nil

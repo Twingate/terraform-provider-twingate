@@ -23,6 +23,7 @@ linters-settings:
       - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Set
       - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Bool
       - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.String
+      - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Int64
       - github.com/hashicorp/terraform-plugin-testing/plancheck.PlanCheck
   errcheck:
     check-type-assertions: false
