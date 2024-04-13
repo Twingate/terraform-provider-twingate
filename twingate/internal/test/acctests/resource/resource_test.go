@@ -3297,3 +3297,65 @@ func TestAccTwingateResourceUnsetSecurityPolicyOnGroupAccess(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateWithMultipleResource(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createMultipleResources(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-1")),
+					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-2")),
+					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-3")),
+				),
+			},
+			{
+				Config: createMultipleResources(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-1")),
+					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-2")),
+					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-3")),
+				),
+			},
+		},
+	})
+}
+
+func createMultipleResources(remoteNetwork, resource, groupName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s-1" {
+	  name = "%[2]s-1"
+	  address = "acc-test-address-1.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	}
+
+	resource "twingate_resource" "%[2]s-2" {
+	  name = "%[2]s-2"
+	  address = "acc-test-address-2.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	}
+
+	resource "twingate_resource" "%[2]s-3" {
+	  name = "%[2]s-3"
+	  address = "acc-test-address-3.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	}
+	`, remoteNetwork, resource, groupName)
+}

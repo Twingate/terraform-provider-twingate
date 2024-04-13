@@ -106,6 +106,10 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
+	if res, ok := cache.getResource(resourceID); ok {
+		return res, nil
+	}
+
 	variables := newVars(
 		gqlID(resourceID),
 		cursor(query.CursorAccess),
@@ -121,7 +125,11 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, err //nolint
 	}
 
-	return response.Resource.ToModel(), nil
+	res := response.Resource.ToModel()
+
+	cache.setResource(res)
+
+	return res, nil
 }
 
 func (client *Client) readResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
