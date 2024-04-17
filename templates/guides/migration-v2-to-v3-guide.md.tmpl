@@ -1,8 +1,7 @@
 ---
 subcategory: "migration"
 page_title: "v2 to v3 Migration Guide"
-description: |-
-This document covers how to migrate from v2 to v3 of the Twingate Terraform provider.
+description: "This document covers how to migrate from v2 to v3 of the Twingate Terraform provider."
 ---
 
 # Migration Guide
