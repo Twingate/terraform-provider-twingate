@@ -6,7 +6,7 @@ This document covers how to migrate from v2 to v3 of the Twingate Terraform prov
 ---
 
 # Migration Guide
-j
+
 This guide covers how to migrate from v2.x.x to v3.0.0 of the Twingate Terraform provider. Migration needs to be done for the following objects:
 - Resources
     - `twingate_resource`
@@ -30,7 +30,7 @@ resource "twingate_resource" "resource" {
 }
 ```
 
-From v3.0.0 and onbward, access must be specified using the `access_group` and `access_service` blocks. Further, `access_group` can only be specified for a single group and no longer uses a list of group IDs.
+From v3.0.0 and onward, access must be specified using the `access_group` and `access_service` blocks. Further, `access_group` can only be specified for a single group and no longer uses a list of group IDs.
 
 ```terraform
 resource "twingate_resource" "resource" {
