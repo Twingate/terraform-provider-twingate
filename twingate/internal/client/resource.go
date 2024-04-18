@@ -96,6 +96,8 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		resource.SecurityPolicyID = nil
 	}
 
+	cache.setResource(resource)
+
 	return resource, nil
 }
 
@@ -222,6 +224,8 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		resource.SecurityPolicyID = nil
 	}
 
+	cache.setResource(resource)
+
 	return resource, nil
 }
 
@@ -234,7 +238,13 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 
 	response := query.DeleteResource{}
 
-	return client.mutate(ctx, &response, newVars(gqlID(resourceID)), opr, attr{id: resourceID})
+	if err := client.mutate(ctx, &response, newVars(gqlID(resourceID)), opr, attr{id: resourceID}); err != nil {
+		return err
+	}
+
+	cache.deleteResource(resourceID)
+
+	return nil
 }
 
 func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *model.Resource) error {
@@ -247,7 +257,13 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 
 	response := query.UpdateResourceActiveState{}
 
-	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
+	if err := client.mutate(ctx, &response, variables, opr, attr{id: resource.ID}); err != nil {
+		return err
+	}
+
+	cache.setResource(resource)
+
+	return nil
 }
 
 func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string) ([]*model.Resource, error) {

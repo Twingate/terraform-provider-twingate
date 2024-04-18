@@ -11,6 +11,7 @@ import (
 var closedChan chan struct{}
 
 func init() {
+	closedChan = make(chan struct{})
 	close(closedChan)
 
 	go cache.run()
@@ -138,6 +139,13 @@ func (c *clientCache) setResource(resource *model.Resource) {
 	defer c.lock.Unlock()
 
 	c.resources[resource.ID] = resource
+}
+
+func (c *clientCache) deleteResource(resourceID string) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	delete(c.resources, resourceID)
 }
 
 func (c *clientCache) setResources(resources []*model.Resource) {
