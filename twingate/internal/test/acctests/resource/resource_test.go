@@ -3297,3 +3297,58 @@ func TestAccTwingateResourceUnsetSecurityPolicyOnGroupAccess(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateResourceWithUsageBasedOnGroupAccess(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	var usageBasedDuration int64 = 2
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithUsageBasedOnGroupAccess(remoteNetworkName, resourceName, groupName, usageBasedDuration),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, usageBasedDuration),
+				),
+			},
+			{
+				Config: createResourceWithNullSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithUsageBasedOnGroupAccess(remoteNetwork, resource, groupName string, daysDuration int64) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_group {
+		group_id = twingate_group.g21.id
+		usage_based_autolock_duration_days = %[4]v
+      }
+	}
+	`, remoteNetwork, resource, groupName, daysDuration)
+}

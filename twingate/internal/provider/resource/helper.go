@@ -91,7 +91,7 @@ func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.Access
 	result := make([]model.AccessGroup, 0, len(setA))
 
 	for key, valA := range setA {
-		if valB, exist := setB[key]; !exist || valA.SecurityPolicyID != valB.SecurityPolicyID {
+		if valB, exist := setB[key]; !exist || !valA.Equals(valB) {
 			result = append(result, valA)
 		}
 	}
