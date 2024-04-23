@@ -1,8 +1,7 @@
 ---
 subcategory: "aws"
 page_title: "AWS EC2 Deployment Guide"
-description: |-
-This document walks you through a basic deployment using Twingate's Terraform provider on AWS
+description: "This document walks you through a basic deployment using Twingate's Terraform provider on AWS"
 ---
 
 # Deployment Guide
