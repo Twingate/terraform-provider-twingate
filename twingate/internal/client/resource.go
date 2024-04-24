@@ -306,8 +306,9 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 }
 
 type AccessInput struct {
-	PrincipalID      string  `json:"principalId"`
-	SecurityPolicyID *string `json:"securityPolicyId"`
+	PrincipalID                    string  `json:"principalId"`
+	SecurityPolicyID               *string `json:"securityPolicyId"`
+	UsageBasedAutolockDurationDays *int64  `json:"usageBasedAutolockDurationDays"`
 }
 
 func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {

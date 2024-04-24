@@ -1,8 +1,7 @@
 ---
 subcategory: "gke"
 page_title: "GKE Helm Provider Deployment Guide"
-description: |-
-This document walks you through a basic deployment using Twingate's Terraform provider on GKE using the Helm Terraform provider
+description: "This document walks you through a basic deployment using Twingate's Terraform provider on GKE using the Helm Terraform provider"
 ---
 
 # Deployment Guide
