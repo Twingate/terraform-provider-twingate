@@ -180,8 +180,65 @@ func (client *Client) readResourcesAfter(ctx context.Context, variables map[stri
 	return &response.PaginatedResource, nil
 }
 
+func (client *Client) ReadFullResources(ctx context.Context) ([]*model.Resource, error) {
+	opr := resourceResource.read()
+
+	variables := newVars(
+		cursor(query.CursorAccess),
+		cursor(query.CursorResources),
+		pageLimit(extendedPageLimit),
+	)
+
+	response := query.ReadFullResources{}
+	if err := client.query(ctx, &response, variables, opr.withCustomName("readFullResources"), attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+		return nil, err
+	}
+
+	if err := response.FetchPages(ctx, client.readFullResourcesAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
+	for i := range response.Edges {
+		if err := response.Edges[i].Node.Access.FetchPages(ctx, client.readExtendedResourceAccessAfter, newVars(gqlID(response.Edges[i].Node.ID))); err != nil {
+			return nil, err //nolint:wrapcheck
+		}
+	}
+
+	return response.ToModel(), nil
+}
+
+func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
+	opr := resourceResource.read()
+
+	variables[query.CursorResources] = cursor
+
+	response := query.ReadFullResources{}
+	if err := client.query(ctx, &response, variables, opr); err != nil {
+		return nil, err
+	}
+
+	return &response.PaginatedResource, nil
+}
+
+func (client *Client) readExtendedResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
+	opr := resourceResource.read()
+
+	resourceID := string(variables["id"].(graphql.ID))
+	variables[query.CursorAccess] = cursor
+	pageLimit(extendedPageLimit)(variables)
+
+	response := query.ReadResourceAccess{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: resourceID}); err != nil {
+		return nil, err
+	}
+
+	return &response.Resource.Access.PaginatedResource, nil
+}
+
 func (client *Client) UpdateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	opr := resourceResource.update()
+
+	cache.invalidateResource(input.ID)
 
 	variables := newVars(
 		gqlID(input.ID),
@@ -232,6 +289,8 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
+	cache.invalidateResource(resourceID)
+
 	response := query.DeleteResource{}
 
 	return client.mutate(ctx, &response, newVars(gqlID(resourceID)), opr, attr{id: resourceID})
@@ -239,6 +298,8 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 
 func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *model.Resource) error {
 	opr := resourceResource.update()
+
+	cache.invalidateResource(resource.ID)
 
 	variables := newVars(
 		gqlID(resource.ID),
@@ -295,6 +356,8 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
+	cache.invalidateResource(resourceID)
+
 	variables := newVars(
 		gqlID(resourceID),
 		gqlIDs(principalIDs, "principalIds"),
@@ -321,6 +384,8 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 	if resourceID == "" {
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
+
+	cache.invalidateResource(resourceID)
 
 	variables := newVars(
 		gqlID(resourceID),

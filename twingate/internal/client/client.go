@@ -28,7 +28,8 @@ const (
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
 
-	defaultPageLimit = 50
+	defaultPageLimit  = 50
+	extendedPageLimit = 500
 )
 
 var (
@@ -137,6 +138,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
+	retryableClient.Logger = nil
 	retryableClient.CheckRetry = customRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {

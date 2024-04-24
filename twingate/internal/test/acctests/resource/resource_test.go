@@ -3360,57 +3360,76 @@ func TestAccTwingateWithMultipleResource(t *testing.T) {
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
 
+	theResource1 := acctests.TerraformResource(resourceName + "-1")
+	theResource2 := acctests.TerraformResource(resourceName + "-2")
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createMultipleResources(remoteNetworkName, resourceName, groupName),
+				Config: createMultipleResourcesN(remoteNetworkName, resourceName, groupName, 10),
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-1")),
-					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-2")),
-					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-3")),
+					acctests.CheckTwingateResourceExists(theResource1),
+					acctests.CheckTwingateResourceExists(theResource2),
+					sdk.TestCheckResourceAttr(theResource1, accessGroupIdsLen, "2"),
+					sdk.TestCheckResourceAttr(theResource2, accessGroupIdsLen, "2"),
 				),
 			},
 			{
-				Config: createMultipleResources(remoteNetworkName, resourceName, groupName),
+				Config: createMultipleResourcesN(remoteNetworkName, resourceName, groupName, 10),
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-1")),
-					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-2")),
-					acctests.CheckTwingateResourceExists(acctests.TerraformResource(resourceName+"-3")),
+					acctests.CheckTwingateResourceExists(theResource1),
+					acctests.CheckTwingateResourceExists(theResource2),
+					sdk.TestCheckResourceAttr(theResource1, accessGroupIdsLen, "2"),
+					sdk.TestCheckResourceAttr(theResource2, accessGroupIdsLen, "2"),
 				),
 			},
 		},
 	})
 }
 
-func createMultipleResources(remoteNetwork, resource, groupName string) string {
+func createMultipleResourcesN(remoteNetwork, resource, groupName string, n int) string {
 	return fmt.Sprintf(`
-	resource "twingate_group" "g21" {
-      name = "%[3]s"
+	resource "twingate_group" "%[2]s-group-1" {
+      name = "%[3]s-1"
+    }
+
+	resource "twingate_group" "%[2]s-group-2" {
+      name = "%[3]s-2"
     }
 
 	resource "twingate_remote_network" "%[1]s" {
 	  name = "%[1]s"
 	}
 
-	resource "twingate_resource" "%[2]s-1" {
-	  name = "%[2]s-1"
-	  address = "acc-test-address-1.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
+	`+genMultipleResource(n),
+		remoteNetwork, resource, groupName)
+}
+
+func genMultipleResource(n int) string {
+	res := make([]string, 0, n)
+	for i := 0; i < n; i++ {
+		res = append(res, fmtResource(i+1))
 	}
 
-	resource "twingate_resource" "%[2]s-2" {
-	  name = "%[2]s-2"
-	  address = "acc-test-address-2.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	}
+	return strings.Join(res, "\n\n")
+}
 
-	resource "twingate_resource" "%[2]s-3" {
-	  name = "%[2]s-3"
-	  address = "acc-test-address-3.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
+func fmtResource(index int) string {
+	return fmt.Sprintf(`
+	resource "twingate_resource" "%%[2]s-%[1]v" {
+	  name = "%%[2]s-%[1]v"
+	  address = "acc-test-address-%[1]v.com"
+	  remote_network_id = twingate_remote_network.%%[1]s.id
+
+	  dynamic "access_group" {
+		for_each = [twingate_group.%%[2]s-group-1.id, twingate_group.%%[2]s-group-2.id]
+		content {
+			group_id = access_group.value
+		}
+      }
 	}
-	`, remoteNetwork, resource, groupName)
+	`, index)
 }

@@ -8,17 +8,25 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 )
 
-var closedChan chan struct{}
+var closedChan chan struct{} //nolint:gochecknoglobals
 
-func init() {
+const (
+	minBulkSize        = 10
+	requestsBufferSize = 1000
+	collectTime        = 70 * time.Millisecond
+	shortWaitTime      = 5 * time.Millisecond
+)
+
+var cache = &clientCache{ //nolint:gochecknoglobals
+	resources:          map[string]*model.Resource{},
+	requestedResources: make(chan string, requestsBufferSize),
+}
+
+func init() { //nolint
+	closedChan = make(chan struct{})
 	close(closedChan)
 
 	go cache.run()
-}
-
-var cache = &clientCache{
-	resources:          map[string]*model.Resource{},
-	requestedResources: make(chan string, 1000),
 }
 
 type clientCache struct {
@@ -34,6 +42,7 @@ type clientCache struct {
 func (c *clientCache) done() <-chan struct{} {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
+
 	if !c.requestDone {
 		return nil
 	}
@@ -41,8 +50,9 @@ func (c *clientCache) done() <-chan struct{} {
 	return closedChan
 }
 
-func (c *clientCache) run() {
+func (c *clientCache) run() { //nolint
 	var collectTimer *time.Timer
+
 	resourcesToRequest := make(map[string]bool)
 
 	for {
@@ -61,17 +71,18 @@ func (c *clientCache) run() {
 			}
 
 			if collectTimer == nil {
-				collectTimer = time.NewTimer(time.Millisecond * 50)
+				collectTimer = time.NewTimer(collectTime)
+
 				continue
 			} else {
 				select {
 				case <-collectTimer.C:
 					collectTimer = nil
+
 					c.fetchResources(resourcesToRequest)
 					resourcesToRequest = make(map[string]bool)
 
-				default:
-					// no op
+				default: // no op
 				}
 			}
 
@@ -80,23 +91,26 @@ func (c *clientCache) run() {
 				select {
 				case <-collectTimer.C:
 					collectTimer = nil
+
 					c.fetchResources(resourcesToRequest)
 					resourcesToRequest = make(map[string]bool)
 
-				default:
-					// no op
+				default: // no op
 				}
 			}
 
-			time.Sleep(time.Millisecond * 5)
+			time.Sleep(shortWaitTime)
 		}
 	}
 }
 
 func (c *clientCache) fetchResources(resourcesToRequest map[string]bool) {
-	// TODO: query only required resources
-	resources, _ := c.client.ReadResources(context.Background())
-	c.setResources(resources)
+	if len(resourcesToRequest) >= minBulkSize {
+		resources, err := c.client.ReadFullResources(context.Background())
+		if err == nil {
+			c.setResources(resources)
+		}
+	}
 
 	// notify
 	c.lock.Lock()
@@ -106,11 +120,11 @@ func (c *clientCache) fetchResources(resourcesToRequest map[string]bool) {
 
 func (c *clientCache) getResource(resourceID string) (*model.Resource, bool) {
 	c.lock.RLock()
-	res, ok := c.resources[resourceID]
+	res, exists := c.resources[resourceID]
 	c.lock.RUnlock()
 
-	if ok {
-		return res, ok
+	if exists {
+		return res, exists
 	}
 
 	c.requestedResources <- resourceID
@@ -122,15 +136,15 @@ LOOP:
 			break LOOP
 
 		default:
-			time.Sleep(time.Millisecond * 10)
+			time.Sleep(shortWaitTime)
 		}
 	}
 
 	c.lock.RLock()
-	res, ok = c.resources[resourceID]
+	res, exists = c.resources[resourceID]
 	c.lock.RUnlock()
 
-	return res, ok
+	return res, exists
 }
 
 func (c *clientCache) setResource(resource *model.Resource) {
@@ -145,7 +159,13 @@ func (c *clientCache) setResources(resources []*model.Resource) {
 	defer c.lock.Unlock()
 
 	for _, resource := range resources {
-		res := resource
-		c.resources[res.ID] = res
+		c.resources[resource.ID] = resource
 	}
+}
+
+func (c *clientCache) invalidateResource(id string) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	delete(c.resources, id)
 }
