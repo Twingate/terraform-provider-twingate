@@ -22,7 +22,7 @@ var cache = &clientCache{ //nolint:gochecknoglobals
 	requestedResources: make(chan string, requestsBufferSize),
 }
 
-func init() { //nolint
+func init() { //nolint:gochecknoinits
 	closedChan = make(chan struct{})
 	close(closedChan)
 
