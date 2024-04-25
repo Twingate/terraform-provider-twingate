@@ -29,7 +29,7 @@ const (
 	headerCorrelationID = "X-Correlation-Id"
 
 	defaultPageLimit  = 50
-	extendedPageLimit = 500
+	extendedPageLimit = 100
 )
 
 var (
