@@ -105,7 +105,7 @@ func (c *clientCache) run() { //nolint
 }
 
 func (c *clientCache) fetchResources(resourcesToRequest map[string]bool) {
-	if len(resourcesToRequest) >= minBulkSize {
+	if len(resourcesToRequest) >= minBulkSize && c.client != nil {
 		resources, err := c.client.ReadFullResources(context.Background())
 		if err == nil {
 			c.setResources(resources)
@@ -119,6 +119,16 @@ func (c *clientCache) fetchResources(resourcesToRequest map[string]bool) {
 }
 
 func (c *clientCache) getResource(resourceID string) (*model.Resource, bool) {
+	c.lock.RLock()
+
+	if c.client == nil {
+		c.lock.RUnlock()
+
+		return nil, false
+	}
+
+	c.lock.RUnlock()
+
 	c.lock.RLock()
 	res, exists := c.resources[resourceID]
 	c.lock.RUnlock()
