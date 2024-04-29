@@ -233,8 +233,9 @@ func convertAccessGroupsToTerraform(ctx context.Context, groups []string) (types
 
 	for _, g := range groups {
 		attributes := map[string]tfattr.Value{
-			attr.GroupID:          types.StringValue(g),
-			attr.SecurityPolicyID: types.StringNull(),
+			attr.GroupID:                        types.StringValue(g),
+			attr.SecurityPolicyID:               types.StringNull(),
+			attr.UsageBasedAutolockDurationDays: types.Int64Null(),
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -244,7 +245,7 @@ func convertAccessGroupsToTerraform(ctx context.Context, groups []string) (types
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
 	return makeObjectsSet(ctx, objects...)
@@ -264,26 +265,15 @@ func convertAccessServiceAccountsToTerraform(ctx context.Context, serviceAccount
 			attr.ServiceAccountID: types.StringValue(account),
 		}
 
-		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
+		obj, diags := types.ObjectValue(accessServiceAccountAttributeTypes(), attributes)
 		diagnostics.Append(diags...)
 
 		objects = append(objects, obj)
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
 	return makeObjectsSet(ctx, objects...)
-}
-
-func accessAttributeTypes() map[string]tfattr.Type {
-	return map[string]tfattr.Type{
-		attr.GroupIDs: types.SetType{
-			ElemType: types.StringType,
-		},
-		attr.ServiceAccountIDs: types.SetType{
-			ElemType: types.StringType,
-		},
-	}
 }
