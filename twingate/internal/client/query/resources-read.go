@@ -28,3 +28,27 @@ func (r Resources) ToModel() []*model.Resource {
 		return edge.Node.ToModel()
 	})
 }
+
+// ---
+
+type ReadFullResources struct {
+	FullResources `graphql:"resources(after: $resourcesEndCursor, first: $pageLimit)"`
+}
+
+func (r ReadFullResources) IsEmpty() bool {
+	return len(r.Edges) == 0
+}
+
+type FullResources struct {
+	PaginatedResource[*FullResourceEdge]
+}
+
+type FullResourceEdge struct {
+	Node *gqlResource
+}
+
+func (r ReadFullResources) ToModel() []*model.Resource {
+	return utils.Map[*FullResourceEdge, *model.Resource](r.Edges, func(edge *FullResourceEdge) *model.Resource {
+		return edge.Node.ToModel()
+	})
+}

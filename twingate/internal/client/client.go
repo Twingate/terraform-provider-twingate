@@ -28,7 +28,8 @@ const (
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
 
-	defaultPageLimit = 50
+	defaultPageLimit  = 50
+	extendedPageLimit = 100
 )
 
 var (
@@ -137,6 +138,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 
 	sURL := newServerURL(network, url)
 	retryableClient := retryablehttp.NewClient()
+	retryableClient.Logger = nil
 	retryableClient.CheckRetry = customRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
@@ -160,6 +162,10 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
+
+	if version != "test" {
+		cache.client = &client
+	}
 
 	return &client
 }

@@ -3352,3 +3352,84 @@ func createResourceWithUsageBasedOnGroupAccess(remoteNetwork, resource, groupNam
 	}
 	`, remoteNetwork, resource, groupName, daysDuration)
 }
+
+func TestAccTwingateWithMultipleResource(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	theResource1 := acctests.TerraformResource(resourceName + "-1")
+	theResource2 := acctests.TerraformResource(resourceName + "-2")
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createMultipleResourcesN(remoteNetworkName, resourceName, groupName, 10),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource1),
+					acctests.CheckTwingateResourceExists(theResource2),
+					sdk.TestCheckResourceAttr(theResource1, accessGroupIdsLen, "2"),
+					sdk.TestCheckResourceAttr(theResource2, accessGroupIdsLen, "2"),
+				),
+			},
+			{
+				Config: createMultipleResourcesN(remoteNetworkName, resourceName, groupName, 10),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource1),
+					acctests.CheckTwingateResourceExists(theResource2),
+					sdk.TestCheckResourceAttr(theResource1, accessGroupIdsLen, "2"),
+					sdk.TestCheckResourceAttr(theResource2, accessGroupIdsLen, "2"),
+				),
+			},
+		},
+	})
+}
+
+func createMultipleResourcesN(remoteNetwork, resource, groupName string, n int) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "%[2]s-group-1" {
+      name = "%[3]s-1"
+    }
+
+	resource "twingate_group" "%[2]s-group-2" {
+      name = "%[3]s-2"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	`+genMultipleResource(n),
+		remoteNetwork, resource, groupName)
+}
+
+func genMultipleResource(n int) string {
+	res := make([]string, 0, n)
+	for i := 0; i < n; i++ {
+		res = append(res, fmtResource(i+1))
+	}
+
+	return strings.Join(res, "\n\n")
+}
+
+func fmtResource(index int) string {
+	return fmt.Sprintf(`
+	resource "twingate_resource" "%%[2]s-%[1]v" {
+	  name = "%%[2]s-%[1]v"
+	  address = "acc-test-address-%[1]v.com"
+	  remote_network_id = twingate_remote_network.%%[1]s.id
+
+	  dynamic "access_group" {
+		for_each = [twingate_group.%%[2]s-group-1.id, twingate_group.%%[2]s-group-2.id]
+		content {
+			group_id = access_group.value
+		}
+      }
+	}
+	`, index)
+}
