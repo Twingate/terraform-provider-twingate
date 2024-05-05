@@ -21,11 +21,11 @@ const (
 
 var cache = &clientCache{ //nolint:gochecknoglobals
 	requestedResources: make(chan string, requestsBufferSize),
-	handlers: map[ResourceWithID]*handler[ResourceWithID]{
-		*model.Resource: handler[*model.Resource]{
-			readResources:
-		},
-	},
+	//handlers: map[ResourceWithID]*handler[ResourceWithID]{
+	//	*model.Resource: handler[*model.Resource]{
+	//		readResources:
+	//	},
+	//},
 }
 
 func init() { //nolint:gochecknoinits
@@ -43,22 +43,37 @@ type clientCache struct {
 	requestDone        atomic.Bool
 	requestedResources chan string
 
-	handlers map[reflect.Type]*handler[ResourceWithID]
+	//handlers map[reflect.Type]resourceHandler
+
+	resHandler *handler[*model.Resource]
 
 	client *Client
 }
 
-func (c *clientCache) setClient (client *Client) {
+func (c *clientCache) setClient(client *Client) {
 	c.client = client
 
-	c.handlers = map[reflect.Type]*handler[ResourceWithID]{
-		type(*model.Resource): &handler[*model.Resource]{
-			readResources: client.readResources,
-		},
+	c.resHandler = &handler[*model.Resource]{
+		readResources: client.ReadFullResources,
 	}
+
+	// &handler[*model.Resource]{
+	//			readResources: client.readResources,
+	//		},
+
+	//c.handlers = map[reflect.Type]resourceHandler{
+	//	//type(*model.Resource): nil,
+	//
+	//}
+	//
+	//c.handlers[reflect.TypeOf(&model.Resource{})] = &handler[*model.Resource]{}
 }
 
 // --
+
+type resourceHandler interface {
+	getResource(resourceID string) (any, bool)
+}
 
 type ResourceWithID interface {
 	GetID() string
@@ -269,6 +284,17 @@ func (c *clientCache) fetchResources(resourcesToRequest map[string]bool) {
 	//c.requestDone = true
 	//c.lock.Unlock()
 	c.requestDone.Store(true)
+}
+
+func getResource[T any](resourceID string) (T, bool) {
+	switch reflect.TypeOf(T) {
+	case *model.Resource:
+
+	}
+
+	var v K
+
+	return v, false
 }
 
 func (c *clientCache) getResource(resourceID string) (*model.Resource, bool) {
