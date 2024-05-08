@@ -19,88 +19,74 @@ const (
 	shortWaitTime      = 5 * time.Millisecond
 )
 
-var cache = &clientCache{ //nolint:gochecknoglobals
-	requestedResources: make(chan string, requestsBufferSize),
-	//handlers: map[ResourceWithID]*handler[ResourceWithID]{
-	//	*model.Resource: handler[*model.Resource]{
-	//		readResources:
-	//	},
-	//},
-}
+var cache = &clientCache{} //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
 	closedChan = make(chan struct{})
 	close(closedChan)
-
-	cache.requestDone.Store(false)
-
-	go cache.run()
 }
 
 type clientCache struct {
-	lock               sync.RWMutex
-	resources          sync.Map
-	requestDone        atomic.Bool
-	requestedResources chan string
+	lock sync.RWMutex
 
-	//handlers map[reflect.Type]resourceHandler
-
-	resHandler *handler[*model.Resource]
-
-	client *Client
+	handlers map[string]resourceHandler
 }
 
 func (c *clientCache) setClient(client *Client) {
-	c.client = client
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
-	c.resHandler = &handler[*model.Resource]{
-		readResources: client.ReadFullResources,
+	if c.handlers != nil {
+		return
 	}
 
-	// &handler[*model.Resource]{
-	//			readResources: client.readResources,
-	//		},
+	c.handlers = map[string]resourceHandler{
+		reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource]{
+			readResources:      client.ReadFullResources,
+			requestedResources: make(chan string, requestsBufferSize),
+		},
+		reflect.TypeOf(&model.Group{}).String(): &handler[*model.Group]{
+			readResources:      client.ReadFullGroups,
+			requestedResources: make(chan string, requestsBufferSize),
+		},
+	}
 
-	//c.handlers = map[reflect.Type]resourceHandler{
-	//	//type(*model.Resource): nil,
-	//
-	//}
-	//
-	//c.handlers[reflect.TypeOf(&model.Resource{})] = &handler[*model.Resource]{}
+	for _, worker := range c.handlers {
+		go worker.run()
+	}
 }
-
-// --
 
 type resourceHandler interface {
+	run()
 	getResource(resourceID string) (any, bool)
+	setResource(resource identifiable)
+	invalidateResource(resourceID string)
 }
 
-type ResourceWithID interface {
+type identifiable interface {
 	GetID() string
 }
 
-type ReadResources[T ResourceWithID] func(ctx context.Context) ([]T, error)
+type readResourcesFunc[T identifiable] func(ctx context.Context) ([]T, error)
 
-type handler[T ResourceWithID] struct {
+type handler[T identifiable] struct {
 	resources          sync.Map
 	requestDone        atomic.Bool
 	requestedResources chan string
-
-	readResources ReadResources[T]
-
-	//client *Client
+	readResources      readResourcesFunc[T]
 }
 
-func (h *handler[T]) getResource(resourceID string) (T, bool) {
+func (h *handler[T]) getResource(resourceID string) (any, bool) {
 	if h.readResources == nil {
 		var emptyObj T
+
 		return emptyObj, false
 	}
 
 	res, exists := h.resources.Load(resourceID)
 
 	if exists {
-		return res.(T), exists
+		return res, exists
 	}
 
 	h.requestedResources <- resourceID
@@ -116,12 +102,10 @@ LOOP:
 		}
 	}
 
-	res, exists = h.resources.Load(resourceID)
-
-	return res.(T), exists
+	return h.resources.Load(resourceID)
 }
 
-func (h *handler[T]) setResource(resource T) {
+func (h *handler[T]) setResource(resource identifiable) {
 	h.resources.Store(resource.GetID(), resource)
 }
 
@@ -203,166 +187,45 @@ func (h *handler[T]) run() { //nolint
 	}
 }
 
-// --
-
-func (c *clientCache) done() <-chan struct{} {
-	//c.lock.RLock()
-	//defer c.lock.RUnlock()
-
-	if !c.requestDone.Load() {
-		return nil
-	}
-
-	return closedChan
-}
-
-func (c *clientCache) run() { //nolint
-	var collectTimer *time.Timer
-
-	resourcesToRequest := make(map[string]bool)
-
-	for {
-		select {
-		case id := <-c.requestedResources:
-			resourcesToRequest[id] = true
-
-			//c.lock.RLock()
-			//isDone := c.requestDone
-			//c.lock.RUnlock()
-
-			if c.requestDone.Load() {
-				//c.lock.Lock()
-				//c.requestDone = false
-				//c.lock.Unlock()
-				c.requestDone.Store(false)
-			}
-
-			if collectTimer == nil {
-				collectTimer = time.NewTimer(collectTime)
-
-				continue
-			} else {
-				select {
-				case <-collectTimer.C:
-					collectTimer = nil
-
-					c.fetchResources(resourcesToRequest)
-					resourcesToRequest = make(map[string]bool)
-
-				default: // no op
-				}
-			}
-
-		default:
-			if collectTimer != nil {
-				select {
-				case <-collectTimer.C:
-					collectTimer = nil
-
-					c.fetchResources(resourcesToRequest)
-					resourcesToRequest = make(map[string]bool)
-
-				default: // no op
-				}
-			}
-
-			time.Sleep(shortWaitTime)
-		}
-	}
-}
-
-func (c *clientCache) fetchResources(resourcesToRequest map[string]bool) {
-	if len(resourcesToRequest) >= minBulkSize && c.client != nil {
-		resources, err := c.client.ReadFullResources(context.Background())
-		if err == nil {
-			c.setResources(resources)
-		}
-	}
-
-	// notify
-	//c.lock.Lock()
-	//c.requestDone = true
-	//c.lock.Unlock()
-	c.requestDone.Store(true)
-}
-
 func getResource[T any](resourceID string) (T, bool) {
-	switch reflect.TypeOf(T) {
-	case *model.Resource:
+	var (
+		res    T
+		exists bool
+	)
 
-	}
-
-	var v K
-
-	return v, false
-}
-
-func (c *clientCache) getResource(resourceID string) (*model.Resource, bool) {
-	c.lock.RLock()
-
-	if c.client == nil {
-		c.lock.RUnlock()
-
-		return nil, false
-	}
-
-	c.lock.RUnlock()
-
-	//c.lock.RLock()
-	//res, exists := c.resources[resourceID]
-	//c.lock.RUnlock()
-	res, exists := c.resources.Load(resourceID)
-
-	if exists {
-		return res.(*model.Resource), exists
-	}
-
-	c.requestedResources <- resourceID
-	// wait for fetching
-LOOP:
-	for {
-		select {
-		case <-c.done():
-			break LOOP
-
-		default:
-			time.Sleep(shortWaitTime)
+	handle(res, func(handler resourceHandler) {
+		resource, found := handler.getResource(resourceID)
+		if resource == nil {
+			return
 		}
-	}
 
-	//c.lock.RLock()
-	//res, exists = c.resources[resourceID]
-	//c.lock.RUnlock()
+		res = resource.(T)
+		exists = found
+	})
 
-	res, exists = c.resources.Load(resourceID)
-
-	return res.(*model.Resource), exists
+	return res, exists
 }
 
-func (c *clientCache) setResource(resource *model.Resource) {
-	//c.lock.Lock()
-	//defer c.lock.Unlock()
-	//
-	//c.resources[resource.ID] = resource
-
-	c.resources.Store(resource.ID, resource)
+func setResource(resource identifiable) {
+	handle(resource, func(handler resourceHandler) {
+		handler.setResource(resource)
+	})
 }
 
-func (c *clientCache) setResources(resources []*model.Resource) {
-	//c.lock.Lock()
-	//defer c.lock.Unlock()
+func invalidateResource[T any](resourceID string) {
+	var res T
 
-	for _, resource := range resources {
-		//c.resources[resource.ID] = resource
-		c.resources.Store(resource.ID, resource)
+	handle(res, func(handler resourceHandler) {
+		handler.invalidateResource(resourceID)
+	})
+}
+
+func handle(handlerType any, apply func(handler resourceHandler)) {
+	if handler, ok := cache.handlers[handlerKey(handlerType)]; ok {
+		apply(handler)
 	}
 }
 
-func (c *clientCache) invalidateResource(id string) {
-	//c.lock.Lock()
-	//defer c.lock.Unlock()
-	//
-	//delete(c.resources, id)
-
-	c.resources.Delete(id)
+func handlerKey(handlerType any) string {
+	return reflect.TypeOf(handlerType).String()
 }

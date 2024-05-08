@@ -42,6 +42,10 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
+	if res, ok := getResource[*model.Group](groupID); ok {
+		return res, nil
+	}
+
 	variables := newVars(
 		gqlID(groupID),
 		cursor(query.CursorUsers),
@@ -57,7 +61,11 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 		return nil, err //nolint
 	}
 
-	return response.ToModel(), nil
+	group := response.ToModel()
+
+	setResource(group)
+
+	return group, nil
 }
 
 func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
@@ -96,6 +104,29 @@ func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]
 	return &response.PaginatedResource, nil
 }
 
+func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error) {
+	opr := resourceGroup.read()
+
+	variables := newVars(
+		gqlNullable(query.NewGroupFilterInput(nil), "filter"),
+		cursor(query.CursorGroups),
+		cursor(query.CursorUsers),
+		pageLimit(extendedPageLimit),
+	)
+
+	response := query.ReadGroups{}
+	if err := client.query(ctx, &response, variables, opr.withCustomName("readGroups"),
+		attr{id: "All"}); err != nil {
+		return nil, err
+	}
+
+	if err := response.FetchPages(ctx, client.readGroupsAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
+	return response.ToModel(), nil
+}
+
 func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*model.Group, error) {
 	opr := resourceGroup.update()
 
@@ -106,6 +137,8 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 	if input.Name == "" {
 		return nil, opr.apiError(ErrGraphqlNameIsEmpty)
 	}
+
+	invalidateResource[*model.Group](input.ID)
 
 	variables := newVars(
 		gqlID(input.ID),
@@ -129,6 +162,8 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 	group := response.Entity.ToModel()
 	group.IsAuthoritative = input.IsAuthoritative
 
+	setResource(group)
+
 	return group, nil
 }
 
@@ -138,6 +173,8 @@ func (client *Client) DeleteGroup(ctx context.Context, groupID string) error {
 	if groupID == "" {
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
+
+	invalidateResource[*model.Group](groupID)
 
 	response := query.DeleteGroup{}
 
@@ -154,6 +191,8 @@ func (client *Client) DeleteGroupUsers(ctx context.Context, groupID string, user
 	if groupID == "" {
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
+
+	invalidateResource[*model.Group](groupID)
 
 	variables := newVars(
 		gqlID(groupID),
