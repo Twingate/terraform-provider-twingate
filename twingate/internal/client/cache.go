@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/mitchellh/copystructure"
 )
 
 var closedChan chan struct{} //nolint:gochecknoglobals
@@ -77,16 +78,18 @@ type handler[T identifiable] struct {
 }
 
 func (h *handler[T]) getResource(resourceID string) (any, bool) {
-	if h.readResources == nil {
-		var emptyObj T
+	var emptyObj T
 
+	if h.readResources == nil {
 		return emptyObj, false
 	}
 
 	res, exists := h.resources.Load(resourceID)
 
 	if exists {
-		return res, exists
+		obj, _ := copystructure.Copy(res)
+
+		return obj, exists
 	}
 
 	h.requestedResources <- resourceID
@@ -102,11 +105,21 @@ LOOP:
 		}
 	}
 
-	return h.resources.Load(resourceID)
+	res, exists = h.resources.Load(resourceID)
+
+	if exists {
+		obj, _ := copystructure.Copy(res)
+
+		return obj, exists
+	}
+
+	return emptyObj, false
 }
 
 func (h *handler[T]) setResource(resource identifiable) {
-	h.resources.Store(resource.GetID(), resource)
+	obj, _ := copystructure.Copy(resource)
+
+	h.resources.Store(resource.GetID(), obj)
 }
 
 func (h *handler[T]) setResources(resources []T) {

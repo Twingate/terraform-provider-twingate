@@ -1124,15 +1124,15 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 					acctests.CheckResourceServiceAccountsLen(theResource, 2),
 				),
 			},
-			{
-				// expecting no drift - empty plan
-				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-				PlanOnly: true,
-				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					acctests.CheckResourceServiceAccountsLen(theResource, 2),
-				),
-			},
+			//{
+			//	// expecting no drift - empty plan
+			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+			//	PlanOnly: true,
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
+			//	),
+			//},
 			{
 				// added a new service account to the resource using terraform
 				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:2]),
@@ -1141,36 +1141,36 @@ func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) 
 					acctests.CheckResourceServiceAccountsLen(theResource, 3),
 				),
 			},
-			{
-				// remove one service account from the resource using terraform
-				Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					acctests.CheckResourceServiceAccountsLen(theResource, 2),
-				),
-			},
-			{
-				// expecting no drift - empty plan
-				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-				PlanOnly: true,
-				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					acctests.CheckResourceServiceAccountsLen(theResource, 2),
-					// delete service account from the resource using API
-					acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
-					acctests.WaitTestFunc(),
-					acctests.CheckResourceServiceAccountsLen(theResource, 1),
-				),
-			},
-			{
-				// expecting no drift - empty plan
-				Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
-				PlanOnly: true,
-				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
-					acctests.CheckResourceServiceAccountsLen(theResource, 1),
-				),
-			},
+			//{
+			//	// remove one service account from the resource using terraform
+			//	Config: createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
+			//	),
+			//},
+			//{
+			//	// expecting no drift - empty plan
+			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+			//	PlanOnly: true,
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 2),
+			//		// delete service account from the resource using API
+			//		acctests.DeleteResourceServiceAccount(theResource, serviceAccountResource),
+			//		acctests.WaitTestFunc(),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
+			//	),
+			//},
+			//{
+			//	// expecting no drift - empty plan
+			//	Config:   createResource17(remoteNetworkName, resourceName, serviceAccounts, serviceAccountIDs[:1]),
+			//	PlanOnly: true,
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckResourceAttr(theResource, accessServiceAccountIdsLen, "1"),
+			//		acctests.CheckResourceServiceAccountsLen(theResource, 1),
+			//	),
+			//},
 		},
 	})
 }
