@@ -76,11 +76,11 @@ module "demo_vpc" {
   name = "demo_vpc"
   cidr = "10.0.0.0/16"
 
-  azs                            = ["us-east-1a"]
-  private_subnets                = ["10.0.1.0/24"]
-  public_subnets                 = ["10.0.2.0/24"]
-  enable_dns_hostnames           = true
-  enable_nat_gateway             = true
+  azs                  = ["us-east-1a"]
+  private_subnets      = ["10.0.1.0/24"]
+  public_subnets       = ["10.0.2.0/24"]
+  enable_dns_hostnames = true
+  enable_nat_gateway   = true
 }
 
 # If you use an existing Security group, the Connector requires egress traffic enabled but does not require ingress
