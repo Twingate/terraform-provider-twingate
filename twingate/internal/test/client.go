@@ -33,6 +33,7 @@ func TwingateClient() (*client.Client, error) {
 			os.Getenv(twingate.EnvNetwork),
 			getHTTPTimeout(twingate.EnvHTTPTimeout, testTimeoutDuration),
 			testHTTPRetry,
+			client.DefaultAgent,
 			"test"),
 		nil
 }

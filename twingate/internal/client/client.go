@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	DefaultAgent = "TF"
 	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
 	EnvAPIToken  = "TWINGATE_API_TOKEN" // #nosec G101
 
@@ -47,6 +48,7 @@ type Client struct {
 	HTTPClient       *http.Client
 	GraphqlServerURL string
 	APIServerURL     string
+	agent            string
 	version          string
 	pageLimit        int
 	correlationID    string
@@ -83,17 +85,17 @@ func (t *transport) init() error {
 	return nil
 }
 
-func newTransport(underlineRoundTripper http.RoundTripper, apiToken, version, correlationID string) *transport {
+func newTransport(underlineRoundTripper http.RoundTripper, apiToken, agent, version, correlationID string) *transport {
 	return &transport{
 		underlineRoundTripper: underlineRoundTripper,
 		apiToken:              apiToken,
-		version:               twingateAgentVersion(version),
+		version:               twingateAgentVersion(agent, version),
 		correlationID:         correlationID,
 	}
 }
 
-func twingateAgentVersion(version string) string {
-	return "TwingateTF/" + version
+func twingateAgentVersion(agent, version string) string {
+	return fmt.Sprintf("Twingate%s/%s", agent, version)
 }
 
 func (s *serverURL) newGraphqlServerURL() string {
@@ -133,7 +135,7 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 	return retryablehttp.DefaultRetryPolicy(ctx, resp, err) //nolint
 }
 
-func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, version string) *Client {
+func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, agent, version string) *Client {
 	correlationID, _ := uuid.GenerateUUID()
 
 	sURL := newServerURL(network, url)
@@ -145,7 +147,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
-	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, version, correlationID)
+	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, agent, version, correlationID)
 
 	httpClient := retryableClient.StandardClient()
 
@@ -156,6 +158,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		GraphqlClient: graphql.NewClient(sURL.newGraphqlServerURL(), httpClient).WithRequestModifier(func(request *http.Request) {
 			request.Header.Set(headerCorrelationID, correlationID)
 		}),
+		agent:         agent,
 		version:       version,
 		pageLimit:     getPageLimit(),
 		correlationID: correlationID,
@@ -211,8 +214,8 @@ func (client *Client) post(ctx context.Context, url string, payload interface{},
 }
 
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {
-	req.Header.Set("content-type", "application/json")
-	req.Header.Set(headerAgent, twingateAgentVersion(client.version))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(headerAgent, twingateAgentVersion(client.agent, client.version))
 	req.Header.Set(headerCorrelationID, client.correlationID)
 	res, err := client.HTTPClient.Do(req)
 

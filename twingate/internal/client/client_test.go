@@ -16,7 +16,7 @@ import (
 func newTestClient() *Client {
 	return NewClient(
 		"twindev.com", "xxxx", "test",
-		time.Duration(1)*time.Second, 0, "test",
+		time.Duration(1)*time.Second, 0, DefaultAgent, "test",
 	)
 }
 
@@ -78,7 +78,7 @@ func TestClientAPITokenNotSet(t *testing.T) {
 
 	client := NewClient(
 		"twindev.com", "", "test",
-		time.Duration(1)*time.Second, 0, "test",
+		time.Duration(1)*time.Second, 0, DefaultAgent, "test",
 	)
 
 	_, err := client.post(context.TODO(), "/hello", "hello", nil)
@@ -94,7 +94,7 @@ func TestClientAPITokenNotSet(t *testing.T) {
 func TestClientInvalidServerAddress(t *testing.T) {
 	client := NewClient(
 		"beamreach.twingate.com", "XXXXX", "beamreach",
-		time.Duration(10)*time.Second, 3, "test",
+		time.Duration(10)*time.Second, 3, DefaultAgent, "test",
 	)
 
 	internal := client.HTTPClient.Transport.(*retryablehttp.RoundTripper)
