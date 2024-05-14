@@ -221,7 +221,7 @@ jobs:
   cleanup:
     name: Cleanup
 #    if: "!github.event.pull_request.head.repo.fork"
-    needs: tests-acceptance
+    needs: tests-acceptance-opentofu # tests-acceptance
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -255,7 +255,8 @@ jobs:
   # notifies that all test jobs are finished.
   finish:
     name: "CI Finished"
-    needs: [tests-unit, tests-acceptance, cleanup]
+#    needs: [tests-unit, tests-acceptance, cleanup]
+    needs: [tests-unit, tests-acceptance-opentofu, cleanup]
     runs-on: ubuntu-latest
     steps:
       - uses: shogo82148/actions-goveralls@v1
