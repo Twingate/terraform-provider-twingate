@@ -211,6 +211,9 @@ jobs:
       - name: Acceptance tests
         timeout-minutes: 10
         env:
+          TF_ACC_TERRAFORM_PATH: $(which tofu)
+          TF_ACC_PROVIDER_NAMESPACE: "hashicorp"
+          TF_ACC_PROVIDER_HOST: "registry.opentofu.org"
           TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
           TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
           TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
@@ -218,6 +221,7 @@ jobs:
         run: |
           terraform version
           tofu version
+          which tofu
           make testacc
 
   cleanup:
