@@ -106,7 +106,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	if res, ok := cache.getResource(resourceID); ok {
+	if res, ok := getResource[*model.Resource](resourceID); ok {
 		return res, nil
 	}
 
@@ -127,7 +127,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 
 	res := response.Resource.ToModel()
 
-	cache.setResource(res)
+	setResource(res)
 
 	return res, nil
 }
@@ -238,7 +238,7 @@ func (client *Client) readExtendedResourceAccessAfter(ctx context.Context, varia
 func (client *Client) UpdateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	opr := resourceResource.update()
 
-	cache.invalidateResource(input.ID)
+	invalidateResource[*model.Resource](input.ID)
 
 	variables := newVars(
 		gqlID(input.ID),
@@ -279,6 +279,8 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		resource.SecurityPolicyID = nil
 	}
 
+	setResource(resource)
+
 	return resource, nil
 }
 
@@ -289,7 +291,7 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	cache.invalidateResource(resourceID)
+	invalidateResource[*model.Resource](resourceID)
 
 	response := query.DeleteResource{}
 
@@ -299,7 +301,7 @@ func (client *Client) DeleteResource(ctx context.Context, resourceID string) err
 func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *model.Resource) error {
 	opr := resourceResource.update()
 
-	cache.invalidateResource(resource.ID)
+	invalidateResource[*model.Resource](resource.ID)
 
 	variables := newVars(
 		gqlID(resource.ID),
@@ -356,7 +358,7 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	cache.invalidateResource(resourceID)
+	invalidateResource[*model.Resource](resourceID)
 
 	variables := newVars(
 		gqlID(resourceID),
@@ -385,7 +387,7 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	cache.invalidateResource(resourceID)
+	invalidateResource[*model.Resource](resourceID)
 
 	variables := newVars(
 		gqlID(resourceID),

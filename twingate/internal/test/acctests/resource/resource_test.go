@@ -2,6 +2,7 @@ package resource
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"regexp"
 	"strings"
 	"testing"
@@ -3369,16 +3370,7 @@ func TestAccTwingateWithMultipleResource(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createMultipleResourcesN(remoteNetworkName, resourceName, groupName, 10),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource1),
-					acctests.CheckTwingateResourceExists(theResource2),
-					sdk.TestCheckResourceAttr(theResource1, accessGroupIdsLen, "2"),
-					sdk.TestCheckResourceAttr(theResource2, accessGroupIdsLen, "2"),
-				),
-			},
-			{
-				Config: createMultipleResourcesN(remoteNetworkName, resourceName, groupName, 10),
+				Config: createMultipleResourcesN(remoteNetworkName, resourceName, groupName, 15),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource1),
 					acctests.CheckTwingateResourceExists(theResource2),
@@ -3432,4 +3424,28 @@ func fmtResource(index int) string {
       }
 	}
 	`, index)
+}
+
+func TestAccTwingateWithMultipleGroups(t *testing.T) {
+	t.Parallel()
+
+	prefix := "group" + acctest.RandString(5)
+	group1 := acctests.TerraformGroup(prefix + "_1")
+	group2 := acctests.TerraformGroup(prefix + "_2")
+	groups, _ := genNewGroups(prefix, 15)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: strings.Join(groups, "\n"),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(group1),
+					acctests.CheckTwingateResourceExists(group2),
+				),
+			},
+		},
+	})
 }
