@@ -42,6 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
+      max-parallel: 2
       fail-fast: false
       matrix:
         terraform:
@@ -114,6 +115,7 @@ jobs:
     if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
+      max-parallel: 2
       fail-fast: false
       matrix:
         tofu:
