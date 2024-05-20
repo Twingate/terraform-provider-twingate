@@ -64,7 +64,7 @@ var providerClient = func() *client.Client { //nolint
 }()
 
 var ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){ //nolint
-	"twingate": providerserver.NewProtocol6WithError(twingate.New("test")()),
+	"twingate": providerserver.NewProtocol6WithError(twingate.New(client.DefaultAgent, "test")()),
 }
 
 func SetPageLimit(limit int) {
