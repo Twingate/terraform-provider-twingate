@@ -13,7 +13,10 @@ var (
 	version = "dev"
 )
 
-const registry = "registry.terraform.io/Twingate/twingate"
+const (
+	registry       = "registry.terraform.io/Twingate/twingate"
+	terraformAgent = "TF"
+)
 
 func main() {
 	var debug bool
@@ -21,7 +24,7 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers")
 	flag.Parse()
 
-	err := providerserver.Serve(context.Background(), twingate.New(version),
+	err := providerserver.Serve(context.Background(), twingate.New(terraformAgent, version),
 		providerserver.ServeOpts{
 			Debug:           debug,
 			Address:         registry,
