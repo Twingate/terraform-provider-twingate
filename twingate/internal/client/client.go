@@ -25,7 +25,7 @@ const (
 	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
 	EnvAPIToken  = "TWINGATE_API_TOKEN" // #nosec G101
 
-	headerAPIKey        = "X-API-KEY"
+	headerAPIKey        = "X-Api-Key" // #nosec G101
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
 
