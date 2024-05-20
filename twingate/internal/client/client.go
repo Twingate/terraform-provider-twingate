@@ -24,7 +24,7 @@ const (
 	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
 	EnvAPIToken  = "TWINGATE_API_TOKEN" // #nosec G101
 
-	headerAPIKey        = "X-API-KEY"
+	headerAPIKey        = "X-Api-Key" // #nosec G101
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
 
@@ -211,7 +211,7 @@ func (client *Client) post(ctx context.Context, url string, payload interface{},
 }
 
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {
-	req.Header.Set("content-type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(headerAgent, twingateAgentVersion(client.version))
 	req.Header.Set(headerCorrelationID, client.correlationID)
 	res, err := client.HTTPClient.Do(req)
