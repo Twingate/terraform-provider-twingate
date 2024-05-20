@@ -221,6 +221,7 @@ jobs:
           terraform version
           tofu version
           which tofu
+          export TF_ACC_TERRAFORM_PATH=$(which tofu)
           make testacc
 
   cleanup:
