@@ -52,6 +52,7 @@ linters-settings:
             - github.com/hasura/go-graphql-client
             - github.com/hashicorp/
             - github.com/iancoleman/strcase
+            - github.com/mitchellh/copystructure
       - test:
           files:
             - $test

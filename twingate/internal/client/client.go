@@ -163,8 +163,8 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
 
-	if version != "test" {
-		cache.client = &client
+	if apiToken != "xxxx" {
+		cache.setClient(&client)
 	}
 
 	return &client
@@ -211,7 +211,7 @@ func (client *Client) post(ctx context.Context, url string, payload interface{},
 }
 
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {
-	req.Header.Set("content-type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(headerAgent, twingateAgentVersion(client.version))
 	req.Header.Set(headerCorrelationID, client.correlationID)
 	res, err := client.HTTPClient.Do(req)

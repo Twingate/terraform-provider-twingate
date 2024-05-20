@@ -364,7 +364,7 @@ func TestAccTwingateGroupUsersCursor(t *testing.T) {
 					),
 				},
 				{
-					Config: terraformResourceTwingateGroupAndUsers(terraformResourceName, groupName, users[:2], userIDs[:2]),
+					Config: terraformResourceTwingateGroupAndUsers(terraformResourceName, groupName, users, userIDs[:2]),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckGroupUsersLen(theResource, 2),
 					),
