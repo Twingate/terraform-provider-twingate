@@ -163,8 +163,8 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
 
-	if version != "test" {
-		cache.client = &client
+	if apiToken != "xxxx" {
+		cache.setClient(&client)
 	}
 
 	return &client
