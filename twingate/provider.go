@@ -35,6 +35,7 @@ const (
 var _ provider.Provider = &Twingate{}
 
 type Twingate struct {
+	agent   string
 	version string
 }
 
@@ -46,9 +47,10 @@ type twingateProviderModel struct {
 	HTTPMaxRetry types.Int64  `tfsdk:"http_max_retry"`
 }
 
-func New(version string) func() provider.Provider {
+func New(agent, version string) func() provider.Provider {
 	return func() provider.Provider {
 		return &Twingate{
+			agent:   agent,
 			version: version,
 		}
 	}
@@ -136,6 +138,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 		network,
 		time.Duration(httpTimeout)*time.Second,
 		httpMaxRetry,
+		t.agent,
 		t.version)
 
 	response.DataSourceData = client
