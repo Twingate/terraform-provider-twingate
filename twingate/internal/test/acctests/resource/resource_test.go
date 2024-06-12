@@ -2717,7 +2717,7 @@ func TestAccTwingateResourceWithBrowserOptionIP(t *testing.T) {
 				),
 			},
 			{
-				Config:      createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
