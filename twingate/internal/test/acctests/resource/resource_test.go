@@ -2697,7 +2697,7 @@ func TestAccTwingateResourceWithBrowserOptionIP(t *testing.T) {
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	wildcardAddress := "10.0.0.1"
+	ipAddress := "10.0.0.1"
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -2705,19 +2705,19 @@ func TestAccTwingateResourceWithBrowserOptionIP(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress),
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, ipAddress),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
 			},
 			{
-				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, false),
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, ipAddress, false),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
 			},
 			{
-				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, ipAddress, true),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
@@ -2731,7 +2731,7 @@ func TestAccTwingateResourceWithBrowserOptionCIDR(t *testing.T) {
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
-	wildcardAddress := "10.0.0.0/24"
+	cidrAddress := "10.0.0.0/24"
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -2739,19 +2739,19 @@ func TestAccTwingateResourceWithBrowserOptionCIDR(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress),
+				Config: createResourceWithoutBrowserOption(terraformResourceName, remoteNetworkName, resourceName, cidrAddress),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
 			},
 			{
-				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, false),
+				Config: createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, cidrAddress, false),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
 			},
 			{
-				Config:      createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, wildcardAddress, true),
+				Config:      createResourceWithBrowserOption(terraformResourceName, remoteNetworkName, resourceName, cidrAddress, true),
 				ExpectError: regexp.MustCompile("Resources with a CIDR range or wildcard"),
 			},
 		},
