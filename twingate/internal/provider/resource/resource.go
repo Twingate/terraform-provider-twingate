@@ -1297,7 +1297,7 @@ func (m caseInsensitiveDiffModifier) PlanModifyString(ctx context.Context, req p
 	}
 }
 
-var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)?`)
+var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)`)
 
 func isWildcardAddress(address string) bool {
 	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
