@@ -26,6 +26,18 @@ resource "twingate_group" "aws" {
   name = "aws_group"
 }
 
+data "twingate_group" "security" {
+  id = "securityGroupID"
+}
+
+data "twingate_groups" "devops" {
+  name_contains = "DevOps"
+}
+
+data "twingate_groups" "sre" {
+  name_contains = "SRE"
+}
+
 resource "twingate_service_account" "github_actions_prod" {
   name = "Github Actions PROD"
 }
@@ -35,8 +47,8 @@ data "twingate_security_policy" "test_policy" {
 }
 
 resource "twingate_resource" "resource" {
-  name = "network"
-  address = "internal.int"
+  name              = "network"
+  address           = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
   security_policy_id = data.twingate_security_policy.test_policy.id
@@ -45,26 +57,52 @@ resource "twingate_resource" "resource" {
     allow_icmp = true
     tcp = {
       policy = "RESTRICTED"
-      ports = ["80", "82-83"]
+      ports  = ["80", "82-83"]
     }
     udp = {
       policy = "ALLOW_ALL"
     }
   }
 
+  // Adding a single group via `access_group`
+  access_group {
+    group_id                           = twingate_group.aws.id
+    security_policy_id                 = data.twingate_security_policy.test_policy.id
+    usage_based_autolock_duration_days = 30
+  }
+
+  // Adding multiple groups by individual ID
   dynamic "access_group" {
-    for_each = [twingate_group.aws.id]
+    for_each = toset([twingate_group.aws.id, data.twingate_group.security.id])
     content {
-      group_id = access_group.value
-      security_policy_id = data.twingate_security_policy.test_policy.id
+      group_id                           = access_group.value
+      security_policy_id                 = data.twingate_security_policy.test_policy.id
       usage_based_autolock_duration_days = 30
     }
   }
 
-  dynamic "access_service" {
-    for_each = [twingate_service_account.github_actions_prod.id]
+  // Adding multiple groups from twingate_groups data sources
+  dynamic "access_group" {
+    for_each = setunion(
+      data.twingate_groups.devops.groups[*].id,
+      data.twingate_groups.sre.groups[*].id,
+      // Single IDs can be added by wrapping them in a set
+      toset([data.twingate_group.security.id])
+    )
     content {
-      service_account_id = access_service.value
+      group_id                           = access_group.value
+      security_policy_id                 = data.twingate_security_policy.test_policy.id
+      usage_based_autolock_duration_days = 30
+
+    }
+  }
+
+  // Service acoount access is specified similarly
+  // A `for_each` block may be used like above to assign access to multiple 
+  // service accounts in a single configuration block.
+  access_service {
+    content {
+      service_account_id = twingate_service_account.github_actions_prod.id
     }
   }
 
