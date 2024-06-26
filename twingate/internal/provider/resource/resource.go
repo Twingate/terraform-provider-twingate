@@ -827,10 +827,10 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 
 	if resource != nil {
 		resource.IsAuthoritative = input.IsAuthoritative
-	}
 
-	if planSecurityPolicy != nil && *planSecurityPolicy == "" {
-		resource.SecurityPolicyID = planSecurityPolicy
+		if planSecurityPolicy != nil && *planSecurityPolicy == "" {
+			resource.SecurityPolicyID = planSecurityPolicy
+		}
 	}
 
 	r.helper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
