@@ -2,10 +2,11 @@ package resource
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -2042,6 +2043,49 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.Alias, ""),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceUpdateWithInvalidAlias(t *testing.T) {
+	const terraformResourceName = "test29_update_invalid"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource29WithoutAlias(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, attr.Alias),
+				),
+			},
+			{
+				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, "test-com"),
+				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceCreateWithInvalidAlias(t *testing.T) {
+	const terraformResourceName = "test29_create_invalid"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, "test-com"),
+				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
 			},
 		},
 	})
