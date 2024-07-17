@@ -18,6 +18,7 @@ linters-settings:
       - empty
       - error
       - generic
+      - context.Context
       - github.com/hashicorp/terraform-plugin-framework/resource.Resource
       - github.com/hashicorp/terraform-plugin-framework/datasource.DataSource
       - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Set
