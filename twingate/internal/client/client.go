@@ -248,7 +248,9 @@ type MutationResponse interface {
 }
 
 func (client *Client) mutate(ctx context.Context, resp MutationResponse, variables map[string]any, opr operation, attrs ...attr) error {
-	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(opr.String()))
+	parentOpr := getOperationFromCtx(ctx)
+	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(concatOperations(parentOpr, opr.String())))
+
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}
@@ -269,7 +271,9 @@ type ResponseWithPayload interface {
 }
 
 func (client *Client) query(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
-	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(opr.String()))
+	parentOpr := getOperationFromCtx(ctx)
+	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(concatOperations(parentOpr, opr.String())))
+
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}
@@ -279,4 +283,29 @@ func (client *Client) query(ctx context.Context, resp ResponseWithPayload, varia
 	}
 
 	return nil
+}
+
+type ctxOperationKeyType string
+
+const ctxOperationKey ctxOperationKeyType = "ctx_operation_key"
+
+func withOperationCtx(ctx context.Context, opr operation) context.Context {
+	return context.WithValue(ctx, ctxOperationKey, opr.String())
+}
+
+func getOperationFromCtx(ctx context.Context) string {
+	val, ok := ctx.Value(ctxOperationKey).(string)
+	if !ok {
+		return ""
+	}
+
+	return val
+}
+
+func concatOperations(opr1, opr2 string) string {
+	if opr1 == "" {
+		return opr2
+	}
+
+	return opr1 + "_" + opr2
 }
