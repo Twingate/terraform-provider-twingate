@@ -14,9 +14,9 @@ import (
 var closedChan chan struct{} //nolint:gochecknoglobals
 
 const (
-	minBulkSize        = 10
+	minBulkSize        = 5
 	requestsBufferSize = 1000
-	collectTime        = 70 * time.Millisecond
+	collectTime        = 100 * time.Millisecond
 	shortWaitTime      = 5 * time.Millisecond
 )
 
