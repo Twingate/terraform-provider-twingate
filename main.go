@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	version = "dev-cache"
+	version = "dev"
 )
 
 const (
