@@ -23,16 +23,16 @@ type dnsFilteringProfile struct {
 }
 
 type dnsFilteringProfileModel struct {
-	ID                 types.String  `tfsdk:"id"`
-	Name               types.String  `tfsdk:"name"`
-	Priority           types.Float64 `tfsdk:"priority"`
-	FallbackMethod     types.String  `tfsdk:"fallback_method"`
-	Groups             types.Set     `tfsdk:"groups"`
-	AllowedDomains     types.Object  `tfsdk:"allowed_domains"`
-	DeniedDomains      types.Object  `tfsdk:"denied_domains"`
-	ContentCategories  types.Object  `tfsdk:"content_categories"`
-	SecurityCategories types.Object  `tfsdk:"security_categories"`
-	PrivacyCategories  types.Object  `tfsdk:"privacy_categories"`
+	ID             types.String  `tfsdk:"id"`
+	Name           types.String  `tfsdk:"name"`
+	Priority       types.Float64 `tfsdk:"priority"`
+	FallbackMethod types.String  `tfsdk:"fallback_method"`
+	Groups         types.Set     `tfsdk:"groups"`
+	AllowedDomains types.Object  `tfsdk:"allowed_domains"`
+	DeniedDomains  types.Object  `tfsdk:"denied_domains"`
+	//ContentCategories  types.Object  `tfsdk:"content_categories"`
+	//SecurityCategories types.Object  `tfsdk:"security_categories"`
+	//PrivacyCategories  types.Object  `tfsdk:"privacy_categories"`
 }
 
 func (d *dnsFilteringProfile) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -111,7 +111,7 @@ func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaR
 }
 
 func (d *dnsFilteringProfile) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data connectorModel
+	var data dnsFilteringProfileModel
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
