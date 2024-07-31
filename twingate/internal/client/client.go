@@ -31,6 +31,8 @@ const (
 
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
+
+	rateLimit = 3
 )
 
 var (
@@ -52,6 +54,7 @@ type Client struct {
 	version          string
 	pageLimit        int
 	correlationID    string
+	ratelimiter      chan struct{}
 }
 
 type transport struct {
@@ -162,6 +165,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		version:       version,
 		pageLimit:     getPageLimit(),
 		correlationID: correlationID,
+		ratelimiter:   make(chan struct{}, rateLimit),
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
@@ -247,7 +251,18 @@ type MutationResponse interface {
 	ResponseWithPayload
 }
 
+func (client *Client) release() {
+	<-client.ratelimiter
+}
+
+func (client *Client) lock() {
+	client.ratelimiter <- struct{}{}
+}
+
 func (client *Client) mutate(ctx context.Context, resp MutationResponse, variables map[string]any, opr operation, attrs ...attr) error {
+	client.lock()
+	defer client.release()
+
 	parentOpr := getOperationFromCtx(ctx)
 	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(concatOperations(parentOpr, opr.String())))
 
@@ -271,6 +286,9 @@ type ResponseWithPayload interface {
 }
 
 func (client *Client) query(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
+	client.lock()
+	defer client.release()
+
 	parentOpr := getOperationFromCtx(ctx)
 	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(concatOperations(parentOpr, opr.String())))
 
