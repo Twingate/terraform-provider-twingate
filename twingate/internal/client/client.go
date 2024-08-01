@@ -24,6 +24,7 @@ const (
 	DefaultAgent = "TF"
 	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
 	EnvAPIToken  = "TWINGATE_API_TOKEN" // #nosec G101
+	EnvRateLimit = "TWINGATE_RATE_LIMIT"
 
 	headerAPIKey        = "X-Api-Key" // #nosec G101
 	headerAgent         = "User-Agent"
@@ -32,7 +33,7 @@ const (
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
 
-	rateLimit = 3
+	defaultRateLimit = 1
 )
 
 var (
@@ -165,7 +166,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		version:       version,
 		pageLimit:     getPageLimit(),
 		correlationID: correlationID,
-		ratelimiter:   make(chan struct{}, rateLimit),
+		ratelimiter:   make(chan struct{}, getRateLimit()),
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
@@ -183,6 +184,17 @@ func getPageLimit() int {
 	val, err := strconv.Atoi(str)
 	if err != nil {
 		return defaultPageLimit
+	}
+
+	return val
+}
+
+func getRateLimit() int {
+	str := os.Getenv(EnvRateLimit)
+
+	val, err := strconv.Atoi(str)
+	if err != nil {
+		return defaultRateLimit
 	}
 
 	return val
