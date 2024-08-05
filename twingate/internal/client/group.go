@@ -71,7 +71,7 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 }
 
 func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
-	opr := resourceGroup.read().withCustomName("datasource_readGroups")
+	opr := resourceGroup.read().withCustomName("readGroups")
 
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
