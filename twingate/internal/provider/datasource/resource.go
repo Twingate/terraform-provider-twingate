@@ -129,7 +129,7 @@ func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *d
 		return
 	}
 
-	resource, err := d.client.ReadResource(ctx, data.ID.ValueString())
+	resource, err := d.client.ReadResource(client.WithCallerCtx(ctx, datasourceKey), data.ID.ValueString())
 	if err != nil {
 		addErr(&resp.Diagnostics, err, TwingateResource)
 
