@@ -478,7 +478,7 @@ func convertSetToList(set types.Set) []string {
 }
 
 func convertStringListToSet(items []string) types.Set {
-	values := utils.Map(items, func(item string) attr.Value {
+	values := utils.Map(items, func(item string) tfattr.Value {
 		return types.StringValue(item)
 	})
 
