@@ -57,7 +57,9 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 		return nil, err
 	}
 
-	if err := response.Group.Users.FetchPages(ctx, client.readGroupUsersAfter, variables); err != nil {
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.Group.Users.FetchPages(oprCtx, client.readGroupUsersAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -69,7 +71,7 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 }
 
 func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
-	opr := resourceGroup.read()
+	opr := resourceGroup.read().withCustomName("datasource_readGroups")
 
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
@@ -79,12 +81,14 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 	)
 
 	response := query.ReadGroups{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readGroups"),
+	if err := client.query(ctx, &response, variables, opr,
 		attr{id: "All", name: filter.GetName()}); err != nil {
 		return nil, err
 	}
 
-	if err := response.FetchPages(ctx, client.readGroupsAfter, variables); err != nil {
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.FetchPages(oprCtx, client.readGroupsAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -92,12 +96,12 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 }
 
 func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
-	opr := resourceGroup.read()
+	opr := resourceGroup.read().withCustomName("readGroupsAfter")
 
 	variables[query.CursorGroups] = cursor
 
 	response := query.ReadGroups{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readGroups"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +109,7 @@ func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]
 }
 
 func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error) {
-	opr := resourceGroup.read()
+	opr := resourceGroup.read().withCustomName("cache_readGroups")
 
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(nil), "filter"),
@@ -115,12 +119,13 @@ func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error
 	)
 
 	response := query.ReadGroups{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readGroups"),
-		attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
-	if err := response.FetchPages(ctx, client.readGroupsAfter, variables); err != nil {
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.FetchPages(oprCtx, client.readGroupsAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -154,7 +159,9 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 		return nil, err
 	}
 
-	if err := response.Entity.Users.FetchPages(ctx,
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.Entity.Users.FetchPages(oprCtx,
 		client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(input.ID))); err != nil {
 		return nil, err //nolint
 	}
@@ -207,7 +214,7 @@ func (client *Client) DeleteGroupUsers(ctx context.Context, groupID string, user
 }
 
 func (client *Client) readGroupUsersAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
-	opr := resourceGroup.read()
+	opr := resourceGroup.read().withCustomName("readGroupUsersAfter")
 
 	variables[query.CursorUsers] = cursor
 	resourceID := fmt.Sprintf("%v", variables["id"])
