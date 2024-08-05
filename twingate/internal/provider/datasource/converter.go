@@ -3,6 +3,7 @@ package datasource
 import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -81,4 +82,24 @@ func convertRemoteNetworksToTerraform(networks []*model.RemoteNetwork) []remoteN
 			Location: types.StringValue(network.Location),
 		}
 	})
+}
+
+func convertDomainsToTerraform(domains []string) *domainsModel {
+	return &domainsModel{
+		Domains: convertStringListToSet(domains),
+	}
+}
+
+func convertStringList(items []string) []types.String {
+	return utils.Map(items, func(item string) types.String {
+		return types.StringValue(item)
+	})
+}
+
+func convertStringListToSet(items []string) types.Set {
+	values := utils.Map(items, func(item string) attr.Value {
+		return types.StringValue(item)
+	})
+
+	return types.SetValueMust(types.StringType, values)
 }
