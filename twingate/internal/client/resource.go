@@ -121,7 +121,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, err
 	}
 
-	if err := response.Resource.Access.FetchPages(ctx, client.readResourceAccessAfter, newVars(gqlID(resourceID))); err != nil {
+	if err := response.Resource.Access.FetchPages(withOperationCtx(ctx, opr), client.readResourceAccessAfter, newVars(gqlID(resourceID))); err != nil {
 		return nil, err //nolint
 	}
 
@@ -133,7 +133,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 }
 
 func (client *Client) readResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readResourceAccessAfter")
 
 	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorAccess] = cursor
@@ -148,7 +148,7 @@ func (client *Client) readResourceAccessAfter(ctx context.Context, variables map
 }
 
 func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readResources")
 
 	variables := newVars(
 		cursor(query.CursorResources),
@@ -156,11 +156,11 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 	)
 
 	response := query.ReadResources{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readResources"), attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
 		return nil, err
 	}
 
-	if err := response.FetchPages(ctx, client.readResourcesAfter, variables); err != nil {
+	if err := response.FetchPages(withOperationCtx(ctx, opr), client.readResourcesAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -168,7 +168,7 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 }
 
 func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readResourcesAfter")
 
 	variables[query.CursorResources] = cursor
 
@@ -181,7 +181,7 @@ func (client *Client) readResourcesAfter(ctx context.Context, variables map[stri
 }
 
 func (client *Client) ReadFullResources(ctx context.Context) ([]*model.Resource, error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readFullResources")
 
 	variables := newVars(
 		cursor(query.CursorAccess),
@@ -190,16 +190,18 @@ func (client *Client) ReadFullResources(ctx context.Context) ([]*model.Resource,
 	)
 
 	response := query.ReadFullResources{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readFullResources"), attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
 		return nil, err
 	}
 
-	if err := response.FetchPages(ctx, client.readFullResourcesAfter, variables); err != nil {
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.FetchPages(oprCtx, client.readFullResourcesAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
 	for i := range response.Edges {
-		if err := response.Edges[i].Node.Access.FetchPages(ctx, client.readExtendedResourceAccessAfter, newVars(gqlID(response.Edges[i].Node.ID))); err != nil {
+		if err := response.Edges[i].Node.Access.FetchPages(oprCtx, client.readExtendedResourceAccessAfter, newVars(gqlID(response.Edges[i].Node.ID))); err != nil {
 			return nil, err //nolint:wrapcheck
 		}
 	}
@@ -208,7 +210,7 @@ func (client *Client) ReadFullResources(ctx context.Context) ([]*model.Resource,
 }
 
 func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readFullResourcesAfter")
 
 	variables[query.CursorResources] = cursor
 
@@ -221,7 +223,7 @@ func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[
 }
 
 func (client *Client) readExtendedResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readExtendedResourceAccessAfter")
 
 	resourceID := string(variables["id"].(graphql.ID))
 	variables[query.CursorAccess] = cursor
@@ -260,7 +262,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, err
 	}
 
-	if err := response.Entity.Access.FetchPages(ctx, client.readResourceAccessAfter, newVars(gqlID(input.ID))); err != nil {
+	if err := response.Entity.Access.FetchPages(withOperationCtx(ctx, opr), client.readResourceAccessAfter, newVars(gqlID(input.ID))); err != nil {
 		return nil, err //nolint
 	}
 
@@ -314,7 +316,7 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 }
 
 func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string) ([]*model.Resource, error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readResourcesByName")
 
 	variables := newVars(
 		gqlNullable(query.NewResourceFilterInput(name, filter), "filter"),
@@ -327,7 +329,7 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name, filter stri
 		return nil, err
 	}
 
-	if err := response.FetchPages(ctx, client.readResourcesByNameAfter, variables); err != nil {
+	if err := response.FetchPages(withOperationCtx(ctx, opr), client.readResourcesByNameAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -335,12 +337,12 @@ func (client *Client) ReadResourcesByName(ctx context.Context, name, filter stri
 }
 
 func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
-	opr := resourceResource.read()
+	opr := resourceResource.read().withCustomName("readResourcesByName")
 
 	variables[query.CursorResources] = cursor
 
 	response := query.ReadResourcesByName{}
-	if err := client.query(ctx, &response, variables, opr.withCustomName("readResources"), attr{id: "All"}); err != nil {
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
 		return nil, err
 	}
 

@@ -13,6 +13,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -248,7 +249,10 @@ type MutationResponse interface {
 }
 
 func (client *Client) mutate(ctx context.Context, resp MutationResponse, variables map[string]any, opr operation, attrs ...attr) error {
-	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(opr.String()))
+	caller := getCallerFromCtx(ctx)
+	parentOpr := getOperationFromCtx(ctx)
+	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
+
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}
@@ -269,7 +273,10 @@ type ResponseWithPayload interface {
 }
 
 func (client *Client) query(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
-	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(opr.String()))
+	caller := getCallerFromCtx(ctx)
+	parentOpr := getOperationFromCtx(ctx)
+	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
+
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}
@@ -279,4 +286,50 @@ func (client *Client) query(ctx context.Context, resp ResponseWithPayload, varia
 	}
 
 	return nil
+}
+
+type ctxOperationKeyType string
+
+const ctxOperationKey ctxOperationKeyType = "ctx_operation_key"
+
+func withOperationCtx(ctx context.Context, opr operation) context.Context {
+	return context.WithValue(ctx, ctxOperationKey, opr.String())
+}
+
+func getOperationFromCtx(ctx context.Context) string {
+	val, ok := ctx.Value(ctxOperationKey).(string)
+	if !ok {
+		return ""
+	}
+
+	return val
+}
+
+func concatOperations(ops ...string) string {
+	operations := make([]string, 0, len(ops))
+
+	for _, op := range ops {
+		if op != "" {
+			operations = append(operations, op)
+		}
+	}
+
+	return strings.Join(operations, "_")
+}
+
+type ctxCallerKeyType string
+
+const ctxCallerKey ctxCallerKeyType = "ctx_caller_key"
+
+func WithCallerCtx(ctx context.Context, caller string) context.Context {
+	return context.WithValue(ctx, ctxCallerKey, caller)
+}
+
+func getCallerFromCtx(ctx context.Context) string {
+	val, ok := ctx.Value(ctxCallerKey).(string)
+	if !ok {
+		return ""
+	}
+
+	return val
 }
