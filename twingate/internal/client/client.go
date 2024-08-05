@@ -33,7 +33,7 @@ const (
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
 
-	defaultRateLimit = 1
+	defaultRateLimit = 3
 )
 
 var (
