@@ -109,7 +109,7 @@ func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]
 }
 
 func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error) {
-	opr := resourceGroup.read().withCustomName("readGroups")
+	opr := resourceGroup.read().withCustomName("readFullGroups")
 
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(nil), "filter"),
