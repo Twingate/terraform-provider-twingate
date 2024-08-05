@@ -162,7 +162,7 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 
 	filter := buildFilter(&data)
 
-	groups, err := d.client.ReadGroups(ctx, filter)
+	groups, err := d.client.ReadGroups(client.WithCallerCtx(ctx, datasourceKey), filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateGroups)
 
