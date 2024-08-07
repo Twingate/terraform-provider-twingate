@@ -2,6 +2,7 @@ package query
 
 import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 )
 
 type ReadDNSFilteringProfile struct {
@@ -10,13 +11,32 @@ type ReadDNSFilteringProfile struct {
 
 type gqlDNSFilteringProfile struct {
 	IDName
-	Priority               float64                 `json:"priority"`
-	AllowedDomains         []string                `json:"allowedDomains"`
-	DeniedDomains          []string                `json:"deniedDomains"`
-	FallbackMethod         string                  `json:"fallbackMethod"`
-	PrivacyCategories      *PrivacyCategoryConfig  `json:"privacyCategoryConfig"`
-	SecurityCategoryConfig *SecurityCategoryConfig `json:"securityCategoryConfig"`
-	ContentCategoryConfig  *ContentCategoryConfig  `json:"contentCategoryConfig"`
+	Priority               float64
+	AllowedDomains         []string
+	DeniedDomains          []string
+	FallbackMethod         string
+	Groups                 gqlGroupIDs `graphql:"groups(after: $groupsEndCursor, first: $pageLimit)"`
+	PrivacyCategoryConfig  *PrivacyCategoryConfig
+	SecurityCategoryConfig *SecurityCategoryConfig
+	ContentCategoryConfig  *ContentCategoryConfig
+}
+
+type gqlGroupIDs struct {
+	PaginatedResource[*GroupIDEdge]
+}
+
+func (g gqlGroupIDs) ToModel() []string {
+	return utils.Map[*GroupIDEdge, string](g.Edges, func(edge *GroupIDEdge) string {
+		return string(edge.Node.ID)
+	})
+}
+
+type GroupIDEdge struct {
+	Node *gqlGroupID
+}
+
+type gqlGroupID struct {
+	IDName
 }
 
 type PrivacyCategoryConfig struct {
@@ -69,13 +89,14 @@ func (p gqlDNSFilteringProfile) ToModel() *model.DNSFilteringProfile {
 		FallbackMethod: p.FallbackMethod,
 		AllowedDomains: p.AllowedDomains,
 		DeniedDomains:  p.DeniedDomains,
+		Groups:         p.Groups.ToModel(),
 	}
 
-	if p.PrivacyCategories != nil {
+	if p.PrivacyCategoryConfig != nil {
 		profile.PrivacyCategories = &model.PrivacyCategories{
-			BlockAffiliate:         p.PrivacyCategories.BlockAffiliate,
-			BlockDisguisedTrackers: p.PrivacyCategories.BlockDisguisedTrackers,
-			BlockAdsAndTrackers:    p.PrivacyCategories.BlockAdsAndTrackers,
+			BlockAffiliate:         p.PrivacyCategoryConfig.BlockAffiliate,
+			BlockDisguisedTrackers: p.PrivacyCategoryConfig.BlockDisguisedTrackers,
+			BlockAdsAndTrackers:    p.PrivacyCategoryConfig.BlockAdsAndTrackers,
 		}
 	}
 
@@ -108,4 +129,17 @@ func (p gqlDNSFilteringProfile) ToModel() *model.DNSFilteringProfile {
 	}
 
 	return profile
+}
+
+type ReadDNSFilteringProfileGroups struct {
+	DnsFilteringProfile *gqlDNSFilteringProfileGroups `graphql:"dnsFilteringProfile(id: $id)"`
+}
+
+func (q ReadDNSFilteringProfileGroups) IsEmpty() bool {
+	return q.DnsFilteringProfile == nil
+}
+
+type gqlDNSFilteringProfileGroups struct {
+	IDName
+	Groups gqlGroupIDs `graphql:"groups(after: $groupsEndCursor, first: $pageLimit)"`
 }

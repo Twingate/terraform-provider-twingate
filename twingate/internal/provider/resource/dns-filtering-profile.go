@@ -7,6 +7,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -78,8 +80,11 @@ func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest
 			attr.FallbackMethod: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "The DNS filtering profile's fallback method. One of AUTOMATIC or STRICT.",
+				Description: `The DNS filtering profile's fallback method. One of "AUTO" or "STRICT". Defaults to "STRICT".`,
 				Default:     stringdefault.StaticString(model.FallbackMethodStrict),
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.FallbackMethods...),
+				},
 			},
 			attr.Groups: schema.SetAttribute{
 				Optional:    true,
@@ -300,17 +305,21 @@ func (r *dnsFilteringProfile) Create(ctx context.Context, req resource.CreateReq
 
 	profile, err := r.client.CreateDNSFilteringProfile(ctx, plan.Name.ValueString())
 
-	if !plan.Priority.IsNull() {
-		profile.Priority = plan.Priority.ValueFloat64()
-	}
+	if profile != nil {
+		if !plan.Priority.IsNull() {
+			profile.Priority = plan.Priority.ValueFloat64()
+		}
 
-	profile.FallbackMethod = plan.FallbackMethod.ValueString()
-	profile.Groups = convertSetToList(plan.Groups)
-	profile.AllowedDomains = convertSetToList(plan.AllowedDomains.Attributes()[attr.Domains].(types.Set))
-	profile.DeniedDomains = convertSetToList(plan.DeniedDomains.Attributes()[attr.Domains].(types.Set))
-	profile.PrivacyCategories = convertPrivacyCategories(plan.PrivacyCategories)
-	profile.ContentCategories = convertContentCategories(plan.ContentCategories)
-	profile.SecurityCategories = convertSecurityCategories(plan.SecurityCategories)
+		profile.FallbackMethod = plan.FallbackMethod.ValueString()
+		profile.Groups = convertSetToList(plan.Groups)
+		profile.AllowedDomains = convertSetToList(plan.AllowedDomains.Attributes()[attr.Domains].(types.Set))
+		profile.DeniedDomains = convertSetToList(plan.DeniedDomains.Attributes()[attr.Domains].(types.Set))
+		profile.PrivacyCategories = convertPrivacyCategories(plan.PrivacyCategories)
+		profile.ContentCategories = convertContentCategories(plan.ContentCategories)
+		profile.SecurityCategories = convertSecurityCategories(plan.SecurityCategories)
+
+		profile, err = r.client.UpdateDNSFilteringProfile(ctx, profile)
+	}
 
 	r.helper(ctx, profile, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }

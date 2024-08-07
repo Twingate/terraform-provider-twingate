@@ -221,6 +221,10 @@ func TerraformUser(name string) string {
 	return ResourceName(resource.TwingateUser, name)
 }
 
+func TerraformDNSFilteringProfile(name string) string {
+	return ResourceName(resource.TwingateDNSFilteringProfile, name)
+}
+
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }

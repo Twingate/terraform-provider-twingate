@@ -13,9 +13,21 @@ func (client *Client) ReadDNSFilteringProfile(ctx context.Context, profileID str
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
+	variables := newVars(
+		gqlID(profileID),
+		cursor(query.CursorGroups),
+		pageLimit(defaultPageLimit),
+	)
+
 	response := query.ReadDNSFilteringProfile{}
-	if err := client.query(ctx, &response, newVars(gqlID(profileID)), opr, attr{id: profileID}); err != nil {
+	if err := client.query(ctx, &response, variables, opr, attr{id: profileID}); err != nil {
 		return nil, err
+	}
+
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.DnsFilteringProfile.Groups.FetchPages(oprCtx, client.readDNSFilteringProfileGroupsAfter, variables); err != nil {
+		return nil, err //nolint
 	}
 
 	return response.ToModel(), nil
@@ -26,6 +38,8 @@ func (client *Client) CreateDNSFilteringProfile(ctx context.Context, name string
 
 	variables := newVars(
 		gqlVar(name, "name"),
+		cursor(query.CursorGroups),
+		pageLimit(defaultPageLimit),
 	)
 
 	var response query.CreateDNSFilteringProfile
@@ -122,6 +136,8 @@ func (client *Client) UpdateDNSFilteringProfile(ctx context.Context, input *mode
 		gqlVar(newPrivacyCategoryConfigInput(input.PrivacyCategories), "privacyCategoryConfig"),
 		gqlVar(newSecurityCategoryConfigInput(input.SecurityCategories), "securityCategoryConfig"),
 		gqlVar(newContentCategoryConfigInput(input.ContentCategories), "contentCategoryConfig"),
+		cursor(query.CursorGroups),
+		pageLimit(defaultPageLimit),
 	)
 
 	var response query.UpdateDNSFilteringProfile
@@ -129,7 +145,26 @@ func (client *Client) UpdateDNSFilteringProfile(ctx context.Context, input *mode
 		return nil, err
 	}
 
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.Entity.Groups.FetchPages(oprCtx, client.readDNSFilteringProfileGroupsAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
 	return response.Entity.ToModel(), nil
+}
+
+func (client *Client) readDNSFilteringProfileGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupIDEdge], error) {
+	opr := resourceGroup.read().withCustomName("readDNSFilteringProfileGroupsAfter")
+
+	variables[query.CursorGroups] = cursor
+
+	response := query.ReadDNSFilteringProfileGroups{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
+		return nil, err
+	}
+
+	return &response.DnsFilteringProfile.Groups.PaginatedResource, nil
 }
 
 func (client *Client) DeleteDNSFilteringProfile(ctx context.Context, profileID string) error {
