@@ -18,4 +18,6 @@ const (
 	computedDatasourceIDDescription = "The ID of this resource."
 
 	operationRead = "read"
+
+	datasourceKey = "datasource"
 )

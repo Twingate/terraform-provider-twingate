@@ -12,13 +12,14 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.13.0
 	github.com/hashicorp/terraform-plugin-go v0.23.0
 	github.com/hashicorp/terraform-plugin-testing v1.9.0
-	github.com/hasura/go-graphql-client v0.12.2
+	github.com/hasura/go-graphql-client v0.13.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/mattn/goveralls v0.0.12
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/securego/gosec/v2 v2.20.0
 	github.com/stretchr/testify v1.9.0
+	golang.org/x/sync v0.7.0
 	gotest.tools/gotestsum v1.12.0
 )
 
@@ -90,7 +91,6 @@ require (
 	golang.org/x/exp v0.0.0-20230809150735-7b3493d9a819 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
