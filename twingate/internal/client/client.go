@@ -132,7 +132,19 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 		}
 	}
 
-	return retryablehttp.DefaultRetryPolicy(ctx, resp, err) //nolint
+	shouldRetry, resultErr := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+	if !shouldRetry {
+		return false, resultErr //nolint
+	}
+
+	errMsg := "<nil>"
+	if err != nil {
+		errMsg = err.Error()
+	}
+
+	log.Printf("[WARN] Failed to call %s, status %s, error: %s", resp.Request.URL.String(), resp.Status, errMsg)
+
+	return true, nil
 }
 
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, agent, version string) *Client {
