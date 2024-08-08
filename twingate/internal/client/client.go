@@ -143,28 +143,28 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 		return false, resultErr //nolint
 	}
 
-	correlationID := resp.Request.Header.Get(headerCorrelationID)
+	reqID, _ := uuid.GenerateUUID()
 
-	log.Printf("[RETRY_POLICY] [id:%s] failed to call %s, status %s", correlationID, resp.Request.URL.String(), resp.Status)
+	log.Printf("[RETRY_POLICY] [id:%s] failed to call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
 
 	if err != nil {
-		log.Printf("[RETRY_POLICY] [id:%s] error: %s", correlationID, err.Error())
+		log.Printf("[RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
 	}
 
 	if ctx.Err() != nil {
-		log.Printf("[RETRY_POLICY] [id:%s] context error: %s", correlationID, ctx.Err().Error())
+		log.Printf("[RETRY_POLICY] [id:%s] context error: %s", reqID, ctx.Err().Error())
 	}
 
 	reqBody, _ := resp.Request.GetBody()
 	if reqBody != nil {
 		reqBodyBytes, _ := io.ReadAll(reqBody)
-		log.Printf("[RETRY_POLICY] [id:%s] request: %s", correlationID, string(reqBodyBytes))
+		log.Printf("[RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
 	}
 
 	body, bodyErr := io.ReadAll(resp.Body)
 	if bodyErr == nil {
 		resp.Body = io.NopCloser(bytes.NewBuffer(body))
-		log.Printf("[RETRY_POLICY] [id:%s] response: %s", correlationID, string(body))
+		log.Printf("[RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
 	}
 
 	return true, nil
