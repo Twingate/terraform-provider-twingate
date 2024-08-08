@@ -127,8 +127,6 @@ func newServerURL(network, url string) serverURL {
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	reqID := resp.Request.Header.Get(ctxReqIDKey)
 
-	log.Printf("[WARN] [RETRY_POLICY] [id:%s]", reqID)
-
 	if err != nil {
 		log.Printf("[WARN] [RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
 	}
