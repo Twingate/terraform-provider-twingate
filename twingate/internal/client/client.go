@@ -34,7 +34,7 @@ const (
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
 
-	defaultRateLimit = 300
+	defaultRateLimit = 3
 )
 
 var (
@@ -123,6 +123,16 @@ func newServerURL(network, url string) serverURL {
 
 //nolint:cyclop
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	reqID, _ := uuid.GenerateUUID()
+
+	if err != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
+	}
+
+	if ctx.Err() != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] context error: %s", reqID, ctx.Err().Error())
+	}
+
 	// do not retry if API token not set
 	if errors.Is(err, ErrAPITokenNoSet) {
 		return false, err
@@ -143,28 +153,18 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 		return false, resultErr //nolint
 	}
 
-	reqID, _ := uuid.GenerateUUID()
-
-	log.Printf("[RETRY_POLICY] [id:%s] failed to call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
-
-	if err != nil {
-		log.Printf("[RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
-	}
-
-	if ctx.Err() != nil {
-		log.Printf("[RETRY_POLICY] [id:%s] context error: %s", reqID, ctx.Err().Error())
-	}
+	log.Printf("[WARN] [RETRY_POLICY] [id:%s] going to retry call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
 
 	reqBody, _ := resp.Request.GetBody()
 	if reqBody != nil {
 		reqBodyBytes, _ := io.ReadAll(reqBody)
-		log.Printf("[RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
 	}
 
 	body, bodyErr := io.ReadAll(resp.Body)
 	if bodyErr == nil {
 		resp.Body = io.NopCloser(bytes.NewBuffer(body))
-		log.Printf("[RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
 	}
 
 	return true, nil
