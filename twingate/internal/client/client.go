@@ -31,6 +31,8 @@ const (
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
 
+	ctxReqIDKey = "Ctx_req_id_key"
+
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
 
@@ -123,7 +125,9 @@ func newServerURL(network, url string) serverURL {
 
 //nolint:cyclop
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
-	reqID, _ := uuid.GenerateUUID()
+	reqID := resp.Request.Header.Get(ctxReqIDKey)
+
+	log.Printf("[WARN] [RETRY_POLICY] [id:%s]", reqID)
 
 	if err != nil {
 		log.Printf("[WARN] [RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
@@ -179,8 +183,11 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	retryableClient.CheckRetry = customRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
+		reqID, _ := uuid.GenerateUUID()
+		req.Header.Set(ctxReqIDKey, reqID)
+
 		if retryNumber > 0 {
-			log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
+			log.Printf("[WARN] [id:%s] Failed to call %s (retry %d)", reqID, req.URL.String(), retryNumber)
 		}
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
