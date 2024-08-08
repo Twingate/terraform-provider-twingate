@@ -34,7 +34,7 @@ const (
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
 
-	defaultRateLimit = 3
+	defaultRateLimit = 300
 )
 
 var (
@@ -121,6 +121,7 @@ func newServerURL(network, url string) serverURL {
 	}
 }
 
+//nolint:cyclop
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	// do not retry if API token not set
 	if errors.Is(err, ErrAPITokenNoSet) {
@@ -142,12 +143,29 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 		return false, resultErr //nolint
 	}
 
-	errMsg := "<nil>"
+	correlationID := resp.Request.Header.Get(headerCorrelationID)
+
+	log.Printf("[RETRY_POLICY] [id:%s] failed to call %s, status %s", correlationID, resp.Request.URL.String(), resp.Status)
+
 	if err != nil {
-		errMsg = err.Error()
+		log.Printf("[RETRY_POLICY] [id:%s] error: %s", correlationID, err.Error())
 	}
 
-	log.Printf("[WARN] Failed to call %s, status %s, error: %s", resp.Request.URL.String(), resp.Status, errMsg)
+	if ctx.Err() != nil {
+		log.Printf("[RETRY_POLICY] [id:%s] context error: %s", correlationID, ctx.Err().Error())
+	}
+
+	reqBody, _ := resp.Request.GetBody()
+	if reqBody != nil {
+		reqBodyBytes, _ := io.ReadAll(reqBody)
+		log.Printf("[RETRY_POLICY] [id:%s] request: %s", correlationID, string(reqBodyBytes))
+	}
+
+	body, bodyErr := io.ReadAll(resp.Body)
+	if bodyErr == nil {
+		resp.Body = io.NopCloser(bytes.NewBuffer(body))
+		log.Printf("[RETRY_POLICY] [id:%s] response: %s", correlationID, string(body))
+	}
 
 	return true, nil
 }
@@ -161,7 +179,9 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	retryableClient.CheckRetry = customRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
-		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
+		if retryNumber > 0 {
+			log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
+		}
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
 	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, agent, version, correlationID)
