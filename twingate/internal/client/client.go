@@ -30,8 +30,7 @@ const (
 	headerAPIKey        = "X-Api-Key" // #nosec G101
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
-
-	ctxReqIDKey = "Ctx_req_id_key"
+	headerRequestID     = "X-Twingate-Request-Id"
 
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
@@ -127,7 +126,7 @@ func newServerURL(network, url string) serverURL {
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	reqID := "test_id"
 	if resp != nil {
-		reqID = resp.Request.Header.Get(ctxReqIDKey)
+		reqID = resp.Request.Header.Get(headerRequestID)
 	}
 
 	if err != nil {
@@ -187,7 +186,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
 		reqID, _ := uuid.GenerateUUID()
-		req.Header.Set(ctxReqIDKey, reqID)
+		req.Header.Set(headerRequestID, reqID)
 
 		if retryNumber > 0 {
 			log.Printf("[WARN] [id:%s] Failed to call %s (retry %d)", reqID, req.URL.String(), retryNumber)
