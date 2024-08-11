@@ -151,6 +151,14 @@ func makeObjectsSet(ctx context.Context, objects ...types.Object) (types.Set, di
 // setUnion - for given two sets A and B,
 // If A = {1, 2} and B = {3, 4}, then the union of A and B is {1, 2, 3, 4}.
 func setUnion(a, b []string) []string {
+	if len(a) == 0 {
+		return b
+	}
+
+	if len(b) == 0 {
+		return a
+	}
+
 	set := utils.MakeLookupMap(a)
 
 	for _, key := range b {

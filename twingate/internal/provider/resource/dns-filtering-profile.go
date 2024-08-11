@@ -62,6 +62,25 @@ func (r *dnsFilteringProfile) Configure(_ context.Context, req resource.Configur
 
 func (r *dnsFilteringProfile) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+
+	profile, err := r.client.ReadDNSFilteringProfile(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to import state", err.Error())
+
+		return
+	}
+
+	resp.State.SetAttribute(ctx, path.Root(attr.FallbackMethod), types.StringValue(profile.FallbackMethod))
+	resp.State.SetAttribute(ctx, path.Root(attr.Groups), convertStringListToSet(profile.Groups))
+
+	if len(profile.AllowedDomains) > 0 {
+		resp.State.SetAttribute(ctx, path.Root(attr.AllowedDomains), convertDomainsToTerraform(profile.AllowedDomains, nil))
+	}
+
+	if len(profile.DeniedDomains) > 0 {
+		resp.State.SetAttribute(ctx, path.Root(attr.DeniedDomains), convertDomainsToTerraform(profile.DeniedDomains, nil))
+	}
+
 }
 
 func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -312,8 +331,8 @@ func (r *dnsFilteringProfile) Create(ctx context.Context, req resource.CreateReq
 
 		profile.FallbackMethod = plan.FallbackMethod.ValueString()
 		profile.Groups = convertSetToList(plan.Groups)
-		profile.AllowedDomains = convertSetToList(plan.AllowedDomains.Attributes()[attr.Domains].(types.Set))
-		profile.DeniedDomains = convertSetToList(plan.DeniedDomains.Attributes()[attr.Domains].(types.Set))
+		profile.AllowedDomains = convertDomains(plan.AllowedDomains)
+		profile.DeniedDomains = convertDomains(plan.DeniedDomains)
 		profile.PrivacyCategories = convertPrivacyCategories(plan.PrivacyCategories)
 		profile.ContentCategories = convertContentCategories(plan.ContentCategories)
 		profile.SecurityCategories = convertSecurityCategories(plan.SecurityCategories)
@@ -335,6 +354,14 @@ func (r *dnsFilteringProfile) Read(ctx context.Context, req resource.ReadRequest
 
 	profile, err := r.client.ReadDNSFilteringProfile(ctx, state.ID.ValueString())
 
+	if !convertBoolDefaultTrue(state.AllowedDomains.Attributes()[attr.IsAuthoritative]) {
+		profile.AllowedDomains = convertDomains(state.AllowedDomains)
+	}
+
+	if !convertBoolDefaultTrue(state.DeniedDomains.Attributes()[attr.IsAuthoritative]) {
+		profile.DeniedDomains = convertDomains(state.DeniedDomains)
+	}
+
 	r.helper(ctx, profile, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
@@ -348,28 +375,66 @@ func (r *dnsFilteringProfile) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
+	allowedDomains := convertDomains(plan.AllowedDomains)
+	deniedDomains := convertDomains(plan.DeniedDomains)
+
 	profile := &model.DNSFilteringProfile{
 		ID:                 state.ID.ValueString(),
 		Name:               plan.Name.ValueString(),
+		Priority:           plan.Priority.ValueFloat64(),
 		FallbackMethod:     plan.FallbackMethod.ValueString(),
 		Groups:             convertSetToList(plan.Groups),
-		AllowedDomains:     convertSetToList(plan.AllowedDomains.Attributes()[attr.Domains].(types.Set)),
-		DeniedDomains:      convertSetToList(plan.DeniedDomains.Attributes()[attr.Domains].(types.Set)),
+		AllowedDomains:     allowedDomains,
+		DeniedDomains:      deniedDomains,
 		PrivacyCategories:  convertPrivacyCategories(plan.PrivacyCategories),
 		ContentCategories:  convertContentCategories(plan.ContentCategories),
 		SecurityCategories: convertSecurityCategories(plan.SecurityCategories),
 	}
 
-	if !plan.AllowedDomains.Attributes()[attr.IsAuthoritative].(types.Bool).ValueBool() {
-		setUnion(profile.AllowedDomains, convertSetToList(state.AllowedDomains.Attributes()[attr.Domains].(types.Set)))
+	allowedDomainsIsAuthoritative := convertBoolDefaultTrue(plan.AllowedDomains.Attributes()[attr.IsAuthoritative])
+	deniedDomainsIsAuthoritative := convertBoolDefaultTrue(plan.DeniedDomains.Attributes()[attr.IsAuthoritative])
+
+	var originAllowedDomains []string
+	var originDeniedDomains []string
+
+	if !allowedDomainsIsAuthoritative || !deniedDomainsIsAuthoritative {
+		origin, err := r.client.ReadDNSFilteringProfile(ctx, profile.ID)
+		if err != nil {
+			r.helper(ctx, profile, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+
+			return
+		}
+
+		originAllowedDomains = origin.AllowedDomains
+		originDeniedDomains = origin.AllowedDomains
 	}
 
-	if !plan.AllowedDomains.Attributes()[attr.IsAuthoritative].(types.Bool).ValueBool() {
-		setUnion(profile.AllowedDomains, convertSetToList(state.AllowedDomains.Attributes()[attr.Domains].(types.Set)))
+	if !allowedDomainsIsAuthoritative {
+		profile.AllowedDomains = setDifference(
+			setUnion(profile.AllowedDomains, originAllowedDomains),
+			convertDomains(state.AllowedDomains),
+		)
+	}
+
+	if !deniedDomainsIsAuthoritative {
+		profile.DeniedDomains = setDifference(
+			setUnion(profile.DeniedDomains, originDeniedDomains),
+			convertDomains(state.DeniedDomains),
+		)
 	}
 
 	var err error
 	profile, err = r.client.UpdateDNSFilteringProfile(ctx, profile)
+
+	if profile != nil {
+		if !allowedDomainsIsAuthoritative {
+			profile.AllowedDomains = allowedDomains
+		}
+
+		if !deniedDomainsIsAuthoritative {
+			profile.DeniedDomains = deniedDomains
+		}
+	}
 
 	r.helper(ctx, profile, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
@@ -406,8 +471,14 @@ func (r *dnsFilteringProfile) helper(ctx context.Context, profile *model.DNSFilt
 	state.Priority = types.Float64Value(profile.Priority)
 	state.FallbackMethod = types.StringValue(profile.FallbackMethod)
 	state.Groups = convertStringListToSet(profile.Groups)
-	state.AllowedDomains = convertDomainsToTerraform(profile.AllowedDomains, state.AllowedDomains.Attributes()[attr.IsAuthoritative])
-	state.DeniedDomains = convertDomainsToTerraform(profile.DeniedDomains, state.DeniedDomains.Attributes()[attr.IsAuthoritative])
+
+	if !state.AllowedDomains.IsNull() {
+		state.AllowedDomains = convertDomainsToTerraform(profile.AllowedDomains, state.AllowedDomains.Attributes()[attr.IsAuthoritative])
+	}
+
+	if !state.DeniedDomains.IsNull() {
+		state.DeniedDomains = convertDomainsToTerraform(profile.DeniedDomains, state.DeniedDomains.Attributes()[attr.IsAuthoritative])
+	}
 
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
@@ -415,8 +486,13 @@ func (r *dnsFilteringProfile) helper(ctx context.Context, profile *model.DNSFilt
 }
 
 func convertDomainsToTerraform(domains []string, isAuthoritative tfattr.Value) types.Object {
+	authoritative := types.BoolValue(true)
+	if isAuthoritative != nil {
+		authoritative = isAuthoritative.(types.Bool)
+	}
+
 	attributes := map[string]tfattr.Value{
-		attr.IsAuthoritative: isAuthoritative,
+		attr.IsAuthoritative: authoritative,
 		attr.Domains:         convertStringListToSet(domains),
 	}
 
@@ -436,9 +512,9 @@ func convertPrivacyCategories(obj types.Object) *model.PrivacyCategories {
 	attrs := obj.Attributes()
 
 	return &model.PrivacyCategories{
-		BlockAffiliate:         boolAttr(attrs[attr.BlockAffiliateLinks]),
-		BlockDisguisedTrackers: boolAttr(attrs[attr.BlockDisguisedTrackers]),
-		BlockAdsAndTrackers:    boolAttr(attrs[attr.BlockAdsAndTrackers]),
+		BlockAffiliate:         convertBoolDefaultFalse(attrs[attr.BlockAffiliateLinks]),
+		BlockDisguisedTrackers: convertBoolDefaultFalse(attrs[attr.BlockDisguisedTrackers]),
+		BlockAdsAndTrackers:    convertBoolDefaultFalse(attrs[attr.BlockAdsAndTrackers]),
 	}
 }
 
@@ -446,15 +522,15 @@ func convertSecurityCategories(obj types.Object) *model.SecurityCategory {
 	attrs := obj.Attributes()
 
 	return &model.SecurityCategory{
-		EnableThreatIntelligenceFeeds:   boolAttr(attrs[attr.EnableThreatIntelligenceFeeds]),
-		EnableGoogleSafeBrowsing:        boolAttr(attrs[attr.EnableGoogleSafeBrowsing]),
-		BlockCryptojacking:              boolAttr(attrs[attr.BlockCryptojacking]),
-		BlockIdnHomographs:              boolAttr(attrs[attr.BlockIdnHomoglyph]),
-		BlockTyposquatting:              boolAttr(attrs[attr.BlockTyposquatting]),
-		BlockDnsRebinding:               boolAttr(attrs[attr.BlockDnsRebinding]),
-		BlockNewlyRegisteredDomains:     boolAttr(attrs[attr.BlockNewlyRegisteredDomains]),
-		BlockDomainGenerationAlgorithms: boolAttr(attrs[attr.BlockDomainGenerationAlgorithms]),
-		BlockParkedDomains:              boolAttr(attrs[attr.BlockParkedDomains]),
+		EnableThreatIntelligenceFeeds:   convertBoolDefaultTrue(attrs[attr.EnableThreatIntelligenceFeeds]),
+		EnableGoogleSafeBrowsing:        convertBoolDefaultTrue(attrs[attr.EnableGoogleSafeBrowsing]),
+		BlockCryptojacking:              convertBoolDefaultTrue(attrs[attr.BlockCryptojacking]),
+		BlockIdnHomographs:              convertBoolDefaultTrue(attrs[attr.BlockIdnHomoglyph]),
+		BlockTyposquatting:              convertBoolDefaultTrue(attrs[attr.BlockTyposquatting]),
+		BlockDnsRebinding:               convertBoolDefaultTrue(attrs[attr.BlockDnsRebinding]),
+		BlockNewlyRegisteredDomains:     convertBoolDefaultTrue(attrs[attr.BlockNewlyRegisteredDomains]),
+		BlockDomainGenerationAlgorithms: convertBoolDefaultTrue(attrs[attr.BlockDomainGenerationAlgorithms]),
+		BlockParkedDomains:              convertBoolDefaultTrue(attrs[attr.BlockParkedDomains]),
 	}
 }
 
@@ -462,20 +538,44 @@ func convertContentCategories(obj types.Object) *model.ContentCategory {
 	attrs := obj.Attributes()
 
 	return &model.ContentCategory{
-		BlockGambling:               boolAttr(attrs[attr.BlockGambling]),
-		BlockDating:                 boolAttr(attrs[attr.BlockDating]),
-		BlockAdultContent:           boolAttr(attrs[attr.BlockAdultContent]),
-		BlockSocialMedia:            boolAttr(attrs[attr.BlockSocialMedia]),
-		BlockGames:                  boolAttr(attrs[attr.BlockGames]),
-		BlockStreaming:              boolAttr(attrs[attr.BlockStreaming]),
-		BlockPiracy:                 boolAttr(attrs[attr.BlockPiracy]),
-		EnableYoutubeRestrictedMode: boolAttr(attrs[attr.EnableYoutubeRestrictedMode]),
-		EnableSafeSearch:            boolAttr(attrs[attr.EnableSafesearch]),
+		BlockGambling:               convertBoolDefaultFalse(attrs[attr.BlockGambling]),
+		BlockDating:                 convertBoolDefaultFalse(attrs[attr.BlockDating]),
+		BlockAdultContent:           convertBoolDefaultFalse(attrs[attr.BlockAdultContent]),
+		BlockSocialMedia:            convertBoolDefaultFalse(attrs[attr.BlockSocialMedia]),
+		BlockGames:                  convertBoolDefaultFalse(attrs[attr.BlockGames]),
+		BlockStreaming:              convertBoolDefaultFalse(attrs[attr.BlockStreaming]),
+		BlockPiracy:                 convertBoolDefaultFalse(attrs[attr.BlockPiracy]),
+		EnableYoutubeRestrictedMode: convertBoolDefaultFalse(attrs[attr.EnableYoutubeRestrictedMode]),
+		EnableSafeSearch:            convertBoolDefaultFalse(attrs[attr.EnableSafesearch]),
 	}
+}
+
+func convertBoolDefaultTrue(boolAttr tfattr.Value) bool {
+	return convertBoolWithDefault(boolAttr, true)
+}
+
+func convertBoolDefaultFalse(boolAttr tfattr.Value) bool {
+	return convertBoolWithDefault(boolAttr, false)
+}
+
+func convertBoolWithDefault(value tfattr.Value, defaultValue bool) bool {
+	if value == nil || (value.IsNull() || value.IsUnknown()) {
+		return defaultValue
+	}
+
+	return boolAttr(value)
 }
 
 func boolAttr(boolAttr tfattr.Value) bool {
 	return boolAttr.(types.Bool).ValueBool()
+}
+
+func convertDomains(obj types.Object) []string {
+	if obj.IsNull() || obj.IsUnknown() {
+		return []string{}
+	}
+
+	return convertSetToList(obj.Attributes()[attr.Domains].(types.Set))
 }
 
 func convertSetToList(set types.Set) []string {

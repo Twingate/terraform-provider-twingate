@@ -46,6 +46,10 @@ func ErrServiceAccountsLenMismatch(expected, actual int) error {
 	return fmt.Errorf("expected %d service accounts, actual - %d", expected, actual) //nolint
 }
 
+func ErrDNSProfileAllowedDomainsLenMismatch(expected, actual int) error {
+	return fmt.Errorf("expected %d allowed domains, actual - %d", expected, actual) //nolint
+}
+
 func ErrGroupsLenMismatch(expected, actual int) error {
 	return fmt.Errorf("expected %d groups, actual - %d", expected, actual) //nolint
 }
@@ -596,6 +600,23 @@ func CheckTwingateConnectorDestroy(s *terraform.State) error {
 	return nil
 }
 
+func CheckTwingateDNSProfileDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateDNSFilteringProfile {
+			continue
+		}
+
+		profileID := rs.Primary.ID
+
+		profile, _ := providerClient.ReadDNSFilteringProfile(context.Background(), profileID)
+		if profile != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, profileID)
+		}
+	}
+
+	return nil
+}
+
 func RevokeTwingateServiceKey(resourceName string) sdk.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resourceState, ok := s.RootModule().Resources[resourceName]
@@ -761,6 +782,29 @@ func AddResourceServiceAccount(resourceName, serviceAccountName string) sdk.Test
 	}
 }
 
+func AddDNSProfileAllowedDomains(resourceName string, domains []string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		profileID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		profile, err := providerClient.ReadDNSFilteringProfile(context.Background(), profileID)
+		if err != nil {
+			return fmt.Errorf("failed to fetch DNS profile with ID %s: %w", profileID, err)
+		}
+
+		profile.AllowedDomains = domains
+
+		_, err = providerClient.UpdateDNSFilteringProfile(context.Background(), profile)
+		if err != nil {
+			return fmt.Errorf("DNS profile with ID %s failed to set new domains: %w", profileID, err)
+		}
+
+		return nil
+	}
+}
+
 func DeleteResourceServiceAccount(resourceName, serviceAccountName string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceID, err := getResourceID(state, resourceName)
@@ -796,6 +840,26 @@ func CheckResourceServiceAccountsLen(resourceName string, expectedServiceAccount
 
 		if len(resource.ServiceAccounts) != expectedServiceAccountsLen {
 			return ErrServiceAccountsLenMismatch(expectedServiceAccountsLen, len(resource.ServiceAccounts))
+		}
+
+		return nil
+	}
+}
+
+func CheckDNSProfileAllowedDomainsLen(resourceName string, expectedLen int) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		profile, err := providerClient.ReadDNSFilteringProfile(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("profile with ID %s failed to read: %w", resourceID, err)
+		}
+
+		if len(profile.AllowedDomains) != expectedLen {
+			return ErrDNSProfileAllowedDomainsLenMismatch(expectedLen, len(profile.AllowedDomains))
 		}
 
 		return nil
