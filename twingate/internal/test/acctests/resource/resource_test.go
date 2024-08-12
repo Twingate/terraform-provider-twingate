@@ -821,7 +821,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  remote_network_id = twingate_remote_network.test12.id
 	  
       dynamic "access_group" {
-		for_each = [twingate_group.g121x.id, twingate_group.g122.id]
+		for_each = [twingate_group.g121.id, twingate_group.g122.id]
 		content {
 			group_id = access_group.value
 		}
