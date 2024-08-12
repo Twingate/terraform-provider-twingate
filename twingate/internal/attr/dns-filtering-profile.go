@@ -16,7 +16,7 @@ const (
 	BlockCryptojacking              = "block_cryptojacking"
 	BlockIdnHomoglyph               = "block_idn_homoglyph"
 	BlockTyposquatting              = "block_typosquatting"
-	BlockDnsRebinding               = "block_dns_rebinding"
+	BlockDNSRebinding               = "block_dns_rebinding"
 	BlockNewlyRegisteredDomains     = "block_newly_registered_domains"
 	BlockDomainGenerationAlgorithms = "block_domain_generation_algorithms"
 	BlockParkedDomains              = "block_parked_domains"

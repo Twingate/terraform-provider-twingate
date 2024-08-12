@@ -2,13 +2,14 @@ package resource
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"strings"
-	"testing"
 )
 
 var (
@@ -74,7 +75,7 @@ func TestAccTwingateDNSFilteringProfileCreate(t *testing.T) {
 					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.DeniedDomains, attr.IsAuthoritative), "true"),
 					sdk.TestCheckResourceAttr(theResource, attr.LenAttr(attr.DeniedDomains, attr.Domains), "1"),
 					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.ContentCategories, attr.BlockAdultContent), "true"),
-					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.SecurityCategories, attr.BlockDnsRebinding), "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.SecurityCategories, attr.BlockDNSRebinding), "false"),
 					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.SecurityCategories, attr.BlockNewlyRegisteredDomains), "false"),
 					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.PrivacyCategories, attr.BlockDisguisedTrackers), "true"),
 				),
@@ -378,7 +379,7 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeTrueFalse(t *testing
 					sdk.TestCheckResourceAttr(theResource, attr.Name, profileName),
 					sdk.TestCheckResourceAttr(theResource, attr.LenAttr(attr.AllowedDomains, attr.Domains), "4"),
 					// check allowed domains using API
-					acctests.CheckDNSProfileAllowedDomainsLen(theResource, 4),
+					acctests.CheckDNSProfileAllowedDomainsLen(theResource, 6),
 					acctests.WaitTestFunc(),
 					// set new domains to the DNS profile using API
 					acctests.AddDNSProfileAllowedDomains(theResource, newDomains),
@@ -434,7 +435,9 @@ func TestAccTwingateDNSFilteringProfileImport(t *testing.T) {
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
 	profileName := test.RandomName()
 
-	domains := []string{"google.com", "twingate.com"}
+	groups, groupResources := genNewGroupsWithName(testName, testName, 3)
+	groupsTF := strings.Join(groups, "\n")
+	groupResourcesTF := fmt.Sprintf(`"%s"`, strings.Join(groupResources, `", "`))
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -442,7 +445,7 @@ func TestAccTwingateDNSFilteringProfileImport(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: testTwingateDNSFilteringProfileWithDomains(testName, profileName, true, domains),
+				Config: testTwingateDNSFilteringProfileFull(groupsTF, testName, profileName, groupResourcesTF),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
@@ -451,12 +454,94 @@ func TestAccTwingateDNSFilteringProfileImport(t *testing.T) {
 				ImportState:  true,
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
-					attr.Name:     profileName,
-					attr.Priority: "5",
-					attr.LenAttr(attr.AllowedDomains, attr.Domains):          "2",
+					attr.Name:                 profileName,
+					attr.Priority:             "3",
+					attr.FallbackMethod:       "AUTO",
+					attr.LenAttr(attr.Groups): "3",
+
+					attr.LenAttr(attr.AllowedDomains, attr.Domains): "2",
+					// we can't get this value from backend, and by default we have `true`
 					attr.PathAttr(attr.AllowedDomains, attr.IsAuthoritative): "true",
+
+					attr.LenAttr(attr.DeniedDomains, attr.Domains):          "1",
+					attr.PathAttr(attr.DeniedDomains, attr.IsAuthoritative): "true",
+
+					attr.PathAttr(attr.ContentCategories, attr.BlockAdultContent):           "true",
+					attr.PathAttr(attr.ContentCategories, attr.BlockGambling):               "false",
+					attr.PathAttr(attr.ContentCategories, attr.BlockDating):                 "false",
+					attr.PathAttr(attr.ContentCategories, attr.BlockSocialMedia):            "false",
+					attr.PathAttr(attr.ContentCategories, attr.BlockGames):                  "false",
+					attr.PathAttr(attr.ContentCategories, attr.BlockStreaming):              "false",
+					attr.PathAttr(attr.ContentCategories, attr.BlockPiracy):                 "false",
+					attr.PathAttr(attr.ContentCategories, attr.EnableYoutubeRestrictedMode): "false",
+					attr.PathAttr(attr.ContentCategories, attr.EnableSafesearch):            "false",
+
+					attr.PathAttr(attr.SecurityCategories, attr.EnableThreatIntelligenceFeeds):   "true",
+					attr.PathAttr(attr.SecurityCategories, attr.EnableGoogleSafeBrowsing):        "true",
+					attr.PathAttr(attr.SecurityCategories, attr.BlockCryptojacking):              "true",
+					attr.PathAttr(attr.SecurityCategories, attr.BlockIdnHomoglyph):               "true",
+					attr.PathAttr(attr.SecurityCategories, attr.BlockTyposquatting):              "true",
+					attr.PathAttr(attr.SecurityCategories, attr.BlockDNSRebinding):               "false",
+					attr.PathAttr(attr.SecurityCategories, attr.BlockNewlyRegisteredDomains):     "false",
+					attr.PathAttr(attr.SecurityCategories, attr.BlockDomainGenerationAlgorithms): "true",
+					attr.PathAttr(attr.SecurityCategories, attr.BlockParkedDomains):              "true",
+
+					attr.PathAttr(attr.PrivacyCategories, attr.BlockAffiliateLinks):    "false",
+					attr.PathAttr(attr.PrivacyCategories, attr.BlockDisguisedTrackers): "true",
+					attr.PathAttr(attr.PrivacyCategories, attr.BlockAdsAndTrackers):    "false",
 				}),
 			},
 		},
 	})
+}
+
+func testTwingateDNSFilteringProfileFull(groups, testName, profileName, groupResources string) string {
+	return fmt.Sprintf(`
+	# groups
+	%[1]s
+
+	resource "twingate_dns_filtering_profile" "%[2]s" {
+	  name = "%[3]s"
+	  priority = 3
+	  fallback_method = "AUTO"
+	  groups = toset(data.twingate_groups.test.groups[*].id)
+	
+	  allowed_domains {
+		is_authoritative = false
+		domains = [
+		  "twingate.com",
+		  "zoom.us"
+		]
+	  }
+	
+	  denied_domains {
+		is_authoritative = true
+		domains = [
+		  "evil.example"
+		]
+	  }
+	
+	  content_categories {
+		block_adult_content = true
+	  }
+	
+	  security_categories {
+		block_dns_rebinding = false
+		block_newly_registered_domains = false
+	  }
+	
+	  privacy_categories {
+		block_disguised_trackers = true
+	  }
+	
+	}
+	
+	data "twingate_groups" "test" {
+	  name_prefix = "%[2]s"
+
+	  depends_on = [%[4]s]
+	}
+
+	`, groups, testName, profileName, groupResources)
+
 }

@@ -19,6 +19,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/securego/gosec/v2 v2.20.0
 	github.com/stretchr/testify v1.9.0
+	golang.org/x/sync v0.7.0
 	gotest.tools/gotestsum v1.12.0
 )
 
@@ -90,7 +91,6 @@ require (
 	golang.org/x/exp v0.0.0-20230809150735-7b3493d9a819 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect

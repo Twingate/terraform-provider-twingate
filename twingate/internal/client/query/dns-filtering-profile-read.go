@@ -6,7 +6,7 @@ import (
 )
 
 type ReadDNSFilteringProfile struct {
-	DnsFilteringProfile *gqlDNSFilteringProfile `graphql:"dnsFilteringProfile(id: $id)"`
+	DNSFilteringProfile *gqlDNSFilteringProfile `graphql:"dnsFilteringProfile(id: $id)"`
 }
 
 type gqlDNSFilteringProfile struct {
@@ -40,45 +40,45 @@ type gqlGroupID struct {
 }
 
 type PrivacyCategoryConfig struct {
-	BlockAffiliate         bool `json:"blockAffiliate"`
-	BlockDisguisedTrackers bool `json:"blockDisguisedTrackers"`
-	BlockAdsAndTrackers    bool `json:"blockAdsAndTrackers"`
+	BlockAffiliate         bool
+	BlockDisguisedTrackers bool
+	BlockAdsAndTrackers    bool
 }
 
 type SecurityCategoryConfig struct {
-	EnableThreatIntelligenceFeeds   bool `json:"enableThreatIntelligenceFeeds"`
-	EnableGoogleSafeBrowsing        bool `json:"enableGoogleSafeBrowsing"`
-	BlockCryptojacking              bool `json:"blockCryptojacking"`
-	BlockIdnHomographs              bool `json:"blockIdnHomographs"`
-	BlockTyposquatting              bool `json:"blockTyposquatting"`
-	BlockDnsRebinding               bool `json:"blockDnsRebinding"`
-	BlockNewlyRegisteredDomains     bool `json:"blockNewlyRegisteredDomains"`
-	BlockDomainGenerationAlgorithms bool `json:"blockDomainGenerationAlgorithms"`
-	BlockParkedDomains              bool `json:"blockParkedDomains"`
+	EnableThreatIntelligenceFeeds   bool
+	EnableGoogleSafeBrowsing        bool
+	BlockCryptojacking              bool
+	BlockIdnHomographs              bool
+	BlockTyposquatting              bool
+	BlockDnsRebinding               bool //nolint:stylecheck
+	BlockNewlyRegisteredDomains     bool
+	BlockDomainGenerationAlgorithms bool
+	BlockParkedDomains              bool
 }
 
 type ContentCategoryConfig struct {
-	BlockGambling               bool `json:"blockGambling"`
-	BlockDating                 bool `json:"blockDating"`
-	BlockAdultContent           bool `json:"blockAdultContent"`
-	BlockSocialMedia            bool `json:"blockSocialMedia"`
-	BlockGames                  bool `json:"blockGames"`
-	BlockStreaming              bool `json:"blockStreaming"`
-	BlockPiracy                 bool `json:"blockPiracy"`
-	EnableYoutubeRestrictedMode bool `json:"enableYoutubeRestrictedMode"`
-	EnableSafeSearch            bool `json:"enableSafeSearch"`
+	BlockGambling               bool
+	BlockDating                 bool
+	BlockAdultContent           bool
+	BlockSocialMedia            bool
+	BlockGames                  bool
+	BlockStreaming              bool
+	BlockPiracy                 bool
+	EnableYoutubeRestrictedMode bool
+	EnableSafeSearch            bool
 }
 
 func (q ReadDNSFilteringProfile) IsEmpty() bool {
-	return q.DnsFilteringProfile == nil
+	return q.DNSFilteringProfile == nil
 }
 
 func (q ReadDNSFilteringProfile) ToModel() *model.DNSFilteringProfile {
-	if q.DnsFilteringProfile == nil {
+	if q.DNSFilteringProfile == nil {
 		return nil
 	}
 
-	return q.DnsFilteringProfile.ToModel()
+	return q.DNSFilteringProfile.ToModel()
 }
 
 func (p gqlDNSFilteringProfile) ToModel() *model.DNSFilteringProfile {
@@ -107,7 +107,7 @@ func (p gqlDNSFilteringProfile) ToModel() *model.DNSFilteringProfile {
 			BlockCryptojacking:              p.SecurityCategoryConfig.BlockCryptojacking,
 			BlockIdnHomographs:              p.SecurityCategoryConfig.BlockIdnHomographs,
 			BlockTyposquatting:              p.SecurityCategoryConfig.BlockTyposquatting,
-			BlockDnsRebinding:               p.SecurityCategoryConfig.BlockDnsRebinding,
+			BlockDNSRebinding:               p.SecurityCategoryConfig.BlockDnsRebinding,
 			BlockNewlyRegisteredDomains:     p.SecurityCategoryConfig.BlockNewlyRegisteredDomains,
 			BlockDomainGenerationAlgorithms: p.SecurityCategoryConfig.BlockDomainGenerationAlgorithms,
 			BlockParkedDomains:              p.SecurityCategoryConfig.BlockParkedDomains,
@@ -132,11 +132,11 @@ func (p gqlDNSFilteringProfile) ToModel() *model.DNSFilteringProfile {
 }
 
 type ReadDNSFilteringProfileGroups struct {
-	DnsFilteringProfile *gqlDNSFilteringProfileGroups `graphql:"dnsFilteringProfile(id: $id)"`
+	DNSFilteringProfile *gqlDNSFilteringProfileGroups `graphql:"dnsFilteringProfile(id: $id)"`
 }
 
 func (q ReadDNSFilteringProfileGroups) IsEmpty() bool {
-	return q.DnsFilteringProfile == nil
+	return q.DNSFilteringProfile == nil
 }
 
 type gqlDNSFilteringProfileGroups struct {

@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 	"fmt"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -50,7 +51,7 @@ type securityCategoriesModel struct {
 	BlockCryptojacking              types.Bool `tfsdk:"block_cryptojacking"`
 	BlockIdnHomoglyph               types.Bool `tfsdk:"block_idn_homoglyph"`
 	BlockTyposquatting              types.Bool `tfsdk:"block_typosquatting"`
-	BlockDnsRebinding               types.Bool `tfsdk:"block_dns_rebinding"`
+	BlockDNSRebinding               types.Bool `tfsdk:"block_dns_rebinding"`
 	BlockNewlyRegisteredDomains     types.Bool `tfsdk:"block_newly_registered_domains"`
 	BlockDomainGenerationAlgorithms types.Bool `tfsdk:"block_domain_generation_algorithms"`
 	BlockParkedDomains              types.Bool `tfsdk:"block_parked_domains"`
@@ -90,7 +91,7 @@ func (d *dnsFilteringProfile) Configure(ctx context.Context, req datasource.Conf
 	d.client = client
 }
 
-func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) { //nolint:funlen
 	resp.Schema = schema.Schema{
 		Description: "DNS filtering gives you the ability to control what websites your users can access. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering).",
 		Attributes: map[string]schema.Attribute{
@@ -181,7 +182,7 @@ func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaR
 						Computed:    true,
 						Description: "Blocks typosquatted domains.",
 					},
-					attr.BlockDnsRebinding: schema.BoolAttribute{
+					attr.BlockDNSRebinding: schema.BoolAttribute{
 						Computed:    true,
 						Description: "Blocks public DNS entries from returning private IP addresses.",
 					},
@@ -245,7 +246,7 @@ func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaR
 	}
 }
 
-func (d *dnsFilteringProfile) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *dnsFilteringProfile) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) { //nolint:funlen
 	var data dnsFilteringProfileModel
 
 	// Read Terraform configuration data into the model
@@ -298,7 +299,7 @@ func (d *dnsFilteringProfile) Read(ctx context.Context, req datasource.ReadReque
 			BlockCryptojacking:              types.BoolValue(profile.SecurityCategories.BlockCryptojacking),
 			BlockIdnHomoglyph:               types.BoolValue(profile.SecurityCategories.BlockIdnHomographs),
 			BlockTyposquatting:              types.BoolValue(profile.SecurityCategories.BlockTyposquatting),
-			BlockDnsRebinding:               types.BoolValue(profile.SecurityCategories.BlockDnsRebinding),
+			BlockDNSRebinding:               types.BoolValue(profile.SecurityCategories.BlockDNSRebinding),
 			BlockNewlyRegisteredDomains:     types.BoolValue(profile.SecurityCategories.BlockNewlyRegisteredDomains),
 			BlockDomainGenerationAlgorithms: types.BoolValue(profile.SecurityCategories.BlockDomainGenerationAlgorithms),
 			BlockParkedDomains:              types.BoolValue(profile.SecurityCategories.BlockParkedDomains),

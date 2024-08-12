@@ -90,12 +90,6 @@ func convertDomainsToTerraform(domains []string) *domainsModel {
 	}
 }
 
-func convertStringList(items []string) []types.String {
-	return utils.Map(items, func(item string) types.String {
-		return types.StringValue(item)
-	})
-}
-
 func convertStringListToSet(items []string) types.Set {
 	values := utils.Map(items, func(item string) attr.Value {
 		return types.StringValue(item)

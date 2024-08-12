@@ -32,7 +32,7 @@ type SecurityCategory struct {
 	BlockCryptojacking              bool
 	BlockIdnHomographs              bool
 	BlockTyposquatting              bool
-	BlockDnsRebinding               bool
+	BlockDNSRebinding               bool
 	BlockNewlyRegisteredDomains     bool
 	BlockDomainGenerationAlgorithms bool
 	BlockParkedDomains              bool

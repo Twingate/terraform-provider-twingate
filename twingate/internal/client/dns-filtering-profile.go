@@ -2,9 +2,21 @@ package client
 
 import (
 	"context"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 )
+
+func (client *Client) ReadShallowDNSFilteringProfiles(ctx context.Context) ([]*model.DNSFilteringProfile, error) {
+	opr := resourceDNSFilteringProfile.read().withCustomName("readShallowDNSFilteringProfiles")
+
+	response := query.ReadDNSFilteringProfiles{}
+	if err := client.query(ctx, &response, nil, opr, attr{id: "All"}); err != nil {
+		return nil, err
+	}
+
+	return response.ToModel(), nil
+}
 
 func (client *Client) ReadDNSFilteringProfile(ctx context.Context, profileID string) (*model.DNSFilteringProfile, error) {
 	opr := resourceDNSFilteringProfile.read()
@@ -26,7 +38,7 @@ func (client *Client) ReadDNSFilteringProfile(ctx context.Context, profileID str
 
 	oprCtx := withOperationCtx(ctx, opr)
 
-	if err := response.DnsFilteringProfile.Groups.FetchPages(oprCtx, client.readDNSFilteringProfileGroupsAfter, variables); err != nil {
+	if err := response.DNSFilteringProfile.Groups.FetchPages(oprCtx, client.readDNSFilteringProfileGroupsAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
@@ -35,6 +47,10 @@ func (client *Client) ReadDNSFilteringProfile(ctx context.Context, profileID str
 
 func (client *Client) CreateDNSFilteringProfile(ctx context.Context, name string) (*model.DNSFilteringProfile, error) {
 	opr := resourceDNSFilteringProfile.create()
+
+	if name == "" {
+		return nil, opr.apiError(ErrGraphqlNameIsEmpty)
+	}
 
 	variables := newVars(
 		gqlVar(name, "name"),
@@ -57,6 +73,10 @@ type PrivacyCategoryConfigInput struct {
 }
 
 func newPrivacyCategoryConfigInput(input *model.PrivacyCategories) *PrivacyCategoryConfigInput {
+	if input == nil {
+		return nil
+	}
+
 	return &PrivacyCategoryConfigInput{
 		BlockAdsAndTrackers:    input.BlockAdsAndTrackers,
 		BlockAffiliate:         input.BlockAffiliate,
@@ -66,7 +86,7 @@ func newPrivacyCategoryConfigInput(input *model.PrivacyCategories) *PrivacyCateg
 
 type SecurityCategoryConfigInput struct {
 	BlockCryptojacking              bool `json:"blockCryptojacking"`
-	BlockDnsRebinding               bool `json:"blockDnsRebinding"`
+	BlockDNSRebinding               bool `json:"blockDnsRebinding"`
 	BlockDomainGenerationAlgorithms bool `json:"blockDomainGenerationAlgorithms"`
 	BlockIdnHomographs              bool `json:"blockIdnHomographs"`
 	BlockNewlyRegisteredDomains     bool `json:"blockNewlyRegisteredDomains"`
@@ -77,9 +97,13 @@ type SecurityCategoryConfigInput struct {
 }
 
 func newSecurityCategoryConfigInput(input *model.SecurityCategory) *SecurityCategoryConfigInput {
+	if input == nil {
+		return nil
+	}
+
 	return &SecurityCategoryConfigInput{
 		BlockCryptojacking:              input.BlockCryptojacking,
-		BlockDnsRebinding:               input.BlockDnsRebinding,
+		BlockDNSRebinding:               input.BlockDNSRebinding,
 		BlockDomainGenerationAlgorithms: input.BlockDomainGenerationAlgorithms,
 		BlockIdnHomographs:              input.BlockIdnHomographs,
 		BlockNewlyRegisteredDomains:     input.BlockNewlyRegisteredDomains,
@@ -103,6 +127,10 @@ type ContentCategoryConfigInput struct {
 }
 
 func newContentCategoryConfigInput(input *model.ContentCategory) *ContentCategoryConfigInput {
+	if input == nil {
+		return nil
+	}
+
 	return &ContentCategoryConfigInput{
 		BlockAdultContent:           input.BlockAdultContent,
 		BlockDating:                 input.BlockDating,
@@ -164,7 +192,7 @@ func (client *Client) readDNSFilteringProfileGroupsAfter(ctx context.Context, va
 		return nil, err
 	}
 
-	return &response.DnsFilteringProfile.Groups.PaginatedResource, nil
+	return &response.DNSFilteringProfile.Groups.PaginatedResource, nil
 }
 
 func (client *Client) DeleteDNSFilteringProfile(ctx context.Context, profileID string) error {
@@ -175,5 +203,6 @@ func (client *Client) DeleteDNSFilteringProfile(ctx context.Context, profileID s
 	}
 
 	var response query.DeleteDNSFilteringProfile
+
 	return client.mutate(ctx, &response, newVars(gqlID(profileID)), opr, attr{id: profileID})
 }

@@ -3,6 +3,7 @@ package resource
 import (
 	"context"
 	"errors"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -81,9 +82,20 @@ func (r *dnsFilteringProfile) ImportState(ctx context.Context, req resource.Impo
 		resp.State.SetAttribute(ctx, path.Root(attr.DeniedDomains), convertDomainsToTerraform(profile.DeniedDomains, nil))
 	}
 
+	if profile.ContentCategories != nil {
+		resp.State.SetAttribute(ctx, path.Root(attr.ContentCategories), convertContentCategoriesToTerraform(profile.ContentCategories))
+	}
+
+	if profile.SecurityCategories != nil {
+		resp.State.SetAttribute(ctx, path.Root(attr.SecurityCategories), convertSecurityCategoriesToTerraform(profile.SecurityCategories))
+	}
+
+	if profile.PrivacyCategories != nil {
+		resp.State.SetAttribute(ctx, path.Root(attr.PrivacyCategories), convertPrivacyCategoriesToTerraform(profile.PrivacyCategories))
+	}
 }
 
-func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) { //nolint
 	resp.Schema = schema.Schema{
 		Description: "DNS filtering gives you the ability to control what websites your users can access. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering).",
 		Attributes: map[string]schema.Attribute{
@@ -162,6 +174,7 @@ func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 
+			//nolint:dupl
 			attr.ContentCategories: schema.SingleNestedBlock{
 				Description: "A block with the following attributes.",
 				Attributes: map[string]schema.Attribute{
@@ -222,6 +235,7 @@ func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 
+			//nolint:dupl
 			attr.SecurityCategories: schema.SingleNestedBlock{
 				Description: "A block with the following attributes.",
 				Attributes: map[string]schema.Attribute{
@@ -255,7 +269,7 @@ func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest
 						Description: "Blocks typosquatted domains. Defaults to true.",
 						Default:     booldefault.StaticBool(true),
 					},
-					attr.BlockDnsRebinding: schema.BoolAttribute{
+					attr.BlockDNSRebinding: schema.BoolAttribute{
 						Optional:    true,
 						Computed:    true,
 						Description: "Blocks public DNS entries from returning private IP addresses. Defaults to true.",
@@ -365,7 +379,7 @@ func (r *dnsFilteringProfile) Read(ctx context.Context, req resource.ReadRequest
 	r.helper(ctx, profile, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
-func (r *dnsFilteringProfile) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *dnsFilteringProfile) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) { //nolint:funlen
 	var state, plan dnsFilteringProfileModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -394,8 +408,10 @@ func (r *dnsFilteringProfile) Update(ctx context.Context, req resource.UpdateReq
 	allowedDomainsIsAuthoritative := convertBoolDefaultTrue(plan.AllowedDomains.Attributes()[attr.IsAuthoritative])
 	deniedDomainsIsAuthoritative := convertBoolDefaultTrue(plan.DeniedDomains.Attributes()[attr.IsAuthoritative])
 
-	var originAllowedDomains []string
-	var originDeniedDomains []string
+	var (
+		originAllowedDomains []string
+		originDeniedDomains  []string
+	)
 
 	if !allowedDomainsIsAuthoritative || !deniedDomainsIsAuthoritative {
 		origin, err := r.client.ReadDNSFilteringProfile(ctx, profile.ID)
@@ -410,17 +426,11 @@ func (r *dnsFilteringProfile) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	if !allowedDomainsIsAuthoritative {
-		profile.AllowedDomains = setDifference(
-			setUnion(profile.AllowedDomains, originAllowedDomains),
-			convertDomains(state.AllowedDomains),
-		)
+		profile.AllowedDomains = setUnion(profile.AllowedDomains, originAllowedDomains)
 	}
 
 	if !deniedDomainsIsAuthoritative {
-		profile.DeniedDomains = setDifference(
-			setUnion(profile.DeniedDomains, originDeniedDomains),
-			convertDomains(state.DeniedDomains),
-		)
+		profile.DeniedDomains = setUnion(profile.DeniedDomains, originDeniedDomains)
 	}
 
 	var err error
@@ -452,7 +462,7 @@ func (r *dnsFilteringProfile) Delete(ctx context.Context, req resource.DeleteReq
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateDNSFilteringProfile)
 }
 
-func (r *dnsFilteringProfile) helper(ctx context.Context, profile *model.DNSFilteringProfile, state *dnsFilteringProfileModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *dnsFilteringProfile) helper(ctx context.Context, profile *model.DNSFilteringProfile, state *dnsFilteringProfileModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) { //nolint:cyclop
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -480,9 +490,99 @@ func (r *dnsFilteringProfile) helper(ctx context.Context, profile *model.DNSFilt
 		state.DeniedDomains = convertDomainsToTerraform(profile.DeniedDomains, state.DeniedDomains.Attributes()[attr.IsAuthoritative])
 	}
 
+	if !state.ContentCategories.IsNull() && profile.ContentCategories != nil {
+		state.ContentCategories = convertContentCategoriesToTerraform(profile.ContentCategories)
+	}
+
+	if !state.SecurityCategories.IsNull() && profile.SecurityCategories != nil {
+		state.SecurityCategories = convertSecurityCategoriesToTerraform(profile.SecurityCategories)
+	}
+
+	if !state.PrivacyCategories.IsNull() && profile.PrivacyCategories != nil {
+		state.PrivacyCategories = convertPrivacyCategoriesToTerraform(profile.PrivacyCategories)
+	}
+
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
 	diagnostics.Append(diags...)
+}
+
+func convertContentCategoriesToTerraform(categories *model.ContentCategory) types.Object {
+	attributes := map[string]tfattr.Value{
+		attr.BlockGambling:               types.BoolValue(categories.BlockGambling),
+		attr.BlockDating:                 types.BoolValue(categories.BlockDating),
+		attr.BlockAdultContent:           types.BoolValue(categories.BlockAdultContent),
+		attr.BlockSocialMedia:            types.BoolValue(categories.BlockSocialMedia),
+		attr.BlockGames:                  types.BoolValue(categories.BlockGames),
+		attr.BlockStreaming:              types.BoolValue(categories.BlockStreaming),
+		attr.BlockPiracy:                 types.BoolValue(categories.BlockPiracy),
+		attr.EnableYoutubeRestrictedMode: types.BoolValue(categories.EnableYoutubeRestrictedMode),
+		attr.EnableSafesearch:            types.BoolValue(categories.EnableSafeSearch),
+	}
+
+	return types.ObjectValueMust(contentCategoriesAttributeTypes(), attributes)
+}
+
+func contentCategoriesAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.BlockGambling:               types.BoolType,
+		attr.BlockDating:                 types.BoolType,
+		attr.BlockAdultContent:           types.BoolType,
+		attr.BlockSocialMedia:            types.BoolType,
+		attr.BlockGames:                  types.BoolType,
+		attr.BlockStreaming:              types.BoolType,
+		attr.BlockPiracy:                 types.BoolType,
+		attr.EnableYoutubeRestrictedMode: types.BoolType,
+		attr.EnableSafesearch:            types.BoolType,
+	}
+}
+
+func convertSecurityCategoriesToTerraform(categories *model.SecurityCategory) types.Object {
+	attributes := map[string]tfattr.Value{
+		attr.EnableThreatIntelligenceFeeds:   types.BoolValue(categories.EnableThreatIntelligenceFeeds),
+		attr.EnableGoogleSafeBrowsing:        types.BoolValue(categories.EnableGoogleSafeBrowsing),
+		attr.BlockCryptojacking:              types.BoolValue(categories.BlockCryptojacking),
+		attr.BlockIdnHomoglyph:               types.BoolValue(categories.BlockIdnHomographs),
+		attr.BlockTyposquatting:              types.BoolValue(categories.BlockTyposquatting),
+		attr.BlockDNSRebinding:               types.BoolValue(categories.BlockDNSRebinding),
+		attr.BlockNewlyRegisteredDomains:     types.BoolValue(categories.BlockNewlyRegisteredDomains),
+		attr.BlockDomainGenerationAlgorithms: types.BoolValue(categories.BlockDomainGenerationAlgorithms),
+		attr.BlockParkedDomains:              types.BoolValue(categories.BlockParkedDomains),
+	}
+
+	return types.ObjectValueMust(securityCategoriesAttributeTypes(), attributes)
+}
+
+func securityCategoriesAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.EnableThreatIntelligenceFeeds:   types.BoolType,
+		attr.EnableGoogleSafeBrowsing:        types.BoolType,
+		attr.BlockCryptojacking:              types.BoolType,
+		attr.BlockIdnHomoglyph:               types.BoolType,
+		attr.BlockTyposquatting:              types.BoolType,
+		attr.BlockDNSRebinding:               types.BoolType,
+		attr.BlockNewlyRegisteredDomains:     types.BoolType,
+		attr.BlockDomainGenerationAlgorithms: types.BoolType,
+		attr.BlockParkedDomains:              types.BoolType,
+	}
+}
+
+func convertPrivacyCategoriesToTerraform(categories *model.PrivacyCategories) types.Object {
+	attributes := map[string]tfattr.Value{
+		attr.BlockAffiliateLinks:    types.BoolValue(categories.BlockAffiliate),
+		attr.BlockDisguisedTrackers: types.BoolValue(categories.BlockDisguisedTrackers),
+		attr.BlockAdsAndTrackers:    types.BoolValue(categories.BlockAdsAndTrackers),
+	}
+
+	return types.ObjectValueMust(privacyCategoriesAttributeTypes(), attributes)
+}
+
+func privacyCategoriesAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.BlockAffiliateLinks:    types.BoolType,
+		attr.BlockDisguisedTrackers: types.BoolType,
+		attr.BlockAdsAndTrackers:    types.BoolType,
+	}
 }
 
 func convertDomainsToTerraform(domains []string, isAuthoritative tfattr.Value) types.Object {
@@ -527,7 +627,7 @@ func convertSecurityCategories(obj types.Object) *model.SecurityCategory {
 		BlockCryptojacking:              convertBoolDefaultTrue(attrs[attr.BlockCryptojacking]),
 		BlockIdnHomographs:              convertBoolDefaultTrue(attrs[attr.BlockIdnHomoglyph]),
 		BlockTyposquatting:              convertBoolDefaultTrue(attrs[attr.BlockTyposquatting]),
-		BlockDnsRebinding:               convertBoolDefaultTrue(attrs[attr.BlockDnsRebinding]),
+		BlockDNSRebinding:               convertBoolDefaultTrue(attrs[attr.BlockDNSRebinding]),
 		BlockNewlyRegisteredDomains:     convertBoolDefaultTrue(attrs[attr.BlockNewlyRegisteredDomains]),
 		BlockDomainGenerationAlgorithms: convertBoolDefaultTrue(attrs[attr.BlockDomainGenerationAlgorithms]),
 		BlockParkedDomains:              convertBoolDefaultTrue(attrs[attr.BlockParkedDomains]),
@@ -559,7 +659,7 @@ func convertBoolDefaultFalse(boolAttr tfattr.Value) bool {
 }
 
 func convertBoolWithDefault(value tfattr.Value, defaultValue bool) bool {
-	if value == nil || (value.IsNull() || value.IsUnknown()) {
+	if value == nil || value.IsNull() || value.IsUnknown() {
 		return defaultValue
 	}
 
