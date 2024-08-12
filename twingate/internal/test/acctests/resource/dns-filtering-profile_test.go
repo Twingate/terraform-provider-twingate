@@ -49,6 +49,24 @@ func testTwingateDNSFilteringProfileBase(testName, profileName, priority string)
 
 }
 
+func genDomains(count int) []string {
+	domains := make([]string, 0, count)
+
+	for i := 0; i < count; i++ {
+		domains = append(domains, test.RandomDomain())
+	}
+
+	return domains
+}
+
+func listToString(list []string) string {
+	if len(list) == 0 {
+		return "[]"
+	}
+
+	return fmt.Sprintf(`["%s"]`, strings.Join(list, `", "`))
+}
+
 func TestAccTwingateDNSFilteringProfileCreate(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
@@ -58,13 +76,16 @@ func TestAccTwingateDNSFilteringProfileCreate(t *testing.T) {
 	groupsTF := strings.Join(groups, "\n")
 	groupResourcesTF := fmt.Sprintf(`"%s"`, strings.Join(groupResources, `", "`))
 
+	allowedDomains := genDomains(2)
+	deniedDomains := genDomains(1)
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
 		CheckDestroy:             acctests.CheckTwingateDNSProfileDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: testTwingateDNSFilteringProfile(groupsTF, testName, profileName, groupResourcesTF),
+				Config: testTwingateDNSFilteringProfile(groupsTF, testName, profileName, groupResourcesTF, allowedDomains, deniedDomains),
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.Name, profileName),
 					sdk.TestCheckResourceAttr(theResource, attr.Priority, "2"),
@@ -84,7 +105,7 @@ func TestAccTwingateDNSFilteringProfileCreate(t *testing.T) {
 	})
 }
 
-func testTwingateDNSFilteringProfile(groups, testName, profileName, groupResources string) string {
+func testTwingateDNSFilteringProfile(groups, testName, profileName, groupResources string, allowedDomains, deniedDomains []string) string {
 	return fmt.Sprintf(`
 	# groups
 	%[1]s
@@ -97,17 +118,12 @@ func testTwingateDNSFilteringProfile(groups, testName, profileName, groupResourc
 	
 	  allowed_domains {
 		is_authoritative = false
-		domains = [
-		  "twingate.com",
-		  "zoom.us"
-		]
+		domains = %[4]s
 	  }
 	
 	  denied_domains {
 		is_authoritative = true
-		domains = [
-		  "evil.example"
-		]
+		domains = %[5]s
 	  }
 	
 	  content_categories {
@@ -128,10 +144,10 @@ func testTwingateDNSFilteringProfile(groups, testName, profileName, groupResourc
 	data "twingate_groups" "test" {
 	  name_prefix = "%[2]s"
 
-	  depends_on = [%[4]s]
+	  depends_on = [%[6]s]
 	}
 
-	`, groups, testName, profileName, groupResources)
+	`, groups, testName, profileName, listToString(allowedDomains), listToString(deniedDomains), groupResources)
 
 }
 
@@ -162,8 +178,8 @@ func TestAccTwingateDNSFilteringProfileUpdate(t *testing.T) {
 	groupsTF2 := strings.Join(groups2, "\n")
 	groupResourcesTF2 := fmt.Sprintf(`"%s"`, strings.Join(groupResources2, `", "`))
 
-	domains1 := []string{"google.com", "twingate.com"}
-	domains2 := []string{"amazon.com", "zoom.com", "booking.com"}
+	domains1 := genDomains(2)
+	domains2 := genDomains(3)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -235,9 +251,9 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeTrue(t *testing.T) {
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
 	profileName := test.RandomName()
 
-	domains1 := []string{"google.com", "twingate.com"}
-	newDomains := []string{"apple.com"}
-	domains2 := []string{"amazon.com", "zoom.com", "booking.com", "airbnb.com"}
+	domains1 := genDomains(2)
+	newDomains := genDomains(1)
+	domains2 := genDomains(4)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -287,9 +303,9 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeFalse(t *testing.T) 
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
 	profileName := test.RandomName()
 
-	domains1 := []string{"google.com", "twingate.com"}
-	newDomains := []string{"apple.com"}
-	domains2 := []string{"amazon.com", "twingate.com"}
+	domains1 := genDomains(2)
+	newDomains := genDomains(1)
+	domains2 := genDomains(2)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -324,8 +340,8 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeFalseTrue(t *testing
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
 	profileName := test.RandomName()
 
-	domains1 := []string{"google.com", "twingate.com"}
-	domains2 := []string{"amazon.com", "zoom.com", "booking.com", "airbnb.com"}
+	domains1 := genDomains(2)
+	domains2 := genDomains(4)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -357,9 +373,9 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeTrueFalse(t *testing
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
 	profileName := test.RandomName()
 
-	domains1 := []string{"google.com", "twingate.com"}
-	domains2 := []string{"amazon.com", "zoom.com", "booking.com", "airbnb.com"}
-	newDomains := []string{"amazon.com", "zoom.com", "booking.com", "airbnb.com", "google.com"}
+	domains1 := genDomains(2)
+	domains2 := genDomains(4)
+	newDomains := genDomains(5)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -403,7 +419,7 @@ func TestAccTwingateDNSFilteringProfileRemoveAllowedDomains(t *testing.T) {
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
 	profileName := test.RandomName()
 
-	domains1 := []string{"google.com", "twingate.com"}
+	domains1 := genDomains(2)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -439,13 +455,16 @@ func TestAccTwingateDNSFilteringProfileImport(t *testing.T) {
 	groupsTF := strings.Join(groups, "\n")
 	groupResourcesTF := fmt.Sprintf(`"%s"`, strings.Join(groupResources, `", "`))
 
+	allowedDomains := genDomains(2)
+	deniedDomains := genDomains(1)
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: testTwingateDNSFilteringProfileFull(groupsTF, testName, profileName, groupResourcesTF),
+				Config: testTwingateDNSFilteringProfileFull(groupsTF, testName, profileName, groupResourcesTF, allowedDomains, deniedDomains),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
@@ -495,7 +514,7 @@ func TestAccTwingateDNSFilteringProfileImport(t *testing.T) {
 	})
 }
 
-func testTwingateDNSFilteringProfileFull(groups, testName, profileName, groupResources string) string {
+func testTwingateDNSFilteringProfileFull(groups, testName, profileName, groupResources string, allowedDomains, deniedDomains []string) string {
 	return fmt.Sprintf(`
 	# groups
 	%[1]s
@@ -508,17 +527,12 @@ func testTwingateDNSFilteringProfileFull(groups, testName, profileName, groupRes
 	
 	  allowed_domains {
 		is_authoritative = false
-		domains = [
-		  "twingate.com",
-		  "zoom.us"
-		]
+		domains = %[4]s
 	  }
 	
 	  denied_domains {
 		is_authoritative = true
-		domains = [
-		  "evil.example"
-		]
+		domains = %[5]s
 	  }
 	
 	  content_categories {
@@ -539,9 +553,9 @@ func testTwingateDNSFilteringProfileFull(groups, testName, profileName, groupRes
 	data "twingate_groups" "test" {
 	  name_prefix = "%[2]s"
 
-	  depends_on = [%[4]s]
+	  depends_on = [%[6]s]
 	}
 
-	`, groups, testName, profileName, groupResources)
+	`, groups, testName, profileName, listToString(allowedDomains), listToString(deniedDomains), groupResources)
 
 }

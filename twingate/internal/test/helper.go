@@ -47,6 +47,12 @@ func RandomEmail() string {
 	return fmt.Sprintf("%s_%s@%s.com", Prefix(), acctest.RandString(nameLen), acctest.RandString(domainLen))
 }
 
+func RandomDomain() string {
+	const domainLen = 6
+
+	return fmt.Sprintf("%s-%s.com", prefixName, acctest.RandString(domainLen))
+}
+
 func RandomUserRole() string {
 	return model.UserRoles[acctest.RandIntRange(0, len(model.UserRoles)-1)]
 }
