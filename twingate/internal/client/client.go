@@ -30,6 +30,7 @@ const (
 	headerAPIKey        = "X-Api-Key" // #nosec G101
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
+	headerRequestID     = "X-Twingate-Request-Id"
 
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
@@ -121,7 +122,21 @@ func newServerURL(network, url string) serverURL {
 	}
 }
 
+//nolint:cyclop
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	reqID := "test_id"
+	if resp != nil {
+		reqID = resp.Request.Header.Get(headerRequestID)
+	}
+
+	if err != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
+	}
+
+	if ctx.Err() != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] context error: %s", reqID, ctx.Err().Error())
+	}
+
 	// do not retry if API token not set
 	if errors.Is(err, ErrAPITokenNoSet) {
 		return false, err
@@ -137,7 +152,28 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 		}
 	}
 
-	return retryablehttp.DefaultRetryPolicy(ctx, resp, err) //nolint
+	shouldRetry, resultErr := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+	if !shouldRetry {
+		return false, resultErr //nolint
+	}
+
+	if resp != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] going to retry call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
+
+		reqBody, _ := resp.Request.GetBody()
+		if reqBody != nil {
+			reqBodyBytes, _ := io.ReadAll(reqBody)
+			log.Printf("[WARN] [RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
+		}
+
+		body, bodyErr := io.ReadAll(resp.Body)
+		if bodyErr == nil {
+			resp.Body = io.NopCloser(bytes.NewBuffer(body))
+			log.Printf("[WARN] [RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
+		}
+	}
+
+	return true, nil
 }
 
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, agent, version string) *Client {
@@ -149,7 +185,12 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	retryableClient.CheckRetry = customRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
-		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
+		reqID, _ := uuid.GenerateUUID()
+		req.Header.Set(headerRequestID, reqID)
+
+		if retryNumber > 0 {
+			log.Printf("[WARN] [id:%s] Failed to call %s (retry %d)", reqID, req.URL.String(), retryNumber)
+		}
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
 	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, agent, version, correlationID)
