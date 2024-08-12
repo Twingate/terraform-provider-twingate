@@ -11,6 +11,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const cacheKey = "cache"
+
 var cache = &clientCache{} //nolint:gochecknoglobals
 
 type clientCache struct {
@@ -118,7 +120,7 @@ func (h *handler[T]) invalidateResource(id string) {
 }
 
 func (h *handler[T]) init() error {
-	resources, err := h.readResources(context.Background())
+	resources, err := h.readResources(WithCallerCtx(context.Background(), cacheKey))
 	if err != nil {
 		return err
 	}
