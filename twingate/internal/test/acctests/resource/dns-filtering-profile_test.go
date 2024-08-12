@@ -19,7 +19,7 @@ var (
 func TestAccTwingateDNSFilteringProfileCreateWithDefaultValues(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -70,7 +70,7 @@ func listToString(list []string) string {
 func TestAccTwingateDNSFilteringProfileCreate(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	groups, groupResources := genNewGroupsWithName(testName, testName, 3)
 	groupsTF := strings.Join(groups, "\n")
@@ -168,7 +168,7 @@ func genNewGroupsWithName(resourcePrefix, namePrefix string, count int) ([]strin
 func TestAccTwingateDNSFilteringProfileUpdate(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	groups1, groupResources1 := genNewGroupsWithName(testName, testName, 2)
 	groupsTF1 := strings.Join(groups1, "\n")
@@ -249,7 +249,7 @@ func testTwingateDNSFilteringProfile1(groups, testName, profileName, groupResour
 func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeTrue(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	domains1 := genDomains(2)
 	newDomains := genDomains(1)
@@ -301,7 +301,7 @@ func testTwingateDNSFilteringProfileWithDomains(testName, profileName string, is
 func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeFalse(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	domains1 := genDomains(2)
 	newDomains := genDomains(1)
@@ -338,7 +338,7 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeFalse(t *testing.T) 
 func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeFalseTrue(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	domains1 := genDomains(2)
 	domains2 := genDomains(4)
@@ -371,7 +371,7 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeFalseTrue(t *testing
 func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeTrueFalse(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	domains1 := genDomains(2)
 	domains2 := genDomains(4)
@@ -417,7 +417,7 @@ func TestAccTwingateDNSFilteringProfileUpdateIsAuthoritativeTrueFalse(t *testing
 func TestAccTwingateDNSFilteringProfileRemoveAllowedDomains(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	domains1 := genDomains(2)
 
@@ -449,7 +449,7 @@ func TestAccTwingateDNSFilteringProfileRemoveAllowedDomains(t *testing.T) {
 func TestAccTwingateDNSFilteringProfileImport(t *testing.T) {
 	testName := "t" + acctest.RandString(6)
 	theResource := acctests.TerraformDNSFilteringProfile(testName)
-	profileName := test.RandomName()
+	profileName := test.RandomName(testName)
 
 	groups, groupResources := genNewGroupsWithName(testName, testName, 3)
 	groupsTF := strings.Join(groups, "\n")
