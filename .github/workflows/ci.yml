@@ -123,7 +123,7 @@ jobs:
     if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
-      max-parallel: 1
+      max-parallel: 2
       fail-fast: false
       matrix:
         terraform:
@@ -173,12 +173,12 @@ jobs:
 
   tests-acceptance-opentofu:
     name: OpenTofu Matrix Acceptance Tests
-    needs: [build, tests-acceptance]
+    needs: build
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
     timeout-minutes: 15
     strategy:
-      max-parallel: 1
+      max-parallel: 2
       fail-fast: false
       matrix:
         tofu:
