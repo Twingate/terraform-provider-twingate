@@ -3,12 +3,12 @@
 page_title: "twingate_dns_filtering_profile Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  DNS filtering gives you the ability to control what websites your users can access. For more information, see Twingate's documentation https://www.twingate.com/docs/dns-filtering.
+  DNS filtering gives you the ability to control what websites your users can access. DNS filtering is only available on certain plans. For more information, see Twingate's documentation https://www.twingate.com/docs/dns-filtering.
 ---
 
 # twingate_dns_filtering_profile (Data Source)
 
-DNS filtering gives you the ability to control what websites your users can access. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering).
+DNS filtering gives you the ability to control what websites your users can access. DNS filtering is only available on certain plans. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering).
 
 ## Example Usage
 
