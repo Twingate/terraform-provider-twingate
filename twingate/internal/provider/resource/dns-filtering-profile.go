@@ -97,7 +97,7 @@ func (r *dnsFilteringProfile) ImportState(ctx context.Context, req resource.Impo
 
 func (r *dnsFilteringProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) { //nolint
 	resp.Schema = schema.Schema{
-		Description: "DNS filtering gives you the ability to control what websites your users can access. DNS filtering is only available on certain plans. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering).",
+		Description: "DNS filtering gives you the ability to control what websites your users can access. DNS filtering is only available on certain plans. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering). DNS filtering must be enabled for this resources to work. If DNS filtering isn't enabled, the provider will throw an error.",
 		Attributes: map[string]schema.Attribute{
 			attr.Name: schema.StringAttribute{
 				Required:    true,

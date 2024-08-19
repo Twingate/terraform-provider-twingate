@@ -93,7 +93,7 @@ func (d *dnsFilteringProfile) Configure(ctx context.Context, req datasource.Conf
 
 func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) { //nolint:funlen
 	resp.Schema = schema.Schema{
-		Description: "DNS filtering gives you the ability to control what websites your users can access. DNS filtering is only available on certain plans. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering).",
+		Description: "DNS filtering gives you the ability to control what websites your users can access. DNS filtering is only available on certain plans. For more information, see Twingate's [documentation](https://www.twingate.com/docs/dns-filtering). DNS filtering must be enabled for this data source to work. If DNS filtering isn't enabled, the provider will throw an error.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Required:    true,
