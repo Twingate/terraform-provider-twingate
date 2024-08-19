@@ -5,7 +5,6 @@ description: "This document covers how to migrate from v1 to v2 of the Twingate 
 ---
 
 # Migration Guide
-j
 This guide covers how to migrate from v1 to v2 of the Twingate Terraform provider. Migration needs to be done for the following objects:
 - Resources
     - `twingate_resource`
