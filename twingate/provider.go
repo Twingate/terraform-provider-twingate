@@ -198,6 +198,7 @@ func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSourc
 		twingateDatasource.NewSecurityPoliciesDatasource,
 		twingateDatasource.NewResourceDatasource,
 		twingateDatasource.NewResourcesDatasource,
+		twingateDatasource.NewDLPPolicyDatasource,
 	}
 }
 

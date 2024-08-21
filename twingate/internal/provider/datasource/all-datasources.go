@@ -14,6 +14,8 @@ const (
 	TwingateServiceAccounts  = "twingate_service_accounts"
 	TwingateSecurityPolicy   = "twingate_security_policy" // #nosec G101
 	TwingateSecurityPolicies = "twingate_security_policies"
+	TwingateDLPPolicy        = "twingate_dlp_policy"
+	TwingateDLPPolicies      = "twingate_dlp_policies"
 
 	computedDatasourceIDDescription = "The ID of this resource."
 

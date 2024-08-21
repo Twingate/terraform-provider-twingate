@@ -22,6 +22,7 @@ const (
 	resourceServiceAccount resource = "service account"
 	resourceServiceKey     resource = "service account key"
 	resourceUser           resource = "user"
+	resourceDLPPolicy      resource = "dlp policy"
 )
 
 const (
