@@ -23,6 +23,7 @@ const (
 	resourceServiceKey          resource = "service account key"
 	resourceUser                resource = "user"
 	resourceDNSFilteringProfile resource = "DNS filtering profile"
+	resourceDLPPolicy           resource = "dlp policy"
 )
 
 const (

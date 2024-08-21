@@ -15,6 +15,8 @@ const (
 	TwingateSecurityPolicy      = "twingate_security_policy" // #nosec G101
 	TwingateSecurityPolicies    = "twingate_security_policies"
 	TwingateDNSFilteringProfile = "twingate_dns_filtering_profile"
+	TwingateDLPPolicy           = "twingate_dlp_policy"
+	TwingateDLPPolicies         = "twingate_dlp_policies"
 
 	computedDatasourceIDDescription = "The ID of this resource."
 
