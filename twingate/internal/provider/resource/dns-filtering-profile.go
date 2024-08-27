@@ -368,12 +368,14 @@ func (r *dnsFilteringProfile) Read(ctx context.Context, req resource.ReadRequest
 
 	profile, err := r.client.ReadDNSFilteringProfile(ctx, state.ID.ValueString())
 
-	if !convertBoolDefaultTrue(state.AllowedDomains.Attributes()[attr.IsAuthoritative]) {
-		profile.AllowedDomains = convertDomains(state.AllowedDomains)
-	}
+	if profile != nil {
+		if !convertBoolDefaultTrue(state.AllowedDomains.Attributes()[attr.IsAuthoritative]) {
+			profile.AllowedDomains = convertDomains(state.AllowedDomains)
+		}
 
-	if !convertBoolDefaultTrue(state.DeniedDomains.Attributes()[attr.IsAuthoritative]) {
-		profile.DeniedDomains = convertDomains(state.DeniedDomains)
+		if !convertBoolDefaultTrue(state.DeniedDomains.Attributes()[attr.IsAuthoritative]) {
+			profile.DeniedDomains = convertDomains(state.DeniedDomains)
+		}
 	}
 
 	r.helper(ctx, profile, &state, &resp.State, &resp.Diagnostics, err, operationRead)
