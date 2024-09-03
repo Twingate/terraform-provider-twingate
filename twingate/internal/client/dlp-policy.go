@@ -10,7 +10,7 @@ import (
 func (client *Client) ReadDLPPolicy(ctx context.Context, policy *model.DLPPolicy) (*model.DLPPolicy, error) {
 	opr := resourceDLPPolicy.read()
 
-	if policy.ID == "" && policy.Name == "" {
+	if policy == nil || policy.ID == "" && policy.Name == "" {
 		return nil, opr.apiError(ErrGraphqlEmptyBothNameAndID)
 	}
 

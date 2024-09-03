@@ -55,8 +55,7 @@ func (d *dlpPolicy) Configure(ctx context.Context, req datasource.ConfigureReque
 
 func (d *dlpPolicy) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// TODO: update description
-		Description: "TODO. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).",
+		Description: "DLP policies are currently in early access. For more information, reach out to your account manager.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Optional:    true,

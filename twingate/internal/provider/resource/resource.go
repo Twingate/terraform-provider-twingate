@@ -75,6 +75,7 @@ type resourceModel struct {
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+	DLPPolicyID              types.String `tfsdk:"dlp_policy_id"`
 }
 
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -177,6 +178,13 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description:   "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.",
 				Default:       stringdefault.StaticString(DefaultSecurityPolicyID),
 				PlanModifiers: []planmodifier.String{UseDefaultPolicyForUnknownModifier()},
+			},
+			attr.DLPPolicyID: schema.StringAttribute{
+				Optional: true,
+				//Computed:    true,
+				Description: "The ID of a DLP policy to be used as the default DLP policy for this Resource. Defaults to null.",
+				//Default:     stringdefault.StaticString(""),
+				//PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
@@ -300,6 +308,12 @@ func groupAccessBlock() schema.SetNestedBlock {
 					PlanModifiers: []planmodifier.Int64{
 						UseNullIntWhenValueOmitted(),
 					},
+				},
+				attr.DLPPolicyID: schema.StringAttribute{
+					Optional: true,
+					//Computed:      true,
+					Description: "The ID of a DLP policy to be used as the DLP policy for the group in this access block.",
+					//PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				},
 			},
 		},
@@ -465,6 +479,7 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 		access = append(access, client.AccessInput{
 			PrincipalID:                    group.GroupID,
 			SecurityPolicyID:               group.SecurityPolicyID,
+			DLPPolicyID:                    group.DLPPolicyID,
 			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
 		})
 	}
@@ -512,6 +527,11 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
 		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
 			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
+		}
+
+		dlpPolicyVal := obj.Attributes()[attr.DLPPolicyID]
+		if dlpPolicyVal != nil && !dlpPolicyVal.IsNull() && !dlpPolicyVal.IsUnknown() {
+			accessGroup.DLPPolicyID = dlpPolicyVal.(types.String).ValueStringPointer()
 		}
 
 		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
@@ -594,6 +614,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
+		DLPPolicyID:              plan.DLPPolicyID.ValueStringPointer(),
 	}, nil
 }
 
@@ -773,9 +794,14 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
+		emptyPolicy := ""
+
 		if state.SecurityPolicyID.ValueString() == "" {
-			emptyPolicy := ""
 			resource.SecurityPolicyID = &emptyPolicy
+		}
+
+		if state.DLPPolicyID.ValueString() == "" {
+			resource.DLPPolicyID = &emptyPolicy
 		}
 	}
 
@@ -1014,6 +1040,10 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.Alias = reference.Alias
 	}
 
+	if !state.DLPPolicyID.IsNull() || !reference.DLPPolicyID.IsUnknown() {
+		state.DLPPolicyID = reference.DLPPolicyID
+	}
+
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
 		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &reference.Protocols)
 		diagnostics.Append(diags...)
@@ -1243,6 +1273,7 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 		attributes := map[string]tfattr.Value{
 			attr.GroupID:                        types.StringValue(access.GroupID),
 			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
+			attr.DLPPolicyID:                    types.StringPointerValue(access.DLPPolicyID),
 			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(access.UsageBasedDuration),
 		}
 
@@ -1354,6 +1385,7 @@ func accessGroupAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.GroupID:                        types.StringType,
 		attr.SecurityPolicyID:               types.StringType,
+		attr.DLPPolicyID:                    types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
 	}
 }

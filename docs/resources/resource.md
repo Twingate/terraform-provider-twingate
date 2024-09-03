@@ -124,6 +124,7 @@ resource "twingate_resource" "resource" {
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_service` (Block Set) Restrict access to certain service account (see [below for nested schema](#nestedblock--access_service))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
+- `dlp_policy_id` (String) The ID of a DLP policy to be used as the default DLP policy for this Resource. Defaults to null.
 - `is_active` (Boolean) Set the resource as active or inactive. Default is `true`.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.
@@ -140,6 +141,7 @@ resource "twingate_resource" "resource" {
 
 Optional:
 
+- `dlp_policy_id` (String) The ID of a DLP policy to be used as the DLP policy for the group in this access block.
 - `group_id` (String) Group ID that will have permission to access the Resource.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.
 - `usage_based_autolock_duration_days` (Number) The usage-based auto-lock duration configured on the edge (in days).

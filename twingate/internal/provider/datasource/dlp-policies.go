@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
@@ -17,6 +18,8 @@ var _ datasource.DataSource = &dlpPolicies{}
 func NewDLPPoliciesDatasource() datasource.DataSource {
 	return &dlpPolicies{}
 }
+
+var invalidNameRegex = regexp.MustCompile(`\W+`)
 
 type dlpPolicies struct {
 	client *client.Client
@@ -57,8 +60,7 @@ func (d *dlpPolicies) Configure(ctx context.Context, req datasource.ConfigureReq
 
 func (d *dlpPolicies) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// TODO: update description
-		Description: "TODO. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).",
+		Description: "DLP policies are currently in early access. For more information, reach out to your account manager.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
@@ -126,15 +128,16 @@ func (d *dlpPolicies) Read(ctx context.Context, req datasource.ReadRequest, resp
 	}
 
 	name, filter := getNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
-	policy, err := d.client.ReadDLPPolicies(client.WithCallerCtx(ctx, datasourceKey), name, filter)
+	policies, err := d.client.ReadDLPPolicies(client.WithCallerCtx(ctx, datasourceKey), name, filter)
+
 	if err != nil {
 		addErr(&resp.Diagnostics, err, TwingateDLPPolicy)
 
 		return
 	}
 
-	data.ID = types.StringValue(policy.ID)
-	data.Name = types.StringValue(policy.Name)
+	data.ID = types.StringValue("policies-by-name-" + sanitizeName(name))
+	data.Policies = convertPoliciesToTerraform(policies)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

@@ -70,6 +70,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlNullableID(input.DLPPolicyID, "dlpPolicyId"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -94,6 +95,10 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	if input.SecurityPolicyID == nil {
 		resource.SecurityPolicyID = nil
+	}
+
+	if input.DLPPolicyID == nil {
+		resource.DLPPolicyID = nil
 	}
 
 	return resource, nil
@@ -375,6 +380,7 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 type AccessInput struct {
 	PrincipalID                    string  `json:"principalId"`
 	SecurityPolicyID               *string `json:"securityPolicyId"`
+	DLPPolicyID                    *string `json:"dlpPolicyId"`
 	UsageBasedAutolockDurationDays *int64  `json:"usageBasedAutolockDurationDays"`
 }
 

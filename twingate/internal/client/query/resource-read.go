@@ -1,6 +1,8 @@
 package query
 
 import (
+	"reflect"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
@@ -33,6 +35,7 @@ type Access struct {
 type AccessEdge struct {
 	Node                           Principal
 	SecurityPolicy                 *gqlSecurityPolicy
+	DLPPolicy                      *gqlDLPPolicy
 	UsageBasedAutolockDurationDays *int64
 }
 
@@ -59,6 +62,7 @@ type ResourceNode struct {
 	IsBrowserShortcutEnabled bool
 	Alias                    string
 	SecurityPolicy           *gqlSecurityPolicy
+	DLPPolicy                *gqlDLPPolicy
 }
 
 type Protocols struct {
@@ -81,16 +85,12 @@ func (r gqlResource) ToModel() *model.Resource {
 	resource := r.ResourceNode.ToModel()
 
 	for _, access := range r.Access.Edges {
-		var securityPolicyID *string
-		if access.SecurityPolicy != nil {
-			securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
-		}
-
 		switch access.Node.Type {
 		case AccessGroup:
 			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
 				GroupID:            string(access.Node.ID),
-				SecurityPolicyID:   securityPolicyID,
+				SecurityPolicyID:   optionalID(access.SecurityPolicy),
+				DLPPolicyID:        optionalID(access.DLPPolicy),
 				UsageBasedDuration: access.UsageBasedAutolockDurationDays,
 			})
 		case AccessServiceAccount:
@@ -102,11 +102,6 @@ func (r gqlResource) ToModel() *model.Resource {
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
-	var securityPolicy string
-	if r.SecurityPolicy != nil {
-		securityPolicy = string(r.SecurityPolicy.ID)
-	}
-
 	return &model.Resource{
 		ID:                       string(r.ID),
 		Name:                     r.Name,
@@ -117,7 +112,8 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsVisible:                &r.IsVisible,
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
-		SecurityPolicyID:         optionalString(securityPolicy),
+		SecurityPolicyID:         optionalID(r.SecurityPolicy),
+		DLPPolicyID:              optionalID(r.DLPPolicy),
 	}
 }
 
@@ -163,4 +159,16 @@ func optionalString(str string) *string {
 	}
 
 	return &str
+}
+
+type HasID interface {
+	GetID() string
+}
+
+func optionalID(obj HasID) *string {
+	if obj == nil || reflect.ValueOf(obj).IsNil() {
+		return nil
+	}
+
+	return optionalString(obj.GetID())
 }

@@ -24,6 +24,7 @@ var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 type AccessGroup struct {
 	GroupID            string
 	SecurityPolicyID   *string
+	DLPPolicyID        *string
 	UsageBasedDuration *int64
 }
 
@@ -59,6 +60,7 @@ type Resource struct {
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
 	SecurityPolicyID         *string
+	DLPPolicyID              *string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {
