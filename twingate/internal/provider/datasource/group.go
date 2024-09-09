@@ -91,7 +91,7 @@ func (d *group) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 		return
 	}
 
-	group, err := d.client.ReadGroup(ctx, data.ID.ValueString())
+	group, err := d.client.ReadGroup(client.WithCallerCtx(ctx, datasourceKey), data.ID.ValueString())
 	if err != nil {
 		addErr(&resp.Diagnostics, err, TwingateGroup)
 

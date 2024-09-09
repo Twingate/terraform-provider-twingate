@@ -13,6 +13,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -24,13 +25,17 @@ const (
 	DefaultAgent = "TF"
 	EnvPageLimit = "TWINGATE_PAGE_LIMIT"
 	EnvAPIToken  = "TWINGATE_API_TOKEN" // #nosec G101
+	EnvRateLimit = "TWINGATE_RATE_LIMIT"
 
 	headerAPIKey        = "X-Api-Key" // #nosec G101
 	headerAgent         = "User-Agent"
 	headerCorrelationID = "X-Correlation-Id"
+	headerRequestID     = "X-Twingate-Request-Id"
 
 	defaultPageLimit  = 50
 	extendedPageLimit = 100
+
+	defaultRateLimit = 3
 )
 
 var (
@@ -52,6 +57,7 @@ type Client struct {
 	version          string
 	pageLimit        int
 	correlationID    string
+	ratelimiter      chan struct{}
 }
 
 type transport struct {
@@ -116,7 +122,21 @@ func newServerURL(network, url string) serverURL {
 	}
 }
 
+//nolint:cyclop
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	reqID := "test_id"
+	if resp != nil {
+		reqID = resp.Request.Header.Get(headerRequestID)
+	}
+
+	if err != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
+	}
+
+	if ctx.Err() != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] context error: %s", reqID, ctx.Err().Error())
+	}
+
 	// do not retry if API token not set
 	if errors.Is(err, ErrAPITokenNoSet) {
 		return false, err
@@ -132,7 +152,28 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 		}
 	}
 
-	return retryablehttp.DefaultRetryPolicy(ctx, resp, err) //nolint
+	shouldRetry, resultErr := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+	if !shouldRetry {
+		return false, resultErr //nolint
+	}
+
+	if resp != nil {
+		log.Printf("[WARN] [RETRY_POLICY] [id:%s] going to retry call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
+
+		reqBody, _ := resp.Request.GetBody()
+		if reqBody != nil {
+			reqBodyBytes, _ := io.ReadAll(reqBody)
+			log.Printf("[WARN] [RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
+		}
+
+		body, bodyErr := io.ReadAll(resp.Body)
+		if bodyErr == nil {
+			resp.Body = io.NopCloser(bytes.NewBuffer(body))
+			log.Printf("[WARN] [RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
+		}
+	}
+
+	return true, nil
 }
 
 func NewClient(url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, agent, version string) *Client {
@@ -144,7 +185,12 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 	retryableClient.CheckRetry = customRetryPolicy
 	retryableClient.RetryMax = httpRetryMax
 	retryableClient.RequestLogHook = func(logger retryablehttp.Logger, req *http.Request, retryNumber int) {
-		log.Printf("[WARN] Failed to call %s (retry %d)", req.URL.String(), retryNumber)
+		reqID, _ := uuid.GenerateUUID()
+		req.Header.Set(headerRequestID, reqID)
+
+		if retryNumber > 0 {
+			log.Printf("[WARN] [id:%s] Failed to call %s (retry %d)", reqID, req.URL.String(), retryNumber)
+		}
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
 	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, agent, version, correlationID)
@@ -162,6 +208,7 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		version:       version,
 		pageLimit:     getPageLimit(),
 		correlationID: correlationID,
+		ratelimiter:   make(chan struct{}, getRateLimit()),
 	}
 
 	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
@@ -179,6 +226,17 @@ func getPageLimit() int {
 	val, err := strconv.Atoi(str)
 	if err != nil {
 		return defaultPageLimit
+	}
+
+	return val
+}
+
+func getRateLimit() int {
+	str := os.Getenv(EnvRateLimit)
+
+	val, err := strconv.Atoi(str)
+	if err != nil {
+		return defaultRateLimit
 	}
 
 	return val
@@ -247,8 +305,22 @@ type MutationResponse interface {
 	ResponseWithPayload
 }
 
+func (client *Client) release() {
+	<-client.ratelimiter
+}
+
+func (client *Client) lock() {
+	client.ratelimiter <- struct{}{}
+}
+
 func (client *Client) mutate(ctx context.Context, resp MutationResponse, variables map[string]any, opr operation, attrs ...attr) error {
-	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(opr.String()))
+	client.lock()
+	defer client.release()
+
+	caller := getCallerFromCtx(ctx)
+	parentOpr := getOperationFromCtx(ctx)
+	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
+
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}
@@ -269,7 +341,13 @@ type ResponseWithPayload interface {
 }
 
 func (client *Client) query(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
-	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(opr.String()))
+	client.lock()
+	defer client.release()
+
+	caller := getCallerFromCtx(ctx)
+	parentOpr := getOperationFromCtx(ctx)
+	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
+
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}
@@ -279,4 +357,50 @@ func (client *Client) query(ctx context.Context, resp ResponseWithPayload, varia
 	}
 
 	return nil
+}
+
+type ctxOperationKeyType string
+
+const ctxOperationKey ctxOperationKeyType = "ctx_operation_key"
+
+func withOperationCtx(ctx context.Context, opr operation) context.Context {
+	return context.WithValue(ctx, ctxOperationKey, opr.String())
+}
+
+func getOperationFromCtx(ctx context.Context) string {
+	val, ok := ctx.Value(ctxOperationKey).(string)
+	if !ok {
+		return ""
+	}
+
+	return val
+}
+
+func concatOperations(ops ...string) string {
+	operations := make([]string, 0, len(ops))
+
+	for _, op := range ops {
+		if op != "" {
+			operations = append(operations, op)
+		}
+	}
+
+	return strings.Join(operations, "_")
+}
+
+type ctxCallerKeyType string
+
+const ctxCallerKey ctxCallerKeyType = "ctx_caller_key"
+
+func WithCallerCtx(ctx context.Context, caller string) context.Context {
+	return context.WithValue(ctx, ctxCallerKey, caller)
+}
+
+func getCallerFromCtx(ctx context.Context) string {
+	val, ok := ctx.Value(ctxCallerKey).(string)
+	if !ok {
+		return ""
+	}
+
+	return val
 }

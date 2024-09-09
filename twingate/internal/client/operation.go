@@ -12,16 +12,17 @@ import (
 type resource string
 
 const (
-	resourceConnector      resource = "connector"
-	resourceConnectorToken resource = "connector token"
-	resourceGroup          resource = "group"
-	resourceRemoteNetwork  resource = "remote network"
-	resourceResource       resource = "resource"
-	resourceResourceAccess resource = "resource access"
-	resourceSecurityPolicy resource = "security policy"
-	resourceServiceAccount resource = "service account"
-	resourceServiceKey     resource = "service account key"
-	resourceUser           resource = "user"
+	resourceConnector           resource = "connector"
+	resourceConnectorToken      resource = "connector token"
+	resourceGroup               resource = "group"
+	resourceRemoteNetwork       resource = "remote network"
+	resourceResource            resource = "resource"
+	resourceResourceAccess      resource = "resource access"
+	resourceSecurityPolicy      resource = "security policy"
+	resourceServiceAccount      resource = "service account"
+	resourceServiceKey          resource = "service account key"
+	resourceUser                resource = "user"
+	resourceDNSFilteringProfile resource = "DNS filtering profile"
 )
 
 const (

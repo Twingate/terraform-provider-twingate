@@ -2,63 +2,51 @@ package client
 
 import (
 	"context"
+	"log"
 	"reflect"
 	"sync"
-	"sync/atomic"
-	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/mitchellh/copystructure"
+	"golang.org/x/sync/errgroup"
 )
 
-var closedChan chan struct{} //nolint:gochecknoglobals
-
-const (
-	minBulkSize        = 10
-	requestsBufferSize = 1000
-	collectTime        = 70 * time.Millisecond
-	shortWaitTime      = 5 * time.Millisecond
-)
+const cacheKey = "cache"
 
 var cache = &clientCache{} //nolint:gochecknoglobals
 
-func init() { //nolint:gochecknoinits
-	closedChan = make(chan struct{})
-	close(closedChan)
-}
-
 type clientCache struct {
-	lock sync.RWMutex
-
+	once     sync.Once
 	handlers map[string]resourceHandler
 }
 
 func (c *clientCache) setClient(client *Client) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.once.Do(func() {
+		c.handlers = map[string]resourceHandler{
+			reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource]{
+				readResources: client.ReadFullResources,
+			},
+			reflect.TypeOf(&model.Group{}).String(): &handler[*model.Group]{
+				readResources: client.ReadFullGroups,
+			},
+		}
 
-	if c.handlers != nil {
-		return
-	}
+		group := errgroup.Group{}
 
-	c.handlers = map[string]resourceHandler{
-		reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource]{
-			readResources:      client.ReadFullResources,
-			requestedResources: make(chan string, requestsBufferSize),
-		},
-		reflect.TypeOf(&model.Group{}).String(): &handler[*model.Group]{
-			readResources:      client.ReadFullGroups,
-			requestedResources: make(chan string, requestsBufferSize),
-		},
-	}
+		for _, handler := range c.handlers {
+			group.Go(func() error {
+				return handler.init()
+			})
+		}
 
-	for _, worker := range c.handlers {
-		go worker.run()
-	}
+		if err := group.Wait(); err != nil {
+			log.Printf("[ERR] cache init failed: %s", err.Error())
+		}
+	})
 }
 
 type resourceHandler interface {
-	run()
+	init() error
 	getResource(resourceID string) (any, bool)
 	setResource(resource identifiable)
 	invalidateResource(resourceID string)
@@ -71,10 +59,8 @@ type identifiable interface {
 type readResourcesFunc[T identifiable] func(ctx context.Context) ([]T, error)
 
 type handler[T identifiable] struct {
-	resources          sync.Map
-	requestDone        atomic.Bool
-	requestedResources chan string
-	readResources      readResourcesFunc[T]
+	resources     sync.Map
+	readResources readResourcesFunc[T]
 }
 
 func (h *handler[T]) getResource(resourceID string) (any, bool) {
@@ -86,45 +72,46 @@ func (h *handler[T]) getResource(resourceID string) (any, bool) {
 
 	res, exists := h.resources.Load(resourceID)
 
-	if exists {
-		obj, _ := copystructure.Copy(res)
-
-		return obj, exists
+	if !exists {
+		return emptyObj, false
 	}
 
-	h.requestedResources <- resourceID
-	// wait for fetching
-LOOP:
-	for {
-		select {
-		case <-h.done():
-			break LOOP
+	obj, err := copystructure.Copy(res)
 
-		default:
-			time.Sleep(shortWaitTime)
-		}
+	if err != nil {
+		log.Printf("[ERR] %T failed copy object from cache: %s", emptyObj, err.Error())
+
+		return emptyObj, false
 	}
 
-	res, exists = h.resources.Load(resourceID)
-
-	if exists {
-		obj, _ := copystructure.Copy(res)
-
-		return obj, exists
-	}
-
-	return emptyObj, false
+	return obj, exists
 }
 
 func (h *handler[T]) setResource(resource identifiable) {
-	obj, _ := copystructure.Copy(resource)
+	if resource == nil {
+		return
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[ERR] setResource failed: %v", r)
+		}
+	}()
+
+	obj, err := copystructure.Copy(resource)
+
+	if err != nil {
+		log.Printf("[ERR] %T failed store object to cache: %s", resource, err.Error())
+
+		return
+	}
 
 	h.resources.Store(resource.GetID(), obj)
 }
 
 func (h *handler[T]) setResources(resources []T) {
 	for _, resource := range resources {
-		h.resources.Store(resource.GetID(), resource)
+		h.setResource(resource)
 	}
 }
 
@@ -132,72 +119,15 @@ func (h *handler[T]) invalidateResource(id string) {
 	h.resources.Delete(id)
 }
 
-func (h *handler[T]) done() <-chan struct{} {
-	if !h.requestDone.Load() {
-		return nil
+func (h *handler[T]) init() error {
+	resources, err := h.readResources(WithCallerCtx(context.Background(), cacheKey))
+	if err != nil {
+		return err
 	}
 
-	return closedChan
-}
+	h.setResources(resources)
 
-func (h *handler[T]) fetchResources(resourcesToRequest map[string]bool) {
-	if len(resourcesToRequest) >= minBulkSize && h.readResources != nil {
-		resources, err := h.readResources(context.Background())
-		if err == nil {
-			h.setResources(resources)
-		}
-	}
-
-	// notify
-	h.requestDone.Store(true)
-}
-
-func (h *handler[T]) run() { //nolint
-	var collectTimer *time.Timer
-
-	resourcesToRequest := make(map[string]bool)
-
-	for {
-		select {
-		case id := <-h.requestedResources:
-			resourcesToRequest[id] = true
-
-			if h.requestDone.Load() {
-				h.requestDone.Store(false)
-			}
-
-			if collectTimer == nil {
-				collectTimer = time.NewTimer(collectTime)
-
-				continue
-			} else {
-				select {
-				case <-collectTimer.C:
-					collectTimer = nil
-
-					h.fetchResources(resourcesToRequest)
-					resourcesToRequest = make(map[string]bool)
-
-				default: // no op
-				}
-			}
-
-		default:
-			if collectTimer != nil {
-				select {
-				case <-collectTimer.C:
-					collectTimer = nil
-
-					h.fetchResources(resourcesToRequest)
-					resourcesToRequest = make(map[string]bool)
-
-				default: // no op
-				}
-			}
-
-			time.Sleep(shortWaitTime)
-		}
-	}
+	return nil
 }
 
 func getResource[T any](resourceID string) (T, bool) {
@@ -208,11 +138,18 @@ func getResource[T any](resourceID string) (T, bool) {
 
 	handle(res, func(handler resourceHandler) {
 		resource, found := handler.getResource(resourceID)
-		if resource == nil {
+		if !found || resource == nil {
 			return
 		}
 
-		res = resource.(T)
+		obj, ok := resource.(T)
+		if !ok {
+			log.Printf("[ERR] getResource failed: expected type %T, got %T", res, resource)
+
+			return
+		}
+
+		res = obj
 		exists = found
 	})
 
