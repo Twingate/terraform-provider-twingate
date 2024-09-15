@@ -32,7 +32,7 @@ func (client *Client) ReadDNSFilteringProfile(ctx context.Context, profileID str
 	)
 
 	response := query.ReadDNSFilteringProfile{}
-	if err := client.query(ctx, &response, variables, opr, attr{id: profileID}); err != nil {
+	if err := client.queryWithTimeout(ctx, &response, variables, opr, attr{id: profileID}); err != nil {
 		return nil, err
 	}
 
