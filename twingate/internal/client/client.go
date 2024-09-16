@@ -36,6 +36,9 @@ const (
 	extendedPageLimit = 100
 
 	defaultRateLimit = 3
+
+	defaultQueryTimeout = time.Second * 10
+	defaultQueryRetries = 3
 )
 
 var (
@@ -338,6 +341,19 @@ func (client *Client) mutate(ctx context.Context, resp MutationResponse, variabl
 
 type ResponseWithPayload interface {
 	IsEmpty() bool
+}
+
+func (client *Client) queryWithTimeout(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
+	var err error
+
+	for i := 0; i == 0 || err != nil && (strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "deadline")) && i < defaultQueryRetries; i++ {
+		timeoutCtx, cancel := context.WithTimeout(ctx, defaultQueryTimeout)
+		err = client.query(timeoutCtx, resp, variables, opr, attrs...)
+
+		cancel()
+	}
+
+	return err
 }
 
 func (client *Client) query(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
