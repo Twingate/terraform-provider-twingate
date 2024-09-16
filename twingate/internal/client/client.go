@@ -344,13 +344,13 @@ type ResponseWithPayload interface {
 }
 
 func (client *Client) queryWithTimeout(ctx context.Context, resp ResponseWithPayload, variables map[string]any, opr operation, attrs ...attr) error {
-	timeoutCtx, cancel := context.WithTimeout(ctx, defaultQueryTimeout)
-	defer cancel()
-
 	var err error
 
-	for i := 0; i == 0 || err != nil && strings.Contains(err.Error(), "timeout") && i < defaultQueryRetries; i++ {
+	for i := 0; i == 0 || err != nil && (strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "deadline")) && i < defaultQueryRetries; i++ {
+		timeoutCtx, cancel := context.WithTimeout(ctx, defaultQueryTimeout)
 		err = client.query(timeoutCtx, resp, variables, opr, attrs...)
+
+		cancel()
 	}
 
 	return err
