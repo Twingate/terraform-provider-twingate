@@ -909,11 +909,47 @@ func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
-	if err := r.client.SetResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd)); err != nil {
+	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd)); err != nil {
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
+	if hasToResetDLPPolicy(groupsToAdd) {
+		res, err := r.client.ReadResource(ctx, input.ID)
+		if err != nil {
+			return fmt.Errorf("failed to fetch resource data: %w", err)
+		}
+
+		remoteGroups := overwriteDLPPolicies(res.GroupsAccess, groupsToAdd)
+		if err := r.client.SetResourceAccess(ctx, input.ID, convertResourceAccess(res.ServiceAccounts, remoteGroups)); err != nil {
+			return fmt.Errorf("failed to update resource access: %w", err)
+		}
+	}
+
 	return nil
+}
+
+func overwriteDLPPolicies(remoteGroups, groupsToAdd []model.AccessGroup) []model.AccessGroup {
+	setGroupsToAdd := convertAccessGroupsToMap(groupsToAdd)
+
+	for i, group := range remoteGroups {
+		if newGroup, ok := setGroupsToAdd[group.GroupID]; ok {
+			remoteGroups[i].DLPPolicyID = newGroup.DLPPolicyID
+		}
+	}
+
+	return remoteGroups
+}
+
+func hasToResetDLPPolicy(groupsToAdd []model.AccessGroup) bool {
+	if len(groupsToAdd) > 0 {
+		for _, group := range groupsToAdd {
+			if group.DLPPolicyID == nil {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state *resourceModel, resource *model.Resource) ([]string, []string, []model.AccessGroup, error) {
