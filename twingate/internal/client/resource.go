@@ -406,3 +406,26 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 
 	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
 }
+
+func (client *Client) SetResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {
+	opr := resourceResourceAccess.update()
+
+	if len(access) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return opr.apiError(ErrGraphqlIDIsEmpty)
+	}
+
+	invalidateResource[*model.Resource](resourceID)
+
+	variables := newVars(
+		gqlID(resourceID),
+		gqlNullable(access, "access"),
+	)
+
+	response := query.SetResourceAccess{}
+
+	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
+}

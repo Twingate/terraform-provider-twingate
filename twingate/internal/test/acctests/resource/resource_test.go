@@ -3581,6 +3581,13 @@ func TestAccTwingateResourceWithDLPPolicy(t *testing.T) {
 					sdk.TestCheckResourceAttrSet(theResource, attr.Path(attr.AccessGroup, attr.DLPPolicyID)),
 				),
 			},
+			{
+				Config: resourceWithoutDLPPolicy(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, attr.DLPPolicyID),
+					sdk.TestCheckNoResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.DLPPolicyID)),
+				),
+			},
 		},
 	})
 }
@@ -3609,6 +3616,28 @@ func createResourceWithDLPPolicy(remoteNetwork, resource, groupName string) stri
 	  access_group {
 		group_id = twingate_group.g21.id
 		dlp_policy_id = data.twingate_dlp_policy.test.id
+      }
+	}
+	`, remoteNetwork, resource, groupName)
+}
+
+func resourceWithoutDLPPolicy(remoteNetwork, resource, groupName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+
+	  access_group {
+		group_id = twingate_group.g21.id
       }
 	}
 	`, remoteNetwork, resource, groupName)

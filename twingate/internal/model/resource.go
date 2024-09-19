@@ -30,6 +30,7 @@ type AccessGroup struct {
 
 func (g AccessGroup) Equals(another AccessGroup) bool {
 	if g.GroupID == another.GroupID &&
+		equalsOptionalString(g.DLPPolicyID, another.DLPPolicyID) &&
 		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
 		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) {
 		return true
