@@ -258,6 +258,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlNullableID(input.DLPPolicyID, "dlpPolicyId"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)

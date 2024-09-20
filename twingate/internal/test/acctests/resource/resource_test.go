@@ -3586,6 +3586,7 @@ func TestAccTwingateResourceWithDLPPolicy(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckNoResourceAttr(theResource, attr.DLPPolicyID),
 					sdk.TestCheckNoResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.DLPPolicyID)),
+					acctests.CheckTwingateResourceHasNoDLPPolicy(theResource),
 				),
 			},
 		},
