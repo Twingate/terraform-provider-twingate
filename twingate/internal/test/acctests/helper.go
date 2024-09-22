@@ -941,6 +941,29 @@ func UpdateResourceSecurityPolicy(resourceName, securityPolicyID string) sdk.Tes
 	}
 }
 
+func DeleteResourceDLPPolicy(resourceName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		resource, err := providerClient.ReadResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		resource.DLPPolicyID = nil
+
+		_, err = providerClient.UpdateResource(context.Background(), resource)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to update dlp_policy: %w", resourceID, err)
+		}
+
+		return nil
+	}
+}
+
 func AddGroupUser(groupResource, groupName, terraformUserID string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		userID, err := getResourceID(state, getResourceNameFromID(terraformUserID))

@@ -799,10 +799,6 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 		if state.SecurityPolicyID.ValueString() == "" {
 			resource.SecurityPolicyID = &emptyPolicy
 		}
-
-		if state.DLPPolicyID.ValueString() == "" {
-			resource.DLPPolicyID = &emptyPolicy
-		}
 	}
 
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
@@ -1064,6 +1060,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.IsActive = types.BoolValue(resource.IsActive)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
+	state.DLPPolicyID = types.StringPointerValue(resource.DLPPolicyID)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
@@ -1075,10 +1072,6 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 
 	if !state.Alias.IsNull() || !reference.Alias.IsUnknown() {
 		state.Alias = reference.Alias
-	}
-
-	if !state.DLPPolicyID.IsNull() || !reference.DLPPolicyID.IsUnknown() {
-		state.DLPPolicyID = reference.DLPPolicyID
 	}
 
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {

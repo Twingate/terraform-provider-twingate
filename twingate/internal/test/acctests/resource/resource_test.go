@@ -3643,3 +3643,43 @@ func resourceWithoutDLPPolicy(remoteNetwork, resource, groupName string) string 
 	}
 	`, remoteNetwork, resource, groupName)
 }
+
+func TestAccTwingateResourceUpdateDLPPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithDLPPolicy(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.DLPPolicyID),
+				),
+			},
+			{
+				Config:             createResourceWithDLPPolicy(remoteNetworkName, resourceName, groupName),
+				ExpectNonEmptyPlan: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.DLPPolicyID),
+					// deletes DLP policy from resource via API
+					acctests.DeleteResourceDLPPolicy(theResource),
+					acctests.WaitTestFunc(),
+				),
+			},
+			{
+				Config: createResourceWithDLPPolicy(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.DLPPolicyID),
+				),
+			},
+		},
+	})
+}
