@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.13.0
 	github.com/hashicorp/terraform-plugin-go v0.24.0
 	github.com/hashicorp/terraform-plugin-testing v1.10.0
-	github.com/hasura/go-graphql-client v0.13.0
+	github.com/hasura/go-graphql-client v0.13.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/mattn/goveralls v0.0.12
@@ -45,6 +45,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
 	github.com/ccojocar/zxcvbn-go v1.0.2 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/coder/websocket v1.8.12 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dnephin/pflag v1.0.7 // indirect
 	github.com/fatih/color v1.16.0 // indirect
@@ -126,5 +127,4 @@ require (
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	nhooyr.io/websocket v1.8.11 // indirect
 )
