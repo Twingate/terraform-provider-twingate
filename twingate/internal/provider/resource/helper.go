@@ -29,16 +29,8 @@ func setIntersection(a, b []string) []string {
 }
 
 func setIntersectionGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
-	setA := map[string]model.AccessGroup{}
-	setB := map[string]model.AccessGroup{}
-
-	for _, access := range inputA {
-		setA[access.GroupID] = access
-	}
-
-	for _, access := range inputB {
-		setB[access.GroupID] = access
-	}
+	setA := convertAccessGroupsToMap(inputA)
+	setB := convertAccessGroupsToMap(inputB)
 
 	result := make([]model.AccessGroup, 0, len(setA))
 
@@ -77,16 +69,8 @@ func setDifference(inputA, inputB []string) []string {
 }
 
 func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.AccessGroup {
-	setA := map[string]model.AccessGroup{}
-	setB := map[string]model.AccessGroup{}
-
-	for _, access := range inputA {
-		setA[access.GroupID] = access
-	}
-
-	for _, access := range inputB {
-		setB[access.GroupID] = access
-	}
+	setA := convertAccessGroupsToMap(inputA)
+	setB := convertAccessGroupsToMap(inputB)
 
 	result := make([]model.AccessGroup, 0, len(setA))
 
@@ -97,6 +81,16 @@ func setDifferenceGroupAccess(inputA, inputB []model.AccessGroup) []model.Access
 	}
 
 	return result
+}
+
+func convertAccessGroupsToMap(groups []model.AccessGroup) map[string]model.AccessGroup {
+	set := map[string]model.AccessGroup{}
+
+	for _, access := range groups {
+		set[access.GroupID] = access
+	}
+
+	return set
 }
 
 func setDifferenceGroups(inputA, inputB []model.AccessGroup) []string {

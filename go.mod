@@ -1,6 +1,7 @@
 module github.com/Twingate/terraform-provider-twingate/v3
 
-go 1.22
+go 1.22.0
+
 toolchain go1.22.5
 
 require (
