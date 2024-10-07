@@ -16,6 +16,7 @@ type RemoteNetwork struct {
 	ID       string
 	Name     string
 	Location string
+	ExitNode bool
 }
 
 func (n RemoteNetwork) GetName() string {
