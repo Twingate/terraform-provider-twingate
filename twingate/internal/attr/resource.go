@@ -19,4 +19,5 @@ const (
 	IsVisible                      = "is_visible"
 	IsBrowserShortcutEnabled       = "is_browser_shortcut_enabled"
 	Resources                      = "resources"
+	DLPPolicyID                    = "dlp_policy_id"
 )

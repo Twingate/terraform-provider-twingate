@@ -182,38 +182,8 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-//nolint:cyclop
 func buildFilter(data *groupsModel) *model.GroupsFilter {
-	var name, filter string
-
-	if data.Name.ValueString() != "" {
-		name = data.Name.ValueString()
-	}
-
-	if data.NameRegexp.ValueString() != "" {
-		name = data.NameRegexp.ValueString()
-		filter = attr.FilterByRegexp
-	}
-
-	if data.NameContains.ValueString() != "" {
-		name = data.NameContains.ValueString()
-		filter = attr.FilterByContains
-	}
-
-	if data.NameExclude.ValueString() != "" {
-		name = data.NameExclude.ValueString()
-		filter = attr.FilterByExclude
-	}
-
-	if data.NamePrefix.ValueString() != "" {
-		name = data.NamePrefix.ValueString()
-		filter = attr.FilterByPrefix
-	}
-
-	if data.NameSuffix.ValueString() != "" {
-		name = data.NameSuffix.ValueString()
-		filter = attr.FilterBySuffix
-	}
+	name, filter := getNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
 
 	groupFilter := &model.GroupsFilter{
 		Name:       &name,
