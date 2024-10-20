@@ -3030,10 +3030,10 @@ func TestAccTwingateResourceUpdateSecurityPolicy(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, defaultPolicy),
+				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, defaultPolicy),
+					sdk.TestCheckNoResourceAttr(theResource, attr.SecurityPolicyID),
 				),
 			},
 			{
@@ -3052,8 +3052,11 @@ func TestAccTwingateResourceUpdateSecurityPolicy(t *testing.T) {
 			},
 			{
 				Config: createResourceWithSecurityPolicy(remoteNetworkName, resourceName, ""),
-				// no changes
-				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, ""),
+				),
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -3118,11 +3121,13 @@ func TestAccTwingateResourceSetDefaultSecurityPolicyByDefault(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckResourceSecurityPolicy(theResource, defaultPolicy),
 				),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
-				// no changes
-				PlanOnly: true,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckResourceSecurityPolicy(theResource, defaultPolicy),
+				),
 			},
 		},
 	})

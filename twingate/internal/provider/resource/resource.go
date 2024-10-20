@@ -773,9 +773,8 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
-		if state.SecurityPolicyID.ValueString() == "" {
-			emptyPolicy := ""
-			resource.SecurityPolicyID = &emptyPolicy
+		if state.SecurityPolicyID.IsNull() {
+			resource.SecurityPolicyID = nil
 		}
 	}
 
@@ -1323,30 +1322,9 @@ func (m useDefaultPolicyForUnknownModifier) MarkdownDescription(_ context.Contex
 // PlanModifyString implements the plan modification logic.
 func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
-		resp.PlanValue = types.StringPointerValue(nil)
+		resp.PlanValue = types.StringNull()
 
 		return
-	}
-
-	// Do nothing if there is no state value.
-	if req.StateValue.IsNull() {
-		return
-	}
-
-	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
-	if req.ConfigValue.IsUnknown() {
-		return
-	}
-
-	// Do nothing if there is a known planned value.
-	if req.ConfigValue.ValueString() != "" {
-		return
-	}
-
-	if req.StateValue.ValueString() == "" && req.PlanValue.ValueString() == DefaultSecurityPolicyID {
-		resp.PlanValue = types.StringValue("")
-	} else if req.StateValue.ValueString() == DefaultSecurityPolicyID && req.PlanValue.ValueString() == "" {
-		resp.PlanValue = types.StringValue(DefaultSecurityPolicyID)
 	}
 }
 
