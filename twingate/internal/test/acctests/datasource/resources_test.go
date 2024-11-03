@@ -18,26 +18,25 @@ var (
 )
 
 func TestAccDatasourceTwingateResources_basic(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Resources Basic", func(t *testing.T) {
-		acctests.SetPageLimit(1)
-		networkName := test.RandomName()
-		resourceName := test.RandomResourceName()
-		const theDatasource = "data.twingate_resources.out_drs1"
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testDatasourceTwingateResources(networkName, resourceName),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, resourcesLen, "2"),
-						resource.TestCheckResourceAttr(theDatasource, resourceNamePath, resourceName),
-					),
-				},
+	networkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	const theDatasource = "data.twingate_resources.out_drs1"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResources(networkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, resourcesLen, "2"),
+					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, resourceName),
+				),
 			},
-		})
+		},
 	})
 }
 
@@ -90,23 +89,23 @@ func testDatasourceTwingateResources(networkName, resourceName string) string {
 }
 
 func TestAccDatasourceTwingateResources_emptyResult(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Resources - empty result", func(t *testing.T) {
-		resourceName := test.RandomResourceName()
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
+	resourceName := test.RandomResourceName()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: testTwingateResourcesDoesNotExists(resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.twingate_resources.out_drs2", resourcesLen, "0"),
+				),
 			},
-			Steps: []resource.TestStep{
-				{
-					Config: testTwingateResourcesDoesNotExists(resourceName),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_resources.out_drs2", resourcesLen, "0"),
-					),
-				},
-			},
-		})
+		},
 	})
 }
 
