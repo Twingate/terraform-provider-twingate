@@ -68,26 +68,21 @@ fmtcheck:
 	@sh -c $(CURDIR)/scripts/gofmtcheck.sh
 
 .PHONY: lint
-lint: tools
+lint:
 	@echo "==> Checking source code against linters..."
-	@$(GOBINPATH)/golangci-lint run -c golangci.yml ./$(PKG_NAME)/...
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint run -c golangci.yml ./$(PKG_NAME)/...
 
 .PHONY: lint-fix
-lint-fix: tools
+lint-fix:
 	@echo "==> Checking source code against linters with fix enabled..."
-	@$(GOBINPATH)/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)/...
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)/...
 
 .PHONY: sec
-sec: tools
+sec:
 	@echo "==> Checking source code against security issues..."
 	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)/...
 
 
-.PHONY: doc-tools
-docs: doc-tools
+.PHONY: docs
+docs:
 	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
-
-.PHONY: tools
-tools:
-	@echo "==> installing required tools ..."
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
