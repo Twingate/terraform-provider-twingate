@@ -122,7 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
     strategy:
-      max-parallel: 1
+      max-parallel: 2
       fail-fast: false
       matrix:
         terraform:
@@ -176,7 +176,7 @@ jobs:
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
     strategy:
-      max-parallel: 1
+      max-parallel: 2
       fail-fast: false
       matrix:
         tofu:
