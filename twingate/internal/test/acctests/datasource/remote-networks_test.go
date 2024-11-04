@@ -17,26 +17,24 @@ var (
 )
 
 func TestAccDatasourceTwingateRemoteNetworks_read(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Remote Networks Read", func(t *testing.T) {
-		acctests.SetPageLimit(1)
+	t.Parallel()
 
-		prefix := acctest.RandString(10)
-		networkName1 := test.RandomName(prefix)
-		networkName2 := test.RandomName(prefix)
+	prefix := acctest.RandString(10)
+	networkName1 := test.RandomName(prefix)
+	networkName2 := test.RandomName(prefix)
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testDatasourceTwingateRemoteNetworks2(networkName1, networkName2, prefix),
-					Check: acctests.ComposeTestCheckFunc(
-						testCheckOutputLength("test_networks", 2),
-					),
-				},
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateRemoteNetworks2(networkName1, networkName2, prefix),
+				Check: acctests.ComposeTestCheckFunc(
+					testCheckOutputLength("test_networks", 2),
+				),
 			},
-		})
+		},
 	})
 }
 
