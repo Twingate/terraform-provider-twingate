@@ -161,7 +161,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    if: always()
+    if: '!github.event.pull_request.head.repo.fork && always()'
     needs: [tests-acceptance, tests-acceptance-opentofu]
     runs-on: ubuntu-latest
     timeout-minutes: 15
