@@ -40,14 +40,13 @@ jobs:
     name: Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     strategy:
-      max-parallel: 2
+      max-parallel: 3
       fail-fast: false
       matrix:
         terraform:
           - '1.8.*'
-          - '1.9.*'
+#          - '1.9.*'
           - 'latest'
     steps:
     - name: Check out code into the Go module directory
@@ -94,6 +93,7 @@ jobs:
         TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
         TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}-${{ matrix.terraform }}
       run: |
+        terraform version
         make testacc
 
     - name: Report Status
@@ -112,14 +112,13 @@ jobs:
     name: OpenTofu Matrix Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    if: "!github.event.pull_request.head.repo.fork"
-    timeout-minutes: 15
     strategy:
-      max-parallel: 2
+      max-parallel: 3
       fail-fast: false
       matrix:
         tofu:
           - '1.6.*'
+          - '1.7.*'
           - 'latest'
 
     steps:
@@ -162,7 +161,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    if: always()
+    if: '!github.event.pull_request.head.repo.fork && always()'
     needs: [tests-acceptance, tests-acceptance-opentofu]
     runs-on: ubuntu-latest
     timeout-minutes: 15

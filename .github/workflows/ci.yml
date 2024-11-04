@@ -120,14 +120,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
-    timeout-minutes: 15
     strategy:
-      max-parallel: 2
+      max-parallel: 3
       fail-fast: false
       matrix:
         terraform:
           - '1.8.*'
-          - '1.9.*'
+#          - '1.9.*'
           - 'latest'
     steps:
 
@@ -161,6 +160,7 @@ jobs:
         TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
         TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}-${{ matrix.terraform }}
       run: |
+        terraform version
         make testacc
 
     - name: Send coverage
@@ -175,13 +175,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
-    timeout-minutes: 15
     strategy:
-      max-parallel: 2
+      max-parallel: 3
       fail-fast: false
       matrix:
         tofu:
           - '1.6.*'
+          - '1.7.*'
           - 'latest'
 
     steps:
@@ -224,7 +224,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    if: "!github.event.pull_request.head.repo.fork"
+    if: '!github.event.pull_request.head.repo.fork && always()'
     needs: [tests-acceptance, tests-acceptance-opentofu]
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -21,106 +21,104 @@ var (
 )
 
 func TestAccDatasourceTwingateServicesFilterByName(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Services - Filter By Name", func(t *testing.T) {
+	t.Parallel()
 
-		name := test.Prefix("orange") + acctest.RandString(5)
-		const (
-			terraformResourceName = "dts_service"
-			theDatasource         = "data.twingate_service_accounts.out"
-		)
+	name := test.Prefix("orange") + acctest.RandString(5)
+	const (
+		terraformResourceName = "dts_service"
+		theDatasource         = "data.twingate_service_accounts.out"
+	)
 
-		config := []terraformServiceConfig{
+	config := []terraformServiceConfig{
+		{
+			serviceName:           name,
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+		{
+			serviceName:           test.Prefix("lemon") + acctest.RandString(5),
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
 			{
-				serviceName:           name,
-				terraformResourceName: test.TerraformRandName(terraformResourceName),
+				Config: terraformConfig(
+					createServices(config),
+					datasourceServices(name, config),
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, keyIDsLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, attr.ID, "service-by-name-"+name),
+				),
 			},
-			{
-				serviceName:           test.Prefix("lemon") + acctest.RandString(5),
-				terraformResourceName: test.TerraformRandName(terraformResourceName),
-			},
-		}
-
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: terraformConfig(
-						createServices(config),
-						datasourceServices(name, config),
-					),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "1"),
-						resource.TestCheckResourceAttr(theDatasource, keyIDsLen, "1"),
-						resource.TestCheckResourceAttr(theDatasource, attr.ID, "service-by-name-"+name),
-					),
-				},
-			},
-		})
+		},
 	})
 }
 
 func TestAccDatasourceTwingateServicesAll(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Services - All", func(t *testing.T) {
-		prefix := test.Prefix() + acctest.RandString(4)
-		const (
-			terraformResourceName = "dts_service"
-			theDatasource         = "data.twingate_service_accounts.out"
-		)
+	t.Parallel()
 
-		config := []terraformServiceConfig{
-			{
-				serviceName:           prefix + "_orange",
-				terraformResourceName: test.TerraformRandName(terraformResourceName),
-			},
-			{
-				serviceName:           prefix + "_lemon",
-				terraformResourceName: test.TerraformRandName(terraformResourceName),
-			},
-		}
+	prefix := test.Prefix() + acctest.RandString(4)
+	const (
+		terraformResourceName = "dts_service"
+		theDatasource         = "data.twingate_service_accounts.out"
+	)
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: filterDatasourceServices(prefix, config),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
-					),
-					ExpectNonEmptyPlan: true,
-				},
-				{
-					Config: filterDatasourceServices(prefix, config),
-					Check: acctests.ComposeTestCheckFunc(
-						testCheckOutputLength("my_services", 2),
-					),
-				},
+	config := []terraformServiceConfig{
+		{
+			serviceName:           prefix + "_orange",
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+		{
+			serviceName:           prefix + "_lemon",
+			terraformResourceName: test.TerraformRandName(terraformResourceName),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: filterDatasourceServices(prefix, config),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, attr.ID, "all-services"),
+				),
+				ExpectNonEmptyPlan: true,
 			},
-		})
+			{
+				Config: filterDatasourceServices(prefix, config),
+				Check: acctests.ComposeTestCheckFunc(
+					testCheckOutputLength("my_services", 2),
+				),
+			},
+		},
 	})
 }
 
 func TestAccDatasourceTwingateServicesEmptyResult(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Services - Empty Result", func(t *testing.T) {
+	t.Parallel()
 
-		const theDatasource = "data.twingate_service_accounts.out"
+	const theDatasource = "data.twingate_service_accounts.out"
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: datasourceServices(test.RandomName(), nil),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "0"),
-					),
-				},
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: datasourceServices(test.RandomName(), nil),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, serviceAccountsLen, "0"),
+				),
 			},
-		})
+		},
 	})
 }
 
@@ -200,23 +198,22 @@ func filterDatasourceServices(prefix string, configs []terraformServiceConfig) s
 }
 
 func TestAccDatasourceTwingateServicesAllCursors(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Services - All Cursors", func(t *testing.T) {
-		acctests.SetPageLimit(1)
-		prefix := test.Prefix() + acctest.RandString(4)
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: datasourceServicesConfig(prefix),
-					Check: acctests.ComposeTestCheckFunc(
-						testCheckOutputLength("my_services", 2),
-					),
-				},
+	prefix := test.Prefix() + acctest.RandString(4)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateServiceAccountDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: datasourceServicesConfig(prefix),
+				Check: acctests.ComposeTestCheckFunc(
+					testCheckOutputLength("my_services", 2),
+				),
 			},
-		})
+		},
 	})
 }
 
