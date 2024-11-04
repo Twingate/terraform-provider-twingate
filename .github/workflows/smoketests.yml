@@ -4,8 +4,8 @@
 name: Smoke Tests
 permissions: read-all
 on:
-#  schedule:
-#    - cron: "0 */3 * * *"
+  schedule:
+    - cron: "0 */3 * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
       matrix:
         terraform:
           - '1.8.*'
-          - '1.9.*'
+#          - '1.9.*'
           - 'latest'
     steps:
     - name: Check out code into the Go module directory

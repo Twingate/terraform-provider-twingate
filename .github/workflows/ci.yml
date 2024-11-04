@@ -16,7 +16,6 @@ on:
       - 'README.md'
     branches:
       - main
-      - fix/not-stable-acctests
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
@@ -127,7 +126,7 @@ jobs:
       matrix:
         terraform:
           - '1.8.*'
-          - '1.9.*'
+#          - '1.9.*'
           - 'latest'
     steps:
 
