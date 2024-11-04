@@ -41,7 +41,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 1
+      max-parallel: 3
       fail-fast: false
       matrix:
         terraform:
@@ -93,6 +93,7 @@ jobs:
         TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
         TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}-${{ matrix.terraform }}
       run: |
+        terraform version
         make testacc
 
     - name: Report Status
@@ -112,11 +113,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 1
+      max-parallel: 3
       fail-fast: false
       matrix:
         tofu:
           - '1.6.*'
+          - '1.7.*'
           - 'latest'
 
     steps:

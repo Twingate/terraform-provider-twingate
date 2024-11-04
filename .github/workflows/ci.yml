@@ -161,6 +161,7 @@ jobs:
         TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
         TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}-${{ matrix.terraform }}
       run: |
+        terraform version
         make testacc
 
     - name: Send coverage
