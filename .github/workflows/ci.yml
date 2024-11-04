@@ -121,9 +121,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
-    timeout-minutes: 15
     strategy:
-      max-parallel: 2
+      max-parallel: 1
       fail-fast: false
       matrix:
         terraform:
@@ -176,9 +175,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
-    timeout-minutes: 15
     strategy:
-      max-parallel: 2
+      max-parallel: 1
       fail-fast: false
       matrix:
         tofu:
@@ -225,7 +223,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    if: "!github.event.pull_request.head.repo.fork"
+    if: always()
     needs: [tests-acceptance, tests-acceptance-opentofu]
     runs-on: ubuntu-latest
     timeout-minutes: 15
