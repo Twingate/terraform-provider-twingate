@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/securego/gosec/v2 v2.21.4
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/sync v0.8.0
+	golang.org/x/sync v0.9.0
 	gotest.tools/gotestsum v1.12.0
 )
 
