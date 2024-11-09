@@ -83,7 +83,7 @@ lint-fix:
 .PHONY: sec
 sec:
 	@echo "==> Checking source code against security issues..."
-	docker run -t --rm -v $(PWD):/app -w /app securego/gosec:$(GOSEC_VERSION) gosec /app/$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app securego/gosec:$(GOSEC_VERSION) GOFLAGS=-buildvcs=false gosec /app/$(PKG_NAME)/...
 
 .PHONY: docs
 docs:
