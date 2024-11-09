@@ -8,7 +8,7 @@ run:
   skip-files: []
 
 output:
-  format: colored-line-number
+  formats: colored-line-number
   print-issued-lines: true
   print-linter-name: true
 
@@ -30,7 +30,7 @@ linters-settings:
     check-type-assertions: false
     check-blank: false
   govet:
-    check-shadowing: true
+    shadow: true
     use-installed-packages: false
   gofmt:
     simplify: true
@@ -64,20 +64,10 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-    - deadcode
-    - exhaustivestruct
     - exhaustruct
     - forcetypeassert
     - gofumpt
-    - golint
-    - ifshort
-    - interfacer
     - lll
-    - maligned
-    - nosnakecase
-    - scopelint
-    - structcheck
-    - varcheck
     - revive
     - gomoddirectives
   disable-all: false

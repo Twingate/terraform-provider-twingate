@@ -8,6 +8,7 @@ GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate/internal/test/sweepers
 GOLINT_VERSION=v1.61.0
+GOSEC_VERSION=2.21.4
 
 
 check_defined = \
@@ -82,8 +83,7 @@ lint-fix:
 .PHONY: sec
 sec:
 	@echo "==> Checking source code against security issues..."
-	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)/...
-
+	docker run -t --rm -v $(PWD):/app -w /app securego/gosec:$(GOSEC_VERSION) gosec /app/$(PKG_NAME)/...
 
 .PHONY: docs
 docs:
