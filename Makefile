@@ -72,18 +72,18 @@ fmtcheck:
 .PHONY: lint
 lint:
 	@echo "==> Checking source code against linters..."
-	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run -c /app/golangci.yml /app/$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run -c /app/golangci.yml ./$(PKG_NAME)/...
 
 
 .PHONY: lint-fix
 lint-fix:
 	@echo "==> Checking source code against linters with fix enabled..."
-	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run --fix -c /app/golangci.yml /app/$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run --fix -c /app/golangci.yml ./$(PKG_NAME)/...
 
 .PHONY: sec
 sec:
 	@echo "==> Checking source code against security issues..."
-	docker run -t --rm -e GOFLAGS=-buildvcs=false -v $(PWD):/app -w /app securego/gosec:$(GOSEC_VERSION) gosec /app/$(PKG_NAME)/...
+	docker run -t --rm -e GOFLAGS=-buildvcs=false -v $(PWD):/app -w /app securego/gosec:$(GOSEC_VERSION) gosec ./$(PKG_NAME)/...
 
 .PHONY: docs
 docs:
