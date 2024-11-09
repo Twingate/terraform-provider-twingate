@@ -7,6 +7,7 @@ OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate/internal/test/sweepers
+GOLINT_VERSION=v1.61.0
 
 
 check_defined = \
@@ -70,12 +71,13 @@ fmtcheck:
 .PHONY: lint
 lint:
 	@echo "==> Checking source code against linters..."
-	go run github.com/golangci/golangci-lint/cmd/golangci-lint run -c golangci.yml ./$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run -c /app/golangci.yml /app/$(PKG_NAME)/...
+
 
 .PHONY: lint-fix
 lint-fix:
 	@echo "==> Checking source code against linters with fix enabled..."
-	go run github.com/golangci/golangci-lint/cmd/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run --fix -c /app/golangci.yml /app/$(PKG_NAME)/...
 
 .PHONY: sec
 sec:
