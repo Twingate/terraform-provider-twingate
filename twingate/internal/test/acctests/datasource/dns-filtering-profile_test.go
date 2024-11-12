@@ -11,6 +11,8 @@ import (
 )
 
 func TestAccDatasourceTwingateDNSFilteringProfile_basic(t *testing.T) {
+	t.Parallel()
+
 	testName := "t" + acctest.RandString(6)
 	profileName := test.RandomName()
 

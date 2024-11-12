@@ -14,23 +14,23 @@ import (
 )
 
 func TestAccDatasourceTwingateResource_basic(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Resource Basic", func(t *testing.T) {
-		networkName := test.RandomName()
-		resourceName := test.RandomResourceName()
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testDatasourceTwingateResource(networkName, resourceName),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.Name, resourceName),
-					),
-				},
+	networkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResource(networkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.Name, resourceName),
+				),
 			},
-		})
+		},
 	})
 }
 
@@ -63,22 +63,22 @@ func testDatasourceTwingateResource(networkName, resourceName string) string {
 	`, networkName, resourceName)
 }
 
-func TestAccDatasourceTwingateResource_negative(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Resource - does not exists", func(t *testing.T) {
-		resourceID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Resource:%d", acctest.RandInt())))
+func TestAccDatasourceTwingateResource_ResourceDoesNotExists(t *testing.T) {
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
+	resourceID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Resource:%d", acctest.RandInt())))
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testTwingateResourceDoesNotExists(resourceID),
+				ExpectError: regexp.MustCompile("failed to read resource with id"),
 			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateResourceDoesNotExists(resourceID),
-					ExpectError: regexp.MustCompile("failed to read resource with id"),
-				},
-			},
-		})
+		},
 	})
 }
 
@@ -95,20 +95,20 @@ func testTwingateResourceDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateResource_invalidID(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Resource - failed parse resource ID", func(t *testing.T) {
-		networkID := acctest.RandString(10)
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
+	networkID := acctest.RandString(10)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testTwingateResourceDoesNotExists(networkID),
+				ExpectError: regexp.MustCompile("failed to read resource with id"),
 			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateResourceDoesNotExists(networkID),
-					ExpectError: regexp.MustCompile("failed to read resource with id"),
-				},
-			},
-		})
+		},
 	})
 }

@@ -30,6 +30,8 @@ var (
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test1"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -55,6 +57,8 @@ func TestAccTwingateResourceCreate(t *testing.T) {
 }
 
 func TestAccTwingateResourceUpdateProtocols(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test1u"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -124,6 +128,8 @@ func createResourceWithSimpleProtocols(terraformResourceName, networkName, resou
 }
 
 func TestAccTwingateResourceCreateWithProtocolsAndGroups(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test2"
 	remoteNetworkName := test.RandomName()
 	groupName1 := test.RandomGroupName()
@@ -190,6 +196,8 @@ func createResourceWithProtocolsAndGroups(networkName, groupName1, groupName2, r
 }
 
 func TestAccTwingateResourceFullCreationFlow(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test3"
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
@@ -262,6 +270,8 @@ func resourceFullCreationFlow(networkName, groupName, resourceName string) strin
 }
 
 func TestAccTwingateResourceWithInvalidGroupId(t *testing.T) {
+	t.Parallel()
+
 	resourceName := test.RandomResourceName()
 	networkName := test.RandomResourceName()
 
@@ -299,6 +309,8 @@ func createResourceWithInvalidGroupId(networkName, resourceName string) string {
 }
 
 func TestAccTwingateResourceWithTcpDenyAllPolicy(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test5"
 	resourceName := test.RandomResourceName()
 	networkName := test.RandomResourceName()
@@ -356,6 +368,8 @@ func createResourceWithTcpDenyAllPolicy(networkName, groupName, resourceName str
 }
 
 func TestAccTwingateResourceWithUdpDenyAllPolicy(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test6"
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
@@ -413,6 +427,8 @@ func createResourceWithUdpDenyAllPolicy(networkName, groupName, resourceName str
 }
 
 func TestAccTwingateResourceWithDenyAllPolicyAndEmptyPortsList(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test7"
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
@@ -473,6 +489,8 @@ func createResourceWithDenyAllPolicyAndEmptyPortsList(networkName, groupName, re
 }
 
 func TestAccTwingateResourceWithInvalidPortRange(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 	expectedError := regexp.MustCompile("failed to parse protocols port range")
@@ -546,6 +564,8 @@ func createResourceWithRestrictedPolicyAndPortRange(networkName, resourceName, p
 }
 
 func TestAccTwingateResourcePortReorderingCreatesNoChanges(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test9"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -612,6 +632,8 @@ func createResourceWithPortRange(networkName, resourceName, portRange string) st
 }
 
 func TestAccTwingateResourcePortsRepresentationChanged(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test9"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -633,6 +655,8 @@ func TestAccTwingateResourcePortsRepresentationChanged(t *testing.T) {
 }
 
 func TestAccTwingateResourcePortsNotChanged(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test9"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -662,6 +686,8 @@ func TestAccTwingateResourcePortsNotChanged(t *testing.T) {
 }
 
 func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test9"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -706,6 +732,8 @@ func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
 }
 
 func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test10"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -738,6 +766,8 @@ func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 }
 
 func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test10"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -767,6 +797,8 @@ func TestAccTwingateResourceReCreateAfterDeletion(t *testing.T) {
 }
 
 func TestAccTwingateResourceImport(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test12"
 	remoteNetworkName := test.RandomName()
 	groupName := test.RandomGroupName()
@@ -885,6 +917,8 @@ func newTerraformGroup(resourceName, groupName string) string {
 }
 
 func TestAccTwingateResourceAddAccessServiceAccounts(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test15"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -942,6 +976,8 @@ func createResource15(networkName, resourceName string, terraformServiceAccount 
 }
 
 func TestAccTwingateResourceAddAccessGroupsAndServiceAccounts(t *testing.T) {
+	t.Parallel()
+
 	const theResource = "twingate_resource.test16"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1101,6 +1137,7 @@ func createResource16WithoutGroups(networkName, resourceName string, groups, gro
 
 func TestAccTwingateResourceAccessServiceAccountsNotAuthoritative(t *testing.T) {
 	t.Parallel()
+
 	const theResource = "twingate_resource.test17"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1214,6 +1251,7 @@ func createResource17(networkName, resourceName string, serviceAccounts, service
 
 func TestAccTwingateResourceAccessServiceAccountsAuthoritative(t *testing.T) {
 	t.Parallel()
+
 	const theResource = "twingate_resource.test13"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1324,6 +1362,8 @@ func createResource13(networkName, resourceName string, serviceAccounts, service
 }
 
 func TestAccTwingateResourceAccessWithEmptyGroups(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1371,6 +1411,8 @@ func createResource18(networkName, resourceName string) string {
 }
 
 func TestAccTwingateResourceAccessWithEmptyServiceAccounts(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1418,6 +1460,8 @@ func createResource19(networkName, resourceName string) string {
 }
 
 func TestAccTwingateResourceAccessWithEmptyBlock(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -1465,6 +1509,7 @@ func createResource20(networkName, resourceName string) string {
 
 func TestAccTwingateResourceAccessGroupsNotAuthoritative(t *testing.T) {
 	t.Parallel()
+
 	const theResource = "twingate_resource.test22"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1578,6 +1623,7 @@ func createResource22(networkName, resourceName string, groups, groupsID []strin
 
 func TestAccTwingateResourceAccessGroupsAuthoritative(t *testing.T) {
 	t.Parallel()
+
 	const theResource = "twingate_resource.test23"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1687,6 +1733,8 @@ func createResource23(networkName, resourceName string, groups, groupsID []strin
 }
 
 func TestGetResourceNameFromID(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		input    string
 		expected string
@@ -1712,6 +1760,8 @@ func TestGetResourceNameFromID(t *testing.T) {
 }
 
 func TestAccTwingateCreateResourceWithFlagIsVisible(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test24"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -1784,6 +1834,8 @@ func createResourceWithFlagIsVisible(terraformResourceName, networkName, resourc
 }
 
 func TestAccTwingateCreateResourceWithFlagIsBrowserShortcutEnabled(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test25"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -1854,6 +1906,7 @@ func createResourceWithFlagIsBrowserShortcutEnabled(terraformResourceName, netwo
 
 func TestAccTwingateResourceGroupsAuthoritativeByDefault(t *testing.T) {
 	t.Parallel()
+
 	const theResource = "twingate_resource.test26"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -1962,6 +2015,8 @@ func createResource26(networkName, resourceName string, groups, groupsID []strin
 }
 
 func TestAccTwingateResourceDoesNotSupportOldGroups(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -2011,6 +2066,8 @@ func createResource28(networkName, resourceName string, groups, groupsID []strin
 }
 
 func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test29"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2049,6 +2106,8 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 }
 
 func TestAccTwingateResourceUpdateWithInvalidAlias(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test29_update_invalid"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2074,6 +2133,8 @@ func TestAccTwingateResourceUpdateWithInvalidAlias(t *testing.T) {
 }
 
 func TestAccTwingateResourceCreateWithInvalidAlias(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test29_create_invalid"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -2120,7 +2181,7 @@ func createResource29WithoutAlias(terraformResourceName, networkName, resourceNa
 }
 
 func TestAccTwingateResourceGroupsCursor(t *testing.T) {
-	acctests.SetPageLimit(1)
+	t.Parallel()
 
 	const terraformResourceName = "test27"
 	theResource := acctests.TerraformResource(terraformResourceName)
@@ -2199,6 +2260,8 @@ func createResourceWithGroupsAndServiceAccounts(name, networkName, resourceName 
 }
 
 func TestAccTwingateResourceCreateWithPort(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 
@@ -2251,6 +2314,8 @@ func createResourceWithPort(networkName, resourceName, port string) string {
 }
 
 func TestAccTwingateResourceUpdateWithPort(t *testing.T) {
+	t.Parallel()
+
 	theResource := acctests.TerraformResource("test30")
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -2275,6 +2340,8 @@ func TestAccTwingateResourceUpdateWithPort(t *testing.T) {
 }
 
 func TestAccTwingateResourceWithPortsFailsForAllowAllAndDenyAllPolicy(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test28"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -2321,6 +2388,8 @@ func createResourceWithPorts(name, networkName, resourceName, policy string) str
 }
 
 func TestAccTwingateResourceWithoutPortsOkForAllowAllAndDenyAllPolicy(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test29"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -2375,6 +2444,8 @@ func createResourceWithoutPorts(name, networkName, resourceName, policy string) 
 }
 
 func TestAccTwingateResourceWithRestrictedPolicy(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test30"
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -2398,6 +2469,8 @@ func TestAccTwingateResourceWithRestrictedPolicy(t *testing.T) {
 }
 
 func TestAccTwingateResourcePolicyTransitionDenyAllToRestricted(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test31"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2429,6 +2502,8 @@ func TestAccTwingateResourcePolicyTransitionDenyAllToRestricted(t *testing.T) {
 }
 
 func TestAccTwingateResourcePolicyTransitionDenyAllToAllowAll(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test32"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2460,6 +2535,8 @@ func TestAccTwingateResourcePolicyTransitionDenyAllToAllowAll(t *testing.T) {
 }
 
 func TestAccTwingateResourcePolicyTransitionRestrictedToDenyAll(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test33"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2491,6 +2568,8 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToDenyAll(t *testing.T) {
 }
 
 func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAll(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test34"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2522,6 +2601,8 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAll(t *testing.T) {
 }
 
 func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAllWithPortsShouldFail(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test35"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2549,6 +2630,8 @@ func TestAccTwingateResourcePolicyTransitionRestrictedToAllowAllWithPortsShouldF
 }
 
 func TestAccTwingateResourcePolicyTransitionAllowAllToRestricted(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test36"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2580,6 +2663,8 @@ func TestAccTwingateResourcePolicyTransitionAllowAllToRestricted(t *testing.T) {
 }
 
 func TestAccTwingateResourcePolicyTransitionAllowAllToDenyAll(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test37"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2611,6 +2696,8 @@ func TestAccTwingateResourcePolicyTransitionAllowAllToDenyAll(t *testing.T) {
 }
 
 func TestAccTwingateResourceTestCaseInsensitiveAlias(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test38"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2643,6 +2730,8 @@ func TestAccTwingateResourceTestCaseInsensitiveAlias(t *testing.T) {
 }
 
 func TestAccTwingateResourceWithBrowserOption(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test40"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2675,6 +2764,8 @@ func TestAccTwingateResourceWithBrowserOption(t *testing.T) {
 }
 
 func TestAccTwingateResourceWithBrowserOptionFailOnUpdate(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test41"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2708,6 +2799,8 @@ func TestAccTwingateResourceWithBrowserOptionFailOnUpdate(t *testing.T) {
 }
 
 func TestAccTwingateResourceWithBrowserOptionRecovered(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "test42"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2737,6 +2830,8 @@ func TestAccTwingateResourceWithBrowserOptionRecovered(t *testing.T) {
 }
 
 func TestAccTwingateResourceWithBrowserOptionIP(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "testIPWithBrowserOption"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2771,6 +2866,8 @@ func TestAccTwingateResourceWithBrowserOptionIP(t *testing.T) {
 }
 
 func TestAccTwingateResourceWithBrowserOptionCIDR(t *testing.T) {
+	t.Parallel()
+
 	const terraformResourceName = "testCIDRWithBrowserOption"
 	theResource := acctests.TerraformResource(terraformResourceName)
 	remoteNetworkName := test.RandomName()
@@ -2857,6 +2954,8 @@ func createResourceWithoutSecurityPolicy(remoteNetwork, resource string) string 
 }
 
 func TestAccTwingateResourceUpdateWithDefaultProtocols(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 	theResource := acctests.TerraformResource(resourceName)
@@ -2920,6 +3019,8 @@ func createResourceWithoutProtocols(remoteNetwork, resource string) string {
 }
 
 func TestAccTwingateResourceUpdatePortsFromEmptyListToNull(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 	theResource := acctests.TerraformResource(resourceName)
@@ -2945,6 +3046,8 @@ func TestAccTwingateResourceUpdatePortsFromEmptyListToNull(t *testing.T) {
 }
 
 func TestAccTwingateResourceUpdatePortsFromNullToEmptyList(t *testing.T) {
+	t.Parallel()
+
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
 	theResource := acctests.TerraformResource(resourceName)
