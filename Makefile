@@ -7,6 +7,8 @@ OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate/internal/test/sweepers
+GOLINT_VERSION=v1.61.0
+GOSEC_VERSION=2.21.4
 
 
 check_defined = \
@@ -68,26 +70,21 @@ fmtcheck:
 	@sh -c $(CURDIR)/scripts/gofmtcheck.sh
 
 .PHONY: lint
-lint: tools
+lint:
 	@echo "==> Checking source code against linters..."
-	@$(GOBINPATH)/golangci-lint run -c golangci.yml ./$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run -c /app/golangci.yml ./$(PKG_NAME)/...
+
 
 .PHONY: lint-fix
-lint-fix: tools
+lint-fix:
 	@echo "==> Checking source code against linters with fix enabled..."
-	@$(GOBINPATH)/golangci-lint run --fix -c golangci.yml ./$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run --fix -c /app/golangci.yml ./$(PKG_NAME)/...
 
 .PHONY: sec
-sec: tools
+sec:
 	@echo "==> Checking source code against security issues..."
-	go run github.com/securego/gosec/v2/cmd/gosec ./$(PKG_NAME)/...
+	docker run -t --rm -e GOFLAGS=-buildvcs=false -v $(PWD):/app -w /app securego/gosec:$(GOSEC_VERSION) gosec ./$(PKG_NAME)/...
 
-
-.PHONY: doc-tools
-docs: doc-tools
+.PHONY: docs
+docs:
 	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
-
-.PHONY: tools
-tools:
-	@echo "==> installing required tools ..."
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
