@@ -6,6 +6,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -27,6 +28,11 @@ type connectorModel struct {
 	Name                 types.String `tfsdk:"name"`
 	RemoteNetworkID      types.String `tfsdk:"remote_network_id"`
 	StatusUpdatesEnabled types.Bool   `tfsdk:"status_updates_enabled"`
+	State                types.String `tfsdk:"state"`
+	Hostname             types.String `tfsdk:"hostname"`
+	Version              types.String `tfsdk:"version"`
+	PublicIP             types.String `tfsdk:"public_ip"`
+	PrivateIPs           types.Set    `tfsdk:"private_ips"`
 }
 
 func (d *connector) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -72,6 +78,27 @@ func (d *connector) Schema(ctx context.Context, req datasource.SchemaRequest, re
 				Computed:    true,
 				Description: "Determines whether status notifications are enabled for the Connector.",
 			},
+			attr.State: schema.StringAttribute{
+				Computed:    true,
+				Description: "The Connector's state. One of `ALIVE`, `DEAD_NO_HEARTBEAT`, `DEAD_HEARTBEAT_TOO_OLD` or `DEAD_NO_RELAYS`.",
+			},
+			attr.Hostname: schema.StringAttribute{
+				Computed:    true,
+				Description: "The hostname of the machine hosting the Connector.",
+			},
+			attr.Version: schema.StringAttribute{
+				Computed:    true,
+				Description: "The Connector's version.",
+			},
+			attr.PublicIP: schema.StringAttribute{
+				Computed:    true,
+				Description: "The Connector's public IP address.",
+			},
+			attr.PrivateIPs: schema.SetAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "The Connector's private IP addresses.",
+			},
 		},
 	}
 }
@@ -96,6 +123,11 @@ func (d *connector) Read(ctx context.Context, req datasource.ReadRequest, resp *
 	data.Name = types.StringValue(connector.Name)
 	data.RemoteNetworkID = types.StringValue(connector.NetworkID)
 	data.StatusUpdatesEnabled = types.BoolPointerValue(connector.StatusUpdatesEnabled)
+	data.State = types.StringValue(connector.State)
+	data.Version = types.StringValue(connector.Version)
+	data.Hostname = types.StringValue(connector.Hostname)
+	data.PublicIP = types.StringValue(connector.PublicIP)
+	data.PrivateIPs = utils.MakeStringSet(connector.PrivateIPs)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
