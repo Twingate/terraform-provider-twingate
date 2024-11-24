@@ -12,26 +12,24 @@ import (
 var securityPolicyNamePath = attr.Path(attr.SecurityPolicies, attr.Name)
 
 func TestAccDatasourceTwingateSecurityPoliciesBasic(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Security Policies - basic", func(t *testing.T) {
-		acctests.SetPageLimit(1)
+	t.Parallel()
 
-		securityPolicies, err := acctests.ListSecurityPolicies()
-		if err != nil {
-			t.Skip("can't run test:", err)
-		}
+	securityPolicies, err := acctests.ListSecurityPolicies()
+	if err != nil {
+		t.Skip("can't run test:", err)
+	}
 
-		sdk.Test(t, sdk.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			Steps: []sdk.TestStep{
-				{
-					Config: testDatasourceTwingateSecurityPolicies(),
-					Check: acctests.ComposeTestCheckFunc(
-						sdk.TestCheckResourceAttr("data.twingate_security_policies.all", attr.Len(attr.SecurityPolicies), fmt.Sprintf("%d", len(securityPolicies))),
-					),
-				},
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []sdk.TestStep{
+			{
+				Config: testDatasourceTwingateSecurityPolicies(),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr("data.twingate_security_policies.all", attr.Len(attr.SecurityPolicies), fmt.Sprintf("%d", len(securityPolicies))),
+				),
 			},
-		})
+		},
 	})
 }
 

@@ -339,6 +339,19 @@ func (client *Client) mutate(ctx context.Context, resp MutationResponse, variabl
 	return nil
 }
 
+func (client *Client) mutateWithTimeout(ctx context.Context, resp MutationResponse, variables map[string]any, opr operation, attrs ...attr) error {
+	var err error
+
+	for i := 0; i == 0 || err != nil && (strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "deadline")) && i < defaultQueryRetries; i++ {
+		timeoutCtx, cancel := context.WithTimeout(ctx, defaultQueryTimeout)
+		err = client.mutate(timeoutCtx, resp, variables, opr, attrs...)
+
+		cancel()
+	}
+
+	return err
+}
+
 type ResponseWithPayload interface {
 	IsEmpty() bool
 }

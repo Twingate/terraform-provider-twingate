@@ -13,24 +13,24 @@ import (
 )
 
 func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Connector Basic", func(t *testing.T) {
-		networkName := test.RandomName()
-		connectorName := test.RandomConnectorName()
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testDatasourceTwingateConnector(networkName, connectorName),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckOutput("my_connector", connectorName),
-						resource.TestCheckOutput("my_connector_notification_status", "true"),
-					),
-				},
+	networkName := test.RandomName()
+	connectorName := test.RandomConnectorName()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateConnectorDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateConnector(networkName, connectorName),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckOutput("my_connector", connectorName),
+					resource.TestCheckOutput("my_connector_notification_status", "true"),
+				),
 			},
-		})
+		},
 	})
 }
 
@@ -59,21 +59,21 @@ func testDatasourceTwingateConnector(remoteNetworkName, connectorName string) st
 }
 
 func TestAccDatasourceTwingateConnector_negative(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Connector - does not exists", func(t *testing.T) {
-		connectorID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Connector:%d", acctest.RandInt())))
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
+	connectorID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Connector:%d", acctest.RandInt())))
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testTwingateConnectorDoesNotExists(connectorID),
+				ExpectError: regexp.MustCompile("failed to read connector with id"),
 			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateConnectorDoesNotExists(connectorID),
-					ExpectError: regexp.MustCompile("failed to read connector with id"),
-				},
-			},
-		})
+		},
 	})
 }
 
@@ -90,20 +90,20 @@ func testTwingateConnectorDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateConnector_invalidID(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Connector - failed parse ID", func(t *testing.T) {
-		connectorID := acctest.RandString(10)
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
+	connectorID := acctest.RandString(10)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testTwingateConnectorDoesNotExists(connectorID),
+				ExpectError: regexp.MustCompile("failed to read connector with id"),
 			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateConnectorDoesNotExists(connectorID),
-					ExpectError: regexp.MustCompile("failed to read connector with id"),
-				},
-			},
-		})
+		},
 	})
 }
