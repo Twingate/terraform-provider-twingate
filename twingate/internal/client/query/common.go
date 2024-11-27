@@ -9,6 +9,10 @@ type IDName struct {
 	Name string     `json:"name"`
 }
 
+func (node IDName) GetID() string {
+	return string(node.ID)
+}
+
 type OkError struct {
 	Ok    bool   `json:"ok"`
 	Error string `json:"error"`

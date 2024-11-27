@@ -3667,3 +3667,127 @@ func TestAccTwingateWithMultipleGroups(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateResourceWithDLPPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithDLPPolicy(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.DLPPolicyID),
+					sdk.TestCheckResourceAttrSet(theResource, attr.Path(attr.AccessGroup, attr.DLPPolicyID)),
+				),
+			},
+			{
+				Config: resourceWithoutDLPPolicy(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, attr.DLPPolicyID),
+					sdk.TestCheckNoResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.DLPPolicyID)),
+					acctests.CheckTwingateResourceHasNoDLPPolicy(theResource),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithDLPPolicy(remoteNetwork, resource, groupName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	data "twingate_dlp_policy" "test" {
+	  name = "Test"
+	}
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+
+	  dlp_policy_id = data.twingate_dlp_policy.test.id
+	  
+	  access_group {
+		group_id = twingate_group.g21.id
+		dlp_policy_id = data.twingate_dlp_policy.test.id
+      }
+	}
+	`, remoteNetwork, resource, groupName)
+}
+
+func resourceWithoutDLPPolicy(remoteNetwork, resource, groupName string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+
+	  access_group {
+		group_id = twingate_group.g21.id
+      }
+	}
+	`, remoteNetwork, resource, groupName)
+}
+
+func TestAccTwingateResourceUpdateDLPPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithDLPPolicy(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.DLPPolicyID),
+				),
+			},
+			{
+				Config:             createResourceWithDLPPolicy(remoteNetworkName, resourceName, groupName),
+				ExpectNonEmptyPlan: true,
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.DLPPolicyID),
+					// deletes DLP policy from resource via API
+					acctests.DeleteResourceDLPPolicy(theResource),
+					acctests.WaitTestFunc(),
+				),
+			},
+			{
+				Config: createResourceWithDLPPolicy(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.DLPPolicyID),
+				),
+			},
+		},
+	})
+}

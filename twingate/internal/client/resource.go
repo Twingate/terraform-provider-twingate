@@ -70,6 +70,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlNullableID(input.DLPPolicyID, "dlpPolicyId"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -94,6 +95,10 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 
 	if input.SecurityPolicyID != nil && *input.SecurityPolicyID == "" {
 		resource.SecurityPolicyID = input.SecurityPolicyID
+	}
+
+	if input.DLPPolicyID == nil {
+		resource.DLPPolicyID = nil
 	}
 
 	return resource, nil
@@ -253,6 +258,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlNullableID(input.DLPPolicyID, "dlpPolicyId"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -375,6 +381,7 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 type AccessInput struct {
 	PrincipalID                    string  `json:"principalId"`
 	SecurityPolicyID               *string `json:"securityPolicyId"`
+	DLPPolicyID                    *string `json:"dlpPolicyId"`
 	UsageBasedAutolockDurationDays *int64  `json:"usageBasedAutolockDurationDays"`
 }
 
@@ -397,6 +404,29 @@ func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, 
 	)
 
 	response := query.AddResourceAccess{}
+
+	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
+}
+
+func (client *Client) SetResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {
+	opr := resourceResourceAccess.update()
+
+	if len(access) == 0 {
+		return nil
+	}
+
+	if resourceID == "" {
+		return opr.apiError(ErrGraphqlIDIsEmpty)
+	}
+
+	invalidateResource[*model.Resource](resourceID)
+
+	variables := newVars(
+		gqlID(resourceID),
+		gqlNullable(access, "access"),
+	)
+
+	response := query.SetResourceAccess{}
 
 	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
 }

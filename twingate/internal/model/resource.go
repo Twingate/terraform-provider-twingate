@@ -24,11 +24,13 @@ var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 type AccessGroup struct {
 	GroupID            string
 	SecurityPolicyID   *string
+	DLPPolicyID        *string
 	UsageBasedDuration *int64
 }
 
 func (g AccessGroup) Equals(another AccessGroup) bool {
 	if g.GroupID == another.GroupID &&
+		equalsOptionalString(g.DLPPolicyID, another.DLPPolicyID) &&
 		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
 		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) {
 		return true
@@ -59,6 +61,7 @@ type Resource struct {
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
 	SecurityPolicyID         *string
+	DLPPolicyID              *string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {

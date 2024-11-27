@@ -75,6 +75,7 @@ type resourceModel struct {
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+	DLPPolicyID              types.String `tfsdk:"dlp_policy_id"`
 }
 
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -177,6 +178,10 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description:   "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.",
 				Default:       stringdefault.StaticString(DefaultSecurityPolicyID),
 				PlanModifiers: []planmodifier.String{UseDefaultPolicyForUnknownModifier()},
+			},
+			attr.DLPPolicyID: schema.StringAttribute{
+				Optional:    true,
+				Description: "The ID of a DLP policy to be used as the default DLP policy for this Resource. Defaults to null.",
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
@@ -300,6 +305,10 @@ func groupAccessBlock() schema.SetNestedBlock {
 					PlanModifiers: []planmodifier.Int64{
 						UseNullIntWhenValueOmitted(),
 					},
+				},
+				attr.DLPPolicyID: schema.StringAttribute{
+					Optional:    true,
+					Description: "The ID of a DLP policy to be used as the DLP policy for the group in this access block.",
 				},
 			},
 		},
@@ -465,6 +474,7 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 		access = append(access, client.AccessInput{
 			PrincipalID:                    group.GroupID,
 			SecurityPolicyID:               group.SecurityPolicyID,
+			DLPPolicyID:                    group.DLPPolicyID,
 			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
 		})
 	}
@@ -512,6 +522,11 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
 		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
 			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
+		}
+
+		dlpPolicyVal := obj.Attributes()[attr.DLPPolicyID]
+		if dlpPolicyVal != nil && !dlpPolicyVal.IsNull() && !dlpPolicyVal.IsUnknown() {
+			accessGroup.DLPPolicyID = dlpPolicyVal.(types.String).ValueStringPointer()
 		}
 
 		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
@@ -594,6 +609,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
+		DLPPolicyID:              plan.DLPPolicyID.ValueStringPointer(),
 	}, nil
 }
 
@@ -869,7 +885,8 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.IsVisible.Equal(state.IsVisible) ||
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
 		!plan.Alias.Equal(state.Alias) ||
-		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID)
+		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
+		!plan.DLPPolicyID.Equal(state.DLPPolicyID)
 }
 
 func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state *resourceModel, input *model.Resource) error {
@@ -886,7 +903,43 @@ func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
+	if hasToResetDLPPolicy(groupsToAdd) {
+		res, err := r.client.ReadResource(ctx, input.ID)
+		if err != nil {
+			return fmt.Errorf("failed to fetch resource data: %w", err)
+		}
+
+		remoteGroups := overwriteDLPPolicies(res.GroupsAccess, groupsToAdd)
+		if err := r.client.SetResourceAccess(ctx, input.ID, convertResourceAccess(res.ServiceAccounts, remoteGroups)); err != nil {
+			return fmt.Errorf("failed to update resource access: %w", err)
+		}
+	}
+
 	return nil
+}
+
+func overwriteDLPPolicies(remoteGroups, groupsToAdd []model.AccessGroup) []model.AccessGroup {
+	setGroupsToAdd := convertAccessGroupsToMap(groupsToAdd)
+
+	for i, group := range remoteGroups {
+		if newGroup, ok := setGroupsToAdd[group.GroupID]; ok {
+			remoteGroups[i].DLPPolicyID = newGroup.DLPPolicyID
+		}
+	}
+
+	return remoteGroups
+}
+
+func hasToResetDLPPolicy(groupsToAdd []model.AccessGroup) bool {
+	if len(groupsToAdd) > 0 {
+		for _, group := range groupsToAdd {
+			if group.DLPPolicyID == nil {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state *resourceModel, resource *model.Resource) ([]string, []string, []model.AccessGroup, error) {
@@ -1000,6 +1053,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.IsActive = types.BoolValue(resource.IsActive)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
+	state.DLPPolicyID = types.StringPointerValue(resource.DLPPolicyID)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
@@ -1242,6 +1296,7 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 		attributes := map[string]tfattr.Value{
 			attr.GroupID:                        types.StringValue(access.GroupID),
 			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
+			attr.DLPPolicyID:                    types.StringPointerValue(access.DLPPolicyID),
 			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(access.UsageBasedDuration),
 		}
 
@@ -1332,6 +1387,7 @@ func accessGroupAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.GroupID:                        types.StringType,
 		attr.SecurityPolicyID:               types.StringType,
+		attr.DLPPolicyID:                    types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
 	}
 }
