@@ -28,6 +28,10 @@ func TestAccDatasourceTwingateConnector_basic(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckOutput("my_connector", connectorName),
 					resource.TestCheckOutput("my_connector_notification_status", "true"),
+					resource.TestCheckOutput("my_connector_state", "DEAD_NO_HEARTBEAT"),
+					resource.TestCheckOutput("my_connector_version", ""),
+					resource.TestCheckOutput("my_connector_hostname", ""),
+					resource.TestCheckOutput("my_connector_public_ip", ""),
 				),
 			},
 		},
@@ -55,6 +59,23 @@ func testDatasourceTwingateConnector(remoteNetworkName, connectorName string) st
 	output "my_connector_notification_status" {
 	  value = data.twingate_connector.out_dc1.status_updates_enabled
 	}
+
+	output "my_connector_state" {
+	  value = data.twingate_connector.out_dc1.state
+	}
+
+	output "my_connector_version" {
+	  value = data.twingate_connector.out_dc1.version
+	}
+
+	output "my_connector_hostname" {
+	  value = data.twingate_connector.out_dc1.hostname
+	}
+
+	output "my_connector_public_ip" {
+	  value = data.twingate_connector.out_dc1.public_ip
+	}
+
 	`, remoteNetworkName, connectorName)
 }
 

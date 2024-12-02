@@ -58,6 +58,7 @@ func (d *connectors) Configure(ctx context.Context, req datasource.ConfigureRequ
 	d.client = client
 }
 
+//nolint:funlen
 func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Connectors provide connectivity to Remote Networks. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/understanding-access-nodes).",
@@ -113,6 +114,27 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 						attr.StatusUpdatesEnabled: schema.BoolAttribute{
 							Computed:    true,
 							Description: "Determines whether status notifications are enabled for the Connector.",
+						},
+						attr.State: schema.StringAttribute{
+							Computed:    true,
+							Description: "The Connector's state. One of `ALIVE`, `DEAD_NO_HEARTBEAT`, `DEAD_HEARTBEAT_TOO_OLD` or `DEAD_NO_RELAYS`.",
+						},
+						attr.Hostname: schema.StringAttribute{
+							Computed:    true,
+							Description: "The hostname of the machine hosting the Connector.",
+						},
+						attr.Version: schema.StringAttribute{
+							Computed:    true,
+							Description: "The Connector's version.",
+						},
+						attr.PublicIP: schema.StringAttribute{
+							Computed:    true,
+							Description: "The Connector's public IP address.",
+						},
+						attr.PrivateIPs: schema.SetAttribute{
+							Computed:    true,
+							ElementType: types.StringType,
+							Description: "The Connector's private IP addresses.",
 						},
 					},
 				},

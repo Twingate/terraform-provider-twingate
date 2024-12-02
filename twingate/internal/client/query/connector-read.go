@@ -15,6 +15,11 @@ type gqlConnector struct {
 		ID graphql.ID
 	}
 	HasStatusNotificationsEnabled bool
+	Hostname                      string
+	State                         string
+	Version                       string
+	PublicIP                      string   `graphql:"publicIP"`
+	PrivateIPs                    []string `graphql:"privateIPs"`
 }
 
 func (q ReadConnector) IsEmpty() bool {
@@ -35,5 +40,10 @@ func (c gqlConnector) ToModel() *model.Connector {
 		Name:                 c.Name,
 		NetworkID:            string(c.RemoteNetwork.ID),
 		StatusUpdatesEnabled: &c.HasStatusNotificationsEnabled,
+		State:                c.State,
+		Hostname:             c.Hostname,
+		Version:              c.Version,
+		PublicIP:             c.PublicIP,
+		PrivateIPs:           c.PrivateIPs,
 	}
 }

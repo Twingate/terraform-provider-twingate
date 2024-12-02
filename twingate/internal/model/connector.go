@@ -7,6 +7,11 @@ type Connector struct {
 	Name                 string
 	NetworkID            string
 	StatusUpdatesEnabled *bool
+	State                string
+	Version              string
+	Hostname             string
+	PublicIP             string
+	PrivateIPs           []string
 }
 
 func (c Connector) GetName() string {
@@ -23,5 +28,10 @@ func (c Connector) ToTerraform() interface{} {
 		attr.Name:                 c.Name,
 		attr.RemoteNetworkID:      c.NetworkID,
 		attr.StatusUpdatesEnabled: *c.StatusUpdatesEnabled,
+		attr.State:                c.State,
+		attr.Version:              c.Version,
+		attr.Hostname:             c.Hostname,
+		attr.PublicIP:             c.PublicIP,
+		attr.PrivateIPs:           c.PrivateIPs,
 	}
 }
