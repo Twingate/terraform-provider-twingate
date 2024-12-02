@@ -3,6 +3,9 @@ package utils
 import (
 	"fmt"
 	"strings"
+
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Map - transform giving slice of items by applying the func.
@@ -74,4 +77,10 @@ func DocList(items []string) string {
 
 		return fmt.Sprintf("%s or %s", strings.Join(items[:n-1], ", "), last)
 	}
+}
+
+func MakeStringSet(values []string) types.Set {
+	return types.SetValueMust(types.StringType, Map(values, func(value string) tfattr.Value {
+		return types.StringValue(value)
+	}))
 }
