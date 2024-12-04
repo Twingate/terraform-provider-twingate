@@ -1,4 +1,4 @@
-name: Bug Report
+name: Feature Request 
 description: Propose a new feature for Twingate's Terraform provider
 title: "[Feature] "
 labels: ["enhancement"]
