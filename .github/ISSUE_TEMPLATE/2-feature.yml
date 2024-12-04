@@ -1,0 +1,35 @@
+name: Bug Report
+description: Propose a new feature for Twingate's Terraform provider
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose a new feature for Twingate's Terraform provider.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: In 1-sentence, describe your feature request 
+      placeholder: Order a pizza using Terraform
+    validations:
+      required: true 
+  - type: textarea
+    id: details
+    attributes:
+      label: Rationale
+      description: Why is this useful? How should it work?
+      placeholder: Tell us more!
+      value: |
+        ### Why this is useful
+
+        ### How it should work
+    validations:
+      required: true
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: Any additional information you think may be helpful
+
