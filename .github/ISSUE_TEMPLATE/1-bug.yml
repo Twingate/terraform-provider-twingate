@@ -1,0 +1,59 @@
+name: Bug Report
+description: Report a bug related to Twingate's Terraform provider
+title: "[Bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a bug related to Twingate's Terraform provider.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: In 1-sentence, what happened?
+      placeholder: Terraform set my laptop on fire
+    validations:
+      required: true 
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen?
+      placeholder: Describe what happened
+      value: |
+        ### Steps to reproduce
+
+        ### Actual outcome
+        
+        ### Expected outcome
+    validations:
+      required: true
+  - type: input
+    id: provider-version
+    attributes:
+      label: Twingate provider version
+      description: Your provider version
+      placeholder: v3.0.0
+    validations:
+      required: true
+  - type: input
+    id: terraform-version
+    attributes:
+      label: Terraform version
+      description: Output of `terraform -v`
+      placeholder: Terraform v1.10.0
+    validations:
+      required: true
+  - type: textarea
+    id: terraform-output
+    attributes:
+      label: Terraform output
+      description: Any relevant Terraform output (formatted as shell output)
+      render: shell
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: Any additional information you think may be helpful
+
