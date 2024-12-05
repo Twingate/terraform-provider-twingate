@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
@@ -126,6 +128,36 @@ func TestDocList(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case: %d", n), func(t *testing.T) {
 			actual := utils.DocList(c.items)
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestMakeStringSet(t *testing.T) {
+	type testCase struct {
+		items    []string
+		expected types.Set
+	}
+
+	cases := []testCase{
+		{
+			items:    []string{},
+			expected: types.SetValueMust(types.StringType, []attr.Value{}),
+		},
+		{
+			items: []string{"1", "2", "3"},
+			expected: types.SetValueMust(types.StringType, []attr.Value{
+				types.StringValue("1"),
+				types.StringValue("2"),
+				types.StringValue("3"),
+			}),
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case: %d", n), func(t *testing.T) {
+			actual := utils.MakeStringSet(c.items)
 
 			assert.Equal(t, c.expected, actual)
 		})

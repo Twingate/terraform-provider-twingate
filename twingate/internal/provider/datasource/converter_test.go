@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -26,13 +27,18 @@ func TestConverterConnectorsToTerraform(t *testing.T) {
 		},
 		{
 			input: []*model.Connector{
-				{ID: "connector-id", Name: "connector-name", NetworkID: "network-id", StatusUpdatesEnabled: &boolTrue},
+				{ID: "connector-id", Name: "connector-name", NetworkID: "network-id", StatusUpdatesEnabled: &boolTrue, State: "ALIVE"},
 			},
 			expected: []connectorModel{
 				{
 					Name:                 types.StringValue("connector-name"),
 					RemoteNetworkID:      types.StringValue("network-id"),
 					StatusUpdatesEnabled: types.BoolValue(true),
+					State:                types.StringValue("ALIVE"),
+					Hostname:             types.StringValue(""),
+					Version:              types.StringValue(""),
+					PublicIP:             types.StringValue(""),
+					PrivateIPs:           types.SetValueMust(types.StringType, []attr.Value{}),
 				},
 			},
 		},
