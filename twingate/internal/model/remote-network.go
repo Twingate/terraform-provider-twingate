@@ -8,6 +8,9 @@ const (
 	LocationGoogleCloud = "GOOGLE_CLOUD"
 	LocationOnPremise   = "ON_PREMISE"
 	LocationOther       = "OTHER"
+
+	NetworkTypeExit    = "EXIT"
+	NetworkTypeRegular = "REGULAR"
 )
 
 var Locations = []string{LocationAWS, LocationAzure, LocationGoogleCloud, LocationOnPremise, LocationOther} //nolint

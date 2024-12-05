@@ -7,14 +7,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-const resourceRemoteNetwork = "twingate_remote_network"
+const resourceExitNetwork = "twingate_exit_network"
 
 func init() {
-	resource.AddTestSweepers(resourceRemoteNetwork, &resource.Sweeper{
-		Name: resourceRemoteNetwork,
-		F: newTestSweeper(resourceRemoteNetwork,
+	resource.AddTestSweepers(resourceExitNetwork, &resource.Sweeper{
+		Name: resourceExitNetwork,
+		F: newTestSweeper(resourceExitNetwork,
 			func(client *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := client.ReadRemoteNetworks(ctx, "", "", false)
+				resources, err := client.ReadRemoteNetworks(ctx, "", "", true)
 				if err != nil {
 					return nil, err
 				}

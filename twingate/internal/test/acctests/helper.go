@@ -201,6 +201,10 @@ func TerraformRemoteNetwork(name string) string {
 	return ResourceName(resource.TwingateRemoteNetwork, name)
 }
 
+func TerraformExitNetwork(name string) string {
+	return ResourceName(resource.TwingateExitNetwork, name)
+}
+
 func TerraformGroup(name string) string {
 	return ResourceName(resource.TwingateGroup, name)
 }
@@ -260,7 +264,7 @@ func deleteResource(resourceType, resourceID string) error {
 	switch resourceType {
 	case resource.TwingateResource:
 		err = providerClient.DeleteResource(context.Background(), resourceID)
-	case resource.TwingateRemoteNetwork:
+	case resource.TwingateRemoteNetwork, resource.TwingateExitNetwork:
 		err = providerClient.DeleteRemoteNetwork(context.Background(), resourceID)
 	case resource.TwingateGroup:
 		err = providerClient.DeleteGroup(context.Background(), resourceID)
@@ -557,9 +561,26 @@ func CheckTwingateRemoteNetworkDestroy(s *terraform.State) error {
 
 		remoteNetworkID := rs.Primary.ID
 
-		remoteNetwork, _ := providerClient.ReadRemoteNetworkByID(context.Background(), remoteNetworkID)
+		remoteNetwork, _ := providerClient.ReadRemoteNetworkByID(context.Background(), remoteNetworkID, false)
 		if remoteNetwork != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, remoteNetworkID)
+		}
+	}
+
+	return nil
+}
+
+func CheckTwingateExitNetworkDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateExitNetwork {
+			continue
+		}
+
+		exitNetworkID := rs.Primary.ID
+
+		exitNetwork, _ := providerClient.ReadRemoteNetworkByID(context.Background(), exitNetworkID, true)
+		if exitNetwork != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, exitNetworkID)
 		}
 	}
 

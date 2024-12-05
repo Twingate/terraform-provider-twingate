@@ -18,28 +18,28 @@ import (
 )
 
 // Ensure the implementation satisfies the desired interfaces.
-var _ datasource.DataSource = &remoteNetwork{}
+var _ datasource.DataSource = &exitNetwork{}
 
-func NewRemoteNetworkDatasource() datasource.DataSource {
-	return &remoteNetwork{}
+func NewExitNetworkDatasource() datasource.DataSource {
+	return &exitNetwork{}
 }
 
-type remoteNetwork struct {
+type exitNetwork struct {
 	client   *client.Client
 	exitNode bool
 }
 
-type remoteNetworkModel struct {
+type exitNetworkModel struct {
 	ID       types.String `tfsdk:"id"`
 	Name     types.String `tfsdk:"name"`
 	Location types.String `tfsdk:"location"`
 }
 
-func (d *remoteNetwork) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = TwingateRemoteNetwork
+func (d *exitNetwork) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = TwingateExitNetwork
 }
 
-func (d *remoteNetwork) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *exitNetwork) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -55,16 +55,16 @@ func (d *remoteNetwork) Configure(ctx context.Context, req datasource.ConfigureR
 	}
 
 	d.client = client
-	d.exitNode = false
+	d.exitNode = true
 }
 
-func (d *remoteNetwork) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *exitNetwork) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).",
+		Description: "TODO: Exit Networks behave similarly to Remote Networks. For more information, see Twingate's [documentation](https://www.twingate.com/docs/exit-networks).",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Optional:    true,
-				Description: "The ID of the Remote Network",
+				Description: "The ID of the Exit Network",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot(attr.Name),
@@ -73,7 +73,7 @@ func (d *remoteNetwork) Schema(ctx context.Context, req datasource.SchemaRequest
 			},
 			attr.Name: schema.StringAttribute{
 				Optional:    true,
-				Description: "The name of the Remote Network",
+				Description: "The name of the Exit Network",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot(attr.ID),
@@ -82,14 +82,14 @@ func (d *remoteNetwork) Schema(ctx context.Context, req datasource.SchemaRequest
 			},
 			attr.Location: schema.StringAttribute{
 				Computed:    true,
-				Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
+				Description: fmt.Sprintf("The location of the Exit Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
 			},
 		},
 	}
 }
 
-func (d *remoteNetwork) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data remoteNetworkModel
+func (d *exitNetwork) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data exitNetworkModel
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -100,7 +100,7 @@ func (d *remoteNetwork) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	network, err := d.client.ReadRemoteNetwork(ctx, data.ID.ValueString(), data.Name.ValueString(), d.exitNode)
 	if err != nil {
-		addErr(&resp.Diagnostics, err, TwingateRemoteNetwork)
+		addErr(&resp.Diagnostics, err, TwingateExitNetwork)
 
 		return
 	}

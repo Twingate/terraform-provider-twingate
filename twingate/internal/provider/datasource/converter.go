@@ -84,6 +84,16 @@ func convertRemoteNetworksToTerraform(networks []*model.RemoteNetwork) []remoteN
 	})
 }
 
+func convertExitNetworksToTerraform(networks []*model.RemoteNetwork) []exitNetworkModel {
+	return utils.Map(networks, func(network *model.RemoteNetwork) exitNetworkModel {
+		return exitNetworkModel{
+			ID:       types.StringValue(network.ID),
+			Name:     types.StringValue(network.Name),
+			Location: types.StringValue(network.Location),
+		}
+	})
+}
+
 func convertDomainsToTerraform(domains []string) *domainsModel {
 	return &domainsModel{
 		Domains: convertStringListToSet(domains),

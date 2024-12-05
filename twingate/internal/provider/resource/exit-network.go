@@ -20,52 +20,52 @@ import (
 )
 
 // Ensure the implementation satisfies the desired interfaces.
-var _ resource.Resource = &remoteNetwork{}
+var _ resource.Resource = &exitNetwork{}
 
-func NewRemoteNetworkResource() resource.Resource {
-	return &remoteNetwork{}
+func NewExitNetworkResource() resource.Resource {
+	return &exitNetwork{}
 }
 
-type remoteNetwork struct {
+type exitNetwork struct {
 	client   *client.Client
 	exitNode bool
 }
 
-type remoteNetworkModel struct {
+type exitNetworkModel struct {
 	ID       types.String `tfsdk:"id"`
 	Name     types.String `tfsdk:"name"`
 	Location types.String `tfsdk:"location"`
 }
 
-func (r *remoteNetwork) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = TwingateRemoteNetwork
+func (r *exitNetwork) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = TwingateExitNetwork
 }
 
-func (r *remoteNetwork) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *exitNetwork) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
 	r.client = req.ProviderData.(*client.Client)
-	r.exitNode = false
+	r.exitNode = true
 }
 
-func (r *remoteNetwork) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *exitNetwork) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
 }
 
-func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *exitNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).",
+		Description: "TODO: Exit Networks behave similarly to Remote Networks. For more information, see Twingate's [documentation](https://www.twingate.com/docs/exit-networks).",
 		Attributes: map[string]schema.Attribute{
 			attr.Name: schema.StringAttribute{
 				Required:    true,
-				Description: "The name of the Remote Network",
+				Description: "The name of the Exit Network",
 			},
 			attr.Location: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
+				Description: fmt.Sprintf("The location of the Exit Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.Locations...),
 				},
@@ -73,14 +73,14 @@ func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp
 			// computed
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the Remote Network",
+				Description: "The ID of the Exit Network",
 			},
 		},
 	}
 }
 
-func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan remoteNetworkModel
+func (r *exitNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan exitNetworkModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -97,13 +97,14 @@ func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, 
 	network, err := r.client.CreateRemoteNetwork(ctx, &model.RemoteNetwork{
 		Name:     plan.Name.ValueString(),
 		Location: location,
+		ExitNode: r.exitNode,
 	})
 
 	r.helper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
-func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state remoteNetworkModel
+func (r *exitNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state exitNetworkModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -116,8 +117,8 @@ func (r *remoteNetwork) Read(ctx context.Context, req resource.ReadRequest, resp
 	r.helper(ctx, network, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
-func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var state, plan remoteNetworkModel
+func (r *exitNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var state, plan exitNetworkModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -130,6 +131,7 @@ func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, 
 		ID:       state.ID.ValueString(),
 		Name:     plan.Name.ValueString(),
 		Location: plan.Location.ValueString(),
+		ExitNode: true,
 	}
 
 	if plan.Name == state.Name {
@@ -141,8 +143,8 @@ func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, 
 	r.helper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func (r *remoteNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state remoteNetworkModel
+func (r *exitNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state exitNetworkModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -151,10 +153,10 @@ func (r *remoteNetwork) Delete(ctx context.Context, req resource.DeleteRequest, 
 	}
 
 	err := r.client.DeleteRemoteNetwork(ctx, state.ID.ValueString())
-	addErr(&resp.Diagnostics, err, operationDelete, TwingateRemoteNetwork)
+	addErr(&resp.Diagnostics, err, operationDelete, TwingateExitNetwork)
 }
 
-func (r *remoteNetwork) helper(ctx context.Context, network *model.RemoteNetwork, state *remoteNetworkModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *exitNetwork) helper(ctx context.Context, network *model.RemoteNetwork, state *exitNetworkModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
@@ -163,7 +165,7 @@ func (r *remoteNetwork) helper(ctx context.Context, network *model.RemoteNetwork
 			return
 		}
 
-		addErr(diagnostics, err, operation, TwingateRemoteNetwork)
+		addErr(diagnostics, err, operation, TwingateExitNetwork)
 
 		return
 	}

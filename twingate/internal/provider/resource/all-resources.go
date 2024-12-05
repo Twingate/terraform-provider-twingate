@@ -2,6 +2,7 @@ package resource
 
 const (
 	TwingateRemoteNetwork       = "twingate_remote_network"
+	TwingateExitNetwork         = "twingate_exit_network"
 	TwingateConnector           = "twingate_connector"
 	TwingateConnectorTokens     = "twingate_connector_tokens"
 	TwingateGroup               = "twingate_group"

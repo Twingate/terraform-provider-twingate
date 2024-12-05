@@ -14,7 +14,8 @@ func (r ReadRemoteNetworkByID) IsEmpty() bool {
 
 type gqlRemoteNetwork struct {
 	IDName
-	Location string
+	Location    string
+	NetworkType string
 }
 
 func (g gqlRemoteNetwork) ToModel() *model.RemoteNetwork {
@@ -22,6 +23,7 @@ func (g gqlRemoteNetwork) ToModel() *model.RemoteNetwork {
 		ID:       string(g.ID),
 		Name:     g.Name,
 		Location: g.Location,
+		ExitNode: g.NetworkType == model.NetworkTypeExit,
 	}
 }
 

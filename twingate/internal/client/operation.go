@@ -16,6 +16,7 @@ const (
 	resourceConnectorToken      resource = "connector token"
 	resourceGroup               resource = "group"
 	resourceRemoteNetwork       resource = "remote network"
+	resourceExitNetwork         resource = "exit network"
 	resourceResource            resource = "resource"
 	resourceResourceAccess      resource = "resource access"
 	resourceSecurityPolicy      resource = "security policy"

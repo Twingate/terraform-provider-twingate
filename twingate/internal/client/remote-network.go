@@ -7,21 +7,18 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 )
 
-type (
-	RemoteNetworkLocation string
-	RemoteNetworkType     string
-)
+type RemoteNetworkLocation string
 
-func convertNetworkType(exitNodeNetwork bool) RemoteNetworkType {
-	if exitNodeNetwork {
-		return RemoteNetworkType("EXIT")
+func resolveNetworkResource(exitNode bool) resource {
+	if exitNode {
+		return resourceExitNetwork
 	}
 
-	return RemoteNetworkType("REGULAR")
+	return resourceRemoteNetwork
 }
 
 func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.RemoteNetwork) (*model.RemoteNetwork, error) {
-	opr := resourceRemoteNetwork.create()
+	opr := resolveNetworkResource(req.ExitNode).create()
 
 	if req.Name == "" {
 		return nil, opr.apiError(ErrGraphqlNetworkNameIsEmpty)
@@ -31,7 +28,7 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.Remote
 		gqlVar(req.Name, "name"),
 		gqlVar(true, "isActive"),
 		gqlVar(RemoteNetworkLocation(req.Location), "location"),
-		gqlVar(convertNetworkType(req.ExitNode), "networkType"),
+		gqlVar(query.ConvertNetworkType(req.ExitNode), "networkType"),
 	)
 
 	response := query.CreateRemoteNetwork{}
@@ -42,11 +39,11 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.Remote
 	return response.ToModel(), nil
 }
 
-func (client *Client) ReadRemoteNetworks(ctx context.Context, name, filter string) ([]*model.RemoteNetwork, error) {
-	opr := resourceRemoteNetwork.read()
+func (client *Client) ReadRemoteNetworks(ctx context.Context, name, filter string, exitNode bool) ([]*model.RemoteNetwork, error) {
+	opr := resolveNetworkResource(exitNode).read()
 
 	variables := newVars(
-		gqlNullable(query.NewRemoteNetworkFilterInput(name, filter), "filter"),
+		gqlNullable(query.NewRemoteNetworkFilterInput(name, filter, exitNode), "filter"),
 		cursor(query.CursorRemoteNetworks),
 		pageLimit(client.pageLimit),
 	)
@@ -76,17 +73,17 @@ func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) ReadRemoteNetwork(ctx context.Context, remoteNetworkID, remoteNetworkName string) (*model.RemoteNetwork, error) {
+func (client *Client) ReadRemoteNetwork(ctx context.Context, remoteNetworkID, remoteNetworkName string, exitNode bool) (*model.RemoteNetwork, error) {
 	switch {
 	case remoteNetworkID != "":
-		return client.ReadRemoteNetworkByID(ctx, remoteNetworkID)
+		return client.ReadRemoteNetworkByID(ctx, remoteNetworkID, exitNode)
 	default:
-		return client.ReadRemoteNetworkByName(ctx, remoteNetworkName)
+		return client.ReadRemoteNetworkByName(ctx, remoteNetworkName, exitNode)
 	}
 }
 
-func (client *Client) ReadRemoteNetworkByID(ctx context.Context, remoteNetworkID string) (*model.RemoteNetwork, error) {
-	opr := resourceRemoteNetwork.read()
+func (client *Client) ReadRemoteNetworkByID(ctx context.Context, remoteNetworkID string, exitNode bool) (*model.RemoteNetwork, error) {
+	opr := resolveNetworkResource(exitNode).read()
 
 	if remoteNetworkID == "" {
 		return nil, opr.apiError(ErrGraphqlNetworkIDIsEmpty)
@@ -98,11 +95,17 @@ func (client *Client) ReadRemoteNetworkByID(ctx context.Context, remoteNetworkID
 		return nil, err
 	}
 
-	return response.ToModel(), nil
+	network := response.ToModel()
+
+	if network.ExitNode != exitNode {
+		return nil, opr.apiError(ErrGraphqlResultIsEmpty, attr{id: remoteNetworkID})
+	}
+
+	return network, nil
 }
 
-func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetworkName string) (*model.RemoteNetwork, error) {
-	opr := resourceRemoteNetwork.read()
+func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetworkName string, exitNode bool) (*model.RemoteNetwork, error) {
+	opr := resolveNetworkResource(exitNode).read()
 
 	if remoteNetworkName == "" {
 		return nil, opr.apiError(ErrGraphqlNetworkNameIsEmpty)
@@ -114,11 +117,17 @@ func (client *Client) ReadRemoteNetworkByName(ctx context.Context, remoteNetwork
 		return nil, err
 	}
 
-	return response.RemoteNetworks.Edges[0].Node.ToModel(), nil
+	network := response.RemoteNetworks.Edges[0].Node.ToModel()
+
+	if network.ExitNode != exitNode {
+		return nil, opr.apiError(ErrGraphqlResultIsEmpty, attr{name: remoteNetworkName})
+	}
+
+	return network, nil
 }
 
 func (client *Client) UpdateRemoteNetwork(ctx context.Context, req *model.RemoteNetwork) (*model.RemoteNetwork, error) {
-	opr := resourceRemoteNetwork.update()
+	opr := resolveNetworkResource(req.ExitNode).update()
 
 	variables := newVars(
 		gqlID(req.ID),

@@ -15,6 +15,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 			ID:       "test-id",
 			Name:     "test",
 			Location: model.LocationOther,
+			ExitNode: true,
 		}
 
 		jsonResponse := `{
@@ -23,7 +24,8 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 		      "entity": {
 		        "id": "test-id",
 		        "name": "test",
-		        "location": "OTHER"
+		        "location": "OTHER",
+		        "networkType": "EXIT"
 		      },
 		      "ok": true,
 		      "error": null
@@ -39,6 +41,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 		remoteNetwork, err := client.CreateRemoteNetwork(context.Background(), &model.RemoteNetwork{
 			Name:     "test",
 			Location: model.LocationOther,
+			ExitNode: true,
 		})
 
 		assert.NoError(t, err)
@@ -178,7 +181,8 @@ func TestClientRemoteNetworkUpdateOk(t *testing.T) {
 		      "entity": {
 		        "id": "network-id",
 		        "name": "test",
-		        "location": "OTHER"
+		        "location": "OTHER",
+		        "networkType": "REGULAR"
 		      }
 		    }
 		  }
@@ -188,6 +192,7 @@ func TestClientRemoteNetworkUpdateOk(t *testing.T) {
 			ID:       "network-id",
 			Name:     "test",
 			Location: model.LocationOther,
+			ExitNode: false,
 		}
 
 		client := newHTTPMockClient()
@@ -236,7 +241,7 @@ func TestClientRemoteNetworkReadByIDError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "id")
+		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "id", true)
 
 		assert.Nil(t, remoteNetwork)
 		assert.EqualError(t, err, "failed to read remote network with id id: query result is empty")
@@ -250,7 +255,7 @@ func TestClientRemoteNetworkReadByIDRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "id")
+		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "id", false)
 
 		assert.Nil(t, remoteNetwork)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read remote network with id id", errBadRequest))
@@ -270,7 +275,7 @@ func TestClientRemoteNetworkReadByNameError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "name")
+		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "name", true)
 
 		assert.Nil(t, remoteNetwork)
 		assert.EqualError(t, err, "failed to read remote network with name name: query result is empty")
@@ -284,7 +289,7 @@ func TestClientRemoteNetworkReadByNameRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "name")
+		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "name", false)
 
 		assert.Nil(t, remoteNetwork)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read remote network with name name", errBadRequest))
@@ -324,7 +329,7 @@ func TestClientReadEmptyRemoteNetworkByIDError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "")
+		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "", true)
 
 		assert.EqualError(t, err, "failed to read remote network: network id is empty")
 		assert.Nil(t, remoteNetwork)
@@ -344,7 +349,7 @@ func TestClientReadEmptyRemoteNetworkByNameError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "")
+		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "", false)
 
 		assert.EqualError(t, err, "failed to read remote network: network name is empty")
 		assert.Nil(t, remoteNetwork)
@@ -429,16 +434,19 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 				ID:       "network1",
 				Name:     "tf-acc-network1",
 				Location: model.LocationAzure,
+				ExitNode: true,
 			},
 			{
 				ID:       "network2",
 				Name:     "network2",
 				Location: model.LocationAWS,
+				ExitNode: true,
 			},
 			{
 				ID:       "network3",
 				Name:     "tf-acc-network3",
 				Location: model.LocationGoogleCloud,
+				ExitNode: true,
 			},
 		}
 
@@ -454,14 +462,16 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		          "node": {
 		            "id": "network1",
 		            "name": "tf-acc-network1",
-		            "location": "AZURE"
+		            "location": "AZURE",
+		            "networkType": "EXIT"
 		          }
 		        },
 		        {
 		          "node": {
 		            "id": "network2",
 		            "name": "network2",
-		            "location": "AWS"
+		            "location": "AWS",
+		            "networkType": "EXIT"
 		          }
 		        }
 		      ]
@@ -480,7 +490,8 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		          "node": {
 		            "id": "network3",
 		            "name": "tf-acc-network3",
-		            "location": "GOOGLE_CLOUD"
+		            "location": "GOOGLE_CLOUD",
+		            "networkType": "EXIT"
 		          }
 		        }
 		      ]
@@ -497,7 +508,7 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 			),
 		)
 
-		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "", true)
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, networks)
@@ -511,7 +522,7 @@ func TestClientNetworkReadAllRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "", false)
 
 		assert.Nil(t, networks)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read remote network with id All", errBadRequest))
@@ -552,7 +563,7 @@ func TestClientNetworkReadAllEmptyResponse(t *testing.T) {
 			),
 		)
 
-		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "", true)
 
 		assert.Nil(t, networks)
 		assert.EqualError(t, err, `failed to read remote network: query result is empty`)
@@ -582,7 +593,7 @@ func TestClientNetworkReadAllRequestErrorOnPageFetch(t *testing.T) {
 			),
 		)
 
-		networks, err := client.ReadRemoteNetworks(context.Background(), "", "")
+		networks, err := client.ReadRemoteNetworks(context.Background(), "", "", false)
 
 		assert.Nil(t, networks)
 		assert.EqualError(t, err, graphqlErr(client, "failed to read remote network", errBadRequest))
@@ -595,6 +606,7 @@ func TestClientReadRemoteNetworkWithIDOk(t *testing.T) {
 			ID:       "network1",
 			Name:     "tf-acc-network1",
 			Location: model.LocationOther,
+			ExitNode: true,
 		}
 
 		jsonResponse := `{
@@ -602,7 +614,8 @@ func TestClientReadRemoteNetworkWithIDOk(t *testing.T) {
 		    "remoteNetwork": {
 		      "id": "network1",
 		      "name": "tf-acc-network1",
-		      "location": "OTHER"
+		      "location": "OTHER",
+		      "networkType": "EXIT"
 		    }
 		  }
 		}`
@@ -613,7 +626,7 @@ func TestClientReadRemoteNetworkWithIDOk(t *testing.T) {
 			httpmock.NewStringResponder(200, jsonResponse),
 		)
 
-		network, err := client.ReadRemoteNetwork(context.Background(), "network1", "")
+		network, err := client.ReadRemoteNetwork(context.Background(), "network1", "", true)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, network)
@@ -626,6 +639,7 @@ func TestClientReadRemoteNetworkWithNameOk(t *testing.T) {
 			ID:       "network1",
 			Name:     "tf-acc-network1",
 			Location: model.LocationAWS,
+			ExitNode: false,
 		}
 
 		jsonResponse := `{
@@ -636,14 +650,16 @@ func TestClientReadRemoteNetworkWithNameOk(t *testing.T) {
 		          "node": {
 		            "id": "network1",
 		            "name": "tf-acc-network1",
-		            "location": "AWS"
+		            "location": "AWS",
+		            "networkType": "REGULAR"
 		          }
 		        },
 		        {
 		          "node": {
 		            "id": "network2",
 		            "name": "tf-acc-network1",
-		            "location": "AZURE"
+		            "location": "AZURE",
+		            "networkType": "REGULAR"
 		          }
 		        }
 		      ]
@@ -657,9 +673,41 @@ func TestClientReadRemoteNetworkWithNameOk(t *testing.T) {
 			httpmock.NewStringResponder(200, jsonResponse),
 		)
 
-		network, err := client.ReadRemoteNetwork(context.Background(), "", "tf-acc-network1")
+		network, err := client.ReadRemoteNetwork(context.Background(), "", "tf-acc-network1", false)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, network)
+	})
+}
+
+func TestClientReadRemoteNetworkWithNameButWrongTypeEmptyResult(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Remote Network With Name But Wrong Type - Empty Result", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "remoteNetworks": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "network1",
+		            "name": "tf-acc-network1",
+		            "location": "AWS",
+		            "networkType": "EXIT"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse),
+		)
+
+		network, err := client.ReadRemoteNetwork(context.Background(), "", "tf-acc-network1", false)
+
+		assert.Nil(t, network)
+		assert.EqualError(t, err, `failed to read remote network with name tf-acc-network1: query result is empty`)
 	})
 }

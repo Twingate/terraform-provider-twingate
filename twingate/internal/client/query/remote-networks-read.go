@@ -29,12 +29,30 @@ func (r RemoteNetworks) ToModel() []*model.RemoteNetwork {
 	})
 }
 
-type RemoteNetworkFilterInput struct {
-	Name *StringFilterOperationInput `json:"name"`
+type RemoteNetworkType string
+
+func ConvertNetworkType(exitNodeNetwork bool) RemoteNetworkType {
+	if exitNodeNetwork {
+		return model.NetworkTypeExit
+	}
+
+	return model.NetworkTypeRegular
 }
 
-func NewRemoteNetworkFilterInput(name, filter string) *RemoteNetworkFilterInput {
+type RemoteNetworkTypeFilterOperatorInput struct {
+	In []RemoteNetworkType `json:"in"`
+}
+
+type RemoteNetworkFilterInput struct {
+	Name        *StringFilterOperationInput           `json:"name"`
+	NetworkType *RemoteNetworkTypeFilterOperatorInput `json:"networkType"`
+}
+
+func NewRemoteNetworkFilterInput(name, filter string, exitNode bool) *RemoteNetworkFilterInput {
 	return &RemoteNetworkFilterInput{
 		Name: NewStringFilterOperationInput(name, filter),
+		NetworkType: &RemoteNetworkTypeFilterOperatorInput{
+			In: []RemoteNetworkType{ConvertNetworkType(exitNode)},
+		},
 	}
 }

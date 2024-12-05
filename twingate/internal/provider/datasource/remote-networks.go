@@ -24,7 +24,8 @@ func NewRemoteNetworksDatasource() datasource.DataSource {
 }
 
 type remoteNetworks struct {
-	client *client.Client
+	client   *client.Client
+	exitNode bool
 }
 
 type remoteNetworksModel struct {
@@ -58,8 +59,10 @@ func (d *remoteNetworks) Configure(ctx context.Context, req datasource.Configure
 	}
 
 	d.client = client
+	d.exitNode = false
 }
 
+//nolint:dupl
 func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "A Remote Network represents a single private network in Twingate that can have one or more Connectors and Resources assigned to it. You must create a Remote Network before creating Resources and Connectors that belong to it. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/remote-networks).",
@@ -136,7 +139,7 @@ func (d *remoteNetworks) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	networks, err := d.client.ReadRemoteNetworks(ctx, name, filter)
+	networks, err := d.client.ReadRemoteNetworks(ctx, name, filter, d.exitNode)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateRemoteNetworks)
 
