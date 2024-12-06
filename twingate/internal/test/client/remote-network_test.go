@@ -244,7 +244,7 @@ func TestClientRemoteNetworkReadByIDError(t *testing.T) {
 		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "id", true)
 
 		assert.Nil(t, remoteNetwork)
-		assert.EqualError(t, err, "failed to read remote network with id id: query result is empty")
+		assert.EqualError(t, err, "failed to read exit network with id id: query result is empty")
 	})
 }
 
@@ -278,7 +278,7 @@ func TestClientRemoteNetworkReadByNameError(t *testing.T) {
 		remoteNetwork, err := client.ReadRemoteNetworkByName(context.Background(), "name", true)
 
 		assert.Nil(t, remoteNetwork)
-		assert.EqualError(t, err, "failed to read remote network with name name: query result is empty")
+		assert.EqualError(t, err, "failed to read exit network with name name: query result is empty")
 	})
 }
 
@@ -331,7 +331,7 @@ func TestClientReadEmptyRemoteNetworkByIDError(t *testing.T) {
 
 		remoteNetwork, err := client.ReadRemoteNetworkByID(context.Background(), "", true)
 
-		assert.EqualError(t, err, "failed to read remote network: network id is empty")
+		assert.EqualError(t, err, "failed to read exit network: network id is empty")
 		assert.Nil(t, remoteNetwork)
 	})
 }
