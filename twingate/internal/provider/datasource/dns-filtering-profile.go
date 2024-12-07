@@ -6,6 +6,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -268,7 +269,7 @@ func (d *dnsFilteringProfile) Read(ctx context.Context, req datasource.ReadReque
 	data.FallbackMethod = types.StringValue(profile.FallbackMethod)
 	data.AllowedDomains = convertDomainsToTerraform(profile.AllowedDomains)
 	data.DeniedDomains = convertDomainsToTerraform(profile.DeniedDomains)
-	data.Groups = convertStringListToSet(profile.Groups)
+	data.Groups = utils.MakeStringSet(profile.Groups)
 
 	if profile.PrivacyCategories != nil {
 		data.PrivacyCategories = &privacyCategoriesModel{

@@ -23,6 +23,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 			Name:                 "test-name",
 			NetworkID:            "remote-network-id",
 			StatusUpdatesEnabled: &notificationEnabled,
+			State:                "DEAD_NO_HEARTBEAT",
 		}
 
 		jsonResponse := `{
@@ -31,6 +32,7 @@ func TestClientConnectorCreateOk(t *testing.T) {
 		      "entity": {
 		        "id": "test-id",
 		        "name": "test-name",
+		        "state": "DEAD_NO_HEARTBEAT",
 		        "hasStatusNotificationsEnabled": true,
 		        "remoteNetwork": {
 		          "id": "remote-network-id"
@@ -61,6 +63,7 @@ func TestClientConnectorCreateWithNotificationStatusOk(t *testing.T) {
 			Name:                 "test-name",
 			NetworkID:            "remote-network-id",
 			StatusUpdatesEnabled: &notificationEnabled,
+			State:                "DEAD_NO_HEARTBEAT",
 		}
 
 		jsonResponse := `{
@@ -69,6 +72,7 @@ func TestClientConnectorCreateWithNotificationStatusOk(t *testing.T) {
 		      "entity": {
 		        "id": "test-id",
 		        "name": "test-name",
+		        "state": "DEAD_NO_HEARTBEAT",
 		        "hasStatusNotificationsEnabled": true,
 		        "remoteNetwork": {
 		          "id": "remote-network-id"
@@ -456,6 +460,11 @@ func TestClientConnectorReadOk(t *testing.T) {
 			ID:                   "test-id",
 			Name:                 "test-name",
 			StatusUpdatesEnabled: &notificationEnabled,
+			State:                "ALIVE",
+			Hostname:             "test-hostname",
+			Version:              "test-version",
+			PublicIP:             "test-public-ip",
+			PrivateIPs:           []string{"test-private-ip"},
 		}
 
 		jsonResponse := `{
@@ -463,7 +472,12 @@ func TestClientConnectorReadOk(t *testing.T) {
 		    "connector": {
 		      "id": "test-id",
 		      "name": "test-name",
-		      "hasStatusNotificationsEnabled": true
+		      "hasStatusNotificationsEnabled": true,
+		      "state": "ALIVE",
+		      "hostname": "test-hostname",
+		      "version": "test-version",
+		      "publicIP": "test-public-ip",
+		      "privateIPs": ["test-private-ip"]
 		    }
 		  }
 		}`
@@ -725,8 +739,6 @@ func TestClientConnectorReadRequestError(t *testing.T) {
 		assert.EqualError(t, err, graphqlErr(client, "failed to read connector with id "+connectorId, errBadRequest))
 	})
 }
-
-// readConnectorsWithRemoteNetwork
 
 func TestClientReadConnectorsWithRemoteNetworkOk(t *testing.T) {
 	t.Run("Test Twingate Resource : Read All Client Connectors with remote network - Ok", func(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -36,6 +37,11 @@ type connectorModel struct {
 	Name                 types.String `tfsdk:"name"`
 	RemoteNetworkID      types.String `tfsdk:"remote_network_id"`
 	StatusUpdatesEnabled types.Bool   `tfsdk:"status_updates_enabled"`
+	State                types.String `tfsdk:"state"`
+	Hostname             types.String `tfsdk:"hostname"`
+	Version              types.String `tfsdk:"version"`
+	PublicIP             types.String `tfsdk:"public_ip"`
+	PrivateIPs           types.Set    `tfsdk:"private_ips"`
 }
 
 func (r *connector) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -100,6 +106,27 @@ func (r *connector) Schema(_ context.Context, _ resource.SchemaRequest, resp *re
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			attr.State: schema.StringAttribute{
+				Computed:    true,
+				Description: "The Connector's state. One of `ALIVE`, `DEAD_NO_HEARTBEAT`, `DEAD_HEARTBEAT_TOO_OLD` or `DEAD_NO_RELAYS`.",
+			},
+			attr.Hostname: schema.StringAttribute{
+				Computed:    true,
+				Description: "The hostname of the machine hosting the Connector.",
+			},
+			attr.Version: schema.StringAttribute{
+				Computed:    true,
+				Description: "The Connector's version.",
+			},
+			attr.PublicIP: schema.StringAttribute{
+				Computed:    true,
+				Description: "The Connector's public IP address.",
+			},
+			attr.PrivateIPs: schema.SetAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "The Connector's private IP addresses.",
 			},
 		},
 	}
@@ -198,6 +225,11 @@ func (r *connector) helper(ctx context.Context, conn *model.Connector, state *co
 	state.Name = types.StringValue(conn.Name)
 	state.RemoteNetworkID = types.StringValue(conn.NetworkID)
 	state.StatusUpdatesEnabled = types.BoolPointerValue(conn.StatusUpdatesEnabled)
+	state.State = types.StringValue(conn.State)
+	state.Version = types.StringValue(conn.Version)
+	state.Hostname = types.StringValue(conn.Hostname)
+	state.PublicIP = types.StringValue(conn.PublicIP)
+	state.PrivateIPs = utils.MakeStringSet(conn.PrivateIPs)
 
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
