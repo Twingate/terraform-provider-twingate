@@ -31,6 +31,7 @@ type remoteNetworkModel struct {
 	ID       types.String `tfsdk:"id"`
 	Name     types.String `tfsdk:"name"`
 	Location types.String `tfsdk:"location"`
+	Type     types.String `tfsdk:"type"`
 }
 
 func (d *remoteNetwork) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -81,6 +82,10 @@ func (d *remoteNetwork) Schema(ctx context.Context, req datasource.SchemaRequest
 				Computed:    true,
 				Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
 			},
+			attr.Type: schema.StringAttribute{
+				Computed:    true,
+				Description: fmt.Sprintf("The type of the Remote Network. Must be one of the following: %s.", strings.Join([]string{model.NetworkTypeRegular, model.NetworkTypeExit}, ", ")),
+			},
 		},
 	}
 }
@@ -105,6 +110,7 @@ func (d *remoteNetwork) Read(ctx context.Context, req datasource.ReadRequest, re
 	data.ID = types.StringValue(network.ID)
 	data.Name = types.StringValue(network.Name)
 	data.Location = types.StringValue(network.Location)
+	data.Type = types.StringValue(network.Type)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
