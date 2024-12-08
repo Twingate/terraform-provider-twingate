@@ -8,6 +8,9 @@ const (
 	LocationGoogleCloud = "GOOGLE_CLOUD"
 	LocationOnPremise   = "ON_PREMISE"
 	LocationOther       = "OTHER"
+
+	NetworkTypeRegular = "REGULAR"
+	NetworkTypeExit    = "EXIT"
 )
 
 var Locations = []string{LocationAWS, LocationAzure, LocationGoogleCloud, LocationOnPremise, LocationOther} //nolint
@@ -16,7 +19,7 @@ type RemoteNetwork struct {
 	ID       string
 	Name     string
 	Location string
-	ExitNode bool
+	Type     string
 }
 
 func (n RemoteNetwork) GetName() string {

@@ -15,6 +15,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 			ID:       "test-id",
 			Name:     "test",
 			Location: model.LocationOther,
+			Type:     model.NetworkTypeRegular,
 		}
 
 		jsonResponse := `{
@@ -23,7 +24,8 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 		      "entity": {
 		        "id": "test-id",
 		        "name": "test",
-		        "location": "OTHER"
+		        "location": "OTHER",
+		        "networkType": "REGULAR"
 		      },
 		      "ok": true,
 		      "error": null
@@ -39,6 +41,7 @@ func TestClientRemoteNetworkCreateOk(t *testing.T) {
 		remoteNetwork, err := client.CreateRemoteNetwork(context.Background(), &model.RemoteNetwork{
 			Name:     "test",
 			Location: model.LocationOther,
+			Type:     model.NetworkTypeRegular,
 		})
 
 		assert.NoError(t, err)
@@ -429,16 +432,19 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 				ID:       "network1",
 				Name:     "tf-acc-network1",
 				Location: model.LocationAzure,
+				Type:     model.NetworkTypeRegular,
 			},
 			{
 				ID:       "network2",
 				Name:     "network2",
 				Location: model.LocationAWS,
+				Type:     model.NetworkTypeRegular,
 			},
 			{
 				ID:       "network3",
 				Name:     "tf-acc-network3",
 				Location: model.LocationGoogleCloud,
+				Type:     model.NetworkTypeExit,
 			},
 		}
 
@@ -454,14 +460,16 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		          "node": {
 		            "id": "network1",
 		            "name": "tf-acc-network1",
-		            "location": "AZURE"
+		            "location": "AZURE",
+		            "networkType": "REGULAR"
 		          }
 		        },
 		        {
 		          "node": {
 		            "id": "network2",
 		            "name": "network2",
-		            "location": "AWS"
+		            "location": "AWS",
+		            "networkType": "REGULAR"
 		          }
 		        }
 		      ]
@@ -480,7 +488,8 @@ func TestClientNetworkReadAllOk(t *testing.T) {
 		          "node": {
 		            "id": "network3",
 		            "name": "tf-acc-network3",
-		            "location": "GOOGLE_CLOUD"
+		            "location": "GOOGLE_CLOUD",
+		            "networkType": "EXIT"
 		          }
 		        }
 		      ]
@@ -595,6 +604,7 @@ func TestClientReadRemoteNetworkWithIDOk(t *testing.T) {
 			ID:       "network1",
 			Name:     "tf-acc-network1",
 			Location: model.LocationOther,
+			Type:     model.NetworkTypeRegular,
 		}
 
 		jsonResponse := `{
@@ -602,7 +612,8 @@ func TestClientReadRemoteNetworkWithIDOk(t *testing.T) {
 		    "remoteNetwork": {
 		      "id": "network1",
 		      "name": "tf-acc-network1",
-		      "location": "OTHER"
+		      "location": "OTHER",
+		      "networkType": "REGULAR"
 		    }
 		  }
 		}`
@@ -626,6 +637,7 @@ func TestClientReadRemoteNetworkWithNameOk(t *testing.T) {
 			ID:       "network1",
 			Name:     "tf-acc-network1",
 			Location: model.LocationAWS,
+			Type:     model.NetworkTypeRegular,
 		}
 
 		jsonResponse := `{
@@ -636,14 +648,16 @@ func TestClientReadRemoteNetworkWithNameOk(t *testing.T) {
 		          "node": {
 		            "id": "network1",
 		            "name": "tf-acc-network1",
-		            "location": "AWS"
+		            "location": "AWS",
+		            "networkType": "REGULAR"
 		          }
 		        },
 		        {
 		          "node": {
 		            "id": "network2",
 		            "name": "tf-acc-network1",
-		            "location": "AZURE"
+		            "location": "AZURE",
+		            "networkType": "REGULAR"
 		          }
 		        }
 		      ]

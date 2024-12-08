@@ -111,6 +111,10 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 							Computed:    true,
 							Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
 						},
+						attr.Type: schema.StringAttribute{
+							Computed:    true,
+							Description: fmt.Sprintf("The type of the Remote Network. Must be one of the following: %s.", strings.Join([]string{model.NetworkTypeRegular, model.NetworkTypeExit}, ", ")),
+						},
 					},
 				},
 			},

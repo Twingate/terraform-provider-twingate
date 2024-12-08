@@ -12,14 +12,6 @@ type (
 	RemoteNetworkType     string
 )
 
-func convertNetworkType(exitNodeNetwork bool) RemoteNetworkType {
-	if exitNodeNetwork {
-		return RemoteNetworkType("EXIT")
-	}
-
-	return RemoteNetworkType("REGULAR")
-}
-
 func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.RemoteNetwork) (*model.RemoteNetwork, error) {
 	opr := resourceRemoteNetwork.create()
 
@@ -31,7 +23,7 @@ func (client *Client) CreateRemoteNetwork(ctx context.Context, req *model.Remote
 		gqlVar(req.Name, "name"),
 		gqlVar(true, "isActive"),
 		gqlVar(RemoteNetworkLocation(req.Location), "location"),
-		gqlVar(convertNetworkType(req.ExitNode), "networkType"),
+		gqlVar(RemoteNetworkType(req.Type), "networkType"),
 	)
 
 	response := query.CreateRemoteNetwork{}

@@ -32,8 +32,8 @@ resource "twingate_remote_network" "aws_network" {
 
 ### Optional
 
-- `exit_node` (Boolean) TODO
 - `location` (String) The location of the Remote Network. Must be one of the following: AWS, AZURE, GOOGLE_CLOUD, ON_PREMISE, OTHER.
+- `type` (String) The type of the Remote Network. Must be one of the following: REGULAR, EXIT. Defaults to REGULAR.
 
 ### Read-Only
 

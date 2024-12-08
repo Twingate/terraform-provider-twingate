@@ -190,15 +190,15 @@ func TestAccTwingateRemoteNetworkCreateExitNode(t *testing.T) {
 			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config: terraformResourceRemoteNetworkExitNode(terraformResourceName, name, true),
+					Config: terraformResourceRemoteNetworkExitNode(terraformResourceName, name, model.NetworkTypeExit),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						sdk.TestCheckResourceAttr(theResource, attr.Name, name),
-						sdk.TestCheckResourceAttr(theResource, attr.ExitNode, "true"),
+						sdk.TestCheckResourceAttr(theResource, attr.Type, model.NetworkTypeExit),
 					),
 				},
 				{
-					Config: terraformResourceRemoteNetworkExitNode(terraformResourceName, name, false),
+					Config: terraformResourceRemoteNetworkExitNode(terraformResourceName, name, model.NetworkTypeRegular),
 					ConfigPlanChecks: sdk.ConfigPlanChecks{
 						PreApply: []plancheck.PlanCheck{
 							plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionReplace),
@@ -210,11 +210,11 @@ func TestAccTwingateRemoteNetworkCreateExitNode(t *testing.T) {
 	})
 }
 
-func terraformResourceRemoteNetworkExitNode(terraformResourceName, name string, exitNode bool) string {
+func terraformResourceRemoteNetworkExitNode(terraformResourceName, name, networkType string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%s" {
 	  name = "%s"
-	  exit_node = %v
+	  type = "%s"
 	}
-	`, terraformResourceName, name, exitNode)
+	`, terraformResourceName, name, networkType)
 }
