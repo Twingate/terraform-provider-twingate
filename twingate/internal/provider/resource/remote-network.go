@@ -14,6 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,6 +37,7 @@ type remoteNetworkModel struct {
 	ID       types.String `tfsdk:"id"`
 	Name     types.String `tfsdk:"name"`
 	Location types.String `tfsdk:"location"`
+	Type     types.String `tfsdk:"type"`
 }
 
 func (r *remoteNetwork) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -68,6 +72,16 @@ func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					stringvalidator.OneOf(model.Locations...),
 				},
 			},
+			attr.Type: schema.StringAttribute{
+				Optional:      true,
+				Computed:      true,
+				Description:   fmt.Sprintf("The type of the Remote Network. Must be one of the following: %s. Defaults to %s.", strings.Join([]string{model.NetworkTypeRegular, model.NetworkTypeExit}, ", "), model.NetworkTypeRegular),
+				Default:       stringdefault.StaticString(model.NetworkTypeRegular),
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.NetworkTypeRegular, model.NetworkTypeExit),
+				},
+			},
 			// computed
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
@@ -95,6 +109,7 @@ func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, 
 	network, err := r.client.CreateRemoteNetwork(ctx, &model.RemoteNetwork{
 		Name:     plan.Name.ValueString(),
 		Location: location,
+		Type:     plan.Type.ValueString(),
 	})
 
 	r.helper(ctx, network, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -169,6 +184,7 @@ func (r *remoteNetwork) helper(ctx context.Context, network *model.RemoteNetwork
 	state.ID = types.StringValue(network.ID)
 	state.Name = types.StringValue(network.Name)
 	state.Location = types.StringValue(network.Location)
+	state.Type = types.StringValue(network.Type)
 
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
