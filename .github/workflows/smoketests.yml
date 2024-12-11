@@ -45,7 +45,6 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '1.8.*'
           - '1.9.*'
           - 'latest'
     steps:
