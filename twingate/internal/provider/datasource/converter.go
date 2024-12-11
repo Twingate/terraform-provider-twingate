@@ -84,6 +84,7 @@ func convertRemoteNetworksToTerraform(networks []*model.RemoteNetwork) []remoteN
 			ID:       types.StringValue(network.ID),
 			Name:     types.StringValue(network.Name),
 			Location: types.StringValue(network.Location),
+			Type:     types.StringValue(network.Type),
 		}
 	})
 }

@@ -3,7 +3,7 @@ package query
 import "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 
 type CreateRemoteNetwork struct {
-	RemoteNetworkEntityResponse `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive, location: $location)"`
+	RemoteNetworkEntityResponse `graphql:"remoteNetworkCreate(name: $name, isActive: $isActive, location: $location, networkType: $networkType)"`
 }
 
 func (q CreateRemoteNetwork) IsEmpty() bool {
