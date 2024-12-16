@@ -12,24 +12,24 @@ import (
 )
 
 func TestAccRemoteConnectorWithTokens(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Remote Connector With Tokens", func(t *testing.T) {
-		const terraformResourceName = "test_t1"
-		theResource := acctests.TerraformConnectorTokens(terraformResourceName)
-		remoteNetworkName := test.RandomName()
+	t.Parallel()
 
-		sdk.Test(t, sdk.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateConnectorTokensInvalidated,
-			Steps: []sdk.TestStep{
-				{
-					Config: terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetworkName),
-					Check: acctests.ComposeTestCheckFunc(
-						checkTwingateConnectorTokensSet(theResource),
-					),
-				},
+	const terraformResourceName = "test_t1"
+	theResource := acctests.TerraformConnectorTokens(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateConnectorTokensInvalidated,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceTwingateConnectorTokens(terraformResourceName, remoteNetworkName),
+				Check: acctests.ComposeTestCheckFunc(
+					checkTwingateConnectorTokensSet(theResource),
+				),
 			},
-		})
+		},
 	})
 }
 

@@ -13,32 +13,32 @@ import (
 )
 
 func TestAccDatasourceTwingateGroup_basic(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Group Basic", func(t *testing.T) {
-		groupName := test.RandomName()
+	t.Parallel()
 
-		securityPolicies, err := acctests.ListSecurityPolicies()
-		if err != nil {
-			t.Skip("can't run test:", err)
-		}
+	groupName := test.RandomName()
 
-		testPolicy := securityPolicies[0]
+	securityPolicies, err := acctests.ListSecurityPolicies()
+	if err != nil {
+		t.Skip("can't run test:", err)
+	}
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateGroupDestroy,
-			Steps: []resource.TestStep{
-				{
-					Config: testDatasourceTwingateGroup(groupName, testPolicy.ID),
-					Check: acctests.ComposeTestCheckFunc(
-						resource.TestCheckOutput("my_group_dg1", groupName),
-						resource.TestCheckOutput("my_group_is_active_dg1", "true"),
-						resource.TestCheckOutput("my_group_type_dg1", "MANUAL"),
-						resource.TestCheckOutput("my_group_policy_dg1", testPolicy.ID),
-					),
-				},
+	testPolicy := securityPolicies[0]
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateGroupDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateGroup(groupName, testPolicy.ID),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckOutput("my_group_dg1", groupName),
+					resource.TestCheckOutput("my_group_is_active_dg1", "true"),
+					resource.TestCheckOutput("my_group_type_dg1", "MANUAL"),
+					resource.TestCheckOutput("my_group_policy_dg1", testPolicy.ID),
+				),
 			},
-		})
+		},
 	})
 }
 
@@ -72,21 +72,21 @@ func testDatasourceTwingateGroup(name, securityPolicyID string) string {
 }
 
 func TestAccDatasourceTwingateGroup_negative(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Group - does not exists", func(t *testing.T) {
-		groupID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Group:%d", acctest.RandInt())))
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
+	groupID := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("Group:%d", acctest.RandInt())))
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testTwingateGroupDoesNotExists(groupID),
+				ExpectError: regexp.MustCompile("failed to read group with id"),
 			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateGroupDoesNotExists(groupID),
-					ExpectError: regexp.MustCompile("failed to read group with id"),
-				},
-			},
-		})
+		},
 	})
 }
 
@@ -99,20 +99,20 @@ func testTwingateGroupDoesNotExists(id string) string {
 }
 
 func TestAccDatasourceTwingateGroup_invalidGroupID(t *testing.T) {
-	t.Run("Test Twingate Datasource : Acc Group - failed parse group ID", func(t *testing.T) {
-		groupID := acctest.RandString(10)
+	t.Parallel()
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck: func() {
-				acctests.PreCheck(t)
+	groupID := acctest.RandString(10)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testTwingateGroupDoesNotExists(groupID),
+				ExpectError: regexp.MustCompile("failed to read group with id"),
 			},
-			Steps: []resource.TestStep{
-				{
-					Config:      testTwingateGroupDoesNotExists(groupID),
-					ExpectError: regexp.MustCompile("failed to read group with id"),
-				},
-			},
-		})
+		},
 	})
 }

@@ -27,6 +27,11 @@ data "twingate_connector" "foo" {
 
 ### Read-Only
 
+- `hostname` (String) The hostname of the machine hosting the Connector.
 - `name` (String) The name of the Connector.
+- `private_ips` (Set of String) The Connector's private IP addresses.
+- `public_ip` (String) The Connector's public IP address.
 - `remote_network_id` (String) The ID of the Remote Network the Connector is attached to.
+- `state` (String) The Connector's state. One of `ALIVE`, `DEAD_NO_HEARTBEAT`, `DEAD_HEARTBEAT_TOO_OLD` or `DEAD_NO_RELAYS`.
 - `status_updates_enabled` (Boolean) Determines whether status notifications are enabled for the Connector.
+- `version` (String) The Connector's version.

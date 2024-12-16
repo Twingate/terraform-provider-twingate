@@ -11,7 +11,7 @@ func (client *Client) ReadShallowDNSFilteringProfiles(ctx context.Context) ([]*m
 	opr := resourceDNSFilteringProfile.read().withCustomName("readShallowDNSFilteringProfiles")
 
 	response := query.ReadDNSFilteringProfiles{}
-	if err := client.query(ctx, &response, nil, opr, attr{id: "All"}); err != nil {
+	if err := client.queryWithTimeout(ctx, &response, nil, opr, attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -32,7 +32,7 @@ func (client *Client) ReadDNSFilteringProfile(ctx context.Context, profileID str
 	)
 
 	response := query.ReadDNSFilteringProfile{}
-	if err := client.query(ctx, &response, variables, opr, attr{id: profileID}); err != nil {
+	if err := client.queryWithTimeout(ctx, &response, variables, opr, attr{id: profileID}); err != nil {
 		return nil, err
 	}
 
@@ -59,7 +59,7 @@ func (client *Client) CreateDNSFilteringProfile(ctx context.Context, name string
 	)
 
 	var response query.CreateDNSFilteringProfile
-	if err := client.mutate(ctx, &response, variables, opr, attr{name: name}); err != nil {
+	if err := client.mutateWithTimeout(ctx, &response, variables, opr, attr{name: name}); err != nil {
 		return nil, err
 	}
 
@@ -169,7 +169,7 @@ func (client *Client) UpdateDNSFilteringProfile(ctx context.Context, input *mode
 	)
 
 	var response query.UpdateDNSFilteringProfile
-	if err := client.mutate(ctx, &response, variables, opr, attr{id: input.ID}); err != nil {
+	if err := client.mutateWithTimeout(ctx, &response, variables, opr, attr{id: input.ID}); err != nil {
 		return nil, err
 	}
 
@@ -188,7 +188,7 @@ func (client *Client) readDNSFilteringProfileGroupsAfter(ctx context.Context, va
 	variables[query.CursorGroups] = cursor
 
 	response := query.ReadDNSFilteringProfileGroups{}
-	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
+	if err := client.queryWithTimeout(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
 		return nil, err
 	}
 
@@ -204,5 +204,5 @@ func (client *Client) DeleteDNSFilteringProfile(ctx context.Context, profileID s
 
 	var response query.DeleteDNSFilteringProfile
 
-	return client.mutate(ctx, &response, newVars(gqlID(profileID)), opr, attr{id: profileID})
+	return client.mutateWithTimeout(ctx, &response, newVars(gqlID(profileID)), opr, attr{id: profileID})
 }

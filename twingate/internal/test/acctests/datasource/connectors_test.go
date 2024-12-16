@@ -19,7 +19,7 @@ var (
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
-	acctests.SetPageLimit(1)
+	t.Parallel()
 
 	networkName1 := test.RandomName()
 	networkName2 := test.RandomName()
@@ -36,6 +36,11 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 					testCheckOutputLength("my_connectors", 2),
 					testCheckOutputAttr("my_connectors", 0, attr.Name, connectorName),
 					testCheckOutputAttr("my_connectors", 0, attr.StatusUpdatesEnabled, true),
+					testCheckOutputAttr("my_connectors", 0, attr.State, "DEAD_NO_HEARTBEAT"),
+					testCheckOutputAttr("my_connectors", 0, attr.Hostname, ""),
+					testCheckOutputAttr("my_connectors", 0, attr.Version, ""),
+					testCheckOutputAttr("my_connectors", 0, attr.PublicIP, ""),
+					testCheckOutputAttr("my_connectors", 0, attr.PrivateIPs, []any{}),
 				),
 			},
 		},
@@ -69,6 +74,7 @@ func testDatasourceTwingateConnectors(networkName1, connectorName1, networkName2
 }
 
 func TestAccDatasourceTwingateConnectors_emptyResult(t *testing.T) {
+	t.Parallel()
 	prefix := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
@@ -150,48 +156,6 @@ func testCheckOutputAttr(name string, index int, attr string, expected interface
 		}
 
 		return fmt.Errorf("not equal: expected '%v', got '%v'", expected, actual)
-	}
-}
-
-func testCheckOutputNestedLen(name string, index int, attr string, length int) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		ms := s.RootModule()
-
-		res, ok := ms.Outputs[name]
-		if !ok || res == nil || res.Value == nil {
-			return fmt.Errorf("output '%s' not found", name)
-		}
-
-		list, ok := res.Value.([]interface{})
-		if !ok {
-			return fmt.Errorf("output '%s' is not a list", name)
-		}
-
-		if index >= len(list) {
-			return fmt.Errorf("index out of bounds, actual length %d", len(list))
-		}
-
-		item := list[index]
-		obj, ok := item.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("expected map, actual is %T", item)
-		}
-
-		actual, ok := obj[attr]
-		if !ok {
-			return fmt.Errorf("attribute '%s' not found", attr)
-		}
-
-		attrList, ok := actual.([]interface{})
-		if !ok {
-			return fmt.Errorf("output '%s' is not a list", attr)
-		}
-
-		if len(attrList) != length {
-			return fmt.Errorf("expected length %d, got %d", length, len(attrList))
-		}
-
-		return nil
 	}
 }
 

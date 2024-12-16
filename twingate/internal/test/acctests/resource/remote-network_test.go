@@ -14,27 +14,27 @@ import (
 )
 
 func TestAccTwingateRemoteNetworkCreate(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Remote Network Create", func(t *testing.T) {
-		const terraformResourceName = "test000"
-		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
-		networkName := test.RandomName()
-		networkLocation := model.LocationAzure
+	t.Parallel()
 
-		sdk.Test(t, sdk.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
-			Steps: []sdk.TestStep{
-				{
-					Config: createRemoteNetworkWithLocation(terraformResourceName, networkName, networkLocation),
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, attr.Name, networkName),
-						sdk.TestCheckResourceAttr(theResource, attr.Location, networkLocation),
-					),
-				},
+	const terraformResourceName = "test000"
+	theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+	networkName := test.RandomName()
+	networkLocation := model.LocationAzure
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createRemoteNetworkWithLocation(terraformResourceName, networkName, networkLocation),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, networkName),
+					sdk.TestCheckResourceAttr(theResource, attr.Location, networkLocation),
+				),
 			},
-		})
+		},
 	})
 }
 
@@ -48,35 +48,35 @@ func createRemoteNetworkWithLocation(terraformResourceName, name, location strin
 }
 
 func TestAccTwingateRemoteNetworkUpdate(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Remote Network Update", func(t *testing.T) {
-		const terraformResourceName = "test001"
-		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
-		nameBefore := test.RandomName()
-		nameAfter := test.RandomName()
+	t.Parallel()
 
-		sdk.Test(t, sdk.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
-			Steps: []sdk.TestStep{
-				{
-					Config: terraformResourceRemoteNetwork(terraformResourceName, nameBefore),
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, attr.Name, nameBefore),
-						sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationOther),
-					),
-				},
-				{
-					Config: createRemoteNetworkWithLocation(terraformResourceName, nameAfter, model.LocationAWS),
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, attr.Name, nameAfter),
-						sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationAWS),
-					),
-				},
+	const terraformResourceName = "test001"
+	theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+	nameBefore := test.RandomName()
+	nameAfter := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceRemoteNetwork(terraformResourceName, nameBefore),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, nameBefore),
+					sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationOther),
+				),
 			},
-		})
+			{
+				Config: createRemoteNetworkWithLocation(terraformResourceName, nameAfter, model.LocationAWS),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, nameAfter),
+					sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationAWS),
+				),
+			},
+		},
 	})
 }
 
@@ -89,66 +89,98 @@ func terraformResourceRemoteNetwork(terraformResourceName, name string) string {
 }
 
 func TestAccTwingateRemoteNetworkDeleteNonExisting(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Remote Network Delete NonExisting", func(t *testing.T) {
-		const terraformResourceName = "test002"
-		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
-		networkName := test.RandomName()
+	t.Parallel()
 
-		sdk.Test(t, sdk.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
-			Steps: []sdk.TestStep{
-				{
-					Config:  terraformResourceRemoteNetwork(terraformResourceName, networkName),
-					Destroy: true,
-				},
-				{
-					Config: terraformResourceRemoteNetwork(terraformResourceName, networkName),
-					ConfigPlanChecks: sdk.ConfigPlanChecks{
-						PreApply: []plancheck.PlanCheck{
-							plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionCreate),
-						},
+	const terraformResourceName = "test002"
+	theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+	networkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:  terraformResourceRemoteNetwork(terraformResourceName, networkName),
+				Destroy: true,
+			},
+			{
+				Config: terraformResourceRemoteNetwork(terraformResourceName, networkName),
+				ConfigPlanChecks: sdk.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionCreate),
 					},
 				},
 			},
-		})
+		},
 	})
 }
 
 func TestAccTwingateRemoteNetworkReCreateAfterDeletion(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Remote Network Re Create After Deletion", func(t *testing.T) {
-		const terraformResourceName = "test003"
-		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
-		remoteNetworkName := test.RandomName()
+	t.Parallel()
 
-		sdk.Test(t, sdk.TestCase{
-			ProtoV6ProviderFactories: acctests.ProviderFactories,
-			PreCheck:                 func() { acctests.PreCheck(t) },
-			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
-			Steps: []sdk.TestStep{
-				{
-					Config: terraformResourceRemoteNetwork(terraformResourceName, remoteNetworkName),
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceExists(theResource),
-						acctests.DeleteTwingateResource(theResource, resource.TwingateRemoteNetwork),
-					),
-					ExpectNonEmptyPlan: true,
-				},
-				{
-					Config: terraformResourceRemoteNetwork(terraformResourceName, remoteNetworkName),
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceExists(theResource),
-					),
-				},
+	const terraformResourceName = "test003"
+	theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceRemoteNetwork(terraformResourceName, remoteNetworkName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.DeleteTwingateResource(theResource, resource.TwingateRemoteNetwork),
+				),
+				ExpectNonEmptyPlan: true,
 			},
-		})
+			{
+				Config: terraformResourceRemoteNetwork(terraformResourceName, remoteNetworkName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+		},
 	})
 }
 
 func TestAccTwingateRemoteNetworkUpdateWithTheSameName(t *testing.T) {
-	t.Run("Test Twingate Resource : Acc Remote Network Update With The Same Name", func(t *testing.T) {
-		const terraformResourceName = "test004"
+	t.Parallel()
+
+	const terraformResourceName = "test004"
+	theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+	name := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceRemoteNetwork(terraformResourceName, name),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, name),
+					sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationOther),
+				),
+			},
+			{
+				Config: createRemoteNetworkWithLocation(terraformResourceName, name, model.LocationAWS),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, name),
+					sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationAWS),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateRemoteNetworkCreateExitNode(t *testing.T) {
+	t.Run("Test Twingate Resource : Acc Remote Network Create Exit Node", func(t *testing.T) {
+		const terraformResourceName = "test005"
 		theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
 		name := test.RandomName()
 
@@ -158,22 +190,31 @@ func TestAccTwingateRemoteNetworkUpdateWithTheSameName(t *testing.T) {
 			CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
 			Steps: []sdk.TestStep{
 				{
-					Config: terraformResourceRemoteNetwork(terraformResourceName, name),
+					Config: terraformResourceRemoteNetworkExitNode(terraformResourceName, name, model.NetworkTypeExit),
 					Check: acctests.ComposeTestCheckFunc(
 						acctests.CheckTwingateResourceExists(theResource),
 						sdk.TestCheckResourceAttr(theResource, attr.Name, name),
-						sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationOther),
+						sdk.TestCheckResourceAttr(theResource, attr.Type, model.NetworkTypeExit),
 					),
 				},
 				{
-					Config: createRemoteNetworkWithLocation(terraformResourceName, name, model.LocationAWS),
-					Check: acctests.ComposeTestCheckFunc(
-						acctests.CheckTwingateResourceExists(theResource),
-						sdk.TestCheckResourceAttr(theResource, attr.Name, name),
-						sdk.TestCheckResourceAttr(theResource, attr.Location, model.LocationAWS),
-					),
+					Config: terraformResourceRemoteNetworkExitNode(terraformResourceName, name, model.NetworkTypeRegular),
+					ConfigPlanChecks: sdk.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(theResource, plancheck.ResourceActionReplace),
+						},
+					},
 				},
 			},
 		})
 	})
+}
+
+func terraformResourceRemoteNetworkExitNode(terraformResourceName, name, networkType string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	  type = "%s"
+	}
+	`, terraformResourceName, name, networkType)
 }
