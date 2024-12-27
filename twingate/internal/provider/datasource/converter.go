@@ -3,7 +3,6 @@ package datasource
 import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -13,6 +12,11 @@ func convertConnectorsToTerraform(connectors []*model.Connector) []connectorMode
 			Name:                 types.StringValue(connector.Name),
 			RemoteNetworkID:      types.StringValue(connector.NetworkID),
 			StatusUpdatesEnabled: types.BoolPointerValue(connector.StatusUpdatesEnabled),
+			State:                types.StringValue(connector.State),
+			Version:              types.StringValue(connector.Version),
+			Hostname:             types.StringValue(connector.Hostname),
+			PublicIP:             types.StringValue(connector.PublicIP),
+			PrivateIPs:           utils.MakeStringSet(connector.PrivateIPs),
 		}
 	})
 }
@@ -80,22 +84,15 @@ func convertRemoteNetworksToTerraform(networks []*model.RemoteNetwork) []remoteN
 			ID:       types.StringValue(network.ID),
 			Name:     types.StringValue(network.Name),
 			Location: types.StringValue(network.Location),
+			Type:     types.StringValue(network.Type),
 		}
 	})
 }
 
 func convertDomainsToTerraform(domains []string) *domainsModel {
 	return &domainsModel{
-		Domains: convertStringListToSet(domains),
+		Domains: utils.MakeStringSet(domains),
 	}
-}
-
-func convertStringListToSet(items []string) types.Set {
-	values := utils.Map(items, func(item string) attr.Value {
-		return types.StringValue(item)
-	})
-
-	return types.SetValueMust(types.StringType, values)
 }
 
 func convertPoliciesToTerraform(policies []*model.DLPPolicy) []dlpPolicyModel {

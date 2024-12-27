@@ -30,6 +30,7 @@ func TestAccRemoteConnectorCreate(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
 					sdk.TestCheckResourceAttrSet(theResource, attr.Name),
+					sdk.TestCheckResourceAttrSet(theResource, attr.State),
 				),
 			},
 		},
