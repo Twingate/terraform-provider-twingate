@@ -94,3 +94,16 @@ func convertDomainsToTerraform(domains []string) *domainsModel {
 		Domains: utils.MakeStringSet(domains),
 	}
 }
+
+func convertPoliciesToTerraform(policies []*model.DLPPolicy) []dlpPolicyModel {
+	return utils.Map(policies, func(policy *model.DLPPolicy) dlpPolicyModel {
+		return dlpPolicyModel{
+			ID:   types.StringValue(policy.ID),
+			Name: types.StringValue(policy.Name),
+		}
+	})
+}
+
+func sanitizeName(name string) string {
+	return invalidNameRegex.ReplaceAllString(name, "")
+}

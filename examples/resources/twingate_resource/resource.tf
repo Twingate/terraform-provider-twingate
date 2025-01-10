@@ -31,12 +31,17 @@ data "twingate_security_policy" "test_policy" {
   name = "Test Policy"
 }
 
+data twingate_dlp_policy access_example {
+  name = "DLP Policy Access Example"
+}
+
 resource "twingate_resource" "resource" {
   name              = "network"
   address           = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
   security_policy_id = data.twingate_security_policy.test_policy.id
+  dlp_policy_id = data.twingate_dlp_policy.access_example.id
 
   protocols = {
     allow_icmp = true
@@ -54,6 +59,7 @@ resource "twingate_resource" "resource" {
     group_id                           = twingate_group.aws.id
     security_policy_id                 = data.twingate_security_policy.test_policy.id
     usage_based_autolock_duration_days = 30
+    dlp_policy_id = data.twingate_dlp_policy.access_example.id
   }
 
   // Adding multiple groups by individual ID
@@ -83,7 +89,7 @@ resource "twingate_resource" "resource" {
   }
 
   // Service acoount access is specified similarly
-  // A `for_each` block may be used like above to assign access to multiple 
+  // A `for_each` block may be used like above to assign access to multiple
   // service accounts in a single configuration block.
   access_service {
     content {
@@ -93,4 +99,3 @@ resource "twingate_resource" "resource" {
 
   is_active = true
 }
-

@@ -36,6 +36,7 @@ var (
 	ErrSecurityPoliciesNotFound = errors.New("security policies not found")
 	ErrInvalidPath              = errors.New("invalid path: the path value cannot be asserted as string")
 	ErrNotNullSecurityPolicy    = errors.New("expected null security policy in GroupAccess, got non null")
+	ErrNotNullDLPPolicy         = errors.New("expected null DLP policy, got non null")
 	ErrNotNullUsageBased        = errors.New("expected null usage based duration in GroupAccess, got non null")
 	ErrNullSecurityPolicy       = errors.New("expected non null security policy in GroupAccess, got null")
 	ErrNullUsageBased           = errors.New("expected non null usage based duration in GroupAccess, got null")
@@ -441,6 +442,37 @@ func CheckTwingateResourceUsageBasedIsNullOnGroupAccess(resourceName string) sdk
 
 		if res.GroupsAccess[0].UsageBasedDuration != nil {
 			return ErrNotNullUsageBased
+		}
+
+		return nil
+	}
+}
+
+func CheckTwingateResourceHasNoDLPPolicy(resourceName string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		res, err := providerClient.ReadResource(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read resource: %w", err)
+		}
+
+		if res.DLPPolicyID != nil {
+			return ErrNotNullDLPPolicy
+		}
+
+		for _, access := range res.GroupsAccess {
+			if access.DLPPolicyID != nil {
+				return ErrNotNullDLPPolicy
+			}
 		}
 
 		return nil
@@ -903,6 +935,29 @@ func UpdateResourceSecurityPolicy(resourceName, securityPolicyID string) sdk.Tes
 		_, err = providerClient.UpdateResource(context.Background(), resource)
 		if err != nil {
 			return fmt.Errorf("resource with ID %s failed to update security_policy: %w", resourceID, err)
+		}
+
+		return nil
+	}
+}
+
+func DeleteResourceDLPPolicy(resourceName string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		resource, err := providerClient.ReadResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		resource.DLPPolicyID = nil
+
+		_, err = providerClient.UpdateResource(context.Background(), resource)
+		if err != nil {
+			return fmt.Errorf("resource with ID %s failed to update dlp_policy: %w", resourceID, err)
 		}
 
 		return nil

@@ -298,3 +298,64 @@ func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
 		})
 	}
 }
+
+func TestConverterPoliciesToTerraform(t *testing.T) {
+	cases := []struct {
+		input    []*model.DLPPolicy
+		expected []dlpPolicyModel
+	}{
+		{
+			input:    nil,
+			expected: []dlpPolicyModel{},
+		},
+		{
+			input:    []*model.DLPPolicy{},
+			expected: []dlpPolicyModel{},
+		},
+		{
+			input: []*model.DLPPolicy{
+				{ID: "policy-id", Name: "policy-name"},
+			},
+			expected: []dlpPolicyModel{
+				{
+					ID:   types.StringValue("policy-id"),
+					Name: types.StringValue("policy-name"),
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := convertPoliciesToTerraform(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestConverterValidaNameRegex(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "",
+			expected: "",
+		},
+		{
+			input:    "jaj29da;1;--213=",
+			expected: "jaj29da1213",
+		},
+		{
+			input:    ";;;;;kawodkada;1;--213=",
+			expected: "kawodkada1213",
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := sanitizeName(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
