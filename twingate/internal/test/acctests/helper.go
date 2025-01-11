@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -69,12 +68,6 @@ var providerClient = func() *client.Client { //nolint
 
 var ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){ //nolint
 	"twingate": providerserver.NewProtocol6WithError(twingate.New(client.DefaultAgent, "test")()),
-}
-
-func SetPageLimit(limit int) {
-	if err := os.Setenv(client.EnvPageLimit, strconv.Itoa(limit)); err != nil {
-		log.Fatal("failed to set page limit", err)
-	}
 }
 
 const WaitDuration = 500 * time.Millisecond

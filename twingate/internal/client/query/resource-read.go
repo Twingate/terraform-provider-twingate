@@ -164,3 +164,9 @@ func optionalString(str string) *string {
 
 	return &str
 }
+
+func optionalInt64(i int) *int64 {
+	result := int64(i)
+
+	return &result
+}
