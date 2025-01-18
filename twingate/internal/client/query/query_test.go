@@ -16,6 +16,12 @@ var (
 	boolFalse = false
 )
 
+func optionalInt64(i int) *int64 {
+	result := int64(i)
+
+	return &result
+}
+
 func TestOkError(t *testing.T) {
 	cases := []struct {
 		query         OkError
@@ -474,6 +480,7 @@ func TestUpdateServiceAccountKeyToModel(t *testing.T) {
 			}
 
 			assert.Equal(t, c.expected, actual)
+			assert.Equal(t, c.expected == nil && c.expectedError == nil, c.query.IsEmpty())
 		})
 	}
 }
@@ -583,6 +590,7 @@ func TestReadShallowServiceAccount(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 			assert.Equal(t, c.expected, c.query.ToModel())
+			assert.Equal(t, c.expected == nil, c.query.IsEmpty())
 		})
 	}
 }
@@ -617,6 +625,10 @@ func TestCreateServiceAccountToModel(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 			assert.Equal(t, c.expected, c.query.ToModel())
+
+			if c.expected == nil {
+				assert.True(t, c.query.IsEmpty())
+			}
 		})
 	}
 }
@@ -651,6 +663,7 @@ func TestUpdateServiceAccountToModel(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 			assert.Equal(t, c.expected, c.query.ToModel())
+			assert.Equal(t, c.expected == nil, c.query.IsEmpty())
 		})
 	}
 }
@@ -2835,6 +2848,1059 @@ func TestReadFullResources_ToModel(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadSecurityPolicies_IsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadSecurityPolicies
+		expected bool
+	}{
+		{
+			name: "ReadSecurityPolicies with no edges",
+			query: ReadSecurityPolicies{
+				SecurityPolicies: SecurityPolicies{
+					PaginatedResource: PaginatedResource[*SecurityPolicyEdge]{
+						Edges: []*SecurityPolicyEdge{},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "ReadSecurityPolicies with edges",
+			query: ReadSecurityPolicies{
+				SecurityPolicies: SecurityPolicies{
+					PaginatedResource: PaginatedResource[*SecurityPolicyEdge]{
+						Edges: []*SecurityPolicyEdge{
+							{Node: &gqlSecurityPolicy{}},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := c.query.IsEmpty()
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestReadSecurityPolicies_ToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadSecurityPolicies
+		expected []*model.SecurityPolicy
+	}{
+		{
+			name: "ReadSecurityPolicies with empty edges",
+			query: ReadSecurityPolicies{
+				SecurityPolicies: SecurityPolicies{
+					PaginatedResource: PaginatedResource[*SecurityPolicyEdge]{
+						Edges: []*SecurityPolicyEdge{},
+					},
+				},
+			},
+			expected: []*model.SecurityPolicy{},
+		},
+		{
+			name: "ReadSecurityPolicies with edges",
+			query: ReadSecurityPolicies{
+				SecurityPolicies: SecurityPolicies{
+					PaginatedResource: PaginatedResource[*SecurityPolicyEdge]{
+						Edges: []*SecurityPolicyEdge{
+							{
+								Node: &gqlSecurityPolicy{
+									IDName{
+										ID:   "policy-id-1",
+										Name: "policy-name-1",
+									},
+								},
+							},
+							{
+								Node: &gqlSecurityPolicy{
+									IDName{
+										ID:   "policy-id-2",
+										Name: "policy-name-2",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*model.SecurityPolicy{
+				{
+					ID:   "policy-id-1",
+					Name: "policy-name-1",
+				},
+				{
+					ID:   "policy-id-2",
+					Name: "policy-name-2",
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := c.query.ToModel()
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestSecurityPolicyFilter(t *testing.T) {
+	cases := []struct {
+		name           string
+		inputName      string
+		inputFilter    string
+		expectedFilter *StringFilterOperationInput
+	}{
+		{
+			name:        "Basic name and filter",
+			inputName:   "policy1",
+			inputFilter: "",
+			expectedFilter: &StringFilterOperationInput{
+				Eq: optionalString("policy1"),
+			},
+		},
+		{
+			name:        "Prefix filter",
+			inputName:   "policy2",
+			inputFilter: "_prefix",
+			expectedFilter: &StringFilterOperationInput{
+				StartsWith: optionalString("policy2"),
+			},
+		},
+		{
+			name:           "Both name and filter empty",
+			inputName:      "",
+			inputFilter:    "",
+			expectedFilter: nil,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			result := NewSecurityPolicyFilterField(c.inputName, c.inputFilter)
+
+			assert.Equal(t, c.expectedFilter, result.Name)
+		})
+	}
+}
+
+func TestDeleteServiceAccountQuery(t *testing.T) {
+	cases := []struct {
+		query    DeleteServiceAccount
+		expected bool
+	}{
+		{
+			query:    DeleteServiceAccount{},
+			expected: false,
+		},
+		{
+			query: DeleteServiceAccount{
+				OkError{
+					Ok: true,
+				},
+			},
+			expected: false,
+		},
+		{
+			query: DeleteServiceAccount{
+				OkError{
+					Ok: false,
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestDeleteServiceAccountKeyQuery(t *testing.T) {
+	cases := []struct {
+		query    DeleteServiceAccountKey
+		expected bool
+	}{
+		{
+			query:    DeleteServiceAccountKey{},
+			expected: false,
+		},
+		{
+			query: DeleteServiceAccountKey{
+				OkError{
+					Ok: true,
+				},
+			},
+			expected: false,
+		},
+		{
+			query: DeleteServiceAccountKey{
+				OkError{
+					Ok: false,
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestRevokeServiceAccountKeyQuery(t *testing.T) {
+	cases := []struct {
+		query    RevokeServiceAccountKey
+		expected bool
+	}{
+		{
+			query:    RevokeServiceAccountKey{},
+			expected: false,
+		},
+		{
+			query: RevokeServiceAccountKey{
+				OkError{
+					Ok: true,
+				},
+			},
+			expected: false,
+		},
+		{
+			query: RevokeServiceAccountKey{
+				OkError{
+					Ok: false,
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadServiceAccount_IsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadServiceAccount
+		expected bool
+	}{
+		{
+			name: "Service is nil",
+			query: ReadServiceAccount{
+				Service: nil,
+			},
+			expected: true,
+		},
+		{
+			name: "Service has no Resources or Keys",
+			query: ReadServiceAccount{
+				Service: &GqlService{
+					Resources: gqlResourceIDs{},
+					Keys:      gqlKeyIDs{},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Service has Resources but no Keys",
+			query: ReadServiceAccount{
+				Service: &GqlService{
+					Resources: gqlResourceIDs{
+						PaginatedResource: PaginatedResource[*GqlResourceIDEdge]{
+							Edges: []*GqlResourceIDEdge{
+								{
+									Node: &gqlResourceID{
+										ID: "123",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Service has Keys but no Resources",
+			query: ReadServiceAccount{
+				Service: &GqlService{
+					Keys: gqlKeyIDs{
+						PaginatedResource: PaginatedResource[*GqlKeyIDEdge]{
+							Edges: []*GqlKeyIDEdge{
+								{
+									Node: &gqlKeyID{
+										ID: "123",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Service has both Resources and Keys",
+			query: ReadServiceAccount{
+				Service: &GqlService{
+					Resources: gqlResourceIDs{
+						PaginatedResource: PaginatedResource[*GqlResourceIDEdge]{
+							Edges: []*GqlResourceIDEdge{
+								{
+									Node: &gqlResourceID{
+										ID: "123",
+									},
+								},
+							},
+						},
+					},
+					Keys: gqlKeyIDs{
+						PaginatedResource: PaginatedResource[*GqlKeyIDEdge]{
+							Edges: []*GqlKeyIDEdge{
+								{
+									Node: &gqlKeyID{
+										ID: "123",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestUpdateServiceAccountRemoveResources_IsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    UpdateServiceAccountRemoveResources
+		expected bool
+	}{
+		{
+			name:     "Entity is nil",
+			query:    UpdateServiceAccountRemoveResources{},
+			expected: true,
+		},
+		{
+			name: "Entity is not nil",
+			query: UpdateServiceAccountRemoveResources{
+				ServiceAccountEntityResponse: ServiceAccountEntityResponse{
+					Entity: &gqlServiceAccount{
+						IDName: IDName{
+							ID:   "123",
+							Name: "TestService",
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadServiceAccounts_IsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadServiceAccounts
+		expected bool
+	}{
+		{
+			name:     "No edges",
+			query:    ReadServiceAccounts{},
+			expected: true,
+		},
+		{
+			name: "Has edges",
+			query: ReadServiceAccounts{
+				Services: Services{
+					PaginatedResource: PaginatedResource[*ServiceEdge]{
+						Edges: []*ServiceEdge{
+							{
+								Node: &GqlService{
+									IDName: IDName{
+										ID:   "123",
+										Name: "TestService",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadServiceAccounts_ToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadServiceAccounts
+		expected []*model.ServiceAccount
+	}{
+		{
+			name:     "Empty edges",
+			query:    ReadServiceAccounts{},
+			expected: []*model.ServiceAccount{},
+		},
+		{
+			name: "Single edge with model conversion",
+			query: ReadServiceAccounts{
+				Services{
+					PaginatedResource: PaginatedResource[*ServiceEdge]{
+						Edges: []*ServiceEdge{
+							{
+								Node: &GqlService{
+									IDName: IDName{
+										ID:   "service1",
+										Name: "Account1",
+									},
+									Resources: gqlResourceIDs{
+										PaginatedResource: PaginatedResource[*GqlResourceIDEdge]{
+											Edges: []*GqlResourceIDEdge{
+												{
+													Node: &gqlResourceID{
+														ID: "123",
+													},
+												},
+											},
+										},
+									},
+									Keys: gqlKeyIDs{
+										PaginatedResource: PaginatedResource[*GqlKeyIDEdge]{
+											Edges: []*GqlKeyIDEdge{
+												{
+													Node: &gqlKeyID{
+														ID: "456",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*model.ServiceAccount{
+				{
+					ID:        "service1",
+					Name:      "Account1",
+					Resources: []string{"123"},
+					Keys:      []string{"456"},
+				},
+			},
+		},
+		{
+			name: "Multiple edges with model conversion",
+			query: ReadServiceAccounts{
+				Services{
+					PaginatedResource: PaginatedResource[*ServiceEdge]{
+						Edges: []*ServiceEdge{
+							{
+								Node: &GqlService{
+									IDName: IDName{
+										ID:   "service1",
+										Name: "Account1",
+									},
+									Resources: gqlResourceIDs{
+										PaginatedResource: PaginatedResource[*GqlResourceIDEdge]{
+											Edges: []*GqlResourceIDEdge{
+												{
+													Node: &gqlResourceID{
+														ID: "123",
+													},
+												},
+											},
+										},
+									},
+									Keys: gqlKeyIDs{
+										PaginatedResource: PaginatedResource[*GqlKeyIDEdge]{
+											Edges: []*GqlKeyIDEdge{
+												{
+													Node: &gqlKeyID{
+														ID: "456",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							{
+								Node: &GqlService{
+									IDName: IDName{
+										ID:   "service2",
+										Name: "Account2",
+									},
+									Resources: gqlResourceIDs{
+										PaginatedResource: PaginatedResource[*GqlResourceIDEdge]{
+											Edges: []*GqlResourceIDEdge{
+												{
+													Node: &gqlResourceID{
+														ID: "222123",
+													},
+												},
+											},
+										},
+									},
+									Keys: gqlKeyIDs{
+										PaginatedResource: PaginatedResource[*GqlKeyIDEdge]{
+											Edges: []*GqlKeyIDEdge{
+												{
+													Node: &gqlKeyID{
+														ID: "222456",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*model.ServiceAccount{
+				{
+					ID:        "service1",
+					Name:      "Account1",
+					Resources: []string{"123"},
+					Keys:      []string{"456"},
+				},
+				{
+					ID:        "service2",
+					Name:      "Account2",
+					Resources: []string{"222123"},
+					Keys:      []string{"222456"},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestIsGqlResourceActive(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    *GqlResourceIDEdge
+		expected bool
+	}{
+		{
+			name:     "Nil input",
+			input:    nil,
+			expected: false,
+		},
+		{
+			name: "Nil Node",
+			input: &GqlResourceIDEdge{
+				Node: nil,
+			},
+			expected: false,
+		},
+		{
+			name: "Active resource",
+			input: &GqlResourceIDEdge{
+				Node: &gqlResourceID{
+					ID:       "resource1",
+					IsActive: true,
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Inactive resource",
+			input: &GqlResourceIDEdge{
+				Node: &gqlResourceID{
+					ID:       "resource2",
+					IsActive: false,
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, IsGqlResourceActive(c.input))
+		})
+	}
+}
+
+func TestIsGqlKeyIDEdgeActive(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    *GqlKeyIDEdge
+		expected bool
+	}{
+		{
+			name:     "Nil input",
+			input:    nil,
+			expected: false,
+		},
+		{
+			name: "Nil Node",
+			input: &GqlKeyIDEdge{
+				Node: nil,
+			},
+			expected: false,
+		},
+		{
+			name: "Active key",
+			input: &GqlKeyIDEdge{
+				Node: &gqlKeyID{
+					ID:     "resource1",
+					Status: "ACTIVE",
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Inactive key",
+			input: &GqlKeyIDEdge{
+				Node: &gqlKeyID{
+					ID:     "resource1",
+					Status: "UNKNOWN",
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, IsGqlKeyActive(c.input))
+		})
+	}
+}
+
+func TestServiceAccountFilter(t *testing.T) {
+	cases := []struct {
+		name           string
+		inputName      string
+		inputFilter    string
+		expectedFilter *StringFilterOperationInput
+	}{
+		{
+			name:        "Basic name and filter",
+			inputName:   "service1",
+			inputFilter: "",
+			expectedFilter: &StringFilterOperationInput{
+				Eq: optionalString("service1"),
+			},
+		},
+		{
+			name:        "Prefix filter",
+			inputName:   "service2",
+			inputFilter: "_prefix",
+			expectedFilter: &StringFilterOperationInput{
+				StartsWith: optionalString("service2"),
+			},
+		},
+		{
+			name:           "Both name and filter empty",
+			inputName:      "",
+			inputFilter:    "",
+			expectedFilter: nil,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			result := NewServiceAccountFilterInput(c.inputName, c.inputFilter)
+
+			if c.inputName == "" {
+				assert.Nil(t, result)
+			} else {
+				assert.Equal(t, c.expectedFilter, result.Name)
+			}
+
+		})
+	}
+}
+
+func TestReadShallowServiceAccounts_IsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadShallowServiceAccounts
+		expected bool
+	}{
+		{
+			name: "No edges (empty list)",
+			query: ReadShallowServiceAccounts{
+				ServiceAccounts: ServiceAccounts{},
+			},
+			expected: true,
+		},
+		{
+			name: "Has edges",
+			query: ReadShallowServiceAccounts{
+				ServiceAccounts: ServiceAccounts{
+					PaginatedResource: PaginatedResource[*ServiceAccountEdge]{
+						Edges: []*ServiceAccountEdge{
+							{
+								Node: &gqlServiceAccount{
+									IDName: IDName{
+										ID:   "123",
+										Name: "TestService",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestServiceAccounts_ToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadShallowServiceAccounts
+		expected []*model.ServiceAccount
+	}{
+		{
+			name:     "No edges (empty list)",
+			query:    ReadShallowServiceAccounts{},
+			expected: []*model.ServiceAccount{},
+		},
+		{
+			name: "Multiple edges with model conversion",
+			query: ReadShallowServiceAccounts{
+				ServiceAccounts{
+					PaginatedResource: PaginatedResource[*ServiceAccountEdge]{
+						Edges: []*ServiceAccountEdge{
+							{
+								Node: &gqlServiceAccount{
+									IDName: IDName{
+										ID:   "service1",
+										Name: "Test Service 1",
+									},
+								},
+							},
+							{
+								Node: &gqlServiceAccount{
+									IDName: IDName{
+										ID:   "service2",
+										Name: "Test Service 2",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*model.ServiceAccount{
+				{
+					ID:   "service1",
+					Name: "Test Service 1",
+				},
+				{
+					ID:   "service2",
+					Name: "Test Service 2",
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestCreateUser_ToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		create   CreateUser
+		expected *model.User
+	}{
+		{
+			name: "Nil Entity",
+			create: CreateUser{
+				UserEntityResponse: UserEntityResponse{
+					Entity: nil,
+				},
+			},
+			expected: nil,
+		},
+		{
+			name: "Valid Entity present",
+			create: CreateUser{
+				UserEntityResponse: UserEntityResponse{
+					Entity: &gqlUser{
+						ID:        "user1",
+						Email:     "test@example.com",
+						FirstName: "John",
+						LastName:  "Doe",
+						Role:      "Admin",
+					},
+				},
+			},
+			expected: &model.User{
+				ID:        "user1",
+				Email:     "test@example.com",
+				FirstName: "John",
+				LastName:  "Doe",
+				Role:      "Admin",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.create.ToModel())
+			assert.Equal(t, c.expected == nil, c.create.IsEmpty())
+		})
+	}
+}
+
+func TestDeleteUserQuery(t *testing.T) {
+	cases := []struct {
+		query    DeleteUser
+		expected bool
+	}{
+		{
+			query:    DeleteUser{},
+			expected: false,
+		},
+		{
+			query: DeleteUser{
+				OkError{
+					Ok: true,
+				},
+			},
+			expected: false,
+		},
+		{
+			query: DeleteUser{
+				OkError{
+					Ok: false,
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestNewUserStateUpdateInput(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    string
+		expected *UserStateUpdateInput
+	}{
+		{
+			name:     "Empty input string",
+			input:    "",
+			expected: nil, // Should return nil for an empty string
+		},
+		{
+			name:  "Valid input string",
+			input: "Active",
+			expected: func() *UserStateUpdateInput {
+				state := UserStateUpdateInput("Active")
+				return &state
+			}(),
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, NewUserStateUpdateInput(c.input))
+		})
+	}
+}
+
+func TestUpdateUser_ToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		update   UpdateUser
+		expected *model.User
+	}{
+		{
+			name: "Nil Entity",
+			update: UpdateUser{
+				UserEntityResponse: UserEntityResponse{},
+			},
+			expected: nil,
+		},
+		{
+			name: "Valid Entity provided",
+			update: UpdateUser{
+				UserEntityResponse: UserEntityResponse{
+					Entity: &gqlUser{
+						ID:        "user1",
+						FirstName: "Jane",
+						LastName:  "Doe",
+						State:     "ACTIVE",
+					},
+				},
+			},
+			expected: &model.User{
+				ID:        "user1",
+				FirstName: "Jane",
+				LastName:  "Doe",
+				IsActive:  true,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.update.ToModel())
+			assert.Equal(t, c.expected == nil, c.update.IsEmpty())
+		})
+	}
+}
+
+func TestUpdateUserRole_ToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		update   UpdateUserRole
+		expected *model.User
+	}{
+		{
+			name: "Nil Entity",
+			update: UpdateUserRole{
+				UserEntityResponse: UserEntityResponse{},
+			},
+			expected: nil,
+		},
+		{
+			name: "Valid Entity provided",
+			update: UpdateUserRole{
+				UserEntityResponse: UserEntityResponse{
+					Entity: &gqlUser{
+						ID:        "user1",
+						FirstName: "Jane",
+						LastName:  "Doe",
+						Role:      "Admin",
+						State:     "ACTIVE",
+					},
+				},
+			},
+			expected: &model.User{
+				ID:        "user1",
+				FirstName: "Jane",
+				LastName:  "Doe",
+				Role:      "Admin",
+				IsActive:  true,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.update.ToModel())
+			assert.Equal(t, c.expected == nil, c.update.IsEmpty())
+		})
+	}
+}
+
+func TestReadUsers_IsEmpty(t *testing.T) {
+	cases := []struct {
+		name          string
+		read          ReadUsers
+		expectedEmpty bool
+		expected      []*model.User
+	}{
+		{
+			name: "No edges - should be empty",
+			read: ReadUsers{
+				Users: Users{
+					PaginatedResource: PaginatedResource[*UserEdge]{
+						Edges: []*UserEdge{},
+					},
+				},
+			},
+			expectedEmpty: true,
+			expected:      []*model.User{},
+		},
+		{
+			name: "Has edges - should not be empty",
+			read: ReadUsers{
+				Users: Users{
+					PaginatedResource: PaginatedResource[*UserEdge]{
+						Edges: []*UserEdge{
+							{Node: &gqlUser{ID: "user1"}},
+						},
+					},
+				},
+			},
+			expectedEmpty: false,
+			expected: []*model.User{
+				{ID: "user1"},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.read.ToModel())
+			assert.Equal(t, c.expectedEmpty, c.read.IsEmpty())
 		})
 	}
 }

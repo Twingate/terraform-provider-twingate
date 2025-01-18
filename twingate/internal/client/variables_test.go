@@ -235,6 +235,13 @@ func TestGqlNullableID(t *testing.T) {
 		expected  map[string]interface{}
 	}{
 		{
+			inputVal:  optionalString("test-id"),
+			inputName: "id",
+			expected: map[string]interface{}{
+				"id": graphql.ID("test-id"),
+			},
+		},
+		{
 			inputVal:  "test-id",
 			inputName: "id",
 			expected: map[string]interface{}{
@@ -258,6 +265,10 @@ func TestGqlNullableID(t *testing.T) {
 			assert.Equal(t, c.expected, values)
 		})
 	}
+}
+
+func optionalString(s string) *string {
+	return &s
 }
 
 func TestGetValue(t *testing.T) {
@@ -318,6 +329,52 @@ func TestGetValue(t *testing.T) {
 		t.Run(fmt.Sprintf("case_n%d", n), func(t *testing.T) {
 
 			assert.Equal(t, c.expected, getValue(c.val))
+		})
+	}
+}
+
+func TestGqlIDs(t *testing.T) {
+	cases := []struct {
+		name     string
+		ids      []string
+		varName  string
+		expected map[string]interface{}
+	}{
+		{
+			name:     "Empty IDs slice",
+			ids:      []string{},
+			varName:  "testVar",
+			expected: map[string]interface{}{"testVar": []graphql.ID{}},
+		},
+		{
+			name:    "Single ID",
+			ids:     []string{"123"},
+			varName: "singleVar",
+			expected: map[string]interface{}{
+				"singleVar": []graphql.ID{"123"},
+			},
+		},
+		{
+			name:    "Multiple IDs",
+			ids:     []string{"id1", "id2", "id3"},
+			varName: "multiVar",
+			expected: map[string]interface{}{
+				"multiVar": []graphql.ID{"id1", "id2", "id3"},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			// Prepare a map to pass to the gqlVarOption function
+			values := make(map[string]interface{})
+
+			// Apply the gqlIDs function
+			option := gqlIDs(c.ids, c.varName)
+			result := option(values)
+
+			// Validate the result
+			assert.Equal(t, c.expected, result)
 		})
 	}
 }

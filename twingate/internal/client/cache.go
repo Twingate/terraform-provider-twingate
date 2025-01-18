@@ -20,7 +20,12 @@ type clientCache struct {
 	handlers map[string]resourceHandler
 }
 
-func (c *clientCache) setClient(client *Client) {
+type ReadClient interface {
+	ReadFullResources(ctx context.Context) ([]*model.Resource, error)
+	ReadFullGroups(ctx context.Context) ([]*model.Group, error)
+}
+
+func (c *clientCache) setClient(client ReadClient) {
 	c.once.Do(func() {
 		c.handlers = map[string]resourceHandler{
 			reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource]{
