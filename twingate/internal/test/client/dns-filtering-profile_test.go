@@ -126,7 +126,37 @@ func TestClientDNSProfileUpdateOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		_, err := c.UpdateDNSFilteringProfile(context.Background(), &model.DNSFilteringProfile{ID: "id", Name: "test"})
+		_, err := c.UpdateDNSFilteringProfile(context.Background(), &model.DNSFilteringProfile{
+			ID:   "id",
+			Name: "test",
+			PrivacyCategories: &model.PrivacyCategories{
+				BlockAffiliate:         true,
+				BlockAdsAndTrackers:    true,
+				BlockDisguisedTrackers: true,
+			},
+			SecurityCategories: &model.SecurityCategory{
+				EnableThreatIntelligenceFeeds:   true,
+				EnableGoogleSafeBrowsing:        true,
+				BlockCryptojacking:              true,
+				BlockIdnHomographs:              true,
+				BlockTyposquatting:              true,
+				BlockDNSRebinding:               true,
+				BlockNewlyRegisteredDomains:     true,
+				BlockDomainGenerationAlgorithms: true,
+				BlockParkedDomains:              true,
+			},
+			ContentCategories: &model.ContentCategory{
+				BlockGambling:               true,
+				BlockDating:                 true,
+				BlockAdultContent:           true,
+				BlockSocialMedia:            true,
+				BlockGames:                  true,
+				BlockStreaming:              true,
+				BlockPiracy:                 true,
+				EnableYoutubeRestrictedMode: true,
+				EnableSafeSearch:            true,
+			},
+		})
 
 		assert.NoError(t, err)
 	})
