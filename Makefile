@@ -72,13 +72,13 @@ fmtcheck:
 .PHONY: lint
 lint:
 	@echo "==> Checking source code against linters..."
-	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run -c /app/golangci.yml ./$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run --timeout 5m -c golangci.yml ./$(PKG_NAME)/...
 
 
 .PHONY: lint-fix
 lint-fix:
 	@echo "==> Checking source code against linters with fix enabled..."
-	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run --fix -c /app/golangci.yml ./$(PKG_NAME)/...
+	docker run -t --rm -v $(PWD):/app -w /app golangci/golangci-lint:$(GOLINT_VERSION) golangci-lint run --timeout 5m --fix -c golangci.yml ./$(PKG_NAME)/...
 
 .PHONY: sec
 sec:
