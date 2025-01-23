@@ -37,6 +37,38 @@ func TestAccRemoteConnectorCreate(t *testing.T) {
 	})
 }
 
+func TestAccRemoteConnectorUpdateNetworkName(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test_n1"
+	theResource := acctests.TerraformConnector(terraformResourceName)
+	networkResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+	remoteNetworkName1 := test.RandomName()
+	remoteNetworkName2 := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateConnectorAndRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName1),
+				Check: acctests.ComposeTestCheckFunc(
+					checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
+					sdk.TestCheckResourceAttr(networkResource, attr.Name, remoteNetworkName1),
+				),
+			},
+			{
+				Config: terraformResourceTwingateConnector(terraformResourceName, terraformResourceName, remoteNetworkName2),
+				Check: acctests.ComposeTestCheckFunc(
+					checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
+					sdk.TestCheckResourceAttr(networkResource, attr.Name, remoteNetworkName2),
+				),
+			},
+		},
+	})
+}
+
 func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 	t.Parallel()
 
