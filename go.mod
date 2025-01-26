@@ -14,9 +14,9 @@ require (
 	github.com/hasura/go-graphql-client v0.13.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jarcoal/httpmock v1.3.1
-	github.com/mattn/goveralls v0.0.12
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.10.0
+	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad
 	golang.org/x/sync v0.10.0
 	gotest.tools/gotestsum v1.12.0
 )

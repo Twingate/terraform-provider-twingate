@@ -1,6 +1,5 @@
 #!/bin/sh
 
-set -o errexit
 set -o nounset
 
 PACKAGE_NAME=./twingate/...
@@ -10,10 +9,19 @@ mkdir -p "${TEST_RESULTS}"
 
 echo PACKAGE_NAME: "$PACKAGE_NAME"
 echo "Running tests:"
-go run gotest.tools/gotestsum --rerun-fails=5 --packages "${PACKAGE_NAME}" --format standard-quiet --junitfile "${TEST_RESULTS}"/test-results.xml -- -coverpkg="${PACKAGE_NAME}" -coverprofile="${TEST_RESULTS}"/coverage.out.tmp "${PACKAGE_NAME}"
-echo
+go run gotest.tools/gotestsum --packages "${PACKAGE_NAME}" --jsonfile "${TEST_RESULTS}"/report.json -- -coverpkg="${PACKAGE_NAME}" -coverprofile="${TEST_RESULTS}"/coverage.out "${PACKAGE_NAME}"
 
-echo "Generating coverage report (removing generated **/api/gen/** and *.pb.go files)"
-grep -f ./scripts/coverage_ignore_patterns -v "${TEST_RESULTS}"/coverage.out.tmp > "${TEST_RESULTS}"/coverage.out
-go tool cover -html="${TEST_RESULTS}"/coverage.out -o "${TEST_RESULTS}"/coverage.html
-echo
+if [ $? -ne 0 ]; then
+  set -o errexit
+
+  echo "Retry failed tests:"
+  grep '"Action":"fail"' "${TEST_RESULTS}"/report.json | grep -o '"Test":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"' > "${TEST_RESULTS}"/failed_tests.txt
+  go run gotest.tools/gotestsum --rerun-fails=5 --packages "${PACKAGE_NAME}" -- -run "$(paste -sd "|" "${TEST_RESULTS}"/failed_tests.txt)" -coverpkg="${PACKAGE_NAME}" -coverprofile="${TEST_RESULTS}"/retry_coverage.out "${PACKAGE_NAME}"
+
+  go run github.com/wadey/gocovmerge "${TEST_RESULTS}"/coverage.out "${TEST_RESULTS}"/retry_coverage.out > "${TEST_RESULTS}"/final_coverage.out
+
+else
+
+  go run github.com/wadey/gocovmerge "${TEST_RESULTS}"/coverage.out "${TEST_RESULTS}"/coverage.out > "${TEST_RESULTS}"/final_coverage.out || exit 1
+
+fi
