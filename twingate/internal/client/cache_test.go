@@ -88,29 +88,3 @@ func TestHandler_Init(t *testing.T) {
 	assert.True(t, exists1)
 	assert.True(t, exists2)
 }
-
-//func TestGetResource(t *testing.T) {
-//	mockResource := &model.Resource{ID: "resource1"}
-//	handler := &handler[*model.Resource]{
-//		readResources: func(ctx context.Context) ([]*model.Resource, error) {
-//			return []*model.Resource{
-//				mockResource,
-//			}, nil
-//		},
-//	}
-//
-//	handler.setResource(mockResource)
-//
-//	//mockResource := &model.Resource{ID: "resource3"}
-//	//cache := &clientCache{}
-//	//handler := &handler[*model.Resource]{}
-//	//handler.setResource(mockResource)
-//	//
-//	//cache.handlers = map[string]resourceHandler{
-//	//	reflect.TypeOf(&model.Resource{}).String(): handler,
-//	//}
-//
-//	result, exists := getResource[*model.Resource]("resource1")
-//	assert.True(t, exists)
-//	assert.Equal(t, "resource1", result.ID)
-//}
