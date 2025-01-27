@@ -29,8 +29,6 @@ func (r Resources) ToModel() []*model.Resource {
 	})
 }
 
-// ---
-
 type ReadFullResources struct {
 	FullResources `graphql:"resources(after: $resourcesEndCursor, first: $pageLimit)"`
 }

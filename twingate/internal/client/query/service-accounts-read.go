@@ -68,6 +68,10 @@ type gqlResourceID struct {
 }
 
 func IsGqlResourceActive(item *GqlResourceIDEdge) bool {
+	if item == nil || item.Node == nil {
+		return false
+	}
+
 	return item.Node.IsActive
 }
 
@@ -95,6 +99,10 @@ func (k gqlKeyID) isActive() bool {
 }
 
 func IsGqlKeyActive(item *GqlKeyIDEdge) bool {
+	if item == nil || item.Node == nil {
+		return false
+	}
+
 	return item.Node.isActive()
 }
 

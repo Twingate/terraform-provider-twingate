@@ -298,3 +298,73 @@ func TestConvertSecurityPoliciesToTerraform(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertRemoteNetworksToTerraform(t *testing.T) {
+	cases := []struct {
+		input    []*model.RemoteNetwork
+		expected []remoteNetworkModel
+	}{
+		{
+			input:    nil,
+			expected: []remoteNetworkModel{},
+		},
+		{
+			input: []*model.RemoteNetwork{
+				{
+					ID:       "network-id",
+					Name:     "network-name",
+					Location: "network-location",
+					Type:     "network-type",
+				},
+			},
+			expected: []remoteNetworkModel{
+				{
+					ID:       types.StringValue("network-id"),
+					Name:     types.StringValue("network-name"),
+					Location: types.StringValue("network-location"),
+					Type:     types.StringValue("network-type"),
+				},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := convertRemoteNetworksToTerraform(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestConvertDomainsToTerraform(t *testing.T) {
+	cases := []struct {
+		input    []string
+		expected *domainsModel
+	}{
+		{
+			input: nil,
+			expected: &domainsModel{
+				Domains: types.SetValueMust(types.StringType, []attr.Value{}),
+			},
+		},
+		{
+			input: []string{
+				"domain-1",
+				"domain-2",
+			},
+			expected: &domainsModel{
+				Domains: types.SetValueMust(types.StringType, []attr.Value{
+					types.StringValue("domain-1"),
+					types.StringValue("domain-2"),
+				}),
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			actual := convertDomainsToTerraform(c.input)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
