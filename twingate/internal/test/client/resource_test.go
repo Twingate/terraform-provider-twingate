@@ -48,10 +48,11 @@ func TestClientResourceCreateOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceOkJson))
 
-		resource, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
+		resource, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id", SecurityPolicyID: optionalString("")})
 
 		assert.Nil(t, err)
 		assert.EqualValues(t, "test-id", resource.ID)
+		assert.EqualValues(t, optionalString(""), resource.SecurityPolicyID)
 	})
 }
 
@@ -1510,5 +1511,321 @@ func TestClientAddResourceAccessResponseError(t *testing.T) {
 			},
 		)
 		assert.EqualError(t, err, `failed to update resource access with id resource-1: response error`)
+	})
+}
+
+func TestClientFullResourcesReadAllOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Full Resource Read All Ok", func(t *testing.T) {
+		var defaultBool bool
+
+		expected := []*model.Resource{
+			{
+				ID:                       "resource1",
+				Name:                     "tf-acc-resource1",
+				IsVisible:                &defaultBool,
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+				GroupsAccess: []model.AccessGroup{
+					{GroupID: "group-1"},
+					{GroupID: "group-2"},
+				},
+				ServiceAccounts: []string{"service-account-2"},
+			},
+			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+		}
+
+		// response JSON
+		readResourcesOkJson := `{
+          "data": {
+            "resources": {
+              "pageInfo": {
+                "endCursor": "cur001",
+                "hasNextPage": true
+              },
+              "edges": [
+                {
+                  "node": {
+                    "id": "resource1",
+                    "name": "tf-acc-resource1",
+                    "access": {
+                      "pageInfo": {
+                        "endCursor": "cur001",
+                        "hasNextPage": true
+                      },
+                      "edges": [
+                        {
+                          "node": {
+                            "__typename": "Group",
+                            "id": "group-1"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "id": "resource2",
+                    "name": "resource2"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "resource3",
+                    "name": "tf-acc-resource3"
+                  }
+                }
+              ]
+            }
+          }
+		}`
+
+		nextPage := `{
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "hasNextPage": false
+		      },
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "resource4",
+		            "name": "tf-acc-resource4"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "resource5",
+		            "name": "tf-acc-resource5"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		resource1AccessPage := `{
+          "data": {
+            "resource": {
+              "id": "resource1",
+              "access": {
+                "pageInfo": {
+                  "hasNextPage": false
+                },
+                "edges": [
+                  {
+                    "node": {
+                      "__typename": "Group",
+                      "id": "group-2"
+                    }
+                  },
+                  {
+                    "node": {
+                      "__typename": "ServiceAccount",
+                      "id": "service-account-2"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.ResponderFromMultipleResponses(
+				[]*http.Response{
+					httpmock.NewStringResponse(200, readResourcesOkJson),
+					httpmock.NewStringResponse(200, nextPage),
+					httpmock.NewStringResponse(200, resource1AccessPage),
+				}),
+		)
+
+		resources, err := client.ReadFullResources(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, expected, resources)
+	})
+}
+
+func TestClientFullResourcesReadRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resources Full Read Request Error", func(t *testing.T) {
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			httpmock.NewErrorResponder(errBadRequest))
+
+		resources, err := client.ReadFullResources(context.Background())
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id All", errBadRequest))
+	})
+}
+
+func TestClientFullResourcesReadAllRequestError(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Full Read All - Request Error", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "endCursor": "cur001",
+		        "hasNextPage": true
+		      },
+		      "edges": []
+		    }
+		  }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewErrorResponder(errBadRequest),
+			),
+		)
+
+		resources, err := client.ReadFullResources(context.Background())
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource", errBadRequest))
+	})
+}
+
+func TestClientFullResourcesReadAllEmptyResponse(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Full Read All - Empty Response", func(t *testing.T) {
+		jsonResponse := `{
+		  "data": {
+		    "resources": {
+		      "pageInfo": {
+		        "endCursor": "cur001",
+		        "hasNextPage": true
+		      },
+		      "edges": []
+		    }
+		  }
+		}`
+
+		emptyResponse := `{}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewStringResponder(200, emptyResponse),
+			),
+		)
+
+		resources, err := client.ReadFullResources(context.Background())
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, `failed to read resource: query result is empty`)
+	})
+}
+
+func TestClientFullResourcesReadAllRequestErrorOnExtendedCall(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Full Read All - Request Error On Extended Call", func(t *testing.T) {
+
+		jsonResponse := `{
+          "data": {
+            "resources": {
+              "pageInfo": {
+                "hasNextPage": false
+              },
+              "edges": [
+                {
+                  "node": {
+                    "id": "resource1",
+                    "name": "tf-acc-resource1",
+                    "access": {
+                      "pageInfo": {
+                        "endCursor": "cur001",
+                        "hasNextPage": true
+                      },
+                      "edges": [
+                        {
+                          "node": {
+                            "__typename": "Group",
+                            "id": "group-1"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+		}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewErrorResponder(errBadRequest),
+			),
+		)
+
+		resources, err := client.ReadFullResources(context.Background())
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, graphqlErr(client, "failed to read resource with id resource1", errBadRequest))
+	})
+}
+
+func TestClientFullResourcesReadAllEmptyResponseOnExtendedCall(t *testing.T) {
+	t.Run("Test Twingate Resource : Client Resource Full Read All - Empty Response On Extended Call", func(t *testing.T) {
+		jsonResponse := `{
+          "data": {
+            "resources": {
+              "pageInfo": {
+                "hasNextPage": false
+              },
+              "edges": [
+                {
+                  "node": {
+                    "id": "resource1",
+                    "name": "tf-acc-resource1",
+                    "access": {
+                      "pageInfo": {
+                        "endCursor": "cur001",
+                        "hasNextPage": true
+                      },
+                      "edges": [
+                        {
+                          "node": {
+                            "__typename": "Group",
+                            "id": "group-1"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+		}`
+
+		emptyResponse := `{}`
+
+		client := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(200, jsonResponse),
+				httpmock.NewStringResponder(200, emptyResponse),
+			),
+		)
+
+		resources, err := client.ReadFullResources(context.Background())
+
+		assert.Nil(t, resources)
+		assert.EqualError(t, err, `failed to read resource with id resource1: query result is empty`)
 	})
 }

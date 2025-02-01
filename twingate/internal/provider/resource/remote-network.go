@@ -65,9 +65,11 @@ func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Description: "The name of the Remote Network",
 			},
 			attr.Location: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
+				Optional:      true,
+				Computed:      true,
+				Description:   fmt.Sprintf("The location of the Remote Network. Must be one of the following: %s.", strings.Join(model.Locations, ", ")),
+				Default:       stringdefault.StaticString(model.LocationOther),
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.Locations...),
 				},
@@ -84,8 +86,9 @@ func (r *remoteNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp
 			},
 			// computed
 			attr.ID: schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the Remote Network",
+				Computed:      true,
+				Description:   "The ID of the Remote Network",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
@@ -100,15 +103,9 @@ func (r *remoteNetwork) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	// init with default value
-	location := model.LocationOther
-	if !plan.Location.IsUnknown() {
-		location = plan.Location.ValueString()
-	}
-
 	network, err := r.client.CreateRemoteNetwork(ctx, &model.RemoteNetwork{
 		Name:     plan.Name.ValueString(),
-		Location: location,
+		Location: plan.Location.ValueString(),
 		Type:     plan.Type.ValueString(),
 	})
 
@@ -146,6 +143,7 @@ func (r *remoteNetwork) Update(ctx context.Context, req resource.UpdateRequest, 
 	}
 
 	if plan.Name == state.Name {
+		// prevents error: A Remote Network with this name already exists
 		network.Name = ""
 	}
 

@@ -279,3 +279,107 @@ func TestResourceAccessToTerraform(t *testing.T) {
 		})
 	}
 }
+
+func TestAccessGroup_Equals(t *testing.T) {
+	// Utility to create optional string
+	toStringPtr := func(s string) *string {
+		return &s
+	}
+
+	// Utility to create optional int64
+	toInt64Ptr := func(i int64) *int64 {
+		return &i
+	}
+
+	t.Run("Equal Groups (all fields)", func(t *testing.T) {
+		group1 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		group2 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		assert.True(t, group1.Equals(group2))
+	})
+
+	t.Run("Equal Groups (optional fields nil)", func(t *testing.T) {
+		group1 := model.AccessGroup{
+			GroupID: "group1",
+		}
+
+		group2 := model.AccessGroup{
+			GroupID: "group1",
+		}
+
+		assert.True(t, group1.Equals(group2))
+	})
+
+	t.Run("Different GroupIDs", func(t *testing.T) {
+		group1 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		group2 := model.AccessGroup{
+			GroupID:            "group2",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		assert.False(t, group1.Equals(group2))
+	})
+
+	t.Run("Different SecurityPolicyID", func(t *testing.T) {
+		group1 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		group2 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy2"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		assert.False(t, group1.Equals(group2))
+	})
+
+	t.Run("Different UsageBasedDuration", func(t *testing.T) {
+		group1 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		group2 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(7200),
+		}
+
+		assert.False(t, group1.Equals(group2))
+	})
+
+	t.Run("Nil vs Non-Nil optional fields", func(t *testing.T) {
+		group1 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   nil,
+			UsageBasedDuration: nil,
+		}
+
+		group2 := model.AccessGroup{
+			GroupID:            "group1",
+			SecurityPolicyID:   toStringPtr("policy1"),
+			UsageBasedDuration: toInt64Ptr(3600),
+		}
+
+		assert.False(t, group1.Equals(group2))
+	})
+}

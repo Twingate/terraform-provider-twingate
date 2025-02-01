@@ -111,7 +111,7 @@ jobs:
     - name: Send coverage
       uses: shogo82148/actions-goveralls@v1
       with:
-        path-to-profile: "./test_results/coverage.out"
+        path-to-profile: "./test_results/final_coverage.out"
         flag-name: tests
         parallel: true
 
@@ -165,7 +165,7 @@ jobs:
     - name: Send coverage
       uses: shogo82148/actions-goveralls@v1
       with:
-        path-to-profile: "./test_results/coverage.out"
+        path-to-profile: "./test_results/final_coverage.out"
         flag-name: tests-acc-${{ matrix.terraform }}
         parallel: true
 

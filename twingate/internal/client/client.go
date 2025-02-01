@@ -128,7 +128,7 @@ func newServerURL(network, url string) serverURL {
 //nolint:cyclop
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	reqID := "test_id"
-	if resp != nil {
+	if resp != nil && resp.Request.Header.Get(headerRequestID) != "" {
 		reqID = resp.Request.Header.Get(headerRequestID)
 	}
 
@@ -163,16 +163,20 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 	if resp != nil {
 		log.Printf("[WARN] [RETRY_POLICY] [id:%s] going to retry call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
 
-		reqBody, _ := resp.Request.GetBody()
-		if reqBody != nil {
-			reqBodyBytes, _ := io.ReadAll(reqBody)
-			log.Printf("[WARN] [RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
+		if resp.Request.GetBody != nil {
+			reqBody, _ := resp.Request.GetBody()
+			if reqBody != nil {
+				reqBodyBytes, _ := io.ReadAll(reqBody)
+				log.Printf("[WARN] [RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
+			}
 		}
 
-		body, bodyErr := io.ReadAll(resp.Body)
-		if bodyErr == nil {
-			resp.Body = io.NopCloser(bytes.NewBuffer(body))
-			log.Printf("[WARN] [RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
+		if resp.Body != nil {
+			body, bodyErr := io.ReadAll(resp.Body)
+			if bodyErr == nil {
+				resp.Body = io.NopCloser(bytes.NewBuffer(body))
+				log.Printf("[WARN] [RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
+			}
 		}
 	}
 

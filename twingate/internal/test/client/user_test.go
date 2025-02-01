@@ -3,11 +3,12 @@ package client
 import (
 	"context"
 	"fmt"
-	"testing"
-
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestClientUserReadOk(t *testing.T) {
@@ -497,4 +498,95 @@ func TestClientUserDeleteResponseError(t *testing.T) {
 
 		assert.EqualError(t, err, `failed to delete user with id user-id: backend error`)
 	})
+}
+
+func TestNewUserFilterInput(t *testing.T) {
+	cases := []struct {
+		name   string
+		filter *client.UsersFilter
+		expect *query.UserFilterInput
+	}{
+		{
+			name:   "nil filter",
+			filter: nil,
+			expect: nil,
+		},
+		{
+			name: "empty filter",
+			filter: &client.UsersFilter{
+				FirstName: nil,
+				LastName:  nil,
+				Email:     nil,
+				Roles:     nil,
+			},
+			expect: &query.UserFilterInput{},
+		},
+		{
+			name: "filter with FirstName",
+			filter: &client.UsersFilter{
+				FirstName: &client.StringFilter{Name: "John", Filter: "_contains"},
+			},
+			expect: &query.UserFilterInput{
+				FirstName: &query.StringFilterOperationInput{
+					Contains: optionalString("John"),
+				},
+			},
+		},
+		{
+			name: "filter with LastName and Email",
+			filter: &client.UsersFilter{
+				LastName: &client.StringFilter{Name: "Doe", Filter: "_prefix"},
+				Email:    &client.StringFilter{Name: "john.doe@example.com", Filter: ""},
+			},
+			expect: &query.UserFilterInput{
+				LastName: &query.StringFilterOperationInput{
+					StartsWith: optionalString("Doe"),
+				},
+				Email: &query.StringFilterOperationInput{
+					Eq: optionalString("john.doe@example.com"),
+				},
+			},
+		},
+		{
+			name: "filter with roles",
+			filter: &client.UsersFilter{
+				Roles: []string{"admin", "user"},
+			},
+			expect: &query.UserFilterInput{
+				Role: &query.UserRoleFilterOperationInput{
+					In: []query.UserRole{"admin", "user"},
+				},
+			},
+		},
+		{
+			name: "filter with all fields",
+			filter: &client.UsersFilter{
+				FirstName: &client.StringFilter{Name: "John", Filter: "_suffix"},
+				LastName:  &client.StringFilter{Name: "Doe", Filter: "_regexp"},
+				Email:     &client.StringFilter{Name: "john.doe@example.com", Filter: "_exclude"},
+				Roles:     []string{"admin", "user"},
+			},
+			expect: &query.UserFilterInput{
+				FirstName: &query.StringFilterOperationInput{
+					EndsWith: optionalString("John"),
+				},
+				LastName: &query.StringFilterOperationInput{
+					Regexp: optionalString("Doe"),
+				},
+				Email: &query.StringFilterOperationInput{
+					Ne: optionalString("john.doe@example.com"),
+				},
+				Role: &query.UserRoleFilterOperationInput{
+					In: []query.UserRole{"admin", "user"},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			result := client.NewUserFilterInput(c.filter)
+			assert.Equal(t, c.expect, result)
+		})
+	}
 }

@@ -210,6 +210,37 @@ func TestAccTwingateRemoteNetworkCreateExitNode(t *testing.T) {
 	})
 }
 
+func TestAccTwingateRemoteNetworkUpdateOnlyName(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test007"
+	theResource := acctests.TerraformRemoteNetwork(terraformResourceName)
+	name1 := test.RandomName()
+	name2 := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceRemoteNetwork(terraformResourceName, name1),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, name1),
+				),
+			},
+			{
+				Config: terraformResourceRemoteNetwork(terraformResourceName, name2),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, name2),
+				),
+			},
+		},
+	})
+}
+
 func terraformResourceRemoteNetworkExitNode(terraformResourceName, name, networkType string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%s" {

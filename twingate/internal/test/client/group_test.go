@@ -1154,3 +1154,62 @@ func TestClientDeleteGroupUsersEmptyResponse(t *testing.T) {
 		assert.EqualError(t, err, `failed to update group with id group-1: query result is empty`)
 	})
 }
+
+func TestClientGroupsReadFullOk(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Full Groups Ok", func(t *testing.T) {
+		expected := []*model.Group{
+			{
+				ID:    "id1",
+				Name:  "group1",
+				Users: []string{},
+			},
+			{
+				ID:    "id2",
+				Name:  "group2",
+				Users: []string{},
+			},
+			{
+				ID:    "id3",
+				Name:  "group3",
+				Users: []string{},
+			},
+		}
+
+		jsonResponse := `{
+		  "data": {
+		    "groups": {
+		      "edges": [
+		        {
+		          "node": {
+		            "id": "id1",
+		            "name": "group1"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id2",
+		            "name": "group2"
+		          }
+		        },
+		        {
+		          "node": {
+		            "id": "id3",
+		            "name": "group3"
+		          }
+		        }
+		      ]
+		    }
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			httpmock.NewStringResponder(200, jsonResponse))
+
+		groups, err := c.ReadFullGroups(context.Background())
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, groups)
+	})
+}
