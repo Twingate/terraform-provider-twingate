@@ -16,6 +16,7 @@ import (
 var (
 	connectorsLen     = attr.Len(attr.Connectors)
 	connectorNamePath = attr.Path(attr.Connectors, attr.Name)
+	connectorIDPath   = attr.Path(attr.Connectors, attr.ID)
 )
 
 func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
@@ -34,6 +35,7 @@ func TestAccDatasourceTwingateConnectors_basic(t *testing.T) {
 				Config: testDatasourceTwingateConnectors(networkName1, connectorName, networkName2, connectorName, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					testCheckOutputLength("my_connectors", 2),
+					testCheckOutputAttrSet("my_connectors", 0, attr.ID),
 					testCheckOutputAttr("my_connectors", 0, attr.Name, connectorName),
 					testCheckOutputAttr("my_connectors", 0, attr.StatusUpdatesEnabled, true),
 					testCheckOutputAttr("my_connectors", 0, attr.State, "DEAD_NO_HEARTBEAT"),
@@ -159,6 +161,43 @@ func testCheckOutputAttr(name string, index int, attr string, expected interface
 	}
 }
 
+func testCheckOutputAttrSet(name string, index int, attr string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ms := s.RootModule()
+
+		res, ok := ms.Outputs[name]
+		if !ok || res == nil || res.Value == nil {
+			return fmt.Errorf("output '%s' not found", name)
+		}
+
+		list, ok := res.Value.([]interface{})
+		if !ok {
+			return fmt.Errorf("output '%s' is not a list", name)
+		}
+
+		if index >= len(list) {
+			return fmt.Errorf("index out of bounds, actual length %d", len(list))
+		}
+
+		item := list[index]
+		obj, ok := item.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("expected map, actual is %T", item)
+		}
+
+		actual, ok := obj[attr]
+		if !ok {
+			return fmt.Errorf("attribute '%s' not found", attr)
+		}
+
+		if len(actual.(string)) > 0 {
+			return nil
+		}
+
+		return fmt.Errorf("got empty: expected not empty value")
+	}
+}
+
 func TestAccDatasourceTwingateConnectorsFilterByName(t *testing.T) {
 	t.Parallel()
 
@@ -175,6 +214,7 @@ func TestAccDatasourceTwingateConnectorsFilterByName(t *testing.T) {
 				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, "", connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
+					resource.TestCheckResourceAttrSet(theDatasource, connectorIDPath),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
 				),
 			},
@@ -215,6 +255,7 @@ func TestAccDatasourceTwingateConnectorsFilterByPrefix(t *testing.T) {
 				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByPrefix, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
+					resource.TestCheckResourceAttrSet(theDatasource, connectorIDPath),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
 				),
 			},
@@ -238,6 +279,7 @@ func TestAccDatasourceTwingateConnectorsFilterBySuffix(t *testing.T) {
 				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterBySuffix, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
+					resource.TestCheckResourceAttrSet(theDatasource, connectorIDPath),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
 				),
 			},
@@ -261,6 +303,7 @@ func TestAccDatasourceTwingateConnectorsFilterByContains(t *testing.T) {
 				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByContains, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
+					resource.TestCheckResourceAttrSet(theDatasource, connectorIDPath),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
 				),
 			},
@@ -284,6 +327,7 @@ func TestAccDatasourceTwingateConnectorsFilterByRegexp(t *testing.T) {
 				Config: testDatasourceTwingateConnectorsFilter(resourceName, test.RandomName(), connectorName, attr.FilterByRegexp, fmt.Sprintf(".*%s.*", connectorName)),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "1"),
+					resource.TestCheckResourceAttrSet(theDatasource, connectorIDPath),
 					resource.TestCheckResourceAttr(theDatasource, connectorNamePath, connectorName),
 				),
 			},

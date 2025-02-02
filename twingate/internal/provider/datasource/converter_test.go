@@ -31,6 +31,7 @@ func TestConverterConnectorsToTerraform(t *testing.T) {
 			},
 			expected: []connectorModel{
 				{
+					ID:                   types.StringValue("connector-id"),
 					Name:                 types.StringValue("connector-name"),
 					RemoteNetworkID:      types.StringValue("network-id"),
 					StatusUpdatesEnabled: types.BoolValue(true),

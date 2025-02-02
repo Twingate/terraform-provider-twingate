@@ -9,6 +9,7 @@ import (
 func convertConnectorsToTerraform(connectors []*model.Connector) []connectorModel {
 	return utils.Map(connectors, func(connector *model.Connector) connectorModel {
 		return connectorModel{
+			ID:                   types.StringValue(connector.ID),
 			Name:                 types.StringValue(connector.Name),
 			RemoteNetworkID:      types.StringValue(connector.NetworkID),
 			StatusUpdatesEnabled: types.BoolPointerValue(connector.StatusUpdatesEnabled),
