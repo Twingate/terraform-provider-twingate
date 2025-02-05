@@ -17,7 +17,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.10.0
 	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.11.0
 	gotest.tools/gotestsum v1.12.0
 )
 
