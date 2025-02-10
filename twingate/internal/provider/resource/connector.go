@@ -69,6 +69,15 @@ func (r *connector) Configure(_ context.Context, req resource.ConfigureRequest, 
 
 func (r *connector) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+
+	con, err := r.client.ReadConnector(ctx, req.ID)
+	if err != nil {
+		addErr(&resp.Diagnostics, err, "import", TwingateConnector)
+
+		return
+	}
+
+	resp.State.SetAttribute(ctx, path.Root(attr.Name), types.StringValue(con.Name))
 }
 
 func (r *connector) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -238,6 +247,10 @@ func (r *connector) helper(ctx context.Context, conn *model.Connector, state *co
 		return
 	}
 
+	if state.Name.IsUnknown() {
+		state.Name = types.StringValue(conn.Name)
+	}
+
 	state.ID = types.StringValue(conn.ID)
 	state.RemoteNetworkID = types.StringValue(conn.NetworkID)
 	state.StatusUpdatesEnabled = types.BoolPointerValue(conn.StatusUpdatesEnabled)
@@ -267,17 +280,18 @@ func (m sanitizeInsensitiveModifier) MarkdownDescription(_ context.Context) stri
 }
 
 func (m sanitizeInsensitiveModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	// Do not replace on resource creation.
-	if req.State.Raw.IsNull() {
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
 		return
 	}
 
-	// Do not replace on resource destroy.
-	if req.Plan.Raw.IsNull() {
+	// Do nothing if there is a known planned value.
+	if !req.PlanValue.IsUnknown() {
 		return
 	}
 
-	if !req.PlanValue.IsUnknown() && req.StateValue.IsNull() {
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
 		return
 	}
 
