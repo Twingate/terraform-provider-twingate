@@ -3,26 +3,37 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatorfuncerr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+const minLengthConnectorName = 3
 
 var ErrNotAllowChangeRemoteNetworkID = errors.New("connectors cannot be moved between Remote Networks: you must either create a new Connector or destroy and recreate the existing one")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ resource.Resource = &connector{}
 var _ resource.ResourceWithImportState = &connector{}
+
+var spacesRgx = regexp.MustCompile(`\s+`)
 
 func NewConnectorResource() resource.Resource {
 	return &connector{}
@@ -93,6 +104,12 @@ func (r *connector) Schema(_ context.Context, _ resource.SchemaRequest, resp *re
 				Optional:    true,
 				Computed:    true,
 				Description: "Name of the Connector, if not provided one will be generated.",
+				Validators: []validator.String{
+					SanitizedNameLengthValidator(minLengthConnectorName),
+				},
+				PlanModifiers: []planmodifier.String{
+					SanitizeInsensitiveModifier(),
+				},
 			},
 			attr.StatusUpdatesEnabled: schema.BoolAttribute{
 				Optional:    true,
@@ -142,7 +159,7 @@ func (r *connector) Create(ctx context.Context, req resource.CreateRequest, resp
 	}
 
 	conn, err := r.client.CreateConnector(ctx, &model.Connector{
-		Name:                 plan.Name.ValueString(),
+		Name:                 sanitizeName(plan.Name.ValueString()),
 		NetworkID:            plan.RemoteNetworkID.ValueString(),
 		StatusUpdatesEnabled: getOptionalBool(plan.StatusUpdatesEnabled),
 	})
@@ -181,7 +198,7 @@ func (r *connector) Update(ctx context.Context, req resource.UpdateRequest, resp
 
 	conn := &model.Connector{
 		ID:                   state.ID.ValueString(),
-		Name:                 plan.Name.ValueString(),
+		Name:                 sanitizeName(plan.Name.ValueString()),
 		StatusUpdatesEnabled: plan.StatusUpdatesEnabled.ValueBoolPointer(),
 	}
 
@@ -222,7 +239,6 @@ func (r *connector) helper(ctx context.Context, conn *model.Connector, state *co
 	}
 
 	state.ID = types.StringValue(conn.ID)
-	state.Name = types.StringValue(conn.Name)
 	state.RemoteNetworkID = types.StringValue(conn.NetworkID)
 	state.StatusUpdatesEnabled = types.BoolPointerValue(conn.StatusUpdatesEnabled)
 	state.State = types.StringValue(conn.State)
@@ -234,4 +250,95 @@ func (r *connector) helper(ctx context.Context, conn *model.Connector, state *co
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
 	diagnostics.Append(diags...)
+}
+
+func SanitizeInsensitiveModifier() planmodifier.String {
+	return sanitizeInsensitiveModifier{}
+}
+
+type sanitizeInsensitiveModifier struct{}
+
+func (m sanitizeInsensitiveModifier) Description(_ context.Context) string {
+	return ""
+}
+
+func (m sanitizeInsensitiveModifier) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+func (m sanitizeInsensitiveModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	// Do not replace on resource creation.
+	if req.State.Raw.IsNull() {
+		return
+	}
+
+	// Do not replace on resource destroy.
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	if !req.PlanValue.IsUnknown() && req.StateValue.IsNull() {
+		return
+	}
+
+	if strings.EqualFold(sanitizeName(req.PlanValue.ValueString()), sanitizeName(req.StateValue.ValueString())) {
+		resp.PlanValue = req.StateValue
+	}
+}
+
+func sanitizeName(name string) string {
+	return strings.TrimSpace(spacesRgx.ReplaceAllString(name, " "))
+}
+
+var _ validator.String = sanitizedLengthValidator{}
+var _ function.StringParameterValidator = sanitizedLengthValidator{}
+
+type sanitizedLengthValidator struct {
+	minLen int
+}
+
+func (v sanitizedLengthValidator) Description(_ context.Context) string {
+	return fmt.Sprintf("must be at least %d characters long", v.minLen)
+}
+
+func (v sanitizedLengthValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (v sanitizedLengthValidator) ValidateString(ctx context.Context, request validator.StringRequest, response *validator.StringResponse) {
+	if request.ConfigValue.IsNull() || request.ConfigValue.IsUnknown() {
+		return
+	}
+
+	value := request.ConfigValue.ValueString()
+
+	if len(sanitizeName(value)) < v.minLen {
+		response.Diagnostics.Append(validatordiag.InvalidAttributeValueMatchDiagnostic(
+			request.Path,
+			v.Description(ctx),
+			value,
+		))
+	}
+}
+
+func (v sanitizedLengthValidator) ValidateParameterString(ctx context.Context, request function.StringParameterValidatorRequest, response *function.StringParameterValidatorResponse) {
+	if request.Value.IsNull() || request.Value.IsUnknown() {
+		return
+	}
+
+	value := request.Value.ValueString()
+
+	if len(sanitizeName(value)) < v.minLen {
+		response.Error = validatorfuncerr.InvalidParameterValueMatchFuncError(
+			request.ArgumentPosition,
+			v.Description(ctx),
+			value,
+		)
+	}
+}
+
+func SanitizedNameLengthValidator(minLen int) sanitizedLengthValidator {
+	return sanitizedLengthValidator{
+		minLen: minLen,
+	}
 }
