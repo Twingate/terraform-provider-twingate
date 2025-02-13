@@ -75,7 +75,8 @@ func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 	const terraformResourceName = "test_c2"
 	theResource := acctests.TerraformConnector(terraformResourceName)
 	remoteNetworkName := test.RandomName()
-	connectorName := test.RandomConnectorName()
+	connectorName := "  Some        connector   name     "
+	sanitizedName := "Some connector name"
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -86,7 +87,18 @@ func TestAccRemoteConnectorWithCustomName(t *testing.T) {
 				Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
 				Check: acctests.ComposeTestCheckFunc(
 					checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
-					sdk.TestMatchResourceAttr(theResource, attr.Name, regexp.MustCompile(connectorName)),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, connectorName),
+					acctests.CheckConnectorName(theResource, sanitizedName),
+				),
+			},
+			{
+				// expecting no changes
+				PlanOnly: true,
+				Config:   terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, connectorName),
+				Check: acctests.ComposeTestCheckFunc(
+					checkTwingateConnectorSetWithRemoteNetwork(theResource, acctests.TerraformRemoteNetwork(terraformResourceName)),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, connectorName),
+					acctests.CheckConnectorName(theResource, sanitizedName),
 				),
 			},
 		},
@@ -334,4 +346,36 @@ func TestAccRemoteConnectorCreateWithNotificationStatusFalse(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccRemoteConnectorNameMustBeAtLeast3CharactersLong(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test_c9"
+	theResource := acctests.TerraformConnector(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	expectedError := regexp.MustCompile("Attribute name must be at least 3 characters long")
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateConnectorAndRemoteNetworkDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, ""),
+				ExpectError: expectedError,
+			},
+			{
+				Config:      terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, "   ab    "),
+				ExpectError: expectedError,
+			},
+			{
+				Config: terraformResourceTwingateConnectorWithName(terraformResourceName, remoteNetworkName, "   a    b    "),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckConnectorName(theResource, "a b"),
+				),
+			},
+		},
+	})
+
 }

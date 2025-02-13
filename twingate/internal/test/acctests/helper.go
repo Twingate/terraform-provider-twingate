@@ -879,6 +879,31 @@ func CheckResourceSecurityPolicy(resourceName string, expectedSecurityPolicyID s
 	}
 }
 
+func CheckConnectorName(resourceName string, expectedName string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		connector, err := providerClient.ReadConnector(context.Background(), resourceState.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read connector: %w", err)
+		}
+
+		if connector.Name != expectedName {
+			return fmt.Errorf("expected name %v, got %v", expectedName, connector.Name) //nolint:goerr113
+		}
+
+		return nil
+	}
+}
+
 func UpdateResourceSecurityPolicy(resourceName, securityPolicyID string) sdk.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceID, err := getResourceID(state, resourceName)
