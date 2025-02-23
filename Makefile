@@ -8,7 +8,7 @@ GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate/internal/test/sweepers
 GOLINT_VERSION=v1.62.2
-GOSEC_VERSION=2.21.4
+GOSEC_VERSION=2.22.1
 
 
 check_defined = \
