@@ -247,7 +247,7 @@ func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaR
 	}
 }
 
-func (d *dnsFilteringProfile) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) { //nolint:funlen
+func (d *dnsFilteringProfile) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data dnsFilteringProfileModel
 
 	// Read Terraform configuration data into the model
