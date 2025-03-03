@@ -70,7 +70,6 @@ linters:
     - lll
     - revive
     - gomoddirectives
-    - exportloopref
   disable-all: false
   fast: false
 
