@@ -1,7 +1,6 @@
 module github.com/Twingate/terraform-provider-twingate/v3
 
 go 1.23
-
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
@@ -17,7 +16,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.10.0
 	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad
-	golang.org/x/sync v0.11.0
+	golang.org/x/sync v0.12.0
 	gotest.tools/gotestsum v1.12.0
 )
 
