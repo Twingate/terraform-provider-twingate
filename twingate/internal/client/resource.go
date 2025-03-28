@@ -58,6 +58,17 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 	})
 }
 
+type AccessApprovalMode string
+
+func newAccessApprovalMode(approvalMode string) *AccessApprovalMode {
+	if approvalMode == "" {
+		return nil
+	}
+
+	mode := AccessApprovalMode(approvalMode)
+	return &mode
+}
+
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	opr := resourceResource.create()
 
@@ -70,6 +81,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newAccessApprovalMode(input.ApprovalMode), "approvalMode"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -83,6 +95,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	resource.GroupsAccess = input.GroupsAccess
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
+	//resource.ApprovalMode = input.ApprovalMode
 
 	if input.IsVisible == nil {
 		resource.IsVisible = nil
@@ -253,6 +266,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newAccessApprovalMode(input.ApprovalMode), "approvalMode"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -268,6 +282,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	resource := response.Entity.ToModel()
 	resource.IsAuthoritative = input.IsAuthoritative
+	//resource.ApprovalMode = input.ApprovalMode
 
 	if input.IsVisible == nil {
 		resource.IsVisible = nil

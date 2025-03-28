@@ -59,6 +59,7 @@ type ResourceNode struct {
 	IsBrowserShortcutEnabled bool
 	Alias                    string
 	SecurityPolicy           *gqlSecurityPolicy
+	ApprovalMode             string
 }
 
 type Protocols struct {
@@ -118,6 +119,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
 		SecurityPolicyID:         optionalString(securityPolicy),
+		ApprovalMode:             r.ApprovalMode,
 	}
 }
 

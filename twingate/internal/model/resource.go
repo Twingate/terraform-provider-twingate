@@ -16,6 +16,9 @@ const (
 	PolicyRestricted = "RESTRICTED"
 	PolicyAllowAll   = "ALLOW_ALL"
 	PolicyDenyAll    = "DENY_ALL"
+
+	ApprovalModeAutomatic = "AUTOMATIC"
+	ApprovalModeManual    = "MANUAL"
 )
 
 //nolint:gochecknoglobals
@@ -25,6 +28,7 @@ type AccessGroup struct {
 	GroupID            string
 	SecurityPolicyID   *string
 	UsageBasedDuration *int64
+	ApprovalMode       *string
 }
 
 func (g AccessGroup) Equals(another AccessGroup) bool {
@@ -59,6 +63,7 @@ type Resource struct {
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
 	SecurityPolicyID         *string
+	ApprovalMode             string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {

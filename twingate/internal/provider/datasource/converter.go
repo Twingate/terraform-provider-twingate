@@ -41,6 +41,7 @@ func convertResourcesToTerraform(resources []*model.Resource) []resourceModel {
 			Name:            types.StringValue(resource.Name),
 			Address:         types.StringValue(resource.Address),
 			RemoteNetworkID: types.StringValue(resource.RemoteNetworkID),
+			ApprovalMode:    types.StringValue(resource.ApprovalMode),
 			Protocols:       convertProtocolsToTerraform(resource.Protocols),
 		}
 	})
