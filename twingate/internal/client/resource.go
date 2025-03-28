@@ -10,6 +10,27 @@ import (
 	"github.com/hasura/go-graphql-client"
 )
 
+type TagInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+func newTagInputs(tags map[string]string) []TagInput {
+	if tags == nil || len(tags) == 0 {
+		return nil
+	}
+
+	tagInputs := make([]TagInput, 0, len(tags))
+	for k, v := range tags {
+		tagInputs = append(tagInputs, TagInput{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	return tagInputs
+}
+
 type ProtocolsInput struct {
 	UDP       *ProtocolInput `json:"udp"`
 	TCP       *ProtocolInput `json:"tcp"`
@@ -70,6 +91,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newTagInputs(input.Tags), "tags"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)

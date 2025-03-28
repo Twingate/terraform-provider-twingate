@@ -75,6 +75,7 @@ type resourceModel struct {
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+	Tags                     types.Map    `tfsdk:"tags"`
 }
 
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -170,6 +171,12 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{CaseInsensitiveDiff()},
 			},
 			attr.Protocols: protocols(),
+			attr.Tags: schema.MapAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
+			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
 				Optional:      true,
@@ -594,7 +601,23 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:                     getTags(plan.Tags),
 	}, nil
+}
+
+func getTags(rawTags types.Map) map[string]string {
+	if rawTags.IsNull() || rawTags.IsUnknown() || len(rawTags.Elements()) == 0 {
+		return nil
+	}
+
+	tags := make(map[string]string, len(rawTags.Elements()))
+	rawMap, _ := rawTags.ToMapValue(context.Background())
+
+	for key, val := range rawMap.Elements() {
+		tags[key] = val.(types.String).ValueString()
+	}
+
+	return tags
 }
 
 func checkGlobalID(val string) error {
@@ -1031,12 +1054,31 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	serviceAccess, diags := convertServiceAccessToTerraform(ctx, resource.ServiceAccounts)
 	diagnostics.Append(diags...)
 
+	tags, diags := convertTagsToTerraform(resource.Tags)
+	diagnostics.Append(diags...)
+
 	if diagnostics.HasError() {
 		return
 	}
 
 	state.GroupAccess = groupAccess
 	state.ServiceAccess = serviceAccess
+	state.Tags = tags
+}
+
+func convertTagsToTerraform(tags map[string]string) (types.Map, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if tags == nil || len(tags) == 0 {
+		return types.MapNull(types.StringType), diagnostics
+	}
+
+	elements := make(map[string]tfattr.Value, len(tags))
+	for key, val := range tags {
+		elements[key] = types.StringValue(val)
+	}
+
+	return types.MapValue(types.StringType, elements)
 }
 
 func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {
