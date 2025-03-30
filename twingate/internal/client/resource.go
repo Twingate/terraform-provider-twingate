@@ -16,11 +16,12 @@ type TagInput struct {
 }
 
 func newTagInputs(tags map[string]string) []TagInput {
+	tagInputs := make([]TagInput, 0, len(tags))
+
 	if tags == nil || len(tags) == 0 {
-		return nil
+		return tagInputs
 	}
 
-	tagInputs := make([]TagInput, 0, len(tags))
 	for k, v := range tags {
 		tagInputs = append(tagInputs, TagInput{
 			Key:   k,
@@ -275,6 +276,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newTagInputs(input.Tags), "tags"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
