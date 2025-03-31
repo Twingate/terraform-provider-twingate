@@ -3736,7 +3736,6 @@ func TestAccTwingateCreateResourceWithTagsUpdateTags(t *testing.T) {
 		tag1: "example_team",
 	}
 	tags2 := map[string]string{
-		//tag1: "example_team",
 		tag2: "example_application",
 	}
 
