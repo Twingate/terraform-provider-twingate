@@ -18,7 +18,7 @@ type TagInput struct {
 func newTagInputs(tags map[string]string) []TagInput {
 	tagInputs := make([]TagInput, 0, len(tags))
 
-	if tags == nil || len(tags) == 0 {
+	if len(tags) == 0 {
 		return tagInputs
 	}
 
@@ -339,11 +339,11 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
 }
 
-func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string) ([]*model.Resource, error) {
+func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string, tags map[string]string) ([]*model.Resource, error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
 	variables := newVars(
-		gqlNullable(query.NewResourceFilterInput(name, filter), "filter"),
+		gqlNullable(query.NewResourceFilterInput(name, filter, tags), "filter"),
 		cursor(query.CursorResources),
 		pageLimit(client.pageLimit),
 	)

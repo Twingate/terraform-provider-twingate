@@ -37,6 +37,7 @@ data "twingate_resources" "foo" {
 - `name_prefix` (String) The name of the resource must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the resource.
 - `name_suffix` (String) The name of the resource must end with the value.
+- `tags` (Map of String) Returns only resources that exactly match tags.
 
 ### Read-Only
 
@@ -53,6 +54,7 @@ Read-Only:
 - `name` (String) The name of the Resource
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--resources--protocols))
 - `remote_network_id` (String) Remote Network ID where the Resource lives
+- `tags` (Map of String) The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.
 
 <a id="nestedatt--resources--protocols"></a>
 ### Nested Schema for `resources.protocols`

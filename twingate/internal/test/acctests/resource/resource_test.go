@@ -3736,7 +3736,7 @@ func TestAccTwingateCreateResourceWithTagsUpdateTags(t *testing.T) {
 		tag1: "example_team",
 	}
 	tags2 := map[string]string{
-		tag1: "example_team",
+		//tag1: "example_team",
 		tag2: "example_application",
 	}
 
@@ -3751,7 +3751,16 @@ func TestAccTwingateCreateResourceWithTagsUpdateTags(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
 					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tag1), tags1[tag1]),
-					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tag2), tags[tag2]),
+					sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, tag2)),
+				),
+			},
+			{
+				Config: createResourceWithTags(resourceName, remoteNetworkName, resourceName, tags2),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, tag1)),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tag2), tags2[tag2]),
 				),
 			},
 		},

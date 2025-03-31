@@ -613,9 +613,8 @@ func getTags(rawTags types.Map) map[string]string {
 	}
 
 	tags := make(map[string]string, len(rawTags.Elements()))
-	rawMap, _ := rawTags.ToMapValue(context.Background())
 
-	for key, val := range rawMap.Elements() {
+	for key, val := range rawTags.Elements() {
 		tags[key] = val.(types.String).ValueString()
 	}
 
@@ -1056,31 +1055,13 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	serviceAccess, diags := convertServiceAccessToTerraform(ctx, resource.ServiceAccounts)
 	diagnostics.Append(diags...)
 
-	tags, diags := convertTagsToTerraform(resource.Tags)
-	diagnostics.Append(diags...)
-
 	if diagnostics.HasError() {
 		return
 	}
 
 	state.GroupAccess = groupAccess
 	state.ServiceAccess = serviceAccess
-	state.Tags = tags
-}
-
-func convertTagsToTerraform(tags map[string]string) (types.Map, diag.Diagnostics) {
-	var diagnostics diag.Diagnostics
-
-	if tags == nil || len(tags) == 0 {
-		return types.MapNull(types.StringType), diagnostics
-	}
-
-	elements := make(map[string]tfattr.Value, len(tags))
-	for key, val := range tags {
-		elements[key] = types.StringValue(val)
-	}
-
-	return types.MapValue(types.StringType, elements)
+	state.Tags = reference.Tags
 }
 
 func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {

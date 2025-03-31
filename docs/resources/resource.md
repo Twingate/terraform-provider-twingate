@@ -130,6 +130,7 @@ resource "twingate_resource" "resource" {
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
+- `tags` (Map of String) The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.
 
 ### Read-Only
 
