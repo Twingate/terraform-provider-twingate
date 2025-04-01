@@ -113,7 +113,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 			attr.Tags: schema.MapAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
-				Description: "Returns only resources that exactly match tags.",
+				Description: "Returns only resources that exactly match the given tags.",
 			},
 			// computed
 			attr.Resources: schema.ListNestedAttribute{
