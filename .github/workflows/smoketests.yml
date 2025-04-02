@@ -5,13 +5,13 @@ name: Smoke Tests
 permissions: read-all
 on:
   schedule:
-    - cron: "*/3 * * * *"
+    - cron: "0 */3 * * *"
   workflow_dispatch: {}
 
 jobs:
   build:
     name: Build
-    if: "!github.event.repository.fork"
+    if: "!github.event.pull_request.head.repo.fork"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -161,7 +161,7 @@ jobs:
 
   cleanup:
     name: Cleanup
-    if: '!github.event.repository.fork && always()'
+    if: '!github.event.pull_request.head.repo.fork && always()'
     needs: [tests-acceptance, tests-acceptance-opentofu]
     runs-on: ubuntu-latest
     timeout-minutes: 15
