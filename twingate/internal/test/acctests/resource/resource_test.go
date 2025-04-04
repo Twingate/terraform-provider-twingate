@@ -3689,7 +3689,7 @@ func TestAccTwingateCreateResourceWithTags(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithTags(resourceName, remoteNetworkName, resourceName, tags),
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
@@ -3701,25 +3701,25 @@ func TestAccTwingateCreateResourceWithTags(t *testing.T) {
 	})
 }
 
-func createResourceWithTags(terraformResourceName, networkName, resourceName string, tags map[string]string) string {
+func createResourceWithTags(resourceName, networkName string, tags map[string]string) string {
 	tagsList := make([]string, 0, len(tags))
 	for k, v := range tags {
 		tagsList = append(tagsList, fmt.Sprintf(`%[1]s = "%[2]s"`, k, v))
 	}
 
 	return fmt.Sprintf(`
-	resource "twingate_remote_network" "%s" {
-	  name = "%s"
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
 	}
-	resource "twingate_resource" "%s" {
-	  name = "%s"
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
 	  address = "acc-test.com"
-	  remote_network_id = twingate_remote_network.%s.id
+	  remote_network_id = twingate_remote_network.%[1]s.id
 	  tags = {
-  	    %s
+  	    %[3]s
 	  }
 	}
-	`, terraformResourceName, networkName, terraformResourceName, resourceName, terraformResourceName, strings.Join(tagsList, ",\n\t"))
+	`, networkName, resourceName, strings.Join(tagsList, ",\n\t"))
 }
 
 func TestAccTwingateCreateResourceWithTagsUpdateTags(t *testing.T) {
@@ -3745,7 +3745,14 @@ func TestAccTwingateCreateResourceWithTagsUpdateTags(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithTags(resourceName, remoteNetworkName, resourceName, tags1),
+				Config: createResource(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+				),
+			},
+			{
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags1),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
@@ -3754,7 +3761,7 @@ func TestAccTwingateCreateResourceWithTagsUpdateTags(t *testing.T) {
 				),
 			},
 			{
-				Config: createResourceWithTags(resourceName, remoteNetworkName, resourceName, tags2),
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags2),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),

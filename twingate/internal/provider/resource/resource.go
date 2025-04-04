@@ -893,7 +893,8 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.IsVisible.Equal(state.IsVisible) ||
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
 		!plan.Alias.Equal(state.Alias) ||
-		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID)
+		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
+		!plan.Tags.Equal(state.Tags)
 }
 
 func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state *resourceModel, input *model.Resource) error {
