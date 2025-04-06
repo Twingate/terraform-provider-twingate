@@ -313,7 +313,7 @@ func groupAccessBlock() schema.SetNestedBlock {
 				attr.ApprovalMode: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					Description: fmt.Sprintf("This will set the approval model for the edge. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
+					Description: fmt.Sprintf("This will set the approval model on the edge. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					PlanModifiers: []planmodifier.String{
 						UseNullStringWhenValueOmitted(),
 					},
@@ -479,10 +479,17 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 	}
 
 	for _, group := range groupsAccess {
+
+		var approvalMode string
+		if group.ApprovalMode != nil {
+			approvalMode = *group.ApprovalMode
+		}
+
 		access = append(access, client.AccessInput{
 			PrincipalID:                    group.GroupID,
 			SecurityPolicyID:               group.SecurityPolicyID,
 			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
+			ApprovalMode:                   client.NewAccessApprovalMode(approvalMode),
 		})
 	}
 
@@ -534,6 +541,11 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
 		if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
 			accessGroup.UsageBasedDuration = usageBasedDuration.(types.Int64).ValueInt64Pointer()
+		}
+
+		approvalModeVal := obj.Attributes()[attr.ApprovalMode]
+		if approvalModeVal != nil && !approvalModeVal.IsNull() && !approvalModeVal.IsUnknown() {
+			accessGroup.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
 		}
 
 		access = append(access, accessGroup)

@@ -60,7 +60,7 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 
 type AccessApprovalMode string
 
-func newAccessApprovalMode(approvalMode string) *AccessApprovalMode {
+func NewAccessApprovalMode(approvalMode string) *AccessApprovalMode {
 	if approvalMode == "" {
 		return nil
 	}
@@ -81,7 +81,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(newAccessApprovalMode(input.ApprovalMode), "approvalMode"),
+		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -95,7 +95,6 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	resource.GroupsAccess = input.GroupsAccess
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
-	//resource.ApprovalMode = input.ApprovalMode
 
 	if input.IsVisible == nil {
 		resource.IsVisible = nil
@@ -266,7 +265,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(newAccessApprovalMode(input.ApprovalMode), "approvalMode"),
+		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -388,9 +387,10 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 }
 
 type AccessInput struct {
-	PrincipalID                    string  `json:"principalId"`
-	SecurityPolicyID               *string `json:"securityPolicyId"`
-	UsageBasedAutolockDurationDays *int64  `json:"usageBasedAutolockDurationDays"`
+	PrincipalID                    string              `json:"principalId"`
+	SecurityPolicyID               *string             `json:"securityPolicyId"`
+	UsageBasedAutolockDurationDays *int64              `json:"usageBasedAutolockDurationDays"`
+	ApprovalMode                   *AccessApprovalMode `json:"approvalMode"`
 }
 
 func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {

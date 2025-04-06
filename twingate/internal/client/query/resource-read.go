@@ -34,6 +34,7 @@ type AccessEdge struct {
 	Node                           Principal
 	SecurityPolicy                 *gqlSecurityPolicy
 	UsageBasedAutolockDurationDays *int64
+	ApprovalMode                   *string
 }
 
 type Principal struct {
@@ -93,6 +94,7 @@ func (r gqlResource) ToModel() *model.Resource {
 				GroupID:            string(access.Node.ID),
 				SecurityPolicyID:   securityPolicyID,
 				UsageBasedDuration: access.UsageBasedAutolockDurationDays,
+				ApprovalMode:       access.ApprovalMode,
 			})
 		case AccessServiceAccount:
 			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
