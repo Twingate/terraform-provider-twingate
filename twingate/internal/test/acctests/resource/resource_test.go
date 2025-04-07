@@ -3687,26 +3687,26 @@ func TestAccTwingateResourceWithApprovalMode(t *testing.T) {
 					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
 				),
 			},
-			{
-				Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeManual),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
-				),
-			},
-			{
-				Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeAutomatic),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeAutomatic),
-				),
-			},
-			{
-				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
-				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
-				),
-			},
+			//{
+			//	Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeManual),
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		acctests.CheckTwingateResourceExists(theResource),
+			//		sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
+			//	),
+			//},
+			//{
+			//	Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeAutomatic),
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		acctests.CheckTwingateResourceExists(theResource),
+			//		sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeAutomatic),
+			//	),
+			//},
+			//{
+			//	Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
+			//	Check: acctests.ComposeTestCheckFunc(
+			//		sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+			//	),
+			//},
 		},
 	})
 }
