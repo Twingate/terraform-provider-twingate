@@ -156,7 +156,7 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 		}
 	}
 
-	return response.Services.ToModel(), nil
+	return response.ToModel(), nil
 }
 
 func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceEdge], error) {
