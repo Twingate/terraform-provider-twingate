@@ -59,6 +59,7 @@ type Resource struct {
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
 	SecurityPolicyID         *string
+	Tags                     map[string]string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {

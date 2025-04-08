@@ -83,7 +83,7 @@ resource "twingate_resource" "resource" {
   }
 
   // Service account access is specified similarly
-  // A `for_each` block may be used like above to assign access to multiple 
+  // A `for_each` block may be used like above to assign access to multiple
   // service accounts in a single configuration block.
   access_service {
     content {
@@ -92,5 +92,11 @@ resource "twingate_resource" "resource" {
   }
 
   is_active = true
+
+  tags = {
+    environment = "dev"
+    owner       = "devops"
+    project     = "api"
+  }
 }
 

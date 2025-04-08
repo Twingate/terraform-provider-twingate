@@ -36,12 +36,15 @@ func convertGroupsToTerraform(groups []*model.Group) []groupModel {
 
 func convertResourcesToTerraform(resources []*model.Resource) []resourceModel {
 	return utils.Map(resources, func(resource *model.Resource) resourceModel {
+		tags, _ := convertTagsToTerraform(resource.Tags)
+
 		return resourceModel{
 			ID:              types.StringValue(resource.ID),
 			Name:            types.StringValue(resource.Name),
 			Address:         types.StringValue(resource.Address),
 			RemoteNetworkID: types.StringValue(resource.RemoteNetworkID),
 			Protocols:       convertProtocolsToTerraform(resource.Protocols),
+			Tags:            tags,
 		}
 	})
 }

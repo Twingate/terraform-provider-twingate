@@ -8,8 +8,10 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -29,6 +31,7 @@ type resourceModel struct {
 	Name            types.String    `tfsdk:"name"`
 	Address         types.String    `tfsdk:"address"`
 	RemoteNetworkID types.String    `tfsdk:"remote_network_id"`
+	Tags            types.Map       `tfsdk:"tags"`
 	Protocols       *protocolsModel `tfsdk:"protocols"`
 }
 
@@ -100,6 +103,11 @@ func (d *resource) Schema(ctx context.Context, req datasource.SchemaRequest, res
 				Computed:    true,
 				Description: "The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.",
 			},
+			attr.Tags: schema.MapAttribute{
+				ElementType: types.StringType,
+				Computed:    true,
+				Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
+			},
 		},
 		Blocks: map[string]schema.Block{
 			attr.Protocols: schema.SingleNestedBlock{
@@ -140,6 +148,15 @@ func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *d
 	data.Address = types.StringValue(resource.Address)
 	data.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
 	data.Protocols = convertProtocolsToTerraform(resource.Protocols)
+	tags, diags := convertTagsToTerraform(resource.Tags)
+
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	data.Tags = tags
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -164,4 +181,19 @@ func convertProtocolToTerraform(protocol *model.Protocol) *protocolModel {
 			return types.StringValue(port.String())
 		}),
 	}
+}
+
+func convertTagsToTerraform(tags map[string]string) (types.Map, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if len(tags) == 0 {
+		return types.MapNull(types.StringType), diagnostics
+	}
+
+	elements := make(map[string]tfattr.Value, len(tags))
+	for key, val := range tags {
+		elements[key] = types.StringValue(val)
+	}
+
+	return types.MapValue(types.StringType, elements)
 }

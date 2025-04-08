@@ -28,6 +28,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 				Config: testDatasourceTwingateResource(networkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.Name, resourceName),
+					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.PathAttr(attr.Tags, "owner"), "example_owner"),
 				),
 			},
 		},
@@ -54,6 +55,10 @@ func testDatasourceTwingateResource(networkName, resourceName string) string {
 	      policy = "ALLOW_ALL"
 	      ports = []
 	    }
+	  }
+
+	  tags = {
+	    owner = "example_owner"
 	  }
 	}
 

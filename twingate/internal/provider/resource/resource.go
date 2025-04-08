@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
@@ -75,6 +76,7 @@ type resourceModel struct {
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+	Tags                     types.Map    `tfsdk:"tags"`
 }
 
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -170,6 +172,13 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{CaseInsensitiveDiff()},
 			},
 			attr.Protocols: protocols(),
+			attr.Tags: schema.MapAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
+				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
+			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
 				Optional:      true,
@@ -594,7 +603,22 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:                     getTags(plan.Tags),
 	}, nil
+}
+
+func getTags(rawTags types.Map) map[string]string {
+	if rawTags.IsNull() || rawTags.IsUnknown() || len(rawTags.Elements()) == 0 {
+		return nil
+	}
+
+	tags := make(map[string]string, len(rawTags.Elements()))
+
+	for key, val := range rawTags.Elements() {
+		tags[key] = val.(types.String).ValueString()
+	}
+
+	return tags
 }
 
 func checkGlobalID(val string) error {
@@ -869,7 +893,8 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.IsVisible.Equal(state.IsVisible) ||
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
 		!plan.Alias.Equal(state.Alias) ||
-		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID)
+		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
+		!plan.Tags.Equal(state.Tags)
 }
 
 func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state *resourceModel, input *model.Resource) error {
@@ -1037,6 +1062,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 
 	state.GroupAccess = groupAccess
 	state.ServiceAccess = serviceAccess
+	state.Tags = reference.Tags
 }
 
 func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {

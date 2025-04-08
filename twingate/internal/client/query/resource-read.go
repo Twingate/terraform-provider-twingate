@@ -45,6 +45,11 @@ type Node struct {
 	ID graphql.ID `json:"id"`
 }
 
+type Tag struct {
+	Key   string
+	Value string
+}
+
 type ResourceNode struct {
 	IDName
 	Address struct {
@@ -59,6 +64,7 @@ type ResourceNode struct {
 	IsBrowserShortcutEnabled bool
 	Alias                    string
 	SecurityPolicy           *gqlSecurityPolicy
+	Tags                     []Tag
 }
 
 type Protocols struct {
@@ -118,7 +124,21 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
 		SecurityPolicyID:         optionalString(securityPolicy),
+		Tags:                     tagsToModel(r.Tags),
 	}
+}
+
+func tagsToModel(tags []Tag) map[string]string {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	m := make(map[string]string, len(tags))
+	for _, tag := range tags {
+		m[tag.Key] = tag.Value
+	}
+
+	return m
 }
 
 func protocolsToModel(protocols *Protocols) *model.Protocols {

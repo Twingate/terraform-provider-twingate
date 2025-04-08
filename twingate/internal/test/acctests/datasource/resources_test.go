@@ -308,3 +308,61 @@ func testDatasourceTwingateResourcesAll(resourceName, networkName, name string) 
 	}
 	`, resourceName, networkName, name)
 }
+
+func TestAccDatasourceTwingateResourcesFilterByTags(t *testing.T) {
+	t.Parallel()
+
+	prefix := acctest.RandString(6)
+	resourceName := test.RandomResourceName()
+	networkName := test.RandomName()
+	theDatasource := "data.twingate_resources." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateResourcesTagsFilter(resourceName, networkName, prefix+"_test_app", prefix+"_one"),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, resourcesLen, "1"),
+					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, prefix+"_one"),
+				),
+			},
+		},
+	})
+}
+
+func testDatasourceTwingateResourcesTagsFilter(resourceName, networkName, name1, name2 string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[2]s" {
+	  name = "%[2]s"
+	}
+
+	resource "twingate_resource" "%[1]s_1" {
+	  name = "%[3]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+	  tags = {
+	    team = "example_team"
+	  }
+	}
+
+	resource "twingate_resource" "%[1]s_2" {
+	  name = "%[4]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+	  tags = {
+	    owner = "example_owner"
+	  }
+	}
+
+	data "twingate_resources" "%[1]s" {
+	  tags = {
+	    owner = "example_owner"
+	  }
+
+	  depends_on = [twingate_resource.%[1]s_1, twingate_resource.%[1]s_2]
+	}
+	`, resourceName, networkName, name1, name2)
+}

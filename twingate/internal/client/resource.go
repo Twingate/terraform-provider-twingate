@@ -10,6 +10,28 @@ import (
 	"github.com/hasura/go-graphql-client"
 )
 
+type TagInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+func newTagInputs(tags map[string]string) []TagInput {
+	tagInputs := make([]TagInput, 0, len(tags))
+
+	if len(tags) == 0 {
+		return tagInputs
+	}
+
+	for k, v := range tags {
+		tagInputs = append(tagInputs, TagInput{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	return tagInputs
+}
+
 type ProtocolsInput struct {
 	UDP       *ProtocolInput `json:"udp"`
 	TCP       *ProtocolInput `json:"tcp"`
@@ -70,6 +92,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newTagInputs(input.Tags), "tags"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -253,6 +276,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newTagInputs(input.Tags), "tags"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -315,11 +339,11 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
 }
 
-func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string) ([]*model.Resource, error) {
+func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string, tags map[string]string) ([]*model.Resource, error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
 	variables := newVars(
-		gqlNullable(query.NewResourceFilterInput(name, filter), "filter"),
+		gqlNullable(query.NewResourceFilterInput(name, filter, tags), "filter"),
 		cursor(query.CursorResources),
 		pageLimit(client.pageLimit),
 	)

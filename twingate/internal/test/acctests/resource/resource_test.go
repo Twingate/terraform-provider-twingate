@@ -3667,3 +3667,108 @@ func TestAccTwingateWithMultipleGroups(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateCreateResourceWithTags(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	const tag1 = "owner"
+	const tag2 = "application"
+	tags := map[string]string{
+		tag1: "example_team",
+		tag2: "example_application",
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tag1), tags[tag1]),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tag2), tags[tag2]),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithTags(resourceName, networkName string, tags map[string]string) string {
+	tagsList := make([]string, 0, len(tags))
+	for k, v := range tags {
+		tagsList = append(tagsList, fmt.Sprintf(`%[1]s = "%[2]s"`, k, v))
+	}
+
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  tags = {
+  	    %[3]s
+	  }
+	}
+	`, networkName, resourceName, strings.Join(tagsList, ",\n\t"))
+}
+
+func TestAccTwingateCreateResourceWithTagsUpdateTags(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	const tag1 = "owner"
+	const tag2 = "application"
+	tags1 := map[string]string{
+		tag1: "example_team",
+	}
+	tags2 := map[string]string{
+		tag2: "example_application",
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResource(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+				),
+			},
+			{
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags1),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tag1), tags1[tag1]),
+					sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, tag2)),
+				),
+			},
+			{
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags2),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, tag1)),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tag2), tags2[tag2]),
+				),
+			},
+		},
+	})
+}
