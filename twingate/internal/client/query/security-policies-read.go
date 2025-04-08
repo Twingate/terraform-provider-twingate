@@ -24,7 +24,7 @@ type SecurityPolicyEdge struct {
 }
 
 func (q ReadSecurityPolicies) ToModel() []*model.SecurityPolicy {
-	return utils.Map[*SecurityPolicyEdge, *model.SecurityPolicy](q.SecurityPolicies.Edges,
+	return utils.Map(q.Edges,
 		func(edge *SecurityPolicyEdge) *model.SecurityPolicy {
 			return edge.Node.ToModel()
 		})

@@ -342,7 +342,7 @@ func CheckTwingateResourceSecurityPolicyOnGroupAccess(resourceName string, expec
 		}
 
 		if *res.GroupsAccess[0].SecurityPolicyID != expectedSecurityPolicy {
-			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, *res.GroupsAccess[0].SecurityPolicyID) //nolint:goerr113
+			return fmt.Errorf("expected security policy %v, got %v", expectedSecurityPolicy, *res.GroupsAccess[0].SecurityPolicyID) //nolint:err113
 		}
 
 		return nil
@@ -375,7 +375,7 @@ func CheckTwingateResourceUsageBasedOnGroupAccess(resourceName string, expectedU
 		}
 
 		if *res.GroupsAccess[0].UsageBasedDuration != expectedUsageBased {
-			return fmt.Errorf("expected usage based duration %v, got %v", expectedUsageBased, *res.GroupsAccess[0].UsageBasedDuration) //nolint:goerr113
+			return fmt.Errorf("expected usage based duration %v, got %v", expectedUsageBased, *res.GroupsAccess[0].UsageBasedDuration) //nolint:err113
 		}
 
 		return nil
@@ -458,7 +458,7 @@ func CheckTwingateResourceActiveState(resourceName string, expectedActiveState b
 		}
 
 		if res.IsActive != expectedActiveState {
-			return fmt.Errorf("expected active state %v, got %v", expectedActiveState, res.IsActive) //nolint:goerr113
+			return fmt.Errorf("expected active state %v, got %v", expectedActiveState, res.IsActive) //nolint:err113
 		}
 
 		return nil
@@ -499,7 +499,7 @@ func (e checkResourceActiveState) CheckPlan(ctx context.Context, req plancheck.C
 	}
 
 	if resourceID == "" {
-		resp.Error = fmt.Errorf("%s - Resource not found in plan ResourceChanges", e.resourceAddress) //nolint:goerr113
+		resp.Error = fmt.Errorf("%s - Resource not found in plan ResourceChanges", e.resourceAddress) //nolint:err113
 
 		return
 	}
@@ -512,7 +512,7 @@ func (e checkResourceActiveState) CheckPlan(ctx context.Context, req plancheck.C
 	}
 
 	if res.IsActive != e.expectedActiveState {
-		resp.Error = fmt.Errorf("expected active state %v, got %v", e.expectedActiveState, res.IsActive) //nolint:goerr113
+		resp.Error = fmt.Errorf("expected active state %v, got %v", e.expectedActiveState, res.IsActive) //nolint:err113
 
 		return
 	}
@@ -528,13 +528,13 @@ func CheckResourceActiveState(resourceAddress string, activeState bool) planchec
 func CheckImportState(attributes map[string]string) func(data []*terraform.InstanceState) error {
 	return func(data []*terraform.InstanceState) error {
 		if len(data) != 1 {
-			return fmt.Errorf("expected 1 resource, got %d", len(data)) //nolint:goerr113
+			return fmt.Errorf("expected 1 resource, got %d", len(data)) //nolint:err113
 		}
 
 		res := data[0]
 		for name, expected := range attributes {
 			if res.Attributes[name] != expected {
-				return fmt.Errorf("attribute %s doesn't match, expected: %s, got: %s", name, expected, res.Attributes[name]) //nolint:goerr113
+				return fmt.Errorf("attribute %s doesn't match, expected: %s, got: %s", name, expected, res.Attributes[name]) //nolint:err113
 			}
 		}
 
@@ -648,7 +648,7 @@ func CheckTwingateServiceKeyStatus(resourceName string, expectedStatus string) s
 		}
 
 		if serviceAccountKey.Status != expectedStatus {
-			return fmt.Errorf("expected status %v, got %v", expectedStatus, serviceAccountKey.Status) //nolint:goerr113
+			return fmt.Errorf("expected status %v, got %v", expectedStatus, serviceAccountKey.Status) //nolint:err113
 		}
 
 		return nil
@@ -897,7 +897,7 @@ func CheckConnectorName(resourceName string, expectedName string) sdk.TestCheckF
 		}
 
 		if connector.Name != expectedName {
-			return fmt.Errorf("expected name %v, got %v", expectedName, connector.Name) //nolint:goerr113
+			return fmt.Errorf("expected name %v, got %v", expectedName, connector.Name) //nolint:err113
 		}
 
 		return nil
