@@ -36,6 +36,10 @@ func (g Group) ToTerraform() interface{} {
 	}
 }
 
+func (g Group) Match(filter ResourceFilter) bool {
+	return filter.IsNil() || g.Name == filter.GetName()
+}
+
 type GroupsFilter struct {
 	Name       *string
 	NameFilter string
@@ -53,4 +57,8 @@ func (f *GroupsFilter) GetName() string {
 	}
 
 	return ""
+}
+
+func (f *GroupsFilter) IsNil() bool {
+	return f == nil
 }

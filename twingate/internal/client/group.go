@@ -73,6 +73,10 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
 	opr := resourceGroup.read().withCustomName("readGroups")
 
+	if matched := matchResources[*model.Group](filter); len(matched) > 0 {
+		return matched, nil
+	}
+
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
 		cursor(query.CursorGroups),

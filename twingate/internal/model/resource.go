@@ -99,6 +99,15 @@ func (r Resource) ToTerraform() interface{} {
 	}
 }
 
+type ResourceFilter interface {
+	GetName() string
+	IsNil() bool
+}
+
+func (r Resource) Match(filter ResourceFilter) bool {
+	return filter.IsNil() || r.Name == filter.GetName()
+}
+
 type PortRange struct {
 	Start int
 	End   int
