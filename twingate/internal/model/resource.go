@@ -102,10 +102,16 @@ func (r Resource) ToTerraform() interface{} {
 type ResourceFilter interface {
 	GetName() string
 	IsNil() bool
+	HasNotSupportedFilters() bool
+	GetFilterBy() string
+	GetTypes() []string
+	GetIsActive() *bool
 }
 
 func (r Resource) Match(filter ResourceFilter) bool {
-	return filter.IsNil() || r.Name == filter.GetName()
+	//nolint:godox
+	// TODO: not supported at the moment
+	return false
 }
 
 type PortRange struct {
