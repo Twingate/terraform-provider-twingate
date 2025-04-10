@@ -1,10 +1,11 @@
 package model
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 )
 
 const (
@@ -64,35 +65,35 @@ func (g Group) Match(filter ResourceFilter) bool {
 	}
 
 	// filter by name
-	if filter.GetName() != "" {
+	if name := filter.GetName(); name != "" {
 		switch filter.GetFilterBy() {
 		case "":
-			if g.Name != filter.GetName() {
+			if g.Name != name {
 				return false
 			}
 
 		case attr.FilterByContains:
-			if !strings.Contains(g.Name, filter.GetName()) {
+			if !strings.Contains(g.Name, name) {
 				return false
 			}
 
 		case attr.FilterByExclude:
-			if strings.Contains(g.Name, filter.GetName()) {
+			if strings.Contains(g.Name, name) {
 				return false
 			}
 
 		case attr.FilterByPrefix:
-			if !strings.HasPrefix(g.Name, filter.GetName()) {
+			if !strings.HasPrefix(g.Name, name) {
 				return false
 			}
 
 		case attr.FilterBySuffix:
-			if !strings.HasSuffix(g.Name, filter.GetName()) {
+			if !strings.HasSuffix(g.Name, name) {
 				return false
 			}
 
 		case attr.FilterByRegexp:
-			matched, err := regexp.MatchString(filter.GetName(), g.Name)
+			matched, err := regexp.MatchString(name, g.Name)
 			if err != nil || !matched {
 				return false
 			}
