@@ -32,6 +32,7 @@ data "twingate_resource" "foo" {
 - `name` (String) The name of the Resource
 - `protocols` (Block, Read-only) By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. (see [below for nested schema](#nestedblock--protocols))
 - `remote_network_id` (String) The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
+- `tags` (Map of String) The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.
 
 <a id="nestedblock--protocols"></a>
 ### Nested Schema for `protocols`

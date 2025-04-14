@@ -64,6 +64,7 @@ type Resource struct {
 	Alias                    *string
 	SecurityPolicyID         *string
 	ApprovalMode             string
+	Tags                     map[string]string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {

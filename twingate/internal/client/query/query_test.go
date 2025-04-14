@@ -3,6 +3,7 @@ package query
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -2629,9 +2630,64 @@ func TestResourceFilter(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			result := NewResourceFilterInput(c.inputName, c.inputFilter)
+			result := NewResourceFilterInput(c.inputName, c.inputFilter, nil)
 
 			assert.Equal(t, c.expectedFilter, result.Name)
+		})
+	}
+}
+
+func TestResourceFilterTags(t *testing.T) {
+	cases := []struct {
+		name           string
+		tags           map[string]string
+		expectedFilter *TagsFilterOperatorInput
+	}{
+		{
+			name: "Basic tags filter",
+			tags: map[string]string{"key1": "value1", "key2": "value2"},
+			expectedFilter: &TagsFilterOperatorInput{
+				And: []TagKeyValueFilterInput{
+					{
+						Key: "key1",
+						Value: TagValueFilterInput{
+							Eq: optionalString("value1"),
+						},
+					},
+					{
+						Key: "key2",
+						Value: TagValueFilterInput{
+							Eq: optionalString("value2"),
+						},
+					},
+				},
+			},
+		},
+		{
+			name:           "Empty tags filter",
+			tags:           map[string]string{},
+			expectedFilter: nil,
+		},
+		{
+			name:           "Nil filter",
+			tags:           nil,
+			expectedFilter: nil,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			result := NewResourceFilterInput("", "", c.tags)
+
+			if c.expectedFilter == nil {
+				assert.Nil(t, result.Tags)
+			} else {
+				sort.Slice(result.Tags.And, func(i, j int) bool {
+					return result.Tags.And[i].Key < result.Tags.And[j].Key
+				})
+
+				assert.EqualValues(t, c.expectedFilter, result.Tags)
+			}
 		})
 	}
 }

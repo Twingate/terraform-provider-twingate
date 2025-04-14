@@ -15,11 +15,11 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.12.0
 	github.com/hasura/go-graphql-client v0.13.1
 	github.com/iancoleman/strcase v0.3.0
-	github.com/jarcoal/httpmock v1.3.1
+	github.com/jarcoal/httpmock v1.4.0
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.10.0
 	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad
-	golang.org/x/sync v0.12.0
+	golang.org/x/sync v0.13.0
 	gotest.tools/gotestsum v1.12.1
 )
 

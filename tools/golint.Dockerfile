@@ -1,3 +1,3 @@
-FROM golangci/golangci-lint:v1.64.8
+FROM golangci/golangci-lint:v2.1.1
 
 # Please also update GOLINT_VERSION in Makefile

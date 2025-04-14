@@ -1,7 +1,7 @@
 package query
 
 type UpdateResource struct {
-	ResourceEntityResponse `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, protocols: $protocols, isVisible: $isVisible, isBrowserShortcutEnabled: $isBrowserShortcutEnabled, alias: $alias, securityPolicyId: $securityPolicyId, isActive: $isActive, approvalMode: $approvalMode)"`
+	ResourceEntityResponse `graphql:"resourceUpdate(id: $id, name: $name, address: $address, remoteNetworkId: $remoteNetworkId, protocols: $protocols, isVisible: $isVisible, isBrowserShortcutEnabled: $isBrowserShortcutEnabled, alias: $alias, securityPolicyId: $securityPolicyId, isActive: $isActive, tags: $tags, approvalMode: $approvalMode)"`
 }
 
 func (q UpdateResource) IsEmpty() bool {

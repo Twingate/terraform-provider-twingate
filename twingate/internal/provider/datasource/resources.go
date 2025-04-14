@@ -34,6 +34,7 @@ type resourcesModel struct {
 	NameExclude  types.String    `tfsdk:"name_exclude"`
 	NamePrefix   types.String    `tfsdk:"name_prefix"`
 	NameSuffix   types.String    `tfsdk:"name_suffix"`
+	Tags         types.Map       `tfsdk:"tags"`
 	Resources    []resourceModel `tfsdk:"resources"`
 }
 
@@ -109,6 +110,11 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 				Optional:    true,
 				Description: "The name of the resource must end with the value.",
 			},
+			attr.Tags: schema.MapAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+				Description: "Returns only resources that exactly match the given tags.",
+			},
 			// computed
 			attr.Resources: schema.ListNestedAttribute{
 				Computed:    true,
@@ -134,6 +140,11 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 						attr.ApprovalMode: schema.StringAttribute{
 							Computed:    true,
 							Description: fmt.Sprintf("The Approval Mode of the Resource. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
+						},
+						attr.Tags: schema.MapAttribute{
+							ElementType: types.StringType,
+							Computed:    true,
+							Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
 						},
 						attr.Protocols: schema.SingleNestedAttribute{
 							Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
@@ -172,7 +183,7 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		return
 	}
 
-	resources, err := d.client.ReadResourcesByName(client.WithCallerCtx(ctx, datasourceKey), name, filter)
+	resources, err := d.client.ReadResourcesByName(client.WithCallerCtx(ctx, datasourceKey), name, filter, getTags(data.Tags))
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateResources)
 
@@ -184,4 +195,18 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func getTags(rawTags types.Map) map[string]string {
+	if rawTags.IsNull() || rawTags.IsUnknown() || len(rawTags.Elements()) == 0 {
+		return nil
+	}
+
+	tags := make(map[string]string, len(rawTags.Elements()))
+
+	for key, val := range rawTags.Elements() {
+		tags[key] = val.(types.String).ValueString()
+	}
+
+	return tags
 }

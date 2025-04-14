@@ -2,10 +2,10 @@ package datasource
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -177,6 +177,7 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 					Address:         types.StringValue("address"),
 					RemoteNetworkID: types.StringValue("network-id"),
 					Protocols:       nil,
+					Tags:            types.MapNull(types.StringType),
 				},
 				{
 					ID:              types.StringValue("resource-1"),
@@ -194,6 +195,7 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 							Ports:  []types.String{},
 						},
 					},
+					Tags: types.MapNull(types.StringType),
 				},
 			},
 		},
