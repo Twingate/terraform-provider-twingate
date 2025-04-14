@@ -55,12 +55,10 @@ type resourceHandler interface {
 	getResource(resourceID string) (any, bool)
 	setResource(resource identifiable)
 	invalidateResource(resourceID string)
-	matchResources(filter model.ResourceFilter) []any
 }
 
 type identifiable interface {
 	GetID() string
-	Match(filter model.ResourceFilter) bool
 }
 
 type readResourcesFunc[T identifiable] func(ctx context.Context) ([]T, error)
@@ -92,21 +90,6 @@ func (h *handler[T]) getResource(resourceID string) (any, bool) {
 	}
 
 	return obj, exists
-}
-
-func (h *handler[T]) matchResources(filter model.ResourceFilter) []any {
-	var matched []any
-
-	h.resources.Range(func(key, value any) bool {
-		obj := value.(T)
-		if obj.Match(filter) {
-			matched = append(matched, obj)
-		}
-
-		return true
-	})
-
-	return matched
 }
 
 func (h *handler[T]) setResource(resource identifiable) {
@@ -200,27 +183,4 @@ func handle(handlerType any, apply func(handler resourceHandler)) {
 
 func handlerKey(handlerType any) string {
 	return reflect.TypeOf(handlerType).String()
-}
-
-func matchResources[T any](filter model.ResourceFilter) []T {
-	var (
-		res     T
-		matched []T
-	)
-
-	handle(res, func(handler resourceHandler) {
-		resources := handler.matchResources(filter)
-		for _, resource := range resources {
-			obj, ok := resource.(T)
-			if !ok {
-				log.Printf("[ERR] matchResources failed: expected type %T, got %T", res, resource)
-
-				return
-			}
-
-			matched = append(matched, obj)
-		}
-	})
-
-	return matched
 }
