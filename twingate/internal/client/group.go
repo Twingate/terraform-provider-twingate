@@ -3,8 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"log"
+
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -33,6 +34,8 @@ func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*mod
 	group := response.ToModel()
 	group.Users = input.Users
 	group.IsAuthoritative = input.IsAuthoritative
+
+	setResource(group)
 
 	return group, nil
 }
