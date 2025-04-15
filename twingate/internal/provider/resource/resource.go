@@ -114,7 +114,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 
 	if len(res.GroupsAccess) > 0 {
-		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess)
+		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess, makeObjectsSetNull(ctx, accessGroupAttributeTypes()))
 		resp.Diagnostics.Append(diags...)
 
 		if resp.Diagnostics.HasError() {
@@ -207,6 +207,9 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: fmt.Sprintf("This will set the approval model for the Resource. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 				PlanModifiers: []planmodifier.String{
 					UseNullStringWhenValueOmitted(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
 				},
 			},
 			attr.ID: schema.StringAttribute{
@@ -325,6 +328,9 @@ func groupAccessBlock() schema.SetNestedBlock {
 					Description: fmt.Sprintf("This will set the approval model on the edge. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					PlanModifiers: []planmodifier.String{
 						UseNullStringWhenValueOmitted(),
+					},
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					},
 				},
 			},
@@ -1086,7 +1092,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		}
 	}
 
-	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess)
+	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess, reference.GroupAccess)
 	diagnostics.Append(diags...)
 	serviceAccess, diags := convertServiceAccessToTerraform(ctx, resource.ServiceAccounts)
 	diagnostics.Append(diags...)
@@ -1290,7 +1296,19 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 	return makeObjectsSet(ctx, objects...)
 }
 
-func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup) (types.Set, diag.Diagnostics) {
+func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.Set) (types.Set, diag.Diagnostics) {
+	reference := getGroupAccessAttribute(referenceGroupAccess)
+	m := make(map[string]string)
+
+	for _, access := range reference {
+		var approvalMode string
+		if access.ApprovalMode != nil {
+			approvalMode = *access.ApprovalMode
+		}
+
+		m[access.GroupID] = approvalMode
+	}
+
 	var diagnostics diag.Diagnostics
 
 	if len(groupAccess) == 0 {
@@ -1305,6 +1323,11 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
 			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(access.UsageBasedDuration),
 			attr.ApprovalMode:                   types.StringPointerValue(access.ApprovalMode),
+		}
+
+		referenceApprovalMode, exists := m[access.GroupID]
+		if exists && referenceApprovalMode == "" {
+			attributes[attr.ApprovalMode] = types.StringNull()
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -1395,6 +1418,7 @@ func accessGroupAttributeTypes() map[string]tfattr.Type {
 		attr.GroupID:                        types.StringType,
 		attr.SecurityPolicyID:               types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
+		attr.ApprovalMode:                   types.StringType,
 	}
 }
 

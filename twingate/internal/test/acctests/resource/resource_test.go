@@ -3819,6 +3819,30 @@ func createResourceWithApprovalMode(remoteNetwork, resource, groupName, approval
 	`, remoteNetwork, resource, groupName, approvalMode)
 }
 
+func createResourceWithApprovalModeInAccessGroup(remoteNetwork, resource, groupName, approvalMode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "g21" {
+      name = "%[3]s"
+    }
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_group {
+		group_id = twingate_group.g21.id
+        approval_mode = "%[4]s"
+      }
+
+	}
+	`, remoteNetwork, resource, groupName, approvalMode)
+}
+
 func TestAccTwingateResourceWithApprovalMode(t *testing.T) {
 	t.Parallel()
 
@@ -3838,13 +3862,56 @@ func TestAccTwingateResourceWithApprovalMode(t *testing.T) {
 					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
 				),
 			},
-			//{
-			//	Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeManual),
-			//	Check: acctests.ComposeTestCheckFunc(
-			//		acctests.CheckTwingateResourceExists(theResource),
-			//		sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
-			//	),
-			//},
+			{
+				Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeManual),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
+				),
+			},
+			{
+				Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeAutomatic),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeAutomatic),
+				),
+			},
+			{
+				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceWithApprovalModeInAccessGroup(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+				),
+			},
+			{
+				Config: createResourceWithApprovalModeInAccessGroup(remoteNetworkName, resourceName, groupName, model.ApprovalModeManual),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.AccessGroup, attr.ApprovalMode), model.ApprovalModeManual),
+				),
+			},
 			//{
 			//	Config: createResourceWithApprovalMode(remoteNetworkName, resourceName, groupName, model.ApprovalModeAutomatic),
 			//	Check: acctests.ComposeTestCheckFunc(
