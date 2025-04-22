@@ -381,3 +381,230 @@ func TestHandler_MatchGroupsByTypeNameInvalidRegexp(t *testing.T) {
 
 	assert.Len(t, matched, 0)
 }
+
+func TestHandler_MatchResourcesByName(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod"},
+		{ID: "res2", Name: "test"},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.GroupsFilter{
+		Name: optionalString("test"),
+	})
+
+	assert.Len(t, matched, 1)
+
+	res, ok := matched[0].(*model.Resource)
+	assert.True(t, ok)
+	assert.Equal(t, "res2", res.ID)
+}
+
+func TestHandler_MatchResourcesByNameAndTag(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod", Tags: map[string]string{"env": "prod"}},
+		{ID: "res2", Name: "test", Tags: map[string]string{"env": "stage"}},
+		{ID: "res3", Name: "test", Tags: map[string]string{"env": "dev"}},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Name: optionalString("test"),
+		Tags: map[string]string{"env": "stage"},
+	})
+
+	assert.Len(t, matched, 1)
+
+	res, ok := matched[0].(*model.Resource)
+	assert.True(t, ok)
+	assert.Equal(t, "res2", res.ID)
+}
+
+func TestHandler_MatchResourceByNamePrefix(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod", Tags: map[string]string{"env": "prod", "app": "app"}},
+		{ID: "res2", Name: "test_a", Tags: map[string]string{"env": "stage", "app": "app"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Name:       optionalString("test"),
+		NameFilter: attrs.FilterByPrefix,
+		Tags:       map[string]string{"env": "dev"},
+	})
+
+	assert.Len(t, matched, 1)
+
+	res, ok := matched[0].(*model.Resource)
+	assert.True(t, ok)
+	assert.Equal(t, "res3", res.ID)
+}
+
+func TestHandler_MatchResourceByNameSuffix(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod_ok", Tags: map[string]string{"env": "prod", "app": "app"}},
+		{ID: "res2", Name: "test_ok", Tags: map[string]string{"env": "stage", "app": "app"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Name:       optionalString("ok"),
+		NameFilter: attrs.FilterBySuffix,
+		Tags:       map[string]string{"env": "prod", "app": "app"},
+	})
+
+	assert.Len(t, matched, 1)
+
+	res, ok := matched[0].(*model.Resource)
+	assert.True(t, ok)
+	assert.Equal(t, "res1", res.ID)
+}
+
+func TestHandler_MatchResourceByNameContains(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod", "app": "app"}},
+		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage", "app": "app"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Name:       optionalString("_new_"),
+		NameFilter: attrs.FilterByContains,
+		Tags:       map[string]string{"env": "stage"},
+	})
+
+	assert.Len(t, matched, 1)
+
+	res, ok := matched[0].(*model.Resource)
+	assert.True(t, ok)
+	assert.Equal(t, "res2", res.ID)
+}
+
+func TestHandler_MatchResourceByNameExclude(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod", "app": "app"}},
+		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage", "app": "app"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Name:       optionalString("_new_"),
+		NameFilter: attrs.FilterByExclude,
+		Tags:       map[string]string{"env": "test"},
+	})
+
+	assert.Len(t, matched, 1)
+
+	res, ok := matched[0].(*model.Resource)
+	assert.True(t, ok)
+	assert.Equal(t, "res4", res.ID)
+}
+
+func TestHandler_MatchResourceByNameRegexp(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
+		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Name:       optionalString("test_*"),
+		NameFilter: attrs.FilterByRegexp,
+		Tags:       map[string]string{"app": "app"},
+	})
+
+	assert.Len(t, matched, 2)
+
+	res, ok := matched[0].(*model.Resource)
+	assert.True(t, ok)
+	assert.True(t, res.ID == "res3" || res.ID == "res4")
+}
+
+func TestHandler_MatchResourceByNameInvalidRegexp(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
+		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+	}
+
+	handler := &handler[*model.Resource]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Name:       optionalString("test_{*}"),
+		NameFilter: attrs.FilterByRegexp,
+		Tags:       map[string]string{"app": "app"},
+	})
+
+	assert.Len(t, matched, 0)
+}

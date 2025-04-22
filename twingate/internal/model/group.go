@@ -141,3 +141,8 @@ func (f *GroupsFilter) IsNil() bool {
 func (f *GroupsFilter) HasNotSupportedFilters() bool {
 	return f != nil && !slices.Contains([]string{"", attr.FilterByRegexp, attr.FilterByContains, attr.FilterByExclude, attr.FilterByPrefix, attr.FilterBySuffix}, f.NameFilter)
 }
+
+func (f *GroupsFilter) GetTags() map[string]string {
+	// not supported
+	return nil
+}

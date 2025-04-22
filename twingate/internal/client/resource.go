@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -353,11 +354,23 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 	return client.mutate(ctx, &response, variables, opr, attr{id: resource.ID})
 }
 
-func (client *Client) ReadResourcesByName(ctx context.Context, name, filter string, tags map[string]string) ([]*model.Resource, error) {
+func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
+	if matched := matchResources[*model.Resource](filter); len(matched) > 0 {
+		log.Printf(
+			"[DEBUG] ReadResourcesByName: matched #%d resources from cache: %v",
+			len(matched), utils.Map(matched, func(item *model.Resource) string {
+				return item.Name
+			}))
+
+		return matched, nil
+	}
+
+	log.Println("[DEBUG] ReadResourcesByName: no matched resource in cache: fallback to query API")
+
 	variables := newVars(
-		gqlNullable(query.NewResourceFilterInput(name, filter, tags), "filter"),
+		gqlNullable(query.NewResourceFilterInput(filter.GetName(), filter.GetFilterBy(), filter.GetTags()), "filter"),
 		cursor(query.CursorResources),
 		pageLimit(client.pageLimit),
 	)
