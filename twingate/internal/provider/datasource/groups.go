@@ -183,39 +183,42 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 }
 
 func buildFilter(data *groupsModel) *model.GroupsFilter {
-	var name, filter string
+	var (
+		name   *string
+		filter string
+	)
 
 	if data.Name.ValueString() != "" {
-		name = data.Name.ValueString()
+		name = data.Name.ValueStringPointer()
 	}
 
 	if data.NameRegexp.ValueString() != "" {
-		name = data.NameRegexp.ValueString()
+		name = data.NameRegexp.ValueStringPointer()
 		filter = attr.FilterByRegexp
 	}
 
 	if data.NameContains.ValueString() != "" {
-		name = data.NameContains.ValueString()
+		name = data.NameContains.ValueStringPointer()
 		filter = attr.FilterByContains
 	}
 
 	if data.NameExclude.ValueString() != "" {
-		name = data.NameExclude.ValueString()
+		name = data.NameExclude.ValueStringPointer()
 		filter = attr.FilterByExclude
 	}
 
 	if data.NamePrefix.ValueString() != "" {
-		name = data.NamePrefix.ValueString()
+		name = data.NamePrefix.ValueStringPointer()
 		filter = attr.FilterByPrefix
 	}
 
 	if data.NameSuffix.ValueString() != "" {
-		name = data.NameSuffix.ValueString()
+		name = data.NameSuffix.ValueStringPointer()
 		filter = attr.FilterBySuffix
 	}
 
 	groupFilter := &model.GroupsFilter{
-		Name:       &name,
+		Name:       name,
 		NameFilter: filter,
 		IsActive:   data.IsActive.ValueBoolPointer(),
 	}
