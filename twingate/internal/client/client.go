@@ -125,7 +125,6 @@ func newServerURL(network, url string) serverURL {
 	}
 }
 
-//nolint:cyclop
 func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	reqID := "test_id"
 	if resp != nil && resp.Request.Header.Get(headerRequestID) != "" {

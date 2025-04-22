@@ -88,6 +88,7 @@ func NewAccessApprovalMode(approvalMode string) *AccessApprovalMode {
 	}
 
 	mode := AccessApprovalMode(approvalMode)
+
 	return &mode
 }
 
@@ -305,7 +306,6 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	resource := response.Entity.ToModel()
 	resource.IsAuthoritative = input.IsAuthoritative
-	//resource.ApprovalMode = input.ApprovalMode
 
 	if input.IsVisible == nil {
 		resource.IsVisible = nil

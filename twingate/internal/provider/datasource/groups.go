@@ -182,7 +182,6 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-//nolint:cyclop
 func buildFilter(data *groupsModel) *model.GroupsFilter {
 	var name, filter string
 

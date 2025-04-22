@@ -494,7 +494,6 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 	}
 
 	for _, group := range groupsAccess {
-
 		var approvalMode string
 		if group.ApprovalMode != nil {
 			approvalMode = *group.ApprovalMode
@@ -529,7 +528,6 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
-//nolint:cyclop
 func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
@@ -593,7 +591,6 @@ func getServiceAccountAccessAttribute(list types.Set) []string {
 	return serviceAccountIDs
 }
 
-//nolint:cyclop
 func convertResource(plan *resourceModel) (*model.Resource, error) {
 	protocols, err := convertProtocols(&plan.Protocols)
 	if err != nil {
@@ -841,7 +838,6 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
-//nolint:cyclop
 func (r *twingateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state resourceModel
 
@@ -1054,7 +1050,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	diagnostics.Append(respState.Set(ctx, state)...)
 }
 
-func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) { //nolint:cyclop
+func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) {
 	state.ID = types.StringValue(resource.ID)
 	state.Name = types.StringValue(resource.Name)
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
@@ -1298,7 +1294,7 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 
 func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.Set) (types.Set, diag.Diagnostics) {
 	reference := getGroupAccessAttribute(referenceGroupAccess)
-	m := make(map[string]string)
+	referenceLookup := make(map[string]string)
 
 	for _, access := range reference {
 		var approvalMode string
@@ -1306,7 +1302,7 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 			approvalMode = *access.ApprovalMode
 		}
 
-		m[access.GroupID] = approvalMode
+		referenceLookup[access.GroupID] = approvalMode
 	}
 
 	var diagnostics diag.Diagnostics
@@ -1325,7 +1321,7 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 			attr.ApprovalMode:                   types.StringPointerValue(access.ApprovalMode),
 		}
 
-		referenceApprovalMode, exists := m[access.GroupID]
+		referenceApprovalMode, exists := referenceLookup[access.GroupID]
 		if exists && referenceApprovalMode == "" {
 			attributes[attr.ApprovalMode] = types.StringNull()
 		}
