@@ -3931,3 +3931,34 @@ func TestAccTwingateResourceWithApprovalModeInAccessGroup(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateResourceWithAutomaticApprovalModeInAccessGroup(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+	groupName := test.RandomGroupName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+				),
+			},
+			{
+				Config: createResourceWithApprovalModeInAccessGroup(remoteNetworkName, resourceName, groupName, model.ApprovalModeAutomatic),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.ApprovalMode), model.ApprovalModeAutomatic),
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+				),
+			},
+		},
+	})
+}
