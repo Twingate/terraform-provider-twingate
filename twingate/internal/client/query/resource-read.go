@@ -34,6 +34,7 @@ type AccessEdge struct {
 	Node                           Principal
 	SecurityPolicy                 *gqlSecurityPolicy
 	UsageBasedAutolockDurationDays *int64
+	ApprovalMode                   *string
 }
 
 type Principal struct {
@@ -64,6 +65,7 @@ type ResourceNode struct {
 	IsBrowserShortcutEnabled bool
 	Alias                    string
 	SecurityPolicy           *gqlSecurityPolicy
+	ApprovalMode             string
 	Tags                     []Tag
 }
 
@@ -98,6 +100,7 @@ func (r gqlResource) ToModel() *model.Resource {
 				GroupID:            string(access.Node.ID),
 				SecurityPolicyID:   securityPolicyID,
 				UsageBasedDuration: access.UsageBasedAutolockDurationDays,
+				ApprovalMode:       access.ApprovalMode,
 			})
 		case AccessServiceAccount:
 			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
@@ -124,6 +127,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
 		SecurityPolicyID:         optionalString(securityPolicy),
+		ApprovalMode:             r.ApprovalMode,
 		Tags:                     tagsToModel(r.Tags),
 	}
 }
