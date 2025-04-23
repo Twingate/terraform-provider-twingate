@@ -76,6 +76,7 @@ type resourceModel struct {
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+	ApprovalMode             types.String `tfsdk:"approval_mode"`
 	Tags                     types.Map    `tfsdk:"tags"`
 }
 
@@ -113,7 +114,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 
 	if len(res.GroupsAccess) > 0 {
-		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess)
+		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess, makeObjectsSetNull(ctx, accessGroupAttributeTypes()))
 		resp.Diagnostics.Append(diags...)
 
 		if resp.Diagnostics.HasError() {
@@ -199,6 +200,17 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "Controls whether an \"Open in Browser\" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.",
 				Default:     booldefault.StaticBool(false),
+			},
+			attr.ApprovalMode: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: fmt.Sprintf("This will set the approval model for the Resource. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
+				PlanModifiers: []planmodifier.String{
+					UseNullStringWhenValueOmitted(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
+				},
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:      true,
@@ -308,6 +320,17 @@ func groupAccessBlock() schema.SetNestedBlock {
 					},
 					PlanModifiers: []planmodifier.Int64{
 						UseNullIntWhenValueOmitted(),
+					},
+				},
+				attr.ApprovalMode: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: fmt.Sprintf("This will set the approval model on the edge. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
+					},
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					},
 				},
 			},
@@ -471,10 +494,16 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 	}
 
 	for _, group := range groupsAccess {
+		var approvalMode string
+		if group.ApprovalMode != nil {
+			approvalMode = *group.ApprovalMode
+		}
+
 		access = append(access, client.AccessInput{
 			PrincipalID:                    group.GroupID,
 			SecurityPolicyID:               group.SecurityPolicyID,
 			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
+			ApprovalMode:                   client.NewAccessApprovalMode(approvalMode),
 		})
 	}
 
@@ -499,7 +528,6 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
-//nolint:cyclop
 func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
@@ -526,6 +554,11 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
 		if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
 			accessGroup.UsageBasedDuration = usageBasedDuration.(types.Int64).ValueInt64Pointer()
+		}
+
+		approvalModeVal := obj.Attributes()[attr.ApprovalMode]
+		if approvalModeVal != nil && !approvalModeVal.IsNull() && !approvalModeVal.IsUnknown() {
+			accessGroup.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
 		}
 
 		access = append(access, accessGroup)
@@ -558,7 +591,6 @@ func getServiceAccountAccessAttribute(list types.Set) []string {
 	return serviceAccountIDs
 }
 
-//nolint:cyclop
 func convertResource(plan *resourceModel) (*model.Resource, error) {
 	protocols, err := convertProtocols(&plan.Protocols)
 	if err != nil {
@@ -603,6 +635,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
+		ApprovalMode:             plan.ApprovalMode.ValueString(),
 		Tags:                     getTags(plan.Tags),
 	}, nil
 }
@@ -805,7 +838,6 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
-//nolint:cyclop
 func (r *twingateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state resourceModel
 
@@ -894,6 +926,7 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
 		!plan.Alias.Equal(state.Alias) ||
 		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
+		!plan.ApprovalMode.Equal(state.ApprovalMode) ||
 		!plan.Tags.Equal(state.Tags)
 }
 
@@ -1017,7 +1050,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	diagnostics.Append(respState.Set(ctx, state)...)
 }
 
-func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) { //nolint:cyclop
+func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) {
 	state.ID = types.StringValue(resource.ID)
 	state.Name = types.StringValue(resource.Name)
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
@@ -1038,6 +1071,10 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.Alias = reference.Alias
 	}
 
+	if !state.ApprovalMode.IsNull() || !reference.ApprovalMode.IsUnknown() {
+		state.ApprovalMode = reference.ApprovalMode
+	}
+
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
 		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &reference.Protocols)
 		diagnostics.Append(diags...)
@@ -1051,7 +1088,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		}
 	}
 
-	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess)
+	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess, reference.GroupAccess)
 	diagnostics.Append(diags...)
 	serviceAccess, diags := convertServiceAccessToTerraform(ctx, resource.ServiceAccounts)
 	diagnostics.Append(diags...)
@@ -1255,7 +1292,19 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 	return makeObjectsSet(ctx, objects...)
 }
 
-func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup) (types.Set, diag.Diagnostics) {
+func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.Set) (types.Set, diag.Diagnostics) {
+	reference := getGroupAccessAttribute(referenceGroupAccess)
+	referenceLookup := make(map[string]string)
+
+	for _, access := range reference {
+		var approvalMode string
+		if access.ApprovalMode != nil {
+			approvalMode = *access.ApprovalMode
+		}
+
+		referenceLookup[access.GroupID] = approvalMode
+	}
+
 	var diagnostics diag.Diagnostics
 
 	if len(groupAccess) == 0 {
@@ -1269,6 +1318,12 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 			attr.GroupID:                        types.StringValue(access.GroupID),
 			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
 			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(access.UsageBasedDuration),
+			attr.ApprovalMode:                   types.StringPointerValue(access.ApprovalMode),
+		}
+
+		referenceApprovalMode, exists := referenceLookup[access.GroupID]
+		if exists && referenceApprovalMode == "" {
+			attributes[attr.ApprovalMode] = types.StringNull()
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -1359,6 +1414,7 @@ func accessGroupAttributeTypes() map[string]tfattr.Type {
 		attr.GroupID:                        types.StringType,
 		attr.SecurityPolicyID:               types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
+		attr.ApprovalMode:                   types.StringType,
 	}
 }
 
@@ -1437,5 +1493,41 @@ func (m useNullIntWhenValueOmitted) PlanModifyInt64(ctx context.Context, req pla
 
 	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
 		resp.PlanValue = types.Int64Null()
+	}
+}
+
+func UseNullStringWhenValueOmitted() planmodifier.String {
+	return useNullStringWhenValueOmitted{}
+}
+
+type useNullStringWhenValueOmitted struct{}
+
+func (m useNullStringWhenValueOmitted) Description(_ context.Context) string {
+	return ""
+}
+
+func (m useNullStringWhenValueOmitted) MarkdownDescription(_ context.Context) string {
+	return ""
+}
+
+func (m useNullStringWhenValueOmitted) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
+		resp.PlanValue = types.StringNull()
+
+		return
+	}
+
+	// Do nothing if there is no state value.
+	if req.StateValue.IsNull() {
+		return
+	}
+
+	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
+		resp.PlanValue = types.StringNull()
 	}
 }

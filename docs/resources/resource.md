@@ -52,6 +52,7 @@ resource "twingate_resource" "resource" {
   remote_network_id = twingate_remote_network.aws_network.id
 
   security_policy_id = data.twingate_security_policy.test_policy.id
+  approval_mode      = "MANUAL"
 
   protocols = {
     allow_icmp = true
@@ -69,6 +70,7 @@ resource "twingate_resource" "resource" {
     group_id                           = twingate_group.aws.id
     security_policy_id                 = data.twingate_security_policy.test_policy.id
     usage_based_autolock_duration_days = 30
+    approval_mode                      = "AUTOMATIC"
   }
 
   // Adding multiple groups by individual ID
@@ -130,6 +132,7 @@ resource "twingate_resource" "resource" {
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_service` (Block Set) Restrict access to certain service account (see [below for nested schema](#nestedblock--access_service))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
+- `approval_mode` (String) This will set the approval model for the Resource. The valid values are `AUTOMATIC` and `MANUAL`.
 - `is_active` (Boolean) Set the resource as active or inactive. Default is `true`.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.
@@ -147,6 +150,7 @@ resource "twingate_resource" "resource" {
 
 Optional:
 
+- `approval_mode` (String) This will set the approval model on the edge. The valid values are `AUTOMATIC` and `MANUAL`.
 - `group_id` (String) Group ID that will have permission to access the Resource.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.
 - `usage_based_autolock_duration_days` (Number) The usage-based auto-lock duration configured on the edge (in days).
