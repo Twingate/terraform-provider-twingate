@@ -119,7 +119,7 @@ type ResourceFilter interface {
 
 func (r Resource) Match(filter ResourceFilter) bool {
 	if filter.IsNil() {
-		// matches all groups
+		// matches all resources
 		return true
 	}
 
