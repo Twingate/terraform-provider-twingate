@@ -48,8 +48,12 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 	}
 
 	if res, ok := getResource[*model.Group](groupID); ok {
+		log.Printf("[DEBUG] ReadGroup: found group in cache: %v", res.Name)
+
 		return res, nil
 	}
+
+	log.Println("[DEBUG] ReadGroup: group not found in cache: fallback to query API")
 
 	variables := newVars(
 		gqlID(groupID),
@@ -109,6 +113,12 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 		return nil, err //nolint
 	}
 
+	for i, group := range response.Edges {
+		if err := response.Edges[i].Node.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(group.Node.ID))); err != nil {
+			return nil, err //nolint
+		}
+	}
+
 	return response.ToModel(), nil
 }
 
@@ -144,6 +154,12 @@ func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error
 
 	if err := response.FetchPages(oprCtx, client.readGroupsAfter, variables); err != nil {
 		return nil, err //nolint
+	}
+
+	for i, group := range response.Edges {
+		if err := response.Edges[i].Node.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(group.Node.ID))); err != nil {
+			return nil, err //nolint
+		}
 	}
 
 	return response.ToModel(), nil
