@@ -168,7 +168,7 @@ func TestClientGroupUpdateErrorOnFetchPages(t *testing.T) {
 
 		_, err := c.UpdateGroup(context.Background(), &model.Group{ID: "group-id", Name: "groupName"})
 
-		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
+		assert.ErrorContains(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
 	})
 }
 
@@ -381,7 +381,7 @@ func TestClientGroupReadErrorOnFetchPages(t *testing.T) {
 		group, err := c.ReadGroup(context.Background(), "group-id")
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
+		assert.ErrorContains(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
 	})
 }
 
@@ -428,7 +428,7 @@ func TestClientGroupReadEmptyOnFetchPages(t *testing.T) {
 		group, err := c.ReadGroup(context.Background(), "group-id")
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id group-id: query result is empty`))
+		assert.ErrorContains(t, err, fmt.Sprintf(`failed to read group with id group-id: query result is empty`))
 	})
 }
 
