@@ -69,7 +69,7 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 	oprCtx := withOperationCtx(ctx, opr)
 
 	if err := response.Group.Users.FetchPages(oprCtx, client.readGroupUsersAfter, variables); err != nil {
-		return nil, fmt.Errorf("failed to read users for group %s: %w", groupID, err)
+		return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), groupID, err)
 	}
 
 	group := response.ToModel()
@@ -115,7 +115,7 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 
 	for i, group := range response.Edges {
 		if err := response.Edges[i].Node.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(group.Node.ID))); err != nil {
-			return nil, fmt.Errorf("failed to read users for group %s: %w", group.Node.ID, err)
+			return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), group.Node.ID, err)
 		}
 	}
 
@@ -158,7 +158,7 @@ func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error
 
 	for i, group := range response.Edges {
 		if err := response.Edges[i].Node.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(group.Node.ID))); err != nil {
-			return nil, fmt.Errorf("failed to read users for group %s: %w", group.Node.ID, err)
+			return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), group.Node.ID, err)
 		}
 	}
 
@@ -195,7 +195,7 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 	oprCtx := withOperationCtx(ctx, opr)
 
 	if err := response.Entity.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(input.ID))); err != nil {
-		return nil, fmt.Errorf("failed to read users for group %s: %w", input.ID, err)
+		return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), input.ID, err)
 	}
 
 	group := response.Entity.ToModel()
