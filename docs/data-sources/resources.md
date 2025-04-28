@@ -54,7 +54,6 @@ data "twingate_resources" "foo" {
 Read-Only:
 
 - `address` (String) The Resource's IP/CIDR or FQDN/DNS zone
-- `approval_mode` (String) The Approval Mode of the Resource. The valid values are `AUTOMATIC` and `MANUAL`.
 - `id` (String) The id of the Resource
 - `name` (String) The name of the Resource
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--resources--protocols))
