@@ -16,6 +16,7 @@ on:
       - 'README.md'
     branches:
       - main
+      - fix/upgrade-resource-missing-tags
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:

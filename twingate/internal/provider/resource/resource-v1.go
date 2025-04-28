@@ -192,6 +192,7 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 				GroupAccess:     accessGroup,
 				ServiceAccess:   accessServiceAccount,
 				IsActive:        priorState.IsActive,
+				Tags:            types.MapNull(types.StringType),
 			}
 
 			if !priorState.IsAuthoritative.IsNull() {
