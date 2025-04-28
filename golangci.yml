@@ -46,9 +46,6 @@ linters:
         - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.String
         - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Int64
         - github.com/hashicorp/terraform-plugin-testing/plancheck.PlanCheck
-    cyclop:
-      max-complexity: 20
-      ignore-tests: true
     gocyclo:
       min-complexity: 25
     dupl:
