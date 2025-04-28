@@ -87,4 +87,4 @@ sec:
 
 .PHONY: docs
 docs:
-	$(go tool -n github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs) generate
+	go tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
