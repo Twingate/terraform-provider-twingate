@@ -129,6 +129,7 @@ func gqlNullableID(val interface{}, name string) gqlVarOption {
 	}
 }
 
+//nolint:cyclop
 func isZeroValue(val interface{}) bool {
 	if val == nil {
 		return true

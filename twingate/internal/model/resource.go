@@ -16,9 +16,6 @@ const (
 	PolicyRestricted = "RESTRICTED"
 	PolicyAllowAll   = "ALLOW_ALL"
 	PolicyDenyAll    = "DENY_ALL"
-
-	ApprovalModeAutomatic = "AUTOMATIC"
-	ApprovalModeManual    = "MANUAL"
 )
 
 //nolint:gochecknoglobals
@@ -28,14 +25,12 @@ type AccessGroup struct {
 	GroupID            string
 	SecurityPolicyID   *string
 	UsageBasedDuration *int64
-	ApprovalMode       *string
 }
 
 func (g AccessGroup) Equals(another AccessGroup) bool {
 	if g.GroupID == another.GroupID &&
 		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
-		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) &&
-		equalsOptionalString(g.ApprovalMode, another.ApprovalMode) {
+		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) {
 		return true
 	}
 
@@ -64,7 +59,6 @@ type Resource struct {
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
 	SecurityPolicyID         *string
-	ApprovalMode             string
 	Tags                     map[string]string
 }
 

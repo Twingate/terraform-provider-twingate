@@ -28,7 +28,6 @@ data "twingate_resource" "foo" {
 ### Read-Only
 
 - `address` (String) The Resource's address, which may be an IP address, CIDR range, or DNS address
-- `approval_mode` (String) The Approval Mode of the Resource. The valid values are `AUTOMATIC` and `MANUAL`.
 - `name` (String) The name of the Resource
 - `protocols` (Block, Read-only) By default (when this argument is not defined) no restriction is applied, and all protocols and ports are allowed. (see [below for nested schema](#nestedblock--protocols))
 - `remote_network_id` (String) The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.
