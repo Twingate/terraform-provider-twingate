@@ -80,6 +80,18 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 	})
 }
 
+type AccessApprovalMode string
+
+func NewAccessApprovalMode(approvalMode string) *AccessApprovalMode {
+	if approvalMode == "" {
+		return nil
+	}
+
+	mode := AccessApprovalMode(approvalMode)
+
+	return &mode
+}
+
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	opr := resourceResource.create()
 
@@ -92,6 +104,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
 		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
@@ -277,6 +290,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
 		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
@@ -399,9 +413,10 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 }
 
 type AccessInput struct {
-	PrincipalID                    string  `json:"principalId"`
-	SecurityPolicyID               *string `json:"securityPolicyId"`
-	UsageBasedAutolockDurationDays *int64  `json:"usageBasedAutolockDurationDays"`
+	PrincipalID                    string              `json:"principalId"`
+	SecurityPolicyID               *string             `json:"securityPolicyId"`
+	UsageBasedAutolockDurationDays *int64              `json:"usageBasedAutolockDurationDays"`
+	ApprovalMode                   *AccessApprovalMode `json:"approvalMode"`
 }
 
 func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {
