@@ -3,6 +3,7 @@ package datasource
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"regexp"
 	"testing"
 
@@ -28,6 +29,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 				Config: testDatasourceTwingateResource(networkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.Name, resourceName),
+					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.ApprovalMode, model.ApprovalModeManual),
 					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.PathAttr(attr.Tags, "owner"), "example_owner"),
 				),
 			},
