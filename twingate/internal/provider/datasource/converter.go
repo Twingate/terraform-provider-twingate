@@ -38,17 +38,11 @@ func convertResourcesToTerraform(resources []*model.Resource) []resourceModel {
 	return utils.Map(resources, func(resource *model.Resource) resourceModel {
 		tags, _ := convertTagsToTerraform(resource.Tags)
 
-		approvalMode := types.StringNull()
-		if resource.ApprovalMode != "" {
-			approvalMode = types.StringValue(resource.ApprovalMode)
-		}
-
 		return resourceModel{
 			ID:              types.StringValue(resource.ID),
 			Name:            types.StringValue(resource.Name),
 			Address:         types.StringValue(resource.Address),
 			RemoteNetworkID: types.StringValue(resource.RemoteNetworkID),
-			ApprovalMode:    approvalMode,
 			Protocols:       convertProtocolsToTerraform(resource.Protocols),
 			Tags:            tags,
 		}

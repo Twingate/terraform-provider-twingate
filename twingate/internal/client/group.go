@@ -48,8 +48,12 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 	}
 
 	if res, ok := getResource[*model.Group](groupID); ok {
+		log.Printf("[DEBUG] ReadGroup: found group in cache: %v", res.Name)
+
 		return res, nil
 	}
+
+	log.Println("[DEBUG] ReadGroup: group not found in cache: fallback to query API")
 
 	variables := newVars(
 		gqlID(groupID),
@@ -65,7 +69,7 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 	oprCtx := withOperationCtx(ctx, opr)
 
 	if err := response.Group.Users.FetchPages(oprCtx, client.readGroupUsersAfter, variables); err != nil {
-		return nil, err //nolint
+		return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), groupID, err)
 	}
 
 	group := response.ToModel()
@@ -109,6 +113,12 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 		return nil, err //nolint
 	}
 
+	for i, group := range response.Edges {
+		if err := response.Edges[i].Node.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(group.Node.ID))); err != nil {
+			return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), group.Node.ID, err)
+		}
+	}
+
 	return response.ToModel(), nil
 }
 
@@ -146,6 +156,12 @@ func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error
 		return nil, err //nolint
 	}
 
+	for i, group := range response.Edges {
+		if err := response.Edges[i].Node.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(group.Node.ID))); err != nil {
+			return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), group.Node.ID, err)
+		}
+	}
+
 	return response.ToModel(), nil
 }
 
@@ -178,9 +194,8 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 
 	oprCtx := withOperationCtx(ctx, opr)
 
-	if err := response.Entity.Users.FetchPages(oprCtx,
-		client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(input.ID))); err != nil {
-		return nil, err //nolint
+	if err := response.Entity.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(input.ID))); err != nil {
+		return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), input.ID, err)
 	}
 
 	group := response.Entity.ToModel()

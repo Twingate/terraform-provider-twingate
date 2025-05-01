@@ -168,7 +168,7 @@ func TestClientGroupUpdateErrorOnFetchPages(t *testing.T) {
 
 		_, err := c.UpdateGroup(context.Background(), &model.Group{ID: "group-id", Name: "groupName"})
 
-		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
+		assert.ErrorContains(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
 	})
 }
 
@@ -381,7 +381,7 @@ func TestClientGroupReadErrorOnFetchPages(t *testing.T) {
 		group, err := c.ReadGroup(context.Background(), "group-id")
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
+		assert.ErrorContains(t, err, graphqlErr(c, "failed to read group with id group-id", errBadRequest))
 	})
 }
 
@@ -428,7 +428,7 @@ func TestClientGroupReadEmptyOnFetchPages(t *testing.T) {
 		group, err := c.ReadGroup(context.Background(), "group-id")
 
 		assert.Nil(t, group)
-		assert.EqualError(t, err, fmt.Sprintf(`failed to read group with id group-id: query result is empty`))
+		assert.ErrorContains(t, err, fmt.Sprintf(`failed to read group with id group-id: query result is empty`))
 	})
 }
 
@@ -1206,6 +1206,193 @@ func TestClientGroupsReadFullOk(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
+
+		groups, err := c.ReadFullGroups(context.Background())
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, groups)
+	})
+}
+
+func TestClientGroupsReadFullWithAllUsers(t *testing.T) {
+	t.Run("Test Twingate Resource : Read Full Groups With All Users", func(t *testing.T) {
+		expected := []*model.Group{
+			{
+				ID:    "id1",
+				Name:  "group1",
+				Users: []string{"user-1", "user-2"},
+			},
+			{
+				ID:    "id2",
+				Name:  "group2",
+				Users: []string{"user-1", "user-2"},
+			},
+			{
+				ID:    "id3",
+				Name:  "group3",
+				Users: []string{"user-1", "user-2"},
+			},
+		}
+
+		response1 := `{
+		  "data": {
+			"groups": {
+			  "pageInfo": {
+				"endCursor": "cursor-001",
+				"hasNextPage": true
+			  },
+			  "edges": [
+				{
+				  "node": {
+					"id": "id1",
+					"name": "group1",
+					"users": {
+					  "pageInfo": {
+						"endCursor": "cursor-001",
+						"hasNextPage": true
+					  },
+					  "edges": [
+						{
+						  "node": {
+							"id": "user-1"
+						  }
+						}
+					  ]
+					}
+				  }
+				},
+				{
+				  "node": {
+					"id": "id2",
+					"name": "group2",
+					"users": {
+					  "pageInfo": {
+						"endCursor": "cursor-001",
+						"hasNextPage": true
+					  },
+					  "edges": [
+						{
+						  "node": {
+							"id": "user-1"
+						  }
+						}
+					  ]
+					}
+				  }
+				}
+			  ]
+			}
+		  }
+		}`
+
+		response2 := `{
+		  "data": {
+			"groups": {
+			  "pageInfo": {
+				"endCursor": "cursor-001",
+				"hasNextPage": false
+			  },
+			  "edges": [
+				{
+				  "node": {
+					"id": "id3",
+					"name": "group3",
+					"users": {
+					  "pageInfo": {
+						"endCursor": "cursor-001",
+						"hasNextPage": true
+					  },
+					  "edges": [
+						{
+						  "node": {
+							"id": "user-1"
+						  }
+						}
+					  ]
+					}
+				  }
+				}
+			  ]
+			}
+		  }
+		}`
+
+		response3 := `{
+		  "data": {
+			"group": {
+			  "id": "id1",
+			  "name": "group1",
+			  "users": {
+				"pageInfo": {
+				  "endCursor": "cursor-002",
+				  "hasNextPage": false
+				},
+				"edges": [
+				  {
+					"node": {
+					  "id": "user-2"
+					}
+				  }
+				]
+			  }
+			}
+		  }
+		}`
+
+		response4 := `{
+		  "data": {
+			"group": {
+			  "id": "id2",
+			  "name": "group2",
+			  "users": {
+				"pageInfo": {
+				  "endCursor": "cursor-002",
+				  "hasNextPage": false
+				},
+				"edges": [
+				  {
+					"node": {
+					  "id": "user-2"
+					}
+				  }
+				]
+			  }
+			}
+		  }
+		}`
+
+		response5 := `{
+		  "data": {
+			"group": {
+			  "id": "id3",
+			  "name": "group3",
+			  "users": {
+				"pageInfo": {
+				  "endCursor": "cursor-002",
+				  "hasNextPage": false
+				},
+				"edges": [
+				  {
+					"node": {
+					  "id": "user-2"
+					}
+				  }
+				]
+			  }
+			}
+		  }
+		}`
+
+		c := newHTTPMockClient()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
+			MultipleResponders(
+				httpmock.NewStringResponder(http.StatusOK, response1),
+				httpmock.NewStringResponder(http.StatusOK, response2),
+				httpmock.NewStringResponder(http.StatusOK, response3),
+				httpmock.NewStringResponder(http.StatusOK, response4),
+				httpmock.NewStringResponder(http.StatusOK, response5),
+			))
 
 		groups, err := c.ReadFullGroups(context.Background())
 
