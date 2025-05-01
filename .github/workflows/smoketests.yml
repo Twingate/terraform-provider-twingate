@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '1.9.*'
+          - '1.10.*'
           - 'latest'
     steps:
     - name: Check out code into the Go module directory
@@ -117,8 +117,8 @@ jobs:
       fail-fast: false
       matrix:
         tofu:
-          - '1.6.*'
           - '1.7.*'
+          - '1.8.*'
           - 'latest'
 
     steps:
