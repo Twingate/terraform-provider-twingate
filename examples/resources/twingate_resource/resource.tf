@@ -37,6 +37,7 @@ resource "twingate_resource" "resource" {
   remote_network_id = twingate_remote_network.aws_network.id
 
   security_policy_id = data.twingate_security_policy.test_policy.id
+  usage_based_autolock_duration_days = 15
 
   protocols = {
     allow_icmp = true

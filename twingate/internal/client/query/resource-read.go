@@ -58,13 +58,14 @@ type ResourceNode struct {
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
-	Protocols                *Protocols
-	IsActive                 bool
-	IsVisible                bool
-	IsBrowserShortcutEnabled bool
-	Alias                    string
-	SecurityPolicy           *gqlSecurityPolicy
-	Tags                     []Tag
+	Protocols                      *Protocols
+	IsActive                       bool
+	IsVisible                      bool
+	IsBrowserShortcutEnabled       bool
+	Alias                          string
+	SecurityPolicy                 *gqlSecurityPolicy
+	Tags                           []Tag
+	UsageBasedAutolockDurationDays *int64
 }
 
 type Protocols struct {
@@ -114,17 +115,18 @@ func (r ResourceNode) ToModel() *model.Resource {
 	}
 
 	return &model.Resource{
-		ID:                       string(r.ID),
-		Name:                     r.Name,
-		Address:                  r.Address.Value,
-		RemoteNetworkID:          string(r.RemoteNetwork.ID),
-		Protocols:                protocolsToModel(r.Protocols),
-		IsActive:                 r.IsActive,
-		IsVisible:                &r.IsVisible,
-		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
-		Alias:                    optionalString(r.Alias),
-		SecurityPolicyID:         optionalString(securityPolicy),
-		Tags:                     tagsToModel(r.Tags),
+		ID:                             string(r.ID),
+		Name:                           r.Name,
+		Address:                        r.Address.Value,
+		RemoteNetworkID:                string(r.RemoteNetwork.ID),
+		Protocols:                      protocolsToModel(r.Protocols),
+		IsActive:                       r.IsActive,
+		IsVisible:                      &r.IsVisible,
+		IsBrowserShortcutEnabled:       &r.IsBrowserShortcutEnabled,
+		Alias:                          optionalString(r.Alias),
+		SecurityPolicyID:               optionalString(securityPolicy),
+		Tags:                           tagsToModel(r.Tags),
+		UsageBasedAutolockDurationDays: r.UsageBasedAutolockDurationDays,
 	}
 }
 
