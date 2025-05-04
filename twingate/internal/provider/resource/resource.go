@@ -103,6 +103,10 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		return
 	}
 
+	if res.ApprovalMode != "" {
+		resp.State.SetAttribute(ctx, path.Root(attr.ApprovalMode), types.StringValue(res.ApprovalMode))
+	}
+
 	resp.State.SetAttribute(ctx, path.Root(attr.UsageBasedAutolockDurationDays), types.Int64PointerValue(res.UsageBasedAutolockDurationDays))
 
 	if res.Protocols != nil {

@@ -828,6 +828,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 					udpPolicy:                           model.PolicyAllowAll,
 					udpPortsLen:                         "0",
 					accessGroupIdsLen:                   "2",
+					attr.ApprovalMode: "MANUAL",
 					attr.UsageBasedAutolockDurationDays: "10",
 					attr.Path(attr.AccessGroup, attr.UsageBasedAutolockDurationDays): "13",
 				}),
@@ -854,6 +855,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  name = "%s"
 	  address = "acc-test.com.12"
 	  remote_network_id = twingate_remote_network.test12.id
+	  approval_mode = "MANUAL"
 	  usage_based_autolock_duration_days = 10
 	  
       dynamic "access_group" {
