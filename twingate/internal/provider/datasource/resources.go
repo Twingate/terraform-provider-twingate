@@ -187,7 +187,11 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		return
 	}
 
-	resources, err := d.client.ReadResourcesByName(client.WithCallerCtx(ctx, datasourceKey), name, filter, getTags(data.Tags))
+	resources, err := d.client.ReadResourcesByName(client.WithCallerCtx(ctx, datasourceKey), &model.ResourcesFilter{
+		Name:       &name,
+		NameFilter: filter,
+		Tags:       getTags(data.Tags),
+	})
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateResources)
 

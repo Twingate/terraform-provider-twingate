@@ -2,6 +2,8 @@ package model
 
 import (
 	"fmt"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -113,12 +115,64 @@ type ResourceFilter interface {
 	GetFilterBy() string
 	GetTypes() []string
 	GetIsActive() *bool
+	GetTags() map[string]string
 }
 
 func (r Resource) Match(filter ResourceFilter) bool {
-	//nolint:godox
-	// TODO: not supported at the moment
-	return false
+	if filter.IsNil() {
+		// matches all resources
+		return true
+	}
+
+	if filter.HasNotSupportedFilters() {
+		// for not supported filters we delegate fetching data from API
+		return false
+	}
+
+	// filter by tags
+	for k, v := range filter.GetTags() {
+		if r.Tags[k] != v {
+			return false
+		}
+	}
+
+	// filter by name
+	if name := filter.GetName(); name != "" {
+		switch filter.GetFilterBy() {
+		case "":
+			if r.Name != name {
+				return false
+			}
+
+		case attr.FilterByContains:
+			if !strings.Contains(r.Name, name) {
+				return false
+			}
+
+		case attr.FilterByExclude:
+			if strings.Contains(r.Name, name) {
+				return false
+			}
+
+		case attr.FilterByPrefix:
+			if !strings.HasPrefix(r.Name, name) {
+				return false
+			}
+
+		case attr.FilterBySuffix:
+			if !strings.HasSuffix(r.Name, name) {
+				return false
+			}
+
+		case attr.FilterByRegexp:
+			matched, err := regexp.MatchString(name, r.Name)
+			if err != nil || !matched {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 type PortRange struct {
@@ -262,4 +316,48 @@ func (p *Protocol) ToTerraform() []interface{} {
 			attr.Ports:  p.PortsToString(),
 		},
 	}
+}
+
+type ResourcesFilter struct {
+	Name       *string
+	NameFilter string
+	Tags       map[string]string
+}
+
+func (f *ResourcesFilter) HasName() bool {
+	return f != nil && f.Name != nil && *f.Name != ""
+}
+
+func (f *ResourcesFilter) GetName() string {
+	if f.HasName() {
+		return *f.Name
+	}
+
+	return ""
+}
+
+func (f *ResourcesFilter) GetFilterBy() string {
+	return f.NameFilter
+}
+
+func (f *ResourcesFilter) GetTypes() []string {
+	// not supported
+	return nil
+}
+
+func (f *ResourcesFilter) GetIsActive() *bool {
+	// not supported
+	return nil
+}
+
+func (f *ResourcesFilter) IsNil() bool {
+	return f == nil
+}
+
+func (f *ResourcesFilter) HasNotSupportedFilters() bool {
+	return f != nil && !slices.Contains([]string{"", attr.FilterByRegexp, attr.FilterByContains, attr.FilterByExclude, attr.FilterByPrefix, attr.FilterBySuffix}, f.NameFilter)
+}
+
+func (f *ResourcesFilter) GetTags() map[string]string {
+	return f.Tags
 }
