@@ -193,6 +193,7 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 				ServiceAccess:                  accessServiceAccount,
 				IsActive:                       priorState.IsActive,
 				Tags:                           types.MapNull(types.StringType),
+				ApprovalMode:                   types.StringNull(),
 				UsageBasedAutolockDurationDays: types.Int64Null(),
 			}
 

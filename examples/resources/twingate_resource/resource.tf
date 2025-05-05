@@ -37,6 +37,7 @@ resource "twingate_resource" "resource" {
   remote_network_id = twingate_remote_network.aws_network.id
 
   security_policy_id = data.twingate_security_policy.test_policy.id
+  approval_mode      = "MANUAL"
   usage_based_autolock_duration_days = 15
 
   protocols = {
@@ -55,6 +56,7 @@ resource "twingate_resource" "resource" {
     group_id                           = twingate_group.aws.id
     security_policy_id                 = data.twingate_security_policy.test_policy.id
     usage_based_autolock_duration_days = 30
+    approval_mode                      = "AUTOMATIC"
   }
 
   // Adding multiple groups by individual ID

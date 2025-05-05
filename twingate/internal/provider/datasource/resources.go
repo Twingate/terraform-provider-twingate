@@ -137,6 +137,10 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 							Computed:    true,
 							Description: "Remote Network ID where the Resource lives",
 						},
+						attr.ApprovalMode: schema.StringAttribute{
+							Computed:    true,
+							Description: fmt.Sprintf("The Approval Mode of the Resource. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
+						},
 						attr.Tags: schema.MapAttribute{
 							ElementType: types.StringType,
 							Computed:    true,

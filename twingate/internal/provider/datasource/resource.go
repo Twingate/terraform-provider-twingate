@@ -33,6 +33,7 @@ type resourceModel struct {
 	RemoteNetworkID                types.String    `tfsdk:"remote_network_id"`
 	Tags                           types.Map       `tfsdk:"tags"`
 	Protocols                      *protocolsModel `tfsdk:"protocols"`
+	ApprovalMode                   types.String    `tfsdk:"approval_mode"`
 	UsageBasedAutolockDurationDays types.Int64     `tfsdk:"usage_based_autolock_duration_days"`
 }
 
@@ -69,6 +70,7 @@ func (d *resource) Configure(ctx context.Context, req datasource.ConfigureReques
 	d.client = client
 }
 
+//nolint:funlen
 func (d *resource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	protocolSchema := schema.SingleNestedBlock{
 		Attributes: map[string]schema.Attribute{
@@ -103,6 +105,10 @@ func (d *resource) Schema(ctx context.Context, req datasource.SchemaRequest, res
 			attr.RemoteNetworkID: schema.StringAttribute{
 				Computed:    true,
 				Description: "The Remote Network ID that the Resource is associated with. Resources may only be associated with a single Remote Network.",
+			},
+			attr.ApprovalMode: schema.StringAttribute{
+				Computed:    true,
+				Description: fmt.Sprintf("The Approval Mode of the Resource. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 			},
 			attr.Tags: schema.MapAttribute{
 				ElementType: types.StringType,
@@ -152,6 +158,7 @@ func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *d
 	data.Name = types.StringValue(resource.Name)
 	data.Address = types.StringValue(resource.Address)
 	data.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
+	data.ApprovalMode = types.StringValue(resource.ApprovalMode)
 	data.Protocols = convertProtocolsToTerraform(resource.Protocols)
 	tags, diags := convertTagsToTerraform(resource.Tags)
 

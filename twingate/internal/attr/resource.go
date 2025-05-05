@@ -19,5 +19,6 @@ const (
 	IsVisible                      = "is_visible"
 	IsBrowserShortcutEnabled       = "is_browser_shortcut_enabled"
 	Resources                      = "resources"
+	ApprovalMode                   = "approval_mode"
 	Tags                           = "tags"
 )
