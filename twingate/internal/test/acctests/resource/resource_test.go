@@ -828,7 +828,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 					udpPolicy:                           model.PolicyAllowAll,
 					udpPortsLen:                         "0",
 					accessGroupIdsLen:                   "2",
-					attr.ApprovalMode: "MANUAL",
+					attr.ApprovalMode:                   "MANUAL",
 					attr.UsageBasedAutolockDurationDays: "10",
 					attr.Path(attr.AccessGroup, attr.UsageBasedAutolockDurationDays): "13",
 				}),
