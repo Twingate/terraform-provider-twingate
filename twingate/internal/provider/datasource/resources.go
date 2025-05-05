@@ -142,6 +142,10 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 							Computed:    true,
 							Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
 						},
+						attr.UsageBasedAutolockDurationDays: schema.Int64Attribute{
+							Computed:    true,
+							Description: "The number of days that the Resource will be locked after the last successful login.",
+						},
 						attr.Protocols: schema.SingleNestedAttribute{
 							Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
 							Computed:    true,

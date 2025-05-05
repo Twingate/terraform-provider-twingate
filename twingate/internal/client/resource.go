@@ -94,6 +94,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
+		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -278,6 +279,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
+		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
