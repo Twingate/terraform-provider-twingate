@@ -59,6 +59,7 @@ Read-Only:
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--resources--protocols))
 - `remote_network_id` (String) Remote Network ID where the Resource lives
 - `tags` (Map of String) The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.
+- `usage_based_autolock_duration_days` (Number) The number of days that the Resource will be locked after the last successful login.
 
 <a id="nestedatt--resources--protocols"></a>
 ### Nested Schema for `resources.protocols`

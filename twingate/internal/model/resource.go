@@ -46,20 +46,21 @@ func equalsOptionalInt64(i1, i2 *int64) bool {
 }
 
 type Resource struct {
-	ID                       string
-	RemoteNetworkID          string
-	Address                  string
-	Name                     string
-	Protocols                *Protocols
-	IsActive                 bool
-	GroupsAccess             []AccessGroup
-	ServiceAccounts          []string
-	IsAuthoritative          bool
-	IsVisible                *bool
-	IsBrowserShortcutEnabled *bool
-	Alias                    *string
-	SecurityPolicyID         *string
-	Tags                     map[string]string
+	ID                             string
+	RemoteNetworkID                string
+	Address                        string
+	Name                           string
+	Protocols                      *Protocols
+	IsActive                       bool
+	GroupsAccess                   []AccessGroup
+	ServiceAccounts                []string
+	IsAuthoritative                bool
+	IsVisible                      *bool
+	IsBrowserShortcutEnabled       *bool
+	Alias                          *string
+	SecurityPolicyID               *string
+	Tags                           map[string]string
+	UsageBasedAutolockDurationDays *int64
 }
 
 func (r Resource) AccessToTerraform() []interface{} {

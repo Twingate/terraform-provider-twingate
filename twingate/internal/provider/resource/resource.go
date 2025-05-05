@@ -63,20 +63,21 @@ type twingateResource struct {
 }
 
 type resourceModel struct {
-	ID                       types.String `tfsdk:"id"`
-	Name                     types.String `tfsdk:"name"`
-	Address                  types.String `tfsdk:"address"`
-	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
-	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
-	Protocols                types.Object `tfsdk:"protocols"`
-	GroupAccess              types.Set    `tfsdk:"access_group"`
-	ServiceAccess            types.Set    `tfsdk:"access_service"`
-	IsActive                 types.Bool   `tfsdk:"is_active"`
-	IsVisible                types.Bool   `tfsdk:"is_visible"`
-	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
-	Alias                    types.String `tfsdk:"alias"`
-	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
-	Tags                     types.Map    `tfsdk:"tags"`
+	ID                             types.String `tfsdk:"id"`
+	Name                           types.String `tfsdk:"name"`
+	Address                        types.String `tfsdk:"address"`
+	RemoteNetworkID                types.String `tfsdk:"remote_network_id"`
+	IsAuthoritative                types.Bool   `tfsdk:"is_authoritative"`
+	Protocols                      types.Object `tfsdk:"protocols"`
+	GroupAccess                    types.Set    `tfsdk:"access_group"`
+	ServiceAccess                  types.Set    `tfsdk:"access_service"`
+	IsActive                       types.Bool   `tfsdk:"is_active"`
+	IsVisible                      types.Bool   `tfsdk:"is_visible"`
+	IsBrowserShortcutEnabled       types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
+	Alias                          types.String `tfsdk:"alias"`
+	SecurityPolicyID               types.String `tfsdk:"security_policy_id"`
+	Tags                           types.Map    `tfsdk:"tags"`
+	UsageBasedAutolockDurationDays types.Int64  `tfsdk:"usage_based_autolock_duration_days"`
 }
 
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -101,6 +102,8 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		return
 	}
 
+	resp.State.SetAttribute(ctx, path.Root(attr.UsageBasedAutolockDurationDays), types.Int64PointerValue(res.UsageBasedAutolockDurationDays))
+
 	if res.Protocols != nil {
 		protocols, diags := convertProtocolsToTerraform(res.Protocols, nil)
 		resp.Diagnostics.Append(diags...)
@@ -113,7 +116,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 
 	if len(res.GroupsAccess) > 0 {
-		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess)
+		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess, makeObjectsSetNull(ctx, accessGroupAttributeTypes()))
 		resp.Diagnostics.Append(diags...)
 
 		if resp.Diagnostics.HasError() {
@@ -178,6 +181,14 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
+			},
+			attr.UsageBasedAutolockDurationDays: schema.Int64Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "The usage-based auto-lock duration for the Resource (in days).",
+				PlanModifiers: []planmodifier.Int64{
+					UseNullIntWhenValueOmitted(),
+				},
 			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
@@ -442,7 +453,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if err = r.client.AddResourceAccess(ctx, resource.ID, convertResourceAccess(resource.ServiceAccounts, resource.GroupsAccess)); err != nil {
+	if err = r.client.AddResourceAccess(ctx, resource.ID, convertResourceAccess(resource.ServiceAccounts, resource.GroupsAccess, resource.UsageBasedAutolockDurationDays)); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
 
 		return
@@ -464,17 +475,22 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
-func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup) []client.AccessInput {
+func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup, defaultUsageBasedAutolockDurationDays *int64) []client.AccessInput {
 	access := make([]client.AccessInput, 0, len(serviceAccounts)+len(groupsAccess))
 	for _, account := range serviceAccounts {
 		access = append(access, client.AccessInput{PrincipalID: account})
 	}
 
 	for _, group := range groupsAccess {
+		usageBasedAutolockDurationDays := defaultUsageBasedAutolockDurationDays
+		if group.UsageBasedDuration != nil {
+			usageBasedAutolockDurationDays = group.UsageBasedDuration
+		}
+
 		access = append(access, client.AccessInput{
 			PrincipalID:                    group.GroupID,
 			SecurityPolicyID:               group.SecurityPolicyID,
-			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
+			UsageBasedAutolockDurationDays: usageBasedAutolockDurationDays,
 		})
 	}
 
@@ -499,7 +515,6 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
-//nolint:cyclop
 func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
@@ -558,7 +573,6 @@ func getServiceAccountAccessAttribute(list types.Set) []string {
 	return serviceAccountIDs
 }
 
-//nolint:cyclop
 func convertResource(plan *resourceModel) (*model.Resource, error) {
 	protocols, err := convertProtocols(&plan.Protocols)
 	if err != nil {
@@ -591,19 +605,20 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 	}
 
 	return &model.Resource{
-		Name:                     plan.Name.ValueString(),
-		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
-		Address:                  plan.Address.ValueString(),
-		Protocols:                protocols,
-		GroupsAccess:             accessGroups,
-		ServiceAccounts:          serviceAccountIDs,
-		IsActive:                 plan.IsActive.ValueBool(),
-		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
-		Alias:                    getOptionalString(plan.Alias),
-		IsVisible:                getOptionalBool(plan.IsVisible),
-		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
-		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:                     getTags(plan.Tags),
+		Name:                           plan.Name.ValueString(),
+		RemoteNetworkID:                plan.RemoteNetworkID.ValueString(),
+		Address:                        plan.Address.ValueString(),
+		Protocols:                      protocols,
+		GroupsAccess:                   accessGroups,
+		ServiceAccounts:                serviceAccountIDs,
+		IsActive:                       plan.IsActive.ValueBool(),
+		IsAuthoritative:                convertAuthoritativeFlag(plan.IsAuthoritative),
+		Alias:                          getOptionalString(plan.Alias),
+		IsVisible:                      getOptionalBool(plan.IsVisible),
+		IsBrowserShortcutEnabled:       isBrowserShortcutEnabled,
+		SecurityPolicyID:               plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:                           getTags(plan.Tags),
+		UsageBasedAutolockDurationDays: plan.UsageBasedAutolockDurationDays.ValueInt64Pointer(),
 	}, nil
 }
 
@@ -805,7 +820,6 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
-//nolint:cyclop
 func (r *twingateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state resourceModel
 
@@ -826,7 +840,8 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	planSecurityPolicy := input.SecurityPolicyID
 	input.ID = state.ID.ValueString()
 
-	if !plan.GroupAccess.Equal(state.GroupAccess) || !plan.ServiceAccess.Equal(state.ServiceAccess) {
+	if !plan.GroupAccess.Equal(state.GroupAccess) || !plan.ServiceAccess.Equal(state.ServiceAccess) ||
+		!plan.UsageBasedAutolockDurationDays.Equal(state.UsageBasedAutolockDurationDays) {
 		if err := r.updateResourceAccess(ctx, &plan, &state, input); err != nil {
 			addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
 
@@ -894,7 +909,8 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
 		!plan.Alias.Equal(state.Alias) ||
 		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
-		!plan.Tags.Equal(state.Tags)
+		!plan.Tags.Equal(state.Tags) ||
+		!plan.UsageBasedAutolockDurationDays.Equal(state.UsageBasedAutolockDurationDays)
 }
 
 func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state *resourceModel, input *model.Resource) error {
@@ -907,7 +923,7 @@ func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
-	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd)); err != nil {
+	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd, input.UsageBasedAutolockDurationDays)); err != nil {
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
@@ -1017,7 +1033,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	diagnostics.Append(respState.Set(ctx, state)...)
 }
 
-func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) { //nolint:cyclop
+func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) {
 	state.ID = types.StringValue(resource.ID)
 	state.Name = types.StringValue(resource.Name)
 	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
@@ -1038,6 +1054,10 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.Alias = reference.Alias
 	}
 
+	if !state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsUnknown() {
+		state.UsageBasedAutolockDurationDays = reference.UsageBasedAutolockDurationDays
+	}
+
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
 		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &reference.Protocols)
 		diagnostics.Append(diags...)
@@ -1051,7 +1071,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		}
 	}
 
-	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess)
+	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess, reference.GroupAccess)
 	diagnostics.Append(diags...)
 	serviceAccess, diags := convertServiceAccessToTerraform(ctx, resource.ServiceAccounts)
 	diagnostics.Append(diags...)
@@ -1255,7 +1275,14 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 	return makeObjectsSet(ctx, objects...)
 }
 
-func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup) (types.Set, diag.Diagnostics) {
+func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.Set) (types.Set, diag.Diagnostics) {
+	reference := getGroupAccessAttribute(referenceGroupAccess)
+	referenceLookup := make(map[string]model.AccessGroup)
+
+	for _, access := range reference {
+		referenceLookup[access.GroupID] = access
+	}
+
 	var diagnostics diag.Diagnostics
 
 	if len(groupAccess) == 0 {
@@ -1269,6 +1296,14 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 			attr.GroupID:                        types.StringValue(access.GroupID),
 			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
 			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(access.UsageBasedDuration),
+		}
+
+		if !referenceGroupAccess.IsNull() {
+			referenceGroup, exists := referenceLookup[access.GroupID]
+
+			if exists && referenceGroup.UsageBasedDuration == nil {
+				attributes[attr.UsageBasedAutolockDurationDays] = types.Int64Null()
+			}
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)

@@ -27,12 +27,13 @@ type resource struct {
 }
 
 type resourceModel struct {
-	ID              types.String    `tfsdk:"id"`
-	Name            types.String    `tfsdk:"name"`
-	Address         types.String    `tfsdk:"address"`
-	RemoteNetworkID types.String    `tfsdk:"remote_network_id"`
-	Tags            types.Map       `tfsdk:"tags"`
-	Protocols       *protocolsModel `tfsdk:"protocols"`
+	ID                             types.String    `tfsdk:"id"`
+	Name                           types.String    `tfsdk:"name"`
+	Address                        types.String    `tfsdk:"address"`
+	RemoteNetworkID                types.String    `tfsdk:"remote_network_id"`
+	Tags                           types.Map       `tfsdk:"tags"`
+	Protocols                      *protocolsModel `tfsdk:"protocols"`
+	UsageBasedAutolockDurationDays types.Int64     `tfsdk:"usage_based_autolock_duration_days"`
 }
 
 type protocolsModel struct {
@@ -108,6 +109,10 @@ func (d *resource) Schema(ctx context.Context, req datasource.SchemaRequest, res
 				Computed:    true,
 				Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
 			},
+			attr.UsageBasedAutolockDurationDays: schema.Int64Attribute{
+				Computed:    true,
+				Description: "The number of days that the Resource will be locked after the last successful login.",
+			},
 		},
 		Blocks: map[string]schema.Block{
 			attr.Protocols: schema.SingleNestedBlock{
@@ -157,6 +162,7 @@ func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *d
 	}
 
 	data.Tags = tags
+	data.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.UsageBasedAutolockDurationDays)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

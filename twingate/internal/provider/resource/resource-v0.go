@@ -29,8 +29,7 @@ type resourceModelV0 struct {
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
 }
 
-//nolint:funlen,cyclop
-func upgradeResourceStateV0() resource.StateUpgrader {
+func upgradeResourceStateV0() resource.StateUpgrader { //nolint:funlen
 	return resource.StateUpgrader{
 		PriorSchema: &schema.Schema{
 			Attributes: map[string]schema.Attribute{

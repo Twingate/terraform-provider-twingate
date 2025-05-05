@@ -464,7 +464,7 @@ func (r *dnsFilteringProfile) Delete(ctx context.Context, req resource.DeleteReq
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateDNSFilteringProfile)
 }
 
-func (r *dnsFilteringProfile) helper(ctx context.Context, profile *model.DNSFilteringProfile, state *dnsFilteringProfileModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) { //nolint:cyclop
+func (r *dnsFilteringProfile) helper(ctx context.Context, profile *model.DNSFilteringProfile, state *dnsFilteringProfileModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			// clear state
