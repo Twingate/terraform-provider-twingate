@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var skipCache = CacheOptions{}
+
 type mockClient struct {
 }
 
@@ -23,7 +25,7 @@ func (m mockClient) ReadFullGroups(ctx context.Context) ([]*model.Group, error) 
 
 func TestClientCache_SetClient(t *testing.T) {
 	cache := &clientCache{}
-	cache.setClient(&mockClient{})
+	cache.setClient(&mockClient{}, skipCache)
 
 	assert.NotNil(t, cache.handlers)
 	assert.Contains(t, cache.handlers, reflect.TypeOf(&model.Resource{}).String())

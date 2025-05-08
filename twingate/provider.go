@@ -20,9 +20,11 @@ import (
 )
 
 const (
-	DefaultHTTPTimeout  = "35"
-	DefaultHTTPMaxRetry = "10"
-	DefaultURL          = "twingate.com"
+	DefaultHTTPTimeout     = "35"
+	DefaultHTTPMaxRetry    = "10"
+	DefaultURL             = "twingate.com"
+	defaultResourceEnabled = true
+	defaultGroupsEnabled   = true
 
 	// EnvAPIToken env var for Token.
 	EnvAPIToken     = "TWINGATE_API_TOKEN" // #nosec G101
@@ -45,6 +47,7 @@ type twingateProviderModel struct {
 	URL          types.String `tfsdk:"url"`
 	HTTPTimeout  types.Int64  `tfsdk:"http_timeout"`
 	HTTPMaxRetry types.Int64  `tfsdk:"http_max_retry"`
+	Cache        types.Object `tfsdk:"cache"`
 }
 
 func New(agent, version string) func() provider.Provider {
@@ -93,6 +96,20 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 				Description: fmt.Sprintf("Specifies a retry limit for the http requests made. The default value is %s.\n"+
 					"Alternatively, this can be specified using the %s environment variable", DefaultHTTPMaxRetry, EnvHTTPMaxRetry),
 			},
+			attr.Cache: schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "Specifies the cache settings for the provider.",
+				Attributes: map[string]schema.Attribute{
+					attr.ResourceEnabled: schema.BoolAttribute{
+						Optional:    true,
+						Description: fmt.Sprintf("Specifies whether the provider should cache resources. The default value is `%t`.", true),
+					},
+					attr.GroupsEnabled: schema.BoolAttribute{
+						Optional:    true,
+						Description: fmt.Sprintf("Specifies whether the provider should cache groups. The default value is `%t`.", true),
+					},
+				},
+			},
 		},
 	}
 }
@@ -139,7 +156,8 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 		time.Duration(httpTimeout)*time.Second,
 		httpMaxRetry,
 		t.agent,
-		t.version)
+		t.version,
+		getCacheOptions(config.Cache))
 
 	response.DataSourceData = client
 	response.ResourceData = client
@@ -147,6 +165,32 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	policy, _ := client.ReadSecurityPolicy(ctx, "", twingateResource.DefaultSecurityPolicyName)
 	if policy != nil {
 		twingateResource.DefaultSecurityPolicyID = policy.ID
+	}
+}
+
+func getCacheOptions(config types.Object) client.CacheOptions {
+	var (
+		resourceEnabled = defaultResourceEnabled
+		groupsEnabled   = defaultGroupsEnabled
+	)
+
+	if !config.IsNull() && !config.IsUnknown() {
+		cacheAttrs := config.Attributes()
+		resourceEnabledAttr := cacheAttrs[attr.ResourceEnabled].(types.Bool).ValueBoolPointer()
+
+		if resourceEnabledAttr != nil {
+			resourceEnabled = *resourceEnabledAttr
+		}
+
+		groupsEnabledAttr := cacheAttrs[attr.GroupsEnabled].(types.Bool).ValueBoolPointer()
+		if groupsEnabledAttr != nil {
+			groupsEnabled = *groupsEnabledAttr
+		}
+	}
+
+	return client.CacheOptions{
+		ResourceEnabled: resourceEnabled,
+		GroupsEnabled:   groupsEnabled,
 	}
 }
 

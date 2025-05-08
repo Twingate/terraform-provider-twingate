@@ -25,6 +25,11 @@ Visit our [documentation](https://docs.twingate.com/docs) for more information o
 provider "twingate" {
   api_token = "1234567890abcdef"
   network   = "autoco"
+
+  cache = {
+    resource_enabled = false
+    groups_enabled = true
+  }
 }
 ```
 
@@ -36,6 +41,7 @@ provider "twingate" {
 - `api_token` (String, Sensitive) The access key for API operations. You can retrieve this
 from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).
 Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
+- `cache` (Attributes) Specifies the cache settings for the provider. (see [below for nested schema](#nestedatt--cache))
 - `http_max_retry` (Number) Specifies a retry limit for the http requests made. The default value is 10.
 Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable
 - `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 35 seconds.
@@ -46,3 +52,11 @@ You can find it in the Admin Console URL, for example:
 Alternatively, this can be specified using the TWINGATE_NETWORK environment variable.
 - `url` (String) The default is 'twingate.com'
 This is optional and shouldn't be changed under normal circumstances.
+
+<a id="nestedatt--cache"></a>
+### Nested Schema for `cache`
+
+Optional:
+
+- `groups_enabled` (Boolean) Specifies whether the provider should cache groups. The default value is `true`.
+- `resource_enabled` (Boolean) Specifies whether the provider should cache resources. The default value is `true`.
