@@ -41,7 +41,9 @@ const (
 )
 
 var (
-	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
+	DefaultSecurityPolicyID string            //nolint:gochecknoglobals
+	DefaultTags             map[string]string //nolint:gochecknoglobals
+
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
@@ -656,7 +658,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsBrowserShortcutEnabled:       isBrowserShortcutEnabled,
 		SecurityPolicyID:               plan.SecurityPolicyID.ValueStringPointer(),
 		ApprovalMode:                   plan.ApprovalMode.ValueString(),
-		Tags:                           getTags(plan.Tags),
+		Tags:                           mapUnion(DefaultTags, getTags(plan.Tags)),
 		UsageBasedAutolockDurationDays: plan.UsageBasedAutolockDurationDays.ValueInt64Pointer(),
 	}, nil
 }

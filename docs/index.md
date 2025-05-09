@@ -36,6 +36,7 @@ provider "twingate" {
 - `api_token` (String, Sensitive) The access key for API operations. You can retrieve this
 from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).
 Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
+- `default_tags` (Attributes) A default set of tags that applied globally to all tagged resources consistently. (see [below for nested schema](#nestedatt--default_tags))
 - `http_max_retry` (Number) Specifies a retry limit for the http requests made. The default value is 10.
 Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable
 - `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 35 seconds.
@@ -46,3 +47,10 @@ You can find it in the Admin Console URL, for example:
 Alternatively, this can be specified using the TWINGATE_NETWORK environment variable.
 - `url` (String) The default is 'twingate.com'
 This is optional and shouldn't be changed under normal circumstances.
+
+<a id="nestedatt--default_tags"></a>
+### Nested Schema for `default_tags`
+
+Optional:
+
+- `tags` (Map of String) A key-value pairs that correspond with tags to be set on all resource by default.

@@ -16,6 +16,14 @@ Resources in Twingate represent servers on the private network that clients can 
 provider "twingate" {
   api_token = "1234567890abcdef"
   network   = "mynetwork"
+
+  default_tags = {
+    tags = {
+      managed-by = "Terraform"
+      owner = "DevOps"
+      cloud = "AWS"
+    }
+  }
 }
 
 resource "twingate_remote_network" "aws_network" {
