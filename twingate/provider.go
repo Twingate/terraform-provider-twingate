@@ -48,6 +48,7 @@ type twingateProviderModel struct {
 	HTTPTimeout  types.Int64  `tfsdk:"http_timeout"`
 	HTTPMaxRetry types.Int64  `tfsdk:"http_max_retry"`
 	Cache        types.Object `tfsdk:"cache"`
+	DefaultTags  types.Object `tfsdk:"default_tags"`
 }
 
 func New(agent, version string) func() provider.Provider {
@@ -110,6 +111,17 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 					},
 				},
 			},
+			attr.DefaultTags: schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "A default set of tags that applied globally to all tagged resources consistently.",
+				Attributes: map[string]schema.Attribute{
+					attr.Tags: schema.MapAttribute{
+						Optional:    true,
+						ElementType: types.StringType,
+						Description: "A key-value pairs that correspond with tags to be set on all resource by default.",
+					},
+				},
+			},
 		},
 	}
 }
@@ -166,6 +178,8 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	if policy != nil {
 		twingateResource.DefaultSecurityPolicyID = policy.ID
 	}
+
+	twingateResource.DefaultTags = getDefaultTags(config.DefaultTags)
 }
 
 func getCacheOptions(config types.Object) client.CacheOptions {
@@ -225,6 +239,25 @@ func withDefault[T comparable](val, defaultVal T) T {
 	}
 
 	return val
+}
+
+func getDefaultTags(defaultTags types.Object) map[string]string {
+	if defaultTags.IsNull() || defaultTags.IsUnknown() {
+		return nil
+	}
+
+	rawTags := defaultTags.Attributes()[attr.Tags].(types.Map)
+	if rawTags.IsNull() || rawTags.IsUnknown() || len(rawTags.Elements()) == 0 {
+		return nil
+	}
+
+	tags := make(map[string]string, len(rawTags.Elements()))
+
+	for key, val := range rawTags.Elements() {
+		tags[key] = val.(types.String).ValueString()
+	}
+
+	return tags
 }
 
 func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSource {

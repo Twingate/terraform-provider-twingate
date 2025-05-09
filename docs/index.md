@@ -42,6 +42,7 @@ provider "twingate" {
 from the Twingate Admin Console ([documentation](https://docs.twingate.com/docs/api-overview)).
 Alternatively, this can be specified using the TWINGATE_API_TOKEN environment variable.
 - `cache` (Attributes) Specifies the cache settings for the provider. (see [below for nested schema](#nestedatt--cache))
+- `default_tags` (Attributes) A default set of tags that applied globally to all tagged resources consistently. (see [below for nested schema](#nestedatt--default_tags))
 - `http_max_retry` (Number) Specifies a retry limit for the http requests made. The default value is 10.
 Alternatively, this can be specified using the TWINGATE_HTTP_MAX_RETRY environment variable
 - `http_timeout` (Number) Specifies a time limit in seconds for the http requests made. The default value is 35 seconds.
@@ -60,3 +61,10 @@ Optional:
 
 - `groups_enabled` (Boolean) Specifies whether the provider should cache groups. The default value is `true`.
 - `resource_enabled` (Boolean) Specifies whether the provider should cache resources. The default value is `true`.
+
+<a id="nestedatt--default_tags"></a>
+### Nested Schema for `default_tags`
+
+Optional:
+
+- `tags` (Map of String) A key-value pairs that correspond with tags to be set on all resource by default.
