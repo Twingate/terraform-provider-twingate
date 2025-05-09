@@ -13,6 +13,11 @@ import (
 
 const cacheKey = "cache"
 
+type CacheOptions struct {
+	ResourceEnabled bool
+	GroupsEnabled   bool
+}
+
 var cache = &clientCache{} //nolint:gochecknoglobals
 
 type clientCache struct {
@@ -25,22 +30,30 @@ type ReadClient interface {
 	ReadFullGroups(ctx context.Context) ([]*model.Group, error)
 }
 
-func (c *clientCache) setClient(client ReadClient) {
+func (c *clientCache) setClient(client ReadClient, opts CacheOptions) {
 	c.once.Do(func() {
 		c.handlers = map[string]resourceHandler{
 			reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource]{
+				enabled:       opts.ResourceEnabled,
 				readResources: client.ReadFullResources,
 			},
 			reflect.TypeOf(&model.Group{}).String(): &handler[*model.Group]{
+				enabled:       opts.GroupsEnabled,
 				readResources: client.ReadFullGroups,
 			},
 		}
 
 		group := errgroup.Group{}
 
-		for _, handler := range c.handlers {
+		for handlerType, handler := range c.handlers {
 			group.Go(func() error {
-				return handler.init()
+				if handler.isEnabled() {
+					return handler.init()
+				}
+
+				log.Printf("[DEBUG] cache init for type %v: skipped.", handlerType)
+
+				return nil
 			})
 		}
 
@@ -51,6 +64,7 @@ func (c *clientCache) setClient(client ReadClient) {
 }
 
 type resourceHandler interface {
+	isEnabled() bool
 	init() error
 	getResource(resourceID string) (any, bool)
 	setResource(resource identifiable)
@@ -66,8 +80,15 @@ type identifiable interface {
 type readResourcesFunc[T identifiable] func(ctx context.Context) ([]T, error)
 
 type handler[T identifiable] struct {
+	once    sync.Once
+	enabled bool
+
 	resources     sync.Map
 	readResources readResourcesFunc[T]
+}
+
+func (h *handler[T]) isEnabled() bool {
+	return h.enabled
 }
 
 func (h *handler[T]) getResource(resourceID string) (any, bool) {
@@ -142,14 +163,30 @@ func (h *handler[T]) invalidateResource(id string) {
 }
 
 func (h *handler[T]) init() error {
-	resources, err := h.readResources(WithCallerCtx(context.Background(), cacheKey))
-	if err != nil {
-		return err
-	}
+	var initErr error
 
-	h.setResources(resources)
+	h.once.Do(func() {
+		var (
+			res T
+		)
 
-	return nil
+		log.Printf("[DEBUG] cache init for type %T: started.", res)
+
+		resources, err := h.readResources(WithCallerCtx(context.Background(), cacheKey))
+		if err != nil {
+			log.Printf("[ERR] cache init for type %T failed: %s", res, err.Error())
+
+			initErr = err
+
+			return
+		}
+
+		h.setResources(resources)
+
+		log.Printf("[DEBUG] cache init for type %T: finished.", res)
+	})
+
+	return initErr
 }
 
 func getResource[T any](resourceID string) (T, bool) {
@@ -223,4 +260,16 @@ func matchResources[T any](filter model.ResourceFilter) []T {
 	})
 
 	return matched
+}
+
+func lazyLoadResources[T any]() {
+	var (
+		res T
+	)
+
+	handle(res, func(handler resourceHandler) {
+		if err := handler.init(); err != nil {
+			log.Printf("[ERR] lazyLoadResources for type %T failed: %s", res, err.Error())
+		}
+	})
 }

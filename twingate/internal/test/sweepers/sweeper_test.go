@@ -51,7 +51,8 @@ func sharedClient(tenant string) (*client.Client, error) {
 			getEnv(twingate.EnvHTTPTimeout, 30*time.Second),
 			2,
 			client.DefaultAgent,
-			"sweeper"),
+			"sweeper",
+			client.CacheOptions{}),
 		nil
 }
 

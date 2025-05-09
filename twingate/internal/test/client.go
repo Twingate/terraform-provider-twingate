@@ -34,6 +34,7 @@ func TwingateClient() (*client.Client, error) {
 			getHTTPTimeout(twingate.EnvHTTPTimeout, testTimeoutDuration),
 			testHTTPRetry,
 			client.DefaultAgent,
-			"test"),
+			"test",
+			client.CacheOptions{}),
 		nil
 }
