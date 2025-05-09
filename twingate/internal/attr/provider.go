@@ -6,4 +6,5 @@ const (
 	URL          = "url"
 	HTTPTimeout  = "http_timeout"
 	HTTPMaxRetry = "http_max_retry"
+	DefaultTags  = "default_tags"
 )
