@@ -4203,6 +4203,14 @@ func TestAccTwingateCreateResourceWithDefaultTags(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceTags(theResource, tagOwner, "example_team"),
+					acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
+				),
+			},
+			{
 				Config: createResourceWithDefaultTags(resourceName, remoteNetworkName, tags, defaultTags),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
@@ -4217,8 +4225,7 @@ func TestAccTwingateCreateResourceWithDefaultTags(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					acctests.CheckTwingateResourceTags(theResource, tagOwner, "example_team"),
 					acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
-					// changes on default tags doesn't trigger resource update
-					acctests.CheckTwingateResourceTags(theResource, tagEnv, "stage"),
+					acctests.CheckTwingateResourceTags(theResource, tagEnv, "prod"),
 				),
 			},
 			{
