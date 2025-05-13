@@ -1,1 +1,0 @@
-terraform import twingate_resource.resource UmVzb3VyY2U6MzQwNDQ3

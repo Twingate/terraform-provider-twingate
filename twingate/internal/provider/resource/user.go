@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
@@ -54,6 +55,19 @@ func (r *user) Configure(_ context.Context, req resource.ConfigureRequest, _ *re
 	}
 
 	r.client = req.ProviderData.(*client.Client)
+}
+
+func (r *user) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+
+	res, err := r.client.ReadUser(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to import state", err.Error())
+
+		return
+	}
+
+	resp.State.SetAttribute(ctx, path.Root(attr.Email), res.Email)
 }
 
 func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {

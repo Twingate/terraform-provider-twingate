@@ -57,6 +57,24 @@ func (r *group) Configure(_ context.Context, req resource.ConfigureRequest, _ *r
 
 func (r *group) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+
+	res, err := r.client.ReadGroup(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to import state", err.Error())
+
+		return
+	}
+
+	resp.State.SetAttribute(ctx, path.Root(attr.IsAuthoritative), types.BoolValue(res.IsAuthoritative))
+
+	userIDs, diags := types.SetValueFrom(ctx, types.StringType, res.Users)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.State.SetAttribute(ctx, path.Root(attr.UserIDs), userIDs)
 }
 
 func (r *group) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
