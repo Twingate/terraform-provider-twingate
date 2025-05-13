@@ -1,0 +1,1 @@
+terraform import twingate_dns_filtering_profile.example RG5zRmlsdGVyaW5nUHJvZmlsZToxY2I4YzM0YTc0

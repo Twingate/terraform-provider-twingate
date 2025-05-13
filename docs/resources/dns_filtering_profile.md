@@ -149,3 +149,11 @@ Optional:
 - `block_typosquatting` (Boolean) Blocks typosquatted domains. Defaults to true.
 - `enable_google_safe_browsing` (Boolean) Whether to use Google Safe browsing lists to block content. Defaults to true.
 - `enable_threat_intelligence_feeds` (Boolean) Whether to filter content using threat intelligence feeds. Defaults to true.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import twingate_dns_filtering_profile.example RG5zRmlsdGVyaW5nUHJvZmlsZToxY2I4YzM0YTc0
+```
