@@ -359,6 +359,8 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
+	lazyLoadResources[*model.Resource]()
+
 	if matched := matchResources[*model.Resource](filter); len(matched) > 0 {
 		log.Printf(
 			"[DEBUG] ReadResourcesByName: matched #%d resources from cache: %v",
