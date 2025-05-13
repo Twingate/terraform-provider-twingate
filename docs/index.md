@@ -62,6 +62,7 @@ Optional:
 - `groups_enabled` (Boolean) Specifies whether the provider should cache groups. The default value is `true`.
 - `resource_enabled` (Boolean) Specifies whether the provider should cache resources. The default value is `true`.
 
+
 <a id="nestedatt--default_tags"></a>
 ### Nested Schema for `default_tags`
 
