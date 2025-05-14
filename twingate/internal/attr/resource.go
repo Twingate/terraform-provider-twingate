@@ -21,4 +21,5 @@ const (
 	Resources                      = "resources"
 	ApprovalMode                   = "approval_mode"
 	Tags                           = "tags"
+	TagsAll                        = "tags_all"
 )

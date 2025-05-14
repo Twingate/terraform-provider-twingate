@@ -40,6 +40,7 @@ var (
 	ErrNullUsageBased              = errors.New("expected non null usage based duration in GroupAccess, got null")
 	ErrEmptyGroupAccess            = errors.New("expected at least one group in GroupAccess")
 	ErrNotNullUsageBasedOnResource = errors.New("expected null usage based duration on Resource, got non null")
+	ErrEmptyTagsList               = errors.New("expected non-empty list of tags")
 )
 
 func ErrServiceAccountsLenMismatch(expected, actual int) error {
@@ -382,6 +383,20 @@ func CheckTwingateResourceUsageBasedDuration(resourceName string, expectedUsageB
 
 		if *res.UsageBasedAutolockDurationDays != expectedUsageBased {
 			return fmt.Errorf("expected usage based duration %v, got %v", expectedUsageBased, *res.UsageBasedAutolockDurationDays) //nolint:err113
+		}
+
+		return nil
+	})
+}
+
+func CheckTwingateResourceTags(resourceName, tag, expectedValue string) sdk.TestCheckFunc {
+	return CheckTwingateResource(resourceName, func(res *model.Resource) error {
+		if len(res.Tags) == 0 {
+			return ErrEmptyTagsList
+		}
+
+		if res.Tags[tag] != expectedValue {
+			return fmt.Errorf("expected tag value %v, got %v", expectedValue, res.Tags[tag]) //nolint:err113
 		}
 
 		return nil
