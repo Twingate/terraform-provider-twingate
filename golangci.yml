@@ -24,6 +24,7 @@ linters:
     - lll
     - revive
     - gomoddirectives
+    - funcorder
   fast: false
 
   settings:
