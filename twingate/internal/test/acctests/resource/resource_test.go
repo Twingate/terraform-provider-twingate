@@ -732,6 +732,36 @@ func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
 	})
 }
 
+func TestAccTwingateResourcePortsReshape(t *testing.T) {
+	t.Parallel()
+
+	const theResource = "twingate_resource.test9"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"80", "81", "90"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
+				),
+			},
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"80", "81", "91"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 	t.Parallel()
 
