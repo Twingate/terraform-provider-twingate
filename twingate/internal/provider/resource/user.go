@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
@@ -54,6 +55,10 @@ func (r *user) Configure(_ context.Context, req resource.ConfigureRequest, _ *re
 	}
 
 	r.client = req.ProviderData.(*client.Client)
+}
+
+func (r *user) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
 }
 
 func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -237,11 +242,13 @@ func (r *user) helper(ctx context.Context, user *model.User, state *userModel, r
 	}
 
 	state.ID = types.StringValue(user.ID)
+	state.Email = types.StringValue(user.Email)
 	state.FirstName = types.StringValue(user.FirstName)
 	state.LastName = types.StringValue(user.LastName)
 	state.Role = types.StringValue(user.Role)
 	state.Type = types.StringValue(user.Type)
 	state.IsActive = types.BoolValue(user.IsActive)
+	state.SendInvite = types.BoolValue(user.SendInvite)
 
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
