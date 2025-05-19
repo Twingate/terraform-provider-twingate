@@ -329,3 +329,41 @@ func genNewUsers(resourcePrefix string, count int) ([]string, []string) {
 
 	return users, userIDs
 }
+
+func TestAccTwingateUserImport(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test009"
+	theResource := acctests.TerraformUser(terraformResourceName)
+	email := test.RandomEmail()
+	firstName := test.RandomName()
+	lastName := test.RandomName()
+	role := test.RandomUserRole()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateUserDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceTwingateUserFull(terraformResourceName, email, firstName, lastName, role),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+			{
+				ImportState:  true,
+				ResourceName: theResource,
+				ImportStateCheck: acctests.CheckImportState(map[string]string{
+					attr.Email:      email,
+					attr.FirstName:  firstName,
+					attr.LastName:   lastName,
+					attr.Role:       role,
+					attr.Type:       model.UserTypeManual,
+					attr.IsActive:   "true",
+					attr.SendInvite: "false",
+				}),
+			},
+		},
+	})
+}
