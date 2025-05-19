@@ -822,6 +822,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
 					attr.Address:                        "acc-test.com.12",
+					attr.Alias:                          "test.alias",
 					tcpPolicy:                           model.PolicyRestricted,
 					tcpPortsLen:                         "2",
 					firstTCPPort:                        "80",
@@ -857,6 +858,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  remote_network_id = twingate_remote_network.test12.id
 	  approval_mode = "MANUAL"
 	  usage_based_autolock_duration_days = 10
+	  alias = "test.alias"
 	  
       dynamic "access_group" {
 		for_each = [twingate_group.g121.id, twingate_group.g122.id]
