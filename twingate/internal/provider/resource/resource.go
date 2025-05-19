@@ -187,13 +187,13 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "Consists of a key-value pairs that correspond with tags to be set on the resource.",
+				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
 			attr.TagsAll: schema.MapAttribute{
 				ElementType:   types.StringType,
 				Computed:      true,
-				Description:   "Consists of a key-value pairs that correspond with tags to be set on the resource merged with default tags from provider configuration.",
+				Description:   "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
 				PlanModifiers: []planmodifier.Map{UseDefaultTagsForUnknownModifier()},
 			},
 			attr.UsageBasedAutolockDurationDays: schema.Int64Attribute{

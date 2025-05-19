@@ -113,12 +113,12 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 			},
 			attr.DefaultTags: schema.SingleNestedAttribute{
 				Optional:    true,
-				Description: "A default set of tags that applied globally to all tagged resources consistently.",
+				Description: "A default set of tags applied globally to all resources created by the provider.",
 				Attributes: map[string]schema.Attribute{
 					attr.Tags: schema.MapAttribute{
 						Optional:    true,
 						ElementType: types.StringType,
-						Description: "A key-value pairs that correspond with tags to be set on all resource by default.",
+						Description: "A map of key-value pair tags to be set on all resources by default.",
 					},
 				},
 			},
