@@ -732,6 +732,36 @@ func TestAccTwingateResourcePortReorderingNoChanges(t *testing.T) {
 	})
 }
 
+func TestAccTwingateResourcePortsReshape(t *testing.T) {
+	t.Parallel()
+
+	const theResource = "twingate_resource.test9"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"80", "81", "90"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
+				),
+			},
+			{
+				Config: createResourceWithPortRange(remoteNetworkName, resourceName, `"80", "81", "91"`),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, tcpPortsLen, "3"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTwingateResourceSetActiveStateOnUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -822,6 +852,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
 					attr.Address:                        "acc-test.com.12",
+					attr.Alias:                          "test.alias",
 					tcpPolicy:                           model.PolicyRestricted,
 					tcpPortsLen:                         "2",
 					firstTCPPort:                        "80",
@@ -857,6 +888,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  remote_network_id = twingate_remote_network.test12.id
 	  approval_mode = "MANUAL"
 	  usage_based_autolock_duration_days = 10
+	  alias = "test.alias"
 	  
       dynamic "access_group" {
 		for_each = [twingate_group.g121.id, twingate_group.g122.id]
@@ -4175,4 +4207,105 @@ func createResourceWithDefaultAutolockAndGroupAutolock(remoteNetwork, resource, 
       }
 	}
 	`, remoteNetwork, resource, groupName, autolockDays1, autolockDays2)
+}
+
+func TestAccTwingateCreateResourceWithDefaultTags(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	const tagOwner = "owner"
+	const tagApp = "application"
+	const tagEnv = "env"
+	tags := map[string]string{
+		tagOwner: "example_team",
+		tagApp:   "custom_application",
+	}
+	defaultTags := map[string]string{
+		tagEnv: "stage",
+		tagApp: "example_application",
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithTags(resourceName, remoteNetworkName, tags),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceTags(theResource, tagOwner, "example_team"),
+					acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
+				),
+			},
+			{
+				Config: createResourceWithDefaultTags(resourceName, remoteNetworkName, tags, defaultTags),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceTags(theResource, tagOwner, "example_team"),
+					acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
+					acctests.CheckTwingateResourceTags(theResource, tagEnv, "stage"),
+				),
+			},
+			{
+				Config: createResourceWithDefaultTags(resourceName, remoteNetworkName, tags, map[string]string{tagEnv: "prod"}),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceTags(theResource, tagOwner, "example_team"),
+					acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
+					acctests.CheckTwingateResourceTags(theResource, tagEnv, "prod"),
+				),
+			},
+			{
+				Config: createResourceWithDefaultTags(resourceName, remoteNetworkName, map[string]string{
+					tagOwner: "new_team",
+					tagApp:   "custom_application",
+				}, map[string]string{tagEnv: "prod"}),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					acctests.CheckTwingateResourceTags(theResource, tagOwner, "new_team"),
+					acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
+					acctests.CheckTwingateResourceTags(theResource, tagEnv, "prod"),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithDefaultTags(resourceName, networkName string, tags, defaultTags map[string]string) string {
+	tagsList := make([]string, 0, len(tags))
+	for k, v := range tags {
+		tagsList = append(tagsList, fmt.Sprintf(`%[1]s = "%[2]s"`, k, v))
+	}
+
+	defaultTagsList := make([]string, 0, len(defaultTags))
+	for k, v := range defaultTags {
+		defaultTagsList = append(defaultTagsList, fmt.Sprintf(`%[1]s = "%[2]s"`, k, v))
+	}
+
+	return fmt.Sprintf(`
+	provider "twingate" {
+	  default_tags = {
+	    tags = {
+		  %[4]s
+	    }
+	  }
+	}
+
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  tags = {
+  	    %[3]s
+	  }
+	}
+	`, networkName, resourceName, strings.Join(tagsList, ",\n\t"), strings.Join(defaultTagsList, ",\n\t"))
 }
