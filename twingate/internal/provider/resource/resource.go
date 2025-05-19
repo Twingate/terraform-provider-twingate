@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"reflect"
 	"regexp"
 	"strings"
@@ -23,7 +24,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
@@ -41,7 +41,9 @@ const (
 )
 
 var (
-	DefaultSecurityPolicyID               string //nolint:gochecknoglobals
+	DefaultSecurityPolicyID string            //nolint:gochecknoglobals
+	DefaultTags             map[string]string //nolint:gochecknoglobals
+
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
@@ -78,6 +80,7 @@ type resourceModel struct {
 	SecurityPolicyID               types.String `tfsdk:"security_policy_id"`
 	ApprovalMode                   types.String `tfsdk:"approval_mode"`
 	Tags                           types.Map    `tfsdk:"tags"`
+	TagsAll                        types.Map    `tfsdk:"tags_all"`
 	UsageBasedAutolockDurationDays types.Int64  `tfsdk:"usage_based_autolock_duration_days"`
 }
 
@@ -184,8 +187,14 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
+				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
+			},
+			attr.TagsAll: schema.MapAttribute{
+				ElementType:   types.StringType,
+				Computed:      true,
+				Description:   "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
+				PlanModifiers: []planmodifier.Map{UseDefaultTagsForUnknownModifier()},
 			},
 			attr.UsageBasedAutolockDurationDays: schema.Int64Attribute{
 				Optional:    true,
@@ -656,7 +665,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsBrowserShortcutEnabled:       isBrowserShortcutEnabled,
 		SecurityPolicyID:               plan.SecurityPolicyID.ValueStringPointer(),
 		ApprovalMode:                   plan.ApprovalMode.ValueString(),
-		Tags:                           getTags(plan.Tags),
+		Tags:                           getTags(plan.TagsAll),
 		UsageBasedAutolockDurationDays: plan.UsageBasedAutolockDurationDays.ValueInt64Pointer(),
 	}, nil
 }
@@ -949,7 +958,7 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.Alias.Equal(state.Alias) ||
 		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
 		!plan.ApprovalMode.Equal(state.ApprovalMode) ||
-		!plan.Tags.Equal(state.Tags) ||
+		!plan.Tags.Equal(state.Tags) || !plan.TagsAll.Equal(state.TagsAll) ||
 		!plan.UsageBasedAutolockDurationDays.Equal(state.UsageBasedAutolockDurationDays)
 }
 
@@ -1126,6 +1135,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 
 	state.GroupAccess = groupAccess
 	state.ServiceAccess = serviceAccess
+	state.TagsAll = makeMapValue(resource.Tags)
 	state.Tags = reference.Tags
 }
 
@@ -1572,4 +1582,43 @@ func (m useNullStringWhenValueOmitted) PlanModifyString(ctx context.Context, req
 	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
 		resp.PlanValue = types.StringNull()
 	}
+}
+
+func UseDefaultTagsForUnknownModifier() planmodifier.Map {
+	return useDefaultTagsForUnknownModifier{}
+}
+
+// useDefaultTagsForUnknownModifier implements the plan modifier.
+type useDefaultTagsForUnknownModifier struct{}
+
+// Description returns a human-readable description of the plan modifier.
+func (m useDefaultTagsForUnknownModifier) Description(_ context.Context) string {
+	return "Once set, the value of this attribute will fallback to Default Tags on unset."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m useDefaultTagsForUnknownModifier) MarkdownDescription(_ context.Context) string {
+	return "Once set, the value of this attribute will fallback to Default Tags on unset."
+}
+
+// PlanModifyMap implements the plan modification logic.
+func (m useDefaultTagsForUnknownModifier) PlanModifyMap(ctx context.Context, req planmodifier.MapRequest, resp *planmodifier.MapResponse) {
+	tags := types.MapValueMust(types.StringType, map[string]tfattr.Value{})
+	req.Config.GetAttribute(ctx, path.Root(attr.Tags), &tags)
+
+	resp.PlanValue = makeMapValue(mapUnion(DefaultTags, getTags(tags)))
+}
+
+func makeMapValue(values map[string]string) types.Map {
+	if len(values) == 0 {
+		return types.MapNull(types.StringType)
+	}
+
+	rawValues := make(map[string]tfattr.Value, len(values))
+
+	for key, val := range values {
+		rawValues[key] = types.StringValue(val)
+	}
+
+	return types.MapValueMust(types.StringType, rawValues)
 }
