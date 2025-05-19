@@ -1176,12 +1176,26 @@ func convertPortsToTerraform(ports []*model.PortRange) types.Set {
 	return types.SetValueMust(types.StringType, elements)
 }
 
-func convertProtocolModelToTerraform(protocol *model.Protocol, _ tfattr.Value) (types.Object, diag.Diagnostics) {
+func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.Value) (types.Object, diag.Diagnostics) {
 	if protocol == nil {
 		return types.ObjectNull(protocolAttributeTypes()), nil
 	}
 
-	ports := convertPortsToTerraform(protocol.Ports)
+	refProtocol, err := convertProtocol(reference)
+	if err != nil {
+		var diags diag.Diagnostics
+
+		diags.AddError("failed to convert protocol", err.Error())
+
+		return types.ObjectNull(protocolAttributeTypes()), diags
+	}
+
+	var ports types.Set
+	if portRangeEqual(protocol.Ports, refProtocol.Ports) {
+		ports = convertPortsToTerraform(refProtocol.Ports)
+	} else {
+		ports = convertPortsToTerraform(protocol.Ports)
+	}
 
 	policy := protocol.Policy
 	if policy == model.PolicyRestricted && len(ports.Elements()) == 0 {
