@@ -19,6 +19,7 @@ const (
 	resourceResource            resource = "resource"
 	resourceResourceAccess      resource = "resource access"
 	resourceSecurityPolicy      resource = "security policy"
+	resourceDLPPolicy           resource = "dlp policy"
 	resourceServiceAccount      resource = "service account"
 	resourceServiceKey          resource = "service account key"
 	resourceUser                resource = "user"

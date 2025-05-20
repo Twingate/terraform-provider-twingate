@@ -78,6 +78,7 @@ type resourceModel struct {
 	IsBrowserShortcutEnabled       types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                          types.String `tfsdk:"alias"`
 	SecurityPolicyID               types.String `tfsdk:"security_policy_id"`
+	DLPPolicyID                    types.String `tfsdk:"dlp_policy_id"`
 	ApprovalMode                   types.String `tfsdk:"approval_mode"`
 	Tags                           types.Map    `tfsdk:"tags"`
 	TagsAll                        types.Map    `tfsdk:"tags_all"`
@@ -213,6 +214,13 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Default:       stringdefault.StaticString(DefaultSecurityPolicyID),
 				PlanModifiers: []planmodifier.String{UseDefaultPolicyForUnknownModifier()},
 			},
+			attr.DLPPolicyID: schema.StringAttribute{
+				Optional:    true,
+				Description: "The ID of a `twingate_dlp_policy` to be used as the default DLP policy for this Resource.",
+				PlanModifiers: []planmodifier.String{
+					UseNullStringWhenValueOmitted(),
+				},
+			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
 				Computed:      true,
@@ -334,6 +342,16 @@ func groupAccessBlock() schema.SetNestedBlock {
 					},
 					PlanModifiers: []planmodifier.String{
 						UseNullPolicyForGroupAccessWhenValueOmitted(),
+					},
+				},
+				attr.DLPPolicyID: schema.StringAttribute{
+					Optional:    true,
+					Description: "The ID of a `twingate_dlp_policy` to be used as the DLP policy for the group in this access block.",
+					Validators: []validator.String{
+						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
+					},
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
 					},
 				},
 				attr.UsageBasedAutolockDurationDays: schema.Int64Attribute{
@@ -591,6 +609,11 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 			accessGroup.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
 		}
 
+		dlpPolicyIDVal := obj.Attributes()[attr.DLPPolicyID]
+		if dlpPolicyIDVal != nil && !dlpPolicyIDVal.IsNull() && !dlpPolicyIDVal.IsUnknown() {
+			accessGroup.DLPPolicyID = dlpPolicyIDVal.(types.String).ValueStringPointer()
+		}
+
 		access = append(access, accessGroup)
 	}
 
@@ -665,6 +688,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsVisible:                      getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled:       isBrowserShortcutEnabled,
 		SecurityPolicyID:               plan.SecurityPolicyID.ValueStringPointer(),
+		DLPPolicyID:                    plan.DLPPolicyID.ValueStringPointer(),
 		ApprovalMode:                   plan.ApprovalMode.ValueString(),
 		Tags:                           getTags(plan.TagsAll),
 		UsageBasedAutolockDurationDays: plan.UsageBasedAutolockDurationDays.ValueInt64Pointer(),
@@ -1091,6 +1115,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.IsActive = types.BoolValue(resource.IsActive)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
+	state.DLPPolicyID = types.StringPointerValue(resource.DLPPolicyID)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
