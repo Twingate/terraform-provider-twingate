@@ -1202,7 +1202,7 @@ func convertProtocolModelToTerraform(protocol *model.Protocol, reference tfattr.
 	}
 
 	var ports types.Set
-	if portRangeEqual(protocol.Ports, refProtocol.Ports) {
+	if refProtocol != nil && portRangeEqual(protocol.Ports, refProtocol.Ports) {
 		ports = convertPortsToTerraform(refProtocol.Ports)
 	} else {
 		ports = convertPortsToTerraform(protocol.Ports)
