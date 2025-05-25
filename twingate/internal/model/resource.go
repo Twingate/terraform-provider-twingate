@@ -31,13 +31,15 @@ type AccessGroup struct {
 	SecurityPolicyID   *string
 	UsageBasedDuration *int64
 	ApprovalMode       *string
+	DLPPolicyID        *string
 }
 
 func (g AccessGroup) Equals(another AccessGroup) bool {
 	if g.GroupID == another.GroupID &&
 		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
 		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) &&
-		equalsOptionalString(g.ApprovalMode, another.ApprovalMode) {
+		equalsOptionalString(g.ApprovalMode, another.ApprovalMode) &&
+		equalsOptionalString(g.DLPPolicyID, another.DLPPolicyID) {
 		return true
 	}
 
@@ -66,6 +68,7 @@ type Resource struct {
 	IsBrowserShortcutEnabled       *bool
 	Alias                          *string
 	SecurityPolicyID               *string
+	DLPPolicyID                    *string
 	ApprovalMode                   string
 	Tags                           map[string]string
 	UsageBasedAutolockDurationDays *int64
