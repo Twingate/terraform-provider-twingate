@@ -4077,7 +4077,7 @@ func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDays(t *t
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays)),
 					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, autolockDays),
+					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
 				),
 			},
 			{
@@ -4086,7 +4086,7 @@ func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDays(t *t
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays1)),
 					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays1),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, autolockDays1),
+					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
 				),
 			},
 			{
@@ -4173,7 +4173,7 @@ func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDaysAndGr
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays1)),
 					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays1),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, autolockDays1),
+					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
 				),
 			},
 			{
