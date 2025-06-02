@@ -177,6 +177,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:      true,
 				Description:   "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+				Default:       booldefault.StaticBool(true),
 			},
 			attr.Alias: schema.StringAttribute{
 				Optional:      true,
@@ -231,7 +232,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: fmt.Sprintf("This will set the approval model for the Resource. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 				PlanModifiers: []planmodifier.String{
-					UseNullStringWhenValueOmitted(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
@@ -1095,16 +1096,16 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
 	}
 
-	if !state.Alias.IsNull() || !reference.Alias.IsUnknown() {
+	if !state.Alias.IsNull() || !reference.Alias.IsNull() {
 		state.Alias = reference.Alias
 	}
 
-	if !state.ApprovalMode.IsNull() || !reference.ApprovalMode.IsUnknown() {
-		state.ApprovalMode = reference.ApprovalMode
+	if !reference.ApprovalMode.IsNull() {
+		state.ApprovalMode = types.StringValue(resource.ApprovalMode)
 	}
 
-	if !state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsUnknown() {
-		state.UsageBasedAutolockDurationDays = reference.UsageBasedAutolockDurationDays
+	if !state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsNull() {
+		state.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.UsageBasedAutolockDurationDays)
 	}
 
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
