@@ -177,6 +177,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:      true,
 				Description:   "Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.",
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+				Default:       booldefault.StaticBool(true),
 			},
 			attr.Alias: schema.StringAttribute{
 				Optional:      true,
@@ -231,7 +232,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: fmt.Sprintf("This will set the approval model for the Resource. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 				PlanModifiers: []planmodifier.String{
-					UseNullStringWhenValueOmitted(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
@@ -490,7 +491,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if err = r.client.AddResourceAccess(ctx, resource.ID, convertResourceAccess(resource.ServiceAccounts, resource.GroupsAccess, resource.UsageBasedAutolockDurationDays)); err != nil {
+	if err = r.client.AddResourceAccess(ctx, resource.ID, convertResourceAccess(resource.ServiceAccounts, resource.GroupsAccess)); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
 
 		return
@@ -512,7 +513,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
 }
 
-func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup, defaultUsageBasedAutolockDurationDays *int64) []client.AccessInput {
+func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup) []client.AccessInput {
 	access := make([]client.AccessInput, 0, len(serviceAccounts)+len(groupsAccess))
 	for _, account := range serviceAccounts {
 		access = append(access, client.AccessInput{PrincipalID: account})
@@ -524,15 +525,10 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 			approvalMode = *group.ApprovalMode
 		}
 
-		usageBasedAutolockDurationDays := defaultUsageBasedAutolockDurationDays
-		if group.UsageBasedDuration != nil {
-			usageBasedAutolockDurationDays = group.UsageBasedDuration
-		}
-
 		access = append(access, client.AccessInput{
 			PrincipalID:                    group.GroupID,
 			SecurityPolicyID:               group.SecurityPolicyID,
-			UsageBasedAutolockDurationDays: usageBasedAutolockDurationDays,
+			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
 			ApprovalMode:                   client.NewAccessApprovalMode(approvalMode),
 		})
 	}
@@ -973,7 +969,7 @@ func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
-	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd, input.UsageBasedAutolockDurationDays)); err != nil {
+	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd)); err != nil {
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
@@ -1100,16 +1096,16 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
 	}
 
-	if !state.Alias.IsNull() || !reference.Alias.IsUnknown() {
+	if !state.Alias.IsNull() || !reference.Alias.IsNull() {
 		state.Alias = reference.Alias
 	}
 
-	if !state.ApprovalMode.IsNull() || !reference.ApprovalMode.IsUnknown() {
-		state.ApprovalMode = reference.ApprovalMode
+	if !reference.ApprovalMode.IsNull() {
+		state.ApprovalMode = types.StringValue(resource.ApprovalMode)
 	}
 
-	if !state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsUnknown() {
-		state.UsageBasedAutolockDurationDays = reference.UsageBasedAutolockDurationDays
+	if !state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsNull() {
+		state.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.UsageBasedAutolockDurationDays)
 	}
 
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
