@@ -2,7 +2,6 @@ package resource
 
 import (
 	"context"
-
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -193,6 +192,7 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 				ServiceAccess:                  accessServiceAccount,
 				IsActive:                       priorState.IsActive,
 				Tags:                           types.MapNull(types.StringType),
+				TagsAll:                        types.MapNull(types.StringType),
 				ApprovalMode:                   types.StringNull(),
 				UsageBasedAutolockDurationDays: types.Int64Null(),
 			}
@@ -239,6 +239,7 @@ func convertAccessGroupsToTerraform(ctx context.Context, groups []string) (types
 			attr.GroupID:                        types.StringValue(g),
 			attr.SecurityPolicyID:               types.StringNull(),
 			attr.UsageBasedAutolockDurationDays: types.Int64Null(),
+			attr.ApprovalMode:                   types.StringNull(),
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
@@ -279,4 +280,39 @@ func convertAccessServiceAccountsToTerraform(ctx context.Context, serviceAccount
 	}
 
 	return makeObjectsSet(ctx, objects...)
+}
+
+func accessBlockAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.GroupIDs:          types.SetType{ElemType: types.StringType},
+		attr.ServiceAccountIDs: types.SetType{ElemType: types.StringType},
+	}
+}
+
+func convertAccessBlockToTerraform(ctx context.Context, groups, serviceAccounts []string) (types.List, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if len(groups)+len(serviceAccounts) == 0 {
+		return makeObjectsListNull(ctx, accessBlockAttributeTypes()), diagnostics
+	}
+
+	serviceAccountsSet, diags := makeStringsSet(serviceAccounts)
+	diagnostics.Append(diags...)
+
+	groupsSet, diags := makeStringsSet(groups)
+	diagnostics.Append(diags...)
+
+	attributes := map[string]tfattr.Value{
+		attr.ServiceAccountIDs: serviceAccountsSet,
+		attr.GroupIDs:          groupsSet,
+	}
+
+	obj, diags := types.ObjectValue(accessBlockAttributeTypes(), attributes)
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return makeObjectsListNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
+	}
+
+	return makeObjectsList(ctx, obj)
 }
