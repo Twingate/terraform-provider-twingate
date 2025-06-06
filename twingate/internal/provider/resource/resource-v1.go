@@ -282,6 +282,7 @@ func convertAccessServiceAccountsToTerraform(ctx context.Context, serviceAccount
 	return makeObjectsSet(ctx, objects...)
 }
 
+//nolint:unused
 func accessBlockAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.GroupIDs:          types.SetType{ElemType: types.StringType},
@@ -289,6 +290,7 @@ func accessBlockAttributeTypes() map[string]tfattr.Type {
 	}
 }
 
+//nolint:unused
 func convertAccessBlockToTerraform(ctx context.Context, groups, serviceAccounts []string) (types.List, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
