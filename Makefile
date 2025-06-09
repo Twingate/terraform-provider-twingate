@@ -10,6 +10,7 @@ SWEEP_FOLDER=./twingate/internal/test/sweepers
 GOLINT_VERSION=v2.1.6
 GOSEC_VERSION=2.22.4
 
+WORKING_DIR     := $(shell pwd)
 
 check_defined = \
     $(strip $(foreach 1,$1, \
@@ -88,3 +89,6 @@ sec:
 .PHONY: docs
 docs:
 	go tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
+
+build.upgrader:
+	cd tools/upgrader && go mod tidy && go build -o $(WORKING_DIR)/bin/upgrader
