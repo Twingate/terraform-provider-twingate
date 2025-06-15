@@ -3898,7 +3898,7 @@ func TestAccTwingateResourceWithApprovalMode(t *testing.T) {
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
 				),
 			},
 			{
@@ -3918,7 +3918,7 @@ func TestAccTwingateResourceWithApprovalMode(t *testing.T) {
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeAutomatic),
 				),
 			},
 		},
@@ -3941,7 +3941,7 @@ func TestAccTwingateResourceWithApprovalModeInAccessGroup(t *testing.T) {
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
 				),
 			},
 			{
@@ -3949,7 +3949,6 @@ func TestAccTwingateResourceWithApprovalModeInAccessGroup(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.ApprovalMode), model.ApprovalModeManual),
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
 				),
 			},
 			{
@@ -3963,7 +3962,7 @@ func TestAccTwingateResourceWithApprovalModeInAccessGroup(t *testing.T) {
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeAutomatic),
 					sdk.TestCheckNoResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.ApprovalMode)),
 				),
 			},
@@ -3987,7 +3986,7 @@ func TestAccTwingateResourceWithAutomaticApprovalModeInAccessGroup(t *testing.T)
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
 				),
 			},
 			{
@@ -3995,7 +3994,7 @@ func TestAccTwingateResourceWithAutomaticApprovalModeInAccessGroup(t *testing.T)
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.ApprovalMode), model.ApprovalModeAutomatic),
-					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
 				),
 			},
 		},
@@ -4077,7 +4076,7 @@ func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDays(t *t
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays)),
 					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, autolockDays),
+					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
 				),
 			},
 			{
@@ -4086,7 +4085,7 @@ func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDays(t *t
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays1)),
 					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays1),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, autolockDays1),
+					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
 				),
 			},
 			{
@@ -4173,7 +4172,7 @@ func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDaysAndGr
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays1)),
 					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays1),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, autolockDays1),
+					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
 				),
 			},
 			{
