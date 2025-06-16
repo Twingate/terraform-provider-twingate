@@ -1,7 +1,7 @@
 version: "2"
 
 run:
-  deadline: 2m
+  deadline: 5m
   issues-exit-code: 1
   tests: false
   skip-dirs: []

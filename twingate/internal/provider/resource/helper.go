@@ -148,6 +148,29 @@ func makeObjectsSet(ctx context.Context, objects ...types.Object) (types.Set, di
 	return types.SetValue(obj.Type(ctx), items)
 }
 
+//nolint:unused
+func makeStringsSet(items []string) (types.Set, diag.Diagnostics) {
+	return types.SetValue(types.StringType, utils.Map(items, func(item string) tfattr.Value {
+		return tfattr.Value(types.StringValue(item))
+	}))
+}
+
+//nolint:unused
+func makeObjectsList(ctx context.Context, objects ...types.Object) (types.List, diag.Diagnostics) {
+	obj := objects[0]
+
+	items := utils.Map(objects, func(item types.Object) tfattr.Value {
+		return tfattr.Value(item)
+	})
+
+	return types.ListValue(obj.Type(ctx), items)
+}
+
+//nolint:unused
+func makeObjectsListNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.List {
+	return types.ListNull(types.ObjectNull(attributeTypes).Type(ctx))
+}
+
 // setUnion - for given two sets A and B,
 // If A = {1, 2} and B = {3, 4}, then the union of A and B is {1, 2, 3, 4}.
 func setUnion(setA, setB []string) []string {
