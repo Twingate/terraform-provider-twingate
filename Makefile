@@ -7,8 +7,8 @@ OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate/internal/test/sweepers
-GOLINT_VERSION=v2.0.2
-GOSEC_VERSION=2.22.3
+GOLINT_VERSION=v2.1.6
+GOSEC_VERSION=2.22.4
 
 WORKING_DIR := $(shell pwd)
 
