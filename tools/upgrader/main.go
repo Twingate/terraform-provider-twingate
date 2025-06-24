@@ -3,32 +3,79 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
+const terraformFileExtension = ".tf"
+
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s <path to terraform file>\n", os.Args[0])
+		fmt.Printf("Usage: %s <path to terraform file or folder>\n", os.Args[0])
 		os.Exit(1)
 	}
 
-	filePath := os.Args[1]
-	input, err := os.ReadFile(filePath)
+	path := os.Args[1]
+
+	info, err := os.Stat(path)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to read file %s: %v", filePath, err))
+		fmt.Printf("Failed to get file info: %v\n", err)
+		os.Exit(1)
 	}
 
-	result := processFile(input)
-	if result == "" {
+	if info.IsDir() {
+		err := filepath.WalkDir(path, walkDirFn)
+		if err != nil {
+			fmt.Printf("Error walking directory: %v\n", err)
+			os.Exit(1)
+		}
+
 		return
 	}
 
-	fmt.Println("----------------------------------------")
+	if isTerraformFile(path) {
+		processFile(path)
+		return
+	}
+
+	fmt.Printf("Not recognized file type. Please provide a path to a terraform file or folder.\n")
+	os.Exit(1)
+}
+
+func isTerraformFile(path string) bool {
+	return strings.HasSuffix(path, terraformFileExtension)
+}
+
+func walkDirFn(path string, d os.DirEntry, err error) error {
+	if err != nil {
+		return err
+	}
+
+	if !d.IsDir() && isTerraformFile(path) {
+		processFile(path)
+	}
+
+	return nil
+}
+
+func processFile(filePath string) {
+	input, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("Failed to read file %s: %v", filePath, err)
+		os.Exit(1)
+	}
+
+	result, hasChanges := modifyFile(input)
+	if result == "" || !hasChanges {
+		return
+	}
+
+	fmt.Printf("\n----------------[Please check changes for the file: %s]-----------------------\n", filePath)
 	fmt.Println(getUnifiedDiff(string(input), result))
-	fmt.Println("----------------------------------------")
+	fmt.Println("------------------------------------------------------------------------------")
 
 	if strings.ToLower(getUserResponse("Do you want to save the changes? (y/n): ")) == "y" {
 		saveResults(filePath, result)
@@ -58,7 +105,7 @@ func saveResults(filePath string, result string) {
 	}
 }
 
-func processFile(src []byte) string {
+func modifyFile(src []byte) (result string, hasChanges bool) {
 	f, diags := hclwrite.ParseConfig(src, "input.tf", hcl.Pos{Line: 1, Column: 1})
 	if diags.HasErrors() {
 		for _, diag := range diags {
@@ -69,20 +116,20 @@ func processFile(src []byte) string {
 			}
 		}
 
-		return ""
+		return "", false
 	}
 
 	if f == nil {
-		fmt.Println("Failed to parse HCL.")
-		return ""
+		fmt.Println("[ERROR]: failed to parse terraform file.")
+		return "", false
 	}
 
-	processResourceBlocks(f.Body())
+	hasChanges = processResourceBlocks(f.Body())
 
-	return string(f.Bytes())
+	return string(f.Bytes()), hasChanges
 }
 
-func processAttributes(body *hclwrite.Body) {
+func processAttributes(body *hclwrite.Body) (hasChanges bool) {
 	accessTokens := map[string]hclwrite.Tokens{}
 	var accessBlock *hclwrite.Block
 
@@ -104,6 +151,8 @@ func processAttributes(body *hclwrite.Body) {
 
 	if accessBlock != nil {
 		body.RemoveBlock(accessBlock)
+
+		hasChanges = true
 	}
 
 	if len(accessTokens["group_ids"]) > 0 {
@@ -124,6 +173,8 @@ func processAttributes(body *hclwrite.Body) {
 		//      group_id = access_group.value
 		//    }
 		//  }
+
+		hasChanges = true
 	}
 
 	if len(accessTokens["service_account_ids"]) > 0 {
@@ -144,14 +195,20 @@ func processAttributes(body *hclwrite.Body) {
 		//      service_account_id = access_service.value
 		//    }
 		//  }
+
+		hasChanges = true
 	}
+
+	return hasChanges
 }
 
-func processResourceBlocks(body *hclwrite.Body) {
+func processResourceBlocks(body *hclwrite.Body) (hasChanges bool) {
 	blocks := body.Blocks()
 	for _, block := range blocks {
 		if block.Type() == "resource" && block.Labels()[0] == "twingate_resource" {
-			processAttributes(block.Body())
+			hasChanges = processAttributes(block.Body()) || hasChanges
 		}
 	}
+
+	return hasChanges
 }

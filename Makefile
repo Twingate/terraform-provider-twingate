@@ -91,5 +91,16 @@ sec:
 docs:
 	go tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
 
+.PHONY: build.upgrader
 build.upgrader:
 	cd tools/upgrader && go mod tidy && go build -o $(WORKING_DIR)/bin/upgrader
+
+.PHONY: build.upgrader-release
+build.upgrader-release:
+	cd tools/upgrader && go mod tidy
+	cd tools/upgrader && CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -a -o $(WORKING_DIR)/build/upgrader-darwin-amd64
+	cd tools/upgrader && CGO_ENABLED=0 GOOS=linux GOARCH=386 go build -ldflags="-s -w" -a -o $(WORKING_DIR)/build/upgrader-linux-386
+	cd tools/upgrader && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -a -o $(WORKING_DIR)/build/upgrader-linux-amd64
+	cd tools/upgrader && CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -ldflags="-s -w" -a -o $(WORKING_DIR)/build/upgrader-linux-arm
+	cd tools/upgrader && CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -ldflags="-s -w" -a -o $(WORKING_DIR)/build/upgrader-windows-386.exe
+	cd tools/upgrader && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -a -o $(WORKING_DIR)/build/upgrader-windows-amd64.exe
