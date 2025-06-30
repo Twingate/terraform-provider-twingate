@@ -32,7 +32,7 @@ builds:
     binary: '{{ .ProjectName }}_v{{ .Version }}'
 
   - id: upgrader
-    main: tools/upgrader
+    dir: ./tools/upgrader
     binary: 'upgrader_v{{ .Version }}'
     env:
       - CGO_ENABLED=0
@@ -56,7 +56,7 @@ builds:
         goarch: '386'
 
 archives:
-  - format: zip
+  - formats: [ 'zip' ]
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 checksum:
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'

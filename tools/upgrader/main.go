@@ -30,7 +30,7 @@ func main() {
 	path := os.Args[1]
 
 	if path == versionFlag {
-		fmt.Printf("Terraform Upgrader v%s (commit: %s)\n", version, commit)
+		fmt.Printf("Twingate Upgrader v%s (commit: %s)\n", version, commit)
 		os.Exit(0)
 	}
 

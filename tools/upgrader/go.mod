@@ -1,4 +1,4 @@
-module github.com/Twingate/terraform-provider-twingate/upgrader
+module github.com/Twingate/terraform-provider-twingate/v3/tools/upgrader
 
 go 1.24.2
 
