@@ -10,7 +10,27 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
-const terraformFileExtension = ".tf"
+const (
+	terraformFileExtension = ".tf"
+
+	resourceType     = "resource"
+	twingateResource = "twingate_resource"
+
+	protocolsBlock = "protocols"
+	tcpBlock       = "tcp"
+	udpBlock       = "udp"
+
+	v2AccessBlock = "access"
+	v2GroupIDs    = "group_ids"
+	v2ServiceIDs  = "service_account_ids"
+
+	v3AccessGroupBlock   = "access_group"
+	v3AccessServiceBlock = "access_service"
+	v3GroupID            = "group_id"
+	v3ServiceID          = "service_account_id"
+)
+
+var terraformFiles []string
 
 func main() {
 	if len(os.Args) < 2 {
@@ -27,26 +47,42 @@ func main() {
 	}
 
 	if info.IsDir() {
-		err := filepath.WalkDir(path, walkDirFn)
+		err := filepath.WalkDir(path, collectTerraformFiles)
 		if err != nil {
 			fmt.Printf("Error walking directory: %v\n", err)
 			os.Exit(1)
 		}
-
-		return
+	} else if isTerraformFile(path) {
+		terraformFiles = append(terraformFiles, path)
 	}
 
-	if isTerraformFile(path) {
-		processFile(path)
-		return
+	if len(terraformFiles) == 0 {
+		fmt.Printf("Not recognized file type. Please provide a path to a terraform file or folder.\n")
+		os.Exit(1)
 	}
 
-	fmt.Printf("Not recognized file type. Please provide a path to a terraform file or folder.\n")
-	os.Exit(1)
+	for _, file := range terraformFiles {
+		// todo: check minimum migration version required
+
+		version := requiredMigration(file)
+	}
+
 }
 
 func isTerraformFile(path string) bool {
 	return strings.HasSuffix(path, terraformFileExtension)
+}
+
+func collectTerraformFiles(path string, d os.DirEntry, err error) error {
+	if err != nil {
+		return err
+	}
+
+	if !d.IsDir() && isTerraformFile(path) {
+		terraformFiles = append(terraformFiles, path)
+	}
+
+	return nil
 }
 
 func walkDirFn(path string, d os.DirEntry, err error) error {
@@ -129,22 +165,116 @@ func modifyFile(src []byte) (result string, hasChanges bool) {
 	return string(f.Bytes()), hasChanges
 }
 
-func processAttributes(body *hclwrite.Body) (hasChanges bool) {
-	accessTokens := map[string]hclwrite.Tokens{}
+func processResourceBlocks(body *hclwrite.Body) (hasChangesV1, hasChangesV2 bool) {
+	blocks := body.Blocks()
+	for _, block := range blocks {
+		if block.Type() == resourceType && block.Labels()[0] == twingateResource {
+			hasChangesV1 = applyMigrationV1(block.Body()) || hasChangesV1
+
+			hasChangesV1 = applyMigrationV2(block.Body()) || hasChangesV1
+		}
+	}
+
+	return hasChangesV1
+}
+
+func requiresMigrationV1(body *hclwrite.Body) bool {
+	for _, block := range body.Blocks() {
+		if block.Type() == protocolsBlock {
+			return true
+		}
+	}
+
+	return false
+}
+
+func applyMigrationV1(body *hclwrite.Body) (hasChanges bool) {
+	attributes := map[string]hclwrite.Tokens{}
+	var (
+		protocols *hclwrite.Block
+		tcp       *hclwrite.Block
+		udp       *hclwrite.Block
+	)
+
+	for _, block := range body.Blocks() {
+		if block.Type() == protocolsBlock {
+			protocols = block
+
+			for name, attr := range block.Body().Attributes() {
+				attributes[name] = attr.Expr().BuildTokens(nil)
+			}
+
+			for _, innerBlock := range block.Body().Blocks() {
+				switch innerBlock.Type() {
+				case tcpBlock:
+					tcp = innerBlock
+				case udpBlock:
+					udp = innerBlock
+				}
+			}
+
+		}
+	}
+
+	if protocols != nil {
+		body.RemoveBlock(protocols)
+
+		hasChanges = true
+	}
+
+	newBlock := hclwrite.NewBlock(protocolsBlock, nil)
+
+	if tcp != nil {
+		newBlock.Body().SetAttributeRaw(tcpBlock, tcp.BuildTokens(nil)[1:])
+	}
+
+	if udp != nil {
+		newBlock.Body().SetAttributeRaw(udpBlock, udp.BuildTokens(nil)[1:])
+	}
+
+	for name, attr := range attributes {
+		newBlock.Body().SetAttributeRaw(name, attr)
+	}
+
+	body.SetAttributeRaw(protocolsBlock, newBlock.BuildTokens(nil)[1:])
+
+	return hasChanges
+}
+
+func requiresMigrationV2(body *hclwrite.Body) bool {
+	for _, block := range body.Blocks() {
+		if block.Type() == v2AccessBlock {
+			return true
+		}
+	}
+
+	return false
+}
+
+func applyMigrationV2(body *hclwrite.Body) (hasChanges bool) {
+	migrationMap := map[string]struct {
+		blockName string
+		attribute string
+	}{
+		v2GroupIDs: {
+			blockName: v3AccessGroupBlock,
+			attribute: v3GroupID,
+		},
+		v2ServiceIDs: {
+			blockName: v3AccessServiceBlock,
+			attribute: v3ServiceID,
+		},
+	}
+
+	accessAttributes := map[string]hclwrite.Tokens{}
 	var accessBlock *hclwrite.Block
 
-	for i, block := range body.Blocks() {
-		if block.Type() == "access" {
-			accessBlock = body.Blocks()[i]
+	for _, block := range body.Blocks() {
+		if block.Type() == v2AccessBlock {
+			accessBlock = block
+
 			for name, attr := range block.Body().Attributes() {
-				list := strings.TrimSpace(string(attr.Expr().BuildTokens(nil).Bytes()))
-
-				values := []string{}
-				for _, v := range strings.Split(list[1:len(list)-1], ",") {
-					values = append(values, strings.TrimSpace(v))
-				}
-
-				accessTokens[name] = attr.Expr().BuildTokens(nil)
+				accessAttributes[name] = attr.Expr().BuildTokens(nil)
 			}
 		}
 	}
@@ -155,16 +285,23 @@ func processAttributes(body *hclwrite.Body) (hasChanges bool) {
 		hasChanges = true
 	}
 
-	if len(accessTokens["group_ids"]) > 0 {
+	for name, tokens := range accessAttributes {
+		if len(tokens) == 0 {
+			continue
+		}
+
+		migration := migrationMap[name]
+
 		// Add the `dynamic "access_group"` block
-		dynamicBlock := body.AppendNewBlock("dynamic", []string{"access_group"})
-		dynamicBlock.Body().SetAttributeRaw("for_each", accessTokens["group_ids"])
+		dynamicBlock := body.AppendNewBlock("dynamic", []string{migration.blockName})
+		dynamicBlock.Body().SetAttributeRaw("for_each", tokens)
 
 		// Add the inner `content` block
 		contentBlock := dynamicBlock.Body().AppendNewBlock("content", nil)
 
 		// Set attributes inside the `content` block
-		contentBlock.Body().SetAttributeRaw("group_id", hclwrite.TokensForIdentifier("access_group.value"))
+		contentBlock.Body().SetAttributeRaw(migration.attribute,
+			hclwrite.TokensForIdentifier(fmt.Sprintf("%s.value", migration.blockName)))
 
 		// Example:
 		// dynamic "access_group" {
@@ -173,41 +310,6 @@ func processAttributes(body *hclwrite.Body) (hasChanges bool) {
 		//      group_id = access_group.value
 		//    }
 		//  }
-
-		hasChanges = true
-	}
-
-	if len(accessTokens["service_account_ids"]) > 0 {
-		// Add the `dynamic "access_service"` block
-		dynamicBlock := body.AppendNewBlock("dynamic", []string{"access_service"})
-		dynamicBlock.Body().SetAttributeRaw("for_each", accessTokens["service_account_ids"])
-
-		// Add the inner `content` block
-		contentBlock := dynamicBlock.Body().AppendNewBlock("content", nil)
-
-		// Set attributes inside the `content` block
-		contentBlock.Body().SetAttributeRaw("service_account_id", hclwrite.TokensForIdentifier("access_service.value"))
-
-		// Example:
-		// dynamic "access_service" {
-		//    for_each = [twingate_service_account.infra.id, twingate_service_account.security.id]
-		//    content {
-		//      service_account_id = access_service.value
-		//    }
-		//  }
-
-		hasChanges = true
-	}
-
-	return hasChanges
-}
-
-func processResourceBlocks(body *hclwrite.Body) (hasChanges bool) {
-	blocks := body.Blocks()
-	for _, block := range blocks {
-		if block.Type() == "resource" && block.Labels()[0] == "twingate_resource" {
-			hasChanges = processAttributes(block.Body()) || hasChanges
-		}
 	}
 
 	return hasChanges
