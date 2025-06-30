@@ -10,7 +10,16 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
-const terraformFileExtension = ".tf"
+var (
+	commit  = "dev"
+	version = "dev"
+)
+
+const (
+	terraformFileExtension = ".tf"
+
+	versionFlag = "--version"
+)
 
 func main() {
 	if len(os.Args) < 2 {
@@ -19,6 +28,11 @@ func main() {
 	}
 
 	path := os.Args[1]
+
+	if path == versionFlag {
+		fmt.Printf("Terraform Upgrader v%s (commit: %s)\n", version, commit)
+		os.Exit(0)
+	}
 
 	info, err := os.Stat(path)
 	if err != nil {

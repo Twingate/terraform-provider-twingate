@@ -1,4 +1,10 @@
 version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - cd tools/upgrader && go mod tidy
+
 builds:
   - env:
       # goreleaser does not work with CGO, it could also complicate
@@ -24,6 +30,31 @@ builds:
       - goos: darwin
         goarch: '386'
     binary: '{{ .ProjectName }}_v{{ .Version }}'
+
+  - id: upgrader
+    main: tools/upgrader
+    binary: 'upgrader_v{{ .Version }}'
+    env:
+      - CGO_ENABLED=0
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags:
+      - -trimpath
+    ldflags:
+      - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
+    goos:
+      - freebsd
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - '386'
+      - arm
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: '386'
+
 archives:
   - format: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
