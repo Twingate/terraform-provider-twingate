@@ -61,3 +61,11 @@ resource "twingate_resource" "resource" {
   }
 ```
 
+## Migration tool
+
+You can take `upgrader` tool from release assets page https://github.com/Twingate/terraform-provider-twingate/releases
+which can help automate migrate terraform files from v2 to v3 by passing path to a terraform file or directory:
+
+```bash
+> upgrader ./main.tf
+```
