@@ -61,11 +61,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	minRequiredMigration := 0
+
 	for _, file := range terraformFiles {
 		// todo: check minimum migration version required
 
 		version := requiredMigration(file)
 	}
+
+}
+
+func requiredMigration(file string) int {
 
 }
 
