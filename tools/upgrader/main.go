@@ -13,6 +13,8 @@ import (
 const (
 	terraformFileExtension = ".tf"
 
+	versionFlag = "--version"
+
 	resourceType     = "resource"
 	twingateResource = "twingate_resource"
 
@@ -34,6 +36,11 @@ const (
 	migrationV2          = 2
 )
 
+var (
+	commit  = "dev"
+	version = "dev"
+)
+
 var terraformFiles []string
 
 func main() {
@@ -43,6 +50,11 @@ func main() {
 	}
 
 	path := os.Args[1]
+
+	if path == versionFlag {
+		fmt.Printf("Twingate Upgrader v%s (commit: %s)\n", version, commit)
+		os.Exit(0)
+	}
 
 	info, err := os.Stat(path)
 	if err != nil {
