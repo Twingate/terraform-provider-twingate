@@ -28,6 +28,10 @@ const (
 	v3AccessServiceBlock = "access_service"
 	v3GroupID            = "group_id"
 	v3ServiceID          = "service_account_id"
+
+	migrationNotRequired = 0
+	migrationV1          = 1
+	migrationV2          = 2
 )
 
 var terraformFiles []string
@@ -61,18 +65,114 @@ func main() {
 		os.Exit(1)
 	}
 
-	minRequiredMigration := 0
+	minRequiredMigration := migrationNotRequired
 
 	for _, file := range terraformFiles {
-		// todo: check minimum migration version required
-
-		version := requiredMigration(file)
+		version, required := requiredMigration(file)
+		if required && (version < minRequiredMigration || minRequiredMigration == migrationNotRequired) {
+			minRequiredMigration = version
+		}
 	}
 
+	if minRequiredMigration == migrationNotRequired {
+		fmt.Println("No migration required.")
+		return
+	}
+
+	hasModified := false
+	for _, file := range terraformFiles {
+		hasModified = applyMigration(file, minRequiredMigration) || hasModified
+	}
+
+	if hasModified {
+		fmt.Println("------------------------------------------------------------------------------")
+		fmt.Printf("Modified files were upgraded to version v%d, now you need to run: $ terraform apply \n", minRequiredMigration+1)
+		fmt.Println("and then run upgrader tool again to check if there are any other changes that need to be applied.")
+		fmt.Println("------------------------------------------------------------------------------")
+	}
 }
 
-func requiredMigration(file string) int {
+func applyMigration(file string, migration int) (changesSaved bool) {
+	input := readFile(file)
+	f := parseFile(input)
 
+	migrationMap := map[int]func(body *hclwrite.Body) (hasChanges bool){
+		migrationV1: applyMigrationV1,
+		migrationV2: applyMigrationV2,
+	}
+
+	migrationFunc := migrationMap[migration]
+
+	if migrationFunc == nil {
+		fmt.Printf("Migration function not found for migration v%d", migration)
+		os.Exit(1)
+	}
+
+	if runBlocksProcessor(f.Body(), migrationFunc) {
+		result := string(f.Bytes())
+
+		fmt.Printf("\n--------[Please check changes for the file (applying migration from v%d to v%d and some formatting): %s]-----------\n", migration, migration+1, file)
+		fmt.Println(getUnifiedDiff(string(input), result))
+		fmt.Println("------------------------------------------------------------------------------")
+
+		if strings.ToLower(getUserResponse("Do you want to save the changes? (y/n): ")) == "y" {
+			saveResults(file, result)
+			fmt.Println("Changes saved successfully!")
+
+			return true
+		} else {
+			fmt.Println("Changes were not saved.")
+		}
+	}
+
+	return false
+}
+
+func requiredMigration(file string) (int, bool) {
+	content := readFile(file)
+	f := parseFile(content)
+
+	if runBlocksProcessor(f.Body(), requiresMigrationV1) {
+		return migrationV1, true
+	}
+
+	if runBlocksProcessor(f.Body(), requiresMigrationV2) {
+		return migrationV2, true
+	}
+
+	return migrationNotRequired, false
+}
+
+func readFile(file string) []byte {
+	content, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Printf("Failed to read file %s: %v", file, err)
+		os.Exit(1)
+	}
+
+	return content
+}
+
+func parseFile(content []byte) *hclwrite.File {
+	f, diags := hclwrite.ParseConfig(content, "input.tf", hcl.Pos{Line: 1, Column: 1})
+	if diags.HasErrors() {
+		for _, diag := range diags {
+			if diag.Subject != nil {
+				fmt.Printf("[%s:%d] %s: %s\n", diag.Subject.Filename, diag.Subject.Start.Line, diag.Summary, diag.Detail)
+			} else {
+				fmt.Printf("%s: %s\n", diag.Summary, diag.Detail)
+			}
+		}
+
+		os.Exit(1)
+	}
+
+	if f == nil {
+		fmt.Println("[ERROR]: failed to parse terraform file.")
+		os.Exit(1)
+	}
+
+	return f
 }
 
 func isTerraformFile(path string) bool {
@@ -89,42 +189,6 @@ func collectTerraformFiles(path string, d os.DirEntry, err error) error {
 	}
 
 	return nil
-}
-
-func walkDirFn(path string, d os.DirEntry, err error) error {
-	if err != nil {
-		return err
-	}
-
-	if !d.IsDir() && isTerraformFile(path) {
-		processFile(path)
-	}
-
-	return nil
-}
-
-func processFile(filePath string) {
-	input, err := os.ReadFile(filePath)
-	if err != nil {
-		fmt.Printf("Failed to read file %s: %v", filePath, err)
-		os.Exit(1)
-	}
-
-	result, hasChanges := modifyFile(input)
-	if result == "" || !hasChanges {
-		return
-	}
-
-	fmt.Printf("\n----------------[Please check changes for the file: %s]-----------------------\n", filePath)
-	fmt.Println(getUnifiedDiff(string(input), result))
-	fmt.Println("------------------------------------------------------------------------------")
-
-	if strings.ToLower(getUserResponse("Do you want to save the changes? (y/n): ")) == "y" {
-		saveResults(filePath, result)
-		fmt.Println("Changes saved successfully!")
-	} else {
-		fmt.Println("Changes were not saved.")
-	}
 }
 
 func getUserResponse(question string) string {
@@ -147,41 +211,15 @@ func saveResults(filePath string, result string) {
 	}
 }
 
-func modifyFile(src []byte) (result string, hasChanges bool) {
-	f, diags := hclwrite.ParseConfig(src, "input.tf", hcl.Pos{Line: 1, Column: 1})
-	if diags.HasErrors() {
-		for _, diag := range diags {
-			if diag.Subject != nil {
-				fmt.Printf("[%s:%d] %s: %s\n", diag.Subject.Filename, diag.Subject.Start.Line, diag.Summary, diag.Detail)
-			} else {
-				fmt.Printf("%s: %s\n", diag.Summary, diag.Detail)
-			}
-		}
-
-		return "", false
-	}
-
-	if f == nil {
-		fmt.Println("[ERROR]: failed to parse terraform file.")
-		return "", false
-	}
-
-	hasChanges = processResourceBlocks(f.Body())
-
-	return string(f.Bytes()), hasChanges
-}
-
-func processResourceBlocks(body *hclwrite.Body) (hasChangesV1, hasChangesV2 bool) {
+func runBlocksProcessor(body *hclwrite.Body, processor func(body *hclwrite.Body) (hasChanges bool)) (hasChanges bool) {
 	blocks := body.Blocks()
 	for _, block := range blocks {
 		if block.Type() == resourceType && block.Labels()[0] == twingateResource {
-			hasChangesV1 = applyMigrationV1(block.Body()) || hasChangesV1
-
-			hasChangesV1 = applyMigrationV2(block.Body()) || hasChangesV1
+			hasChanges = processor(block.Body()) || hasChanges
 		}
 	}
 
-	return hasChangesV1
+	return hasChanges
 }
 
 func requiresMigrationV1(body *hclwrite.Body) bool {
@@ -222,11 +260,11 @@ func applyMigrationV1(body *hclwrite.Body) (hasChanges bool) {
 		}
 	}
 
-	if protocols != nil {
-		body.RemoveBlock(protocols)
-
-		hasChanges = true
+	if protocols == nil {
+		return false
 	}
+
+	body.RemoveBlock(protocols)
 
 	newBlock := hclwrite.NewBlock(protocolsBlock, nil)
 
@@ -244,7 +282,7 @@ func applyMigrationV1(body *hclwrite.Body) (hasChanges bool) {
 
 	body.SetAttributeRaw(protocolsBlock, newBlock.BuildTokens(nil)[1:])
 
-	return hasChanges
+	return true
 }
 
 func requiresMigrationV2(body *hclwrite.Body) bool {
@@ -285,11 +323,11 @@ func applyMigrationV2(body *hclwrite.Body) (hasChanges bool) {
 		}
 	}
 
-	if accessBlock != nil {
-		body.RemoveBlock(accessBlock)
-
-		hasChanges = true
+	if accessBlock == nil {
+		return false
 	}
+
+	body.RemoveBlock(accessBlock)
 
 	for name, tokens := range accessAttributes {
 		if len(tokens) == 0 {
@@ -318,5 +356,5 @@ func applyMigrationV2(body *hclwrite.Body) (hasChanges bool) {
 		//  }
 	}
 
-	return hasChanges
+	return true
 }
