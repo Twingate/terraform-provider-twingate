@@ -40,7 +40,6 @@ resource "twingate_user" "user" {
 - `is_active` (Boolean) Determines whether the User is active or not. Inactive users will be not able to sign in.
 - `last_name` (String) The User's last name
 - `role` (String) Determines the User's role. Either ADMIN, DEVOPS, SUPPORT or MEMBER.
-- `send_invite` (Boolean) Determines whether to send an email invitation to the User. True by default.
 
 ### Read-Only
 
