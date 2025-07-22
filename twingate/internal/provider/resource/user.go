@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
@@ -36,13 +38,14 @@ type user struct {
 }
 
 type userModel struct {
-	ID        types.String `tfsdk:"id"`
-	Email     types.String `tfsdk:"email"`
-	FirstName types.String `tfsdk:"first_name"`
-	LastName  types.String `tfsdk:"last_name"`
-	IsActive  types.Bool   `tfsdk:"is_active"`
-	Role      types.String `tfsdk:"role"`
-	Type      types.String `tfsdk:"type"`
+	ID         types.String `tfsdk:"id"`
+	Email      types.String `tfsdk:"email"`
+	FirstName  types.String `tfsdk:"first_name"`
+	LastName   types.String `tfsdk:"last_name"`
+	IsActive   types.Bool   `tfsdk:"is_active"`
+	Role       types.String `tfsdk:"role"`
+	Type       types.String `tfsdk:"type"`
+	SendInvite types.Bool   `tfsdk:"send_invite"`
 }
 
 func (r *user) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -95,6 +98,14 @@ func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resourc
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.UserRoles...),
 				},
+			},
+			attr.SendInvite: schema.BoolAttribute{
+				Optional:           true,
+				Computed:           true,
+				Description:        "Determines whether to send an email invitation to the User. True by default.",
+				DeprecationMessage: "This attribute is no longer used and will be removed in a future release.",
+				Default:            booldefault.StaticBool(true),
+				PlanModifiers:      []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			// computed
 			attr.Type: schema.StringAttribute{
