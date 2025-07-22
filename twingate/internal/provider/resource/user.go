@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework/path"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
@@ -35,14 +36,13 @@ type user struct {
 }
 
 type userModel struct {
-	ID         types.String `tfsdk:"id"`
-	Email      types.String `tfsdk:"email"`
-	FirstName  types.String `tfsdk:"first_name"`
-	LastName   types.String `tfsdk:"last_name"`
-	SendInvite types.Bool   `tfsdk:"send_invite"`
-	IsActive   types.Bool   `tfsdk:"is_active"`
-	Role       types.String `tfsdk:"role"`
-	Type       types.String `tfsdk:"type"`
+	ID        types.String `tfsdk:"id"`
+	Email     types.String `tfsdk:"email"`
+	FirstName types.String `tfsdk:"first_name"`
+	LastName  types.String `tfsdk:"last_name"`
+	IsActive  types.Bool   `tfsdk:"is_active"`
+	Role      types.String `tfsdk:"role"`
+	Type      types.String `tfsdk:"type"`
 }
 
 func (r *user) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -83,11 +83,6 @@ func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resourc
 				Computed:    true,
 				Description: "The User's last name",
 			},
-			attr.SendInvite: schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Determines whether to send an email invitation to the User. True by default.",
-			},
 			attr.IsActive: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -125,24 +120,14 @@ func (r *user) Create(ctx context.Context, req resource.CreateRequest, resp *res
 	}
 
 	user, err := r.client.CreateUser(ctx, &model.User{
-		Email:      plan.Email.ValueString(),
-		FirstName:  plan.FirstName.ValueString(),
-		LastName:   plan.LastName.ValueString(),
-		SendInvite: convertSendInviteFlag(plan.SendInvite),
-		Role:       withDefaultValue(plan.Role.ValueString(), model.UserRoleMember),
-		IsActive:   convertIsActiveFlag(plan.IsActive),
+		Email:     plan.Email.ValueString(),
+		FirstName: plan.FirstName.ValueString(),
+		LastName:  plan.LastName.ValueString(),
+		Role:      withDefaultValue(plan.Role.ValueString(), model.UserRoleMember),
+		IsActive:  convertIsActiveFlag(plan.IsActive),
 	})
 
 	r.helper(ctx, user, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
-}
-
-func convertSendInviteFlag(val types.Bool) bool {
-	if !val.IsUnknown() {
-		return val.ValueBool()
-	}
-
-	// default value
-	return true
 }
 
 func convertIsActiveFlag(val types.Bool) bool {
@@ -248,7 +233,6 @@ func (r *user) helper(ctx context.Context, user *model.User, state *userModel, r
 	state.Role = types.StringValue(user.Role)
 	state.Type = types.StringValue(user.Type)
 	state.IsActive = types.BoolValue(user.IsActive)
-	state.SendInvite = types.BoolValue(user.SendInvite)
 
 	// Set refreshed state
 	diags := respState.Set(ctx, state)

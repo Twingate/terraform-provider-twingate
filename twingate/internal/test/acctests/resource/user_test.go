@@ -71,7 +71,6 @@ func terraformResourceTwingateUser(terraformResourceName, email string) string {
 	return fmt.Sprintf(`
 	resource "twingate_user" "%s" {
 	  email = "%s"
-	  send_invite = false
 	}
 	`, terraformResourceName, email)
 }
@@ -81,7 +80,6 @@ func terraformResourceTwingateUserWithFirstName(terraformResourceName, email, fi
 	resource "twingate_user" "%s" {
 	  email = "%s"
 	  first_name = "%s"
-	  send_invite = false
 	}
 	`, terraformResourceName, email, firstName)
 }
@@ -91,7 +89,6 @@ func terraformResourceTwingateUserWithLastName(terraformResourceName, email, las
 	resource "twingate_user" "%s" {
 	  email = "%s"
 	  last_name = "%s"
-	  send_invite = false
 	}
 	`, terraformResourceName, email, lastName)
 }
@@ -101,7 +98,6 @@ func terraformResourceTwingateUserWithRole(terraformResourceName, email, role st
 	resource "twingate_user" "%s" {
 	  email = "%s"
 	  role = "%s"
-	  send_invite = false
 	}
 	`, terraformResourceName, email, role)
 }
@@ -142,7 +138,6 @@ func terraformResourceTwingateUserFull(terraformResourceName, email, firstName, 
 	  first_name = "%s"
 	  last_name = "%s"
 	  role = "%s"
-	  send_invite = false
 	}
 	`, terraformResourceName, email, firstName, lastName, role)
 }
@@ -209,7 +204,6 @@ func terraformResourceTwingateUserDisabled(terraformResourceName, email string) 
 	return fmt.Sprintf(`
 	resource "twingate_user" "%s" {
 	  email = "%s"
-	  send_invite = false
 	  is_active = false
 	}
 	`, terraformResourceName, email)
@@ -312,7 +306,6 @@ func TestAccTwingateUserCreateWithoutEmail(t *testing.T) {
 func terraformResourceTwingateUserWithoutEmail(terraformResourceName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_user" "%s" {
-	  send_invite = false
 	}
 	`, terraformResourceName)
 }
@@ -355,13 +348,12 @@ func TestAccTwingateUserImport(t *testing.T) {
 				ImportState:  true,
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
-					attr.Email:      email,
-					attr.FirstName:  firstName,
-					attr.LastName:   lastName,
-					attr.Role:       role,
-					attr.Type:       model.UserTypeManual,
-					attr.IsActive:   "true",
-					attr.SendInvite: "false",
+					attr.Email:     email,
+					attr.FirstName: firstName,
+					attr.LastName:  lastName,
+					attr.Role:      role,
+					attr.Type:      model.UserTypeManual,
+					attr.IsActive:  "true",
 				}),
 			},
 		},
