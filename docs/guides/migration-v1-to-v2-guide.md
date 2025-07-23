@@ -69,3 +69,12 @@ resource "twingate_resource" "resource" {
 ## Migrating data sources
 
 The attribute `is_admin` has been removed from the `twingate_user` and `twingate_users` data sources. Similar information is now available via the [`role` attribute](https://registry.terraform.io/providers/Twingate/twingate/latest/docs/data-sources/users#role).
+
+## Migration tool
+
+You can take `upgrader` tool from release assets page https://github.com/Twingate/terraform-provider-twingate/releases
+which can help automate migrate terraform files from v1 to v2 by passing path to a terraform file or directory:
+
+```bash
+> upgrader ./main.tf
+```
