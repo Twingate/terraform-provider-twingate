@@ -287,6 +287,7 @@ func (m staticBoolModifier) PlanModifyBool(_ context.Context, req planmodifier.B
 
 	if req.StateValue.IsNull() {
 		resp.PlanValue = types.BoolValue(m.value)
+
 		return
 	}
 
