@@ -5,18 +5,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -77,19 +76,22 @@ func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resourc
 			},
 			// optional
 			attr.FirstName: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The User's first name",
+				Optional:      true,
+				Computed:      true,
+				Description:   "The User's first name",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.LastName: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The User's last name",
+				Optional:      true,
+				Computed:      true,
+				Description:   "The User's last name",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsActive: schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Determines whether the User is active or not. Inactive users will be not able to sign in.",
+				Optional:      true,
+				Computed:      true,
+				Description:   "Determines whether the User is active or not. Inactive users will be not able to sign in.",
+				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			attr.Role: schema.StringAttribute{
 				Optional:    true,
@@ -98,6 +100,7 @@ func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resourc
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.UserRoles...),
 				},
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.SendInvite: schema.BoolAttribute{
 				Optional:           true,
@@ -105,12 +108,15 @@ func (r *user) Schema(_ context.Context, _ resource.SchemaRequest, resp *resourc
 				Description:        "Determines whether to send an email invitation to the User. True by default.",
 				DeprecationMessage: "This attribute is no longer used and will be removed in a future release.",
 				Default:            booldefault.StaticBool(true),
-				PlanModifiers:      []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+				PlanModifiers: []planmodifier.Bool{
+					StaticBoolModifier(true),
+				},
 			},
 			// computed
 			attr.Type: schema.StringAttribute{
-				Computed:    true,
-				Description: fmt.Sprintf("Indicates the User's type. Either %s.", utils.DocList(model.UserTypes)),
+				Computed:      true,
+				Description:   fmt.Sprintf("Indicates the User's type. Either %s.", utils.DocList(model.UserTypes)),
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:      true,
@@ -196,6 +202,8 @@ func (r *user) Update(ctx context.Context, req resource.UpdateRequest, resp *res
 		userUpdateReq.IsActive = &isActive
 	}
 
+	state.SendInvite = plan.SendInvite
+
 	user, err := r.client.UpdateUser(ctx, userUpdateReq)
 
 	r.helper(ctx, user, &state, &resp.State, &resp.Diagnostics, err, operationUpdate)
@@ -248,4 +256,39 @@ func (r *user) helper(ctx context.Context, user *model.User, state *userModel, r
 	// Set refreshed state
 	diags := respState.Set(ctx, state)
 	diagnostics.Append(diags...)
+}
+
+func StaticBoolModifier(value bool) planmodifier.Bool {
+	return staticBoolModifier{
+		value: value,
+	}
+}
+
+// staticBoolModifier implements the plan modifier.
+type staticBoolModifier struct {
+	value bool
+}
+
+// Description returns a human-readable description of the plan modifier.
+func (m staticBoolModifier) Description(_ context.Context) string {
+	return "Once set, the value of this attribute in state will not change."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (m staticBoolModifier) MarkdownDescription(_ context.Context) string {
+	return "Once set, the value of this attribute in state will not change."
+}
+
+// PlanModifyBool implements the plan modification logic.
+func (m staticBoolModifier) PlanModifyBool(_ context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
+	if !req.PlanValue.IsUnknown() && req.StateValue.IsNull() {
+		m.value = req.PlanValue.ValueBool()
+	}
+
+	if req.StateValue.IsNull() {
+		resp.PlanValue = types.BoolValue(m.value)
+		return
+	}
+
+	resp.PlanValue = req.StateValue
 }

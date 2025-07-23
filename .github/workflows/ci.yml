@@ -16,6 +16,7 @@ on:
       - 'README.md'
     branches:
       - main
+      - fix-remove-user-invite-attribute
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:

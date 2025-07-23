@@ -14,6 +14,84 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
+func TestAccTwingateUserDeprecateSendInviteTrue(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test00t"
+	theResource := acctests.TerraformUser(terraformResourceName)
+	email := test.RandomEmail()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateUserDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceTwingateUserSendInvite(terraformResourceName, email, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Email, email),
+				),
+			},
+			{
+				PlanOnly: true,
+				Config:   terraformResourceTwingateUserSendInvite(terraformResourceName, email, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Email, email),
+				),
+			},
+			{
+				PlanOnly: true,
+				Config:   terraformResourceTwingateUser(terraformResourceName, email),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Email, email),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateUserDeprecateSendInviteFalse(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test00f"
+	theResource := acctests.TerraformUser(terraformResourceName)
+	email := test.RandomEmail()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateUserDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: terraformResourceTwingateUserSendInvite(terraformResourceName, email, false),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Email, email),
+				),
+			},
+			{
+				PlanOnly: true,
+				Config:   terraformResourceTwingateUserSendInvite(terraformResourceName, email, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Email, email),
+				),
+			},
+			{
+				PlanOnly: true,
+				Config:   terraformResourceTwingateUser(terraformResourceName, email),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Email, email),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTwingateUserCreateUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -65,6 +143,15 @@ func TestAccTwingateUserCreateUpdate(t *testing.T) {
 			},
 		},
 	})
+}
+
+func terraformResourceTwingateUserSendInvite(terraformResourceName, email string, sendInvite bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_user" "%s" {
+	  email = "%s"
+	  send_invite = %v
+	}
+	`, terraformResourceName, email, sendInvite)
 }
 
 func terraformResourceTwingateUser(terraformResourceName, email string) string {
