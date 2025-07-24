@@ -7,6 +7,6 @@ const (
 	Role       = "role"
 	Roles      = "roles"
 	Users      = "users"
-	SendInvite = "send_invite"
 	State      = "state"
+	SendInvite = "send_invite"
 )
