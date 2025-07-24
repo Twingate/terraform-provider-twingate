@@ -210,7 +210,6 @@ func terraformResourceTwingateUser(terraformResourceName, email string) string {
 	return fmt.Sprintf(`
 	resource "twingate_user" "%s" {
 	  email = "%s"
-	  send_invite = false
 	}
 	`, terraformResourceName, email)
 }
@@ -415,7 +414,6 @@ func terraformResourceTwingateUserWithFirstName(resourceName, email, firstName s
 	resource "twingate_user" "%s" {
 	  email = "%s"
 	  first_name = "%s"
-	  send_invite = false
 	}
 	`, resourceName, email, firstName)
 }
@@ -583,7 +581,6 @@ func terraformResourceTwingateUserWithLastName(resourceName, email, lastName str
 	resource "twingate_user" "%s" {
 	  email = "%s"
 	  last_name = "%s"
-	  send_invite = false
 	}
 	`, resourceName, email, lastName)
 }
@@ -634,7 +631,6 @@ func terraformResourceTwingateUserWithFirstNameAndLastName(resourceName, email, 
 	  email = "%s"
 	  first_name = "%s"
 	  last_name = "%s"
-	  send_invite = false
 	}
 	`, resourceName, email, firstName, lastName)
 }
@@ -690,7 +686,6 @@ func terraformResourceTwingateUserWithFirstNameLastNameAndRole(resourceName, ema
 	  first_name = "%s"
 	  last_name = "%s"
 	  role = "%s"
-	  send_invite = false
 	}
 	`, resourceName, email, firstName, lastName, role)
 }
