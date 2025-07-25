@@ -2,8 +2,8 @@ version: 2
 
 before:
   hooks:
-    - go mod tidy
-    - cd tools/upgrader && go mod tidy
+    - bash -c 'go mod tidy'
+    - bash -c 'cd tools/upgrader && go mod tidy'
 
 builds:
   - env:
