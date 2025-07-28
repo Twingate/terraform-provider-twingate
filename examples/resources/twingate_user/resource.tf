@@ -8,5 +8,4 @@ resource "twingate_user" "user" {
   first_name = "Twin"
   last_name = "Gate"
   role = "DEVOPS"
-  send_invite = true
 }

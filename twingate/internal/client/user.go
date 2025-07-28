@@ -118,7 +118,6 @@ func (client *Client) CreateUser(ctx context.Context, input *model.User) (*model
 		gqlNullable(input.FirstName, "firstName"),
 		gqlNullable(input.LastName, "lastName"),
 		gqlVar(query.UserRole(input.Role), "role"),
-		gqlVar(input.SendInvite, "shouldSendInvite"),
 	)
 	response := query.CreateUser{}
 

@@ -5,7 +5,7 @@ import (
 )
 
 type CreateUser struct {
-	UserEntityResponse `graphql:"userCreate(email: $email, firstName: $firstName, lastName: $lastName, role: $role, shouldSendInvite: $shouldSendInvite)"`
+	UserEntityResponse `graphql:"userCreate(email: $email, firstName: $firstName, lastName: $lastName, role: $role)"`
 }
 
 type UserEntityResponse struct {

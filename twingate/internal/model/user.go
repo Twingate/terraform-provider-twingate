@@ -23,14 +23,13 @@ var (
 )
 
 type User struct {
-	ID         string
-	FirstName  string
-	LastName   string
-	Email      string
-	Role       string
-	Type       string
-	SendInvite bool
-	IsActive   bool
+	ID        string
+	FirstName string
+	LastName  string
+	Email     string
+	Role      string
+	Type      string
+	IsActive  bool
 }
 
 func (u User) GetID() string {
