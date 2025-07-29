@@ -27,11 +27,13 @@ const (
 	defaultGroupsEnabled   = true
 
 	// EnvAPIToken env var for Token.
-	EnvAPIToken     = "TWINGATE_API_TOKEN" // #nosec G101
-	EnvNetwork      = "TWINGATE_NETWORK"
-	EnvURL          = "TWINGATE_URL"
-	EnvHTTPTimeout  = "TWINGATE_HTTP_TIMEOUT"
-	EnvHTTPMaxRetry = "TWINGATE_HTTP_MAX_RETRY"
+	EnvAPIToken       = "TWINGATE_API_TOKEN" // #nosec G101
+	EnvNetwork        = "TWINGATE_NETWORK"
+	EnvURL            = "TWINGATE_URL"
+	EnvHTTPTimeout    = "TWINGATE_HTTP_TIMEOUT"
+	EnvHTTPMaxRetry   = "TWINGATE_HTTP_MAX_RETRY"
+	EnvCacheResources = "TWINGATE_CACHE_RESOURCES"
+	EnvCacheGroups    = "TWINGATE_CACHE_GROUPS"
 )
 
 var _ provider.Provider = &Twingate{}
@@ -102,12 +104,14 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 				Description: "Specifies the cache settings for the provider.",
 				Attributes: map[string]schema.Attribute{
 					attr.ResourceEnabled: schema.BoolAttribute{
-						Optional:    true,
-						Description: fmt.Sprintf("Specifies whether the provider should cache resources. The default value is `%t`.", true),
+						Optional: true,
+						Description: fmt.Sprintf("Specifies whether the provider should cache resources. The default value is `%t`.\n"+
+							"Alternatively, this can be specified using the %s environment variable", true, EnvCacheResources),
 					},
 					attr.GroupsEnabled: schema.BoolAttribute{
-						Optional:    true,
-						Description: fmt.Sprintf("Specifies whether the provider should cache groups. The default value is `%t`.", true),
+						Optional: true,
+						Description: fmt.Sprintf("Specifies whether the provider should cache groups. The default value is `%t`.\n"+
+							"Alternatively, this can be specified using the %s environment variable", true, EnvCacheGroups),
 					},
 				},
 			},
@@ -187,6 +191,14 @@ func getCacheOptions(config types.Object) client.CacheOptions {
 		resourceEnabled = defaultResourceEnabled
 		groupsEnabled   = defaultGroupsEnabled
 	)
+	r, err := strconv.ParseBool(os.Getenv(EnvCacheResources))
+	if err != nil {
+		resourceEnabled = r
+	}
+	g, err := strconv.ParseBool(os.Getenv(EnvCacheGroups))
+	if err != nil {
+		groupsEnabled = g
+	}
 
 	if !config.IsNull() && !config.IsUnknown() {
 		cacheAttrs := config.Attributes()
