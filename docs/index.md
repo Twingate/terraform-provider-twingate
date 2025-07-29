@@ -60,7 +60,9 @@ This is optional and shouldn't be changed under normal circumstances.
 Optional:
 
 - `groups_enabled` (Boolean) Specifies whether the provider should cache groups. The default value is `true`.
+Alternatively, this can be specified using the TWINGATE_CACHE_GROUPS environment variable
 - `resource_enabled` (Boolean) Specifies whether the provider should cache resources. The default value is `true`.
+Alternatively, this can be specified using the TWINGATE_CACHE_RESOURCES environment variable
 
 
 <a id="nestedatt--default_tags"></a>
