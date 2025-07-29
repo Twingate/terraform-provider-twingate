@@ -192,11 +192,11 @@ func getCacheOptions(config types.Object) client.CacheOptions {
 		groupsEnabled   = defaultGroupsEnabled
 	)
 	r, err := strconv.ParseBool(os.Getenv(EnvCacheResources))
-	if err != nil {
+	if err == nil {
 		resourceEnabled = r
 	}
 	g, err := strconv.ParseBool(os.Getenv(EnvCacheGroups))
-	if err != nil {
+	if err == nil {
 		groupsEnabled = g
 	}
 
