@@ -4308,3 +4308,35 @@ func createResourceWithDefaultTags(resourceName, networkName string, tags, defau
 	}
 	`, networkName, resourceName, strings.Join(tagsList, ",\n\t"), strings.Join(defaultTagsList, ",\n\t"))
 }
+
+func TestAccTwingateResourceSecurityPolicyOnUpdate(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	theResource := acctests.TerraformResource(resourceName)
+	remoteNetworkName := test.RandomName()
+
+	_, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					// set new policy via API
+					acctests.UpdateResourceSecurityPolicy(theResource, testPolicy),
+				),
+			},
+			{
+				Config: createResourceWithUsageBasedAutolockDurationDays(remoteNetworkName, resourceName, 1),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+				),
+			},
+		},
+	})
+}

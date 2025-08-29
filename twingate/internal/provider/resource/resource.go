@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
@@ -913,6 +914,8 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 
 		if planSecurityPolicy != nil && *planSecurityPolicy == "" {
 			resource.SecurityPolicyID = planSecurityPolicy
+		} else if planSecurityPolicy == nil {
+			resource.SecurityPolicyID = nil
 		}
 	}
 
