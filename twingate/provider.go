@@ -9,13 +9,17 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	twingateDatasource "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/datasource"
 	twingateResource "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/resource"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -105,9 +109,86 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 						Optional:    true,
 						Description: fmt.Sprintf("Specifies whether the provider should cache resources. The default value is `%t`.", true),
 					},
+					attr.ResourcesFilter: schema.SingleNestedAttribute{
+						Optional:    true,
+						Description: "Specifies the filter for the resources to be cached.",
+						Attributes: map[string]schema.Attribute{
+							attr.Name: schema.StringAttribute{
+								Optional:    true,
+								Description: "Returns only resources that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.",
+							},
+							attr.Name + attr.FilterByRegexp: schema.StringAttribute{
+								Optional:    true,
+								Description: "The regular expression match of the name of the resource.",
+							},
+							attr.Name + attr.FilterByContains: schema.StringAttribute{
+								Optional:    true,
+								Description: "Match when the value exist in the name of the resource.",
+							},
+							attr.Name + attr.FilterByExclude: schema.StringAttribute{
+								Optional:    true,
+								Description: "Match when the exact value does not exist in the name of the resource.",
+							},
+							attr.Name + attr.FilterByPrefix: schema.StringAttribute{
+								Optional:    true,
+								Description: "The name of the resource must start with the value.",
+							},
+							attr.Name + attr.FilterBySuffix: schema.StringAttribute{
+								Optional:    true,
+								Description: "The name of the resource must end with the value.",
+							},
+							attr.Tags: schema.MapAttribute{
+								ElementType: types.StringType,
+								Optional:    true,
+								Description: "Returns only resources that exactly match the given tags.",
+							},
+						},
+					},
 					attr.GroupsEnabled: schema.BoolAttribute{
 						Optional:    true,
 						Description: fmt.Sprintf("Specifies whether the provider should cache groups. The default value is `%t`.", true),
+					},
+					attr.GroupsFilter: schema.SingleNestedAttribute{
+						Optional:    true,
+						Description: "Specifies the filter for the groups to be cached.",
+						Attributes: map[string]schema.Attribute{
+							attr.Name: schema.StringAttribute{
+								Optional:    true,
+								Description: "Returns only groups that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.",
+							},
+							attr.Name + attr.FilterByRegexp: schema.StringAttribute{
+								Optional:    true,
+								Description: "The regular expression match of the name of the group.",
+							},
+							attr.Name + attr.FilterByContains: schema.StringAttribute{
+								Optional:    true,
+								Description: "Match when the value exist in the name of the group.",
+							},
+							attr.Name + attr.FilterByExclude: schema.StringAttribute{
+								Optional:    true,
+								Description: "Match when the exact value does not exist in the name of the group.",
+							},
+							attr.Name + attr.FilterByPrefix: schema.StringAttribute{
+								Optional:    true,
+								Description: "The name of the group must start with the value.",
+							},
+							attr.Name + attr.FilterBySuffix: schema.StringAttribute{
+								Optional:    true,
+								Description: "The name of the group must end with the value.",
+							},
+							attr.IsActive: schema.BoolAttribute{
+								Optional:    true,
+								Description: "Returns only Groups matching the specified state.",
+							},
+							attr.Types: schema.SetAttribute{
+								Optional:    true,
+								ElementType: types.StringType,
+								Description: fmt.Sprintf("Returns groups that match a list of types. valid types: `%s`, `%s`, `%s`.", model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem),
+								Validators: []validator.Set{
+									setvalidator.ValueStringsAre(stringvalidator.OneOf(model.GroupTypeManual, model.GroupTypeSynced, model.GroupTypeSystem)),
+								},
+							},
+						},
 					},
 				},
 			},
@@ -162,6 +243,17 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 		return
 	}
 
+	cacheOpts, err := getCacheOptions(config.Cache)
+	if err != nil {
+		response.Diagnostics.AddAttributeError(
+			path.Root(attr.Cache),
+			"Issue in configuring Twingate "+attr.Cache,
+			fmt.Sprintf("Error: %v", err.Error()),
+		)
+
+		return
+	}
+
 	client := client.NewClient(url,
 		apiToken,
 		network,
@@ -169,7 +261,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 		httpMaxRetry,
 		t.agent,
 		t.version,
-		getCacheOptions(config.Cache))
+		cacheOpts)
 
 	response.DataSourceData = client
 	response.ResourceData = client
@@ -182,7 +274,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	twingateResource.DefaultTags = getDefaultTags(config.DefaultTags)
 }
 
-func getCacheOptions(config types.Object) client.CacheOptions {
+func getCacheOptions(config types.Object) (client.CacheOptions, error) {
 	var (
 		resourceEnabled = defaultResourceEnabled
 		groupsEnabled   = defaultGroupsEnabled
@@ -202,10 +294,51 @@ func getCacheOptions(config types.Object) client.CacheOptions {
 		}
 	}
 
+	resourcesFilter, err := parseResourcesFilter(config)
+	if err != nil {
+		return client.CacheOptions{}, fmt.Errorf("failed to parse resources filter: %s", err)
+	}
+
 	return client.CacheOptions{
 		ResourceEnabled: resourceEnabled,
 		GroupsEnabled:   groupsEnabled,
+		ResourcesFilter: resourcesFilter,
+		GroupsFilter:    nil,
+	}, nil
+}
+
+func parseResourcesFilter(config types.Object) (*model.ResourcesFilter, error) {
+	if config.IsNull() || config.IsUnknown() {
+		return nil, nil
 	}
+
+	filterObj := config.Attributes()[attr.ResourcesFilter].(types.Object)
+	if filterObj.IsNull() || filterObj.IsUnknown() {
+		return nil, nil
+	}
+
+	attrs := filterObj.Attributes()
+
+	name := attrs[attr.Name].(types.String)
+	nameRegexp := attrs[attr.Name+attr.FilterByRegexp].(types.String)
+	nameContains := attrs[attr.Name+attr.FilterByContains].(types.String)
+	nameExclude := attrs[attr.Name+attr.FilterByExclude].(types.String)
+	namePrefix := attrs[attr.Name+attr.FilterByPrefix].(types.String)
+	nameSuffix := attrs[attr.Name+attr.FilterBySuffix].(types.String)
+
+	value, filter := twingateDatasource.GetNameFilter(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix)
+
+	if twingateDatasource.CountOptionalAttributes(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix) > 1 {
+		return nil, twingateDatasource.ErrResourcesDatasourceShouldSetOneOptionalNameAttribute
+	}
+
+	tags := attrs[attr.Tags].(types.Map)
+
+	return &model.ResourcesFilter{
+		Name:       &value,
+		NameFilter: filter,
+		Tags:       twingateDatasource.GetTags(tags),
+	}, nil
 }
 
 func mustGetInt(str string) int {

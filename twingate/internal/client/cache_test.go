@@ -2,9 +2,10 @@ package client
 
 import (
 	"context"
-	attrs "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"reflect"
 	"testing"
+
+	attrs "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,14 @@ import (
 var skipCache = CacheOptions{}
 
 type mockClient struct {
+}
+
+func (m mockClient) ReadResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
+	return []*model.Resource{}, nil
+}
+
+func (m mockClient) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
+	return []*model.Group{}, nil
 }
 
 func (m mockClient) ReadFullResources(ctx context.Context) ([]*model.Resource, error) {
@@ -34,7 +43,7 @@ func TestClientCache_SetClient(t *testing.T) {
 
 func TestHandler_SetAndGetResource(t *testing.T) {
 	mockResource := &model.Resource{ID: "resource1"}
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return []*model.Resource{
 				mockResource,
@@ -54,7 +63,7 @@ func TestHandler_SetAndGetResource(t *testing.T) {
 
 func TestHandler_InvalidateResource(t *testing.T) {
 	mockResource := &model.Resource{ID: "resource2"}
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return []*model.Resource{
 				mockResource,
@@ -77,7 +86,7 @@ func TestHandler_Init(t *testing.T) {
 		{ID: "resource2"},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -98,7 +107,7 @@ func TestHandler_MatchGroupsByName(t *testing.T) {
 		{ID: "group2", Name: "test", IsActive: true, Type: model.GroupTypeSystem},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -125,7 +134,7 @@ func TestHandler_MatchGroupsByNameAndIsActive(t *testing.T) {
 		{ID: "group3", Name: "test", IsActive: false, Type: model.GroupTypeSystem},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -155,7 +164,7 @@ func TestHandler_MatchGroupsByNameAndType(t *testing.T) {
 		{ID: "group3", Name: "test", IsActive: false, Type: model.GroupTypeSystem},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -183,7 +192,7 @@ func TestHandler_MatchGroupsByNameAndTypeAndIsActive(t *testing.T) {
 		{ID: "group3", Name: "test", IsActive: false, Type: model.GroupTypeSystem},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -213,7 +222,7 @@ func TestHandler_MatchGroupsByTypeIsActiveNamePrefix(t *testing.T) {
 		{ID: "group3", Name: "test_b", IsActive: true, Type: model.GroupTypeSystem},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -244,7 +253,7 @@ func TestHandler_MatchGroupsByTypeIsActiveNameSuffix(t *testing.T) {
 		{ID: "group3", Name: "test_b", IsActive: true, Type: model.GroupTypeSystem},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -275,7 +284,7 @@ func TestHandler_MatchGroupsByTypeIsActiveNameContains(t *testing.T) {
 		{ID: "group3", Name: "test_b", IsActive: true, Type: model.GroupTypeSystem},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -306,7 +315,7 @@ func TestHandler_MatchGroupsByTypeNameExclude(t *testing.T) {
 		{ID: "group4", Name: "test_c", IsActive: true, Type: model.GroupTypeManual},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -336,7 +345,7 @@ func TestHandler_MatchGroupsByTypeNameRegexp(t *testing.T) {
 		{ID: "group4", Name: "test_c", IsActive: true, Type: model.GroupTypeManual},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -366,7 +375,7 @@ func TestHandler_MatchGroupsByTypeNameInvalidRegexp(t *testing.T) {
 		{ID: "group4", Name: "test_c", IsActive: true, Type: model.GroupTypeManual},
 	}
 
-	handler := &handler[*model.Group]{
+	handler := &handler[*model.Group, *model.GroupsFilter]{
 		readResources: func(ctx context.Context) ([]*model.Group, error) {
 			return mockResources, nil
 		},
@@ -390,7 +399,7 @@ func TestHandler_MatchResourcesByName(t *testing.T) {
 		{ID: "res2", Name: "test"},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -399,7 +408,7 @@ func TestHandler_MatchResourcesByName(t *testing.T) {
 	err := handler.init()
 	assert.NoError(t, err)
 
-	matched := handler.matchResources(&model.GroupsFilter{
+	matched := handler.matchResources(&model.ResourcesFilter{
 		Name: optionalString("test"),
 	})
 
@@ -417,7 +426,7 @@ func TestHandler_MatchResourcesByNameAndTag(t *testing.T) {
 		{ID: "res3", Name: "test", Tags: map[string]string{"env": "dev"}},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -445,7 +454,7 @@ func TestHandler_MatchResourceByNamePrefix(t *testing.T) {
 		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -474,7 +483,7 @@ func TestHandler_MatchResourceByNameSuffix(t *testing.T) {
 		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -503,7 +512,7 @@ func TestHandler_MatchResourceByNameContains(t *testing.T) {
 		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -533,7 +542,7 @@ func TestHandler_MatchResourceByNameExclude(t *testing.T) {
 		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -563,7 +572,7 @@ func TestHandler_MatchResourceByNameRegexp(t *testing.T) {
 		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -593,7 +602,7 @@ func TestHandler_MatchResourceByNameInvalidRegexp(t *testing.T) {
 		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
 	}
 
-	handler := &handler[*model.Resource]{
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return mockResources, nil
 		},
@@ -609,4 +618,39 @@ func TestHandler_MatchResourceByNameInvalidRegexp(t *testing.T) {
 	})
 
 	assert.Len(t, matched, 0)
+}
+
+func TestHandler_MatchResourceByNameWithFilter(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
+		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "test_app"}},
+	}
+
+	mockFilteredResources := []*model.Resource{
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+	}
+
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+		filterResources: func(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
+			return mockFilteredResources, nil
+		},
+		filter: &model.ResourcesFilter{
+			Tags: map[string]string{"app": "app"},
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		Tags: map[string]string{"app": "app"},
+	})
+
+	assert.Len(t, matched, 2)
 }
