@@ -12,8 +12,10 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	twingateDatasource "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/datasource"
 	twingateResource "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -299,11 +301,16 @@ func getCacheOptions(config types.Object) (client.CacheOptions, error) {
 		return client.CacheOptions{}, fmt.Errorf("failed to parse resources filter: %s", err)
 	}
 
+	groupsFilter, err := parseGroupFilter(config)
+	if err != nil {
+		return client.CacheOptions{}, fmt.Errorf("failed to parse groups filter: %s", err)
+	}
+
 	return client.CacheOptions{
 		ResourceEnabled: resourceEnabled,
 		GroupsEnabled:   groupsEnabled,
 		ResourcesFilter: resourcesFilter,
-		GroupsFilter:    nil,
+		GroupsFilter:    groupsFilter,
 	}, nil
 }
 
@@ -339,6 +346,52 @@ func parseResourcesFilter(config types.Object) (*model.ResourcesFilter, error) {
 		NameFilter: filter,
 		Tags:       twingateDatasource.GetTags(tags),
 	}, nil
+}
+
+func parseGroupFilter(config types.Object) (*model.GroupsFilter, error) {
+	if config.IsNull() || config.IsUnknown() {
+		return nil, nil
+	}
+
+	filterObj := config.Attributes()[attr.GroupsFilter].(types.Object)
+	if filterObj.IsNull() || filterObj.IsUnknown() {
+		return nil, nil
+	}
+
+	attrs := filterObj.Attributes()
+
+	name := attrs[attr.Name].(types.String)
+	nameRegexp := attrs[attr.Name+attr.FilterByRegexp].(types.String)
+	nameContains := attrs[attr.Name+attr.FilterByContains].(types.String)
+	nameExclude := attrs[attr.Name+attr.FilterByExclude].(types.String)
+	namePrefix := attrs[attr.Name+attr.FilterByPrefix].(types.String)
+	nameSuffix := attrs[attr.Name+attr.FilterBySuffix].(types.String)
+
+	value, filter := twingateDatasource.GetNameFilter(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix)
+
+	if twingateDatasource.CountOptionalAttributes(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix) > 1 {
+		return nil, twingateDatasource.ErrResourcesDatasourceShouldSetOneOptionalNameAttribute
+	}
+
+	groupFilter := &model.GroupsFilter{
+		Name:       &value,
+		NameFilter: filter,
+		IsActive:   attrs[attr.IsActive].(types.Bool).ValueBoolPointer(),
+	}
+
+	groupTypes := attrs[attr.Types].(types.Set).Elements()
+
+	if len(groupTypes) > 0 {
+		groupFilter.Types = utils.Map(groupTypes, func(item tfattr.Value) string {
+			return item.(types.String).ValueString()
+		})
+	}
+
+	if groupFilter.Name == nil && len(groupFilter.Types) == 0 && groupFilter.IsActive == nil {
+		return nil, nil
+	}
+
+	return groupFilter, nil
 }
 
 func mustGetInt(str string) int {

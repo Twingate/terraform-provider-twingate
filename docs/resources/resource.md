@@ -24,6 +24,17 @@ provider "twingate" {
       cloud = "AWS"
     }
   }
+
+  cache = {
+    groups_enabled = false
+    resources_filter = {
+      name_prefix = "prod-"
+
+      tags = {
+        cloud = "AWS"
+      }
+    }
+  }
 }
 
 resource "twingate_remote_network" "aws_network" {
