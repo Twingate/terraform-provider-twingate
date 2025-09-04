@@ -29,6 +29,20 @@ func (r Resources) ToModel() []*model.Resource {
 	})
 }
 
+type ReadFullResourcesByName struct {
+	FullResources `graphql:"resources(filter: $filter, after: $resourcesEndCursor, first: $pageLimit)"`
+}
+
+func (r ReadFullResourcesByName) IsEmpty() bool {
+	return len(r.Edges) == 0
+}
+
+func (r ReadFullResourcesByName) ToModel() []*model.Resource {
+	return utils.Map[*FullResourceEdge, *model.Resource](r.Edges, func(edge *FullResourceEdge) *model.Resource {
+		return edge.Node.ToModel()
+	})
+}
+
 type ReadFullResources struct {
 	FullResources `graphql:"resources(after: $resourcesEndCursor, first: $pageLimit)"`
 }

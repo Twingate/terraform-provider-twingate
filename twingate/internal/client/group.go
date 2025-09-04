@@ -137,6 +137,36 @@ func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]
 	return &response.PaginatedResource, nil
 }
 
+func (client *Client) ReadFullGroupsByName(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
+	opr := resourceGroup.read().withCustomName("readFullGroupsByName")
+
+	variables := newVars(
+		gqlNullable(query.NewGroupFilterInput(filter), "filter"),
+		cursor(query.CursorGroups),
+		cursor(query.CursorUsers),
+		pageLimit(extendedPageLimit),
+	)
+
+	response := query.ReadGroups{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
+		return nil, err
+	}
+
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.FetchPages(oprCtx, client.readGroupsAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
+	for i, group := range response.Edges {
+		if err := response.Edges[i].Node.Users.FetchPages(oprCtx, client.readGroupUsersAfter, newVars(pageLimit(client.pageLimit), gqlID(group.Node.ID))); err != nil {
+			return nil, fmt.Errorf("%s: failed to read users for group %s: %w", opr.String(), group.Node.ID, err)
+		}
+	}
+
+	return response.ToModel(), nil
+}
+
 func (client *Client) ReadFullGroups(ctx context.Context) ([]*model.Group, error) {
 	opr := resourceGroup.read().withCustomName("readFullGroups")
 
