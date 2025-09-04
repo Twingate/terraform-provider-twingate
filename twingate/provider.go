@@ -71,6 +71,7 @@ func (t Twingate) Metadata(ctx context.Context, request provider.MetadataRequest
 	response.Version = t.version
 }
 
+//nolint:funlen
 func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, response *provider.SchemaResponse) {
 	response.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
@@ -209,6 +210,7 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 	}
 }
 
+//nolint:funlen
 func (t Twingate) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
 	var config twingateProviderModel
 
@@ -298,12 +300,12 @@ func getCacheOptions(config types.Object) (client.CacheOptions, error) {
 
 	resourcesFilter, err := parseResourcesFilter(config)
 	if err != nil {
-		return client.CacheOptions{}, fmt.Errorf("failed to parse resources filter: %s", err)
+		return client.CacheOptions{}, fmt.Errorf("failed to parse resources filter: %w", err)
 	}
 
 	groupsFilter, err := parseGroupFilter(config)
 	if err != nil {
-		return client.CacheOptions{}, fmt.Errorf("failed to parse groups filter: %s", err)
+		return client.CacheOptions{}, fmt.Errorf("failed to parse groups filter: %w", err)
 	}
 
 	return client.CacheOptions{
@@ -316,11 +318,13 @@ func getCacheOptions(config types.Object) (client.CacheOptions, error) {
 
 func parseResourcesFilter(config types.Object) (*model.ResourcesFilter, error) {
 	if config.IsNull() || config.IsUnknown() {
+		//nolint:nilnil
 		return nil, nil
 	}
 
 	filterObj := config.Attributes()[attr.ResourcesFilter].(types.Object)
 	if filterObj.IsNull() || filterObj.IsUnknown() {
+		//nolint:nilnil
 		return nil, nil
 	}
 
@@ -350,11 +354,13 @@ func parseResourcesFilter(config types.Object) (*model.ResourcesFilter, error) {
 
 func parseGroupFilter(config types.Object) (*model.GroupsFilter, error) {
 	if config.IsNull() || config.IsUnknown() {
+		//nolint:nilnil
 		return nil, nil
 	}
 
 	filterObj := config.Attributes()[attr.GroupsFilter].(types.Object)
 	if filterObj.IsNull() || filterObj.IsUnknown() {
+		//nolint:nilnil
 		return nil, nil
 	}
 
@@ -388,6 +394,7 @@ func parseGroupFilter(config types.Object) (*model.GroupsFilter, error) {
 	}
 
 	if groupFilter.Name == nil && len(groupFilter.Types) == 0 && groupFilter.IsActive == nil {
+		//nolint:nilnil
 		return nil, nil
 	}
 

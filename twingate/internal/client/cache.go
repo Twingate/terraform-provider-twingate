@@ -298,6 +298,7 @@ func lazyLoadResources[T any]() {
 
 func isNil(obj any) bool {
 	val := reflect.ValueOf(obj)
+	//nolint:exhaustive
 	switch val.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
 		return val.IsNil()
