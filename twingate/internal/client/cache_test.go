@@ -16,11 +16,11 @@ var skipCache = CacheOptions{}
 type mockClient struct {
 }
 
-func (m mockClient) ReadResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
+func (m mockClient) ReadFullResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
 	return []*model.Resource{}, nil
 }
 
-func (m mockClient) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
+func (m mockClient) ReadFullGroupsByName(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
 	return []*model.Group{}, nil
 }
 
