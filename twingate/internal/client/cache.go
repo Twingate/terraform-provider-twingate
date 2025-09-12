@@ -289,9 +289,10 @@ func matchResources[T any](filter model.ResourceFilter) []T {
 	return matched
 }
 
-func isCacheReady[T any]() (ready bool) {
+func isCacheReady[T any]() bool {
 	var (
-		res T
+		res   T
+		ready = false
 	)
 
 	handle(res, func(handler resourceHandler) {
