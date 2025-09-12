@@ -16,6 +16,8 @@ const cacheKey = "cache"
 type CacheOptions struct {
 	ResourceEnabled bool
 	GroupsEnabled   bool
+	ResourcesFilter *model.ResourcesFilter
+	GroupsFilter    *model.GroupsFilter
 }
 
 var cache = &clientCache{} //nolint:gochecknoglobals
@@ -28,18 +30,25 @@ type clientCache struct {
 type ReadClient interface {
 	ReadFullResources(ctx context.Context) ([]*model.Resource, error)
 	ReadFullGroups(ctx context.Context) ([]*model.Group, error)
+
+	ReadFullResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error)
+	ReadFullGroupsByName(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error)
 }
 
 func (c *clientCache) setClient(client ReadClient, opts CacheOptions) {
 	c.once.Do(func() {
 		c.handlers = map[string]resourceHandler{
-			reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource]{
-				enabled:       opts.ResourceEnabled,
-				readResources: client.ReadFullResources,
+			reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource, *model.ResourcesFilter]{
+				enabled:         opts.ResourceEnabled,
+				readResources:   client.ReadFullResources,
+				filter:          opts.ResourcesFilter,
+				filterResources: client.ReadFullResourcesByName,
 			},
-			reflect.TypeOf(&model.Group{}).String(): &handler[*model.Group]{
-				enabled:       opts.GroupsEnabled,
-				readResources: client.ReadFullGroups,
+			reflect.TypeOf(&model.Group{}).String(): &handler[*model.Group, *model.GroupsFilter]{
+				enabled:         opts.GroupsEnabled,
+				readResources:   client.ReadFullGroups,
+				filter:          opts.GroupsFilter,
+				filterResources: client.ReadFullGroupsByName,
 			},
 		}
 
@@ -51,20 +60,21 @@ func (c *clientCache) setClient(client ReadClient, opts CacheOptions) {
 					return handler.init()
 				}
 
-				log.Printf("[DEBUG] cache init for type %v: skipped.", handlerType)
+				log.Printf("[TWINGATE_LOG] cache init for type %v: skipped.", handlerType)
 
 				return nil
 			})
 		}
 
 		if err := group.Wait(); err != nil {
-			log.Printf("[ERR] cache init failed: %s", err.Error())
+			log.Printf("[TWINGATE_LOG] [ERR] cache init failed: %s", err.Error())
 		}
 	})
 }
 
 type resourceHandler interface {
 	isEnabled() bool
+	isFilterSet() bool
 	init() error
 	getResource(resourceID string) (any, bool)
 	setResource(resource identifiable)
@@ -79,19 +89,25 @@ type identifiable interface {
 
 type readResourcesFunc[T identifiable] func(ctx context.Context) ([]T, error)
 
-type handler[T identifiable] struct {
+type handler[T identifiable, F any] struct {
 	once    sync.Once
 	enabled bool
+	filter  F
 
-	resources     sync.Map
-	readResources readResourcesFunc[T]
+	resources       sync.Map
+	readResources   readResourcesFunc[T]
+	filterResources func(ctx context.Context, filter F) ([]T, error)
 }
 
-func (h *handler[T]) isEnabled() bool {
+func (h *handler[T, F]) isEnabled() bool {
 	return h.enabled
 }
 
-func (h *handler[T]) getResource(resourceID string) (any, bool) {
+func (h *handler[T, F]) isFilterSet() bool {
+	return !isNil(h.filter)
+}
+
+func (h *handler[T, F]) getResource(resourceID string) (any, bool) {
 	var emptyObj T
 
 	if h.readResources == nil {
@@ -107,7 +123,7 @@ func (h *handler[T]) getResource(resourceID string) (any, bool) {
 	obj, err := copystructure.Copy(res)
 
 	if err != nil {
-		log.Printf("[ERR] %T failed copy object from cache: %s", emptyObj, err.Error())
+		log.Printf("[TWINGATE_LOG] [ERR] %T failed copy object from cache: %s", emptyObj, err.Error())
 
 		return emptyObj, false
 	}
@@ -115,7 +131,7 @@ func (h *handler[T]) getResource(resourceID string) (any, bool) {
 	return obj, exists
 }
 
-func (h *handler[T]) matchResources(filter model.ResourceFilter) []any {
+func (h *handler[T, F]) matchResources(filter model.ResourceFilter) []any {
 	var matched []any
 
 	h.resources.Range(func(key, value any) bool {
@@ -130,21 +146,21 @@ func (h *handler[T]) matchResources(filter model.ResourceFilter) []any {
 	return matched
 }
 
-func (h *handler[T]) setResource(resource identifiable) {
+func (h *handler[T, F]) setResource(resource identifiable) {
 	if resource == nil {
 		return
 	}
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("[ERR] setResource failed: %v", r)
+			log.Printf("[TWINGATE_LOG] [ERR] setResource failed: %v", r)
 		}
 	}()
 
 	obj, err := copystructure.Copy(resource)
 
 	if err != nil {
-		log.Printf("[ERR] %T failed store object to cache: %s", resource, err.Error())
+		log.Printf("[TWINGATE_LOG] [ERR] %T failed store object to cache: %s", resource, err.Error())
 
 		return
 	}
@@ -152,29 +168,40 @@ func (h *handler[T]) setResource(resource identifiable) {
 	h.resources.Store(resource.GetID(), obj)
 }
 
-func (h *handler[T]) setResources(resources []T) {
+func (h *handler[T, F]) setResources(resources []T) {
 	for _, resource := range resources {
 		h.setResource(resource)
 	}
 }
 
-func (h *handler[T]) invalidateResource(id string) {
+func (h *handler[T, F]) invalidateResource(id string) {
 	h.resources.Delete(id)
 }
 
-func (h *handler[T]) init() error {
+func (h *handler[T, F]) init() error {
 	var initErr error
 
 	h.once.Do(func() {
 		var (
-			res T
+			res       T
+			err       error
+			resources []T
 		)
 
-		log.Printf("[DEBUG] cache init for type %T: started.", res)
+		log.Printf("[TWINGATE_LOG] cache init for type %T: started. Filter set: %v.", res, !isNil(h.filter))
 
-		resources, err := h.readResources(WithCallerCtx(context.Background(), cacheKey))
+		if isNil(h.filter) {
+			// read all resources
+			resources, err = h.readResources(WithCallerCtx(context.Background(), cacheKey))
+		} else {
+			log.Printf("[TWINGATE_LOG] cache init for type %T: started. Applying filter: %v.", res, h.filter)
+
+			// read filtered resources
+			resources, err = h.filterResources(WithCallerCtx(context.Background(), cacheKey), h.filter)
+		}
+
 		if err != nil {
-			log.Printf("[ERR] cache init for type %T failed: %s", res, err.Error())
+			log.Printf("[TWINGATE_LOG] [ERR] cache init for type %T failed: %s", res, err.Error())
 
 			initErr = err
 
@@ -183,7 +210,7 @@ func (h *handler[T]) init() error {
 
 		h.setResources(resources)
 
-		log.Printf("[DEBUG] cache init for type %T: finished.", res)
+		log.Printf("[TWINGATE_LOG] cache init for type %T: finished.", res)
 	})
 
 	return initErr
@@ -203,7 +230,7 @@ func getResource[T any](resourceID string) (T, bool) {
 
 		obj, ok := resource.(T)
 		if !ok {
-			log.Printf("[ERR] getResource failed: expected type %T, got %T", res, resource)
+			log.Printf("[TWINGATE_LOG] [ERR] getResource failed: expected type %T, got %T", res, resource)
 
 			return
 		}
@@ -250,7 +277,7 @@ func matchResources[T any](filter model.ResourceFilter) []T {
 		for _, resource := range resources {
 			obj, ok := resource.(T)
 			if !ok {
-				log.Printf("[ERR] matchResources failed: expected type %T, got %T", res, resource)
+				log.Printf("[TWINGATE_LOG] [ERR] matchResources failed: expected type %T, got %T", res, resource)
 
 				return
 			}
@@ -262,14 +289,26 @@ func matchResources[T any](filter model.ResourceFilter) []T {
 	return matched
 }
 
-func lazyLoadResources[T any]() {
+func isCacheReady[T any]() bool {
 	var (
-		res T
+		res   T
+		ready = false
 	)
 
 	handle(res, func(handler resourceHandler) {
-		if err := handler.init(); err != nil {
-			log.Printf("[ERR] lazyLoadResources for type %T failed: %s", res, err.Error())
-		}
+		ready = handler.isEnabled() && !handler.isFilterSet()
 	})
+
+	return ready
+}
+
+func isNil(obj any) bool {
+	val := reflect.ValueOf(obj)
+	//nolint:exhaustive
+	switch val.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return val.IsNil()
+	default:
+		return false
+	}
 }

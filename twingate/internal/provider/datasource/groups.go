@@ -154,7 +154,7 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 		return
 	}
 
-	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrGroupsDatasourceShouldSetOneOptionalNameAttribute, TwingateGroups)
 
 		return

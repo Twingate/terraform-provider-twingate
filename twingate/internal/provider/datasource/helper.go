@@ -19,7 +19,7 @@ func addErr(diagnostics *diag.Diagnostics, err error, resource string) {
 	)
 }
 
-func countOptionalAttributes(attributes ...types.String) int {
+func CountOptionalAttributes(attributes ...types.String) int {
 	var count int
 
 	for _, attr := range attributes {
@@ -31,7 +31,7 @@ func countOptionalAttributes(attributes ...types.String) int {
 	return count
 }
 
-func getNameFilter(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix types.String) (string, string) {
+func GetNameFilter(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix types.String) (string, string) {
 	var value, filter string
 
 	if name.ValueString() != "" {
