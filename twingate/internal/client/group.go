@@ -82,19 +82,20 @@ func (client *Client) ReadGroup(ctx context.Context, groupID string) (*model.Gro
 func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
 	opr := resourceGroup.read().withCustomName("readGroups")
 
-	lazyLoadResources[*model.Group]()
+	// cache is not used when cache filter config set or cache disabled
+	if isCacheReady[*model.Group]() {
+		if matched := matchResources[*model.Group](filter); len(matched) > 0 {
+			log.Printf(
+				"[DEBUG] ReadGroups: matched #%d groups from cache: %v",
+				len(matched), utils.Map(matched, func(item *model.Group) string {
+					return item.Name
+				}))
 
-	if matched := matchResources[*model.Group](filter); len(matched) > 0 {
-		log.Printf(
-			"[DEBUG] ReadGroups: matched #%d groups from cache: %v",
-			len(matched), utils.Map(matched, func(item *model.Group) string {
-				return item.Name
-			}))
+			return matched, nil
+		}
 
-		return matched, nil
+		log.Println("[DEBUG] ReadGroups: no matched groups in cache: fallback to query API")
 	}
-
-	log.Println("[DEBUG] ReadGroups: no matched groups in cache: fallback to query API")
 
 	variables := newVars(
 		gqlNullable(query.NewGroupFilterInput(filter), "filter"),

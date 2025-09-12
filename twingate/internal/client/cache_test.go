@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -653,4 +654,152 @@ func TestHandler_MatchResourceByNameWithFilter(t *testing.T) {
 	})
 
 	assert.Len(t, matched, 2)
+}
+
+func TestHandler_ResourcesCacheReady(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+	}
+
+	mockFilteredResources := []*model.Resource{
+		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+	}
+
+	tests := []struct {
+		handler         *handler[*model.Resource, *model.ResourcesFilter]
+		expectedIsReady bool
+	}{
+		{
+			handler: &handler[*model.Resource, *model.ResourcesFilter]{
+				enabled: true,
+				readResources: func(ctx context.Context) ([]*model.Resource, error) {
+					return mockResources, nil
+				},
+				filterResources: func(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
+					return mockFilteredResources, nil
+				},
+				filter: &model.ResourcesFilter{
+					Tags: map[string]string{"app": "app"},
+				},
+			},
+			expectedIsReady: false,
+		},
+		{
+			handler: &handler[*model.Resource, *model.ResourcesFilter]{
+				enabled: false,
+				readResources: func(ctx context.Context) ([]*model.Resource, error) {
+					return mockResources, nil
+				},
+				filterResources: func(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
+					return mockFilteredResources, nil
+				},
+				filter: &model.ResourcesFilter{
+					Tags: map[string]string{"app": "app"},
+				},
+			},
+			expectedIsReady: false,
+		},
+		{
+			handler: &handler[*model.Resource, *model.ResourcesFilter]{
+				enabled: true,
+				readResources: func(ctx context.Context) ([]*model.Resource, error) {
+					return mockResources, nil
+				},
+			},
+			expectedIsReady: true,
+		},
+		{
+			handler: &handler[*model.Resource, *model.ResourcesFilter]{
+				enabled: false,
+				readResources: func(ctx context.Context) ([]*model.Resource, error) {
+					return mockResources, nil
+				},
+			},
+			expectedIsReady: false,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
+			isReady := test.handler.isEnabled() && !test.handler.isFilterSet()
+			assert.Equal(t, test.expectedIsReady, isReady)
+		})
+	}
+}
+
+func TestHandler_GroupsCacheReady(t *testing.T) {
+	mockGroups := []*model.Group{
+		{ID: "group1", Name: "prod_new_ok", IsActive: true, Type: model.GroupTypeManual},
+		{ID: "group4", Name: "test_c", IsActive: true, Type: model.GroupTypeManual},
+	}
+
+	mockFilteredGroups := []*model.Group{
+		{ID: "group3", Name: "test_b", IsActive: false, Type: model.GroupTypeSystem},
+	}
+
+	isActive := false
+
+	tests := []struct {
+		handler         *handler[*model.Group, *model.GroupsFilter]
+		expectedIsReady bool
+	}{
+		{
+			handler: &handler[*model.Group, *model.GroupsFilter]{
+				enabled: true,
+				readResources: func(ctx context.Context) ([]*model.Group, error) {
+					return mockGroups, nil
+				},
+				filterResources: func(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
+					return mockFilteredGroups, nil
+				},
+				filter: &model.GroupsFilter{
+					IsActive: &isActive,
+					Types:    []string{model.GroupTypeSystem},
+				},
+			},
+			expectedIsReady: false,
+		},
+		{
+			handler: &handler[*model.Group, *model.GroupsFilter]{
+				enabled: false,
+				readResources: func(ctx context.Context) ([]*model.Group, error) {
+					return mockGroups, nil
+				},
+				filterResources: func(ctx context.Context, filter *model.GroupsFilter) ([]*model.Group, error) {
+					return mockFilteredGroups, nil
+				},
+				filter: &model.GroupsFilter{
+					IsActive: &isActive,
+					Types:    []string{model.GroupTypeSystem},
+				},
+			},
+			expectedIsReady: false,
+		},
+		{
+			handler: &handler[*model.Group, *model.GroupsFilter]{
+				enabled: true,
+				readResources: func(ctx context.Context) ([]*model.Group, error) {
+					return mockGroups, nil
+				},
+			},
+			expectedIsReady: true,
+		},
+		{
+			handler: &handler[*model.Group, *model.GroupsFilter]{
+				enabled: false,
+				readResources: func(ctx context.Context) ([]*model.Group, error) {
+					return mockGroups, nil
+				},
+			},
+			expectedIsReady: false,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
+			isReady := test.handler.isEnabled() && !test.handler.isFilterSet()
+			assert.Equal(t, test.expectedIsReady, isReady)
+		})
+	}
 }

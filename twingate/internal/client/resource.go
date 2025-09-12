@@ -402,20 +402,20 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
-	log.Printf("[DEBUG] ReadResourcesByName lazyLoad. Filter: %v, tags: %v", filter.NameFilter, filter.Tags)
-	lazyLoadResources[*model.Resource]()
+	// cache is not used when cache filter config set or cache disabled
+	if isCacheReady[*model.Resource]() {
+		if matched := matchResources[*model.Resource](filter); len(matched) > 0 {
+			log.Printf(
+				"[DEBUG] ReadResourcesByName: matched #%d resources from cache: %v",
+				len(matched), utils.Map(matched, func(item *model.Resource) string {
+					return item.Name
+				}))
 
-	if matched := matchResources[*model.Resource](filter); len(matched) > 0 {
-		log.Printf(
-			"[DEBUG] ReadResourcesByName: matched #%d resources from cache: %v",
-			len(matched), utils.Map(matched, func(item *model.Resource) string {
-				return item.Name
-			}))
+			return matched, nil
+		}
 
-		return matched, nil
+		log.Println("[DEBUG] ReadResourcesByName: no matched resource in cache: fallback to query API")
 	}
-
-	log.Println("[DEBUG] ReadResourcesByName: no matched resource in cache: fallback to query API")
 
 	variables := newVars(
 		gqlNullable(query.NewResourceFilterInput(filter.GetName(), filter.GetFilterBy(), filter.GetTags()), "filter"),

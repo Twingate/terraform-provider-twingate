@@ -74,6 +74,7 @@ func (c *clientCache) setClient(client ReadClient, opts CacheOptions) {
 
 type resourceHandler interface {
 	isEnabled() bool
+	isFilterSet() bool
 	init() error
 	getResource(resourceID string) (any, bool)
 	setResource(resource identifiable)
@@ -100,6 +101,10 @@ type handler[T identifiable, F any] struct {
 
 func (h *handler[T, F]) isEnabled() bool {
 	return h.enabled
+}
+
+func (h *handler[T, F]) isFilterSet() bool {
+	return !isNil(h.filter)
 }
 
 func (h *handler[T, F]) getResource(resourceID string) (any, bool) {
@@ -284,16 +289,16 @@ func matchResources[T any](filter model.ResourceFilter) []T {
 	return matched
 }
 
-func lazyLoadResources[T any]() {
+func isCacheReady[T any]() (ready bool) {
 	var (
 		res T
 	)
 
 	handle(res, func(handler resourceHandler) {
-		if err := handler.init(); err != nil {
-			log.Printf("[TWINGATE_LOG] [ERR] lazyLoadResources for type %T failed: %s", res, err.Error())
-		}
+		ready = handler.isEnabled() && !handler.isFilterSet()
 	})
+
+	return ready
 }
 
 func isNil(obj any) bool {
