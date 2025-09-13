@@ -140,7 +140,7 @@ func (r *user) Create(ctx context.Context, req resource.CreateRequest, resp *res
 		Email:     plan.Email.ValueString(),
 		FirstName: plan.FirstName.ValueString(),
 		LastName:  plan.LastName.ValueString(),
-		Role:      withDefaultValue(plan.Role.ValueString(), model.UserRoleMember),
+		Role:      withDefaultValue(plan.Role.ValueString(), model.DefaultUserRole),
 		IsActive:  convertIsActiveFlag(plan.IsActive),
 	})
 
