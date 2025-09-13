@@ -203,7 +203,7 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 						},
 						attr.Role: schema.StringAttribute{
 							Computed:    true,
-							Description: fmt.Sprintf("Indicates the User's role. Either %s, %s, %s, or %s.", model.UserRoleAdmin, model.UserRoleDevops, model.UserRoleSupport, model.UserRoleMember),
+							Description: fmt.Sprintf("Indicates the User's role. Either %s.", utils.DocList(model.UserRoles)),
 						},
 						attr.Type: schema.StringAttribute{
 							Computed:    true,

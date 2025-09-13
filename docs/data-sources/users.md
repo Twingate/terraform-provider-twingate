@@ -78,5 +78,5 @@ Read-Only:
 - `first_name` (String) The first name of the User
 - `id` (String) The ID of the User
 - `last_name` (String) The last name of the User
-- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, or MEMBER.
+- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, MEMBER or ACCESS_REVIEWER.
 - `type` (String) Indicates the User's type. Either MANUAL or SYNCED.
