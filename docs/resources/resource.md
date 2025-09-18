@@ -24,6 +24,17 @@ provider "twingate" {
       cloud = "AWS"
     }
   }
+
+  cache = {
+    groups_enabled = false
+    resources_filter = {
+      name_prefix = "prod-"
+
+      tags = {
+        cloud = "AWS"
+      }
+    }
+  }
 }
 
 resource "twingate_remote_network" "aws_network" {
@@ -112,9 +123,7 @@ resource "twingate_resource" "resource" {
   // A `for_each` block may be used like above to assign access to multiple
   // service accounts in a single configuration block.
   access_service {
-    content {
-      service_account_id = twingate_service_account.github_actions_prod.id
-    }
+    service_account_id = twingate_service_account.github_actions_prod.id
   }
 
   is_active = true
