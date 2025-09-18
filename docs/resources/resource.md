@@ -123,7 +123,9 @@ resource "twingate_resource" "resource" {
   // A `for_each` block may be used like above to assign access to multiple
   // service accounts in a single configuration block.
   access_service {
-    service_account_id = twingate_service_account.github_actions_prod.id
+    content {
+      service_account_id = twingate_service_account.github_actions_prod.id
+    }
   }
 
   is_active = true
