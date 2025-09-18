@@ -247,6 +247,49 @@ func (client *Client) ReadFullResources(ctx context.Context) ([]*model.Resource,
 	return response.ToModel(), nil
 }
 
+func (client *Client) ReadFullResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
+	opr := resourceResource.read().withCustomName("readFullResourcesByName")
+
+	variables := newVars(
+		gqlNullable(query.NewResourceFilterInput(filter.GetName(), filter.GetFilterBy(), filter.GetTags()), "filter"),
+		cursor(query.CursorAccess),
+		cursor(query.CursorResources),
+		pageLimit(extendedPageLimit),
+	)
+
+	response := query.ReadFullResourcesByName{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+		return nil, err
+	}
+
+	oprCtx := withOperationCtx(ctx, opr)
+
+	if err := response.FetchPages(oprCtx, client.readFullResourcesByNameAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
+	for i := range response.Edges {
+		if err := response.Edges[i].Node.Access.FetchPages(oprCtx, client.readExtendedResourceAccessAfter, newVars(gqlID(response.Edges[i].Node.ID))); err != nil {
+			return nil, err //nolint:wrapcheck
+		}
+	}
+
+	return response.ToModel(), nil
+}
+
+func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
+	opr := resourceResource.read().withCustomName("readFullResourcesByNameAfter")
+
+	variables[query.CursorResources] = cursor
+
+	response := query.ReadFullResourcesByName{}
+	if err := client.query(ctx, &response, variables, opr); err != nil {
+		return nil, err
+	}
+
+	return &response.PaginatedResource, nil
+}
+
 func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readFullResourcesAfter")
 
@@ -359,19 +402,20 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
-	lazyLoadResources[*model.Resource]()
+	// cache is not used when cache filter config set or cache disabled
+	if isCacheReady[*model.Resource]() {
+		if matched := matchResources[*model.Resource](filter); len(matched) > 0 {
+			log.Printf(
+				"[DEBUG] ReadResourcesByName: matched #%d resources from cache: %v",
+				len(matched), utils.Map(matched, func(item *model.Resource) string {
+					return item.Name
+				}))
 
-	if matched := matchResources[*model.Resource](filter); len(matched) > 0 {
-		log.Printf(
-			"[DEBUG] ReadResourcesByName: matched #%d resources from cache: %v",
-			len(matched), utils.Map(matched, func(item *model.Resource) string {
-				return item.Name
-			}))
+			return matched, nil
+		}
 
-		return matched, nil
+		log.Println("[DEBUG] ReadResourcesByName: no matched resource in cache: fallback to query API")
 	}
-
-	log.Println("[DEBUG] ReadResourcesByName: no matched resource in cache: fallback to query API")
 
 	variables := newVars(
 		gqlNullable(query.NewResourceFilterInput(filter.GetName(), filter.GetFilterBy(), filter.GetTags()), "filter"),

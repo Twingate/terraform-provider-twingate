@@ -227,27 +227,27 @@ func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 	}
 
 	// email
-	email, emailFilter := getNameFilter(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix)
+	email, emailFilter := GetNameFilter(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix)
 
-	if countOptionalAttributes(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix) > 1 {
+	if CountOptionalAttributes(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalEmailAttribute, TwingateResources)
 
 		return
 	}
 
 	// first name
-	firstName, firstNameFilter := getNameFilter(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix)
+	firstName, firstNameFilter := GetNameFilter(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix)
 
-	if countOptionalAttributes(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix) > 1 {
+	if CountOptionalAttributes(data.FirstName, data.FirstNameRegexp, data.FirstNameContains, data.FirstNameExclude, data.FirstNamePrefix, data.FirstNameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute, TwingateResources)
 
 		return
 	}
 
 	// last name
-	lastName, lastNameFilter := getNameFilter(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix)
+	lastName, lastNameFilter := GetNameFilter(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix)
 
-	if countOptionalAttributes(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix) > 1 {
+	if CountOptionalAttributes(data.LastName, data.LastNameRegexp, data.LastNameContains, data.LastNameExclude, data.LastNamePrefix, data.LastNameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute, TwingateResources)
 
 		return
