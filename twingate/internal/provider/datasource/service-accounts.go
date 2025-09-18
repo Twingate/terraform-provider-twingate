@@ -137,9 +137,9 @@ func (d *serviceAccounts) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	name, filter := getNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+	name, filter := GetNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
 
-	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrServiceAccountsDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
 
 		return
