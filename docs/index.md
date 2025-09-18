@@ -60,7 +60,38 @@ This is optional and shouldn't be changed under normal circumstances.
 Optional:
 
 - `groups_enabled` (Boolean) Specifies whether the provider should cache groups. The default value is `true`.
+- `groups_filter` (Attributes) Specifies the filter for the groups to be cached. (see [below for nested schema](#nestedatt--cache--groups_filter))
 - `resource_enabled` (Boolean) Specifies whether the provider should cache resources. The default value is `true`.
+- `resources_filter` (Attributes) Specifies the filter for the resources to be cached. (see [below for nested schema](#nestedatt--cache--resources_filter))
+
+<a id="nestedatt--cache--groups_filter"></a>
+### Nested Schema for `cache.groups_filter`
+
+Optional:
+
+- `is_active` (Boolean) Returns only Groups matching the specified state.
+- `name` (String) Returns only groups that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.
+- `name_contains` (String) Match when the value exist in the name of the group.
+- `name_exclude` (String) Match when the exact value does not exist in the name of the group.
+- `name_prefix` (String) The name of the group must start with the value.
+- `name_regexp` (String) The regular expression match of the name of the group.
+- `name_suffix` (String) The name of the group must end with the value.
+- `types` (Set of String) Returns groups that match a list of types. valid types: `MANUAL`, `SYNCED`, `SYSTEM`.
+
+
+<a id="nestedatt--cache--resources_filter"></a>
+### Nested Schema for `cache.resources_filter`
+
+Optional:
+
+- `name` (String) Returns only resources that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.
+- `name_contains` (String) Match when the value exist in the name of the resource.
+- `name_exclude` (String) Match when the exact value does not exist in the name of the resource.
+- `name_prefix` (String) The name of the resource must start with the value.
+- `name_regexp` (String) The regular expression match of the name of the resource.
+- `name_suffix` (String) The name of the resource must end with the value.
+- `tags` (Map of String) Returns only resources that exactly match the given tags.
+
 
 
 <a id="nestedatt--default_tags"></a>

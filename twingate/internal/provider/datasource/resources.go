@@ -179,9 +179,9 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		return
 	}
 
-	name, filter := getNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+	name, filter := GetNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
 
-	if countOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
 		addErr(&resp.Diagnostics, ErrResourcesDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
 
 		return
@@ -190,7 +190,7 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 	resources, err := d.client.ReadResourcesByName(client.WithCallerCtx(ctx, datasourceKey), &model.ResourcesFilter{
 		Name:       &name,
 		NameFilter: filter,
-		Tags:       getTags(data.Tags),
+		Tags:       GetTags(data.Tags),
 	})
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateResources)
@@ -205,7 +205,7 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func getTags(rawTags types.Map) map[string]string {
+func GetTags(rawTags types.Map) map[string]string {
 	if rawTags.IsNull() || rawTags.IsUnknown() || len(rawTags.Elements()) == 0 {
 		return nil
 	}

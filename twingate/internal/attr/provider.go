@@ -10,4 +10,6 @@ const (
 	ResourceEnabled = "resource_enabled"
 	GroupsEnabled   = "groups_enabled"
 	DefaultTags     = "default_tags"
+	ResourcesFilter = "resources_filter"
+	GroupsFilter    = "groups_filter"
 )
