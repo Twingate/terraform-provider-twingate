@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -269,6 +270,7 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 
 	response.DataSourceData = client
 	response.ResourceData = client
+	response.EphemeralResourceData = client
 
 	policy, _ := client.ReadSecurityPolicy(ctx, "", twingateResource.DefaultSecurityPolicyName)
 	if policy != nil {
@@ -483,5 +485,13 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		twingateResource.NewUserResource,
 		twingateResource.NewResourceResource,
 		twingateResource.NewDNSFilteringProfile,
+	}
+}
+
+func (t Twingate) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		func() ephemeral.EphemeralResource {
+			return twingateResource.NewEphemeralConnectorTokens()
+		},
 	}
 }
