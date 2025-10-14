@@ -436,6 +436,7 @@ func (r *dnsFilteringProfile) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	var err error
+
 	profile, err = r.client.UpdateDNSFilteringProfile(ctx, profile)
 
 	if profile != nil {

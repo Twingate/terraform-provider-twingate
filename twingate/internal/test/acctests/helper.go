@@ -309,7 +309,6 @@ func DeactivateTwingateResource(resourceName string) sdk.TestCheckFunc {
 			ID:       resourceID,
 			IsActive: false,
 		})
-
 		if err != nil {
 			return fmt.Errorf("resource with ID %s still active: %w", resourceID, err)
 		}

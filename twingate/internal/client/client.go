@@ -281,8 +281,8 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(headerAgent, twingateAgentVersion(client.agent, client.version))
 	req.Header.Set(headerCorrelationID, client.correlationID)
-	res, err := client.HTTPClient.Do(req)
 
+	res, err := client.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute http request: %w", err)
 	}
@@ -325,8 +325,8 @@ func (client *Client) mutate(ctx context.Context, resp MutationResponse, variabl
 
 	caller := getCallerFromCtx(ctx)
 	parentOpr := getOperationFromCtx(ctx)
-	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
 
+	err := client.GraphqlClient.Mutate(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}
@@ -378,8 +378,8 @@ func (client *Client) query(ctx context.Context, resp ResponseWithPayload, varia
 
 	caller := getCallerFromCtx(ctx)
 	parentOpr := getOperationFromCtx(ctx)
-	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
 
+	err := client.GraphqlClient.Query(ctx, resp, variables, graphql.OperationName(concatOperations(caller, parentOpr, opr.String())))
 	if err != nil {
 		return opr.apiError(err, attrs...)
 	}

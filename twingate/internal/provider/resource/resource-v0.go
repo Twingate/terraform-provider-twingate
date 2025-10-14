@@ -170,6 +170,7 @@ func upgradeResourceStateV0() resource.StateUpgrader {
 
 			protocolsState, diags := convertProtocolsToTerraform(protocols, nil)
 			resp.Diagnostics.Append(diags...)
+
 			if resp.Diagnostics.HasError() {
 				return
 			}

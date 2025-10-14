@@ -121,7 +121,6 @@ func (h *handler[T, F]) getResource(resourceID string) (any, bool) {
 	}
 
 	obj, err := copystructure.Copy(res)
-
 	if err != nil {
 		log.Printf("[TWINGATE_LOG] [ERR] %T failed copy object from cache: %s", emptyObj, err.Error())
 
@@ -158,7 +157,6 @@ func (h *handler[T, F]) setResource(resource identifiable) {
 	}()
 
 	obj, err := copystructure.Copy(resource)
-
 	if err != nil {
 		log.Printf("[TWINGATE_LOG] [ERR] %T failed store object to cache: %s", resource, err.Error())
 
