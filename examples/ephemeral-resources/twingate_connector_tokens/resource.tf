@@ -4,7 +4,7 @@ provider "twingate" {
 }
 
 resource "twingate_remote_network" "aws_network" {
-  name = "local-test-aws_remote_network"
+  name = "test-aws_remote_network"
 }
 
 resource "twingate_connector" "aws_connector" {
@@ -15,8 +15,16 @@ ephemeral "twingate_connector_tokens" "aws_connector_tokens" {
   connector_id = twingate_connector.aws_connector.id
 }
 
+resource "twingate_connector_tokens" "aws_connector_tokens" {
+  connector_id = twingate_connector.aws_connector.id
+}
+
 locals {
   credentials = {
-    access_token = ephemeral.twingate_connector_tokens.aws_connector_tokens.access_token
+    # ephemeral
+    ephemeral_access_token = ephemeral.twingate_connector_tokens.aws_connector_tokens.access_token
+
+    # non-ephemeral
+    access_token = resource.twingate_connector_tokens.aws_connector_tokens.access_token
   }
 }
