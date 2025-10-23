@@ -2,6 +2,8 @@ package resource
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
@@ -9,6 +11,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func TestAccRemoteConnectorWithTokens(t *testing.T) {
@@ -78,8 +81,19 @@ func TestAccRemoteEphemeralConnectorTokens(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateConnectorTokensInvalidated,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+				t.Skip("Ephemeral resources not supported in OpenTofu")
+			}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Ephemeral resources require Terraform 1.10+
+			tfversion.SkipBelow(tfversion.Version1_10_0),
+		},
+		CheckDestroy: acctests.CheckTwingateConnectorTokensInvalidated,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceTwingateEphemeralConnectorTokens(terraformResourceName, remoteNetworkName),
