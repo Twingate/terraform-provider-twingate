@@ -313,6 +313,8 @@ func TestAccDatasourceTwingateResourcesFilterByTags(t *testing.T) {
 	t.Parallel()
 
 	prefix := acctest.RandString(6)
+	suffix := acctest.RandString(6)
+	tag := acctest.RandString(6)
 	resourceName := test.RandomResourceName()
 	networkName := test.RandomName()
 	theDatasource := "data.twingate_resources." + resourceName
@@ -323,17 +325,17 @@ func TestAccDatasourceTwingateResourcesFilterByTags(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testDatasourceTwingateResourcesTagsFilter(resourceName, networkName, prefix+"_test_app", prefix+"_one"),
+				Config: testDatasourceTwingateResourcesTagsFilter(resourceName, networkName, prefix+"_test_app", prefix+"_"+suffix, tag),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, resourcesLen, "1"),
-					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, prefix+"_one"),
+					resource.TestCheckResourceAttr(theDatasource, resourceNamePath, prefix+"_"+suffix),
 				),
 			},
 		},
 	})
 }
 
-func testDatasourceTwingateResourcesTagsFilter(resourceName, networkName, name1, name2 string) string {
+func testDatasourceTwingateResourcesTagsFilter(resourceName, networkName, name1, name2, tag string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%[2]s" {
 	  name = "%[2]s"
@@ -353,16 +355,17 @@ func testDatasourceTwingateResourcesTagsFilter(resourceName, networkName, name1,
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.%[2]s.id
 	  tags = {
-	    owner = "example_owner"
+	    owner = "%[5]s"
 	  }
 	}
 
 	data "twingate_resources" "%[1]s" {
 	  tags = {
-	    owner = "example_owner"
+	    owner = "%[5]s"
 	  }
+	  name_suffix = "%[4]s"
 
 	  depends_on = [twingate_resource.%[1]s_1, twingate_resource.%[1]s_2]
 	}
-	`, resourceName, networkName, name1, name2)
+	`, resourceName, networkName, name1, name2, tag)
 }
