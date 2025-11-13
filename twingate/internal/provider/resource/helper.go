@@ -155,7 +155,6 @@ func makeStringsSet(items []string) (types.Set, diag.Diagnostics) {
 	}))
 }
 
-//nolint:unused
 func makeObjectsList(ctx context.Context, objects ...types.Object) (types.List, diag.Diagnostics) {
 	obj := objects[0]
 
@@ -166,7 +165,6 @@ func makeObjectsList(ctx context.Context, objects ...types.Object) (types.List, 
 	return types.ListValue(obj.Type(ctx), items)
 }
 
-//nolint:unused
 func makeObjectsListNull(ctx context.Context, attributeTypes map[string]tfattr.Type) types.List {
 	return types.ListNull(types.ObjectNull(attributeTypes).Type(ctx))
 }
