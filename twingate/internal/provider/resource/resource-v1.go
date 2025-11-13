@@ -225,11 +225,11 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 	}
 }
 
-func convertAccessGroupsToTerraform(ctx context.Context, groups []string) (types.Set, diag.Diagnostics) {
+func convertAccessGroupsToTerraform(ctx context.Context, groups []string) (types.List, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if len(groups) == 0 {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
 	objects := make([]types.Object, 0, len(groups))
@@ -249,17 +249,17 @@ func convertAccessGroupsToTerraform(ctx context.Context, groups []string) (types
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
-	return makeObjectsSet(ctx, objects...)
+	return makeObjectsList(ctx, objects...)
 }
 
-func convertAccessServiceAccountsToTerraform(ctx context.Context, serviceAccounts []string) (types.Set, diag.Diagnostics) {
+func convertAccessServiceAccountsToTerraform(ctx context.Context, serviceAccounts []string) (types.List, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if len(serviceAccounts) == 0 {
-		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
 	objects := make([]types.Object, 0, len(serviceAccounts))
@@ -276,10 +276,10 @@ func convertAccessServiceAccountsToTerraform(ctx context.Context, serviceAccount
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
-	return makeObjectsSet(ctx, objects...)
+	return makeObjectsList(ctx, objects...)
 }
 
 //nolint:unused

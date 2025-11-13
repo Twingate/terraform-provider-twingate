@@ -16,7 +16,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -72,8 +72,8 @@ type resourceModel struct {
 	RemoteNetworkID                types.String `tfsdk:"remote_network_id"`
 	IsAuthoritative                types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                      types.Object `tfsdk:"protocols"`
-	GroupAccess                    types.Set    `tfsdk:"access_group"`
-	ServiceAccess                  types.Set    `tfsdk:"access_service"`
+	GroupAccess                    types.List   `tfsdk:"access_group"`
+	ServiceAccess                  types.List   `tfsdk:"access_service"`
 	IsActive                       types.Bool   `tfsdk:"is_active"`
 	IsVisible                      types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled       types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
@@ -126,7 +126,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 
 	if len(res.GroupsAccess) > 0 {
-		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess, makeObjectsSetNull(ctx, accessGroupAttributeTypes()))
+		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess, makeObjectsListNull(ctx, accessGroupAttributeTypes()))
 		resp.Diagnostics.Append(diags...)
 
 		if resp.Diagnostics.HasError() {
@@ -311,10 +311,10 @@ func protocol() schema.SingleNestedAttribute {
 	}
 }
 
-func groupAccessBlock() schema.SetNestedBlock {
-	return schema.SetNestedBlock{
-		Validators: []validator.Set{
-			setvalidator.SizeAtLeast(1),
+func groupAccessBlock() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtLeast(1),
 		},
 		Description: "Restrict access to certain group",
 		NestedObject: schema.NestedBlockObject{
@@ -365,10 +365,10 @@ func groupAccessBlock() schema.SetNestedBlock {
 	}
 }
 
-func serviceAccessBlock() schema.SetNestedBlock {
-	return schema.SetNestedBlock{
-		Validators: []validator.Set{
-			setvalidator.SizeAtLeast(1),
+func serviceAccessBlock() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Validators: []validator.List{
+			listvalidator.SizeAtLeast(1),
 		},
 		Description: "Restrict access to certain service account",
 		NestedObject: schema.NestedBlockObject{
@@ -555,7 +555,7 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
-func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
+func getGroupAccessAttribute(list types.List) []model.AccessGroup {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
 	}
@@ -594,7 +594,7 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 	return access
 }
 
-func getServiceAccountAccessAttribute(list types.Set) []string {
+func getServiceAccountAccessAttribute(list types.List) []string {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil
 	}
@@ -1316,11 +1316,11 @@ func protocolAttributeTypes() map[string]tfattr.Type {
 	}
 }
 
-func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []string) (types.Set, diag.Diagnostics) {
+func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []string) (types.List, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if len(serviceAccounts) == 0 {
-		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
 	objects := make([]types.Object, 0, len(serviceAccounts))
@@ -1337,13 +1337,13 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessServiceAccountAttributeTypes()), diagnostics
 	}
 
-	return makeObjectsSet(ctx, objects...)
+	return makeObjectsList(ctx, objects...)
 }
 
-func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.Set) (types.Set, diag.Diagnostics) {
+func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.List) (types.List, diag.Diagnostics) {
 	reference := getGroupAccessAttribute(referenceGroupAccess)
 	referenceLookup := make(map[string]model.AccessGroup)
 
@@ -1354,7 +1354,7 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 	var diagnostics diag.Diagnostics
 
 	if len(groupAccess) == 0 {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
 	objects := make([]types.Object, 0, len(groupAccess))
@@ -1385,10 +1385,10 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsListNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
-	return makeObjectsSet(ctx, objects...)
+	return makeObjectsList(ctx, objects...)
 }
 
 func CaseInsensitiveDiff() planmodifier.String {
