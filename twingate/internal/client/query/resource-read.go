@@ -38,8 +38,8 @@ type AccessEdge struct {
 }
 
 type Principal struct {
-	ID   graphql.ID `json:"id"`
-	Type string     `graphql:"__typename"`
+	Type string `graphql:"__typename"`
+	Node `graphql:"... on Node"`
 }
 
 type Node struct {
