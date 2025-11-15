@@ -167,14 +167,14 @@ func TestClientResourceReadOk(t *testing.T) {
 		        "edges": [
 		          {
 		            "node": {
-		              "__typename": "Group",
-		              "id": "group1"
+		              "id": "group1",
+		              "__typename": "Group"
 		            }
 		          },
 		          {
 		            "node": {
-		              "__typename": "Group",
-		              "id": "group2"
+		              "id": "group2",
+		              "__typename": "Group"
 		            }
 		          }
 		        ]
@@ -267,14 +267,14 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 		        "edges": [
 		          {
 		            "node": {
-		              "__typename": "Group",
-		              "id": "group1"
+		              "id": "group1",
+		              "__typename": "Group"
 		            }
 		          },
 		          {
 		            "node": {
-		              "__typename": "Group",
-		              "id": "group2"
+		              "id": "group2",
+		              "__typename": "Group"
 		            }
 		          }
 		        ]
@@ -315,14 +315,14 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 		        "edges": [
 		          {
 		            "node": {
-		              "__typename": "Group",
-		              "id": "group3"
+		              "id": "group3",
+		              "__typename": "Group"
 		            }
 		          },
 		          {
 		            "node": {
-		              "__typename": "Group",
-		              "id": "group4"
+		              "id": "group4",
+		              "__typename": "Group"
 		            }
 		          }
 		        ]
@@ -567,8 +567,8 @@ func TestClientResourceUpdateFetchGroupsError(t *testing.T) {
 		          "edges": [
 		            {
 		              "node": {
-		                "__typename": "Group",
-		                "id": "group-1"
+		                "id": "group-1",
+		                "__typename": "Group"
 		              }
 		            }
 		          ]
@@ -1558,8 +1558,8 @@ func TestClientFullResourcesReadAllOk(t *testing.T) {
                       "edges": [
                         {
                           "node": {
-                            "__typename": "Group",
-                            "id": "group-1"
+                            "id": "group-1",
+                            "__typename": "Group"
                           }
                         }
                       ]
@@ -1618,14 +1618,14 @@ func TestClientFullResourcesReadAllOk(t *testing.T) {
                 "edges": [
                   {
                     "node": {
-                      "__typename": "Group",
-                      "id": "group-2"
+                      "id": "group-2",
+                      "__typename": "Group"
                     }
                   },
                   {
                     "node": {
-                      "__typename": "ServiceAccount",
-                      "id": "service-account-2"
+                      "id": "service-account-2",
+                      "__typename": "ServiceAccount"
                     }
                   }
                 ]
@@ -1749,8 +1749,8 @@ func TestClientFullResourcesReadAllRequestErrorOnExtendedCall(t *testing.T) {
                       "edges": [
                         {
                           "node": {
-                            "__typename": "Group",
-                            "id": "group-1"
+                            "id": "group-1",
+                            "__typename": "Group"
                           }
                         }
                       ]
@@ -1799,8 +1799,8 @@ func TestClientFullResourcesReadAllEmptyResponseOnExtendedCall(t *testing.T) {
                       "edges": [
                         {
                           "node": {
-                            "__typename": "Group",
-                            "id": "group-1"
+                            "id": "group-1",
+                            "__typename": "Group"
                           }
                         }
                       ]
