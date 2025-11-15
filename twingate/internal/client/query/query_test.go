@@ -2492,7 +2492,9 @@ func TestReadResource_ToModel(t *testing.T) {
 							Edges: []*AccessEdge{
 								{
 									Node: Principal{
-										ID:   "group123",
+										Node: Node{
+											ID: "group123",
+										},
 										Type: "Group",
 									},
 									SecurityPolicy: &gqlSecurityPolicy{
@@ -2504,7 +2506,9 @@ func TestReadResource_ToModel(t *testing.T) {
 								},
 								{
 									Node: Principal{
-										ID:   "serviceAccount456",
+										Node: Node{
+											ID: "serviceAccount456",
+										},
 										Type: "ServiceAccount",
 									},
 								},
