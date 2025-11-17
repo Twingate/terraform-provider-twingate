@@ -2492,7 +2492,7 @@ func TestReadResource_ToModel(t *testing.T) {
 							Edges: []*AccessEdge{
 								{
 									Node: Principal{
-										Node: Node{
+										Group: Node{
 											ID: "group123",
 										},
 										Type: "Group",
@@ -2506,7 +2506,7 @@ func TestReadResource_ToModel(t *testing.T) {
 								},
 								{
 									Node: Principal{
-										Node: Node{
+										ServiceAccount: Node{
 											ID: "serviceAccount456",
 										},
 										Type: "ServiceAccount",

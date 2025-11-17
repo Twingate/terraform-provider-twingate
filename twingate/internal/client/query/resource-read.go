@@ -38,13 +38,13 @@ type AccessEdge struct {
 }
 
 type Principal struct {
-	Node `graphql:"... on Node"`
-	Type string `graphql:"__typename"`
-	//ID   graphql.ID `json:"id"`
+	Type           string `graphql:"__typename"`
+	Group          Node   `graphql:"... on Group"`
+	ServiceAccount Node   `graphql:"... on ServiceAccount"`
 }
 
 type Node struct {
-	ID graphql.ID
+	ID graphql.ID `json:"id"`
 }
 
 type Tag struct {
@@ -99,13 +99,13 @@ func (r gqlResource) ToModel() *model.Resource {
 		switch access.Node.Type {
 		case AccessGroup:
 			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
-				GroupID:            string(access.Node.ID),
+				GroupID:            string(access.Node.Group.ID),
 				SecurityPolicyID:   securityPolicyID,
 				UsageBasedDuration: access.UsageBasedAutolockDurationDays,
 				ApprovalMode:       access.ApprovalMode,
 			})
 		case AccessServiceAccount:
-			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
+			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ServiceAccount.ID))
 		}
 	}
 
