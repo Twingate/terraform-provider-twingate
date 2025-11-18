@@ -15,11 +15,11 @@ func TestGroupModel(t *testing.T) {
 
 		expectedName string
 		expectedID   string
-		expected     interface{}
+		expected     any
 	}{
 		{
 			group: model.Group{},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:               "",
 				attr.Name:             "",
 				attr.Type:             "",
@@ -37,7 +37,7 @@ func TestGroupModel(t *testing.T) {
 			},
 			expectedID:   "id",
 			expectedName: "name",
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:               "id",
 				attr.Name:             "name",
 				attr.Type:             "type",

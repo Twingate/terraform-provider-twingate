@@ -71,7 +71,7 @@ func NewAPIError(wrappedError error, operation, resource string) *APIError {
 }
 
 func (e *APIError) Error() string {
-	args := []interface{}{e.Operation, e.Resource}
+	args := []any{e.Operation, e.Resource}
 
 	var format = "failed to %s %s"
 
