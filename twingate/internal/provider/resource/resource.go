@@ -206,6 +206,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.Int64{
 					UseNullIntWhenValueOmitted(),
 				},
+				DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
 			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
@@ -238,6 +239,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
 				},
+				DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:      true,
@@ -348,6 +350,7 @@ func groupAccessBlock() schema.SetNestedBlock {
 					PlanModifiers: []planmodifier.Int64{
 						UseNullIntWhenValueOmitted(),
 					},
+					DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
 				},
 				attr.ApprovalMode: schema.StringAttribute{
 					Optional:    true,
@@ -359,6 +362,7 @@ func groupAccessBlock() schema.SetNestedBlock {
 					Validators: []validator.String{
 						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					},
+					DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
 				},
 			},
 		},
