@@ -1,9 +1,16 @@
 package query
 
 import (
+	"errors"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
+)
+
+var (
+	ErrMissingAccessGroupID          = errors.New("access group ID is missing in response")
+	ErrMissingAccessServiceAccountID = errors.New("access service account ID is missing in response")
 )
 
 const (
@@ -87,7 +94,7 @@ type PortRange struct {
 	End   int `json:"end"`
 }
 
-func (r gqlResource) ToModel() *model.Resource {
+func (r gqlResource) ToModel() (*model.Resource, error) {
 	resource := r.ResourceNode.ToModel()
 
 	for _, access := range r.Access.Edges {
@@ -98,18 +105,28 @@ func (r gqlResource) ToModel() *model.Resource {
 
 		switch access.Node.Type {
 		case AccessGroup:
+			groupID := string(access.Node.Group.ID)
+			if groupID == "" {
+				return nil, ErrMissingAccessGroupID
+			}
+
 			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
-				GroupID:            string(access.Node.Group.ID),
+				GroupID:            groupID,
 				SecurityPolicyID:   securityPolicyID,
 				UsageBasedDuration: access.UsageBasedAutolockDurationDays,
 				ApprovalMode:       access.ApprovalMode,
 			})
 		case AccessServiceAccount:
-			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ServiceAccount.ID))
+			serviceAccountID := string(access.Node.ServiceAccount.ID)
+			if serviceAccountID == "" {
+				return nil, ErrMissingAccessServiceAccountID
+			}
+
+			resource.ServiceAccounts = append(resource.ServiceAccounts, serviceAccountID)
 		}
 	}
 
-	return resource
+	return resource, nil
 }
 
 func (r ResourceNode) ToModel() *model.Resource {

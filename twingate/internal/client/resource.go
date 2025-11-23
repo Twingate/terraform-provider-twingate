@@ -117,7 +117,11 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		return nil, err
 	}
 
-	resource := response.Entity.ToModel()
+	resource, err := response.Entity.ToModel()
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
 	resource.GroupsAccess = input.GroupsAccess
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
@@ -163,7 +167,10 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, err //nolint
 	}
 
-	res := response.Resource.ToModel()
+	res, err := response.Resource.ToModel()
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
 
 	setResource(res)
 
@@ -244,7 +251,7 @@ func (client *Client) ReadFullResources(ctx context.Context) ([]*model.Resource,
 		}
 	}
 
-	return response.ToModel(), nil
+	return response.ToModel() //nolint:wrapcheck
 }
 
 func (client *Client) ReadFullResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
@@ -274,7 +281,7 @@ func (client *Client) ReadFullResourcesByName(ctx context.Context, filter *model
 		}
 	}
 
-	return response.ToModel(), nil
+	return response.ToModel() //nolint:wrapcheck
 }
 
 func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
@@ -350,7 +357,11 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, err //nolint
 	}
 
-	resource := response.Entity.ToModel()
+	resource, err := response.Entity.ToModel()
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
 	resource.IsAuthoritative = input.IsAuthoritative
 
 	if input.IsVisible == nil {
