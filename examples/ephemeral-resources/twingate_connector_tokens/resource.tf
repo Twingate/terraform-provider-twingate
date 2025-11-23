@@ -35,7 +35,6 @@ resource "google_secret_manager_secret_version" "twingate_secret" {
   secret_data_wo         = ephemeral.twingate_connector_tokens.aws_connector_tokens.access_token
 }
 
-# Retrieve the secret value
 data "google_secret_manager_secret_version" "twingate_secret" {
   secret  = google_secret_manager_secret.twingate_token.id
   version = google_secret_manager_secret_version.twingate_secret.version
@@ -56,7 +55,6 @@ resource "aws_secretsmanager_secret_version" "twingate_secret" {
   secret_string_wo         = ephemeral.twingate_connector_tokens.aws_connector_tokens.access_token
 }
 
-# Retrieve the secret value
 data "aws_secretsmanager_secret_version" "twingate_secret" {
   secret_id  = aws_secretsmanager_secret.twingate_token.id
   version_id = aws_secretsmanager_secret_version.twingate_secret.version_id
