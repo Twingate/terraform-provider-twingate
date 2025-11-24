@@ -6,8 +6,8 @@ import (
 	"github.com/hasura/go-graphql-client"
 )
 
-func newVars(options ...gqlVarOption) map[string]interface{} {
-	values := make(map[string]interface{})
+func newVars(options ...gqlVarOption) map[string]any {
+	values := make(map[string]any)
 
 	for _, opt := range options {
 		values = opt(values)
@@ -16,7 +16,7 @@ func newVars(options ...gqlVarOption) map[string]interface{} {
 	return values
 }
 
-type gqlVarOption func(values map[string]interface{}) map[string]interface{}
+type gqlVarOption func(values map[string]any) map[string]any
 
 func pageLimit(limit int) gqlVarOption {
 	return gqlVar(limit, query.PageLimit)
@@ -26,13 +26,13 @@ func cursor(name string) gqlVarOption {
 	return gqlNullable("", name)
 }
 
-func gqlID(val interface{}, name ...string) gqlVarOption {
+func gqlID(val any, name ...string) gqlVarOption {
 	key := "id"
 	if len(name) > 0 {
 		key = name[0]
 	}
 
-	return func(values map[string]interface{}) map[string]interface{} {
+	return func(values map[string]any) map[string]any {
 		switch value := val.(type) {
 		case string:
 			values[key] = graphql.ID(value)
@@ -52,15 +52,15 @@ func gqlIDs(ids []string, name string) gqlVarOption {
 			return graphql.ID(val)
 		})
 
-	return func(values map[string]interface{}) map[string]interface{} {
+	return func(values map[string]any) map[string]any {
 		values[name] = gqlValues
 
 		return values
 	}
 }
 
-func gqlVar(val interface{}, name string) gqlVarOption {
-	return func(values map[string]interface{}) map[string]interface{} {
+func gqlVar(val any, name string) gqlVarOption {
+	return func(values map[string]any) map[string]any {
 		if val != nil {
 			values[name] = val
 		}
@@ -69,9 +69,9 @@ func gqlVar(val interface{}, name string) gqlVarOption {
 	}
 }
 
-func gqlNullable(val interface{}, name string) gqlVarOption {
-	return func(values map[string]interface{}) map[string]interface{} {
-		var gqlValue interface{}
+func gqlNullable(val any, name string) gqlVarOption {
+	return func(values map[string]any) map[string]any {
+		var gqlValue any
 		if isZeroValue(val) {
 			gqlValue = getNullableValue(val)
 		} else {
@@ -106,10 +106,10 @@ func getValue(val any) any {
 }
 
 //nolint:unparam
-func gqlNullableID(val interface{}, name string) gqlVarOption {
-	return func(values map[string]interface{}) map[string]interface{} {
+func gqlNullableID(val any, name string) gqlVarOption {
+	return func(values map[string]any) map[string]any {
 		var (
-			gqlValue  interface{}
+			gqlValue  any
 			defaultID *graphql.ID
 		)
 
@@ -129,7 +129,7 @@ func gqlNullableID(val interface{}, name string) gqlVarOption {
 	}
 }
 
-func isZeroValue(val interface{}) bool {
+func isZeroValue(val any) bool {
 	if val == nil {
 		return true
 	}
@@ -178,7 +178,7 @@ func isZeroValue(val interface{}) bool {
 	return false
 }
 
-func getNullableValue(val interface{}) interface{} {
+func getNullableValue(val any) any {
 	if val == nil {
 		return nil
 	}

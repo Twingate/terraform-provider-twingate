@@ -14,7 +14,7 @@ jobs:
     name: "Verify PR title and desc"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Danger
         uses: danger/danger-js@13.0.5
         env:

@@ -38,13 +38,13 @@ type ReadClient interface {
 func (c *clientCache) setClient(client ReadClient, opts CacheOptions) {
 	c.once.Do(func() {
 		c.handlers = map[string]resourceHandler{
-			reflect.TypeOf(&model.Resource{}).String(): &handler[*model.Resource, *model.ResourcesFilter]{
+			reflect.TypeFor[*model.Resource]().String(): &handler[*model.Resource, *model.ResourcesFilter]{
 				enabled:         opts.ResourceEnabled,
 				readResources:   client.ReadFullResources,
 				filter:          opts.ResourcesFilter,
 				filterResources: client.ReadFullResourcesByName,
 			},
-			reflect.TypeOf(&model.Group{}).String(): &handler[*model.Group, *model.GroupsFilter]{
+			reflect.TypeFor[*model.Group]().String(): &handler[*model.Group, *model.GroupsFilter]{
 				enabled:         opts.GroupsEnabled,
 				readResources:   client.ReadFullGroups,
 				filter:          opts.GroupsFilter,

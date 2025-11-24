@@ -97,7 +97,7 @@ func (client *Client) ReadConnectors(ctx context.Context, name, filter string) (
 	return response.ToModel(), nil
 }
 
-func (client *Client) readConnectorsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ConnectorEdge], error) {
+func (client *Client) readConnectorsAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ConnectorEdge], error) {
 	opr := resourceConnector.read()
 
 	variables[query.CursorConnectors] = cursor

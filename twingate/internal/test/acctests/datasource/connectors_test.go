@@ -111,7 +111,7 @@ func testCheckOutputLength(name string, length int) resource.TestCheckFunc {
 			return fmt.Errorf("output '%s' not found", name)
 		}
 
-		actual, ok := res.Value.([]interface{})
+		actual, ok := res.Value.([]any)
 		if !ok {
 			return fmt.Errorf("output '%s' is not a list", name)
 		}
@@ -124,7 +124,7 @@ func testCheckOutputLength(name string, length int) resource.TestCheckFunc {
 	}
 }
 
-func testCheckOutputAttr(name string, index int, attr string, expected interface{}) resource.TestCheckFunc {
+func testCheckOutputAttr(name string, index int, attr string, expected any) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ms := s.RootModule()
 
@@ -133,7 +133,7 @@ func testCheckOutputAttr(name string, index int, attr string, expected interface
 			return fmt.Errorf("output '%s' not found", name)
 		}
 
-		list, ok := res.Value.([]interface{})
+		list, ok := res.Value.([]any)
 		if !ok {
 			return fmt.Errorf("output '%s' is not a list", name)
 		}
@@ -143,7 +143,7 @@ func testCheckOutputAttr(name string, index int, attr string, expected interface
 		}
 
 		item := list[index]
-		obj, ok := item.(map[string]interface{})
+		obj, ok := item.(map[string]any)
 		if !ok {
 			return fmt.Errorf("expected map, actual is %T", item)
 		}
@@ -170,7 +170,7 @@ func testCheckOutputAttrSet(name string, index int, attr string) resource.TestCh
 			return fmt.Errorf("output '%s' not found", name)
 		}
 
-		list, ok := res.Value.([]interface{})
+		list, ok := res.Value.([]any)
 		if !ok {
 			return fmt.Errorf("output '%s' is not a list", name)
 		}
@@ -180,7 +180,7 @@ func testCheckOutputAttrSet(name string, index int, attr string) resource.TestCh
 		}
 
 		item := list[index]
-		obj, ok := item.(map[string]interface{})
+		obj, ok := item.(map[string]any)
 		if !ok {
 			return fmt.Errorf("expected map, actual is %T", item)
 		}

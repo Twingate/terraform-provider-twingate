@@ -71,8 +71,8 @@ type Resource struct {
 	UsageBasedAutolockDurationDays *int64
 }
 
-func (r Resource) AccessToTerraform() []interface{} {
-	rawMap := make(map[string]interface{})
+func (r Resource) AccessToTerraform() []any {
+	rawMap := make(map[string]any)
 	if len(r.GroupsAccess) != 0 {
 		rawMap[attr.GroupIDs] = utils.Map(r.GroupsAccess, func(item AccessGroup) string {
 			return item.GroupID
@@ -87,7 +87,7 @@ func (r Resource) AccessToTerraform() []interface{} {
 		return nil
 	}
 
-	return []interface{}{rawMap}
+	return []any{rawMap}
 }
 
 func (r Resource) GetID() string {
@@ -98,8 +98,8 @@ func (r Resource) GetName() string {
 	return r.Name
 }
 
-func (r Resource) ToTerraform() interface{} {
-	return map[string]interface{}{
+func (r Resource) ToTerraform() any {
+	return map[string]any{
 		attr.ID:              r.ID,
 		attr.Name:            r.Name,
 		attr.Address:         r.Address,
@@ -281,12 +281,12 @@ func DefaultProtocols() *Protocols {
 	}
 }
 
-func (p *Protocols) ToTerraform() []interface{} {
+func (p *Protocols) ToTerraform() []any {
 	if p == nil {
 		return nil
 	}
 
-	rawMap := make(map[string]interface{})
+	rawMap := make(map[string]any)
 	rawMap[attr.AllowIcmp] = p.AllowIcmp
 
 	if p.TCP != nil {
@@ -297,10 +297,10 @@ func (p *Protocols) ToTerraform() []interface{} {
 		rawMap[attr.UDP] = p.UDP.ToTerraform()
 	}
 
-	return []interface{}{rawMap}
+	return []any{rawMap}
 }
 
-func (p *Protocol) ToTerraform() []interface{} {
+func (p *Protocol) ToTerraform() []any {
 	if p == nil {
 		return nil
 	}
@@ -310,8 +310,8 @@ func (p *Protocol) ToTerraform() []interface{} {
 		policy = PolicyDenyAll
 	}
 
-	return []interface{}{
-		map[string]interface{}{
+	return []any{
+		map[string]any{
 			attr.Policy: policy,
 			attr.Ports:  p.PortsToString(),
 		},

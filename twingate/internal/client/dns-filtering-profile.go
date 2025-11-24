@@ -182,7 +182,7 @@ func (client *Client) UpdateDNSFilteringProfile(ctx context.Context, input *mode
 	return response.Entity.ToModel(), nil
 }
 
-func (client *Client) readDNSFilteringProfileGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupIDEdge], error) {
+func (client *Client) readDNSFilteringProfileGroupsAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.GroupIDEdge], error) {
 	opr := resourceGroup.read().withCustomName("readDNSFilteringProfileGroupsAfter")
 
 	variables[query.CursorGroups] = cursor

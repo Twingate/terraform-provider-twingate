@@ -248,7 +248,7 @@ func getRateLimit() int {
 	return val
 }
 
-func (client *Client) post(ctx context.Context, url string, payload interface{}, headers map[string]string) ([]byte, error) {
+func (client *Client) post(ctx context.Context, url string, payload any, headers map[string]string) ([]byte, error) {
 	var body io.Reader
 
 	if payload != nil {
