@@ -111,6 +111,10 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		resp.State.SetAttribute(ctx, path.Root(attr.ApprovalMode), types.StringValue(res.ApprovalMode))
 	}
 
+	if res.SecurityPolicyID != nil && *res.SecurityPolicyID != "" {
+		resp.State.SetAttribute(ctx, path.Root(attr.SecurityPolicyID), types.StringPointerValue(res.SecurityPolicyID))
+	}
+
 	resp.State.SetAttribute(ctx, path.Root(attr.Alias), types.StringPointerValue(res.Alias))
 	resp.State.SetAttribute(ctx, path.Root(attr.UsageBasedAutolockDurationDays), types.Int64PointerValue(res.UsageBasedAutolockDurationDays))
 

@@ -836,13 +836,15 @@ func TestAccTwingateResourceImport(t *testing.T) {
 	groupName2 := test.RandomGroupName()
 	resourceName := test.RandomResourceName()
 
+	_, testPolicy := preparePolicies(t)
+
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResource12(remoteNetworkName, groupName, groupName2, resourceName),
+				Config: createResource12(remoteNetworkName, groupName, groupName2, resourceName, testPolicy),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
@@ -853,6 +855,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
 					attr.Address:                        "acc-test.com.12",
 					attr.Alias:                          "test.alias",
+					attr.SecurityPolicyID:               testPolicy,
 					tcpPolicy:                           model.PolicyRestricted,
 					tcpPortsLen:                         "2",
 					firstTCPPort:                        "80",
@@ -868,7 +871,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 	})
 }
 
-func createResource12(networkName, groupName1, groupName2, resourceName string) string {
+func createResource12(networkName, groupName1, groupName2, resourceName, policyID string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "test12" {
 	  name = "%s"
@@ -889,6 +892,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  approval_mode = "MANUAL"
 	  usage_based_autolock_duration_days = 10
 	  alias = "test.alias"
+	  security_policy_id = "%s"
 	  
       dynamic "access_group" {
 		for_each = [twingate_group.g121.id, twingate_group.g122.id]
@@ -909,7 +913,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 		}
       }
 	}
-	`, networkName, groupName1, groupName2, resourceName, model.PolicyRestricted, model.PolicyAllowAll)
+	`, networkName, groupName1, groupName2, resourceName, policyID, model.PolicyRestricted, model.PolicyAllowAll)
 }
 
 func genNewGroups(resourcePrefix string, count int) ([]string, []string) {
