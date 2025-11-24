@@ -44,8 +44,8 @@ func (u User) GetName() string {
 	return u.Email
 }
 
-func (u User) ToTerraform() interface{} {
-	return map[string]interface{}{
+func (u User) ToTerraform() any {
+	return map[string]any{
 		attr.ID:        u.ID,
 		attr.FirstName: u.FirstName,
 		attr.LastName:  u.LastName,

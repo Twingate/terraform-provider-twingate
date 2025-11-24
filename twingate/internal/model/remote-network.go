@@ -30,8 +30,8 @@ func (n RemoteNetwork) GetID() string {
 	return n.ID
 }
 
-func (n RemoteNetwork) ToTerraform() interface{} {
-	return map[string]interface{}{
+func (n RemoteNetwork) ToTerraform() any {
+	return map[string]any{
 		attr.ID:       n.ID,
 		attr.Name:     n.Name,
 		attr.Location: n.Location,

@@ -17,8 +17,8 @@ func (s ServiceAccount) GetName() string {
 	return s.Name
 }
 
-func (s ServiceAccount) ToTerraform() interface{} {
-	return map[string]interface{}{
+func (s ServiceAccount) ToTerraform() any {
+	return map[string]any{
 		attr.ID:          s.ID,
 		attr.Name:        s.Name,
 		attr.ResourceIDs: s.Resources,

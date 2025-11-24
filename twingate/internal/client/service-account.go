@@ -103,7 +103,7 @@ func (client *Client) ReadShallowServiceAccounts(ctx context.Context) ([]*model.
 	return response.ToModel(), nil
 }
 
-func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
+func (client *Client) readServiceAccountsAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ServiceAccountEdge], error) {
 	opr := resourceServiceAccount.read()
 
 	variables[query.CursorServices] = cursor
@@ -159,7 +159,7 @@ func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) 
 	return response.ToModel(), nil
 }
 
-func (client *Client) readServicesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ServiceEdge], error) {
+func (client *Client) readServicesAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ServiceEdge], error) {
 	opr := resourceServiceAccount.read()
 
 	variables[query.CursorServices] = cursor
@@ -172,7 +172,7 @@ func (client *Client) readServicesAfter(ctx context.Context, variables map[strin
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
+func (client *Client) readServiceResourcesAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.GqlResourceIDEdge], error) {
 	opr := resourceServiceAccount.read()
 
 	gqlNullable("", query.CursorServiceKeys)(variables)
@@ -186,7 +186,7 @@ func (client *Client) readServiceResourcesAfter(ctx context.Context, variables m
 	return &response.Service.Resources.PaginatedResource, nil
 }
 
-func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
+func (client *Client) readServiceKeysAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.GqlKeyIDEdge], error) {
 	opr := resourceServiceAccount.read()
 
 	gqlNullable("", query.CursorResources)(variables)

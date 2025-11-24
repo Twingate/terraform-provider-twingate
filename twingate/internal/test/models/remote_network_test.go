@@ -13,14 +13,14 @@ func TestRemoteNetworkModel(t *testing.T) {
 	cases := []struct {
 		remoteNetwork model.RemoteNetwork
 
-		expected         interface{}
+		expected         any
 		expectedID       string
 		expectedName     string
 		expectedLocation string
 	}{
 		{
 			remoteNetwork: model.RemoteNetwork{},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:       "",
 				attr.Name:     "",
 				attr.Location: "",
@@ -32,7 +32,7 @@ func TestRemoteNetworkModel(t *testing.T) {
 				Name:     "name",
 				Location: model.LocationGoogleCloud,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:       "id",
 				attr.Name:     "name",
 				attr.Location: model.LocationGoogleCloud,
