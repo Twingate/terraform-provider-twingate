@@ -84,7 +84,7 @@ func TestNewPortRange(t *testing.T) {
 
 func TestResourceModel(t *testing.T) {
 	var (
-		emptySlice       []interface{}
+		emptySlice       []any
 		emptyStringSlice []string
 	)
 
@@ -93,11 +93,11 @@ func TestResourceModel(t *testing.T) {
 
 		expectedName string
 		expectedID   string
-		expected     interface{}
+		expected     any
 	}{
 		{
 			resource: model.Resource{},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:              "",
 				attr.Name:            "",
 				attr.Address:         "",
@@ -126,22 +126,22 @@ func TestResourceModel(t *testing.T) {
 			},
 			expectedID:   "id",
 			expectedName: "name",
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:              "id",
 				attr.Name:            "name",
 				attr.Address:         "address",
 				attr.RemoteNetworkID: "network-id",
-				attr.Protocols: []interface{}{
-					map[string]interface{}{
+				attr.Protocols: []any{
+					map[string]any{
 						attr.AllowIcmp: true,
-						attr.TCP: []interface{}{
-							map[string]interface{}{
+						attr.TCP: []any{
+							map[string]any{
 								attr.Policy: "RESTRICTED",
 								attr.Ports:  []string{"80"},
 							},
 						},
-						attr.UDP: []interface{}{
-							map[string]interface{}{
+						attr.UDP: []any{
+							map[string]any{
 								attr.Policy: "ALLOW_ALL",
 								attr.Ports:  emptyStringSlice,
 							},
@@ -162,13 +162,13 @@ func TestResourceModel(t *testing.T) {
 }
 
 func TestProtocolToTerraform(t *testing.T) {
-	var emptySlice []interface{}
+	var emptySlice []any
 	var emptyStringSlice []string
 
 	cases := []struct {
 		protocol *model.Protocol
 
-		expected interface{}
+		expected any
 	}{
 		{
 			protocol: nil,
@@ -178,8 +178,8 @@ func TestProtocolToTerraform(t *testing.T) {
 			protocol: &model.Protocol{
 				Policy: model.PolicyAllowAll,
 			},
-			expected: []interface{}{
-				map[string]interface{}{
+			expected: []any{
+				map[string]any{
 					attr.Policy: "ALLOW_ALL",
 					attr.Ports:  emptyStringSlice,
 				},
@@ -189,8 +189,8 @@ func TestProtocolToTerraform(t *testing.T) {
 			protocol: &model.Protocol{
 				Policy: model.PolicyRestricted,
 			},
-			expected: []interface{}{
-				map[string]interface{}{
+			expected: []any{
+				map[string]any{
 					attr.Policy: "DENY_ALL",
 					attr.Ports:  emptyStringSlice,
 				},
@@ -203,8 +203,8 @@ func TestProtocolToTerraform(t *testing.T) {
 					{Start: 80, End: 80},
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
+			expected: []any{
+				map[string]any{
 					attr.Policy: "RESTRICTED",
 					attr.Ports:  []string{"80"},
 				},
@@ -242,7 +242,7 @@ func TestResourceAccessToTerraform(t *testing.T) {
 	cases := []struct {
 		resource model.Resource
 
-		expected []interface{}
+		expected []any
 	}{
 		{
 			resource: model.Resource{},
@@ -254,8 +254,8 @@ func TestResourceAccessToTerraform(t *testing.T) {
 					{GroupID: "group-1"},
 				},
 			},
-			expected: []interface{}{
-				map[string]interface{}{
+			expected: []any{
+				map[string]any{
 					attr.GroupIDs: []string{"group-1"},
 				},
 			},
@@ -265,8 +265,8 @@ func TestResourceAccessToTerraform(t *testing.T) {
 				ServiceAccounts: []string{"service-1"},
 				IsAuthoritative: true,
 			},
-			expected: []interface{}{
-				map[string]interface{}{
+			expected: []any{
+				map[string]any{
 					attr.ServiceAccountIDs: []string{"service-1"},
 				},
 			},

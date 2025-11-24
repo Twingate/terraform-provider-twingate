@@ -39,7 +39,7 @@ func TestPagination(t *testing.T) {
 					HasNextPage: true,
 				},
 			},
-			nextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[int], error) {
+			nextPage: func(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[int], error) {
 				return nil, badError
 			},
 			expected: &query.PaginatedResource[int]{
@@ -56,7 +56,7 @@ func TestPagination(t *testing.T) {
 				},
 				Edges: []int{1, 2},
 			},
-			nextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[int], error) {
+			nextPage: func(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[int], error) {
 				return &query.PaginatedResource[int]{
 					PageInfo: query.PageInfo{
 						HasNextPage: false,
@@ -75,7 +75,7 @@ func TestPagination(t *testing.T) {
 
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
-			err := c.resource.FetchPages(context.TODO(), c.nextPage, map[string]interface{}{})
+			err := c.resource.FetchPages(context.TODO(), c.nextPage, map[string]any{})
 
 			assert.Equal(t, c.expected, c.resource)
 			assert.Equal(t, c.expectedErr, err)

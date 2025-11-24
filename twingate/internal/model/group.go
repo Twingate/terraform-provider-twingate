@@ -32,8 +32,8 @@ func (g Group) GetID() string {
 	return g.ID
 }
 
-func (g Group) ToTerraform() interface{} {
-	return map[string]interface{}{
+func (g Group) ToTerraform() any {
+	return map[string]any{
 		attr.ID:               g.ID,
 		attr.Name:             g.Name,
 		attr.Type:             g.Type,

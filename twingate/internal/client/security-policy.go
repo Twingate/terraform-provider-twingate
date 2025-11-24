@@ -58,7 +58,7 @@ func (client *Client) ReadSecurityPolicies(ctx context.Context, name, filter str
 	return response.ToModel(), nil
 }
 
-func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.SecurityPolicyEdge], error) {
+func (client *Client) readSecurityPoliciesAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.SecurityPolicyEdge], error) {
 	opr := resourceSecurityPolicy.read()
 
 	variables[query.CursorPolicies] = cursor

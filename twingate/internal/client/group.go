@@ -125,7 +125,7 @@ func (client *Client) ReadGroups(ctx context.Context, filter *model.GroupsFilter
 	return response.ToModel(), nil
 }
 
-func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
+func (client *Client) readGroupsAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.GroupEdge], error) {
 	opr := resourceGroup.read().withCustomName("readGroupsAfter")
 
 	variables[query.CursorGroups] = cursor
@@ -278,7 +278,7 @@ func (client *Client) DeleteGroupUsers(ctx context.Context, groupID string, user
 	return client.mutate(ctx, &response, variables, opr, attr{id: groupID})
 }
 
-func (client *Client) readGroupUsersAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
+func (client *Client) readGroupUsersAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
 	opr := resourceGroup.read().withCustomName("readGroupUsersAfter")
 
 	variables[query.CursorUsers] = cursor

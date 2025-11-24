@@ -177,7 +177,7 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 	return res, nil
 }
 
-func (client *Client) readResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
+func (client *Client) readResourceAccessAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
 	opr := resourceResource.read().withCustomName("readResourceAccessAfter")
 
 	resourceID := string(variables["id"].(graphql.ID))
@@ -212,7 +212,7 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readResourcesAfter")
 
 	variables[query.CursorResources] = cursor
@@ -284,7 +284,7 @@ func (client *Client) ReadFullResourcesByName(ctx context.Context, filter *model
 	return response.ToModel() //nolint:wrapcheck
 }
 
-func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
+func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readFullResourcesByNameAfter")
 
 	variables[query.CursorResources] = cursor
@@ -297,7 +297,7 @@ func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variable
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
+func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readFullResourcesAfter")
 
 	variables[query.CursorResources] = cursor
@@ -310,7 +310,7 @@ func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) readExtendedResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
+func (client *Client) readExtendedResourceAccessAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
 	opr := resourceResource.read().withCustomName("readExtendedResourceAccessAfter")
 
 	resourceID := string(variables["id"].(graphql.ID))
@@ -446,7 +446,7 @@ func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.Res
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
 	variables[query.CursorResources] = cursor
