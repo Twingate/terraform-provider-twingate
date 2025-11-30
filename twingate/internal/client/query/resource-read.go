@@ -1,6 +1,8 @@
 package query
 
 import (
+	"time"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
@@ -35,6 +37,7 @@ type AccessEdge struct {
 	SecurityPolicy                 *gqlSecurityPolicy
 	UsageBasedAutolockDurationDays *int64
 	ApprovalMode                   *string
+	AccessPolicy                   *AccessPolicy
 }
 
 type Principal struct {
@@ -68,7 +71,15 @@ type ResourceNode struct {
 	ApprovalMode                   string
 	Tags                           []Tag
 	UsageBasedAutolockDurationDays *int64
+	AccessPolicy                   *AccessPolicy
 }
+
+type AccessPolicy struct {
+	DurationSeconds *int64
+	Mode            AccessMode
+}
+
+type AccessMode string
 
 type Protocols struct {
 	UDP       *Protocol `json:"udp"`
@@ -102,6 +113,7 @@ func (r gqlResource) ToModel() *model.Resource {
 				SecurityPolicyID:   securityPolicyID,
 				UsageBasedDuration: access.UsageBasedAutolockDurationDays,
 				ApprovalMode:       access.ApprovalMode,
+				AccessPolicy:       accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
 			})
 		case AccessServiceAccount:
 			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
@@ -131,6 +143,27 @@ func (r ResourceNode) ToModel() *model.Resource {
 		ApprovalMode:                   r.ApprovalMode,
 		Tags:                           tagsToModel(r.Tags),
 		UsageBasedAutolockDurationDays: r.UsageBasedAutolockDurationDays,
+		AccessPolicy:                   accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
+	}
+}
+
+func accessPolicyToModel(accessPolicy *AccessPolicy, approvalMode *string) *model.AccessPolicy {
+	if accessPolicy == nil {
+		return nil
+	}
+
+	var duration *time.Duration
+	if accessPolicy.DurationSeconds != nil {
+		val := time.Duration(*accessPolicy.DurationSeconds) * time.Second
+		duration = &val
+	}
+
+	mode := string(accessPolicy.Mode)
+
+	return &model.AccessPolicy{
+		Mode:         &mode,
+		Duration:     duration,
+		ApprovalMode: approvalMode,
 	}
 }
 

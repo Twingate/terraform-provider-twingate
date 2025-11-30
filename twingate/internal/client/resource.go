@@ -33,6 +33,40 @@ func newTagInputs(tags map[string]string) []TagInput {
 	return tagInputs
 }
 
+type AccessMode string
+type AccessPolicyInput struct {
+	Mode            AccessMode `json:"mode"`
+	DurationSeconds *int64     `json:"durationSeconds"`
+}
+
+func NewAccessPolicyInput(accessPolicy *model.AccessPolicy, approvalMode string) *AccessPolicyInput {
+	if accessPolicy == nil && approvalMode != "" {
+		return nil
+	}
+
+	if accessPolicy == nil {
+		return &AccessPolicyInput{
+			Mode: model.AccessPolicyModeManual,
+		}
+	}
+
+	mode := AccessMode(model.AccessPolicyModeManual)
+	if accessPolicy.Mode != nil {
+		mode = AccessMode(*accessPolicy.Mode)
+	}
+
+	var durationSeconds *int64
+	if accessPolicy.Duration != nil {
+		seconds := int64((*accessPolicy.Duration).Seconds())
+		durationSeconds = &seconds
+	}
+
+	return &AccessPolicyInput{
+		Mode:            mode,
+		DurationSeconds: durationSeconds,
+	}
+}
+
 type ProtocolsInput struct {
 	UDP       *ProtocolInput `json:"udp"`
 	TCP       *ProtocolInput `json:"tcp"`
@@ -83,14 +117,20 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 
 type AccessApprovalMode string
 
-func NewAccessApprovalMode(approvalMode string) *AccessApprovalMode {
-	if approvalMode == "" {
-		return nil
+func NewAccessApprovalMode(accessPolicy *model.AccessPolicy, approvalMode string) *AccessApprovalMode {
+	mode := approvalMode
+
+	if accessPolicy != nil && accessPolicy.ApprovalMode != nil && mode == "" {
+		mode = *accessPolicy.ApprovalMode
 	}
 
-	mode := AccessApprovalMode(approvalMode)
+	if mode == "" {
+		mode = model.ApprovalModeManual
+	}
 
-	return &mode
+	val := AccessApprovalMode(mode)
+
+	return &val
 }
 
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
@@ -105,9 +145,11 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
+		gqlVar(NewAccessPolicyInput(input.AccessPolicy, input.ApprovalMode), "accessPolicy"),
+		gqlVar(NewAccessApprovalMode(input.AccessPolicy, input.ApprovalMode), "approvalMode"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
 		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
+
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -118,6 +160,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 	}
 
 	resource := response.Entity.ToModel()
+	resource.AccessPolicy = input.AccessPolicy
 	resource.GroupsAccess = input.GroupsAccess
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
@@ -334,7 +377,8 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
+		gqlVar(NewAccessApprovalMode(input.AccessPolicy, input.ApprovalMode), "approvalMode"),
+		gqlVar(NewAccessPolicyInput(input.AccessPolicy, input.ApprovalMode), "accessPolicy"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
 		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
@@ -363,6 +407,10 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	if input.SecurityPolicyID == nil {
 		resource.SecurityPolicyID = nil
+	}
+
+	if input.AccessPolicy == nil {
+		resource.AccessPolicy = nil
 	}
 
 	setResource(resource)

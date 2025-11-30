@@ -1,11 +1,13 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
@@ -21,16 +23,78 @@ const (
 
 	ApprovalModeAutomatic = "AUTOMATIC"
 	ApprovalModeManual    = "MANUAL"
+
+	AccessPolicyModeManual        = "MANUAL"
+	AccessPolicyModeAutoLock      = "AUTO_LOCK"
+	AccessPolicyModeAccessRequest = "ACCESS_REQUEST"
 )
 
 //nolint:gochecknoglobals
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
+
+type AccessPolicy struct {
+	Mode         *string
+	Duration     *time.Duration
+	ApprovalMode *string
+}
+
+func (p *AccessPolicy) Validate() error {
+	if p.Mode != nil {
+		switch *p.Mode {
+		case AccessPolicyModeManual, AccessPolicyModeAutoLock, AccessPolicyModeAccessRequest:
+			break
+		default:
+			return fmt.Errorf("invalid mode: %s", *p.Mode)
+		}
+	}
+
+	if p.ApprovalMode != nil {
+		switch *p.ApprovalMode {
+		case ApprovalModeAutomatic, ApprovalModeManual:
+			break
+		default:
+			return fmt.Errorf("invalid approval_mode: %s", *p.Mode)
+		}
+	}
+
+	if (p.Duration != nil || p.ApprovalMode != nil) && p.Mode == nil {
+		return errors.New("mode is required")
+	}
+
+	if p.Mode != nil {
+		switch *p.Mode {
+		case AccessPolicyModeManual:
+			break
+		case AccessPolicyModeAutoLock:
+			if p.Duration == nil || p.ApprovalMode == nil {
+				return errors.New("duration and approval_mode are required")
+			}
+
+			if *p.Duration < time.Hour*24 {
+				return errors.New("minimum duration is 1 day")
+			}
+			break
+		case AccessPolicyModeAccessRequest:
+			if p.ApprovalMode == nil {
+				return errors.New("approval_mode is required")
+			}
+
+			if p.Duration != nil && *p.Duration < time.Hour {
+				return errors.New("minimum duration is 1 hour")
+			}
+			break
+		}
+	}
+
+	return nil
+}
 
 type AccessGroup struct {
 	GroupID            string
 	SecurityPolicyID   *string
 	UsageBasedDuration *int64
 	ApprovalMode       *string
+	AccessPolicy       *AccessPolicy
 }
 
 func (g AccessGroup) Equals(another AccessGroup) bool {
@@ -59,6 +123,7 @@ type Resource struct {
 	Name                           string
 	Protocols                      *Protocols
 	IsActive                       bool
+	AccessPolicy                   *AccessPolicy
 	GroupsAccess                   []AccessGroup
 	ServiceAccounts                []string
 	IsAuthoritative                bool
