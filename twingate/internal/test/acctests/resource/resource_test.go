@@ -4340,3 +4340,224 @@ func TestAccTwingateResourceSecurityPolicyOnUpdate(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateCreateResourceWithManualAccessPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithAccessPolicyMode(remoteNetworkName, resourceName, model.AccessPolicyModeManual),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeManual),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithAccessPolicyMode(remoteNetwork, resource, mode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_policy {
+		mode = "%[3]s"
+      }
+	}
+	`, remoteNetwork, resource, mode)
+}
+
+func TestAccTwingateCreateResourceWithAutolockAccessPolicy_ShouldFailRequire2MoreArguments(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithAccessPolicyMode(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock),
+				ExpectError: regexp.MustCompile("duration and approval_mode are required"),
+			},
+		},
+	})
+}
+
+func TestAccTwingateCreateResourceWithAutolockAccessPolicyAndApprovalMode_ShouldFailRequireMinDuration1d(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "1h", model.ApprovalModeManual),
+				ExpectError: regexp.MustCompile("minimum duration is 1 day"),
+			},
+		},
+	})
+}
+
+func createResourceWithAccessPolicy(remoteNetwork, resource, mode, duration, approvalMode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_policy {
+		mode = "%[3]s"
+		duration = "%[4]s"
+		approval_mode = "%[5]s"
+      }
+	}
+	`, remoteNetwork, resource, mode, duration, approvalMode)
+}
+
+func TestAccTwingateCreateResourceWithAutolockAccessPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "48h", model.ApprovalModeManual),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAutoLock),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "48h"),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeManual),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateCreateResourceWithAccessRequestAccessPolicy_ShouldFailRequiresAtLeast1h(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAccessRequest, "30m", model.ApprovalModeManual),
+				ExpectError: regexp.MustCompile("minimum duration is 1 hour"),
+			},
+		},
+	})
+}
+
+func TestAccTwingateCreateResourceWithAccessRequestAccessPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithAccessPolicyWithoutDuration(remoteNetworkName, resourceName, model.AccessPolicyModeAccessRequest, model.ApprovalModeManual),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAccessRequest),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeManual),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithAccessPolicyWithoutDuration(remoteNetwork, resource, mode, approvalMode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  access_policy {
+		mode = "%[3]s"
+		approval_mode = "%[4]s"
+      }
+	}
+	`, remoteNetwork, resource, mode, approvalMode)
+}
+
+func TestAccTwingateUpdateResourceWithAutolockAccessPolicy(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "48h", model.ApprovalModeManual),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAutoLock),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "48h"),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeManual),
+				),
+			},
+			{
+				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAccessRequest, "32h", model.ApprovalModeAutomatic),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAutoLock),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "32h"),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeAutomatic),
+				),
+			},
+		},
+	})
+}

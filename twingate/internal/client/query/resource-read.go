@@ -1,6 +1,7 @@
 package query
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -33,11 +34,10 @@ type Access struct {
 }
 
 type AccessEdge struct {
-	Node                           Principal
-	SecurityPolicy                 *gqlSecurityPolicy
-	UsageBasedAutolockDurationDays *int64
-	ApprovalMode                   *string
-	AccessPolicy                   *AccessPolicy
+	Node           Principal
+	SecurityPolicy *gqlSecurityPolicy
+	ApprovalMode   *string
+	AccessPolicy   *AccessPolicy
 }
 
 type Principal struct {
@@ -62,16 +62,15 @@ type ResourceNode struct {
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
-	Protocols                      *Protocols
-	IsActive                       bool
-	IsVisible                      bool
-	IsBrowserShortcutEnabled       bool
-	Alias                          string
-	SecurityPolicy                 *gqlSecurityPolicy
-	ApprovalMode                   string
-	Tags                           []Tag
-	UsageBasedAutolockDurationDays *int64
-	AccessPolicy                   *AccessPolicy
+	Protocols                *Protocols
+	IsActive                 bool
+	IsVisible                bool
+	IsBrowserShortcutEnabled bool
+	Alias                    string
+	SecurityPolicy           *gqlSecurityPolicy
+	Tags                     []Tag
+	ApprovalMode             string
+	AccessPolicy             *AccessPolicy
 }
 
 type AccessPolicy struct {
@@ -152,10 +151,15 @@ func accessPolicyToModel(accessPolicy *AccessPolicy, approvalMode *string) *mode
 		return nil
 	}
 
-	var duration *time.Duration
+	var duration *string
 	if accessPolicy.DurationSeconds != nil {
 		val := time.Duration(*accessPolicy.DurationSeconds) * time.Second
-		duration = &val
+
+		raw := val.String()
+		raw = strings.TrimSuffix(raw, "0s")
+		raw = strings.TrimSuffix(raw, "0m")
+
+		duration = &raw
 	}
 
 	mode := string(accessPolicy.Mode)

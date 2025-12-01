@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/customvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
@@ -693,17 +692,11 @@ func getAccessPolicyAttribute(list types.Set) (*model.AccessPolicy, error) {
 	modeVal := obj.Attributes()[attr.Mode]
 	if modeVal != nil && !modeVal.IsNull() && !modeVal.IsUnknown() {
 		access.Mode = modeVal.(types.String).ValueStringPointer()
-
 	}
 
 	durationVal := obj.Attributes()[attr.Duration]
 	if durationVal != nil && !durationVal.IsNull() && !durationVal.IsUnknown() {
-		val, err := time.ParseDuration(durationVal.(types.String).ValueString())
-		if err != nil {
-			return nil, fmt.Errorf("invalid duration: %w", err)
-		}
-
-		access.Duration = &val
+		access.Duration = durationVal.(types.String).ValueStringPointer()
 	}
 
 	approvalModeVal := obj.Attributes()[attr.ApprovalMode]
@@ -1093,7 +1086,8 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
 		!plan.ApprovalMode.Equal(state.ApprovalMode) ||
 		!plan.Tags.Equal(state.Tags) || !plan.TagsAll.Equal(state.TagsAll) ||
-		!plan.UsageBasedAutolockDurationDays.Equal(state.UsageBasedAutolockDurationDays)
+		!plan.UsageBasedAutolockDurationDays.Equal(state.UsageBasedAutolockDurationDays) ||
+		!plan.AccessPolicy.Equal(state.AccessPolicy)
 }
 
 func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state *resourceModel, input *model.Resource) error {
@@ -1252,7 +1246,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.ApprovalMode = types.StringValue(resource.ApprovalMode)
 	}
 
-	if !state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsNull() {
+	if (!state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsNull()) && state.AccessPolicy.IsNull() {
 		state.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.UsageBasedAutolockDurationDays)
 	}
 
@@ -1269,7 +1263,18 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		}
 	}
 
-	// todo: add access
+	referenceAccessPolicy, err := getAccessPolicyAttribute(reference.AccessPolicy)
+	if err != nil {
+		diagnostics.AddAttributeError(
+			path.Root(attr.AccessPolicy),
+			"failed to parse access_policy attribute",
+			err.Error(),
+		)
+		return
+	}
+
+	accessPolicy, diags := convertAccessPolicyToTerraform(ctx, resource.AccessPolicy, referenceAccessPolicy)
+	diagnostics.Append(diags...)
 
 	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess, reference.GroupAccess)
 	diagnostics.Append(diags...)
@@ -1280,6 +1285,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		return
 	}
 
+	state.AccessPolicy = accessPolicy
 	state.GroupAccess = groupAccess
 	state.ServiceAccess = serviceAccess
 	state.TagsAll = makeMapValue(resource.Tags)
@@ -1463,6 +1469,37 @@ func protocolAttributeTypes() map[string]tfattr.Type {
 	}
 }
 
+func convertAccessPolicyToTerraform(ctx context.Context, accessPolicy, referenceAccessPolicy *model.AccessPolicy) (types.Set, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if accessPolicy == nil {
+		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
+	}
+
+	attributes := map[string]tfattr.Value{
+		attr.Mode:         types.StringPointerValue(accessPolicy.Mode),
+		attr.Duration:     types.StringPointerValue(accessPolicy.Duration),
+		attr.ApprovalMode: types.StringPointerValue(accessPolicy.ApprovalMode),
+	}
+
+	if referenceAccessPolicy != nil && (referenceAccessPolicy.ApprovalMode == nil || *referenceAccessPolicy.ApprovalMode == "") {
+		attributes[attr.ApprovalMode] = types.StringNull()
+	}
+
+	if referenceAccessPolicy != nil && (referenceAccessPolicy.Duration == nil || *referenceAccessPolicy.Duration == "") {
+		attributes[attr.Duration] = types.StringNull()
+	}
+
+	obj, diags := types.ObjectValue(accessPolicyAttributeTypes(), attributes)
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
+	}
+
+	return makeObjectsSet(ctx, obj)
+}
+
 func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []string) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
@@ -1524,6 +1561,7 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 			attr.ApprovalMode:                   types.StringPointerValue(access.ApprovalMode),
 		}
 
+		var referenceAccessPolicy *model.AccessPolicy
 		referenceGroup, exists := referenceLookup[access.GroupID]
 		if exists {
 			if referenceGroup.UsageBasedDuration == nil {
@@ -1533,7 +1571,13 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 			if referenceGroup.ApprovalMode == nil || *referenceGroup.ApprovalMode == "" {
 				attributes[attr.ApprovalMode] = types.StringNull()
 			}
+
+			referenceAccessPolicy = referenceGroup.AccessPolicy
 		}
+
+		accessPolicy, diags := convertAccessPolicyToTerraform(ctx, access.AccessPolicy, referenceAccessPolicy)
+		diagnostics.Append(diags...)
+		attributes[attr.AccessPolicy] = accessPolicy
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
 		diagnostics.Append(diags...)
@@ -1624,12 +1668,25 @@ func accessGroupAttributeTypes() map[string]tfattr.Type {
 		attr.SecurityPolicyID:               types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
 		attr.ApprovalMode:                   types.StringType,
+		attr.AccessPolicy: types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: accessPolicyAttributeTypes(),
+			},
+		},
 	}
 }
 
 func accessServiceAccountAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.ServiceAccountID: types.StringType,
+	}
+}
+
+func accessPolicyAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.Mode:         types.StringType,
+		attr.Duration:     types.StringType,
+		attr.ApprovalMode: types.StringType,
 	}
 }
 

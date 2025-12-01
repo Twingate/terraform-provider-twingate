@@ -57,7 +57,8 @@ func NewAccessPolicyInput(accessPolicy *model.AccessPolicy, approvalMode string)
 
 	var durationSeconds *int64
 	if accessPolicy.Duration != nil {
-		seconds := int64((*accessPolicy.Duration).Seconds())
+		duration, _ := accessPolicy.ParseDuration()
+		seconds := int64(duration.Seconds())
 		durationSeconds = &seconds
 	}
 
@@ -377,10 +378,10 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(NewAccessApprovalMode(input.AccessPolicy, input.ApprovalMode), "approvalMode"),
+		//gqlVar(NewAccessApprovalMode(input.AccessPolicy, input.ApprovalMode), "approvalMode"),
 		gqlVar(NewAccessPolicyInput(input.AccessPolicy, input.ApprovalMode), "accessPolicy"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
-		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
+		//gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)

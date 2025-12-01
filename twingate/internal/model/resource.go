@@ -34,8 +34,16 @@ var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
 type AccessPolicy struct {
 	Mode         *string
-	Duration     *time.Duration
+	Duration     *string
 	ApprovalMode *string
+}
+
+func (p *AccessPolicy) ParseDuration() (time.Duration, error) {
+	if p.Duration == nil || *p.Duration == "" {
+		return time.Duration(0), nil
+	}
+
+	return time.ParseDuration(*p.Duration)
 }
 
 func (p *AccessPolicy) Validate() error {
@@ -61,6 +69,11 @@ func (p *AccessPolicy) Validate() error {
 		return errors.New("mode is required")
 	}
 
+	duration, err := p.ParseDuration()
+	if err != nil {
+		return fmt.Errorf("invalid duration: %w", err)
+	}
+
 	if p.Mode != nil {
 		switch *p.Mode {
 		case AccessPolicyModeManual:
@@ -70,7 +83,7 @@ func (p *AccessPolicy) Validate() error {
 				return errors.New("duration and approval_mode are required")
 			}
 
-			if *p.Duration < time.Hour*24 {
+			if duration < time.Hour*24 {
 				return errors.New("minimum duration is 1 day")
 			}
 			break
@@ -79,7 +92,7 @@ func (p *AccessPolicy) Validate() error {
 				return errors.New("approval_mode is required")
 			}
 
-			if p.Duration != nil && *p.Duration < time.Hour {
+			if p.Duration != nil && duration < time.Hour {
 				return errors.New("minimum duration is 1 hour")
 			}
 			break
@@ -90,22 +103,29 @@ func (p *AccessPolicy) Validate() error {
 }
 
 type AccessGroup struct {
-	GroupID            string
-	SecurityPolicyID   *string
-	UsageBasedDuration *int64
-	ApprovalMode       *string
-	AccessPolicy       *AccessPolicy
+	GroupID          string
+	SecurityPolicyID *string
+	AccessPolicy     *AccessPolicy
 }
 
-func (g AccessGroup) Equals(another AccessGroup) bool {
-	if g.GroupID == another.GroupID &&
-		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
-		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) &&
-		equalsOptionalString(g.ApprovalMode, another.ApprovalMode) {
+func (p *AccessPolicy) Equals(another *AccessPolicy) bool {
+	if p == nil && another == nil {
 		return true
 	}
 
-	return false
+	if p == nil || another == nil {
+		return false
+	}
+
+	return equalsOptionalString(p.Mode, another.Mode) &&
+		equalsOptionalString(p.Duration, another.Duration) &&
+		equalsOptionalString(p.ApprovalMode, another.ApprovalMode)
+}
+
+func (g AccessGroup) Equals(another AccessGroup) bool {
+	return g.GroupID == another.GroupID &&
+		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
+		g.AccessPolicy.Equals(another.AccessPolicy)
 }
 
 func equalsOptionalString(s1, s2 *string) bool {
