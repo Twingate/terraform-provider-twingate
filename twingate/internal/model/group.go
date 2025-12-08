@@ -42,7 +42,6 @@ func (g Group) ToTerraform() interface{} {
 	}
 }
 
-//nolint:cyclop
 func (g Group) Match(filter ResourceFilter) bool {
 	if filter.IsNil() {
 		// matches all groups

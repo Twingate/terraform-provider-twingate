@@ -158,7 +158,7 @@ func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *d
 	data.Name = types.StringValue(resource.Name)
 	data.Address = types.StringValue(resource.Address)
 	data.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
-	data.ApprovalMode = types.StringValue(resource.ApprovalMode)
+	data.ApprovalMode = types.StringPointerValue(resource.AccessPolicy.LegacyApprovalMode())
 	data.Protocols = convertProtocolsToTerraform(resource.Protocols)
 	tags, diags := convertTagsToTerraform(resource.Tags)
 
@@ -169,7 +169,7 @@ func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *d
 	}
 
 	data.Tags = tags
-	data.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.UsageBasedAutolockDurationDays)
+	data.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.AccessPolicy.LegacyUsageBasedAutolockDurationDays())
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

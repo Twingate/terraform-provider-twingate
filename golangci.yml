@@ -60,7 +60,7 @@ linters:
         - github.com/hashicorp/terraform-plugin-testing/plancheck.PlanCheck
         - github.com/hashicorp/terraform-plugin-framework/ephemeral.EphemeralResourceWithConfigure
     cyclop:
-      max-complexity: 20
+      max-complexity: 25
       ignore-tests: true
     gocyclo:
       min-complexity: 25

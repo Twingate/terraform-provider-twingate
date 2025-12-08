@@ -14,6 +14,8 @@ import (
 )
 
 const (
+	hoursInDay = 24
+
 	portRangeSeparator    = "-"
 	expectedPortsRangeLen = 2
 
@@ -29,6 +31,14 @@ const (
 	AccessPolicyModeAccessRequest = "ACCESS_REQUEST"
 )
 
+var (
+	ErrRequiredMode                    = errors.New("mode is required")
+	ErrRequiredApprovalMode            = errors.New("approval_mode is required")
+	ErrRequiredDurationAndApprovalMode = errors.New("duration and approval_mode are required")
+	ErrRequiredMinDuration1Day         = errors.New("minimum duration is 1 day")
+	ErrRequiredMinDuration1Hour        = errors.New("minimum duration is 1 hour")
+)
+
 //nolint:gochecknoglobals
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
@@ -38,12 +48,31 @@ type AccessPolicy struct {
 	ApprovalMode *string
 }
 
+func (p *AccessPolicy) LegacyApprovalMode() *string {
+	if p != nil && p.ApprovalMode != nil && *p.ApprovalMode != "" {
+		return p.ApprovalMode
+	}
+
+	return nil
+}
+
+func (p *AccessPolicy) LegacyUsageBasedAutolockDurationDays() *int64 {
+	if p != nil && p.Duration != nil && *p.Duration != "" {
+		duration, _ := p.ParseDuration()
+		days := int64(duration.Hours() / hoursInDay)
+
+		return &days
+	}
+
+	return nil
+}
+
 func (p *AccessPolicy) ParseDuration() (time.Duration, error) {
 	if p.Duration == nil || *p.Duration == "" {
 		return time.Duration(0), nil
 	}
 
-	return time.ParseDuration(*p.Duration)
+	return time.ParseDuration(*p.Duration) //nolint:wrapcheck
 }
 
 func (p *AccessPolicy) Validate() error {
@@ -52,7 +81,7 @@ func (p *AccessPolicy) Validate() error {
 		case AccessPolicyModeManual, AccessPolicyModeAutoLock, AccessPolicyModeAccessRequest:
 			break
 		default:
-			return fmt.Errorf("invalid mode: %s", *p.Mode)
+			return fmt.Errorf("invalid mode: %s", *p.Mode) //nolint:err113
 		}
 	}
 
@@ -61,12 +90,12 @@ func (p *AccessPolicy) Validate() error {
 		case ApprovalModeAutomatic, ApprovalModeManual:
 			break
 		default:
-			return fmt.Errorf("invalid approval_mode: %s", *p.Mode)
+			return fmt.Errorf("invalid approval_mode: %s", *p.Mode) //nolint:err113
 		}
 	}
 
 	if (p.Duration != nil || p.ApprovalMode != nil) && p.Mode == nil {
-		return errors.New("mode is required")
+		return ErrRequiredMode
 	}
 
 	duration, err := p.ParseDuration()
@@ -80,26 +109,33 @@ func (p *AccessPolicy) Validate() error {
 			break
 		case AccessPolicyModeAutoLock:
 			if p.Duration == nil || p.ApprovalMode == nil {
-				return errors.New("duration and approval_mode are required")
+				return ErrRequiredDurationAndApprovalMode
 			}
 
-			if duration < time.Hour*24 {
-				return errors.New("minimum duration is 1 day")
+			if duration < time.Hour*hoursInDay {
+				return ErrRequiredMinDuration1Day
 			}
-			break
+
 		case AccessPolicyModeAccessRequest:
 			if p.ApprovalMode == nil {
-				return errors.New("approval_mode is required")
+				return ErrRequiredApprovalMode
 			}
 
 			if p.Duration != nil && duration < time.Hour {
-				return errors.New("minimum duration is 1 hour")
+				return ErrRequiredMinDuration1Hour
 			}
-			break
 		}
 	}
 
 	return nil
+}
+
+type LegacyAccessGroup struct {
+	GroupID            string
+	SecurityPolicyID   *string
+	ApprovalMode       *string
+	UsageBasedDuration *int64
+	AccessPolicy       *AccessPolicy
 }
 
 type AccessGroup struct {
@@ -132,28 +168,22 @@ func equalsOptionalString(s1, s2 *string) bool {
 	return s1 == nil && s2 == nil || s1 != nil && s2 != nil && strings.EqualFold(*s1, *s2)
 }
 
-func equalsOptionalInt64(i1, i2 *int64) bool {
-	return i1 == nil && i2 == nil || i1 != nil && i2 != nil && *i1 == *i2
-}
-
 type Resource struct {
-	ID                             string
-	RemoteNetworkID                string
-	Address                        string
-	Name                           string
-	Protocols                      *Protocols
-	IsActive                       bool
-	AccessPolicy                   *AccessPolicy
-	GroupsAccess                   []AccessGroup
-	ServiceAccounts                []string
-	IsAuthoritative                bool
-	IsVisible                      *bool
-	IsBrowserShortcutEnabled       *bool
-	Alias                          *string
-	SecurityPolicyID               *string
-	ApprovalMode                   string
-	Tags                           map[string]string
-	UsageBasedAutolockDurationDays *int64
+	ID                       string
+	RemoteNetworkID          string
+	Address                  string
+	Name                     string
+	Protocols                *Protocols
+	IsActive                 bool
+	AccessPolicy             *AccessPolicy
+	GroupsAccess             []AccessGroup
+	ServiceAccounts          []string
+	IsAuthoritative          bool
+	IsVisible                *bool
+	IsBrowserShortcutEnabled *bool
+	Alias                    *string
+	SecurityPolicyID         *string
+	Tags                     map[string]string
 }
 
 func (r Resource) AccessToTerraform() []interface{} {

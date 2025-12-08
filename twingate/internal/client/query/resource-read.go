@@ -108,11 +108,11 @@ func (r gqlResource) ToModel() *model.Resource {
 		switch access.Node.Type {
 		case AccessGroup:
 			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
-				GroupID:            string(access.Node.ID),
-				SecurityPolicyID:   securityPolicyID,
-				UsageBasedDuration: access.UsageBasedAutolockDurationDays,
-				ApprovalMode:       access.ApprovalMode,
-				AccessPolicy:       accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
+				GroupID:          string(access.Node.ID),
+				SecurityPolicyID: securityPolicyID,
+				//UsageBasedDuration: access.UsageBasedAutolockDurationDays,
+				//ApprovalMode:       access.ApprovalMode,
+				AccessPolicy: accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
 			})
 		case AccessServiceAccount:
 			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
@@ -129,20 +129,20 @@ func (r ResourceNode) ToModel() *model.Resource {
 	}
 
 	return &model.Resource{
-		ID:                             string(r.ID),
-		Name:                           r.Name,
-		Address:                        r.Address.Value,
-		RemoteNetworkID:                string(r.RemoteNetwork.ID),
-		Protocols:                      protocolsToModel(r.Protocols),
-		IsActive:                       r.IsActive,
-		IsVisible:                      &r.IsVisible,
-		IsBrowserShortcutEnabled:       &r.IsBrowserShortcutEnabled,
-		Alias:                          optionalString(r.Alias),
-		SecurityPolicyID:               optionalString(securityPolicy),
-		ApprovalMode:                   r.ApprovalMode,
-		Tags:                           tagsToModel(r.Tags),
-		UsageBasedAutolockDurationDays: r.UsageBasedAutolockDurationDays,
-		AccessPolicy:                   accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
+		ID:                       string(r.ID),
+		Name:                     r.Name,
+		Address:                  r.Address.Value,
+		RemoteNetworkID:          string(r.RemoteNetwork.ID),
+		Protocols:                protocolsToModel(r.Protocols),
+		IsActive:                 r.IsActive,
+		IsVisible:                &r.IsVisible,
+		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
+		Alias:                    optionalString(r.Alias),
+		SecurityPolicyID:         optionalString(securityPolicy),
+		//ApprovalMode:                   r.ApprovalMode,
+		Tags: tagsToModel(r.Tags),
+		//UsageBasedAutolockDurationDays: r.UsageBasedAutolockDurationDays,
+		AccessPolicy: accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
 	}
 }
 
@@ -152,6 +152,7 @@ func accessPolicyToModel(accessPolicy *AccessPolicy, approvalMode *string) *mode
 	}
 
 	var duration *string
+
 	if accessPolicy.DurationSeconds != nil {
 		val := time.Duration(*accessPolicy.DurationSeconds) * time.Second
 

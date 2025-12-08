@@ -33,11 +33,11 @@ func (validator durationValidator) MarkdownDescription(ctx context.Context) stri
 func (v durationValidator) validate(value string) error {
 	duration, err := time.ParseDuration(value)
 	if err != nil {
-		return fmt.Errorf("failed to parse Duration %v", err)
+		return fmt.Errorf("failed to parse Duration %w", err)
 	}
 
 	if duration < 0 {
-		return fmt.Errorf("got negative Duration %v", duration.String())
+		return fmt.Errorf("got negative Duration %s", duration.String()) //nolint:err113
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (v durationValidator) ValidateParameterString(ctx context.Context, request 
 	}
 }
 
-// Duration returns a validator which ensures that duration string configured correctly
+// Duration returns a validator which ensures that duration string configured correctly.
 func Duration() durationValidator {
 	return durationValidator{}
 }

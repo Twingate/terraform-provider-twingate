@@ -851,17 +851,18 @@ func TestAccTwingateResourceImport(t *testing.T) {
 				ImportState:  true,
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
-					attr.Address:                        "acc-test.com.12",
-					attr.Alias:                          "test.alias",
-					tcpPolicy:                           model.PolicyRestricted,
-					tcpPortsLen:                         "2",
-					firstTCPPort:                        "80",
-					udpPolicy:                           model.PolicyAllowAll,
-					udpPortsLen:                         "0",
-					accessGroupIdsLen:                   "2",
-					attr.ApprovalMode:                   "MANUAL",
-					attr.UsageBasedAutolockDurationDays: "10",
-					attr.Path(attr.AccessGroup, attr.UsageBasedAutolockDurationDays): "13",
+					attr.Address:                            "acc-test.com.12",
+					attr.Alias:                              "test.alias",
+					tcpPolicy:                               model.PolicyRestricted,
+					tcpPortsLen:                             "2",
+					firstTCPPort:                            "80",
+					udpPolicy:                               model.PolicyAllowAll,
+					udpPortsLen:                             "0",
+					accessGroupIdsLen:                       "2",
+					attr.Path(attr.AccessPolicy, attr.Mode): model.AccessPolicyModeAutoLock,
+					attr.Path(attr.AccessPolicy, attr.ApprovalMode):               model.ApprovalModeManual,
+					attr.Path(attr.AccessPolicy, attr.Duration):                   "48h",
+					attr.Path(attr.AccessGroup, attr.AccessPolicy, attr.Duration): "240h",
 				}),
 			},
 		},
@@ -886,15 +887,23 @@ func createResource12(networkName, groupName1, groupName2, resourceName string) 
 	  name = "%s"
 	  address = "acc-test.com.12"
 	  remote_network_id = twingate_remote_network.test12.id
-	  approval_mode = "MANUAL"
-	  usage_based_autolock_duration_days = 10
 	  alias = "test.alias"
+
+	  access_policy {
+	    mode = "AUTO_LOCK"
+	    approval_mode = "MANUAL"
+	    duration = "48h"
+	  }
 	  
       dynamic "access_group" {
 		for_each = [twingate_group.g121.id, twingate_group.g122.id]
 		content {
 			group_id = access_group.value
-			usage_based_autolock_duration_days = 13
+			access_policy {
+			  mode = "AUTO_LOCK"
+			  approval_mode = "MANUAL"
+			  duration = "240h"
+			}
 		}
       }
       
@@ -4553,11 +4562,87 @@ func TestAccTwingateUpdateResourceWithAutolockAccessPolicy(t *testing.T) {
 				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAccessRequest, "32h", model.ApprovalModeAutomatic),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAutoLock),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAccessRequest),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "32h"),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeAutomatic),
 				),
 			},
 		},
 	})
+}
+
+func TestAccTwingateCreateResourceWithAccessPolicyAndDeprecatedApprovalMode_ShouldFail(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithAccessPolicyAndApprovalMode(remoteNetworkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
+		},
+	})
+}
+
+func createResourceWithAccessPolicyAndApprovalMode(remoteNetwork, resource string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  approval_mode = "MANUAL"
+
+	  access_policy {
+		mode = "MANUAL"
+      }
+	}
+	`, remoteNetwork, resource)
+}
+
+func TestAccTwingateCreateResourceWithAccessPolicyAndDeprecatedUsageBasedDuration_ShouldFail(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithAccessPolicyAndUsageBasedDuration(remoteNetworkName, resourceName),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
+		},
+	})
+}
+
+func createResourceWithAccessPolicyAndUsageBasedDuration(remoteNetwork, resource string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  
+	  usage_based_autolock_duration_days = 1
+
+	  access_policy {
+		mode = "MANUAL"
+      }
+	}
+	`, remoteNetwork, resource)
 }
