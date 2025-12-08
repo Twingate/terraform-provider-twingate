@@ -2500,7 +2500,10 @@ func TestReadResource_ToModel(t *testing.T) {
 											ID: "policy789",
 										},
 									},
-									UsageBasedAutolockDurationDays: optionalInt64(30),
+									AccessPolicy: &AccessPolicy{
+										Mode:            AccessMode(model.ApprovalModeManual),
+										DurationSeconds: optionalInt64(2592000),
+									},
 								},
 								{
 									Node: Principal{
@@ -2519,9 +2522,12 @@ func TestReadResource_ToModel(t *testing.T) {
 				SecurityPolicyID: optionalString("policy123"),
 				GroupsAccess: []model.AccessGroup{
 					{
-						GroupID:            "group123",
-						SecurityPolicyID:   optionalString("policy789"),
-						UsageBasedDuration: optionalInt64(30),
+						GroupID:          "group123",
+						SecurityPolicyID: optionalString("policy789"),
+						AccessPolicy: &model.AccessPolicy{
+							Mode:     optionalString(model.ApprovalModeManual),
+							Duration: optionalString("720h"),
+						},
 					},
 				},
 				ServiceAccounts: []string{"serviceAccount456"},
