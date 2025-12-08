@@ -2,6 +2,8 @@ package resource
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -10,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var defaultProtocols = &model.Protocols{
