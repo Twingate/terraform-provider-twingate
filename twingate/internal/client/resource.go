@@ -170,7 +170,11 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		return nil, err
 	}
 
-	resource := response.Entity.ToModel()
+	resource, err := response.Entity.ToModel()
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
 	resource.GroupsAccess = input.GroupsAccess
 	resource.ServiceAccounts = input.ServiceAccounts
 	resource.IsAuthoritative = input.IsAuthoritative
@@ -216,14 +220,17 @@ func (client *Client) ReadResource(ctx context.Context, resourceID string) (*mod
 		return nil, err //nolint
 	}
 
-	res := response.Resource.ToModel()
+	res, err := response.Resource.ToModel()
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
 
 	setResource(res)
 
 	return res, nil
 }
 
-func (client *Client) readResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
+func (client *Client) readResourceAccessAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
 	opr := resourceResource.read().withCustomName("readResourceAccessAfter")
 
 	resourceID := string(variables["id"].(graphql.ID))
@@ -258,7 +265,7 @@ func (client *Client) ReadResources(ctx context.Context) ([]*model.Resource, err
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readResourcesAfter")
 
 	variables[query.CursorResources] = cursor
@@ -297,7 +304,7 @@ func (client *Client) ReadFullResources(ctx context.Context) ([]*model.Resource,
 		}
 	}
 
-	return response.ToModel(), nil
+	return response.ToModel() //nolint:wrapcheck
 }
 
 func (client *Client) ReadFullResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
@@ -327,10 +334,10 @@ func (client *Client) ReadFullResourcesByName(ctx context.Context, filter *model
 		}
 	}
 
-	return response.ToModel(), nil
+	return response.ToModel() //nolint:wrapcheck
 }
 
-func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
+func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readFullResourcesByNameAfter")
 
 	variables[query.CursorResources] = cursor
@@ -343,7 +350,7 @@ func (client *Client) readFullResourcesByNameAfter(ctx context.Context, variable
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
+func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.FullResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readFullResourcesAfter")
 
 	variables[query.CursorResources] = cursor
@@ -356,7 +363,7 @@ func (client *Client) readFullResourcesAfter(ctx context.Context, variables map[
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) readExtendedResourceAccessAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
+func (client *Client) readExtendedResourceAccessAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.AccessEdge], error) {
 	opr := resourceResource.read().withCustomName("readExtendedResourceAccessAfter")
 
 	resourceID := string(variables["id"].(graphql.ID))
@@ -404,7 +411,11 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		return nil, err //nolint
 	}
 
-	resource := response.Entity.ToModel()
+	resource, err := response.Entity.ToModel()
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
 	resource.IsAuthoritative = input.IsAuthoritative
 
 	if input.IsVisible == nil {
@@ -493,7 +504,7 @@ func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.Res
 	return response.ToModel(), nil
 }
 
-func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
+func (client *Client) readResourcesByNameAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ResourceEdge], error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
 	variables[query.CursorResources] = cursor

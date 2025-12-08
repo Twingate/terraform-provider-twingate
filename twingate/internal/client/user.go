@@ -76,7 +76,7 @@ func (client *Client) ReadUsers(ctx context.Context, filter *UsersFilter) ([]*mo
 	return response.ToModel(), nil
 }
 
-func (client *Client) readUsersAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
+func (client *Client) readUsersAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.UserEdge], error) {
 	opr := resourceUser.read()
 
 	variables[query.CursorUsers] = cursor

@@ -20,13 +20,13 @@ func TestConnectorModel(t *testing.T) {
 
 		expectedName string
 		expectedID   string
-		expected     interface{}
+		expected     any
 	}{
 		{
 			connector: model.Connector{
 				StatusUpdatesEnabled: &boolFalse,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:                   "",
 				attr.Name:                 "",
 				attr.RemoteNetworkID:      "",
@@ -52,7 +52,7 @@ func TestConnectorModel(t *testing.T) {
 			},
 			expectedID:   "id",
 			expectedName: "name",
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				attr.ID:                   "id",
 				attr.Name:                 "name",
 				attr.RemoteNetworkID:      "network-id",

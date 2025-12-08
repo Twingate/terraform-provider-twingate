@@ -22,8 +22,8 @@ func (c Connector) GetID() string {
 	return c.ID
 }
 
-func (c Connector) ToTerraform() interface{} {
-	return map[string]interface{}{
+func (c Connector) ToTerraform() any {
+	return map[string]any{
 		attr.ID:                   c.ID,
 		attr.Name:                 c.Name,
 		attr.RemoteNetworkID:      c.NetworkID,

@@ -55,7 +55,7 @@ func (client *Client) ReadRemoteNetworks(ctx context.Context, name, filter strin
 	return response.ToModel(), nil
 }
 
-func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map[string]interface{}, cursor string) (*query.PaginatedResource[*query.RemoteNetworkEdge], error) {
+func (client *Client) readRemoteNetworksAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.RemoteNetworkEdge], error) {
 	opr := resourceRemoteNetwork.read()
 
 	variables[query.CursorRemoteNetworks] = cursor

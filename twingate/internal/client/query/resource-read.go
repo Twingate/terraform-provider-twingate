@@ -1,12 +1,18 @@
 package query
 
 import (
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
+)
+
+var (
+	ErrMissingAccessGroupID          = errors.New("access group ID is missing in response")
+	ErrMissingAccessServiceAccountID = errors.New("access service account ID is missing in response")
 )
 
 const (
@@ -41,8 +47,9 @@ type AccessEdge struct {
 }
 
 type Principal struct {
-	Type string `graphql:"__typename"`
-	Node `graphql:"... on Node"`
+	Type           string `graphql:"__typename"`
+	Group          Node   `graphql:"... on Group"`
+	ServiceAccount Node   `graphql:"... on ServiceAccount"`
 }
 
 type Node struct {
@@ -96,7 +103,7 @@ type PortRange struct {
 	End   int `json:"end"`
 }
 
-func (r gqlResource) ToModel() *model.Resource {
+func (r gqlResource) ToModel() (*model.Resource, error) {
 	resource := r.ResourceNode.ToModel()
 
 	for _, access := range r.Access.Edges {
@@ -107,19 +114,27 @@ func (r gqlResource) ToModel() *model.Resource {
 
 		switch access.Node.Type {
 		case AccessGroup:
+			groupID := string(access.Node.Group.ID)
+			if groupID == "" {
+				return nil, ErrMissingAccessGroupID
+			}
+
 			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
-				GroupID:          string(access.Node.ID),
+				GroupID:          groupID,
 				SecurityPolicyID: securityPolicyID,
-				//UsageBasedDuration: access.UsageBasedAutolockDurationDays,
-				//ApprovalMode:       access.ApprovalMode,
-				AccessPolicy: accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
+				AccessPolicy:     accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
 			})
 		case AccessServiceAccount:
-			resource.ServiceAccounts = append(resource.ServiceAccounts, string(access.Node.ID))
+			serviceAccountID := string(access.Node.ServiceAccount.ID)
+			if serviceAccountID == "" {
+				return nil, ErrMissingAccessServiceAccountID
+			}
+
+			resource.ServiceAccounts = append(resource.ServiceAccounts, serviceAccountID)
 		}
 	}
 
-	return resource
+	return resource, nil
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
@@ -139,10 +154,8 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
 		SecurityPolicyID:         optionalString(securityPolicy),
-		//ApprovalMode:                   r.ApprovalMode,
-		Tags: tagsToModel(r.Tags),
-		//UsageBasedAutolockDurationDays: r.UsageBasedAutolockDurationDays,
-		AccessPolicy: accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
+		Tags:                     tagsToModel(r.Tags),
+		AccessPolicy:             accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
 	}
 }
 

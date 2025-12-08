@@ -110,6 +110,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		return
 	}
 
+	resp.State.SetAttribute(ctx, path.Root(attr.SecurityPolicyID), types.StringPointerValue(res.SecurityPolicyID))
 	resp.State.SetAttribute(ctx, path.Root(attr.Alias), types.StringPointerValue(res.Alias))
 
 	accessPolicy, diags := convertAccessPolicyToTerraformForImport(ctx, res.AccessPolicy)
@@ -654,14 +655,7 @@ func getGroupAccessAttribute(list types.Set) ([]model.AccessGroup, error) {
 		}
 
 		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
-		// if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
-		//	accessGroup.UsageBasedDuration = usageBasedDuration.(types.Int64).ValueInt64Pointer()
-		//}
-		//
 		approvalModeVal := obj.Attributes()[attr.ApprovalMode]
-		// if approvalModeVal != nil && !approvalModeVal.IsNull() && !approvalModeVal.IsUnknown() {
-		//	accessGroup.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
-		//}
 
 		var (
 			err          error
@@ -862,8 +856,6 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:                     getTags(plan.TagsAll),
-		//ApprovalMode:                   plan.ApprovalMode.ValueString(),
-		//UsageBasedAutolockDurationDays: plan.UsageBasedAutolockDurationDays.ValueInt64Pointer(),
 	}, nil
 }
 

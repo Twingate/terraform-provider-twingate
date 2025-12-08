@@ -3,6 +3,7 @@ package resource
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
@@ -208,13 +209,8 @@ func mapUnion(mapA, mapB map[string]string) map[string]string {
 	}
 
 	result := make(map[string]string, max(len(mapA), len(mapB)))
-	for key, val := range mapA {
-		result[key] = val
-	}
-
-	for key, val := range mapB {
-		result[key] = val
-	}
+	maps.Copy(result, mapA)
+	maps.Copy(result, mapB)
 
 	return result
 }

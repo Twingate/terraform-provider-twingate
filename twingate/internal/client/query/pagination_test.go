@@ -11,7 +11,7 @@ func TestFetchPages(t *testing.T) {
 	cases := []struct {
 		name            string
 		initialResource *PaginatedResource[string]
-		fetchNextPage   func(ctx context.Context, variables map[string]interface{}, cursor string) (*PaginatedResource[string], error)
+		fetchNextPage   func(ctx context.Context, variables map[string]any, cursor string) (*PaginatedResource[string], error)
 		expectedEdges   []string
 		expectedError   error
 	}{
@@ -24,7 +24,7 @@ func TestFetchPages(t *testing.T) {
 				},
 				Edges: []string{"edge1", "edge2"},
 			},
-			fetchNextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*PaginatedResource[string], error) {
+			fetchNextPage: func(ctx context.Context, variables map[string]any, cursor string) (*PaginatedResource[string], error) {
 				return nil, nil // Should not be called since HasNextPage is false
 			},
 			expectedEdges: []string{"edge1", "edge2"},
@@ -39,7 +39,7 @@ func TestFetchPages(t *testing.T) {
 				},
 				Edges: []string{"edge1"},
 			},
-			fetchNextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*PaginatedResource[string], error) {
+			fetchNextPage: func(ctx context.Context, variables map[string]any, cursor string) (*PaginatedResource[string], error) {
 				if cursor == "cursor1" {
 					return &PaginatedResource[string]{
 						PageInfo: PageInfo{
@@ -63,7 +63,7 @@ func TestFetchPages(t *testing.T) {
 				},
 				Edges: []string{"edge1"},
 			},
-			fetchNextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*PaginatedResource[string], error) {
+			fetchNextPage: func(ctx context.Context, variables map[string]any, cursor string) (*PaginatedResource[string], error) {
 				switch cursor {
 				case "cursor1":
 					return &PaginatedResource[string]{
@@ -97,7 +97,7 @@ func TestFetchPages(t *testing.T) {
 				},
 				Edges: []string{"edge1"},
 			},
-			fetchNextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*PaginatedResource[string], error) {
+			fetchNextPage: func(ctx context.Context, variables map[string]any, cursor string) (*PaginatedResource[string], error) {
 				return nil, errors.New("fetch error")
 			},
 			expectedEdges: []string{"edge1"},
@@ -106,7 +106,7 @@ func TestFetchPages(t *testing.T) {
 		{
 			name:            "Nil initial resource",
 			initialResource: nil,
-			fetchNextPage: func(ctx context.Context, variables map[string]interface{}, cursor string) (*PaginatedResource[string], error) {
+			fetchNextPage: func(ctx context.Context, variables map[string]any, cursor string) (*PaginatedResource[string], error) {
 				return nil, nil // Should not be called since resource is nil
 			},
 			expectedEdges: nil,

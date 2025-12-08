@@ -2418,16 +2418,18 @@ func TestUpdateResourceRemoveGroups_IsEmpty(t *testing.T) {
 
 func TestReadResource_ToModel(t *testing.T) {
 	cases := []struct {
-		name     string
-		query    ReadResource
-		expected *model.Resource
+		name          string
+		query         ReadResource
+		expected      *model.Resource
+		expectedError error
 	}{
 		{
 			name: "Resource is nil",
 			query: ReadResource{
 				Resource: nil,
 			},
-			expected: nil,
+			expected:      nil,
+			expectedError: nil,
 		},
 		{
 			name: "Resource with no access edges",
@@ -2461,6 +2463,7 @@ func TestReadResource_ToModel(t *testing.T) {
 				IsVisible:                optionalBool(false),
 				IsBrowserShortcutEnabled: optionalBool(false),
 			},
+			expectedError: nil,
 		},
 		{
 			name: "Resource with multiple access edges",
@@ -2492,8 +2495,10 @@ func TestReadResource_ToModel(t *testing.T) {
 							Edges: []*AccessEdge{
 								{
 									Node: Principal{
+										Group: Node{
+											ID: "group123",
+										},
 										Type: "Group",
-										Node: Node{ID: "group123"},
 									},
 									SecurityPolicy: &gqlSecurityPolicy{
 										IDName{
@@ -2507,8 +2512,10 @@ func TestReadResource_ToModel(t *testing.T) {
 								},
 								{
 									Node: Principal{
+										ServiceAccount: Node{
+											ID: "serviceAccount456",
+										},
 										Type: "ServiceAccount",
-										Node: Node{ID: "serviceAccount456"},
 									},
 								},
 							},
@@ -2547,13 +2554,58 @@ func TestReadResource_ToModel(t *testing.T) {
 				IsVisible:                optionalBool(false),
 				IsBrowserShortcutEnabled: optionalBool(false),
 			},
+			expectedError: nil,
+		},
+		{
+			name: "Resource with broken access edges - no group_id",
+			query: ReadResource{
+				Resource: &gqlResource{
+					ResourceNode: ResourceNode{},
+					Access: Access{
+						PaginatedResource: PaginatedResource[*AccessEdge]{
+							Edges: []*AccessEdge{
+								{
+									Node: Principal{
+										Type: "Group",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected:      nil,
+			expectedError: ErrMissingAccessGroupID,
+		},
+		{
+			name: "Resource with broken access edges - no service_account_id",
+			query: ReadResource{
+				Resource: &gqlResource{
+					ResourceNode: ResourceNode{},
+					Access: Access{
+						PaginatedResource: PaginatedResource[*AccessEdge]{
+							Edges: []*AccessEdge{
+								{
+									Node: Principal{
+										Type: "ServiceAccount",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected:      nil,
+			expectedError: ErrMissingAccessServiceAccountID,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			if !c.query.IsEmpty() {
-				assert.Equal(t, c.expected, c.query.Resource.ToModel())
+				res, err := c.query.Resource.ToModel()
+				assert.ErrorIs(t, err, c.expectedError)
+				assert.Equal(t, c.expected, res)
 			}
 		})
 	}
@@ -2909,7 +2961,9 @@ func TestReadFullResources_ToModel(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, c.query.ToModel())
+			res, err := c.query.ToModel()
+			assert.NoError(t, err)
+			assert.Equal(t, c.expected, res)
 		})
 	}
 }
