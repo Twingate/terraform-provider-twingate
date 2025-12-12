@@ -33,6 +33,42 @@ func newTagInputs(tags map[string]string) []TagInput {
 	return tagInputs
 }
 
+type AccessMode string
+type AccessPolicyInput struct {
+	Mode            AccessMode `json:"mode"`
+	DurationSeconds *int64     `json:"durationSeconds"`
+}
+
+func NewAccessPolicyInput(accessPolicy *model.AccessPolicy) *AccessPolicyInput {
+	if accessPolicy == nil {
+		return &AccessPolicyInput{
+			Mode: model.AccessPolicyModeManual,
+		}
+	}
+
+	var durationSeconds *int64
+
+	if accessPolicy.Duration != nil {
+		duration, _ := accessPolicy.ParseDuration()
+		seconds := int64(duration.Seconds())
+		durationSeconds = &seconds
+	}
+
+	mode := AccessMode(model.AccessPolicyModeManual)
+	if durationSeconds != nil {
+		mode = model.AccessPolicyModeAutoLock
+	}
+
+	if accessPolicy.Mode != nil {
+		mode = AccessMode(*accessPolicy.Mode)
+	}
+
+	return &AccessPolicyInput{
+		Mode:            mode,
+		DurationSeconds: durationSeconds,
+	}
+}
+
 type ProtocolsInput struct {
 	UDP       *ProtocolInput `json:"udp"`
 	TCP       *ProtocolInput `json:"tcp"`
@@ -83,14 +119,30 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 
 type AccessApprovalMode string
 
-func NewAccessApprovalMode(approvalMode string) *AccessApprovalMode {
+func NewAccessApprovalMode(accessPolicy *model.AccessPolicy) *AccessApprovalMode {
+	var approvalMode string
+
+	if accessPolicy != nil && accessPolicy.ApprovalMode != nil {
+		approvalMode = *accessPolicy.ApprovalMode
+	}
+
 	if approvalMode == "" {
+		approvalMode = model.ApprovalModeManual
+	}
+
+	val := AccessApprovalMode(approvalMode)
+
+	return &val
+}
+
+func NewGroupAccessApprovalMode(accessPolicy *model.AccessPolicy) *AccessApprovalMode {
+	if accessPolicy == nil || accessPolicy.ApprovalMode == nil || *accessPolicy.ApprovalMode == "" {
 		return nil
 	}
 
-	mode := AccessApprovalMode(approvalMode)
+	val := AccessApprovalMode(*accessPolicy.ApprovalMode)
 
-	return &mode
+	return &val
 }
 
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
@@ -105,9 +157,10 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
+		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
+		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
-		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
+
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -341,9 +394,10 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(NewAccessApprovalMode(input.ApprovalMode), "approvalMode"),
+		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
+		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
-		gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
+		// gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -375,6 +429,10 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 	if input.SecurityPolicyID == nil {
 		resource.SecurityPolicyID = nil
 	}
+
+	// if input.AccessPolicy == nil {
+	//	resource.AccessPolicy = nil
+	//}
 
 	setResource(resource)
 
@@ -483,10 +541,10 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 }
 
 type AccessInput struct {
-	PrincipalID                    string              `json:"principalId"`
-	SecurityPolicyID               *string             `json:"securityPolicyId"`
-	UsageBasedAutolockDurationDays *int64              `json:"usageBasedAutolockDurationDays"`
-	ApprovalMode                   *AccessApprovalMode `json:"approvalMode"`
+	PrincipalID      string              `json:"principalId"`
+	SecurityPolicyID *string             `json:"securityPolicyId"`
+	ApprovalMode     *AccessApprovalMode `json:"approvalMode"`
+	AccessPolicy     *AccessPolicyInput  `json:"accessPolicy"`
 }
 
 func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {

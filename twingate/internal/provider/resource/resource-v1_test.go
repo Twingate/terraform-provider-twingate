@@ -2,9 +2,12 @@ package resource
 
 import (
 	"context"
+	"testing"
+
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/stretchr/testify/assert"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -16,7 +19,7 @@ func TestStateUpgraderV1(t *testing.T) {
 	tests := []struct {
 		name          string
 		priorState    func() resourceModelV1
-		expectedState func() resourceModel
+		expectedState func() resourceModelV2
 	}{
 		{
 			name: "base case",
@@ -36,8 +39,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					Access:                   makeObjectsListNull(ctx, accessBlockAttributeTypes()),
 				}
 			},
-			expectedState: func() resourceModel {
-				return resourceModel{
+			expectedState: func() resourceModelV2 {
+				return resourceModelV2{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -50,7 +53,7 @@ func TestStateUpgraderV1(t *testing.T) {
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
 					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
@@ -71,8 +74,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					Access:          makeObjectsListNull(ctx, accessBlockAttributeTypes()),
 				}
 			},
-			expectedState: func() resourceModel {
-				return resourceModel{
+			expectedState: func() resourceModelV2 {
+				return resourceModelV2{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -85,7 +88,7 @@ func TestStateUpgraderV1(t *testing.T) {
 					Alias:                          types.StringNull(),
 					SecurityPolicyID:               types.StringNull(),
 					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
@@ -108,8 +111,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					SecurityPolicyID: types.StringValue(""),
 				}
 			},
-			expectedState: func() resourceModel {
-				return resourceModel{
+			expectedState: func() resourceModelV2 {
+				return resourceModelV2{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -122,7 +125,7 @@ func TestStateUpgraderV1(t *testing.T) {
 					Alias:                          types.StringNull(),
 					SecurityPolicyID:               types.StringNull(),
 					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
@@ -156,10 +159,12 @@ func TestStateUpgraderV1(t *testing.T) {
 					Access:                   access,
 				}
 			},
-			expectedState: func() resourceModel {
+			expectedState: func() resourceModelV2 {
 				groupIDs := []string{"test-group-id-1", "test-group-id-2"}
 				serviceAccountIDs := []string{"test-service-account-id-1", "test-service-account-id-2"}
-				accessGroup, diags := convertAccessGroupsToTerraform(ctx, groupIDs)
+				accessGroup, diags := convertAccessGroupsToTerraformV2(ctx, utils.Map(groupIDs, func(id string) *model.LegacyAccessGroup {
+					return &model.LegacyAccessGroup{GroupID: id}
+				}))
 				if diags.HasError() {
 					t.Fatalf("unexpected errors during upgrade: %v", diags)
 				}
@@ -169,7 +174,7 @@ func TestStateUpgraderV1(t *testing.T) {
 					t.Fatalf("unexpected errors during upgrade: %v", diags)
 				}
 
-				return resourceModel{
+				return resourceModelV2{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -205,13 +210,9 @@ func TestStateUpgraderV1(t *testing.T) {
 				State: &state,
 			}
 
-			newResource := NewResourceResource()
-			newSchema := resource.SchemaResponse{}
-			newResource.Schema(nil, resource.SchemaRequest{}, &newSchema)
-
 			resp := &resource.UpgradeStateResponse{
 				State: tfsdk.State{
-					Schema: newSchema.Schema,
+					Schema: upgradeResourceStateV2().PriorSchema,
 				},
 			}
 
@@ -228,7 +229,7 @@ func TestStateUpgraderV1(t *testing.T) {
 			assert.Equal(t, "Please update the access blocks.", resp.Diagnostics[0].Summary())
 
 			// Retrieve the upgraded state
-			var upgradedState resourceModel
+			var upgradedState resourceModelV2
 			digs := resp.State.Get(ctx, &upgradedState)
 			assert.False(t, digs.HasError())
 
