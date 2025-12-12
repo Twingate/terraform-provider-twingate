@@ -297,6 +297,11 @@ func convertLegacyAccessGroupsToTerraform(ctx context.Context, groupAccess types
 		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
+	if len(groups) == 0 {
+		// no legacy groups to convert - return a null set
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+	}
+
 	for _, group := range groups {
 		if group.ApprovalMode != nil || group.UsageBasedDuration != nil {
 			mode := model.AccessPolicyModeManual
