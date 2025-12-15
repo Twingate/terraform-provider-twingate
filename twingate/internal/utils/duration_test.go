@@ -33,7 +33,7 @@ func TestParseDurationSupportsDays(t *testing.T) {
 		},
 		{
 			duration:    "1.5d1d",
-			expectedErr: errors.New("invalid duration: 1.5d1d"),
+			expectedErr: errors.New("invalid day duration: 1.5d1d"),
 		},
 	}
 

@@ -2533,7 +2533,7 @@ func TestReadResource_ToModel(t *testing.T) {
 						SecurityPolicyID: optionalString("policy789"),
 						AccessPolicy: &model.AccessPolicy{
 							Mode:     optionalString(model.ApprovalModeManual),
-							Duration: optionalString("720h"),
+							Duration: optionalString("30d"),
 						},
 					},
 				},
