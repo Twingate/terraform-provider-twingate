@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -280,11 +281,12 @@ func TestResourceAccessToTerraform(t *testing.T) {
 	}
 }
 
+// Utility to create optional string
+func toStringPtr(s string) *string {
+	return &s
+}
+
 func TestAccessGroup_Equals(t *testing.T) {
-	// Utility to create optional string
-	toStringPtr := func(s string) *string {
-		return &s
-	}
 
 	t.Run("Equal Groups (all fields)", func(t *testing.T) {
 		group1 := model.AccessGroup{
@@ -410,5 +412,29 @@ func TestAccessGroup_Equals(t *testing.T) {
 		}
 
 		assert.False(t, group1.Equals(group2))
+	})
+}
+
+func TestAccessPolicy_ParseDurationSupportsDays(t *testing.T) {
+	t.Run("integer days and hours", func(t *testing.T) {
+		policy := model.AccessPolicy{
+			Duration: toStringPtr("2d3h"),
+		}
+
+		duration, err := policy.ParseDuration()
+
+		assert.NoError(t, err)
+		assert.Equal(t, 51*time.Hour, duration)
+	})
+
+	t.Run("fractional days", func(t *testing.T) {
+		policy := model.AccessPolicy{
+			Duration: toStringPtr("1.5d"),
+		}
+
+		duration, err := policy.ParseDuration()
+
+		assert.NoError(t, err)
+		assert.Equal(t, 36*time.Hour, duration)
 	})
 }

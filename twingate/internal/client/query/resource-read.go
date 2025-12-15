@@ -2,7 +2,6 @@ package query
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -168,11 +167,7 @@ func accessPolicyToModel(accessPolicy *AccessPolicy, approvalMode *string) *mode
 
 	if accessPolicy.DurationSeconds != nil {
 		val := time.Duration(*accessPolicy.DurationSeconds) * time.Second
-
-		raw := val.String()
-		raw = strings.TrimSuffix(raw, "0s")
-		raw = strings.TrimSuffix(raw, "0m")
-
+		raw := utils.FormatDurationWithDays(val)
 		duration = &raw
 	}
 

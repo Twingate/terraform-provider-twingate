@@ -3,13 +3,14 @@ package customvalidator
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatorfuncerr"
+
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 )
 
 var _ validator.String = durationValidator{}
@@ -31,7 +32,7 @@ func (validator durationValidator) MarkdownDescription(ctx context.Context) stri
 }
 
 func (v durationValidator) validate(value string) error {
-	duration, err := time.ParseDuration(value)
+	duration, err := utils.ParseDurationWithDays(value)
 	if err != nil {
 		return fmt.Errorf("failed to parse Duration %w", err)
 	}

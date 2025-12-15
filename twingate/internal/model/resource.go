@@ -72,7 +72,7 @@ func (p *AccessPolicy) ParseDuration() (time.Duration, error) {
 		return time.Duration(0), nil
 	}
 
-	return time.ParseDuration(*p.Duration) //nolint:wrapcheck
+	return utils.ParseDurationWithDays(*p.Duration) //nolint:wrapcheck
 }
 
 func (p *AccessPolicy) Validate() error {

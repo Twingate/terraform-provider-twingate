@@ -259,7 +259,7 @@ func convertLegacyAccessPolicyToTerraform(ctx context.Context, approvalMode *str
 		attr.ApprovalMode: types.StringPointerValue(approvalMode),
 	}
 
-	if approvalMode == nil && usageBasedAutolockDurationDays == nil {
+	if (approvalMode == nil || *approvalMode == model.ApprovalModeManual) && usageBasedAutolockDurationDays == nil {
 		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
 	}
 

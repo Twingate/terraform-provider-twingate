@@ -21,6 +21,53 @@ func TestStateUpgraderV2(t *testing.T) {
 		expectedState func() resourceModel
 	}{
 		{
+			name: "bare case",
+			priorState: func() resourceModelV2 {
+				return resourceModelV2{
+					ID:                             types.StringValue("test-id"),
+					Name:                           types.StringValue("test-name"),
+					Address:                        types.StringValue("test-address"),
+					RemoteNetworkID:                types.StringValue("test-remote-network-id"),
+					Protocols:                      defaultProtocolsObject(),
+					IsAuthoritative:                types.BoolNull(),
+					IsActive:                       types.BoolNull(),
+					IsVisible:                      types.BoolNull(),
+					IsBrowserShortcutEnabled:       types.BoolNull(),
+					Alias:                          types.StringNull(),
+					SecurityPolicyID:               types.StringNull(),
+					ApprovalMode:                   types.StringNull(),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                           types.MapNull(types.StringType),
+					TagsAll:                        types.MapNull(types.StringType),
+					UsageBasedAutolockDurationDays: types.Int64Null(),
+				}
+			},
+			expectedState: func() resourceModel {
+				return resourceModel{
+					ID:                             types.StringValue("test-id"),
+					Name:                           types.StringValue("test-name"),
+					Address:                        types.StringValue("test-address"),
+					RemoteNetworkID:                types.StringValue("test-remote-network-id"),
+					Protocols:                      defaultProtocolsObject(),
+					IsAuthoritative:                types.BoolNull(),
+					IsActive:                       types.BoolNull(),
+					IsVisible:                      types.BoolNull(),
+					IsBrowserShortcutEnabled:       types.BoolNull(),
+					Alias:                          types.StringNull(),
+					SecurityPolicyID:               types.StringNull(),
+					ApprovalMode:                   types.StringNull(),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
+					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                           types.MapNull(types.StringType),
+					TagsAll:                        types.MapNull(types.StringType),
+					UsageBasedAutolockDurationDays: types.Int64Null(),
+				}
+			},
+		},
+
+		{
 			name: "minimum case",
 			priorState: func() resourceModelV2 {
 				return resourceModelV2{
@@ -82,7 +129,7 @@ func TestStateUpgraderV2(t *testing.T) {
 					IsBrowserShortcutEnabled:       types.BoolValue(false),
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
-					ApprovalMode:                   types.StringValue(model.ApprovalModeManual),
+					ApprovalMode:                   types.StringValue(model.ApprovalModeAutomatic),
 					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
@@ -92,7 +139,7 @@ func TestStateUpgraderV2(t *testing.T) {
 			},
 			expectedState: func() resourceModel {
 				mode := model.AccessPolicyModeManual
-				approvalMode := model.ApprovalModeManual
+				approvalMode := model.ApprovalModeAutomatic
 
 				accessPolicy, diags := convertAccessPolicyToTerraformForImport(context.TODO(), &model.AccessPolicy{
 					Mode:         &mode,
@@ -214,7 +261,7 @@ func TestStateUpgraderV2(t *testing.T) {
 					IsBrowserShortcutEnabled:       types.BoolValue(false),
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
-					ApprovalMode:                   types.StringValue(model.ApprovalModeManual),
+					ApprovalMode:                   types.StringValue(model.ApprovalModeAutomatic),
 					GroupAccess:                    accessGroup,
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
@@ -224,11 +271,12 @@ func TestStateUpgraderV2(t *testing.T) {
 			},
 			expectedState: func() resourceModel {
 				mode := model.AccessPolicyModeManual
-				approvalMode := model.ApprovalModeManual
+				automaticApprovalMode := model.ApprovalModeAutomatic
+				manualApprovalMode := model.ApprovalModeManual
 
 				accessPolicy, diags := convertAccessPolicyToTerraformForImport(context.TODO(), &model.AccessPolicy{
 					Mode:         &mode,
-					ApprovalMode: &approvalMode,
+					ApprovalMode: &automaticApprovalMode,
 				})
 
 				if diags.HasError() {
@@ -240,7 +288,7 @@ func TestStateUpgraderV2(t *testing.T) {
 						GroupID: "test-group-id",
 						AccessPolicy: &model.AccessPolicy{
 							Mode:         &mode,
-							ApprovalMode: &approvalMode,
+							ApprovalMode: &manualApprovalMode,
 						},
 					},
 				})
