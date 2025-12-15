@@ -4466,11 +4466,11 @@ func TestAccTwingateCreateResourceWithAutolockAccessPolicy(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "48h", model.ApprovalModeManual),
+				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "2d", model.ApprovalModeManual),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAutoLock),
-					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "48h"),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "2d"),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeManual),
 				),
 			},
@@ -4554,20 +4554,20 @@ func TestAccTwingateUpdateResourceWithAutolockAccessPolicy(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "48h", model.ApprovalModeManual),
+				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "2d", model.ApprovalModeManual),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAutoLock),
-					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "48h"),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "2d"),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeManual),
 				),
 			},
 			{
-				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAccessRequest, "32h", model.ApprovalModeAutomatic),
+				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAccessRequest, "1d8h", model.ApprovalModeAutomatic),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAccessRequest),
-					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "32h"),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "1d8h"),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeAutomatic),
 				),
 			},
