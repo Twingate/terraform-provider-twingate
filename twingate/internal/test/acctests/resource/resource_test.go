@@ -864,8 +864,8 @@ func TestAccTwingateResourceImport(t *testing.T) {
 					accessGroupIdsLen:                       "2",
 					attr.Path(attr.AccessPolicy, attr.Mode): model.AccessPolicyModeAutoLock,
 					attr.Path(attr.AccessPolicy, attr.ApprovalMode):               model.ApprovalModeManual,
-					attr.Path(attr.AccessPolicy, attr.Duration):                   "48h",
-					attr.Path(attr.AccessGroup, attr.AccessPolicy, attr.Duration): "240h",
+					attr.Path(attr.AccessPolicy, attr.Duration):                   "2d",
+					attr.Path(attr.AccessGroup, attr.AccessPolicy, attr.Duration): "10d",
 				}),
 			},
 		},
@@ -896,7 +896,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName, policyI
 	  access_policy {
 	    mode = "AUTO_LOCK"
 	    approval_mode = "MANUAL"
-	    duration = "48h"
+	    duration = "2d"
 	  }	
 	  
       dynamic "access_group" {
@@ -906,7 +906,7 @@ func createResource12(networkName, groupName1, groupName2, resourceName, policyI
 			access_policy {
 			  mode = "AUTO_LOCK"
 			  approval_mode = "MANUAL"
-			  duration = "240h"
+			  duration = "10d"
 			}
 		}
       }
@@ -4649,4 +4649,35 @@ func createResourceWithAccessPolicyAndUsageBasedDuration(remoteNetwork, resource
       }
 	}
 	`, remoteNetwork, resource)
+}
+
+func TestAccTwingateResourceWithEqualAccessPolicyDuration(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "2d", model.ApprovalModeManual),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAutoLock),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Duration), "2d"),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.ApprovalMode), model.ApprovalModeManual),
+				),
+			},
+			{
+				// expecting no changes - empty plan
+				Config:   createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAutoLock, "48h", model.ApprovalModeManual),
+				PlanOnly: true,
+			},
+		},
+	})
 }

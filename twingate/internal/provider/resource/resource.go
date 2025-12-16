@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/customplanmodifier"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/customvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 
@@ -112,6 +113,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 
 	resp.State.SetAttribute(ctx, path.Root(attr.SecurityPolicyID), types.StringPointerValue(res.SecurityPolicyID))
 	resp.State.SetAttribute(ctx, path.Root(attr.Alias), types.StringPointerValue(res.Alias))
+	resp.State.SetAttribute(ctx, path.Root(attr.IsAuthoritative), types.BoolValue(true))
 
 	accessPolicy, diags := convertAccessPolicyToTerraformForImport(ctx, res.AccessPolicy)
 	resp.Diagnostics.Append(diags...)
@@ -445,6 +447,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 					Description: "This will set the access duration on the edge. The valid values are like `1h` and `2d`.",
 					PlanModifiers: []planmodifier.String{
 						UseNullStringWhenValueOmitted(),
+						customplanmodifier.Duration(),
 					},
 					Validators: []validator.String{
 						customvalidator.Duration(),
