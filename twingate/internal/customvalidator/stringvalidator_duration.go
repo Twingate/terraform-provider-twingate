@@ -2,7 +2,9 @@ package customvalidator
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -13,11 +15,20 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 )
 
-var _ validator.String = durationValidator{}
-var _ function.StringParameterValidator = durationValidator{}
+var (
+	_ validator.String                  = durationValidator{}
+	_ function.StringParameterValidator = durationValidator{}
 
-type durationValidator struct {
-}
+	ErrLessThenMinDuration = errors.New("minimum duration is 1 hour")
+	ErrExceedsMaxDuration  = errors.New("maximum duration is 365 days")
+)
+
+const (
+	minDuration time.Duration = time.Hour
+	maxDuration time.Duration = time.Hour * 24 * 365
+)
+
+type durationValidator struct{}
 
 func (validator durationValidator) invalidUsageMessage() string {
 	return "string must be a valid duration"
@@ -34,11 +45,15 @@ func (validator durationValidator) MarkdownDescription(ctx context.Context) stri
 func (v durationValidator) validate(value string) error {
 	duration, err := utils.ParseDurationWithDays(value)
 	if err != nil {
-		return fmt.Errorf("failed to parse Duration %w", err)
+		return fmt.Errorf("failed to parse duration %w", err)
 	}
 
-	if duration < 0 {
-		return fmt.Errorf("got negative Duration %s", duration.String()) //nolint:err113
+	if duration < minDuration {
+		return ErrLessThenMinDuration
+	}
+
+	if duration > maxDuration {
+		return ErrExceedsMaxDuration
 	}
 
 	return nil

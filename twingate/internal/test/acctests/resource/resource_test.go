@@ -4497,6 +4497,25 @@ func TestAccTwingateCreateResourceWithAccessRequestAccessPolicy_ShouldFailRequir
 	})
 }
 
+func TestAccTwingateCreateResourceWithAccessRequestAccessPolicy_ShouldFailRequiresMaxDuration365d(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithAccessPolicy(remoteNetworkName, resourceName, model.AccessPolicyModeAccessRequest, "366d", model.ApprovalModeManual),
+				ExpectError: regexp.MustCompile("maximum duration is 365 days"),
+			},
+		},
+	})
+}
+
 func TestAccTwingateCreateResourceWithAccessRequestAccessPolicy(t *testing.T) {
 	t.Parallel()
 

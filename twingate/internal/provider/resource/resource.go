@@ -444,7 +444,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 				attr.Duration: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					Description: "This will set the access duration on the edge. The valid values are like `1h` and `2d`.",
+					Description: "This will set the access duration on the edge. Duration must be between 1 hour and 365 days. The valid values are like `1h` and `2d`.",
 					PlanModifiers: []planmodifier.String{
 						UseNullStringWhenValueOmitted(),
 						customplanmodifier.Duration(),
