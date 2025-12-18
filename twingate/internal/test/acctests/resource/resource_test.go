@@ -3911,7 +3911,7 @@ func TestAccTwingateResourceWithApprovalMode(t *testing.T) {
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
 				),
 			},
 			{
@@ -3954,7 +3954,7 @@ func TestAccTwingateResourceWithApprovalModeInAccessGroup(t *testing.T) {
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
 				),
 			},
 			{
@@ -3999,7 +3999,7 @@ func TestAccTwingateResourceWithAutomaticApprovalModeInAccessGroup(t *testing.T)
 			{
 				Config: createResourceWithNullApprovalMode(remoteNetworkName, resourceName, groupName),
 				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
 				),
 			},
 			{
@@ -4007,7 +4007,7 @@ func TestAccTwingateResourceWithAutomaticApprovalModeInAccessGroup(t *testing.T)
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessGroup, attr.ApprovalMode), model.ApprovalModeAutomatic),
-					sdk.TestCheckResourceAttr(theResource, attr.ApprovalMode, model.ApprovalModeManual),
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
 				),
 			},
 		},
