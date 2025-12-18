@@ -4700,3 +4700,100 @@ func TestAccTwingateResourceWithEqualAccessPolicyDuration(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateResourceWithGroupAccessPolicy(t *testing.T) {
+	t.Parallel()
+
+	groupName := test.RandomGroupName()
+	resourceName := test.RandomResourceName()
+	remoteNetworkName := test.RandomName()
+
+	theResource := acctests.TerraformResource(resourceName)
+
+	_, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: createResourceWithAccessPolicyAndGroup(groupName, remoteNetworkName, resourceName, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Path(attr.AccessPolicy, attr.Mode), model.AccessPolicyModeAccessRequest),
+				),
+			},
+			{
+				Config: createResourceWithGroupAccessPolicy(groupName, remoteNetworkName, resourceName, testPolicy),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, attr.Len(attr.AccessPolicy)),
+					sdk.TestCheckNoResourceAttr(theResource, attr.ApprovalMode),
+				),
+			},
+		},
+	})
+}
+
+func createResourceWithAccessPolicyAndGroup(groupName, remoteNetwork, resource, securityPolicyID string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "%[1]s" {
+      name = "%[1]s"
+    }
+	resource "twingate_remote_network" "%[2]s" {
+	  name = "%[2]s"
+	}
+	resource "twingate_resource" "%[3]s" {
+	  name = "%[3]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+	  
+	  access_policy {
+		mode          = "ACCESS_REQUEST"
+		duration      = "4h"
+		approval_mode = "AUTOMATIC"
+	  }
+	  
+	  access_group {
+		group_id           = twingate_group.%[1]s.id
+		security_policy_id = "%[4]s"
+	
+		access_policy {
+		  mode          = "AUTO_LOCK"
+		  duration      = "3d"
+		  approval_mode = "MANUAL"
+		}
+	  }
+
+	}
+	`, groupName, remoteNetwork, resource, securityPolicyID)
+}
+
+func createResourceWithGroupAccessPolicy(groupName, remoteNetwork, resource, securityPolicyID string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "%[1]s" {
+      name = "%[1]s"
+    }
+	resource "twingate_remote_network" "%[2]s" {
+	  name = "%[2]s"
+	}
+	resource "twingate_resource" "%[3]s" {
+	  name = "%[3]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+
+	  access_group {
+		group_id           = twingate_group.%[1]s.id
+		security_policy_id = "%[4]s"
+	
+		access_policy {
+		  mode          = "AUTO_LOCK"
+		  duration      = "3d"
+		  approval_mode = "MANUAL"
+		}
+	  }
+
+	}
+	`, groupName, remoteNetwork, resource, securityPolicyID)
+}

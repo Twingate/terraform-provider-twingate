@@ -1331,10 +1331,10 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.Alias = reference.Alias
 	}
 
-	if (!state.ApprovalMode.IsNull() || !reference.ApprovalMode.IsUnknown()) && reference.AccessPolicy.IsNull() {
-		state.ApprovalMode = types.StringPointerValue(resource.AccessPolicy.LegacyApprovalMode())
-	} else if state.ApprovalMode.IsUnknown() {
+	if reference.ApprovalMode.IsUnknown() || reference.ApprovalMode.IsNull() {
 		state.ApprovalMode = types.StringNull()
+	} else {
+		state.ApprovalMode = types.StringPointerValue(resource.AccessPolicy.LegacyApprovalMode())
 	}
 
 	if (!state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsNull()) && reference.AccessPolicy.IsNull() {
