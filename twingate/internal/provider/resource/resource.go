@@ -1577,12 +1577,21 @@ func convertAccessPolicyToTerraform(ctx context.Context, accessPolicy, reference
 		attr.ApprovalMode: types.StringPointerValue(accessPolicy.ApprovalMode),
 	}
 
-	if referenceAccessPolicy != nil && (referenceAccessPolicy.ApprovalMode == nil || *referenceAccessPolicy.ApprovalMode == "") {
+	if referenceAccessPolicy.ApprovalMode == nil || *referenceAccessPolicy.ApprovalMode == "" {
 		attributes[attr.ApprovalMode] = types.StringNull()
 	}
 
-	if referenceAccessPolicy != nil && (referenceAccessPolicy.Duration == nil || *referenceAccessPolicy.Duration == "") {
+	if referenceAccessPolicy.Duration == nil || *referenceAccessPolicy.Duration == "" {
 		attributes[attr.Duration] = types.StringNull()
+	}
+
+	if referenceAccessPolicy.Duration != nil && accessPolicy.Duration != nil {
+		referenceDuration, _ := utils.ParseDurationWithDays(*referenceAccessPolicy.Duration)
+		duration, _ := utils.ParseDurationWithDays(*accessPolicy.Duration)
+
+		if duration == referenceDuration {
+			attributes[attr.Duration] = types.StringPointerValue(referenceAccessPolicy.Duration)
+		}
 	}
 
 	obj, diags := types.ObjectValue(accessPolicyAttributeTypes(), attributes)
