@@ -75,7 +75,7 @@ resource "twingate_resource" "resource" {
   access_policy {
     mode          = "AUTO_LOCK"
     approval_mode = "MANUAL"
-    duration      = "360h"
+    duration      = "12d"
   }
 
   protocols = {
@@ -96,7 +96,7 @@ resource "twingate_resource" "resource" {
     access_policy {
       mode          = "AUTO_LOCK"
       approval_mode = "AUTOMATIC"
-      duration      = "720h"
+      duration      = "30d"
     }
   }
 
@@ -109,7 +109,7 @@ resource "twingate_resource" "resource" {
       access_policy {
         mode          = "AUTO_LOCK"
         approval_mode = "AUTOMATIC"
-        duration      = "720h"
+        duration      = "30d"
       }
     }
   }
@@ -128,7 +128,7 @@ resource "twingate_resource" "resource" {
       access_policy {
         mode          = "AUTO_LOCK"
         approval_mode = "AUTOMATIC"
-        duration      = "720h"
+        duration      = "30d"
       }
     }
   }
