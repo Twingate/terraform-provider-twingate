@@ -65,12 +65,21 @@ data "twingate_security_policy" "test_policy" {
   name = "Test Policy"
 }
 
+data "twingate_dlp_policy" "example" {
+  name = "DLP Policy Example"
+}
+
+data "twingate_dlp_policy" "access_example" {
+  name = "DLP Policy Access Example"
+}
+
 resource "twingate_resource" "resource" {
   name              = "network"
   address           = "internal.int"
   remote_network_id = twingate_remote_network.aws_network.id
 
   security_policy_id = data.twingate_security_policy.test_policy.id
+  dlp_policy_id = data.twingate_dlp_policy.example.id
   approval_mode      = "MANUAL"
   usage_based_autolock_duration_days = 15
 
@@ -89,6 +98,7 @@ resource "twingate_resource" "resource" {
   access_group {
     group_id                           = twingate_group.aws.id
     security_policy_id                 = data.twingate_security_policy.test_policy.id
+    dlp_policy_id                      = data.twingate_dlp_policy.access_example.id
     usage_based_autolock_duration_days = 30
     approval_mode                      = "AUTOMATIC"
   }
@@ -157,6 +167,7 @@ resource "twingate_resource" "resource" {
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
+- `dlp_policy_id` (String) The ID of a `twingate_dlp_policy` to be used as the default DLP policy for this Resource.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
 - `usage_based_autolock_duration_days` (Number) The usage-based auto-lock duration for the Resource (in days).
 
@@ -173,6 +184,7 @@ Optional:
 - `approval_mode` (String) This will set the approval model on the edge. The valid values are `AUTOMATIC` and `MANUAL`.
 - `group_id` (String) Group ID that will have permission to access the Resource.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.
+- `dlp_policy_id` (String) The ID of a `twingate_dlp_policy` to be used as the DLP policy for the group in this access block.
 - `usage_based_autolock_duration_days` (Number) The usage-based auto-lock duration configured on the edge (in days).
 
 
