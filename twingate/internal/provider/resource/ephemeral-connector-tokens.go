@@ -52,7 +52,8 @@ func (r *ephemeralConnectorTokens) Configure(_ context.Context, req ephemeral.Co
 
 func (r *ephemeralConnectorTokens) Schema(_ context.Context, _ ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.",
+		Description:         "This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.",
+		MarkdownDescription: "This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.\n\n~> **Warning:** When existing connectors are converted to ephemeral mode, Terraform generates a new token during plan or apply, preventing the connectors from reconnecting until they are updated with the new token.\nRather than converting existing connectors, we recommend creating new connectors with ephemeral resource tokens and deleting the old ones after migration.",
 		Attributes: map[string]schema.Attribute{
 			attr.ConnectorID: schema.StringAttribute{
 				Required:    true,
