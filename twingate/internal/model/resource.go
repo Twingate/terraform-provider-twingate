@@ -1,17 +1,21 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 )
 
 const (
+	hoursInDay = 24
+
 	portRangeSeparator    = "-"
 	expectedPortsRangeLen = 2
 
@@ -21,54 +25,165 @@ const (
 
 	ApprovalModeAutomatic = "AUTOMATIC"
 	ApprovalModeManual    = "MANUAL"
+
+	AccessPolicyModeManual        = "MANUAL"
+	AccessPolicyModeAutoLock      = "AUTO_LOCK"
+	AccessPolicyModeAccessRequest = "ACCESS_REQUEST"
+)
+
+var (
+	ErrRequiredMode                    = errors.New("mode is required")
+	ErrRequiredApprovalMode            = errors.New("approval_mode is required")
+	ErrRequiredDurationAndApprovalMode = errors.New("duration and approval_mode are required")
+	ErrRequiredMinDuration1Day         = errors.New("minimum duration is 1 day")
+	ErrRequiredMinDuration1Hour        = errors.New("minimum duration is 1 hour")
 )
 
 //nolint:gochecknoglobals
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
 
-type AccessGroup struct {
-	GroupID            string
-	SecurityPolicyID   *string
-	UsageBasedDuration *int64
-	ApprovalMode       *string
+type AccessPolicy struct {
+	Mode         *string
+	Duration     *string
+	ApprovalMode *string
 }
 
-func (g AccessGroup) Equals(another AccessGroup) bool {
-	if g.GroupID == another.GroupID &&
-		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
-		equalsOptionalInt64(g.UsageBasedDuration, another.UsageBasedDuration) &&
-		equalsOptionalString(g.ApprovalMode, another.ApprovalMode) {
+func (p *AccessPolicy) LegacyApprovalMode() *string {
+	if p != nil && p.ApprovalMode != nil && *p.ApprovalMode != "" {
+		return p.ApprovalMode
+	}
+
+	return nil
+}
+
+func (p *AccessPolicy) LegacyUsageBasedAutolockDurationDays() *int64 {
+	if p != nil && p.Duration != nil && *p.Duration != "" {
+		duration, _ := p.ParseDuration()
+		days := int64(duration.Hours() / hoursInDay)
+
+		return &days
+	}
+
+	return nil
+}
+
+func (p *AccessPolicy) ParseDuration() (time.Duration, error) {
+	if p.Duration == nil || *p.Duration == "" {
+		return time.Duration(0), nil
+	}
+
+	return utils.ParseDurationWithDays(*p.Duration) //nolint:wrapcheck
+}
+
+func (p *AccessPolicy) Validate() error {
+	if p.Mode != nil {
+		switch *p.Mode {
+		case AccessPolicyModeManual, AccessPolicyModeAutoLock, AccessPolicyModeAccessRequest:
+			break
+		default:
+			return fmt.Errorf("invalid mode: %s", *p.Mode) //nolint:err113
+		}
+	}
+
+	if p.ApprovalMode != nil {
+		switch *p.ApprovalMode {
+		case ApprovalModeAutomatic, ApprovalModeManual:
+			break
+		default:
+			return fmt.Errorf("invalid approval_mode: %s", *p.Mode) //nolint:err113
+		}
+	}
+
+	if (p.Duration != nil || p.ApprovalMode != nil) && p.Mode == nil {
+		return ErrRequiredMode
+	}
+
+	duration, err := p.ParseDuration()
+	if err != nil {
+		return fmt.Errorf("invalid duration: %w", err)
+	}
+
+	if p.Mode != nil {
+		switch *p.Mode {
+		case AccessPolicyModeManual:
+			break
+		case AccessPolicyModeAutoLock:
+			if p.Duration == nil || p.ApprovalMode == nil {
+				return ErrRequiredDurationAndApprovalMode
+			}
+
+			if duration < time.Hour*hoursInDay {
+				return ErrRequiredMinDuration1Day
+			}
+
+		case AccessPolicyModeAccessRequest:
+			if p.ApprovalMode == nil {
+				return ErrRequiredApprovalMode
+			}
+
+			if p.Duration != nil && duration < time.Hour {
+				return ErrRequiredMinDuration1Hour
+			}
+		}
+	}
+
+	return nil
+}
+
+type LegacyAccessGroup struct {
+	GroupID            string
+	SecurityPolicyID   *string
+	ApprovalMode       *string
+	UsageBasedDuration *int64
+	AccessPolicy       *AccessPolicy
+}
+
+type AccessGroup struct {
+	GroupID          string
+	SecurityPolicyID *string
+	AccessPolicy     *AccessPolicy
+}
+
+func (p *AccessPolicy) Equals(another *AccessPolicy) bool {
+	if p == nil && another == nil {
 		return true
 	}
 
-	return false
+	if p == nil || another == nil {
+		return false
+	}
+
+	return equalsOptionalString(p.Mode, another.Mode) &&
+		equalsOptionalString(p.Duration, another.Duration) &&
+		equalsOptionalString(p.ApprovalMode, another.ApprovalMode)
+}
+
+func (g AccessGroup) Equals(another AccessGroup) bool {
+	return g.GroupID == another.GroupID &&
+		equalsOptionalString(g.SecurityPolicyID, another.SecurityPolicyID) &&
+		g.AccessPolicy.Equals(another.AccessPolicy)
 }
 
 func equalsOptionalString(s1, s2 *string) bool {
 	return s1 == nil && s2 == nil || s1 != nil && s2 != nil && strings.EqualFold(*s1, *s2)
 }
 
-func equalsOptionalInt64(i1, i2 *int64) bool {
-	return i1 == nil && i2 == nil || i1 != nil && i2 != nil && *i1 == *i2
-}
-
 type Resource struct {
-	ID                             string
-	RemoteNetworkID                string
-	Address                        string
-	Name                           string
-	Protocols                      *Protocols
-	IsActive                       bool
-	GroupsAccess                   []AccessGroup
-	ServiceAccounts                []string
-	IsAuthoritative                bool
-	IsVisible                      *bool
-	IsBrowserShortcutEnabled       *bool
-	Alias                          *string
-	SecurityPolicyID               *string
-	ApprovalMode                   string
-	Tags                           map[string]string
-	UsageBasedAutolockDurationDays *int64
+	ID                       string
+	RemoteNetworkID          string
+	Address                  string
+	Name                     string
+	Protocols                *Protocols
+	IsActive                 bool
+	AccessPolicy             *AccessPolicy
+	GroupsAccess             []AccessGroup
+	ServiceAccounts          []string
+	IsAuthoritative          bool
+	IsVisible                *bool
+	IsBrowserShortcutEnabled *bool
+	Alias                    *string
+	SecurityPolicyID         *string
+	Tags                     map[string]string
 }
 
 func (r Resource) AccessToTerraform() []any {

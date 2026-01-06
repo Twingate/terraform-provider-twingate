@@ -8,7 +8,10 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/customplanmodifier"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/customvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
@@ -38,7 +41,7 @@ import (
 
 const (
 	DefaultSecurityPolicyName       = "Default Policy"
-	schemaVersion             int64 = 2
+	schemaVersion             int64 = 3
 )
 
 var (
@@ -72,6 +75,7 @@ type resourceModel struct {
 	RemoteNetworkID                types.String `tfsdk:"remote_network_id"`
 	IsAuthoritative                types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                      types.Object `tfsdk:"protocols"`
+	AccessPolicy                   types.Set    `tfsdk:"access_policy"`
 	GroupAccess                    types.Set    `tfsdk:"access_group"`
 	ServiceAccess                  types.Set    `tfsdk:"access_service"`
 	IsActive                       types.Bool   `tfsdk:"is_active"`
@@ -107,16 +111,18 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		return
 	}
 
-	if res.ApprovalMode != "" {
-		resp.State.SetAttribute(ctx, path.Root(attr.ApprovalMode), types.StringValue(res.ApprovalMode))
-	}
-
-	if res.SecurityPolicyID != nil && *res.SecurityPolicyID != "" {
-		resp.State.SetAttribute(ctx, path.Root(attr.SecurityPolicyID), types.StringPointerValue(res.SecurityPolicyID))
-	}
-
+	resp.State.SetAttribute(ctx, path.Root(attr.SecurityPolicyID), types.StringPointerValue(res.SecurityPolicyID))
 	resp.State.SetAttribute(ctx, path.Root(attr.Alias), types.StringPointerValue(res.Alias))
-	resp.State.SetAttribute(ctx, path.Root(attr.UsageBasedAutolockDurationDays), types.Int64PointerValue(res.UsageBasedAutolockDurationDays))
+	resp.State.SetAttribute(ctx, path.Root(attr.IsAuthoritative), types.BoolValue(true))
+
+	accessPolicy, diags := convertAccessPolicyToTerraformForImport(ctx, res.AccessPolicy)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.State.SetAttribute(ctx, path.Root(attr.AccessPolicy), accessPolicy)
 
 	if res.Protocols != nil {
 		protocols, diags := convertProtocolsToTerraform(res.Protocols, nil)
@@ -130,7 +136,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 
 	if len(res.GroupsAccess) > 0 {
-		accessGroup, diags := convertGroupsAccessToTerraform(ctx, res.GroupsAccess, makeObjectsSetNull(ctx, accessGroupAttributeTypes()))
+		accessGroup, diags := convertGroupsAccessToTerraformForImport(ctx, res.GroupsAccess)
 		resp.Diagnostics.Append(diags...)
 
 		if resp.Diagnostics.HasError() {
@@ -210,6 +216,12 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.Int64{
 					UseNullIntWhenValueOmitted(),
 				},
+				DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
+				Validators: []validator.Int64{
+					int64validator.ConflictsWith(path.Expressions{
+						path.MatchRoot(attr.AccessPolicy),
+					}...),
+				},
 			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
@@ -241,7 +253,11 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
+					stringvalidator.ConflictsWith(path.Expressions{
+						path.MatchRoot(attr.AccessPolicy),
+					}...),
 				},
+				DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:      true,
@@ -253,6 +269,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		Blocks: map[string]schema.Block{
 			attr.AccessGroup:   groupAccessBlock(),
 			attr.AccessService: serviceAccessBlock(),
+			attr.AccessPolicy:  accessPolicyBlock(),
 		},
 	}
 }
@@ -263,6 +280,8 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 		0: upgradeResourceStateV0(),
 		// State upgrade implementation from schema version 1 to 2
 		1: upgradeResourceStateV1(),
+		// State upgrade implementation from schema version 2 to 3
+		2: upgradeResourceStateV2(),
 	}
 }
 
@@ -315,6 +334,7 @@ func protocol() schema.SingleNestedAttribute {
 	}
 }
 
+//nolint:funlen
 func groupAccessBlock() schema.SetNestedBlock {
 	return schema.SetNestedBlock{
 		Validators: []validator.Set{
@@ -348,10 +368,14 @@ func groupAccessBlock() schema.SetNestedBlock {
 					Description: "The usage-based auto-lock duration configured on the edge (in days).",
 					Validators: []validator.Int64{
 						int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
+						int64validator.ConflictsWith(
+							path.MatchRelative().AtParent().AtName(attr.AccessPolicy),
+						),
 					},
 					PlanModifiers: []planmodifier.Int64{
 						UseNullIntWhenValueOmitted(),
 					},
+					DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
 				},
 				attr.ApprovalMode: schema.StringAttribute{
 					Optional:    true,
@@ -362,8 +386,15 @@ func groupAccessBlock() schema.SetNestedBlock {
 					},
 					Validators: []validator.String{
 						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
+						stringvalidator.ConflictsWith(
+							path.MatchRelative().AtParent().AtName(attr.AccessPolicy),
+						),
 					},
+					DeprecationMessage: "Configure access_policy instead. This attribute will be removed in the next major version of the provider.",
 				},
+			},
+			Blocks: map[string]schema.Block{
+				attr.AccessPolicy: accessPolicyBlock(),
 			},
 		},
 	}
@@ -383,6 +414,55 @@ func serviceAccessBlock() schema.SetNestedBlock {
 					Description: "The ID of the service account that should have access to this Resource.",
 					Validators: []validator.String{
 						stringvalidator.RegexMatches(regexp.MustCompile(`\w+`), "ServiceAccount ID can't be empty"),
+					},
+				},
+			},
+		},
+	}
+}
+
+func accessPolicyBlock() schema.SetNestedBlock {
+	return schema.SetNestedBlock{
+		Validators: []validator.Set{
+			setvalidator.SizeAtMost(1),
+		},
+		Description: "Restrict access according to JIT access policy",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.Mode: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: fmt.Sprintf("This will set the access_policy mode on the edge. The valid values are `%s`, `%s` and `%s`.", model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
+					},
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
+					},
+				},
+
+				attr.Duration: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: "This will set the access duration on the edge. Duration must be between 1 hour and 365 days. The valid values are like `1h` and `2d`.",
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
+						customplanmodifier.Duration(),
+					},
+					Validators: []validator.String{
+						customvalidator.Duration(),
+					},
+				},
+
+				attr.ApprovalMode: schema.StringAttribute{
+					Optional:    true,
+					Computed:    true,
+					Description: fmt.Sprintf("This will set the approval model on the edge. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
+					},
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					},
 				},
 			},
@@ -525,16 +605,11 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 	}
 
 	for _, group := range groupsAccess {
-		var approvalMode string
-		if group.ApprovalMode != nil {
-			approvalMode = *group.ApprovalMode
-		}
-
 		access = append(access, client.AccessInput{
-			PrincipalID:                    group.GroupID,
-			SecurityPolicyID:               group.SecurityPolicyID,
-			UsageBasedAutolockDurationDays: group.UsageBasedDuration,
-			ApprovalMode:                   client.NewAccessApprovalMode(approvalMode),
+			PrincipalID:      group.GroupID,
+			SecurityPolicyID: group.SecurityPolicyID,
+			ApprovalMode:     client.NewGroupAccessApprovalMode(group.AccessPolicy),
+			AccessPolicy:     client.NewAccessPolicyInput(group.AccessPolicy),
 		})
 	}
 
@@ -559,9 +634,9 @@ func getAccessAttribute(list types.List, attribute string) []string {
 	return convertIDs(val.(types.Set))
 }
 
-func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
+func getGroupAccessAttribute(list types.Set) ([]model.AccessGroup, error) {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	access := make([]model.AccessGroup, 0, len(list.Elements()))
@@ -583,6 +658,57 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 		}
 
 		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
+		approvalModeVal := obj.Attributes()[attr.ApprovalMode]
+
+		var (
+			err          error
+			accessPolicy *model.AccessPolicy
+		)
+
+		accessPolicyVal := obj.Attributes()[attr.AccessPolicy]
+		if accessPolicyVal != nil && !accessPolicyVal.IsNull() && !accessPolicyVal.IsUnknown() {
+			accessPolicyRaw, ok := accessPolicyVal.(types.Set)
+			if ok {
+				accessPolicy, err = getAccessPolicyAttribute(accessPolicyRaw)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing access_policy: %w", err)
+				}
+			}
+		}
+
+		accessPolicy = setAccessPolicyWithLegacyAttributes(accessPolicy, approvalModeVal.(types.String).ValueStringPointer(), usageBasedDuration.(types.Int64).ValueInt64Pointer())
+		accessGroup.AccessPolicy = accessPolicy
+
+		access = append(access, accessGroup)
+	}
+
+	return access, nil
+}
+
+func getLegacyGroupAccessAttribute(list types.Set) ([]*model.LegacyAccessGroup, error) {
+	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+		return nil, nil
+	}
+
+	access := make([]*model.LegacyAccessGroup, 0, len(list.Elements()))
+
+	for _, item := range list.Elements() {
+		obj := item.(types.Object)
+		if obj.IsNull() || obj.IsUnknown() {
+			continue
+		}
+
+		groupVal := obj.Attributes()[attr.GroupID]
+		accessGroup := &model.LegacyAccessGroup{
+			GroupID: groupVal.(types.String).ValueString(),
+		}
+
+		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
+		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
+			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
+		}
+
+		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
 		if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
 			accessGroup.UsageBasedDuration = usageBasedDuration.(types.Int64).ValueInt64Pointer()
 		}
@@ -592,10 +718,62 @@ func getGroupAccessAttribute(list types.Set) []model.AccessGroup {
 			accessGroup.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
 		}
 
+		var (
+			err          error
+			accessPolicy *model.AccessPolicy
+		)
+
+		accessPolicyVal := obj.Attributes()[attr.AccessPolicy]
+		if accessPolicyVal != nil && !accessPolicyVal.IsNull() && !accessPolicyVal.IsUnknown() {
+			accessPolicyRaw, ok := accessPolicyVal.(types.Set)
+			if ok {
+				accessPolicy, err = getAccessPolicyAttribute(accessPolicyRaw)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing access_policy: %w", err)
+				}
+			}
+		}
+
+		accessGroup.AccessPolicy = accessPolicy
+
 		access = append(access, accessGroup)
 	}
 
-	return access
+	return access, nil
+}
+
+func getAccessPolicyAttribute(list types.Set) (*model.AccessPolicy, error) {
+	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+		return nil, nil //nolint:nilnil
+	}
+
+	obj := list.Elements()[0].(types.Object)
+	if obj.IsNull() || obj.IsUnknown() {
+		return nil, nil //nolint:nilnil
+	}
+
+	access := &model.AccessPolicy{}
+
+	modeVal := obj.Attributes()[attr.Mode]
+	if modeVal != nil && !modeVal.IsNull() && !modeVal.IsUnknown() {
+		access.Mode = modeVal.(types.String).ValueStringPointer()
+	}
+
+	durationVal := obj.Attributes()[attr.Duration]
+	if durationVal != nil && !durationVal.IsNull() && !durationVal.IsUnknown() {
+		access.Duration = durationVal.(types.String).ValueStringPointer()
+	}
+
+	approvalModeVal := obj.Attributes()[attr.ApprovalMode]
+	if approvalModeVal != nil && !approvalModeVal.IsNull() && !approvalModeVal.IsUnknown() {
+		access.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
+	}
+
+	if err := access.Validate(); err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	return access, nil
 }
 
 func getServiceAccountAccessAttribute(list types.Set) []string {
@@ -628,11 +806,17 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		return nil, err
 	}
 
-	accessGroups := getGroupAccessAttribute(plan.GroupAccess)
+	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse access_group: %w", err)
+	}
+
 	serviceAccountIDs := getServiceAccountAccessAttribute(plan.ServiceAccess)
 
 	for _, access := range accessGroups {
-		if access.SecurityPolicyID == nil && access.UsageBasedDuration == nil && len(strings.TrimSpace(access.GroupID)) == 0 {
+		if access.SecurityPolicyID == nil &&
+			(access.AccessPolicy == nil || access.AccessPolicy.Duration == nil) &&
+			len(strings.TrimSpace(access.GroupID)) == 0 {
 			return nil, ErrInvalidAttributeCombination
 		}
 
@@ -653,23 +837,50 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		return nil, ErrWildcardAddressWithEnabledShortcut
 	}
 
+	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse access_policy: %w", err)
+	}
+
+	accessPolicy = setAccessPolicyWithLegacyAttributes(accessPolicy, plan.ApprovalMode.ValueStringPointer(), plan.UsageBasedAutolockDurationDays.ValueInt64Pointer())
+
 	return &model.Resource{
-		Name:                           plan.Name.ValueString(),
-		RemoteNetworkID:                plan.RemoteNetworkID.ValueString(),
-		Address:                        plan.Address.ValueString(),
-		Protocols:                      protocols,
-		GroupsAccess:                   accessGroups,
-		ServiceAccounts:                serviceAccountIDs,
-		IsActive:                       plan.IsActive.ValueBool(),
-		IsAuthoritative:                convertAuthoritativeFlag(plan.IsAuthoritative),
-		Alias:                          getOptionalString(plan.Alias),
-		IsVisible:                      getOptionalBool(plan.IsVisible),
-		IsBrowserShortcutEnabled:       isBrowserShortcutEnabled,
-		SecurityPolicyID:               plan.SecurityPolicyID.ValueStringPointer(),
-		ApprovalMode:                   plan.ApprovalMode.ValueString(),
-		Tags:                           getTags(plan.TagsAll),
-		UsageBasedAutolockDurationDays: plan.UsageBasedAutolockDurationDays.ValueInt64Pointer(),
+		Name:                     plan.Name.ValueString(),
+		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
+		Address:                  plan.Address.ValueString(),
+		Protocols:                protocols,
+		AccessPolicy:             accessPolicy,
+		GroupsAccess:             accessGroups,
+		ServiceAccounts:          serviceAccountIDs,
+		IsActive:                 plan.IsActive.ValueBool(),
+		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
+		Alias:                    getOptionalString(plan.Alias),
+		IsVisible:                getOptionalBool(plan.IsVisible),
+		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
+		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:                     getTags(plan.TagsAll),
 	}, nil
+}
+
+func setAccessPolicyWithLegacyAttributes(accessPolicy *model.AccessPolicy, approvalMode *string, durationDays *int64) *model.AccessPolicy {
+	if accessPolicy == nil && (approvalMode == nil || *approvalMode == "") && (durationDays == nil || *durationDays == 0) {
+		return nil
+	}
+
+	if accessPolicy != nil {
+		return accessPolicy
+	}
+
+	policy := &model.AccessPolicy{
+		ApprovalMode: approvalMode,
+	}
+
+	if durationDays != nil {
+		duration := (time.Duration(*durationDays) * 24 * time.Hour).String()
+		policy.Duration = &duration
+	}
+
+	return policy
 }
 
 func getTags(rawTags types.Map) map[string]string {
@@ -963,7 +1174,8 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
 		!plan.ApprovalMode.Equal(state.ApprovalMode) ||
 		!plan.Tags.Equal(state.Tags) || !plan.TagsAll.Equal(state.TagsAll) ||
-		!plan.UsageBasedAutolockDurationDays.Equal(state.UsageBasedAutolockDurationDays)
+		!plan.UsageBasedAutolockDurationDays.Equal(state.UsageBasedAutolockDurationDays) ||
+		!plan.AccessPolicy.Equal(state.AccessPolicy)
 }
 
 func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state *resourceModel, input *model.Resource) error {
@@ -997,7 +1209,11 @@ func (r *twingateResource) getChangedAccessIDs(ctx context.Context, plan, state 
 	if resource.IsAuthoritative {
 		oldGroups, oldServiceAccounts = remote.GroupsAccess, remote.ServiceAccounts
 	} else {
-		oldGroups = getOldIDsNonAuthoritativeGroupAccess(plan, state)
+		oldGroups, err = getOldIDsNonAuthoritativeGroupAccess(plan, state)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to parse access_group: %w", err)
+		}
+
 		oldServiceAccounts = getOldIDsNonAuthoritativeServiceAccountAccess(plan, state)
 	}
 
@@ -1020,12 +1236,12 @@ func getOldIDsNonAuthoritativeServiceAccountAccess(plan, state *resourceModel) [
 	return nil
 }
 
-func getOldIDsNonAuthoritativeGroupAccess(plan, state *resourceModel) []model.AccessGroup {
+func getOldIDsNonAuthoritativeGroupAccess(plan, state *resourceModel) ([]model.AccessGroup, error) {
 	if !plan.GroupAccess.Equal(state.GroupAccess) {
 		return getGroupAccessAttribute(state.GroupAccess)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (r *twingateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -1060,7 +1276,14 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	}
 
 	if !resource.IsAuthoritative {
-		resource.GroupsAccess = setIntersectionGroupAccess(getGroupAccessAttribute(reference.GroupAccess), resource.GroupsAccess)
+		refGroupAccess, err := getGroupAccessAttribute(reference.GroupAccess)
+		if err != nil {
+			addErr(diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operation, TwingateResource)
+
+			return
+		}
+
+		resource.GroupsAccess = setIntersectionGroupAccess(refGroupAccess, resource.GroupsAccess)
 		resource.ServiceAccounts = setIntersection(getServiceAccountAccessAttribute(reference.ServiceAccess), resource.ServiceAccounts)
 
 		serviceAccessIDs := utils.MakeLookupMap(getServiceAccountAccessAttribute(reference.ServiceAccess))
@@ -1086,6 +1309,7 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	diagnostics.Append(respState.Set(ctx, state)...)
 }
 
+//nolint:funlen
 func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) {
 	state.ID = types.StringValue(resource.ID)
 	state.Name = types.StringValue(resource.Name)
@@ -1107,12 +1331,16 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 		state.Alias = reference.Alias
 	}
 
-	if !reference.ApprovalMode.IsNull() {
-		state.ApprovalMode = types.StringValue(resource.ApprovalMode)
+	if reference.ApprovalMode.IsUnknown() || reference.ApprovalMode.IsNull() {
+		state.ApprovalMode = types.StringNull()
+	} else {
+		state.ApprovalMode = types.StringPointerValue(resource.AccessPolicy.LegacyApprovalMode())
 	}
 
-	if !state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsNull() {
-		state.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.UsageBasedAutolockDurationDays)
+	if (!state.UsageBasedAutolockDurationDays.IsNull() || !reference.UsageBasedAutolockDurationDays.IsNull()) && reference.AccessPolicy.IsNull() {
+		state.UsageBasedAutolockDurationDays = types.Int64PointerValue(resource.AccessPolicy.LegacyUsageBasedAutolockDurationDays())
+	} else if state.UsageBasedAutolockDurationDays.IsUnknown() {
+		state.UsageBasedAutolockDurationDays = types.Int64Null()
 	}
 
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
@@ -1127,6 +1355,22 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 			state.Protocols = protocols
 		}
 	}
+
+	referenceAccessPolicy, err := getAccessPolicyAttribute(reference.AccessPolicy)
+	if err != nil {
+		diagnostics.AddAttributeError(
+			path.Root(attr.AccessPolicy),
+			"failed to parse access_policy attribute",
+			err.Error(),
+		)
+
+		return
+	}
+
+	accessPolicy, diags := convertAccessPolicyToTerraform(ctx, resource.AccessPolicy, referenceAccessPolicy)
+	state.AccessPolicy = accessPolicy
+
+	diagnostics.Append(diags...)
 
 	groupAccess, diags := convertGroupsAccessToTerraform(ctx, resource.GroupsAccess, reference.GroupAccess)
 	diagnostics.Append(diags...)
@@ -1320,6 +1564,69 @@ func protocolAttributeTypes() map[string]tfattr.Type {
 	}
 }
 
+func convertAccessPolicyToTerraform(ctx context.Context, accessPolicy, referenceAccessPolicy *model.AccessPolicy) (types.Set, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if accessPolicy == nil || referenceAccessPolicy == nil {
+		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
+	}
+
+	attributes := map[string]tfattr.Value{
+		attr.Mode:         types.StringPointerValue(accessPolicy.Mode),
+		attr.Duration:     types.StringPointerValue(accessPolicy.Duration),
+		attr.ApprovalMode: types.StringPointerValue(accessPolicy.ApprovalMode),
+	}
+
+	if referenceAccessPolicy.ApprovalMode == nil || *referenceAccessPolicy.ApprovalMode == "" {
+		attributes[attr.ApprovalMode] = types.StringNull()
+	}
+
+	if referenceAccessPolicy.Duration == nil || *referenceAccessPolicy.Duration == "" {
+		attributes[attr.Duration] = types.StringNull()
+	}
+
+	if referenceAccessPolicy.Duration != nil && accessPolicy.Duration != nil {
+		referenceDuration, _ := utils.ParseDurationWithDays(*referenceAccessPolicy.Duration)
+		duration, _ := utils.ParseDurationWithDays(*accessPolicy.Duration)
+
+		if duration == referenceDuration {
+			attributes[attr.Duration] = types.StringPointerValue(referenceAccessPolicy.Duration)
+		}
+	}
+
+	obj, diags := types.ObjectValue(accessPolicyAttributeTypes(), attributes)
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
+	}
+
+	return makeObjectsSet(ctx, obj)
+}
+
+func convertAccessPolicyToTerraformForImport(ctx context.Context, accessPolicy *model.AccessPolicy) (types.Set, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if accessPolicy == nil {
+		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
+	}
+
+	attributes := map[string]tfattr.Value{
+		attr.Mode:         types.StringPointerValue(accessPolicy.Mode),
+		attr.Duration:     types.StringPointerValue(accessPolicy.Duration),
+		attr.ApprovalMode: types.StringPointerValue(accessPolicy.ApprovalMode),
+	}
+
+	obj, diags := types.ObjectValue(accessPolicyAttributeTypes(), attributes)
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
+	}
+
+	return makeObjectsSet(ctx, obj)
+}
+
 func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []string) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
@@ -1347,14 +1654,75 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 	return makeObjectsSet(ctx, objects...)
 }
 
+//nolint:funlen
 func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.Set) (types.Set, diag.Diagnostics) {
-	reference := getGroupAccessAttribute(referenceGroupAccess)
-	referenceLookup := make(map[string]model.AccessGroup)
+	var diagnostics diag.Diagnostics
+
+	reference, err := getLegacyGroupAccessAttribute(referenceGroupAccess)
+	if err != nil {
+		diagnostics.AddAttributeError(
+			path.Root(attr.AccessGroup),
+			"failed to parse access_group attribute",
+			err.Error(),
+		)
+
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+	}
+
+	referenceLookup := make(map[string]*model.LegacyAccessGroup)
 
 	for _, access := range reference {
 		referenceLookup[access.GroupID] = access
 	}
 
+	if len(groupAccess) == 0 {
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+	}
+
+	objects := make([]types.Object, 0, len(groupAccess))
+
+	for _, access := range groupAccess {
+		attributes := map[string]tfattr.Value{
+			attr.GroupID:                        types.StringValue(access.GroupID),
+			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
+			attr.UsageBasedAutolockDurationDays: types.Int64Null(),
+			attr.ApprovalMode:                   types.StringNull(),
+		}
+
+		var referenceAccessPolicy *model.AccessPolicy
+
+		referenceGroup, exists := referenceLookup[access.GroupID]
+		if exists {
+			if referenceGroup.UsageBasedDuration != nil {
+				attributes[attr.UsageBasedAutolockDurationDays] = types.Int64PointerValue(referenceGroup.UsageBasedDuration)
+			}
+
+			if referenceGroup.ApprovalMode != nil {
+				attributes[attr.ApprovalMode] = types.StringPointerValue(referenceGroup.ApprovalMode)
+			}
+
+			referenceAccessPolicy = referenceGroup.AccessPolicy
+		}
+
+		accessPolicy, diags := convertAccessPolicyToTerraform(ctx, access.AccessPolicy, referenceAccessPolicy)
+		diagnostics.Append(diags...)
+
+		attributes[attr.AccessPolicy] = accessPolicy
+
+		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
+		diagnostics.Append(diags...)
+
+		objects = append(objects, obj)
+	}
+
+	if diagnostics.HasError() {
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+	}
+
+	return makeObjectsSet(ctx, objects...)
+}
+
+func convertGroupsAccessToTerraformForImport(ctx context.Context, groupAccess []model.AccessGroup) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if len(groupAccess) == 0 {
@@ -1367,20 +1735,14 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 		attributes := map[string]tfattr.Value{
 			attr.GroupID:                        types.StringValue(access.GroupID),
 			attr.SecurityPolicyID:               types.StringPointerValue(access.SecurityPolicyID),
-			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(access.UsageBasedDuration),
-			attr.ApprovalMode:                   types.StringPointerValue(access.ApprovalMode),
+			attr.UsageBasedAutolockDurationDays: types.Int64Null(),
+			attr.ApprovalMode:                   types.StringNull(),
 		}
 
-		referenceGroup, exists := referenceLookup[access.GroupID]
-		if exists {
-			if referenceGroup.UsageBasedDuration == nil {
-				attributes[attr.UsageBasedAutolockDurationDays] = types.Int64Null()
-			}
+		accessPolicy, diags := convertAccessPolicyToTerraformForImport(ctx, access.AccessPolicy)
+		diagnostics.Append(diags...)
 
-			if referenceGroup.ApprovalMode == nil || *referenceGroup.ApprovalMode == "" {
-				attributes[attr.ApprovalMode] = types.StringNull()
-			}
-		}
+		attributes[attr.AccessPolicy] = accessPolicy
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
 		diagnostics.Append(diags...)
@@ -1471,12 +1833,25 @@ func accessGroupAttributeTypes() map[string]tfattr.Type {
 		attr.SecurityPolicyID:               types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
 		attr.ApprovalMode:                   types.StringType,
+		attr.AccessPolicy: types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: accessPolicyAttributeTypes(),
+			},
+		},
 	}
 }
 
 func accessServiceAccountAttributeTypes() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.ServiceAccountID: types.StringType,
+	}
+}
+
+func accessPolicyAttributeTypes() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.Mode:         types.StringType,
+		attr.Duration:     types.StringType,
+		attr.ApprovalMode: types.StringType,
 	}
 }
 

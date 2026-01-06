@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
@@ -280,28 +281,32 @@ func TestResourceAccessToTerraform(t *testing.T) {
 	}
 }
 
-func TestAccessGroup_Equals(t *testing.T) {
-	// Utility to create optional string
-	toStringPtr := func(s string) *string {
-		return &s
-	}
+// Utility to create optional string
+func toStringPtr(s string) *string {
+	return &s
+}
 
-	// Utility to create optional int64
-	toInt64Ptr := func(i int64) *int64 {
-		return &i
-	}
+func TestAccessGroup_Equals(t *testing.T) {
 
 	t.Run("Equal Groups (all fields)", func(t *testing.T) {
 		group1 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		group2 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		assert.True(t, group1.Equals(group2))
@@ -321,15 +326,23 @@ func TestAccessGroup_Equals(t *testing.T) {
 
 	t.Run("Different GroupIDs", func(t *testing.T) {
 		group1 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		group2 := model.AccessGroup{
-			GroupID:            "group2",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group2",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		assert.False(t, group1.Equals(group2))
@@ -337,15 +350,23 @@ func TestAccessGroup_Equals(t *testing.T) {
 
 	t.Run("Different SecurityPolicyID", func(t *testing.T) {
 		group1 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		group2 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy2"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy2"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		assert.False(t, group1.Equals(group2))
@@ -353,15 +374,23 @@ func TestAccessGroup_Equals(t *testing.T) {
 
 	t.Run("Different UsageBasedDuration", func(t *testing.T) {
 		group1 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		group2 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(7200),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("2h"),
+			},
 		}
 
 		assert.False(t, group1.Equals(group2))
@@ -369,17 +398,43 @@ func TestAccessGroup_Equals(t *testing.T) {
 
 	t.Run("Nil vs Non-Nil optional fields", func(t *testing.T) {
 		group1 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   nil,
-			UsageBasedDuration: nil,
+			GroupID: "group1",
 		}
 
 		group2 := model.AccessGroup{
-			GroupID:            "group1",
-			SecurityPolicyID:   toStringPtr("policy1"),
-			UsageBasedDuration: toInt64Ptr(3600),
+			GroupID:          "group1",
+			SecurityPolicyID: toStringPtr("policy1"),
+			AccessPolicy: &model.AccessPolicy{
+				Mode:         toStringPtr(model.AccessPolicyModeAccessRequest),
+				ApprovalMode: toStringPtr(model.ApprovalModeManual),
+				Duration:     toStringPtr("1h"),
+			},
 		}
 
 		assert.False(t, group1.Equals(group2))
+	})
+}
+
+func TestAccessPolicy_ParseDurationSupportsDays(t *testing.T) {
+	t.Run("integer days and hours", func(t *testing.T) {
+		policy := model.AccessPolicy{
+			Duration: toStringPtr("2d3h"),
+		}
+
+		duration, err := policy.ParseDuration()
+
+		assert.NoError(t, err)
+		assert.Equal(t, 51*time.Hour, duration)
+	})
+
+	t.Run("fractional days", func(t *testing.T) {
+		policy := model.AccessPolicy{
+			Duration: toStringPtr("1.5d"),
+		}
+
+		duration, err := policy.ParseDuration()
+
+		assert.NoError(t, err)
+		assert.Equal(t, 36*time.Hour, duration)
 	})
 }
