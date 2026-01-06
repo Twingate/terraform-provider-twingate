@@ -4,11 +4,14 @@ page_title: "twingate_connector_tokens Ephemeral Resource - terraform-provider-t
 subcategory: ""
 description: |-
   This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.
+  ~> Warning: When converting existing connectors to ephemeral mode, Terraform will generate a new token during plan or apply. Until the connectors are updated with the new token, existing connectors will be unable to reconnect.
 ---
 
 # twingate_connector_tokens (Ephemeral Resource)
 
 This resource type will generate tokens for a Connector, which are needed to successfully provision one on your network. The Connector itself has its own resource type and must be created before you can provision tokens.
+
+~> **Warning:** When converting existing connectors to ephemeral mode, Terraform will generate a new token during plan or apply. Until the connectors are updated with the new token, existing connectors will be unable to reconnect.
 
 
 
