@@ -192,6 +192,7 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 				Address:                        priorState.Address,
 				RemoteNetworkID:                priorState.RemoteNetworkID,
 				Protocols:                      priorState.Protocols,
+				AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 				GroupAccess:                    accessGroup,
 				ServiceAccess:                  accessServiceAccount,
 				IsActive:                       priorState.IsActive,
@@ -308,6 +309,7 @@ func convertAccessGroupsToTerraformV2(ctx context.Context, groups []*model.Legac
 			attr.SecurityPolicyID:               types.StringPointerValue(g.SecurityPolicyID),
 			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(g.UsageBasedDuration),
 			attr.ApprovalMode:                   types.StringPointerValue(g.ApprovalMode),
+			attr.AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypesV2(), attributes)
@@ -329,5 +331,10 @@ func accessGroupAttributeTypesV2() map[string]tfattr.Type {
 		attr.SecurityPolicyID:               types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
 		attr.ApprovalMode:                   types.StringType,
+		attr.AccessPolicy: types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: accessPolicyAttributeTypes(),
+			},
+		},
 	}
 }
