@@ -30,7 +30,6 @@ type resourceModelV2 struct {
 	RemoteNetworkID                types.String `tfsdk:"remote_network_id"`
 	IsAuthoritative                types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                      types.Object `tfsdk:"protocols"`
-	AccessPolicy                   types.Set    `tfsdk:"access_policy"`
 	GroupAccess                    types.Set    `tfsdk:"access_group"`
 	ServiceAccess                  types.Set    `tfsdk:"access_service"`
 	IsActive                       types.Bool   `tfsdk:"is_active"`

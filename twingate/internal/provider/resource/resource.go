@@ -616,24 +616,6 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 	return access
 }
 
-func getAccessAttribute(list types.List, attribute string) []string {
-	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return nil
-	}
-
-	obj := list.Elements()[0].(types.Object)
-	if obj.IsNull() || obj.IsUnknown() {
-		return nil
-	}
-
-	val := obj.Attributes()[attribute]
-	if val == nil || val.IsNull() || val.IsUnknown() {
-		return nil
-	}
-
-	return convertIDs(val.(types.Set))
-}
-
 func getGroupAccessAttribute(list types.Set) ([]model.AccessGroup, error) {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil, nil

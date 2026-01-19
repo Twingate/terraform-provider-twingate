@@ -175,10 +175,10 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 				return
 			}
 
-			groupIDs := getAccessAttribute(priorState.Access, attr.GroupIDs)
-			serviceAccountIDs := getAccessAttribute(priorState.Access, attr.ServiceAccountIDs)
+			groupIDs := getAccessAttributeV0(priorState.Access, attr.GroupIDs)
+			serviceAccountIDs := getAccessAttributeV0(priorState.Access, attr.ServiceAccountIDs)
 
-			accessGroup, diags := convertAccessGroupsToTerraformV2(ctx, utils.Map(groupIDs, func(id string) *model.LegacyAccessGroup {
+			accessGroup, diags := convertAccessGroupsToTerraform(ctx, utils.Map(groupIDs, func(id string) *model.LegacyAccessGroup {
 				return &model.LegacyAccessGroup{GroupID: id}
 			}))
 			resp.Diagnostics.Append(diags...)
@@ -186,18 +186,20 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 			accessServiceAccount, diags := convertAccessServiceAccountsToTerraform(ctx, serviceAccountIDs)
 			resp.Diagnostics.Append(diags...)
 
-			upgradedState := resourceModelV2{
-				ID:                             priorState.ID,
-				Name:                           priorState.Name,
-				Address:                        priorState.Address,
-				RemoteNetworkID:                priorState.RemoteNetworkID,
-				Protocols:                      priorState.Protocols,
-				AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
-				GroupAccess:                    accessGroup,
-				ServiceAccess:                  accessServiceAccount,
-				IsActive:                       priorState.IsActive,
-				Tags:                           types.MapNull(types.StringType),
-				TagsAll:                        types.MapNull(types.StringType),
+			upgradedState := resourceModel{
+				ID:              priorState.ID,
+				Name:            priorState.Name,
+				Address:         priorState.Address,
+				RemoteNetworkID: priorState.RemoteNetworkID,
+				Protocols:       priorState.Protocols,
+				AccessPolicy:    makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+				GroupAccess:     accessGroup,
+				ServiceAccess:   accessServiceAccount,
+				IsActive:        priorState.IsActive,
+				Tags:            types.MapNull(types.StringType),
+				TagsAll:         types.MapNull(types.StringType),
+
+				// Deprecated
 				ApprovalMode:                   types.StringNull(),
 				UsageBasedAutolockDurationDays: types.Int64Null(),
 			}
@@ -294,11 +296,11 @@ func convertAccessBlockToTerraform(ctx context.Context, groups, serviceAccounts 
 	return makeObjectsList(ctx, obj)
 }
 
-func convertAccessGroupsToTerraformV2(ctx context.Context, groups []*model.LegacyAccessGroup) (types.Set, diag.Diagnostics) {
+func convertAccessGroupsToTerraform(ctx context.Context, groups []*model.LegacyAccessGroup) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if len(groups) == 0 {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
 	objects := make([]types.Object, 0, len(groups))
@@ -312,29 +314,15 @@ func convertAccessGroupsToTerraformV2(ctx context.Context, groups []*model.Legac
 			attr.AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 		}
 
-		obj, diags := types.ObjectValue(accessGroupAttributeTypesV2(), attributes)
+		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
 		diagnostics.Append(diags...)
 
 		objects = append(objects, obj)
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
 	return makeObjectsSet(ctx, objects...)
-}
-
-func accessGroupAttributeTypesV2() map[string]tfattr.Type {
-	return map[string]tfattr.Type{
-		attr.GroupID:                        types.StringType,
-		attr.SecurityPolicyID:               types.StringType,
-		attr.UsageBasedAutolockDurationDays: types.Int64Type,
-		attr.ApprovalMode:                   types.StringType,
-		attr.AccessPolicy: types.SetType{
-			ElemType: types.ObjectType{
-				AttrTypes: accessPolicyAttributeTypes(),
-			},
-		},
-	}
 }
