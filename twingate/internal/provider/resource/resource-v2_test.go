@@ -4,7 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/stretchr/testify/assert"
 
@@ -407,7 +410,11 @@ func TestStateUpgraderV2(t *testing.T) {
 			state := tfsdk.State{
 				Schema: upgradeResourceStateV2().PriorSchema,
 			}
-			state.Set(ctx, test.priorState())
+
+			diags := state.Set(ctx, test.priorState())
+			if diags.HasError() {
+				t.Fatalf("unexpected errors during upgrade: %v", diags)
+			}
 
 			// Mock the request and response
 			req := resource.UpgradeStateRequest{
@@ -445,4 +452,43 @@ func TestStateUpgraderV2(t *testing.T) {
 		})
 	}
 
+}
+
+func accessGroupAttributeTypesV2() map[string]tfattr.Type {
+	return map[string]tfattr.Type{
+		attr.GroupID:                        types.StringType,
+		attr.SecurityPolicyID:               types.StringType,
+		attr.UsageBasedAutolockDurationDays: types.Int64Type,
+		attr.ApprovalMode:                   types.StringType,
+	}
+}
+
+func convertAccessGroupsToTerraformV2(ctx context.Context, groups []*model.LegacyAccessGroup) (types.Set, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if len(groups) == 0 {
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()), diagnostics
+	}
+
+	objects := make([]types.Object, 0, len(groups))
+
+	for _, g := range groups {
+		attributes := map[string]tfattr.Value{
+			attr.GroupID:                        types.StringValue(g.GroupID),
+			attr.SecurityPolicyID:               types.StringPointerValue(g.SecurityPolicyID),
+			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(g.UsageBasedDuration),
+			attr.ApprovalMode:                   types.StringPointerValue(g.ApprovalMode),
+		}
+
+		obj, diags := types.ObjectValue(accessGroupAttributeTypesV2(), attributes)
+		diagnostics.Append(diags...)
+
+		objects = append(objects, obj)
+	}
+
+	if diagnostics.HasError() {
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()), diagnostics
+	}
+
+	return makeObjectsSet(ctx, objects...)
 }

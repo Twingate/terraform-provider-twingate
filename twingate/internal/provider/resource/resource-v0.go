@@ -5,6 +5,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -175,14 +176,37 @@ func upgradeResourceStateV0() resource.StateUpgrader {
 				return
 			}
 
-			upgradedState := resourceModelV1{
+			groups, serviceAccounts := convertAccessV0(priorState.Access)
+
+			groupAccess, diags := convertGroupsAccessToTerraformForImport(ctx,
+				utils.Map(groups, func(id string) model.AccessGroup { return model.AccessGroup{GroupID: id} }),
+			)
+			if diags.HasError() {
+				return
+			}
+
+			serviceAccess, diags := convertServiceAccessToTerraform(ctx, serviceAccounts)
+			if diags.HasError() {
+				return
+			}
+
+			upgradedState := resourceModel{
 				ID:              priorState.ID,
 				Name:            priorState.Name,
 				Address:         priorState.Address,
 				RemoteNetworkID: priorState.RemoteNetworkID,
 				Protocols:       protocolsState,
-				Access:          priorState.Access,
 				IsActive:        priorState.IsActive,
+
+				AccessPolicy:  makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+				GroupAccess:   groupAccess,
+				ServiceAccess: serviceAccess,
+				Tags:          types.MapNull(types.StringType),
+				TagsAll:       types.MapNull(types.StringType),
+
+				// Deprecated
+				ApprovalMode:                   types.StringNull(),
+				UsageBasedAutolockDurationDays: types.Int64Null(),
 			}
 
 			if !priorState.IsAuthoritative.IsNull() {
@@ -331,4 +355,26 @@ func isValidPolicyV0(policy string, ports []*model.PortRange) error {
 	}
 
 	return nil
+}
+
+func convertAccessV0(list types.List) ([]string, []string) {
+	return getAccessAttributeV0(list, attr.GroupIDs), getAccessAttributeV0(list, attr.ServiceAccountIDs)
+}
+
+func getAccessAttributeV0(list types.List, attribute string) []string {
+	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+		return nil
+	}
+
+	obj := list.Elements()[0].(types.Object)
+	if obj.IsNull() || obj.IsUnknown() {
+		return nil
+	}
+
+	val := obj.Attributes()[attribute]
+	if val == nil || val.IsNull() || val.IsUnknown() {
+		return nil
+	}
+
+	return convertIDs(val.(types.Set))
 }

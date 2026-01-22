@@ -19,7 +19,7 @@ func TestStateUpgraderV1(t *testing.T) {
 	tests := []struct {
 		name          string
 		priorState    func() resourceModelV1
-		expectedState func() resourceModelV2
+		expectedState func() resourceModel
 	}{
 		{
 			name: "base case",
@@ -39,8 +39,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					Access:                   makeObjectsListNull(ctx, accessBlockAttributeTypes()),
 				}
 			},
-			expectedState: func() resourceModelV2 {
-				return resourceModelV2{
+			expectedState: func() resourceModel {
+				return resourceModel{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -53,7 +53,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
 					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
@@ -74,8 +75,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					Access:          makeObjectsListNull(ctx, accessBlockAttributeTypes()),
 				}
 			},
-			expectedState: func() resourceModelV2 {
-				return resourceModelV2{
+			expectedState: func() resourceModel {
+				return resourceModel{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -88,7 +89,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					Alias:                          types.StringNull(),
 					SecurityPolicyID:               types.StringNull(),
 					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
@@ -111,8 +113,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					SecurityPolicyID: types.StringValue(""),
 				}
 			},
-			expectedState: func() resourceModelV2 {
-				return resourceModelV2{
+			expectedState: func() resourceModel {
+				return resourceModel{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -125,7 +127,8 @@ func TestStateUpgraderV1(t *testing.T) {
 					Alias:                          types.StringNull(),
 					SecurityPolicyID:               types.StringNull(),
 					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
@@ -159,10 +162,10 @@ func TestStateUpgraderV1(t *testing.T) {
 					Access:                   access,
 				}
 			},
-			expectedState: func() resourceModelV2 {
+			expectedState: func() resourceModel {
 				groupIDs := []string{"test-group-id-1", "test-group-id-2"}
 				serviceAccountIDs := []string{"test-service-account-id-1", "test-service-account-id-2"}
-				accessGroup, diags := convertAccessGroupsToTerraformV2(ctx, utils.Map(groupIDs, func(id string) *model.LegacyAccessGroup {
+				accessGroup, diags := convertAccessGroupsToTerraform(ctx, utils.Map(groupIDs, func(id string) *model.LegacyAccessGroup {
 					return &model.LegacyAccessGroup{GroupID: id}
 				}))
 				if diags.HasError() {
@@ -174,7 +177,7 @@ func TestStateUpgraderV1(t *testing.T) {
 					t.Fatalf("unexpected errors during upgrade: %v", diags)
 				}
 
-				return resourceModelV2{
+				return resourceModel{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -187,6 +190,7 @@ func TestStateUpgraderV1(t *testing.T) {
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
 					ApprovalMode:                   types.StringNull(),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 					GroupAccess:                    accessGroup,
 					ServiceAccess:                  accessServiceAccount,
 					Tags:                           types.MapNull(types.StringType),
@@ -210,9 +214,13 @@ func TestStateUpgraderV1(t *testing.T) {
 				State: &state,
 			}
 
+			newResource := NewResourceResource()
+			newSchema := resource.SchemaResponse{}
+			newResource.Schema(nil, resource.SchemaRequest{}, &newSchema)
+
 			resp := &resource.UpgradeStateResponse{
 				State: tfsdk.State{
-					Schema: upgradeResourceStateV2().PriorSchema,
+					Schema: newSchema.Schema,
 				},
 			}
 
@@ -229,7 +237,7 @@ func TestStateUpgraderV1(t *testing.T) {
 			assert.Equal(t, "Please update the access blocks.", resp.Diagnostics[0].Summary())
 
 			// Retrieve the upgraded state
-			var upgradedState resourceModelV2
+			var upgradedState resourceModel
 			digs := resp.State.Get(ctx, &upgradedState)
 			assert.False(t, digs.HasError())
 
