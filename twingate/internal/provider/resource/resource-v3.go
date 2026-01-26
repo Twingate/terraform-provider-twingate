@@ -93,6 +93,7 @@ func accessPolicyBlockResourceStateV3() schema.SetNestedBlock {
 func upgradeResourceStateV3() resource.StateUpgrader {
 	return resource.StateUpgrader{
 		PriorSchema: &schema.Schema{
+			//nolint:dupl
 			Attributes: map[string]schema.Attribute{
 				attr.ID: schema.StringAttribute{
 					Computed: true,
@@ -414,7 +415,6 @@ func getLegacyGroupAccessAttributeV3(list types.Set) ([]*legacyAccessGroupV2, er
 			}
 
 			accessGroup.AccessPolicy = accessPolicy
-
 		} else {
 			usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
 			if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {

@@ -303,7 +303,6 @@ func protocol() schema.SingleNestedAttribute {
 	}
 }
 
-//nolint:funlen
 func groupAccessBlock() schema.SetNestedBlock {
 	return schema.SetNestedBlock{
 		Validators: []validator.Set{
@@ -556,53 +555,6 @@ func convertResourceAccess(serviceAccounts []string, groupsAccess []model.Access
 }
 
 func getGroupAccessAttribute(list types.Set) ([]model.AccessGroup, error) {
-	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return nil, nil
-	}
-
-	access := make([]model.AccessGroup, 0, len(list.Elements()))
-
-	for _, item := range list.Elements() {
-		obj := item.(types.Object)
-		if obj.IsNull() || obj.IsUnknown() {
-			continue
-		}
-
-		groupVal := obj.Attributes()[attr.GroupID]
-		accessGroup := model.AccessGroup{
-			GroupID: groupVal.(types.String).ValueString(),
-		}
-
-		securityPolicyVal := obj.Attributes()[attr.SecurityPolicyID]
-		if securityPolicyVal != nil && !securityPolicyVal.IsNull() && !securityPolicyVal.IsUnknown() {
-			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
-		}
-
-		var (
-			err          error
-			accessPolicy *model.AccessPolicy
-		)
-
-		accessPolicyVal := obj.Attributes()[attr.AccessPolicy]
-		if accessPolicyVal != nil && !accessPolicyVal.IsNull() && !accessPolicyVal.IsUnknown() {
-			accessPolicyRaw, ok := accessPolicyVal.(types.Set)
-			if ok {
-				accessPolicy, err = getAccessPolicyAttribute(accessPolicyRaw)
-				if err != nil {
-					return nil, fmt.Errorf("error parsing access_policy: %w", err)
-				}
-			}
-		}
-
-		accessGroup.AccessPolicy = accessPolicy
-
-		access = append(access, accessGroup)
-	}
-
-	return access, nil
-}
-
-func getLegacyGroupAccessAttribute(list types.Set) ([]model.AccessGroup, error) {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil, nil
 	}
@@ -1523,11 +1475,10 @@ func convertServiceAccessToTerraform(ctx context.Context, serviceAccounts []stri
 	return makeObjectsSet(ctx, objects...)
 }
 
-//nolint:funlen
 func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.AccessGroup, referenceGroupAccess types.Set) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
-	reference, err := getLegacyGroupAccessAttribute(referenceGroupAccess)
+	reference, err := getGroupAccessAttribute(referenceGroupAccess)
 	if err != nil {
 		diagnostics.AddAttributeError(
 			path.Root(attr.AccessGroup),

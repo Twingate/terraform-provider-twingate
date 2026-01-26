@@ -68,7 +68,6 @@ func (d *resource) Configure(ctx context.Context, req datasource.ConfigureReques
 	d.client = client
 }
 
-//nolint:funlen
 func (d *resource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	protocolSchema := schema.SingleNestedBlock{
 		Attributes: map[string]schema.Attribute{

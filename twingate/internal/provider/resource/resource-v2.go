@@ -56,6 +56,7 @@ type legacyAccessGroupV2 struct {
 func upgradeResourceStateV2() resource.StateUpgrader {
 	return resource.StateUpgrader{
 		PriorSchema: &schema.Schema{
+			//nolint:dupl
 			Attributes: map[string]schema.Attribute{
 				attr.ID: schema.StringAttribute{
 					Computed: true,
@@ -295,13 +296,7 @@ func convertLegacyAccessGroupsToTerraform(ctx context.Context, groupAccess types
 		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
-	groups, err := getLegacyGroupAccessAttributeV2(groupAccess)
-	if err != nil {
-		diagnostics.AddError("failed to convert access groups", err.Error())
-
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
-	}
-
+	groups := getLegacyGroupAccessAttributeV2(groupAccess)
 	if len(groups) == 0 {
 		// no legacy groups to convert - return a null set
 		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
@@ -361,9 +356,9 @@ func convertLegacyAccessGroupsToTerraform(ctx context.Context, groupAccess types
 }
 
 // getLegacyGroupAccessAttributeV2 reads the deprecated access_group attributes from v2 state.
-func getLegacyGroupAccessAttributeV2(list types.Set) ([]*legacyAccessGroupV2, error) {
+func getLegacyGroupAccessAttributeV2(list types.Set) []*legacyAccessGroupV2 {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	access := make([]*legacyAccessGroupV2, 0, len(list.Elements()))
@@ -397,5 +392,5 @@ func getLegacyGroupAccessAttributeV2(list types.Set) ([]*legacyAccessGroupV2, er
 		access = append(access, accessGroup)
 	}
 
-	return access, nil
+	return access
 }
