@@ -2,7 +2,6 @@ package resource
 
 import (
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strings"
 	"testing"
@@ -3569,61 +3568,6 @@ func TestAccTwingateResourceUnsetSecurityPolicyOnGroupAccess(t *testing.T) {
 	})
 }
 
-func TestAccTwingateResourceWithUsageBasedOnGroupAccess(t *testing.T) {
-	t.Parallel()
-
-	resourceName := test.RandomResourceName()
-	theResource := acctests.TerraformResource(resourceName)
-	remoteNetworkName := test.RandomName()
-	groupName := test.RandomGroupName()
-
-	var usageBasedDuration int64 = 2
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResourceWithUsageBasedOnGroupAccess(remoteNetworkName, resourceName, groupName, usageBasedDuration),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, usageBasedDuration),
-				),
-			},
-			{
-				Config: createResourceWithNullSecurityPolicyOnGroupAccess(remoteNetworkName, resourceName, groupName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
-				),
-			},
-		},
-	})
-}
-
-func createResourceWithUsageBasedOnGroupAccess(remoteNetwork, resource, groupName string, daysDuration int64) string {
-	return fmt.Sprintf(`
-	resource "twingate_group" "g21" {
-      name = "%[3]s"
-    }
-
-	resource "twingate_remote_network" "%[1]s" {
-	  name = "%[1]s"
-	}
-
-	resource "twingate_resource" "%[2]s" {
-	  name = "%[2]s"
-	  address = "acc-test-address.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	  
-	  access_group {
-		group_id = twingate_group.g21.id
-		usage_based_autolock_duration_days = %[4]v
-      }
-	}
-	`, remoteNetwork, resource, groupName, daysDuration)
-}
-
 func TestAccTwingateWithMultipleResource(t *testing.T) {
 	t.Parallel()
 
@@ -4014,213 +3958,6 @@ func TestAccTwingateResourceWithAutomaticApprovalModeInAccessGroup(t *testing.T)
 	})
 }
 
-func TestAccTwingateCreateResourceWithUsageBasedAutolockDurationDays(t *testing.T) {
-	t.Parallel()
-
-	resourceName := test.RandomResourceName()
-	remoteNetworkName := test.RandomName()
-
-	theResource := acctests.TerraformResource(resourceName)
-	autolockDays := rand.Intn(30) + 1
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResource(remoteNetworkName, resourceName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, attr.UsageBasedAutolockDurationDays),
-				),
-			},
-			{
-				Config: createResourceWithUsageBasedAutolockDurationDays(remoteNetworkName, resourceName, autolockDays),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays)),
-				),
-			},
-			{
-				Config: createResource(remoteNetworkName, resourceName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, attr.UsageBasedAutolockDurationDays),
-				),
-			},
-		},
-	})
-}
-
-func createResourceWithUsageBasedAutolockDurationDays(networkName, resourceName string, autolockDays int) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "%[1]s" {
-	  name = "%[1]s"
-	}
-	resource "twingate_resource" "%[2]s" {
-	  name = "%[2]s"
-	  address = "acc-test.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	  usage_based_autolock_duration_days = %[3]d
-	}
-	`, networkName, resourceName, autolockDays)
-}
-
-func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDays(t *testing.T) {
-	t.Parallel()
-
-	resourceName := test.RandomResourceName()
-	remoteNetworkName := test.RandomName()
-	groupName := test.RandomGroupName()
-
-	theResource := acctests.TerraformResource(resourceName)
-	autolockDays := rand.Int63n(30) + 1
-	autolockDays1 := autolockDays + 1
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResourceWithDefaultAutolock(remoteNetworkName, resourceName, groupName, autolockDays),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays)),
-					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays),
-					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
-				),
-			},
-			{
-				Config: createResourceWithDefaultAutolock(remoteNetworkName, resourceName, groupName, autolockDays1),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays1)),
-					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays1),
-					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
-				),
-			},
-			{
-				Config: createResourceWithoutDefaultAutolock(remoteNetworkName, resourceName, groupName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckNoResourceAttr(theResource, attr.UsageBasedAutolockDurationDays),
-					acctests.CheckTwingateResourceUsageBasedIsNullOnResource(theResource),
-					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
-				),
-			},
-		},
-	})
-}
-
-func createResourceWithDefaultAutolock(remoteNetwork, resource, groupName string, autolockDays int64) string {
-	return fmt.Sprintf(`
-	resource "twingate_group" "g21" {
-      name = "%[3]s"
-    }
-	resource "twingate_remote_network" "%[1]s" {
-	  name = "%[1]s"
-	}
-	resource "twingate_resource" "%[2]s" {
-	  name = "%[2]s"
-	  address = "acc-test-address.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	  usage_based_autolock_duration_days = %[4]d
-	  
-	  access_group {
-		group_id = twingate_group.g21.id
-      }
-	}
-	`, remoteNetwork, resource, groupName, autolockDays)
-}
-
-func createResourceWithoutDefaultAutolock(remoteNetwork, resource, groupName string) string {
-	return fmt.Sprintf(`
-	resource "twingate_group" "g21" {
-      name = "%[3]s"
-    }
-	resource "twingate_remote_network" "%[1]s" {
-	  name = "%[1]s"
-	}
-	resource "twingate_resource" "%[2]s" {
-	  name = "%[2]s"
-	  address = "acc-test-address.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	  
-	  access_group {
-		group_id = twingate_group.g21.id
-      }
-	}
-	`, remoteNetwork, resource, groupName)
-}
-
-func TestAccTwingateCreateResourceWithDefaultUsageBasedAutolockDurationDaysAndGroupAutolock(t *testing.T) {
-	t.Parallel()
-
-	resourceName := test.RandomResourceName()
-	remoteNetworkName := test.RandomName()
-	groupName := test.RandomGroupName()
-
-	theResource := acctests.TerraformResource(resourceName)
-	autolockDays1 := rand.Int63n(30) + 1
-	autolockDays2 := autolockDays1 + 2
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: createResourceWithDefaultAutolockAndGroupAutolock(remoteNetworkName, resourceName, groupName, autolockDays1, autolockDays2),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays1)),
-					acctests.CheckTwingateResourceUsageBasedOnGroupAccess(theResource, autolockDays2),
-				),
-			},
-			{
-				Config: createResourceWithDefaultAutolock(remoteNetworkName, resourceName, groupName, autolockDays1),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.UsageBasedAutolockDurationDays, fmt.Sprintf("%v", autolockDays1)),
-					acctests.CheckTwingateResourceUsageBasedDuration(theResource, autolockDays1),
-					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
-				),
-			},
-			{
-				Config: createResourceWithoutDefaultAutolock(remoteNetworkName, resourceName, groupName),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					acctests.CheckTwingateResourceUsageBasedIsNullOnGroupAccess(theResource),
-				),
-			},
-		},
-	})
-}
-
-func createResourceWithDefaultAutolockAndGroupAutolock(remoteNetwork, resource, groupName string, autolockDays1, autolockDays2 int64) string {
-	return fmt.Sprintf(`
-	resource "twingate_group" "g21" {
-      name = "%[3]s"
-    }
-	resource "twingate_remote_network" "%[1]s" {
-	  name = "%[1]s"
-	}
-	resource "twingate_resource" "%[2]s" {
-	  name = "%[2]s"
-	  address = "acc-test-address.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	  usage_based_autolock_duration_days = %[4]d
-	  
-	  access_group {
-		group_id = twingate_group.g21.id
-		usage_based_autolock_duration_days = %[5]d
-      }
-	}
-	`, remoteNetwork, resource, groupName, autolockDays1, autolockDays2)
-}
-
 func TestAccTwingateCreateResourceWithDefaultTags(t *testing.T) {
 	t.Parallel()
 
@@ -4342,12 +4079,6 @@ func TestAccTwingateResourceSecurityPolicyOnUpdate(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					// set new policy via API
 					acctests.UpdateResourceSecurityPolicy(theResource, testPolicy),
-				),
-			},
-			{
-				Config: createResourceWithUsageBasedAutolockDurationDays(remoteNetworkName, resourceName, 1),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
 				),
 			},
 		},
@@ -4624,44 +4355,6 @@ func createResourceWithAccessPolicyAndApprovalMode(remoteNetwork, resource strin
 	  remote_network_id = twingate_remote_network.%[1]s.id
 	  
 	  approval_mode = "MANUAL"
-
-	  access_policy {
-		mode = "MANUAL"
-      }
-	}
-	`, remoteNetwork, resource)
-}
-
-func TestAccTwingateCreateResourceWithAccessPolicyAndDeprecatedUsageBasedDuration_ShouldFail(t *testing.T) {
-	t.Parallel()
-
-	resourceName := test.RandomResourceName()
-	remoteNetworkName := test.RandomName()
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config:      createResourceWithAccessPolicyAndUsageBasedDuration(remoteNetworkName, resourceName),
-				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
-			},
-		},
-	})
-}
-
-func createResourceWithAccessPolicyAndUsageBasedDuration(remoteNetwork, resource string) string {
-	return fmt.Sprintf(`
-	resource "twingate_remote_network" "%[1]s" {
-	  name = "%[1]s"
-	}
-	resource "twingate_resource" "%[2]s" {
-	  name = "%[2]s"
-	  address = "acc-test-address.com"
-	  remote_network_id = twingate_remote_network.%[1]s.id
-	  
-	  usage_based_autolock_duration_days = 1
 
 	  access_policy {
 		mode = "MANUAL"

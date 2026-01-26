@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/customplanmodifier"
+	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/customvalidator"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -21,15 +23,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-const hoursInDay = 24
-
-type resourceModelV2 struct {
+type resourceModelV3 struct {
 	ID                             types.String `tfsdk:"id"`
 	Name                           types.String `tfsdk:"name"`
 	Address                        types.String `tfsdk:"address"`
 	RemoteNetworkID                types.String `tfsdk:"remote_network_id"`
 	IsAuthoritative                types.Bool   `tfsdk:"is_authoritative"`
 	Protocols                      types.Object `tfsdk:"protocols"`
+	AccessPolicy                   types.Set    `tfsdk:"access_policy"`
 	GroupAccess                    types.Set    `tfsdk:"access_group"`
 	ServiceAccess                  types.Set    `tfsdk:"access_service"`
 	IsActive                       types.Bool   `tfsdk:"is_active"`
@@ -43,17 +44,53 @@ type resourceModelV2 struct {
 	UsageBasedAutolockDurationDays types.Int64  `tfsdk:"usage_based_autolock_duration_days"` // deprecated, kept for migration
 }
 
-// legacyAccessGroupV2 is used only for migration from v2 to v3 state.
-type legacyAccessGroupV2 struct {
-	GroupID            string
-	SecurityPolicyID   *string
-	ApprovalMode       *string
-	UsageBasedDuration *int64
-	AccessPolicy       *model.AccessPolicy
+func accessPolicyBlockResourceStateV3() schema.SetNestedBlock {
+	return schema.SetNestedBlock{
+		Validators: []validator.Set{
+			setvalidator.SizeAtMost(1),
+		},
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				attr.Mode: schema.StringAttribute{
+					Optional: true,
+					Computed: true,
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
+					},
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
+					},
+				},
+
+				attr.Duration: schema.StringAttribute{
+					Optional: true,
+					Computed: true,
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
+						customplanmodifier.Duration(),
+					},
+					Validators: []validator.String{
+						customvalidator.Duration(),
+					},
+				},
+
+				attr.ApprovalMode: schema.StringAttribute{
+					Optional: true,
+					Computed: true,
+					PlanModifiers: []planmodifier.String{
+						UseNullStringWhenValueOmitted(),
+					},
+					Validators: []validator.String{
+						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
+					},
+				},
+			},
+		},
+	}
 }
 
 //nolint:funlen
-func upgradeResourceStateV2() resource.StateUpgrader {
+func upgradeResourceStateV3() resource.StateUpgrader {
 	return resource.StateUpgrader{
 		PriorSchema: &schema.Schema{
 			Attributes: map[string]schema.Attribute{
@@ -195,6 +232,9 @@ func upgradeResourceStateV2() resource.StateUpgrader {
 								Computed: true,
 							},
 						},
+						Blocks: map[string]schema.Block{
+							attr.AccessPolicy: accessPolicyBlockResourceStateV3(),
+						},
 					},
 				},
 				attr.AccessService: schema.SetNestedBlock{
@@ -210,11 +250,12 @@ func upgradeResourceStateV2() resource.StateUpgrader {
 						},
 					},
 				},
+				attr.AccessPolicy: accessPolicyBlockResourceStateV3(),
 			},
 		},
 
 		StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
-			var priorState resourceModelV2
+			var priorState resourceModelV3
 
 			resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
 
@@ -222,11 +263,16 @@ func upgradeResourceStateV2() resource.StateUpgrader {
 				return
 			}
 
-			accessGroup, diags := convertLegacyAccessGroupsToTerraform(ctx, priorState.GroupAccess)
+			accessGroup, diags := convertLegacyAccessGroupsToTerraformV3(ctx, priorState.GroupAccess)
 			resp.Diagnostics.Append(diags...)
 
-			accessPolicy, diags := convertLegacyAccessPolicyToTerraform(ctx, priorState.ApprovalMode.ValueStringPointer(), priorState.UsageBasedAutolockDurationDays.ValueInt64Pointer())
-			resp.Diagnostics.Append(diags...)
+			var accessPolicy types.Set
+			if !priorState.AccessPolicy.IsNull() && !priorState.AccessPolicy.IsUnknown() {
+				accessPolicy = priorState.AccessPolicy
+			} else {
+				accessPolicy, diags = convertLegacyAccessPolicyToTerraform(ctx, priorState.ApprovalMode.ValueStringPointer(), priorState.UsageBasedAutolockDurationDays.ValueInt64Pointer())
+				resp.Diagnostics.Append(diags...)
+			}
 
 			upgradedState := resourceModel{
 				ID:                       priorState.ID,
@@ -255,47 +301,15 @@ func upgradeResourceStateV2() resource.StateUpgrader {
 	}
 }
 
-func convertLegacyAccessPolicyToTerraform(ctx context.Context, approvalMode *string, usageBasedAutolockDurationDays *int64) (types.Set, diag.Diagnostics) {
-	var diagnostics diag.Diagnostics
-
-	attributes := map[string]tfattr.Value{
-		attr.Mode:         types.StringValue(model.AccessPolicyModeManual),
-		attr.Duration:     types.StringNull(),
-		attr.ApprovalMode: types.StringPointerValue(approvalMode),
-	}
-
-	if (approvalMode == nil || *approvalMode == model.ApprovalModeManual) && usageBasedAutolockDurationDays == nil {
-		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
-	}
-
-	if usageBasedAutolockDurationDays != nil {
-		duration := fmt.Sprintf("%dh", *usageBasedAutolockDurationDays*hoursInDay)
-		attributes[attr.Duration] = types.StringValue(duration)
-
-		if *usageBasedAutolockDurationDays >= 1 {
-			attributes[attr.Mode] = types.StringValue(model.AccessPolicyModeAutoLock)
-		}
-	}
-
-	obj, diags := types.ObjectValue(accessPolicyAttributeTypes(), attributes)
-	diagnostics.Append(diags...)
-
-	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessPolicyAttributeTypes()), diagnostics
-	}
-
-	return makeObjectsSet(ctx, obj)
-}
-
 //nolint:funlen
-func convertLegacyAccessGroupsToTerraform(ctx context.Context, groupAccess types.Set) (types.Set, diag.Diagnostics) {
+func convertLegacyAccessGroupsToTerraformV3(ctx context.Context, groupAccess types.Set) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if groupAccess.IsNull() {
 		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
 	}
 
-	groups, err := getLegacyGroupAccessAttributeV2(groupAccess)
+	groups, err := getLegacyGroupAccessAttributeV3(groupAccess)
 	if err != nil {
 		diagnostics.AddError("failed to convert access groups", err.Error())
 
@@ -360,8 +374,8 @@ func convertLegacyAccessGroupsToTerraform(ctx context.Context, groupAccess types
 	return makeObjectsSet(ctx, objects...)
 }
 
-// getLegacyGroupAccessAttributeV2 reads the deprecated access_group attributes from v2 state.
-func getLegacyGroupAccessAttributeV2(list types.Set) ([]*legacyAccessGroupV2, error) {
+// getLegacyGroupAccessAttributeV3 reads the access_group attributes from v3 state.
+func getLegacyGroupAccessAttributeV3(list types.Set) ([]*legacyAccessGroupV2, error) {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
 		return nil, nil
 	}
@@ -384,14 +398,33 @@ func getLegacyGroupAccessAttributeV2(list types.Set) ([]*legacyAccessGroupV2, er
 			accessGroup.SecurityPolicyID = securityPolicyVal.(types.String).ValueStringPointer()
 		}
 
-		usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
-		if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
-			accessGroup.UsageBasedDuration = usageBasedDuration.(types.Int64).ValueInt64Pointer()
-		}
+		var (
+			err          error
+			accessPolicy *model.AccessPolicy
+		)
 
-		approvalModeVal := obj.Attributes()[attr.ApprovalMode]
-		if approvalModeVal != nil && !approvalModeVal.IsNull() && !approvalModeVal.IsUnknown() {
-			accessGroup.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
+		accessPolicyVal := obj.Attributes()[attr.AccessPolicy]
+		if accessPolicyVal != nil && !accessPolicyVal.IsNull() && !accessPolicyVal.IsUnknown() {
+			accessPolicyRaw, ok := accessPolicyVal.(types.Set)
+			if ok {
+				accessPolicy, err = getAccessPolicyAttribute(accessPolicyRaw)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing access_policy: %w", err)
+				}
+			}
+
+			accessGroup.AccessPolicy = accessPolicy
+
+		} else {
+			usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
+			if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
+				accessGroup.UsageBasedDuration = usageBasedDuration.(types.Int64).ValueInt64Pointer()
+			}
+
+			approvalModeVal := obj.Attributes()[attr.ApprovalMode]
+			if approvalModeVal != nil && !approvalModeVal.IsNull() && !approvalModeVal.IsUnknown() {
+				accessGroup.ApprovalMode = approvalModeVal.(types.String).ValueStringPointer()
+			}
 		}
 
 		access = append(access, accessGroup)

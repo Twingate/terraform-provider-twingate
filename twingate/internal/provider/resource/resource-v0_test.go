@@ -74,10 +74,6 @@ func TestStateUpgraderV0(t *testing.T) {
 					ServiceAccess: makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:          types.MapNull(types.StringType),
 					TagsAll:       types.MapNull(types.StringType),
-
-					// Deprecated
-					ApprovalMode:                   types.StringNull(),
-					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
 		},
@@ -118,10 +114,6 @@ func TestStateUpgraderV0(t *testing.T) {
 					ServiceAccess: makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:          types.MapNull(types.StringType),
 					TagsAll:       types.MapNull(types.StringType),
-
-					// Deprecated
-					ApprovalMode:                   types.StringNull(),
-					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
 		},
@@ -164,10 +156,6 @@ func TestStateUpgraderV0(t *testing.T) {
 					ServiceAccess: makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:          types.MapNull(types.StringType),
 					TagsAll:       types.MapNull(types.StringType),
-
-					// Deprecated
-					ApprovalMode:                   types.StringNull(),
-					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
 		},
@@ -235,10 +223,6 @@ func TestStateUpgraderV0(t *testing.T) {
 					AccessPolicy: makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 					Tags:         types.MapNull(types.StringType),
 					TagsAll:      types.MapNull(types.StringType),
-
-					// Deprecated
-					ApprovalMode:                   types.StringNull(),
-					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
 		},

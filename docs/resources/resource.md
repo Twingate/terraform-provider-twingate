@@ -165,7 +165,6 @@ resource "twingate_resource" "resource" {
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
 - `access_service` (Block Set) Restrict access to certain service account (see [below for nested schema](#nestedblock--access_service))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
-- `approval_mode` (String, Deprecated) This will set the approval model for the Resource. The valid values are `AUTOMATIC` and `MANUAL`.
 - `is_active` (Boolean) Set the resource as active or inactive. Default is `true`.
 - `is_authoritative` (Boolean) Determines whether assignments in the access block will override any existing assignments. Default is `true`. If set to `false`, assignments made outside of Terraform will be ignored.
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.
@@ -173,7 +172,6 @@ resource "twingate_resource" "resource" {
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
-- `usage_based_autolock_duration_days` (Number, Deprecated) The usage-based auto-lock duration for the Resource (in days).
 
 ### Read-Only
 
@@ -186,10 +184,8 @@ resource "twingate_resource" "resource" {
 Optional:
 
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_group--access_policy))
-- `approval_mode` (String, Deprecated) This will set the approval model on the edge. The valid values are `AUTOMATIC` and `MANUAL`.
 - `group_id` (String) Group ID that will have permission to access the Resource.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.
-- `usage_based_autolock_duration_days` (Number, Deprecated) The usage-based auto-lock duration configured on the edge (in days).
 
 <a id="nestedblock--access_group--access_policy"></a>
 ### Nested Schema for `access_group.access_policy`

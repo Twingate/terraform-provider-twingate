@@ -178,8 +178,8 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 			groupIDs := getAccessAttributeV0(priorState.Access, attr.GroupIDs)
 			serviceAccountIDs := getAccessAttributeV0(priorState.Access, attr.ServiceAccountIDs)
 
-			accessGroup, diags := convertAccessGroupsToTerraform(ctx, utils.Map(groupIDs, func(id string) *model.LegacyAccessGroup {
-				return &model.LegacyAccessGroup{GroupID: id}
+			accessGroup, diags := convertAccessGroupsToTerraform(ctx, utils.Map(groupIDs, func(id string) model.AccessGroup {
+				return model.AccessGroup{GroupID: id}
 			}))
 			resp.Diagnostics.Append(diags...)
 
@@ -198,10 +198,6 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 				IsActive:        priorState.IsActive,
 				Tags:            types.MapNull(types.StringType),
 				TagsAll:         types.MapNull(types.StringType),
-
-				// Deprecated
-				ApprovalMode:                   types.StringNull(),
-				UsageBasedAutolockDurationDays: types.Int64Null(),
 			}
 
 			if !priorState.IsAuthoritative.IsNull() {
@@ -296,7 +292,7 @@ func convertAccessBlockToTerraform(ctx context.Context, groups, serviceAccounts 
 	return makeObjectsList(ctx, obj)
 }
 
-func convertAccessGroupsToTerraform(ctx context.Context, groups []*model.LegacyAccessGroup) (types.Set, diag.Diagnostics) {
+func convertAccessGroupsToTerraform(ctx context.Context, groups []model.AccessGroup) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if len(groups) == 0 {
@@ -307,11 +303,9 @@ func convertAccessGroupsToTerraform(ctx context.Context, groups []*model.LegacyA
 
 	for _, g := range groups {
 		attributes := map[string]tfattr.Value{
-			attr.GroupID:                        types.StringValue(g.GroupID),
-			attr.SecurityPolicyID:               types.StringPointerValue(g.SecurityPolicyID),
-			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(g.UsageBasedDuration),
-			attr.ApprovalMode:                   types.StringPointerValue(g.ApprovalMode),
-			attr.AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+			attr.GroupID:          types.StringValue(g.GroupID),
+			attr.SecurityPolicyID: types.StringPointerValue(g.SecurityPolicyID),
+			attr.AccessPolicy:     makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 		}
 
 		obj, diags := types.ObjectValue(accessGroupAttributeTypes(), attributes)
