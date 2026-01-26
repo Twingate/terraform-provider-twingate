@@ -15,18 +15,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func TestStateUpgraderV2(t *testing.T) {
+func TestStateUpgraderV3(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
 		name          string
-		priorState    func() resourceModelV2
+		priorState    func() resourceModelV3
 		expectedState func() resourceModel
 	}{
 		{
 			name: "bare case",
-			priorState: func() resourceModelV2 {
-				return resourceModelV2{
+			priorState: func() resourceModelV3 {
+				return resourceModelV3{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -38,11 +38,12 @@ func TestStateUpgraderV2(t *testing.T) {
 					IsBrowserShortcutEnabled:       types.BoolNull(),
 					Alias:                          types.StringNull(),
 					SecurityPolicyID:               types.StringNull(),
-					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV3()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
+					ApprovalMode:                   types.StringNull(),
 					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
@@ -70,8 +71,8 @@ func TestStateUpgraderV2(t *testing.T) {
 
 		{
 			name: "minimum case",
-			priorState: func() resourceModelV2 {
-				return resourceModelV2{
+			priorState: func() resourceModelV3 {
+				return resourceModelV3{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -83,11 +84,12 @@ func TestStateUpgraderV2(t *testing.T) {
 					IsBrowserShortcutEnabled:       types.BoolValue(false),
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
-					ApprovalMode:                   types.StringNull(),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV3()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
+					ApprovalMode:                   types.StringNull(),
 					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
@@ -115,8 +117,8 @@ func TestStateUpgraderV2(t *testing.T) {
 
 		{
 			name: "base case",
-			priorState: func() resourceModelV2 {
-				return resourceModelV2{
+			priorState: func() resourceModelV3 {
+				return resourceModelV3{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -128,11 +130,12 @@ func TestStateUpgraderV2(t *testing.T) {
 					IsBrowserShortcutEnabled:       types.BoolValue(false),
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
-					ApprovalMode:                   types.StringValue(model.ApprovalModeAutomatic),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV3()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
+					ApprovalMode:                   types.StringValue(model.ApprovalModeAutomatic),
 					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
@@ -172,8 +175,8 @@ func TestStateUpgraderV2(t *testing.T) {
 
 		{
 			name: "base case with usage_based_autolock_duration_days",
-			priorState: func() resourceModelV2 {
-				return resourceModelV2{
+			priorState: func() resourceModelV3 {
+				return resourceModelV3{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -185,11 +188,12 @@ func TestStateUpgraderV2(t *testing.T) {
 					IsBrowserShortcutEnabled:       types.BoolValue(false),
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
-					ApprovalMode:                   types.StringValue(model.ApprovalModeManual),
-					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    makeObjectsSetNull(ctx, accessGroupAttributeTypesV3()),
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
+					ApprovalMode:                   types.StringValue(model.ApprovalModeManual),
 					UsageBasedAutolockDurationDays: types.Int64Value(2),
 				}
 			},
@@ -231,10 +235,10 @@ func TestStateUpgraderV2(t *testing.T) {
 
 		{
 			name: "base case with group_access",
-			priorState: func() resourceModelV2 {
+			priorState: func() resourceModelV3 {
 				approvalMode := model.ApprovalModeManual
 
-				accessGroup, diags := convertAccessGroupsToTerraformV2(ctx, []*legacyAccessGroupV2{
+				accessGroup, diags := convertAccessGroupsToTerraformV3(ctx, []*legacyAccessGroupV2{
 					{
 						GroupID:      "test-group-id",
 						ApprovalMode: &approvalMode,
@@ -244,7 +248,7 @@ func TestStateUpgraderV2(t *testing.T) {
 					t.Fatalf("unexpected errors during upgrade: %v", diags)
 				}
 
-				return resourceModelV2{
+				return resourceModelV3{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -257,6 +261,7 @@ func TestStateUpgraderV2(t *testing.T) {
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
 					ApprovalMode:                   types.StringValue(model.ApprovalModeAutomatic),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 					GroupAccess:                    accessGroup,
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
@@ -315,11 +320,11 @@ func TestStateUpgraderV2(t *testing.T) {
 
 		{
 			name: "base case with group_access and usage_based_autolock_duration_days",
-			priorState: func() resourceModelV2 {
+			priorState: func() resourceModelV3 {
 				approvalMode := model.ApprovalModeAutomatic
 				usageBaseDuration := int64(3)
 
-				accessGroup, diags := convertAccessGroupsToTerraformV2(ctx, []*legacyAccessGroupV2{
+				accessGroup, diags := convertAccessGroupsToTerraformV3(ctx, []*legacyAccessGroupV2{
 					{
 						GroupID:            "test-group-id",
 						ApprovalMode:       &approvalMode,
@@ -330,7 +335,7 @@ func TestStateUpgraderV2(t *testing.T) {
 					t.Fatalf("unexpected errors during upgrade: %v", diags)
 				}
 
-				return resourceModelV2{
+				return resourceModelV3{
 					ID:                             types.StringValue("test-id"),
 					Name:                           types.StringValue("test-name"),
 					Address:                        types.StringValue("test-address"),
@@ -342,11 +347,12 @@ func TestStateUpgraderV2(t *testing.T) {
 					IsBrowserShortcutEnabled:       types.BoolValue(false),
 					Alias:                          types.StringValue("alias.com"),
 					SecurityPolicyID:               types.StringValue("security-policy-id"),
-					ApprovalMode:                   types.StringNull(),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
 					GroupAccess:                    accessGroup,
 					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
 					Tags:                           types.MapNull(types.StringType),
 					TagsAll:                        types.MapNull(types.StringType),
+					ApprovalMode:                   types.StringNull(),
 					UsageBasedAutolockDurationDays: types.Int64Null(),
 				}
 			},
@@ -390,13 +396,110 @@ func TestStateUpgraderV2(t *testing.T) {
 				}
 			},
 		},
+
+		{
+			name: "base case with access_policy and group_access with access_policy",
+			priorState: func() resourceModelV3 {
+				mode := model.AccessPolicyModeAutoLock
+				approvalMode := model.ApprovalModeAutomatic
+				duration := "2d"
+
+				accessPolicy := &model.AccessPolicy{
+					Mode:         &mode,
+					ApprovalMode: &approvalMode,
+					Duration:     &duration,
+				}
+
+				accessPolicySet, diags := convertAccessPolicyToTerraformForImport(ctx, accessPolicy)
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				accessGroup, diags := convertAccessGroupsToTerraformV3(ctx, []*legacyAccessGroupV2{
+					{
+						GroupID:      "test-group-id",
+						AccessPolicy: accessPolicy,
+					},
+				})
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				return resourceModelV3{
+					ID:                             types.StringValue("test-id"),
+					Name:                           types.StringValue("test-name"),
+					Address:                        types.StringValue("test-address"),
+					RemoteNetworkID:                types.StringValue("test-remote-network-id"),
+					Protocols:                      defaultProtocolsObject(),
+					IsAuthoritative:                types.BoolValue(true),
+					IsActive:                       types.BoolValue(true),
+					IsVisible:                      types.BoolValue(false),
+					IsBrowserShortcutEnabled:       types.BoolValue(false),
+					Alias:                          types.StringValue("alias.com"),
+					SecurityPolicyID:               types.StringValue("security-policy-id"),
+					AccessPolicy:                   accessPolicySet,
+					GroupAccess:                    accessGroup,
+					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                           types.MapNull(types.StringType),
+					TagsAll:                        types.MapNull(types.StringType),
+					ApprovalMode:                   types.StringNull(),
+					UsageBasedAutolockDurationDays: types.Int64Null(),
+				}
+			},
+			expectedState: func() resourceModel {
+				mode := model.AccessPolicyModeAutoLock
+				approvalMode := model.ApprovalModeAutomatic
+				duration := "2d"
+
+				accessPolicy := &model.AccessPolicy{
+					Mode:         &mode,
+					ApprovalMode: &approvalMode,
+					Duration:     &duration,
+				}
+
+				accessPolicySet, diags := convertAccessPolicyToTerraformForImport(ctx, accessPolicy)
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				groupAccess, diags := convertGroupsAccessToTerraformForImport(context.TODO(), []model.AccessGroup{
+					{
+						GroupID:      "test-group-id",
+						AccessPolicy: accessPolicy,
+					},
+				})
+
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				return resourceModel{
+					ID:                       types.StringValue("test-id"),
+					Name:                     types.StringValue("test-name"),
+					Address:                  types.StringValue("test-address"),
+					RemoteNetworkID:          types.StringValue("test-remote-network-id"),
+					Protocols:                defaultProtocolsObject(),
+					IsAuthoritative:          types.BoolValue(true),
+					IsActive:                 types.BoolValue(true),
+					IsVisible:                types.BoolValue(false),
+					IsBrowserShortcutEnabled: types.BoolValue(false),
+					Alias:                    types.StringValue("alias.com"),
+					SecurityPolicyID:         types.StringValue("security-policy-id"),
+					AccessPolicy:             accessPolicySet,
+					GroupAccess:              groupAccess,
+					ServiceAccess:            makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                     types.MapNull(types.StringType),
+					TagsAll:                  types.MapNull(types.StringType),
+				}
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// Given: Prior state (resourceModelV2)
+			// Given: Prior state (resourceModelV3)
 			state := tfsdk.State{
-				Schema: upgradeResourceStateV2().PriorSchema,
+				Schema: upgradeResourceStateV3().PriorSchema,
 			}
 
 			diags := state.Set(ctx, test.priorState())
@@ -420,7 +523,7 @@ func TestStateUpgraderV2(t *testing.T) {
 			}
 
 			// Call the StateUpgrader function under test
-			upgradeResourceStateV2().StateUpgrader(ctx, req, resp)
+			upgradeResourceStateV3().StateUpgrader(ctx, req, resp)
 
 			// Then: Verify the upgraded state
 			if resp.Diagnostics.HasError() {
@@ -442,40 +545,49 @@ func TestStateUpgraderV2(t *testing.T) {
 
 }
 
-func accessGroupAttributeTypesV2() map[string]tfattr.Type {
+func accessGroupAttributeTypesV3() map[string]tfattr.Type {
 	return map[string]tfattr.Type{
 		attr.GroupID:                        types.StringType,
 		attr.SecurityPolicyID:               types.StringType,
 		attr.UsageBasedAutolockDurationDays: types.Int64Type,
 		attr.ApprovalMode:                   types.StringType,
+		attr.AccessPolicy: types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: accessPolicyAttributeTypes(),
+			},
+		},
 	}
 }
 
-func convertAccessGroupsToTerraformV2(ctx context.Context, groups []*legacyAccessGroupV2) (types.Set, diag.Diagnostics) {
+func convertAccessGroupsToTerraformV3(ctx context.Context, groups []*legacyAccessGroupV2) (types.Set, diag.Diagnostics) {
 	var diagnostics diag.Diagnostics
 
 	if len(groups) == 0 {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV3()), diagnostics
 	}
 
 	objects := make([]types.Object, 0, len(groups))
 
 	for _, g := range groups {
+		accessPolicy, diags := convertAccessPolicyToTerraformForImport(ctx, g.AccessPolicy)
+		diagnostics.Append(diags...)
+
 		attributes := map[string]tfattr.Value{
 			attr.GroupID:                        types.StringValue(g.GroupID),
 			attr.SecurityPolicyID:               types.StringPointerValue(g.SecurityPolicyID),
 			attr.UsageBasedAutolockDurationDays: types.Int64PointerValue(g.UsageBasedDuration),
 			attr.ApprovalMode:                   types.StringPointerValue(g.ApprovalMode),
+			attr.AccessPolicy:                   accessPolicy,
 		}
 
-		obj, diags := types.ObjectValue(accessGroupAttributeTypesV2(), attributes)
+		obj, diags := types.ObjectValue(accessGroupAttributeTypesV3(), attributes)
 		diagnostics.Append(diags...)
 
 		objects = append(objects, obj)
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV2()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypesV3()), diagnostics
 	}
 
 	return makeObjectsSet(ctx, objects...)

@@ -356,40 +356,6 @@ func CheckTwingateResourceSecurityPolicyOnGroupAccess(resourceName string, expec
 	})
 }
 
-func CheckTwingateResourceUsageBasedOnGroupAccess(resourceName string, expectedUsageBased int64) sdk.TestCheckFunc {
-	return CheckTwingateResource(resourceName, func(res *model.Resource) error {
-		if len(res.GroupsAccess) == 0 {
-			return ErrEmptyGroupAccess
-		}
-
-		usageBasedDuration := res.GroupsAccess[0].AccessPolicy.LegacyUsageBasedAutolockDurationDays()
-		if usageBasedDuration == nil {
-			return ErrNullUsageBased
-		}
-
-		if *usageBasedDuration != expectedUsageBased {
-			return fmt.Errorf("expected usage based duration %v, got %v", expectedUsageBased, *usageBasedDuration) //nolint:err113
-		}
-
-		return nil
-	})
-}
-
-func CheckTwingateResourceUsageBasedDuration(resourceName string, expectedUsageBased int64) sdk.TestCheckFunc {
-	return CheckTwingateResource(resourceName, func(res *model.Resource) error {
-		usageBasedAutolockDurationDays := res.AccessPolicy.LegacyUsageBasedAutolockDurationDays()
-		if usageBasedAutolockDurationDays == nil {
-			return fmt.Errorf("expected usage based duration %v, got <nil>", expectedUsageBased) //nolint:err113
-		}
-
-		if *usageBasedAutolockDurationDays != expectedUsageBased {
-			return fmt.Errorf("expected usage based duration %v, got %v", expectedUsageBased, *usageBasedAutolockDurationDays) //nolint:err113
-		}
-
-		return nil
-	})
-}
-
 func CheckTwingateResourceTags(resourceName, tag, expectedValue string) sdk.TestCheckFunc {
 	return CheckTwingateResource(resourceName, func(res *model.Resource) error {
 		if len(res.Tags) == 0 {
@@ -412,32 +378,6 @@ func CheckTwingateResourceSecurityPolicyIsNullOnGroupAccess(resourceName string)
 
 		if res.GroupsAccess[0].SecurityPolicyID != nil {
 			return ErrNotNullSecurityPolicy
-		}
-
-		return nil
-	})
-}
-
-func CheckTwingateResourceUsageBasedIsNullOnGroupAccess(resourceName string) sdk.TestCheckFunc {
-	return CheckTwingateResource(resourceName, func(res *model.Resource) error {
-		if len(res.GroupsAccess) == 0 {
-			return ErrEmptyGroupAccess
-		}
-
-		usageBasedDuration := res.GroupsAccess[0].AccessPolicy.LegacyUsageBasedAutolockDurationDays()
-		if usageBasedDuration != nil {
-			return ErrNotNullUsageBased
-		}
-
-		return nil
-	})
-}
-
-func CheckTwingateResourceUsageBasedIsNullOnResource(resourceName string) sdk.TestCheckFunc {
-	return CheckTwingateResource(resourceName, func(res *model.Resource) error {
-		usageBasedAutolockDurationDays := res.AccessPolicy.LegacyUsageBasedAutolockDurationDays()
-		if usageBasedAutolockDurationDays != nil {
-			return ErrNotNullUsageBasedOnResource
 		}
 
 		return nil

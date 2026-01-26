@@ -397,7 +397,6 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
 		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
-		// gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -429,10 +428,6 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 	if input.SecurityPolicyID == nil {
 		resource.SecurityPolicyID = nil
 	}
-
-	// if input.AccessPolicy == nil {
-	//	resource.AccessPolicy = nil
-	//}
 
 	setResource(resource)
 
