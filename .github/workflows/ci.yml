@@ -16,7 +16,6 @@ on:
       - 'README.md'
     branches:
       - main
-      - remove-deprecated-resource-attributes
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
