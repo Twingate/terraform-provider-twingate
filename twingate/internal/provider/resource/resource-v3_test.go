@@ -19,9 +19,10 @@ func TestStateUpgraderV3(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name          string
-		priorState    func() resourceModelV3
-		expectedState func() resourceModel
+		name            string
+		priorState      func() resourceModelV3
+		expectedState   func() resourceModel
+		expectedWarning bool
 	}{
 		{
 			name: "bare case",
@@ -67,6 +68,7 @@ func TestStateUpgraderV3(t *testing.T) {
 					TagsAll:                  types.MapNull(types.StringType),
 				}
 			},
+			expectedWarning: true,
 		},
 
 		{
@@ -113,6 +115,7 @@ func TestStateUpgraderV3(t *testing.T) {
 					TagsAll:                  types.MapNull(types.StringType),
 				}
 			},
+			expectedWarning: true,
 		},
 
 		{
@@ -171,6 +174,7 @@ func TestStateUpgraderV3(t *testing.T) {
 					TagsAll:                  types.MapNull(types.StringType),
 				}
 			},
+			expectedWarning: true,
 		},
 
 		{
@@ -231,6 +235,7 @@ func TestStateUpgraderV3(t *testing.T) {
 					TagsAll:                  types.MapNull(types.StringType),
 				}
 			},
+			expectedWarning: true,
 		},
 
 		{
@@ -316,6 +321,7 @@ func TestStateUpgraderV3(t *testing.T) {
 					TagsAll:                  types.MapNull(types.StringType),
 				}
 			},
+			expectedWarning: true,
 		},
 
 		{
@@ -395,6 +401,7 @@ func TestStateUpgraderV3(t *testing.T) {
 					TagsAll:                  types.MapNull(types.StringType),
 				}
 			},
+			expectedWarning: true,
 		},
 
 		{
@@ -492,6 +499,93 @@ func TestStateUpgraderV3(t *testing.T) {
 					TagsAll:                  types.MapNull(types.StringType),
 				}
 			},
+			expectedWarning: false,
+		},
+
+		{
+			name: "case with access_policy only in group_access",
+			priorState: func() resourceModelV3 {
+				mode := model.AccessPolicyModeAutoLock
+				approvalMode := model.ApprovalModeAutomatic
+				duration := "2d"
+
+				accessPolicy := &model.AccessPolicy{
+					Mode:         &mode,
+					ApprovalMode: &approvalMode,
+					Duration:     &duration,
+				}
+
+				accessGroup, diags := convertAccessGroupsToTerraformV3(ctx, []*legacyAccessGroupV2{
+					{
+						GroupID:      "test-group-id",
+						AccessPolicy: accessPolicy,
+					},
+				})
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				return resourceModelV3{
+					ID:                             types.StringValue("test-id"),
+					Name:                           types.StringValue("test-name"),
+					Address:                        types.StringValue("test-address"),
+					RemoteNetworkID:                types.StringValue("test-remote-network-id"),
+					Protocols:                      defaultProtocolsObject(),
+					IsAuthoritative:                types.BoolValue(true),
+					IsActive:                       types.BoolValue(true),
+					IsVisible:                      types.BoolValue(false),
+					IsBrowserShortcutEnabled:       types.BoolValue(false),
+					Alias:                          types.StringValue("alias.com"),
+					SecurityPolicyID:               types.StringValue("security-policy-id"),
+					AccessPolicy:                   makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:                    accessGroup,
+					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                           types.MapNull(types.StringType),
+					TagsAll:                        types.MapNull(types.StringType),
+					ApprovalMode:                   types.StringNull(),
+					UsageBasedAutolockDurationDays: types.Int64Null(),
+				}
+			},
+			expectedState: func() resourceModel {
+				mode := model.AccessPolicyModeAutoLock
+				approvalMode := model.ApprovalModeAutomatic
+				duration := "2d"
+
+				groupAccess, diags := convertGroupsAccessToTerraformForImport(context.TODO(), []model.AccessGroup{
+					{
+						GroupID: "test-group-id",
+						AccessPolicy: &model.AccessPolicy{
+							Mode:         &mode,
+							ApprovalMode: &approvalMode,
+							Duration:     &duration,
+						},
+					},
+				})
+
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				return resourceModel{
+					ID:                       types.StringValue("test-id"),
+					Name:                     types.StringValue("test-name"),
+					Address:                  types.StringValue("test-address"),
+					RemoteNetworkID:          types.StringValue("test-remote-network-id"),
+					Protocols:                defaultProtocolsObject(),
+					IsAuthoritative:          types.BoolValue(true),
+					IsActive:                 types.BoolValue(true),
+					IsVisible:                types.BoolValue(false),
+					IsBrowserShortcutEnabled: types.BoolValue(false),
+					Alias:                    types.StringValue("alias.com"),
+					SecurityPolicyID:         types.StringValue("security-policy-id"),
+					AccessPolicy:             makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:              groupAccess,
+					ServiceAccess:            makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                     types.MapNull(types.StringType),
+					TagsAll:                  types.MapNull(types.StringType),
+				}
+			},
+			expectedWarning: false,
 		},
 	}
 
@@ -531,8 +625,12 @@ func TestStateUpgraderV3(t *testing.T) {
 			}
 
 			// Validate the warning message
-			assert.Len(t, resp.Diagnostics, 1)
-			assert.Equal(t, "Please use new access_policy block instead of approval_mode and usage_based_autolock_duration_days attributes.", resp.Diagnostics[0].Summary())
+			if test.expectedWarning {
+				assert.Len(t, resp.Diagnostics, 1)
+				assert.Equal(t, "Please use new access_policy block instead of approval_mode and usage_based_autolock_duration_days attributes.", resp.Diagnostics[0].Summary())
+			} else {
+				assert.Len(t, resp.Diagnostics, 0)
+			}
 
 			// Retrieve the upgraded state
 			var upgradedState resourceModel

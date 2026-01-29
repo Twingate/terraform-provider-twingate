@@ -264,12 +264,13 @@ func upgradeResourceStateV3() resource.StateUpgrader {
 				return
 			}
 
-			accessGroup, diags := convertLegacyAccessGroupsToTerraformV3(ctx, priorState.GroupAccess)
+			accessGroup, diags, alreadyUseAccessPolicy := convertLegacyAccessGroupsToTerraformV3(ctx, priorState.GroupAccess)
 			resp.Diagnostics.Append(diags...)
 
 			var accessPolicy types.Set
 			if !priorState.AccessPolicy.IsNull() && !priorState.AccessPolicy.IsUnknown() {
 				accessPolicy = priorState.AccessPolicy
+				alreadyUseAccessPolicy = true
 			} else {
 				accessPolicy, diags = convertLegacyAccessPolicyToTerraform(ctx, priorState.ApprovalMode.ValueStringPointer(), priorState.UsageBasedAutolockDurationDays.ValueInt64Pointer())
 				resp.Diagnostics.Append(diags...)
@@ -296,30 +297,35 @@ func upgradeResourceStateV3() resource.StateUpgrader {
 
 			resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
 
-			resp.Diagnostics.AddWarning("Please use new access_policy block instead of approval_mode and usage_based_autolock_duration_days attributes.",
-				"See the v3 to v4 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migration-v3-to-v4-guide")
+			if !alreadyUseAccessPolicy {
+				resp.Diagnostics.AddWarning("Please use new access_policy block instead of approval_mode and usage_based_autolock_duration_days attributes.",
+					"See the v3 to v4 migration guide in the Twingate Terraform Provider documentation https://registry.terraform.io/providers/Twingate/twingate/latest/docs/guides/migration-v3-to-v4-guide")
+			}
 		},
 	}
 }
 
 //nolint:funlen
-func convertLegacyAccessGroupsToTerraformV3(ctx context.Context, groupAccess types.Set) (types.Set, diag.Diagnostics) {
-	var diagnostics diag.Diagnostics
+func convertLegacyAccessGroupsToTerraformV3(ctx context.Context, groupAccess types.Set) (types.Set, diag.Diagnostics, bool) {
+	var (
+		alreadyUseAccessPolicy bool
+		diagnostics            diag.Diagnostics
+	)
 
 	if groupAccess.IsNull() {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics, alreadyUseAccessPolicy
 	}
 
-	groups, err := getLegacyGroupAccessAttributeV3(groupAccess)
+	groups, err, alreadyUseAccessPolicy := getLegacyGroupAccessAttributeV3(groupAccess)
 	if err != nil {
 		diagnostics.AddError("failed to convert access groups", err.Error())
 
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics, alreadyUseAccessPolicy
 	}
 
 	if len(groups) == 0 {
 		// no legacy groups to convert - return a null set
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics, alreadyUseAccessPolicy
 	}
 
 	for _, group := range groups {
@@ -369,16 +375,19 @@ func convertLegacyAccessGroupsToTerraformV3(ctx context.Context, groupAccess typ
 	}
 
 	if diagnostics.HasError() {
-		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics
+		return makeObjectsSetNull(ctx, accessGroupAttributeTypes()), diagnostics, alreadyUseAccessPolicy
 	}
 
-	return makeObjectsSet(ctx, objects...)
+	result, diagnostics := makeObjectsSet(ctx, objects...)
+
+	return result, diagnostics, alreadyUseAccessPolicy
 }
 
 // getLegacyGroupAccessAttributeV3 reads the access_group attributes from v3 state.
-func getLegacyGroupAccessAttributeV3(list types.Set) ([]*legacyAccessGroupV2, error) {
+func getLegacyGroupAccessAttributeV3(list types.Set) ([]*legacyAccessGroupV2, error, bool) {
+	var alreadyUseAccessPolicy bool
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return nil, nil
+		return nil, nil, alreadyUseAccessPolicy
 	}
 
 	access := make([]*legacyAccessGroupV2, 0, len(list.Elements()))
@@ -410,11 +419,12 @@ func getLegacyGroupAccessAttributeV3(list types.Set) ([]*legacyAccessGroupV2, er
 			if ok {
 				accessPolicy, err = getAccessPolicyAttribute(accessPolicyRaw)
 				if err != nil {
-					return nil, fmt.Errorf("error parsing access_policy: %w", err)
+					return nil, fmt.Errorf("error parsing access_policy: %w", err), alreadyUseAccessPolicy
 				}
-			}
 
-			accessGroup.AccessPolicy = accessPolicy
+				alreadyUseAccessPolicy = true
+				accessGroup.AccessPolicy = accessPolicy
+			}
 		} else {
 			usageBasedDuration := obj.Attributes()[attr.UsageBasedAutolockDurationDays]
 			if usageBasedDuration != nil && !usageBasedDuration.IsNull() && !usageBasedDuration.IsUnknown() {
@@ -430,5 +440,5 @@ func getLegacyGroupAccessAttributeV3(list types.Set) ([]*legacyAccessGroupV2, er
 		access = append(access, accessGroup)
 	}
 
-	return access, nil
+	return access, nil, alreadyUseAccessPolicy
 }
