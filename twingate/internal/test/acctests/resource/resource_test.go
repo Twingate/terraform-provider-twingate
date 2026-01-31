@@ -4261,6 +4261,7 @@ func TestAccTwingateResourceSecurityPolicyOnUpdate(t *testing.T) {
 					// set new policy via API
 					acctests.UpdateResourceSecurityPolicy(theResource, testPolicy),
 				),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: createResourceWithUsageBasedAutolockDurationDays(remoteNetworkName, resourceName, 1),
