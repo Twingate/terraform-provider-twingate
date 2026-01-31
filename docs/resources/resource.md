@@ -171,7 +171,7 @@ resource "twingate_resource" "resource" {
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
-- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
+- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
 - `usage_based_autolock_duration_days` (Number, Deprecated) The usage-based auto-lock duration for the Resource (in days).
 
