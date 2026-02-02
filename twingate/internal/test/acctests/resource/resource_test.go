@@ -4258,15 +4258,17 @@ func TestAccTwingateResourceSecurityPolicyOnUpdate(t *testing.T) {
 				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, attr.SecurityPolicyID),
 					// set new policy via API
 					acctests.UpdateResourceSecurityPolicy(theResource, testPolicy),
 				),
 				ExpectNonEmptyPlan: true,
 			},
 			{
-				Config: createResourceWithUsageBasedAutolockDurationDays(remoteNetworkName, resourceName, 1),
+				Config: createResourceWithoutSecurityPolicy(remoteNetworkName, resourceName),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, attr.SecurityPolicyID),
 				),
 			},
 		},

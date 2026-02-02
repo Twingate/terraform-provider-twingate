@@ -225,7 +225,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.SecurityPolicyID: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy.",
+				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
 				PlanModifiers: []planmodifier.String{
 					UseNullPolicyForGroupAccessWhenValueOmitted(),
 				},
@@ -353,7 +353,7 @@ func groupAccessBlock() schema.SetNestedBlock {
 				attr.SecurityPolicyID: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					Description: "The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.",
+					Description: "The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block. Default is 'Null' which points to `Default Policy` on Admin console.",
 					Validators: []validator.String{
 						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
 					},
