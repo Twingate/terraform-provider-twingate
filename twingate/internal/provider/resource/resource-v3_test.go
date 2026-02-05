@@ -508,6 +508,7 @@ func TestStateUpgraderV3(t *testing.T) {
 				mode := model.AccessPolicyModeAutoLock
 				approvalMode := model.ApprovalModeAutomatic
 				duration := "2d"
+				securityPolicyID := "security-policy-id"
 
 				accessPolicy := &model.AccessPolicy{
 					Mode:         &mode,
@@ -517,8 +518,9 @@ func TestStateUpgraderV3(t *testing.T) {
 
 				accessGroup, diags := convertAccessGroupsToTerraformV3(ctx, []*legacyAccessGroupV2{
 					{
-						GroupID:      "test-group-id",
-						AccessPolicy: accessPolicy,
+						GroupID:          "test-group-id",
+						SecurityPolicyID: &securityPolicyID,
+						AccessPolicy:     accessPolicy,
 					},
 				})
 				if diags.HasError() {
@@ -550,13 +552,15 @@ func TestStateUpgraderV3(t *testing.T) {
 				mode := model.AccessPolicyModeAutoLock
 				approvalMode := model.ApprovalModeAutomatic
 				duration := "2d"
+				securityPolicyID := "security-policy-id"
 
 				groupAccess, diags := convertGroupsAccessToTerraformForImport(context.TODO(), []model.AccessGroup{
 					{
-						GroupID: "test-group-id",
+						GroupID:          "test-group-id",
+						SecurityPolicyID: &securityPolicyID,
 						AccessPolicy: &model.AccessPolicy{
-							Mode:         &mode,
 							ApprovalMode: &approvalMode,
+							Mode:         &mode,
 							Duration:     &duration,
 						},
 					},

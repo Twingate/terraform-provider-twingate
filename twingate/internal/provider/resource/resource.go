@@ -1382,6 +1382,12 @@ func convertAccessPolicyToTerraform(ctx context.Context, accessPolicy, reference
 		}
 	}
 
+	// restore duration and approvalMode when mode=MANUAL
+	if accessPolicy.Mode != nil && *accessPolicy.Mode == model.AccessPolicyModeManual {
+		attributes[attr.ApprovalMode] = types.StringPointerValue(referenceAccessPolicy.ApprovalMode)
+		attributes[attr.Duration] = types.StringPointerValue(referenceAccessPolicy.Duration)
+	}
+
 	obj, diags := types.ObjectValue(accessPolicyAttributeTypes(), attributes)
 	diagnostics.Append(diags...)
 
