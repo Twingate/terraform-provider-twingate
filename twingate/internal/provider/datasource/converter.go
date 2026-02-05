@@ -25,11 +25,10 @@ func convertConnectorsToTerraform(connectors []*model.Connector) []connectorMode
 func convertGroupsToTerraform(groups []*model.Group) []groupModel {
 	return utils.Map(groups, func(group *model.Group) groupModel {
 		return groupModel{
-			ID:               types.StringValue(group.ID),
-			Name:             types.StringValue(group.Name),
-			Type:             types.StringValue(group.Type),
-			IsActive:         types.BoolValue(group.IsActive),
-			SecurityPolicyID: types.StringValue(group.SecurityPolicyID),
+			ID:       types.StringValue(group.ID),
+			Name:     types.StringValue(group.Name),
+			Type:     types.StringValue(group.Type),
+			IsActive: types.BoolValue(group.IsActive),
 		}
 	})
 }

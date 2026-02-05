@@ -36,11 +36,10 @@ type group struct {
 }
 
 type groupModel struct {
-	ID               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	IsAuthoritative  types.Bool   `tfsdk:"is_authoritative"`
-	UserIDs          types.Set    `tfsdk:"user_ids"`
-	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
+	ID              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
+	IsAuthoritative types.Bool   `tfsdk:"is_authoritative"`
+	UserIDs         types.Set    `tfsdk:"user_ids"`
 }
 
 func (r *group) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -79,6 +78,7 @@ func (r *group) ImportState(ctx context.Context, req resource.ImportStateRequest
 
 func (r *group) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version:     1,
 		Description: "Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).",
 		Attributes: map[string]schema.Attribute{
 			attr.Name: schema.StringAttribute{
@@ -95,11 +95,6 @@ func (r *group) Schema(_ context.Context, _ resource.SchemaRequest, resp *resour
 				Optional:    true,
 				Description: "List of User IDs that have permission to access the Group.",
 			},
-			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Defines which Security Policy applies to this Group. The Security Policy ID can be obtained from the `twingate_security_policy` and `twingate_security_policies` data sources.",
-			},
 			// computed
 			attr.ID: schema.StringAttribute{
 				Computed:      true,
@@ -107,6 +102,13 @@ func (r *group) Schema(_ context.Context, _ resource.SchemaRequest, resp *resour
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
+	}
+}
+
+func (r *group) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		// State upgrade implementation from schema v0 to latest
+		0: upgradeGroupStateV0(),
 	}
 }
 
@@ -228,7 +230,6 @@ func (r *group) helper(ctx context.Context, group *model.Group, state *groupMode
 
 	state.ID = types.StringValue(group.ID)
 	state.Name = types.StringValue(group.Name)
-	state.SecurityPolicyID = types.StringValue(group.SecurityPolicyID)
 	state.IsAuthoritative = types.BoolValue(group.IsAuthoritative)
 
 	if !state.UserIDs.IsNull() {
@@ -250,11 +251,10 @@ func (r *group) helper(ctx context.Context, group *model.Group, state *groupMode
 
 func convertGroup(data *groupModel) *model.Group {
 	return &model.Group{
-		ID:               data.ID.ValueString(),
-		Name:             data.Name.ValueString(),
-		Users:            convertUsers(data.UserIDs.Elements()),
-		IsAuthoritative:  convertAuthoritativeFlag(data.IsAuthoritative),
-		SecurityPolicyID: data.SecurityPolicyID.ValueString(),
+		ID:              data.ID.ValueString(),
+		Name:            data.Name.ValueString(),
+		Users:           convertUsers(data.UserIDs.Elements()),
+		IsAuthoritative: convertAuthoritativeFlag(data.IsAuthoritative),
 	}
 }
 

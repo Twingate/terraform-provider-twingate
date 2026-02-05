@@ -114,62 +114,6 @@ func TestAccTwingateGroupReCreateAfterDeletion(t *testing.T) {
 	})
 }
 
-func TestAccTwingateGroupWithSecurityPolicy(t *testing.T) {
-	t.Parallel()
-
-	const terraformResourceName = "test004"
-	theResource := acctests.TerraformGroup(terraformResourceName)
-	name := test.RandomName()
-
-	securityPolicies, err := acctests.ListSecurityPolicies()
-	if err != nil {
-		t.Skip("can't run test:", err)
-	}
-
-	testPolicy := securityPolicies[0]
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateGroupDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: terraformResourceTwingateGroup(terraformResourceName, name),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.Name, name),
-				),
-			},
-			{
-				Config: terraformResourceTwingateGroupWithSecurityPolicy(terraformResourceName, name, testPolicy.ID),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.Name, name),
-					sdk.TestCheckResourceAttr(theResource, attr.SecurityPolicyID, testPolicy.ID),
-				),
-			},
-			{
-				// expecting no changes
-				PlanOnly: true,
-				Config:   terraformResourceTwingateGroup(terraformResourceName, name),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.Name, name),
-				),
-			},
-		},
-	})
-}
-
-func terraformResourceTwingateGroupWithSecurityPolicy(terraformResourceName, name, securityPolicyID string) string {
-	return fmt.Sprintf(`
-	resource "twingate_group" "%s" {
-	  name = "%s"
-	  security_policy_id = "%s"
-	}
-	`, terraformResourceName, name, securityPolicyID)
-}
-
 func TestAccTwingateGroupUsersAuthoritativeByDefault(t *testing.T) {
 	t.Parallel()
 
@@ -392,13 +336,6 @@ func TestAccTwingateGroupImport(t *testing.T) {
 
 	users, userIDs := genNewUsers("u008", 3)
 
-	securityPolicies, err := acctests.ListSecurityPolicies()
-	if err != nil {
-		t.Skip("can't run test:", err)
-	}
-
-	testPolicy := securityPolicies[0]
-
 	authoritative := true
 
 	sdk.Test(t, sdk.TestCase{
@@ -407,7 +344,7 @@ func TestAccTwingateGroupImport(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: terraformResourceTwingateGroupFull(terraformResourceName, groupName, users, userIDs, testPolicy.ID, authoritative),
+				Config: terraformResourceTwingateGroupFull(terraformResourceName, groupName, users, userIDs, authoritative),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 				),
@@ -417,7 +354,6 @@ func TestAccTwingateGroupImport(t *testing.T) {
 				ResourceName: theResource,
 				ImportStateCheck: acctests.CheckImportState(map[string]string{
 					attr.Name:                  groupName,
-					attr.SecurityPolicyID:      testPolicy.ID,
 					attr.IsAuthoritative:       fmt.Sprintf("%v", authoritative),
 					attr.LenAttr(attr.UserIDs): fmt.Sprintf("%d", len(users)),
 				}),
@@ -426,15 +362,14 @@ func TestAccTwingateGroupImport(t *testing.T) {
 	})
 }
 
-func terraformResourceTwingateGroupFull(terraformResourceName, name string, users, usersID []string, securityPolicy string, authoritative bool) string {
+func terraformResourceTwingateGroupFull(terraformResourceName, name string, users, usersID []string, authoritative bool) string {
 	return fmt.Sprintf(`
 	%s
 
 	resource "twingate_group" "%s" {
 	  name = "%s"
 	  user_ids = [%s]
-	  security_policy_id = "%s"
 	  is_authoritative = %v
 	}
-	`, strings.Join(users, "\n"), terraformResourceName, name, strings.Join(usersID, ", "), securityPolicy, authoritative)
+	`, strings.Join(users, "\n"), terraformResourceName, name, strings.Join(usersID, ", "), authoritative)
 }

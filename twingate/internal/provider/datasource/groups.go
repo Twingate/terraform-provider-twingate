@@ -133,10 +133,6 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 							Computed:    true,
 							Description: "The type of the Group",
 						},
-						attr.SecurityPolicyID: schema.StringAttribute{
-							Computed:    true,
-							Description: "The Security Policy assigned to the Group.",
-						},
 					},
 				},
 			},

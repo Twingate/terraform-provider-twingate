@@ -2,9 +2,10 @@ package datasource
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"regexp"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
@@ -13,9 +14,8 @@ import (
 )
 
 var (
-	groupsLen         = attr.Len(attr.Groups)
-	groupNamePath     = attr.Path(attr.Groups, attr.Name)
-	groupPolicyIDPath = attr.Path(attr.Groups, attr.SecurityPolicyID)
+	groupsLen     = attr.Len(attr.Groups)
+	groupNamePath = attr.Path(attr.Groups, attr.Name)
 )
 
 func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
@@ -24,40 +24,30 @@ func TestAccDatasourceTwingateGroups_basic(t *testing.T) {
 
 	const theDatasource = "data.twingate_groups.out_dgs1"
 
-	securityPolicies, err := acctests.ListSecurityPolicies()
-	if err != nil {
-		t.Skip("can't run test:", err)
-	}
-
-	testPolicy := securityPolicies[0]
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
 		CheckDestroy:             acctests.CheckTwingateGroupDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testDatasourceTwingateGroups(groupName, testPolicy.ID),
+				Config: testDatasourceTwingateGroups(groupName),
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(theDatasource, groupsLen, "2"),
 					resource.TestCheckResourceAttr(theDatasource, groupNamePath, groupName),
-					resource.TestCheckResourceAttr(theDatasource, groupPolicyIDPath, testPolicy.ID),
 				),
 			},
 		},
 	})
 }
 
-func testDatasourceTwingateGroups(name, securityPolicyID string) string {
+func testDatasourceTwingateGroups(name string) string {
 	return fmt.Sprintf(`
 	resource "twingate_group" "test_dgs1_1" {
 	  name = "%s"
-	  security_policy_id = "%s"
 	}
 
 	resource "twingate_group" "test_dgs1_2" {
 	  name = "%s"
-	  security_policy_id = "%s"
 	}
 
 	data "twingate_groups" "out_dgs1" {
@@ -65,7 +55,7 @@ func testDatasourceTwingateGroups(name, securityPolicyID string) string {
 
 	  depends_on = [twingate_group.test_dgs1_1, twingate_group.test_dgs1_2]
 	}
-	`, name, securityPolicyID, name, securityPolicyID, name)
+	`, name, name, name)
 }
 
 func TestAccDatasourceTwingateGroups_emptyResult(t *testing.T) {
