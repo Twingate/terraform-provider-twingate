@@ -68,15 +68,14 @@ func TestConverterGroupsToTerraform(t *testing.T) {
 		},
 		{
 			input: []*model.Group{
-				{ID: "group-id", Name: "group-name", Type: model.GroupTypeManual, IsActive: true, SecurityPolicyID: "policy-id"},
+				{ID: "group-id", Name: "group-name", Type: model.GroupTypeManual, IsActive: true},
 			},
 			expected: []groupModel{
 				{
-					ID:               types.StringValue("group-id"),
-					Name:             types.StringValue("group-name"),
-					Type:             types.StringValue(model.GroupTypeManual),
-					SecurityPolicyID: types.StringValue("policy-id"),
-					IsActive:         types.BoolValue(true),
+					ID:       types.StringValue("group-id"),
+					Name:     types.StringValue("group-name"),
+					Type:     types.StringValue(model.GroupTypeManual),
+					IsActive: types.BoolValue(true),
 				},
 			},
 		},
