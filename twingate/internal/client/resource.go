@@ -187,7 +187,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		resource.IsBrowserShortcutEnabled = nil
 	}
 
-	if input.SecurityPolicyID != nil && *input.SecurityPolicyID == "" {
+	if resource.SecurityPolicyID == nil && input.SecurityPolicyID != nil && *input.SecurityPolicyID == "" {
 		resource.SecurityPolicyID = input.SecurityPolicyID
 	}
 

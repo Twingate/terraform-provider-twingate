@@ -170,7 +170,7 @@ resource "twingate_resource" "resource" {
 - `is_browser_shortcut_enabled` (Boolean) Controls whether an "Open in Browser" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
-- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.
+- `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
 
 ### Read-Only
@@ -185,7 +185,7 @@ Optional:
 
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_group--access_policy))
 - `group_id` (String) Group ID that will have permission to access the Resource.
-- `security_policy_id` (String) The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.
+- `security_policy_id` (String) The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block. Default is 'Null' which points to `Default Policy` on Admin console.
 
 <a id="nestedblock--access_group--access_policy"></a>
 ### Nested Schema for `access_group.access_policy`

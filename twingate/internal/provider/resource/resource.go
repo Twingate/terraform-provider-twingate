@@ -43,15 +43,13 @@ const (
 )
 
 var (
-	DefaultSecurityPolicyID string            //nolint:gochecknoglobals
-	DefaultTags             map[string]string //nolint:gochecknoglobals
+	DefaultTags map[string]string //nolint:gochecknoglobals
 
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
 	ErrInvalidAttributeCombination        = errors.New("invalid attribute combination")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
-	ErrDefaultPolicyNotSet                = errors.New("default policy not set")
 	ErrWrongGlobalID                      = errors.New("Unable to parse global ID")
 )
 
@@ -207,11 +205,12 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:      true,
-				Computed:      true,
-				Description:   "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is `Default Policy`.",
-				Default:       stringdefault.StaticString(DefaultSecurityPolicyID),
-				PlanModifiers: []planmodifier.String{UseDefaultPolicyForUnknownModifier()},
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
+				PlanModifiers: []planmodifier.String{
+					UseNullPolicyForGroupAccessWhenValueOmitted(),
+				},
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
@@ -322,7 +321,7 @@ func groupAccessBlock() schema.SetNestedBlock {
 				attr.SecurityPolicyID: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					Description: "The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block.",
+					Description: "The ID of a `twingate_security_policy` to use as the access policy for the group IDs in the access block. Default is 'Null' which points to `Default Policy` on Admin console.",
 					Validators: []validator.String{
 						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
 					},
@@ -909,8 +908,9 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
 
-		if state.SecurityPolicyID.IsNull() {
-			resource.SecurityPolicyID = nil
+		if resource.SecurityPolicyID == nil && !state.SecurityPolicyID.IsNull() && state.SecurityPolicyID.ValueString() == "" {
+			emptyString := ""
+			resource.SecurityPolicyID = &emptyString
 		}
 	}
 
@@ -948,12 +948,6 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	var resource *model.Resource
 
 	if isResourceChanged(&plan, &state) {
-		if err := r.setDefaultSecurityPolicy(ctx, input); err != nil {
-			addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
-
-			return
-		}
-
 		resource, err = r.client.UpdateResource(ctx, input)
 	} else {
 		resource, err = r.client.ReadResource(ctx, input.ID)
@@ -962,39 +956,12 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 	if resource != nil {
 		resource.IsAuthoritative = input.IsAuthoritative
 
-		if planSecurityPolicy != nil && *planSecurityPolicy == "" {
+		if resource.SecurityPolicyID == nil && planSecurityPolicy != nil && *planSecurityPolicy == "" {
 			resource.SecurityPolicyID = planSecurityPolicy
-		} else if planSecurityPolicy == nil {
-			resource.SecurityPolicyID = nil
 		}
 	}
 
 	r.helper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
-}
-
-func (r *twingateResource) setDefaultSecurityPolicy(ctx context.Context, resource *model.Resource) error {
-	if DefaultSecurityPolicyID == "" {
-		policy, _ := r.client.ReadSecurityPolicy(ctx, "", DefaultSecurityPolicyName)
-		if policy != nil {
-			DefaultSecurityPolicyID = policy.ID
-		}
-	}
-
-	if DefaultSecurityPolicyID == "" {
-		return ErrDefaultPolicyNotSet
-	}
-
-	remoteResource, err := r.client.ReadResource(ctx, resource.ID)
-	if err != nil {
-		return err //nolint:wrapcheck
-	}
-
-	if remoteResource.SecurityPolicyID != nil && (resource.SecurityPolicyID == nil || *resource.SecurityPolicyID == "") &&
-		*remoteResource.SecurityPolicyID != DefaultSecurityPolicyID {
-		resource.SecurityPolicyID = &DefaultSecurityPolicyID
-	}
-
-	return nil
 }
 
 func isResourceChanged(plan, state *resourceModel) bool {
@@ -1607,32 +1574,6 @@ var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)`)
 
 func isWildcardAddress(address string) bool {
 	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
-}
-
-func UseDefaultPolicyForUnknownModifier() planmodifier.String {
-	return useDefaultPolicyForUnknownModifier{}
-}
-
-// useDefaultPolicyForUnknownModifier implements the plan modifier.
-type useDefaultPolicyForUnknownModifier struct{}
-
-// Description returns a human-readable description of the plan modifier.
-func (m useDefaultPolicyForUnknownModifier) Description(_ context.Context) string {
-	return "Once set, the value of this attribute will fallback to Default Policy on unset."
-}
-
-// MarkdownDescription returns a markdown description of the plan modifier.
-func (m useDefaultPolicyForUnknownModifier) MarkdownDescription(_ context.Context) string {
-	return "Once set, the value of this attribute will fallback to Default Policy on unset."
-}
-
-// PlanModifyString implements the plan modification logic.
-func (m useDefaultPolicyForUnknownModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
-		resp.PlanValue = types.StringNull()
-
-		return
-	}
 }
 
 func accessGroupAttributeTypes() map[string]tfattr.Type {

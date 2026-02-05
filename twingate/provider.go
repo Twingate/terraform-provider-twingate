@@ -211,7 +211,6 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 	}
 }
 
-//nolint:funlen
 func (t Twingate) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
 	var config twingateProviderModel
 
@@ -271,11 +270,6 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	response.DataSourceData = client
 	response.ResourceData = client
 	response.EphemeralResourceData = client
-
-	policy, _ := client.ReadSecurityPolicy(ctx, "", twingateResource.DefaultSecurityPolicyName)
-	if policy != nil {
-		twingateResource.DefaultSecurityPolicyID = policy.ID
-	}
 
 	twingateResource.DefaultTags = getDefaultTags(config.DefaultTags)
 }
