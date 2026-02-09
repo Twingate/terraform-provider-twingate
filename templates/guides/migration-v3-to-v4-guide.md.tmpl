@@ -57,8 +57,9 @@ resource "twingate_resource" "resource" {
   remote_network_id = twingate_remote_network.aws_network.id
 
   access_policy {
-    mode     = "MANUAL"
-    duration = "48h"
+    mode          = "AUTO_LOCK"
+    approval_mode = "MANUAL"
+    duration      = "48h"
   }
 
   access_group {

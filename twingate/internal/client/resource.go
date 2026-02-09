@@ -63,6 +63,11 @@ func NewAccessPolicyInput(accessPolicy *model.AccessPolicy) *AccessPolicyInput {
 		mode = AccessMode(*accessPolicy.Mode)
 	}
 
+	// skip duration when mode=MANUAL
+	if mode == model.AccessPolicyModeManual {
+		durationSeconds = nil
+	}
+
 	return &AccessPolicyInput{
 		Mode:            mode,
 		DurationSeconds: durationSeconds,
@@ -120,6 +125,10 @@ func newPorts(ports []*model.PortRange) []*PortRangeInput {
 type AccessApprovalMode string
 
 func NewAccessApprovalMode(accessPolicy *model.AccessPolicy) *AccessApprovalMode {
+	if accessPolicy != nil && accessPolicy.Mode != nil && *accessPolicy.Mode == model.AccessPolicyModeManual {
+		return nil
+	}
+
 	var approvalMode string
 
 	if accessPolicy != nil && accessPolicy.ApprovalMode != nil {
@@ -136,7 +145,9 @@ func NewAccessApprovalMode(accessPolicy *model.AccessPolicy) *AccessApprovalMode
 }
 
 func NewGroupAccessApprovalMode(accessPolicy *model.AccessPolicy) *AccessApprovalMode {
-	if accessPolicy == nil || accessPolicy.ApprovalMode == nil || *accessPolicy.ApprovalMode == "" {
+	if accessPolicy == nil || accessPolicy.ApprovalMode == nil || *accessPolicy.ApprovalMode == "" ||
+		// skip approvalMode when mode=MANUAL
+		accessPolicy.Mode != nil && *accessPolicy.Mode == model.AccessPolicyModeManual {
 		return nil
 	}
 
@@ -397,7 +408,6 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
 		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
-		// gqlNullable(input.UsageBasedAutolockDurationDays, "usageBasedAutolockDurationDays"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
 	)
@@ -426,9 +436,9 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		resource.IsBrowserShortcutEnabled = nil
 	}
 
-	// if input.AccessPolicy == nil {
-	//	resource.AccessPolicy = nil
-	//}
+	if input.SecurityPolicyID == nil {
+		resource.SecurityPolicyID = nil
+	}
 
 	setResource(resource)
 

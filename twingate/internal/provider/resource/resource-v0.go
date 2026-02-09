@@ -203,10 +203,6 @@ func upgradeResourceStateV0() resource.StateUpgrader {
 				ServiceAccess: serviceAccess,
 				Tags:          types.MapNull(types.StringType),
 				TagsAll:       types.MapNull(types.StringType),
-
-				// Deprecated
-				ApprovalMode:                   types.StringNull(),
-				UsageBasedAutolockDurationDays: types.Int64Null(),
 			}
 
 			if !priorState.IsAuthoritative.IsNull() {

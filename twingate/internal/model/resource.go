@@ -48,25 +48,6 @@ type AccessPolicy struct {
 	ApprovalMode *string
 }
 
-func (p *AccessPolicy) LegacyApprovalMode() *string {
-	if p != nil && p.ApprovalMode != nil && *p.ApprovalMode != "" {
-		return p.ApprovalMode
-	}
-
-	return nil
-}
-
-func (p *AccessPolicy) LegacyUsageBasedAutolockDurationDays() *int64 {
-	if p != nil && p.Duration != nil && *p.Duration != "" {
-		duration, _ := p.ParseDuration()
-		days := int64(duration.Hours() / hoursInDay)
-
-		return &days
-	}
-
-	return nil
-}
-
 func (p *AccessPolicy) ParseDuration() (time.Duration, error) {
 	if p.Duration == nil || *p.Duration == "" {
 		return time.Duration(0), nil
@@ -128,14 +109,6 @@ func (p *AccessPolicy) Validate() error {
 	}
 
 	return nil
-}
-
-type LegacyAccessGroup struct {
-	GroupID            string
-	SecurityPolicyID   *string
-	ApprovalMode       *string
-	UsageBasedDuration *int64
-	AccessPolicy       *AccessPolicy
 }
 
 type AccessGroup struct {

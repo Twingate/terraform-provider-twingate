@@ -105,7 +105,6 @@ func getValue(val any) any {
 	}
 }
 
-//nolint:unparam
 func gqlNullableID(val any, name string) gqlVarOption {
 	return func(values map[string]any) map[string]any {
 		var (

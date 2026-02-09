@@ -21,7 +21,6 @@ func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*mod
 	variables := newVars(
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "userIds"),
-		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		cursor(query.CursorUsers),
 		pageLimit(client.pageLimit),
 	)
@@ -215,7 +214,6 @@ func (client *Client) UpdateGroup(ctx context.Context, input *model.Group) (*mod
 		gqlID(input.ID),
 		gqlVar(input.Name, "name"),
 		gqlIDs(input.Users, "addedUserIds"),
-		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		cursor(query.CursorUsers),
 		pageLimit(client.pageLimit),
 	)

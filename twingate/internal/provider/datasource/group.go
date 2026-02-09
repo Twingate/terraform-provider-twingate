@@ -23,11 +23,10 @@ type group struct {
 }
 
 type groupModel struct {
-	ID               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	Type             types.String `tfsdk:"type"`
-	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
-	IsActive         types.Bool   `tfsdk:"is_active"`
+	ID       types.String `tfsdk:"id"`
+	Name     types.String `tfsdk:"name"`
+	Type     types.String `tfsdk:"type"`
+	IsActive types.Bool   `tfsdk:"is_active"`
 }
 
 func (d *group) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -73,10 +72,6 @@ func (d *group) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 				Computed:    true,
 				Description: "The type of the Group",
 			},
-			attr.SecurityPolicyID: schema.StringAttribute{
-				Computed:    true,
-				Description: "The Security Policy assigned to the Group.",
-			},
 		},
 	}
 }
@@ -101,7 +96,6 @@ func (d *group) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 	data.Name = types.StringValue(group.Name)
 	data.Type = types.StringValue(group.Type)
 	data.IsActive = types.BoolValue(group.IsActive)
-	data.SecurityPolicyID = types.StringValue(group.SecurityPolicyID)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

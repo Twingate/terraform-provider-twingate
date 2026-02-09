@@ -11,10 +11,9 @@ type ReadGroup struct {
 
 type gqlGroup struct {
 	IDName
-	IsActive       bool
-	Type           string
-	Users          Users `graphql:"users(after: $usersEndCursor, first: $pageLimit)"`
-	SecurityPolicy gqlSecurityPolicy
+	IsActive bool
+	Type     string
+	Users    Users `graphql:"users(after: $usersEndCursor, first: $pageLimit)"`
 }
 
 func (g gqlGroup) ToModel() *model.Group {
@@ -26,7 +25,6 @@ func (g gqlGroup) ToModel() *model.Group {
 		Users: utils.Map[*UserEdge, string](g.Users.Edges, func(edge *UserEdge) string {
 			return string(edge.Node.ID)
 		}),
-		SecurityPolicyID: string(g.SecurityPolicy.ID),
 	}
 }
 

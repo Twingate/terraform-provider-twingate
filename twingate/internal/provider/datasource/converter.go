@@ -25,11 +25,10 @@ func convertConnectorsToTerraform(connectors []*model.Connector) []connectorMode
 func convertGroupsToTerraform(groups []*model.Group) []groupModel {
 	return utils.Map(groups, func(group *model.Group) groupModel {
 		return groupModel{
-			ID:               types.StringValue(group.ID),
-			Name:             types.StringValue(group.Name),
-			Type:             types.StringValue(group.Type),
-			IsActive:         types.BoolValue(group.IsActive),
-			SecurityPolicyID: types.StringValue(group.SecurityPolicyID),
+			ID:       types.StringValue(group.ID),
+			Name:     types.StringValue(group.Name),
+			Type:     types.StringValue(group.Type),
+			IsActive: types.BoolValue(group.IsActive),
 		}
 	})
 }
@@ -39,14 +38,12 @@ func convertResourcesToTerraform(resources []*model.Resource) []resourceModel {
 		tags, _ := convertTagsToTerraform(resource.Tags)
 
 		return resourceModel{
-			ID:                             types.StringValue(resource.ID),
-			Name:                           types.StringValue(resource.Name),
-			Address:                        types.StringValue(resource.Address),
-			RemoteNetworkID:                types.StringValue(resource.RemoteNetworkID),
-			ApprovalMode:                   types.StringPointerValue(resource.AccessPolicy.LegacyApprovalMode()),
-			Protocols:                      convertProtocolsToTerraform(resource.Protocols),
-			Tags:                           tags,
-			UsageBasedAutolockDurationDays: types.Int64PointerValue(resource.AccessPolicy.LegacyUsageBasedAutolockDurationDays()),
+			ID:              types.StringValue(resource.ID),
+			Name:            types.StringValue(resource.Name),
+			Address:         types.StringValue(resource.Address),
+			RemoteNetworkID: types.StringValue(resource.RemoteNetworkID),
+			Protocols:       convertProtocolsToTerraform(resource.Protocols),
+			Tags:            tags,
 		}
 	})
 }
