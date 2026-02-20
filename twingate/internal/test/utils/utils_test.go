@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 

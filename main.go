@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 

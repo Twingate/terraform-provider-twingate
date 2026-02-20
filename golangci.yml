@@ -77,7 +77,7 @@ linters:
               - "!$test"
             allow:
               - $gostd
-              - github.com/Twingate/terraform-provider-twingate/v3/twingate
+              - github.com/Twingate/terraform-provider-twingate/v4/twingate
               - github.com/hasura/go-graphql-client
               - github.com/hashicorp/
               - github.com/iancoleman/strcase

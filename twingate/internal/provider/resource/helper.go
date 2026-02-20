@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"

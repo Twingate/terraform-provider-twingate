@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	"github.com/mitchellh/copystructure"
 	"golang.org/x/sync/errgroup"
 )

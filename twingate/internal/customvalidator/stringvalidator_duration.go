@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatorfuncerr"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 )
 
 var (

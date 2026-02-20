@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"

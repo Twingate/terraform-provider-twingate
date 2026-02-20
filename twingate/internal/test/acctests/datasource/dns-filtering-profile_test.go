@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )

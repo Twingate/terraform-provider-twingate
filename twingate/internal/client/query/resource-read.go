@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/hasura/go-graphql-client"
 )
 

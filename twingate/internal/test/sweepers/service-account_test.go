@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/resource"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 

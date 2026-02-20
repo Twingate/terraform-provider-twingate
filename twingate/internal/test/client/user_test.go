@@ -3,9 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"testing"

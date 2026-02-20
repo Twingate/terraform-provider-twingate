@@ -3,10 +3,10 @@ package sweepers
 import (
 	"context"
 	"errors"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 

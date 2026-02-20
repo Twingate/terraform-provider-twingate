@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 )
 
 func (client *Client) CreateGroup(ctx context.Context, input *model.Group) (*model.Group, error) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
 )

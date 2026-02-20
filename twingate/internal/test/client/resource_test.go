@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	api "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	api "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"

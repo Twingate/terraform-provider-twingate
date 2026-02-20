@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"

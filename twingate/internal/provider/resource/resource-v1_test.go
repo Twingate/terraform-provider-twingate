@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/stretchr/testify/assert"
 

@@ -3,9 +3,9 @@ package resource
 import (
 	"context"
 
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"

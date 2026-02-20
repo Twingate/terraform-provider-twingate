@@ -1,6 +1,6 @@
 package model
 
-import "github.com/Twingate/terraform-provider-twingate/v3/twingate/internal/attr"
+import "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 
 type Connector struct {
 	ID                   string
