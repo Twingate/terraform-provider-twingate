@@ -32,31 +32,31 @@ func (client *Client) CreateX509CertificateAuthority(ctx context.Context, name, 
 	return response.ToModel(), nil
 }
 
-func (client *Client) ReadX509CertificateAuthority(ctx context.Context, id string) (*model.CertificateAuthority, error) {
+func (client *Client) ReadX509CertificateAuthority(ctx context.Context, certificateID string) (*model.CertificateAuthority, error) {
 	opr := resourceX509CertificateAuthority.read()
 
-	if id == "" {
+	if certificateID == "" {
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	variables := newVars(gqlID(id))
+	variables := newVars(gqlID(certificateID))
 	response := query.ReadX509CertificateAuthority{}
 
-	if err := client.query(ctx, &response, variables, opr, attr{id: id}); err != nil {
+	if err := client.query(ctx, &response, variables, opr, attr{id: certificateID}); err != nil {
 		return nil, err
 	}
 
 	return response.ToModel(), nil
 }
 
-func (client *Client) DeleteX509CertificateAuthority(ctx context.Context, id string) error {
+func (client *Client) DeleteX509CertificateAuthority(ctx context.Context, certificateID string) error {
 	opr := resourceX509CertificateAuthority.delete()
 
-	if id == "" {
+	if certificateID == "" {
 		return opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
 	response := query.DeleteX509CertificateAuthority{}
 
-	return client.mutate(ctx, &response, newVars(gqlID(id)), opr, attr{id: id})
+	return client.mutate(ctx, &response, newVars(gqlID(certificateID)), opr, attr{id: certificateID})
 }

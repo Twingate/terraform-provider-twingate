@@ -2,17 +2,14 @@ package resource
 
 import (
 	"context"
-	"crypto/sha256"
-	"crypto/x509"
-	"encoding/hex"
-	"encoding/pem"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -82,7 +79,7 @@ func (r *x509CertificateAuthority) Schema(_ context.Context, _ resource.SchemaRe
 				WriteOnly:   true,
 				Description: "The PEM-encoded X509 certificate. This field is write-only and will not be returned by the API.",
 				Validators: []validator.String{
-					certificateValidator{},
+					customvalidator.Certificate(),
 				},
 			},
 			attr.Fingerprint: schema.StringAttribute{
@@ -147,7 +144,7 @@ func (r *x509CertificateAuthority) Delete(ctx context.Context, req resource.Dele
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateX509CertificateAuthority)
 }
 
-func (r *x509CertificateAuthority) helper(ctx context.Context, ca *model.CertificateAuthority, state *x509CertificateAuthorityModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
+func (r *x509CertificateAuthority) helper(ctx context.Context, certificateAuthority *model.CertificateAuthority, state *x509CertificateAuthorityModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 			respState.RemoveResource(ctx)
@@ -160,10 +157,10 @@ func (r *x509CertificateAuthority) helper(ctx context.Context, ca *model.Certifi
 		return
 	}
 
-	state.ID = types.StringValue(ca.ID)
-	state.Name = types.StringValue(ca.Name)
+	state.ID = types.StringValue(certificateAuthority.ID)
+	state.Name = types.StringValue(certificateAuthority.Name)
 	// instead of a certificate - we store its fingerprint
-	state.Fingerprint = types.StringValue(ca.Fingerprint)
+	state.Fingerprint = types.StringValue(certificateAuthority.Fingerprint)
 
 	diags := respState.Set(ctx, state)
 	diagnostics.Append(diags...)
@@ -194,7 +191,7 @@ func (r *x509CertificateAuthority) ModifyPlan(ctx context.Context, req resource.
 		return
 	}
 
-	newFingerprint, err := calculateCertificateFingerprint(certValue.ValueString())
+	newFingerprint, err := utils.CalculateCertificateFingerprint(certValue.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(
 			path.Root(attr.Certificate),
@@ -207,70 +204,5 @@ func (r *x509CertificateAuthority) ModifyPlan(ctx context.Context, req resource.
 
 	if stateFingerprint.ValueString() != newFingerprint {
 		resp.RequiresReplace = append(resp.RequiresReplace, path.Root(attr.Certificate))
-	}
-}
-
-// calculateCertificateFingerprint returns the SHA-256 fingerprint of a PEM-encoded certificate
-// formatted as colon-separated uppercase hex pairs (e.g. "AB:CD:EF:...").
-func calculateCertificateFingerprint(pemCert string) (string, error) {
-	block, _ := pem.Decode([]byte(pemCert))
-	if block == nil {
-		return "", fmt.Errorf("failed to decode PEM certificate")
-	}
-
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse certificate: %w", err)
-	}
-
-	hash := sha256.Sum256(cert.Raw)
-	hexStr := strings.ToUpper(hex.EncodeToString(hash[:]))
-
-	var result strings.Builder
-
-	for i, char := range hexStr {
-		if i > 0 && i%2 == 0 {
-			result.WriteRune(':')
-		}
-
-		result.WriteRune(char)
-	}
-
-	return result.String(), nil
-}
-
-type certificateValidator struct{}
-
-func (ca certificateValidator) Description(_ context.Context) string {
-	return ""
-}
-
-func (ca certificateValidator) MarkdownDescription(_ context.Context) string {
-	return ""
-}
-
-func (ca certificateValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
-	// Skip on create (state is null) or delete (plan is null).
-	if req.Config.Raw.IsNull() {
-		return
-	}
-
-	var certValue types.String
-
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(attr.Certificate), &certValue)...)
-
-	if resp.Diagnostics.HasError() || certValue.IsNull() || certValue.IsUnknown() {
-		return
-	}
-
-	_, err := calculateCertificateFingerprint(certValue.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddAttributeError(
-			path.Root(attr.Certificate),
-			"Invalid certificate",
-			fmt.Sprintf("Could not calculate fingerprint: %s", err),
-		)
-
-		return
 	}
 }

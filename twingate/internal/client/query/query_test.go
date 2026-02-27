@@ -4020,3 +4020,193 @@ func TestReadUsers_IsEmpty(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteX509CertificateAuthorityQuery(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    DeleteX509CertificateAuthority
+		expected bool
+	}{
+		{
+			name:     "Empty query - IsEmpty always false",
+			query:    DeleteX509CertificateAuthority{},
+			expected: false,
+		},
+		{
+			name: "Ok true - IsEmpty always false",
+			query: DeleteX509CertificateAuthority{
+				OkError: OkError{Ok: true},
+			},
+			expected: false,
+		},
+		{
+			name: "Ok false with error - IsEmpty always false",
+			query: DeleteX509CertificateAuthority{
+				OkError: OkError{Ok: false, Error: "not found"},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateX509CertificateAuthorityQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateX509CertificateAuthority
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    CreateX509CertificateAuthority{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: CreateX509CertificateAuthority{
+				X509CertificateAuthorityEntityResponse: X509CertificateAuthorityEntityResponse{
+					Entity: &certificateAuthority{
+						ID:          "ca-id",
+						Name:        "ca-name",
+						Fingerprint: "ca-fingerprint",
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateX509CertificateAuthorityQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateX509CertificateAuthority
+		expected *model.CertificateAuthority
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    CreateX509CertificateAuthority{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil entity - returns model",
+			query: CreateX509CertificateAuthority{
+				X509CertificateAuthorityEntityResponse: X509CertificateAuthorityEntityResponse{
+					Entity: &certificateAuthority{
+						ID:          "ca-id",
+						Name:        "ca-name",
+						Fingerprint: "ca-fingerprint",
+					},
+				},
+			},
+			expected: &model.CertificateAuthority{
+				ID:          "ca-id",
+				Name:        "ca-name",
+				Fingerprint: "ca-fingerprint",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadX509CertificateAuthorityQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadX509CertificateAuthority
+		expected bool
+	}{
+		{
+			name:     "Nil certificate authority - IsEmpty true",
+			query:    ReadX509CertificateAuthority{},
+			expected: true,
+		},
+		{
+			name: "Non-nil certificate authority - IsEmpty false",
+			query: ReadX509CertificateAuthority{
+				CertificateAuthority: &certificateAuthorityNode{
+					Type: "X509CertificateAuthority",
+					X509CertificateAuthority: certificateAuthority{
+						ID:          "ca-id",
+						Name:        "ca-name",
+						Fingerprint: "ca-fingerprint",
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadX509CertificateAuthorityQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadX509CertificateAuthority
+		expected *model.CertificateAuthority
+	}{
+		{
+			name:     "Nil certificate authority - returns nil",
+			query:    ReadX509CertificateAuthority{},
+			expected: nil,
+		},
+		{
+			name: "Wrong type - returns nil",
+			query: ReadX509CertificateAuthority{
+				CertificateAuthority: &certificateAuthorityNode{
+					Type: "SSHCertificateAuthority",
+					SSHCertificateAuthority: certificateAuthority{
+						ID:          "ssh-ca-id",
+						Name:        "ssh-ca-name",
+						Fingerprint: "ssh-ca-fingerprint",
+					},
+				},
+			},
+			expected: nil,
+		},
+		{
+			name: "Correct type - returns model",
+			query: ReadX509CertificateAuthority{
+				CertificateAuthority: &certificateAuthorityNode{
+					Type: "X509CertificateAuthority",
+					X509CertificateAuthority: certificateAuthority{
+						ID:          "ca-id",
+						Name:        "ca-name",
+						Fingerprint: "ca-fingerprint",
+					},
+				},
+			},
+			expected: &model.CertificateAuthority{
+				ID:          "ca-id",
+				Name:        "ca-name",
+				Fingerprint: "ca-fingerprint",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
