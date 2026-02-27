@@ -224,6 +224,10 @@ func TerraformDNSFilteringProfile(name string) string {
 	return ResourceName(resource.TwingateDNSFilteringProfile, name)
 }
 
+func TerraformX509CertificateAuthority(name string) string {
+	return ResourceName(resource.TwingateX509CertificateAuthority, name)
+}
+
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }
@@ -267,6 +271,8 @@ func deleteResource(resourceType, resourceID string) error {
 		err = providerClient.DeleteServiceKey(context.Background(), resourceID)
 	case resource.TwingateUser:
 		err = providerClient.DeleteUser(context.Background(), resourceID)
+	case resource.TwingateX509CertificateAuthority:
+		err = providerClient.DeleteX509CertificateAuthority(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -995,6 +1001,23 @@ func GetTestUser() (*model.User, error) {
 	}
 
 	return users[0], nil
+}
+
+func CheckTwingateX509CertificateAuthorityDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateX509CertificateAuthority {
+			continue
+		}
+
+		caID := rs.Primary.ID
+
+		ca, _ := providerClient.ReadX509CertificateAuthority(context.Background(), caID)
+		if ca != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, caID)
+		}
+	}
+
+	return nil
 }
 
 func CheckTwingateConnectorAndRemoteNetworkDestroy(s *terraform.State) error {

@@ -479,6 +479,7 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		twingateResource.NewUserResource,
 		twingateResource.NewResourceResource,
 		twingateResource.NewDNSFilteringProfile,
+		twingateResource.NewX509CertificateAuthorityResource,
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 var (
 	ErrGraphqlIDIsEmpty          = errors.New("id is empty")
 	ErrGraphqlNameIsEmpty        = errors.New("name is empty")
+	ErrGraphqlCertificateIsEmpty = errors.New("certificate is empty")
 	ErrGraphqlEmptyBothNameAndID = errors.New("both name and id should not be empty")
 	ErrGraphqlResultIsEmpty      = errors.New("query result is empty")
 	ErrGraphqlConnectorIDIsEmpty = errors.New("connector id is empty")
