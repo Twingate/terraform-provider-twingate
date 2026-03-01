@@ -21,6 +21,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func generateTestCACertPEM(t *testing.T) string {
@@ -77,8 +78,19 @@ func TestAccTwingateX509CertificateAuthorityCreate(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert),
@@ -106,8 +118,19 @@ func TestAccTwingateX509CertificateAuthorityNameChange(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name1, cert),
@@ -150,8 +173,19 @@ func TestAccTwingateX509CertificateAuthorityCertWithoutChanges(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert1),
@@ -197,8 +231,19 @@ func TestAccTwingateX509CertificateAuthorityCertChange(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert1),
@@ -238,8 +283,19 @@ func TestAccTwingateX509CertificateAuthorityDelete(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:  terraformResourceX509CertificateAuthority(terraformResourceName, name, cert),
@@ -267,8 +323,19 @@ func TestAccTwingateX509CertificateAuthorityReCreateAfterDeletion(t *testing.T) 
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert),
@@ -296,8 +363,19 @@ func TestAccTwingateX509CertificateAuthorityMissingRequiredCertificateField(t *t
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      terraformResourceX509CertificateAuthorityWithoutCert(terraformResourceName, test.RandomName()),
@@ -323,8 +401,19 @@ func TestAccTwingateX509CertificateAuthorityMissingRequiredNameField(t *testing.
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      terraformResourceX509CertificateAuthorityWithoutName(terraformResourceName, cert),
@@ -351,8 +440,19 @@ func TestAccTwingateX509CertificateAuthorityWithInvalidCertificate(t *testing.T)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		PreCheck: func() {
+			acctests.PreCheck(t)
+
+			// Skip if running with OpenTofu
+			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
+			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
+			//}
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      terraformResourceX509CertificateAuthorityWithInvalidCertificate(terraformResourceName, test.RandomName()),

@@ -13,27 +13,27 @@ import (
 )
 
 // Ensure the implementation satisfies the desired interfaces.
-var _ datasource.DataSource = &x509CertificateAuthority{}
+var _ datasource.DataSource = &sshCertificateAuthority{}
 
-func NewX509CertificateAuthorityDatasource() datasource.DataSource {
-	return &x509CertificateAuthority{}
+func NewSSHCertificateAuthorityDatasource() datasource.DataSource {
+	return &sshCertificateAuthority{}
 }
 
-type x509CertificateAuthority struct {
+type sshCertificateAuthority struct {
 	client *client.Client
 }
 
-type x509CertificateAuthorityDatasourceModel struct {
+type sshCertificateAuthorityDatasourceModel struct {
 	ID          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Fingerprint types.String `tfsdk:"fingerprint"`
 }
 
-func (d *x509CertificateAuthority) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = TwingateX509CertificateAuthority
+func (d *sshCertificateAuthority) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = TwingateSSHCertificateAuthority
 }
 
-func (d *x509CertificateAuthority) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *sshCertificateAuthority) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -51,28 +51,28 @@ func (d *x509CertificateAuthority) Configure(_ context.Context, req datasource.C
 	d.client = httpClient
 }
 
-func (d *x509CertificateAuthority) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *sshCertificateAuthority) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "X509 Certificate Authorities allow Twingate to verify certificates presented by resources during TLS connections.",
+		Description: "SSH Certificate Authorities allow Twingate to sign SSH certificates for authenticating users to resources.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Required:    true,
-				Description: "The ID of the X509 Certificate Authority.",
+				Description: "The ID of the SSH Certificate Authority.",
 			},
 			attr.Name: schema.StringAttribute{
 				Computed:    true,
-				Description: "The name of the X509 Certificate Authority.",
+				Description: "The name of the SSH Certificate Authority.",
 			},
 			attr.Fingerprint: schema.StringAttribute{
 				Computed:    true,
-				Description: "The SHA-256 fingerprint of the X509 certificate.",
+				Description: "The fingerprint of the SSH public key.",
 			},
 		},
 	}
 }
 
-func (d *x509CertificateAuthority) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data x509CertificateAuthorityDatasourceModel
+func (d *sshCertificateAuthority) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data sshCertificateAuthorityDatasourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -80,17 +80,17 @@ func (d *x509CertificateAuthority) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
-	certificateAuthority, err := d.client.ReadX509CertificateAuthority(ctx, data.ID.ValueString())
+	certificateAuthority, err := d.client.ReadSSHCertificateAuthority(ctx, data.ID.ValueString())
 	if err != nil {
-		addErr(&resp.Diagnostics, err, TwingateX509CertificateAuthority)
+		addErr(&resp.Diagnostics, err, TwingateSSHCertificateAuthority)
 
 		return
 	}
 
 	if certificateAuthority == nil {
 		resp.Diagnostics.AddError(
-			"Certificate Authority not found",
-			fmt.Sprintf("Certificate Authority with ID %s not found", data.ID.ValueString()),
+			"SSH Certificate Authority not found",
+			fmt.Sprintf("SSH Certificate Authority with ID %s not found", data.ID.ValueString()),
 		)
 
 		return

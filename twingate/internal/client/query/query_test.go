@@ -4210,3 +4210,193 @@ func TestReadX509CertificateAuthorityQueryToModel(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteSSHCertificateAuthorityQuery(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    DeleteSSHCertificateAuthority
+		expected bool
+	}{
+		{
+			name:     "Empty query - IsEmpty always false",
+			query:    DeleteSSHCertificateAuthority{},
+			expected: false,
+		},
+		{
+			name: "Ok true - IsEmpty always false",
+			query: DeleteSSHCertificateAuthority{
+				OkError: OkError{Ok: true},
+			},
+			expected: false,
+		},
+		{
+			name: "Ok false with error - IsEmpty always false",
+			query: DeleteSSHCertificateAuthority{
+				OkError: OkError{Ok: false, Error: "not found"},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateSSHCertificateAuthorityQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateSSHCertificateAuthority
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    CreateSSHCertificateAuthority{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: CreateSSHCertificateAuthority{
+				SSHCertificateAuthorityEntityResponse: SSHCertificateAuthorityEntityResponse{
+					Entity: &certificateAuthority{
+						ID:          "ssh-ca-id",
+						Name:        "ssh-ca-name",
+						Fingerprint: "ssh-ca-fingerprint",
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateSSHCertificateAuthorityQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateSSHCertificateAuthority
+		expected *model.CertificateAuthority
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    CreateSSHCertificateAuthority{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil entity - returns model",
+			query: CreateSSHCertificateAuthority{
+				SSHCertificateAuthorityEntityResponse: SSHCertificateAuthorityEntityResponse{
+					Entity: &certificateAuthority{
+						ID:          "ssh-ca-id",
+						Name:        "ssh-ca-name",
+						Fingerprint: "ssh-ca-fingerprint",
+					},
+				},
+			},
+			expected: &model.CertificateAuthority{
+				ID:          "ssh-ca-id",
+				Name:        "ssh-ca-name",
+				Fingerprint: "ssh-ca-fingerprint",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadSSHCertificateAuthorityQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadSSHCertificateAuthority
+		expected bool
+	}{
+		{
+			name:     "Nil certificate authority - IsEmpty true",
+			query:    ReadSSHCertificateAuthority{},
+			expected: true,
+		},
+		{
+			name: "Non-nil certificate authority - IsEmpty false",
+			query: ReadSSHCertificateAuthority{
+				CertificateAuthority: &certificateAuthorityNode{
+					Type: "SSHCertificateAuthority",
+					SSHCertificateAuthority: certificateAuthority{
+						ID:          "ssh-ca-id",
+						Name:        "ssh-ca-name",
+						Fingerprint: "ssh-ca-fingerprint",
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadSSHCertificateAuthorityQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadSSHCertificateAuthority
+		expected *model.CertificateAuthority
+	}{
+		{
+			name:     "Nil certificate authority - returns nil",
+			query:    ReadSSHCertificateAuthority{},
+			expected: nil,
+		},
+		{
+			name: "Wrong type - returns nil",
+			query: ReadSSHCertificateAuthority{
+				CertificateAuthority: &certificateAuthorityNode{
+					Type: "X509CertificateAuthority",
+					X509CertificateAuthority: certificateAuthority{
+						ID:          "x509-ca-id",
+						Name:        "x509-ca-name",
+						Fingerprint: "x509-ca-fingerprint",
+					},
+				},
+			},
+			expected: nil,
+		},
+		{
+			name: "Correct type - returns model",
+			query: ReadSSHCertificateAuthority{
+				CertificateAuthority: &certificateAuthorityNode{
+					Type: "SSHCertificateAuthority",
+					SSHCertificateAuthority: certificateAuthority{
+						ID:          "ssh-ca-id",
+						Name:        "ssh-ca-name",
+						Fingerprint: "ssh-ca-fingerprint",
+					},
+				},
+			},
+			expected: &model.CertificateAuthority{
+				ID:          "ssh-ca-id",
+				Name:        "ssh-ca-name",
+				Fingerprint: "ssh-ca-fingerprint",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}

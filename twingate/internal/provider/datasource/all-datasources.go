@@ -16,6 +16,7 @@ const (
 	TwingateSecurityPolicies         = "twingate_security_policies"
 	TwingateDNSFilteringProfile      = "twingate_dns_filtering_profile"
 	TwingateX509CertificateAuthority = "twingate_x509_certificate_authority"
+	TwingateSSHCertificateAuthority  = "twingate_ssh_certificate_authority"
 
 	computedDatasourceIDDescription = "The ID of this resource."
 

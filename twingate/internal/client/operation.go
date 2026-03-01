@@ -24,6 +24,7 @@ const (
 	resourceUser                     resource = "user"
 	resourceDNSFilteringProfile      resource = "DNS filtering profile"
 	resourceX509CertificateAuthority resource = "x509 certificate authority"
+	resourceSSHCertificateAuthority  resource = "SSH certificate authority"
 )
 
 const (

@@ -228,6 +228,10 @@ func TerraformX509CertificateAuthority(name string) string {
 	return ResourceName(resource.TwingateX509CertificateAuthority, name)
 }
 
+func TerraformSSHCertificateAuthority(name string) string {
+	return ResourceName(resource.TwingateSSHCertificateAuthority, name)
+}
+
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }
@@ -273,6 +277,8 @@ func deleteResource(resourceType, resourceID string) error {
 		err = providerClient.DeleteUser(context.Background(), resourceID)
 	case resource.TwingateX509CertificateAuthority:
 		err = providerClient.DeleteX509CertificateAuthority(context.Background(), resourceID)
+	case resource.TwingateSSHCertificateAuthority:
+		err = providerClient.DeleteSSHCertificateAuthority(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -1001,6 +1007,23 @@ func GetTestUser() (*model.User, error) {
 	}
 
 	return users[0], nil
+}
+
+func CheckTwingateSSHCertificateAuthorityDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateSSHCertificateAuthority {
+			continue
+		}
+
+		caID := rs.Primary.ID
+
+		ca, _ := providerClient.ReadSSHCertificateAuthority(context.Background(), caID)
+		if ca != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, caID)
+		}
+	}
+
+	return nil
 }
 
 func CheckTwingateX509CertificateAuthorityDestroy(s *terraform.State) error {
