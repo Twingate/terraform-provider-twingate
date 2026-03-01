@@ -78,14 +78,7 @@ func TestAccTwingateX509CertificateAuthorityCreate(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -118,14 +111,7 @@ func TestAccTwingateX509CertificateAuthorityNameChange(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -173,14 +159,7 @@ func TestAccTwingateX509CertificateAuthorityCertWithoutChanges(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -231,14 +210,7 @@ func TestAccTwingateX509CertificateAuthorityCertChange(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -283,14 +255,7 @@ func TestAccTwingateX509CertificateAuthorityDelete(t *testing.T) {
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -323,14 +288,7 @@ func TestAccTwingateX509CertificateAuthorityReCreateAfterDeletion(t *testing.T) 
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -363,14 +321,7 @@ func TestAccTwingateX509CertificateAuthorityMissingRequiredCertificateField(t *t
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -401,14 +352,7 @@ func TestAccTwingateX509CertificateAuthorityMissingRequiredNameField(t *testing.
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),
@@ -440,14 +384,7 @@ func TestAccTwingateX509CertificateAuthorityWithInvalidCertificate(t *testing.T)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck: func() {
-			acctests.PreCheck(t)
-
-			// Skip if running with OpenTofu
-			//if strings.Contains(os.Getenv("TF_ACC_PROVIDER_HOST"), "opentofu.org") {
-			//	t.Skip("Write-only attributes are only supported in OpenTofu 1.11 and later.")
-			//}
-		},
+		PreCheck:                 func() { acctests.PreCheck(t) },
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			// Write-only attributes are only supported in Terraform 1.11 and later.
 			tfversion.SkipBelow(tfversion.Version1_11_0),

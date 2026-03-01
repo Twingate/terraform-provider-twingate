@@ -21,6 +21,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func generateX509DatasourceTestCACertPEM(t *testing.T) string {
@@ -87,7 +88,11 @@ func TestAccDatasourceTwingateX509CertificateAuthority_basic(t *testing.T) {
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			// Write-only attributes are only supported in Terraform 1.11 and later.
+			tfversion.SkipBelow(tfversion.Version1_11_0),
+		},
+		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformDatasourceX509CertificateAuthority(terraformResourceName, name, cert),
