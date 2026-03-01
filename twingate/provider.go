@@ -465,6 +465,7 @@ func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSourc
 		twingateDatasource.NewResourceDatasource,
 		twingateDatasource.NewResourcesDatasource,
 		twingateDatasource.NewDNSFilteringProfileDatasource,
+		twingateDatasource.NewX509CertificateAuthorityDatasource,
 	}
 }
 
