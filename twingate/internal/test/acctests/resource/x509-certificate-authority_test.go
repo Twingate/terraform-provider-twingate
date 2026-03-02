@@ -1,19 +1,11 @@
 package resource
 
 import (
-	"bytes"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"errors"
 	"fmt"
-	"math/big"
 	"regexp"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/resource"
@@ -21,41 +13,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
-	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
-
-func generateTestCACertPEM(t *testing.T) string {
-	t.Helper()
-
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("failed to generate RSA key: %v", err)
-	}
-
-	template := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			CommonName: "Test CA " + test.RandomName(),
-		},
-		NotBefore:             time.Now().Add(-time.Hour),
-		NotAfter:              time.Now().Add(24 * time.Hour),
-		IsCA:                  true,
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-		BasicConstraintsValid: true,
-	}
-
-	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	if err != nil {
-		t.Fatalf("failed to create certificate: %v", err)
-	}
-
-	var buf bytes.Buffer
-	if err := pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
-		t.Fatalf("failed to PEM-encode certificate: %v", err)
-	}
-
-	return buf.String()
-}
 
 func terraformResourceX509CertificateAuthority(terraformResourceName, name, cert string) string {
 	return fmt.Sprintf(`
@@ -74,16 +32,13 @@ func TestAccTwingateX509CertificateAuthorityCreate(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_x509")
 	theResource := acctests.TerraformX509CertificateAuthority(terraformResourceName)
-	cert := generateTestCACertPEM(t)
+	cert := acctests.GenerateCACertPEM(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert),
@@ -106,17 +61,14 @@ func TestAccTwingateX509CertificateAuthorityNameChange(t *testing.T) {
 	name2 := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_x509")
 	theResource := acctests.TerraformX509CertificateAuthority(terraformResourceName)
-	cert := generateTestCACertPEM(t)
+	cert := acctests.GenerateCACertPEM(t)
 	resourceID := new(string)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name1, cert),
@@ -154,17 +106,14 @@ func TestAccTwingateX509CertificateAuthorityCertWithoutChanges(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_x509")
 	theResource := acctests.TerraformX509CertificateAuthority(terraformResourceName)
-	cert1 := generateTestCACertPEM(t)
+	cert1 := acctests.GenerateCACertPEM(t)
 	resourceID := new(string)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert1),
@@ -200,8 +149,8 @@ func TestAccTwingateX509CertificateAuthorityCertChange(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_x509")
 	theResource := acctests.TerraformX509CertificateAuthority(terraformResourceName)
-	cert1 := generateTestCACertPEM(t)
-	cert2 := generateTestCACertPEM(t)
+	cert1 := acctests.GenerateCACertPEM(t)
+	cert2 := acctests.GenerateCACertPEM(t)
 	resourceID := new(string)
 
 	if cert1 == cert2 {
@@ -211,11 +160,8 @@ func TestAccTwingateX509CertificateAuthorityCertChange(t *testing.T) {
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert1),
@@ -251,16 +197,13 @@ func TestAccTwingateX509CertificateAuthorityDelete(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_x509")
 	theResource := acctests.TerraformX509CertificateAuthority(terraformResourceName)
-	cert := generateTestCACertPEM(t)
+	cert := acctests.GenerateCACertPEM(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:  terraformResourceX509CertificateAuthority(terraformResourceName, name, cert),
@@ -284,16 +227,13 @@ func TestAccTwingateX509CertificateAuthorityReCreateAfterDeletion(t *testing.T) 
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_x509")
 	theResource := acctests.TerraformX509CertificateAuthority(terraformResourceName)
-	cert := generateTestCACertPEM(t)
+	cert := acctests.GenerateCACertPEM(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceX509CertificateAuthority(terraformResourceName, name, cert),
@@ -322,11 +262,8 @@ func TestAccTwingateX509CertificateAuthorityMissingRequiredCertificateField(t *t
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      terraformResourceX509CertificateAuthorityWithoutCert(terraformResourceName, test.RandomName()),
@@ -347,17 +284,14 @@ func terraformResourceX509CertificateAuthorityWithoutCert(terraformResourceName,
 func TestAccTwingateX509CertificateAuthorityMissingRequiredNameField(t *testing.T) {
 	t.Parallel()
 
-	cert := generateTestCACertPEM(t)
+	cert := acctests.GenerateCACertPEM(t)
 	terraformResourceName := test.TerraformRandName("test_x509")
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      terraformResourceX509CertificateAuthorityWithoutName(terraformResourceName, cert),
@@ -385,11 +319,8 @@ func TestAccTwingateX509CertificateAuthorityWithInvalidCertificate(t *testing.T)
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config:      terraformResourceX509CertificateAuthorityWithInvalidCertificate(terraformResourceName, test.RandomName()),

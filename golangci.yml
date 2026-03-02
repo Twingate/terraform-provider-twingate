@@ -84,6 +84,7 @@ linters:
               - github.com/iancoleman/strcase
               - github.com/mitchellh/copystructure
               - golang.org/x/sync/errgroup
+              - golang.org/x/crypto/ssh
         - test:
             files:
               - $test

@@ -4400,3 +4400,206 @@ func TestReadSSHCertificateAuthorityQueryToModel(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteGatewayQuery(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    DeleteGateway
+		expected bool
+	}{
+		{
+			name:     "Empty query - IsEmpty returns false",
+			query:    DeleteGateway{},
+			expected: false,
+		},
+		{
+			name:     "Ok=true - IsEmpty returns false",
+			query:    DeleteGateway{OkError: OkError{Ok: true}},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateGatewayQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateGateway
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty returns true",
+			query:    CreateGateway{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty returns false",
+			query: CreateGateway{
+				GatewayEntityResponse: GatewayEntityResponse{
+					Entity: &gqlGateway{ID: graphql.ID("gw-id")},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateGatewayQueryToModel(t *testing.T) {
+	sshCAID := graphql.ID("ssh-ca-id")
+
+	cases := []struct {
+		name     string
+		query    CreateGateway
+		expected *model.Gateway
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    CreateGateway{},
+			expected: nil,
+		},
+		{
+			name: "Without SSH CA - returns model with empty SSHCAID",
+			query: CreateGateway{
+				GatewayEntityResponse: GatewayEntityResponse{
+					Entity: &gqlGateway{
+						ID:            graphql.ID("gw-id"),
+						Address:       "10.0.0.1",
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+						X509CA:        struct{ ID graphql.ID }{ID: graphql.ID("x509-id")},
+					},
+				},
+			},
+			expected: &model.Gateway{
+				ID:              "gw-id",
+				Address:         "10.0.0.1",
+				RemoteNetworkID: "rn-id",
+				X509CAID:        "x509-id",
+				SSHCAID:         "",
+			},
+		},
+		{
+			name: "With SSH CA - returns model with SSHCAID set",
+			query: CreateGateway{
+				GatewayEntityResponse: GatewayEntityResponse{
+					Entity: &gqlGateway{
+						ID:            graphql.ID("gw-id"),
+						Address:       "10.0.0.1",
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+						X509CA:        struct{ ID graphql.ID }{ID: graphql.ID("x509-id")},
+						SSHCA:         &struct{ ID graphql.ID }{ID: sshCAID},
+					},
+				},
+			},
+			expected: &model.Gateway{
+				ID:              "gw-id",
+				Address:         "10.0.0.1",
+				RemoteNetworkID: "rn-id",
+				X509CAID:        "x509-id",
+				SSHCAID:         "ssh-ca-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadGatewayQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadGateway
+		expected bool
+	}{
+		{
+			name:     "Nil gateway - IsEmpty returns true",
+			query:    ReadGateway{},
+			expected: true,
+		},
+		{
+			name: "Non-nil gateway - IsEmpty returns false",
+			query: ReadGateway{
+				Gateway: &gqlGateway{ID: graphql.ID("gw-id")},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadGatewayQueryToModel(t *testing.T) {
+	sshCAID := graphql.ID("ssh-ca-id")
+
+	cases := []struct {
+		name     string
+		query    ReadGateway
+		expected *model.Gateway
+	}{
+		{
+			name:     "Nil gateway - returns nil",
+			query:    ReadGateway{},
+			expected: nil,
+		},
+		{
+			name: "Gateway without SSH CA",
+			query: ReadGateway{
+				Gateway: &gqlGateway{
+					ID:            graphql.ID("gw-id"),
+					Address:       "10.0.0.1",
+					RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					X509CA:        struct{ ID graphql.ID }{ID: graphql.ID("x509-id")},
+				},
+			},
+			expected: &model.Gateway{
+				ID:              "gw-id",
+				Address:         "10.0.0.1",
+				RemoteNetworkID: "rn-id",
+				X509CAID:        "x509-id",
+				SSHCAID:         "",
+			},
+		},
+		{
+			name: "Gateway with SSH CA",
+			query: ReadGateway{
+				Gateway: &gqlGateway{
+					ID:            graphql.ID("gw-id"),
+					Address:       "10.0.0.1",
+					RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					X509CA:        struct{ ID graphql.ID }{ID: graphql.ID("x509-id")},
+					SSHCA:         &struct{ ID graphql.ID }{ID: sshCAID},
+				},
+			},
+			expected: &model.Gateway{
+				ID:              "gw-id",
+				Address:         "10.0.0.1",
+				RemoteNetworkID: "rn-id",
+				X509CAID:        "x509-id",
+				SSHCAID:         "ssh-ca-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}

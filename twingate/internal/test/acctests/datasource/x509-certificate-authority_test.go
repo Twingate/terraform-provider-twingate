@@ -1,19 +1,11 @@
 package datasource
 
 import (
-	"bytes"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
-	"encoding/pem"
 	"fmt"
-	"math/big"
 	"regexp"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/datasource"
@@ -21,41 +13,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
-
-func generateX509DatasourceTestCACertPEM(t *testing.T) string {
-	t.Helper()
-
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("failed to generate RSA key: %v", err)
-	}
-
-	template := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			CommonName: "Test CA " + test.RandomName(),
-		},
-		NotBefore:             time.Now().Add(-time.Hour),
-		NotAfter:              time.Now().Add(24 * time.Hour),
-		IsCA:                  true,
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-		BasicConstraintsValid: true,
-	}
-
-	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	if err != nil {
-		t.Fatalf("failed to create certificate: %v", err)
-	}
-
-	var buf bytes.Buffer
-	if err := pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
-		t.Fatalf("failed to PEM-encode certificate: %v", err)
-	}
-
-	return buf.String()
-}
 
 func terraformDatasourceX509CertificateAuthority(terraformResourceName, name, cert string) string {
 	return fmt.Sprintf(`
@@ -83,16 +41,13 @@ func TestAccDatasourceTwingateX509CertificateAuthority_basic(t *testing.T) {
 	theResource := acctests.TerraformX509CertificateAuthority(terraformResourceName)
 	theDatasource := acctests.DatasourceName(datasource.TwingateX509CertificateAuthority, terraformResourceName)
 	name := test.RandomName()
-	cert := generateX509DatasourceTestCACertPEM(t)
+	cert := acctests.GenerateCACertPEM(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			// Write-only attributes are only supported in Terraform 1.11 and later.
-			tfversion.SkipBelow(tfversion.Version1_11_0),
-		},
-		CheckDestroy: acctests.CheckTwingateX509CertificateAuthorityDestroy,
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateX509CertificateAuthorityDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformDatasourceX509CertificateAuthority(terraformResourceName, name, cert),

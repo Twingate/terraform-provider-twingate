@@ -12,6 +12,7 @@ const (
 	TwingateDNSFilteringProfile      = "twingate_dns_filtering_profile"
 	TwingateX509CertificateAuthority = "twingate_x509_certificate_authority"
 	TwingateSSHCertificateAuthority  = "twingate_ssh_certificate_authority"
+	TwingateGateway                  = "twingate_gateway"
 
 	operationCreate = "create"
 	operationRead   = "read"

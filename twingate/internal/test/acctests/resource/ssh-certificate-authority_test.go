@@ -1,12 +1,9 @@
 package resource
 
 import (
-	"crypto/ed25519"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
@@ -15,24 +12,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
-	"golang.org/x/crypto/ssh"
 )
-
-func generateSSHPublicKey(t *testing.T) string {
-	t.Helper()
-
-	_, privKey, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("failed to generate ED25519 key: %v", err)
-	}
-
-	sshPubKey, err := ssh.NewPublicKey(privKey.Public())
-	if err != nil {
-		t.Fatalf("failed to create SSH public key: %v", err)
-	}
-
-	return strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPubKey)))
-}
 
 func terraformResourceSSHCertificateAuthority(terraformResourceName, name, publicKey string) string {
 	return fmt.Sprintf(`
@@ -49,7 +29,7 @@ func TestAccTwingateSSHCertificateAuthorityCreate(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_ssh")
 	theResource := acctests.TerraformSSHCertificateAuthority(terraformResourceName)
-	publicKey := generateSSHPublicKey(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -77,7 +57,7 @@ func TestAccTwingateSSHCertificateAuthorityNameChange(t *testing.T) {
 	name2 := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_ssh")
 	theResource := acctests.TerraformSSHCertificateAuthority(terraformResourceName)
-	publicKey := generateSSHPublicKey(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceID := new(string)
 
 	sdk.Test(t, sdk.TestCase{
@@ -121,8 +101,8 @@ func TestAccTwingateSSHCertificateAuthorityPublicKeyChange(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_ssh")
 	theResource := acctests.TerraformSSHCertificateAuthority(terraformResourceName)
-	publicKey1 := generateSSHPublicKey(t)
-	publicKey2 := generateSSHPublicKey(t)
+	publicKey1 := acctests.GenerateSSHPublicKey(t)
+	publicKey2 := acctests.GenerateSSHPublicKey(t)
 	resourceID := new(string)
 
 	if publicKey1 == publicKey2 {
@@ -168,7 +148,7 @@ func TestAccTwingateSSHCertificateAuthorityNoChanges(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_ssh")
 	theResource := acctests.TerraformSSHCertificateAuthority(terraformResourceName)
-	publicKey := generateSSHPublicKey(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceID := new(string)
 
 	sdk.Test(t, sdk.TestCase{
@@ -210,7 +190,7 @@ func TestAccTwingateSSHCertificateAuthorityDelete(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_ssh")
 	theResource := acctests.TerraformSSHCertificateAuthority(terraformResourceName)
-	publicKey := generateSSHPublicKey(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -239,7 +219,7 @@ func TestAccTwingateSSHCertificateAuthorityReCreateAfterDeletion(t *testing.T) {
 	name := test.RandomName()
 	terraformResourceName := test.TerraformRandName("test_ssh")
 	theResource := acctests.TerraformSSHCertificateAuthority(terraformResourceName)
-	publicKey := generateSSHPublicKey(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -295,7 +275,7 @@ func TestAccTwingateSSHCertificateAuthorityMissingRequiredNameField(t *testing.T
 	t.Parallel()
 
 	terraformResourceName := test.TerraformRandName("test_ssh")
-	publicKey := generateSSHPublicKey(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,

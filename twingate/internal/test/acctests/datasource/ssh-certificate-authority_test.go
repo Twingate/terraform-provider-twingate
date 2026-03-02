@@ -1,12 +1,9 @@
 package datasource
 
 import (
-	"crypto/ed25519"
-	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
@@ -15,24 +12,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"golang.org/x/crypto/ssh"
 )
-
-func generateSSHDatasourcePublicKey(t *testing.T) string {
-	t.Helper()
-
-	_, privKey, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("failed to generate ED25519 key: %v", err)
-	}
-
-	sshPubKey, err := ssh.NewPublicKey(privKey.Public())
-	if err != nil {
-		t.Fatalf("failed to create SSH public key: %v", err)
-	}
-
-	return strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPubKey)))
-}
 
 func terraformDatasourceSSHCertificateAuthority(terraformResourceName, name, publicKey string) string {
 	return fmt.Sprintf(`
@@ -58,7 +38,7 @@ func TestAccDatasourceTwingateSSHCertificateAuthority_basic(t *testing.T) {
 	theResource := acctests.TerraformSSHCertificateAuthority(terraformResourceName)
 	theDatasource := acctests.DatasourceName(datasource.TwingateSSHCertificateAuthority, terraformResourceName)
 	name := test.RandomName()
-	publicKey := generateSSHDatasourcePublicKey(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
