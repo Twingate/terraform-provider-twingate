@@ -318,6 +318,12 @@ func convertLegacyAccessGroupsToTerraform(ctx context.Context, groupAccess types
 				if *group.UsageBasedDuration >= 1 {
 					mode = model.AccessPolicyModeAutoLock
 					accessPolicy.Mode = &mode
+
+					// AUTO_LOCK requires approval_mode; default to MANUAL if not set in legacy state
+					if accessPolicy.ApprovalMode == nil {
+						defaultApprovalMode := model.ApprovalModeManual
+						accessPolicy.ApprovalMode = &defaultApprovalMode
+					}
 				}
 			}
 
