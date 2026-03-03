@@ -314,6 +314,85 @@ func TestStateUpgraderV2(t *testing.T) {
 		},
 
 		{
+			name: "group_access with usage_based_autolock_duration_days and nil approval_mode",
+			priorState: func() resourceModelV2 {
+				usageBaseDuration := int64(60)
+
+				accessGroup, diags := convertAccessGroupsToTerraformV2(ctx, []*legacyAccessGroupV2{
+					{
+						GroupID:            "test-group-id",
+						ApprovalMode:       nil, // null in legacy state
+						UsageBasedDuration: &usageBaseDuration,
+					},
+				})
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				return resourceModelV2{
+					ID:                             types.StringValue("test-id"),
+					Name:                           types.StringValue("test-name"),
+					Address:                        types.StringValue("test-address"),
+					RemoteNetworkID:                types.StringValue("test-remote-network-id"),
+					Protocols:                      defaultProtocolsObject(),
+					IsAuthoritative:                types.BoolValue(true),
+					IsActive:                       types.BoolValue(true),
+					IsVisible:                      types.BoolValue(true),
+					IsBrowserShortcutEnabled:       types.BoolValue(false),
+					Alias:                          types.StringNull(),
+					SecurityPolicyID:               types.StringNull(),
+					ApprovalMode:                   types.StringValue(model.ApprovalModeManual),
+					GroupAccess:                    accessGroup,
+					ServiceAccess:                  makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                           types.MapNull(types.StringType),
+					TagsAll:                        types.MapNull(types.StringType),
+					UsageBasedAutolockDurationDays: types.Int64Null(),
+				}
+			},
+			expectedState: func() resourceModel {
+				mode := model.AccessPolicyModeAutoLock
+				approvalMode := model.ApprovalModeManual // defaulted from nil
+				duration := "1440h"
+
+				groupAccess, diags := convertGroupsAccessToTerraformForImport(context.TODO(), []model.AccessGroup{
+					{
+						GroupID: "test-group-id",
+						AccessPolicy: &model.AccessPolicy{
+							Mode:         &mode,
+							ApprovalMode: &approvalMode,
+							Duration:     &duration,
+						},
+					},
+				})
+
+				if diags.HasError() {
+					t.Fatalf("unexpected errors during upgrade: %v", diags)
+				}
+
+				// resource-level approval_mode=MANUAL with no usage_based_autolock_duration_days
+				// results in a null access_policy (see convertLegacyAccessPolicyToTerraform logic)
+				return resourceModel{
+					ID:                       types.StringValue("test-id"),
+					Name:                     types.StringValue("test-name"),
+					Address:                  types.StringValue("test-address"),
+					RemoteNetworkID:          types.StringValue("test-remote-network-id"),
+					Protocols:                defaultProtocolsObject(),
+					IsAuthoritative:          types.BoolValue(true),
+					IsActive:                 types.BoolValue(true),
+					IsVisible:                types.BoolValue(true),
+					IsBrowserShortcutEnabled: types.BoolValue(false),
+					Alias:                    types.StringNull(),
+					SecurityPolicyID:         types.StringNull(),
+					AccessPolicy:             makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+					GroupAccess:              groupAccess,
+					ServiceAccess:            makeObjectsSetNull(ctx, accessServiceAccountAttributeTypes()),
+					Tags:                     types.MapNull(types.StringType),
+					TagsAll:                  types.MapNull(types.StringType),
+				}
+			},
+		},
+
+		{
 			name: "base case with group_access and usage_based_autolock_duration_days",
 			priorState: func() resourceModelV2 {
 				approvalMode := model.ApprovalModeAutomatic
