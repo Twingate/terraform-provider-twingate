@@ -59,6 +59,7 @@ linters:
         - github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier.Int64
         - github.com/hashicorp/terraform-plugin-testing/plancheck.PlanCheck
         - github.com/hashicorp/terraform-plugin-framework/ephemeral.EphemeralResourceWithConfigure
+        - github.com/hashicorp/terraform-plugin-framework/schema/validator.String
     cyclop:
       max-complexity: 25
       ignore-tests: true
@@ -83,6 +84,7 @@ linters:
               - github.com/iancoleman/strcase
               - github.com/mitchellh/copystructure
               - golang.org/x/sync/errgroup
+              - golang.org/x/crypto/ssh
         - test:
             files:
               - $test

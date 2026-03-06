@@ -465,6 +465,9 @@ func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSourc
 		twingateDatasource.NewResourceDatasource,
 		twingateDatasource.NewResourcesDatasource,
 		twingateDatasource.NewDNSFilteringProfileDatasource,
+		twingateDatasource.NewX509CertificateAuthorityDatasource,
+		twingateDatasource.NewSSHCertificateAuthorityDatasource,
+		twingateDatasource.NewGatewayDatasource,
 	}
 }
 
@@ -479,6 +482,9 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		twingateResource.NewUserResource,
 		twingateResource.NewResourceResource,
 		twingateResource.NewDNSFilteringProfile,
+		twingateResource.NewX509CertificateAuthorityResource,
+		twingateResource.NewSSHCertificateAuthorityResource,
+		twingateResource.NewGatewayResource,
 	}
 }
 

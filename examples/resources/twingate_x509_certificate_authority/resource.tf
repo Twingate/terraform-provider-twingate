@@ -1,0 +1,36 @@
+provider "twingate" {
+  api_token = "1234567890abcdef"
+  network   = "mynetwork"
+}
+
+resource "twingate_x509_certificate_authority" "test" {
+  name = "example"
+  certificate = file("${path.module}/certs/ca.pem")
+}
+
+# example with inline certificate details
+resource "twingate_x509_certificate_authority" "test_inline" {
+  name = "inline example"
+  certificate = <<-EOF
+-----BEGIN CERTIFICATE-----
+MIIDMzCCAhugAwIBAgIBATANBgkqhkiG9w0BAQsFADA7MTkwNwYDVQQDEzBUZXN0
+IENBIHRmLWFjYy12bWFuaWxvLWxvY2FsLTI0MDYwODcwOTMwNTY1OTAxNjMwHhcN
+MjYwMjI1MTQ1MDQ1WhcNMjYwMjI2MTU1MDQ1WjA7MTkwNwYDVQQDEzBUZXN0IENB
+IHRmLWFjYy12bWFuaWxvLWxvY2FsLTI0MDYwODcwOTMwNTY1OTAxNjMwggEiMA0G
+CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDfDKrJSvDZ4DLkmeC2l4MZcpEZlRwY
+rTQNn/eVi2vUwjxmcjxyyaTqLcRfNEUJtTQ1cYqqCaCZIg4Cc8U/36ovDhAmTUwr
+yDTh6Gg5Sx+fA4qrxa1rktUVElczarX9/oAPfIMA9ig7d+7OminmUfsqJmxZpS3Y
+0/51vsLf59sbDyaXTLaW/KRQA8qIuL5S4tZyNlGZs2ZmVvGpBZKiQxVpjBc0y6KW
+hC/FzXf2f9xk9hEJvXt2gXhDp8zFah6KmOBTZmTUfIL+Rcp6ivZk5fpzkDCRLTl2
+LyJw1Et26OJwrf4Sb6vhunYUJKZUnEUpB0piVHbG4eUCDKzVyFbNBq3BAgMBAAGj
+QjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQs
+Zs8ot3rmWco6vdS0zBiLIRbq4zANBgkqhkiG9w0BAQsFAAOCAQEALm2PMiL9tXL0
+LZMCRGKbdHfkXxZEyAcoZC4MEa6Pr9OLf34rQIWrEpZCCWzvOXEwwVZm1fk/fRdZ
+46xjXnL7YQR2yGRzcFnFTTzzAC+GUBe7ZAEkVTuJyluxjuCbPTpQuTnjasIHPVY0
+772SwNJMpgWpyr6Ej/fZmI4W0ugOwTJ8yE1hZU8L+UQkWEc1MyGTUOYEGydf0tSl
+hFIs4jBtfez1YdKIGezpQ0kMo4ZX0P5wBY3P1YxhqthtkioMqg2T03ri4axBK7KE
+QqoqrT++W7pQ44zAfEgTUhOvqQEo9o8sWk8ctbOZ0DsSDyG4jZGD5Xj+bYGKq2Ns
+6nWSdzKElQ==
+-----END CERTIFICATE-----
+EOF
+}

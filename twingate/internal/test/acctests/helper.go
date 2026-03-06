@@ -1,10 +1,18 @@
 package acctests
 
 import (
+	"bytes"
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"strings"
 	"testing"
@@ -23,6 +31,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
+	"golang.org/x/crypto/ssh"
 )
 
 var (
@@ -224,6 +234,18 @@ func TerraformDNSFilteringProfile(name string) string {
 	return ResourceName(resource.TwingateDNSFilteringProfile, name)
 }
 
+func TerraformX509CertificateAuthority(name string) string {
+	return ResourceName(resource.TwingateX509CertificateAuthority, name)
+}
+
+func TerraformSSHCertificateAuthority(name string) string {
+	return ResourceName(resource.TwingateSSHCertificateAuthority, name)
+}
+
+func TerraformGateway(name string) string {
+	return ResourceName(resource.TwingateGateway, name)
+}
+
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }
@@ -267,6 +289,12 @@ func deleteResource(resourceType, resourceID string) error {
 		err = providerClient.DeleteServiceKey(context.Background(), resourceID)
 	case resource.TwingateUser:
 		err = providerClient.DeleteUser(context.Background(), resourceID)
+	case resource.TwingateX509CertificateAuthority:
+		err = providerClient.DeleteX509CertificateAuthority(context.Background(), resourceID)
+	case resource.TwingateSSHCertificateAuthority:
+		err = providerClient.DeleteSSHCertificateAuthority(context.Background(), resourceID)
+	case resource.TwingateGateway:
+		err = providerClient.DeleteGateway(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -997,10 +1025,122 @@ func GetTestUser() (*model.User, error) {
 	return users[0], nil
 }
 
+func CheckTwingateSSHCertificateAuthorityDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateSSHCertificateAuthority {
+			continue
+		}
+
+		caID := rs.Primary.ID
+
+		ca, _ := providerClient.ReadSSHCertificateAuthority(context.Background(), caID)
+		if ca != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, caID)
+		}
+	}
+
+	return nil
+}
+
+func CheckTwingateX509CertificateAuthorityDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateX509CertificateAuthority {
+			continue
+		}
+
+		caID := rs.Primary.ID
+
+		ca, _ := providerClient.ReadX509CertificateAuthority(context.Background(), caID)
+		if ca != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, caID)
+		}
+	}
+
+	return nil
+}
+
 func CheckTwingateConnectorAndRemoteNetworkDestroy(s *terraform.State) error {
 	if err := CheckTwingateConnectorDestroy(s); err != nil {
 		return err
 	}
 
 	return CheckTwingateRemoteNetworkDestroy(s)
+}
+
+func CheckTwingateGatewayDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateGateway {
+			continue
+		}
+
+		gatewayID := rs.Primary.ID
+
+		gw, _ := providerClient.ReadGateway(context.Background(), gatewayID)
+		if gw != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, gatewayID)
+		}
+	}
+
+	return nil
+}
+
+func GenerateCACertPEM(t *testing.T) string {
+	t.Helper()
+
+	const (
+		keySize    = 2048
+		hoursInDay = 24
+	)
+
+	key, err := rsa.GenerateKey(rand.Reader, keySize)
+	if err != nil {
+		t.Fatalf("failed to generate RSA key: %v", err)
+	}
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			CommonName: "Test CA " + test.RandomName(),
+		},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(hoursInDay * time.Hour),
+		IsCA:                  true,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	if err != nil {
+		t.Fatalf("failed to create certificate: %v", err)
+	}
+
+	var buf bytes.Buffer
+	if err := pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
+		t.Fatalf("failed to PEM-encode certificate: %v", err)
+	}
+
+	return buf.String()
+}
+
+func GenerateSSHPublicKey(t *testing.T) string {
+	t.Helper()
+
+	_, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate ED25519 key: %v", err)
+	}
+
+	sshPubKey, err := ssh.NewPublicKey(privKey.Public())
+	if err != nil {
+		t.Fatalf("failed to create SSH public key: %v", err)
+	}
+
+	return strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPubKey)))
+}
+
+func VersionCheckForWriteOnlyAttributes() []tfversion.TerraformVersionCheck {
+	return []tfversion.TerraformVersionCheck{
+		// Write-only attributes are only supported in Terraform 1.11 and later.
+		tfversion.SkipBelow(tfversion.Version1_11_0),
+	}
 }
