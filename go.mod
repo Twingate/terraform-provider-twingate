@@ -1,6 +1,6 @@
 module github.com/Twingate/terraform-provider-twingate/v4
 
-go 1.24.2
+go 1.25.0
 
 require (
 	github.com/google/go-cmp v0.7.0
@@ -16,7 +16,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.48.0
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
