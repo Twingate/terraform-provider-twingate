@@ -73,7 +73,7 @@ func (r *gateway) Schema(_ context.Context, _ resource.SchemaRequest, resp *reso
 				Required:    true,
 				Description: "The address of the Gateway.",
 				Validators: []validator.String{
-					customvalidator.Address(),
+					customvalidator.AddressWithPort(),
 				},
 			},
 			attr.X509CAID: schema.StringAttribute{

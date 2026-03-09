@@ -4603,3 +4603,433 @@ func TestReadGatewayQueryToModel(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateSSHResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateSSHResource
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    CreateSSHResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: CreateSSHResource{
+				SSHResourceEntityResponse: SSHResourceEntityResponse{
+					Entity: &gqlSSHResource{
+						IDName: IDName{ID: graphql.ID("ssh-res-id")},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateSSHResourceQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateSSHResource
+		expected *model.SSHResource
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    CreateSSHResource{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil entity - returns model",
+			query: CreateSSHResource{
+				SSHResourceEntityResponse: SSHResourceEntityResponse{
+					Entity: &gqlSSHResource{
+						IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "my-ssh-res"},
+						Address:       struct{ Value string }{Value: "10.0.0.1"},
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+					},
+				},
+			},
+			expected: &model.SSHResource{
+				ID:              "ssh-res-id",
+				Name:            "my-ssh-res",
+				Address:         "10.0.0.1",
+				RemoteNetworkID: "rn-id",
+				GatewayID:       "gw-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestUpdateSSHResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    UpdateSSHResource
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    UpdateSSHResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: UpdateSSHResource{
+				SSHResourceEntityResponse: SSHResourceEntityResponse{
+					Entity: &gqlSSHResource{
+						IDName: IDName{ID: graphql.ID("ssh-res-id")},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestUpdateSSHResourceQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    UpdateSSHResource
+		expected *model.SSHResource
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    UpdateSSHResource{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil entity - returns model",
+			query: UpdateSSHResource{
+				SSHResourceEntityResponse: SSHResourceEntityResponse{
+					Entity: &gqlSSHResource{
+						IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "updated-ssh-res"},
+						Address:       struct{ Value string }{Value: "10.0.0.2"},
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+					},
+				},
+			},
+			expected: &model.SSHResource{
+				ID:              "ssh-res-id",
+				Name:            "updated-ssh-res",
+				Address:         "10.0.0.2",
+				RemoteNetworkID: "rn-id",
+				GatewayID:       "gw-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadSSHResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadSSHResource
+		expected bool
+	}{
+		{
+			name:     "Nil resource - IsEmpty true",
+			query:    ReadSSHResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil resource - IsEmpty false",
+			query: ReadSSHResource{
+				Resource: &gqlSSHResourceNode{
+					IDName: IDName{ID: graphql.ID("ssh-res-id")},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadSSHResourceQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadSSHResource
+		expected *model.SSHResource
+	}{
+		{
+			name:     "Nil resource - returns nil",
+			query:    ReadSSHResource{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil resource - returns model",
+			query: ReadSSHResource{
+				Resource: &gqlSSHResourceNode{
+					IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "my-ssh-res"},
+					Address:       struct{ Value string }{Value: "10.0.0.1"},
+					RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					SSHResourceFragment: struct {
+						Gateway struct {
+							ID graphql.ID
+						}
+					}{
+						Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+					},
+				},
+			},
+			expected: &model.SSHResource{
+				ID:              "ssh-res-id",
+				Name:            "my-ssh-res",
+				Address:         "10.0.0.1",
+				RemoteNetworkID: "rn-id",
+				GatewayID:       "gw-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestCreateKubernetesResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateKubernetesResource
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    CreateKubernetesResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: CreateKubernetesResource{
+				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
+					Entity: &gqlKubernetesResource{
+						IDName: IDName{ID: graphql.ID("k8s-res-id")},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateKubernetesResourceQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateKubernetesResource
+		expected *model.KubernetesResource
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    CreateKubernetesResource{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil entity - returns model",
+			query: CreateKubernetesResource{
+				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
+					Entity: &gqlKubernetesResource{
+						IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "my-k8s-res"},
+						Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+					},
+				},
+			},
+			expected: &model.KubernetesResource{
+				ID:              "k8s-res-id",
+				Name:            "my-k8s-res",
+				Address:         "kubernetes.default.svc.cluster.local",
+				RemoteNetworkID: "rn-id",
+				GatewayID:       "gw-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestUpdateKubernetesResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    UpdateKubernetesResource
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    UpdateKubernetesResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: UpdateKubernetesResource{
+				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
+					Entity: &gqlKubernetesResource{
+						IDName: IDName{ID: graphql.ID("k8s-res-id")},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestUpdateKubernetesResourceQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    UpdateKubernetesResource
+		expected *model.KubernetesResource
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    UpdateKubernetesResource{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil entity - returns model",
+			query: UpdateKubernetesResource{
+				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
+					Entity: &gqlKubernetesResource{
+						IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "updated-k8s-res"},
+						Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+					},
+				},
+			},
+			expected: &model.KubernetesResource{
+				ID:              "k8s-res-id",
+				Name:            "updated-k8s-res",
+				Address:         "kubernetes.default.svc.cluster.local",
+				RemoteNetworkID: "rn-id",
+				GatewayID:       "gw-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
+
+func TestReadKubernetesResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadKubernetesResource
+		expected bool
+	}{
+		{
+			name:     "Nil resource - IsEmpty true",
+			query:    ReadKubernetesResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil resource - IsEmpty false",
+			query: ReadKubernetesResource{
+				Resource: &gqlKubernetesResourceNode{
+					IDName: IDName{ID: graphql.ID("k8s-res-id")},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadKubernetesResourceQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadKubernetesResource
+		expected *model.KubernetesResource
+	}{
+		{
+			name:     "Nil resource - returns nil",
+			query:    ReadKubernetesResource{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil resource - returns model",
+			query: ReadKubernetesResource{
+				Resource: &gqlKubernetesResourceNode{
+					IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "my-k8s-res"},
+					Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
+					RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					KubernetesResourceFragment: struct {
+						Gateway struct {
+							ID graphql.ID
+						}
+					}{
+						Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+					},
+				},
+			},
+			expected: &model.KubernetesResource{
+				ID:              "k8s-res-id",
+				Name:            "my-k8s-res",
+				Address:         "kubernetes.default.svc.cluster.local",
+				RemoteNetworkID: "rn-id",
+				GatewayID:       "gw-id",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.ToModel())
+		})
+	}
+}
