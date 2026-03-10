@@ -1,8 +1,9 @@
-package resource //nolint:dupl
+package resource
 
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -30,12 +32,19 @@ type sshResource struct {
 }
 
 type sshResourceModel struct {
-	ID              types.String `tfsdk:"id"`
-	Name            types.String `tfsdk:"name"`
-	Address         types.String `tfsdk:"address"`
-	GatewayID       types.String `tfsdk:"gateway_id"`
-	RemoteNetworkID types.String `tfsdk:"remote_network_id"`
-	Username        types.String `tfsdk:"username"`
+	ID               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	Address          types.String `tfsdk:"address"`
+	GatewayID        types.String `tfsdk:"gateway_id"`
+	RemoteNetworkID  types.String `tfsdk:"remote_network_id"`
+	Username         types.String `tfsdk:"username"`
+	IsVisible        types.Bool   `tfsdk:"is_visible"`
+	Alias            types.String `tfsdk:"alias"`
+	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
+	Tags             types.Map    `tfsdk:"tags"`
+	Protocols        types.Object `tfsdk:"protocols"`
+	AccessPolicy     types.Set    `tfsdk:"access_policy"`
+	GroupAccess      types.Set    `tfsdk:"access_group"`
 }
 
 func (r *sshResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -54,6 +63,7 @@ func (r *sshResource) ImportState(ctx context.Context, req resource.ImportStateR
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
 }
 
+//nolint:funlen
 func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "SSH Resources are Twingate resources accessed via an SSH Gateway.",
@@ -91,6 +101,37 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
+			attr.IsVisible: schema.BoolAttribute{
+				Optional:      true,
+				Computed:      true,
+				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.",
+				PlanModifiers: []planmodifier.Bool{},
+			},
+			attr.Alias: schema.StringAttribute{
+				Optional:      true,
+				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
+				PlanModifiers: []planmodifier.String{CaseInsensitiveDiff()},
+			},
+			attr.SecurityPolicyID: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
+				PlanModifiers: []planmodifier.String{
+					UseNullPolicyForGroupAccessWhenValueOmitted(),
+				},
+			},
+			attr.Tags: schema.MapAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "A map of key-value pair tags to set on this resource.",
+				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
+			},
+			attr.Protocols: protocols(),
+		},
+		Blocks: map[string]schema.Block{
+			attr.AccessPolicy: accessPolicyBlock(),
+			attr.AccessGroup:  groupAccessBlock(),
 		},
 	}
 }
@@ -104,11 +145,39 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
+	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationCreate, TwingateSSHResource)
+
+		return
+	}
+
+	prots, err := convertProtocols(&plan.Protocols)
+	if err != nil {
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateSSHResource)
+
+		return
+	}
+
+	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationCreate, TwingateSSHResource)
+
+		return
+	}
+
 	sshRes, err := r.client.CreateSSHResource(ctx, &model.SSHResource{
-		Name:            plan.Name.ValueString(),
-		Address:         plan.Address.ValueString(),
-		GatewayID:       plan.GatewayID.ValueString(),
-		RemoteNetworkID: plan.RemoteNetworkID.ValueString(),
+		Name:             plan.Name.ValueString(),
+		Address:          plan.Address.ValueString(),
+		GatewayID:        plan.GatewayID.ValueString(),
+		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
+		IsVisible:        getOptionalBool(plan.IsVisible),
+		Alias:            getOptionalString(plan.Alias),
+		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:             getTags(plan.Tags),
+		Protocols:        prots,
+		AccessPolicy:     accessPolicy,
+		GroupsAccess:     accessGroups,
 	})
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -141,15 +210,75 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
+	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationUpdate, TwingateSSHResource)
+
+		return
+	}
+
+	prots, err := convertProtocols(&plan.Protocols)
+	if err != nil {
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
+
+		return
+	}
+
+	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateSSHResource)
+
+		return
+	}
+
+	if !plan.GroupAccess.Equal(state.GroupAccess) {
+		if err := r.updateSSHResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, accessGroups); err != nil {
+			addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
+
+			return
+		}
+	}
+
 	sshRes, err := r.client.UpdateSSHResource(ctx, &model.SSHResource{
-		ID:              state.ID.ValueString(),
-		Name:            plan.Name.ValueString(),
-		Address:         plan.Address.ValueString(),
-		GatewayID:       plan.GatewayID.ValueString(),
-		RemoteNetworkID: plan.RemoteNetworkID.ValueString(),
+		ID:               state.ID.ValueString(),
+		Name:             plan.Name.ValueString(),
+		Address:          plan.Address.ValueString(),
+		GatewayID:        plan.GatewayID.ValueString(),
+		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
+		IsVisible:        getOptionalBool(plan.IsVisible),
+		Alias:            getOptionalString(plan.Alias),
+		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:             getTags(plan.Tags),
+		Protocols:        prots,
+		AccessPolicy:     accessPolicy,
+		GroupsAccess:     accessGroups,
 	})
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+}
+
+func (r *sshResource) updateSSHResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
+	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
+	if err != nil {
+		return fmt.Errorf("failed to parse access_group: %w", err)
+	}
+
+	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
+	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
+		return fmt.Errorf("failed to remove resource access: %w", err)
+	}
+
+	current, err := r.client.ReadSSHResource(ctx, resourceID)
+	if err != nil {
+		return fmt.Errorf("failed to read resource access: %w", err)
+	}
+
+	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
+	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
+		return fmt.Errorf("failed to add resource access: %w", err)
+	}
+
+	return nil
 }
 
 func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -165,6 +294,7 @@ func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateSSHResource)
 }
 
+//nolint:dupl,funlen
 func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, state *sshResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -183,7 +313,54 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 	state.Address = types.StringValue(sshRes.Address)
 	state.GatewayID = types.StringValue(sshRes.GatewayID)
 	state.RemoteNetworkID = types.StringValue(sshRes.RemoteNetworkID)
+	state.SecurityPolicyID = types.StringPointerValue(sshRes.SecurityPolicyID)
 
-	diags := respState.Set(ctx, state)
+	if !state.IsVisible.IsNull() || sshRes.IsVisible != nil {
+		state.IsVisible = types.BoolPointerValue(sshRes.IsVisible)
+	}
+
+	if !state.Alias.IsNull() || sshRes.Alias != nil {
+		state.Alias = types.StringPointerValue(sshRes.Alias)
+	}
+
+	state.Tags = makeMapValue(sshRes.Tags)
+
+	if sshRes.Protocols != nil {
+		prots, diags := convertProtocolsToTerraform(sshRes.Protocols, &state.Protocols)
+		diagnostics.Append(diags...)
+
+		if diagnostics.HasError() {
+			return
+		}
+
+		state.Protocols = prots
+	}
+
+	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
+	if err != nil {
+		diagnostics.AddAttributeError(
+			path.Root(attr.AccessPolicy),
+			"failed to parse access_policy attribute",
+			err.Error(),
+		)
+
+		return
+	}
+
+	accessPolicy, diags := convertAccessPolicyToTerraform(ctx, sshRes.AccessPolicy, referenceAccessPolicy)
+	diagnostics.Append(diags...)
+
+	state.AccessPolicy = accessPolicy
+
+	groupAccess, diags := convertGroupsAccessToTerraform(ctx, sshRes.GroupsAccess, state.GroupAccess)
+	diagnostics.Append(diags...)
+
+	state.GroupAccess = groupAccess
+
+	if diagnostics.HasError() {
+		return
+	}
+
+	diags = respState.Set(ctx, state)
 	diagnostics.Append(diags...)
 }

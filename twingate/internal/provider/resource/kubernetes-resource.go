@@ -1,8 +1,9 @@
-package resource //nolint:dupl
+package resource
 
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
@@ -13,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -31,12 +33,19 @@ type kubernetesResource struct {
 }
 
 type kubernetesResourceModel struct {
-	ID              types.String `tfsdk:"id"`
-	Name            types.String `tfsdk:"name"`
-	Address         types.String `tfsdk:"address"`
-	GatewayID       types.String `tfsdk:"gateway_id"`
-	RemoteNetworkID types.String `tfsdk:"remote_network_id"`
-	InCluster       types.Bool   `tfsdk:"in_cluster"`
+	ID               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	Address          types.String `tfsdk:"address"`
+	GatewayID        types.String `tfsdk:"gateway_id"`
+	RemoteNetworkID  types.String `tfsdk:"remote_network_id"`
+	InCluster        types.Bool   `tfsdk:"in_cluster"`
+	IsVisible        types.Bool   `tfsdk:"is_visible"`
+	Alias            types.String `tfsdk:"alias"`
+	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
+	Tags             types.Map    `tfsdk:"tags"`
+	Protocols        types.Object `tfsdk:"protocols"`
+	AccessPolicy     types.Set    `tfsdk:"access_policy"`
+	GroupAccess      types.Set    `tfsdk:"access_group"`
 }
 
 func (r *kubernetesResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -55,6 +64,7 @@ func (r *kubernetesResource) ImportState(ctx context.Context, req resource.Impor
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
 }
 
+//nolint:funlen
 func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Kubernetes Resources are Twingate resources accessed via a Kubernetes Gateway.",
@@ -92,6 +102,37 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
+			attr.IsVisible: schema.BoolAttribute{
+				Optional:      true,
+				Computed:      true,
+				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.",
+				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+			},
+			attr.Alias: schema.StringAttribute{
+				Optional:      true,
+				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
+				PlanModifiers: []planmodifier.String{CaseInsensitiveDiff()},
+			},
+			attr.SecurityPolicyID: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
+				PlanModifiers: []planmodifier.String{
+					UseNullPolicyForGroupAccessWhenValueOmitted(),
+				},
+			},
+			attr.Tags: schema.MapAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "A map of key-value pair tags to set on this resource.",
+				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
+			},
+			attr.Protocols: protocols(),
+		},
+		Blocks: map[string]schema.Block{
+			attr.AccessPolicy: accessPolicyBlock(),
+			attr.AccessGroup:  groupAccessBlock(),
 		},
 	}
 }
@@ -105,11 +146,39 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
+	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationCreate, TwingateKubernetesResource)
+
+		return
+	}
+
+	protocols, err := convertProtocols(&plan.Protocols)
+	if err != nil {
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateKubernetesResource)
+
+		return
+	}
+
+	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationCreate, TwingateKubernetesResource)
+
+		return
+	}
+
 	k8sRes, err := r.client.CreateKubernetesResource(ctx, &model.KubernetesResource{
-		Name:            plan.Name.ValueString(),
-		Address:         plan.Address.ValueString(),
-		GatewayID:       plan.GatewayID.ValueString(),
-		RemoteNetworkID: plan.RemoteNetworkID.ValueString(),
+		Name:             plan.Name.ValueString(),
+		Address:          plan.Address.ValueString(),
+		GatewayID:        plan.GatewayID.ValueString(),
+		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
+		IsVisible:        getOptionalBool(plan.IsVisible),
+		Alias:            getOptionalString(plan.Alias),
+		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:             getTags(plan.Tags),
+		Protocols:        protocols,
+		AccessPolicy:     accessPolicy,
+		GroupsAccess:     accessGroups,
 	})
 
 	r.helper(ctx, k8sRes, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -142,15 +211,76 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
+	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationUpdate, TwingateKubernetesResource)
+
+		return
+	}
+
+	prots, err := convertProtocols(&plan.Protocols)
+	if err != nil {
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
+
+		return
+	}
+
+	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
+	if err != nil {
+		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateKubernetesResource)
+
+		return
+	}
+
+	if !plan.GroupAccess.Equal(state.GroupAccess) {
+		if err := r.updateK8sResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, accessGroups); err != nil {
+			addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
+
+			return
+		}
+	}
+
 	k8sRes, err := r.client.UpdateKubernetesResource(ctx, &model.KubernetesResource{
-		ID:              state.ID.ValueString(),
-		Name:            plan.Name.ValueString(),
-		Address:         plan.Address.ValueString(),
-		GatewayID:       plan.GatewayID.ValueString(),
-		RemoteNetworkID: plan.RemoteNetworkID.ValueString(),
+		ID:               state.ID.ValueString(),
+		Name:             plan.Name.ValueString(),
+		Address:          plan.Address.ValueString(),
+		GatewayID:        plan.GatewayID.ValueString(),
+		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
+		IsVisible:        getOptionalBool(plan.IsVisible),
+		Alias:            getOptionalString(plan.Alias),
+		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
+		Tags:             getTags(plan.Tags),
+		Protocols:        prots,
+		AccessPolicy:     accessPolicy,
+		GroupsAccess:     accessGroups,
 	})
 
 	r.helper(ctx, k8sRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+}
+
+func (r *kubernetesResource) updateK8sResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
+	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
+	if err != nil {
+		return fmt.Errorf("failed to parse access_group: %w", err)
+	}
+
+	// setDifferenceGroups returns IDs of groups to remove
+	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
+	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
+		return fmt.Errorf("failed to remove resource access: %w", err)
+	}
+
+	current, err := r.client.ReadKubernetesResource(ctx, resourceID)
+	if err != nil {
+		return fmt.Errorf("failed to read resource access: %w", err)
+	}
+
+	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
+	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
+		return fmt.Errorf("failed to add resource access: %w", err)
+	}
+
+	return nil
 }
 
 func (r *kubernetesResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -166,6 +296,7 @@ func (r *kubernetesResource) Delete(ctx context.Context, req resource.DeleteRequ
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateKubernetesResource)
 }
 
+//nolint:dupl,funlen
 func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.KubernetesResource, state *kubernetesResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -184,7 +315,54 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 	state.Address = types.StringValue(k8sRes.Address)
 	state.GatewayID = types.StringValue(k8sRes.GatewayID)
 	state.RemoteNetworkID = types.StringValue(k8sRes.RemoteNetworkID)
+	state.SecurityPolicyID = types.StringPointerValue(k8sRes.SecurityPolicyID)
 
-	diags := respState.Set(ctx, state)
+	if !state.IsVisible.IsNull() || k8sRes.IsVisible != nil {
+		state.IsVisible = types.BoolPointerValue(k8sRes.IsVisible)
+	}
+
+	if !state.Alias.IsNull() || k8sRes.Alias != nil {
+		state.Alias = types.StringPointerValue(k8sRes.Alias)
+	}
+
+	state.Tags = makeMapValue(k8sRes.Tags)
+
+	if k8sRes.Protocols != nil {
+		prots, diags := convertProtocolsToTerraform(k8sRes.Protocols, &state.Protocols)
+		diagnostics.Append(diags...)
+
+		if diagnostics.HasError() {
+			return
+		}
+
+		state.Protocols = prots
+	}
+
+	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
+	if err != nil {
+		diagnostics.AddAttributeError(
+			path.Root(attr.AccessPolicy),
+			"failed to parse access_policy attribute",
+			err.Error(),
+		)
+
+		return
+	}
+
+	accessPolicy, diags := convertAccessPolicyToTerraform(ctx, k8sRes.AccessPolicy, referenceAccessPolicy)
+	diagnostics.Append(diags...)
+
+	state.AccessPolicy = accessPolicy
+
+	groupAccess, diags := convertGroupsAccessToTerraform(ctx, k8sRes.GroupsAccess, state.GroupAccess)
+	diagnostics.Append(diags...)
+
+	state.GroupAccess = groupAccess
+
+	if diagnostics.HasError() {
+		return
+	}
+
+	diags = respState.Set(ctx, state)
 	diagnostics.Append(diags...)
 }

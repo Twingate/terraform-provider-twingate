@@ -4664,6 +4664,8 @@ func TestCreateSSHResourceQueryToModel(t *testing.T) {
 				Address:         "10.0.0.1",
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
+				IsVisible:       optionalBool(false),
+				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -4735,6 +4737,8 @@ func TestUpdateSSHResourceQueryToModel(t *testing.T) {
 				Address:         "10.0.0.2",
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
+				IsVisible:       optionalBool(false),
+				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -4808,13 +4812,17 @@ func TestReadSSHResourceQueryToModel(t *testing.T) {
 				Address:         "10.0.0.1",
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
+				IsVisible:       optionalBool(false),
+				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, c.query.ToModel())
+			actual, err := c.query.ToModel()
+			assert.NoError(t, err)
+			assert.Equal(t, c.expected, actual)
 		})
 	}
 }
@@ -4879,6 +4887,8 @@ func TestCreateKubernetesResourceQueryToModel(t *testing.T) {
 				Address:         "kubernetes.default.svc.cluster.local",
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
+				IsVisible:       optionalBool(false),
+				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -4950,6 +4960,8 @@ func TestUpdateKubernetesResourceQueryToModel(t *testing.T) {
 				Address:         "kubernetes.default.svc.cluster.local",
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
+				IsVisible:       optionalBool(false),
+				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -5023,13 +5035,17 @@ func TestReadKubernetesResourceQueryToModel(t *testing.T) {
 				Address:         "kubernetes.default.svc.cluster.local",
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
+				IsVisible:       optionalBool(false),
+				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, c.query.ToModel())
+			actual, err := c.query.ToModel()
+			assert.NoError(t, err)
+			assert.Equal(t, c.expected, actual)
 		})
 	}
 }
