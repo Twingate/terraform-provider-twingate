@@ -38,13 +38,13 @@ type gqlKubernetesResource struct {
 	Gateway struct {
 		ID graphql.ID
 	}
-	Protocols       *Protocols
-	IsVisible       bool
-	Alias           string
-	SecurityPolicy  *gqlSecurityPolicy
-	Tags            []Tag
-	ApprovalMode    string
-	AccessPolicy    *AccessPolicy
+	Protocols      *Protocols
+	IsVisible      bool
+	Alias          string
+	SecurityPolicy *gqlSecurityPolicy
+	Tags           []Tag
+	ApprovalMode   string
+	AccessPolicy   *AccessPolicy
 }
 
 func (g gqlKubernetesResource) ToModel() *model.KubernetesResource {
