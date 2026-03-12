@@ -13,6 +13,8 @@ const (
 	TwingateX509CertificateAuthority = "twingate_x509_certificate_authority"
 	TwingateSSHCertificateAuthority  = "twingate_ssh_certificate_authority"
 	TwingateGateway                  = "twingate_gateway"
+	TwingateSSHResource              = "twingate_ssh_resource"
+	TwingateKubernetesResource       = "twingate_kubernetes_resource"
 
 	operationCreate = "create"
 	operationRead   = "read"

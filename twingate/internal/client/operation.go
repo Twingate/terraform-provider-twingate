@@ -26,6 +26,8 @@ const (
 	resourceX509CertificateAuthority resource = "x509 certificate authority"
 	resourceSSHCertificateAuthority  resource = "SSH certificate authority"
 	resourceGateway                  resource = "gateway"
+	resourceSSHResource              resource = "SSH resource"
+	resourceKubernetesResource       resource = "Kubernetes resource"
 )
 
 const (
