@@ -176,7 +176,7 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	if !plan.InCluster.ValueBool() {
+	if !plan.InCluster.IsNull() && !plan.InCluster.IsUnknown() && !plan.InCluster.ValueBool() {
 		if plan.BearerTokenFile.ValueString() == "" {
 			addErr(&resp.Diagnostics, ErrBearerTokenFileEmpty, operationCreate, TwingateKubernetesResource)
 
@@ -259,7 +259,7 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
-	if !plan.InCluster.ValueBool() {
+	if !plan.InCluster.IsNull() && !plan.InCluster.IsUnknown() && !plan.InCluster.ValueBool() {
 		if plan.BearerTokenFile.ValueString() == "" {
 			addErr(&resp.Diagnostics, ErrBearerTokenFileEmpty, operationUpdate, TwingateKubernetesResource)
 
