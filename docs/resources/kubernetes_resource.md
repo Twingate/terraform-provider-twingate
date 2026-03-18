@@ -3,12 +3,12 @@
 page_title: "twingate_kubernetes_resource Resource - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Kubernetes Resources are Twingate resources accessed via a Kubernetes Gateway.
+  Kubernetes Resources are Twingate resources accessed via a Gateway.
 ---
 
 # twingate_kubernetes_resource (Resource)
 
-Kubernetes Resources are Twingate resources accessed via a Kubernetes Gateway.
+Kubernetes Resources are Twingate resources accessed via a Gateway.
 
 ## Example Usage
 
@@ -27,16 +27,10 @@ resource "twingate_x509_certificate_authority" "tls" {
   certificate = file("ca.pem")
 }
 
-resource "twingate_ssh_certificate_authority" "ssh" {
-  name       = "My SSH CA"
-  public_key = trimspace(file("~/.ssh/id_ed25519.pub"))
-}
-
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.prod.id
   address           = "10.0.0.1:8001"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
-  ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
 
 # Kubernetes resource accessed via in-cluster DNS
@@ -62,7 +56,6 @@ resource "twingate_kubernetes_resource" "external_cluster" {
 
 ### Required
 
-- `address` (String) The address of the Kubernetes Resource (IP or FQDN).
 - `gateway_id` (String) The ID of the Gateway used to access this Kubernetes Resource.
 - `name` (String) The name of the Kubernetes Resource.
 - `remote_network_id` (String) The ID of the Remote Network the Kubernetes Resource belongs to.
@@ -71,8 +64,11 @@ resource "twingate_kubernetes_resource" "external_cluster" {
 
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
+- `address` (String) The address of the Kubernetes Resource (IP or FQDN).
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
-- `in_cluster` (Boolean) Whether the Kubernetes Resource is running inside the cluster.
+- `bearer_token_file` (String) Path to bearer token file.
+- `ca_file` (String) Path to CA certificate file.
+- `in_cluster` (Boolean) Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.

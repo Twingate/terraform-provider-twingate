@@ -9,6 +9,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -56,7 +57,12 @@ func (r *sshResource) Configure(_ context.Context, req resource.ConfigureRequest
 		return
 	}
 
-	r.client = req.ProviderData.(*client.Client)
+	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
+	if !ok {
+		return
+	}
+
+	r.client = providerData.Client
 }
 
 func (r *sshResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -66,7 +72,7 @@ func (r *sshResource) ImportState(ctx context.Context, req resource.ImportStateR
 //nolint:funlen
 func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "SSH Resources are Twingate resources accessed via an SSH Gateway.",
+		Description: "SSH Resources are Twingate resources accessed via a Gateway.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
@@ -294,7 +300,7 @@ func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateSSHResource)
 }
 
-//nolint:dupl,funlen
+//nolint:funlen
 func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, state *sshResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {

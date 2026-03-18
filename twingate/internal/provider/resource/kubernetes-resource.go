@@ -9,6 +9,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -20,6 +21,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+)
+
+const defaultKubernetesAddress = "kubernetes.default.svc.cluster.local"
+
+var (
+	ErrBearerTokenFileEmpty = errors.New("bearer_token_file cannot be empty")
+	ErrCAFileEmpty          = errors.New("ca_file cannot be empty")
+	ErrAddressEmpty         = errors.New("address cannot be empty")
 )
 
 var _ resource.Resource = &kubernetesResource{}
@@ -36,6 +45,8 @@ type kubernetesResourceModel struct {
 	ID               types.String `tfsdk:"id"`
 	Name             types.String `tfsdk:"name"`
 	Address          types.String `tfsdk:"address"`
+	BearerTokenFile  types.String `tfsdk:"bearer_token_file"`
+	CAFile           types.String `tfsdk:"ca_file"`
 	GatewayID        types.String `tfsdk:"gateway_id"`
 	RemoteNetworkID  types.String `tfsdk:"remote_network_id"`
 	InCluster        types.Bool   `tfsdk:"in_cluster"`
@@ -57,7 +68,12 @@ func (r *kubernetesResource) Configure(_ context.Context, req resource.Configure
 		return
 	}
 
-	r.client = req.ProviderData.(*client.Client)
+	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
+	if !ok {
+		return
+	}
+
+	r.client = providerData.Client
 }
 
 func (r *kubernetesResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -67,7 +83,7 @@ func (r *kubernetesResource) ImportState(ctx context.Context, req resource.Impor
 //nolint:funlen
 func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Kubernetes Resources are Twingate resources accessed via a Kubernetes Gateway.",
+		Description: "Kubernetes Resources are Twingate resources accessed via a Gateway.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
@@ -81,7 +97,8 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "The name of the Kubernetes Resource.",
 			},
 			attr.Address: schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "The address of the Kubernetes Resource (IP or FQDN).",
 				Validators: []validator.String{
 					customvalidator.Address(),
@@ -97,10 +114,22 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			attr.InCluster: schema.BoolAttribute{
 				Optional:    true,
-				Description: "Whether the Kubernetes Resource is running inside the cluster.",
+				Description: "Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource.",
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 				},
+			},
+			attr.BearerTokenFile: schema.StringAttribute{
+				Optional:      true,
+				Computed:      true,
+				Description:   "Path to bearer token file.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			},
+			attr.CAFile: schema.StringAttribute{
+				Optional:      true,
+				Computed:      true,
+				Description:   "Path to CA certificate file.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:      true,
@@ -137,6 +166,7 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 	}
 }
 
+//nolint:funlen
 func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan kubernetesResourceModel
 
@@ -144,6 +174,20 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if !plan.InCluster.ValueBool() {
+		if plan.BearerTokenFile.ValueString() == "" {
+			addErr(&resp.Diagnostics, ErrBearerTokenFileEmpty, operationCreate, TwingateKubernetesResource)
+
+			return
+		}
+
+		if plan.CAFile.ValueString() == "" {
+			addErr(&resp.Diagnostics, ErrCAFileEmpty, operationCreate, TwingateKubernetesResource)
+
+			return
+		}
 	}
 
 	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
@@ -167,9 +211,20 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
+	address := plan.Address.ValueString()
+	if plan.InCluster.ValueBool() {
+		address = defaultKubernetesAddress
+	}
+
+	if address == "" {
+		addErr(&resp.Diagnostics, ErrAddressEmpty, operationCreate, TwingateKubernetesResource)
+
+		return
+	}
+
 	k8sRes, err := r.client.CreateKubernetesResource(ctx, &model.KubernetesResource{
 		Name:             plan.Name.ValueString(),
-		Address:          plan.Address.ValueString(),
+		Address:          address,
 		GatewayID:        plan.GatewayID.ValueString(),
 		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
 		IsVisible:        getOptionalBool(plan.IsVisible),
@@ -198,10 +253,25 @@ func (r *kubernetesResource) Read(ctx context.Context, req resource.ReadRequest,
 	r.helper(ctx, k8sRes, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
+//nolint:funlen
 func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan kubernetesResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if !plan.InCluster.ValueBool() {
+		if plan.BearerTokenFile.ValueString() == "" {
+			addErr(&resp.Diagnostics, ErrBearerTokenFileEmpty, operationUpdate, TwingateKubernetesResource)
+
+			return
+		}
+
+		if plan.CAFile.ValueString() == "" {
+			addErr(&resp.Diagnostics, ErrCAFileEmpty, operationUpdate, TwingateKubernetesResource)
+
+			return
+		}
+	}
 
 	var state kubernetesResourceModel
 
@@ -240,10 +310,21 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		}
 	}
 
+	address := plan.Address.ValueString()
+	if plan.InCluster.ValueBool() {
+		address = defaultKubernetesAddress
+	}
+
+	if address == "" {
+		addErr(&resp.Diagnostics, ErrAddressEmpty, operationUpdate, TwingateKubernetesResource)
+
+		return
+	}
+
 	k8sRes, err := r.client.UpdateKubernetesResource(ctx, &model.KubernetesResource{
 		ID:               state.ID.ValueString(),
 		Name:             plan.Name.ValueString(),
-		Address:          plan.Address.ValueString(),
+		Address:          address,
 		GatewayID:        plan.GatewayID.ValueString(),
 		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
 		IsVisible:        getOptionalBool(plan.IsVisible),
@@ -296,7 +377,7 @@ func (r *kubernetesResource) Delete(ctx context.Context, req resource.DeleteRequ
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateKubernetesResource)
 }
 
-//nolint:dupl,funlen
+//nolint:funlen
 func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.KubernetesResource, state *kubernetesResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -316,6 +397,14 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 	state.GatewayID = types.StringValue(k8sRes.GatewayID)
 	state.RemoteNetworkID = types.StringValue(k8sRes.RemoteNetworkID)
 	state.SecurityPolicyID = types.StringPointerValue(k8sRes.SecurityPolicyID)
+
+	if state.BearerTokenFile.IsUnknown() {
+		state.BearerTokenFile = types.StringNull()
+	}
+
+	if state.CAFile.IsUnknown() {
+		state.CAFile = types.StringNull()
+	}
 
 	if !state.IsVisible.IsNull() || k8sRes.IsVisible != nil {
 		state.IsVisible = types.BoolPointerValue(k8sRes.IsVisible)

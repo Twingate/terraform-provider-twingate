@@ -38,6 +38,45 @@ func terraformResourceKubernetesResourceWithInClusterField(tfName, gatewayTFName
 	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, inCluster)
 }
 
+func terraformResourceKubernetesResourceWithTokenAndCA(tfName, gatewayTFName, remoteNetworkTFName, name, address, bearerTokenFile, caFile string) string {
+	return fmt.Sprintf(`
+	resource "twingate_kubernetes_resource" "%s" {
+	  name               = "%s"
+	  address            = "%s"
+	  gateway_id         = twingate_gateway.%s.id
+	  remote_network_id  = twingate_remote_network.%s.id
+	  in_cluster         = false
+	  bearer_token_file  = "%s"
+	  ca_file            = "%s"
+	}
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, bearerTokenFile, caFile)
+}
+
+func terraformResourceKubernetesResourceWithInClusterFalseNoToken(tfName, gatewayTFName, remoteNetworkTFName, name, address string) string {
+	return fmt.Sprintf(`
+	resource "twingate_kubernetes_resource" "%s" {
+	  name              = "%s"
+	  address           = "%s"
+	  gateway_id        = twingate_gateway.%s.id
+	  remote_network_id = twingate_remote_network.%s.id
+	  in_cluster        = false
+	}
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName)
+}
+
+func terraformResourceKubernetesResourceWithInClusterFalseNoCA(tfName, gatewayTFName, remoteNetworkTFName, name, address, bearerTokenFile string) string {
+	return fmt.Sprintf(`
+	resource "twingate_kubernetes_resource" "%s" {
+	  name               = "%s"
+	  address            = "%s"
+	  gateway_id         = twingate_gateway.%s.id
+	  remote_network_id  = twingate_remote_network.%s.id
+	  in_cluster         = false
+	  bearer_token_file  = "%s"
+	}
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, bearerTokenFile)
+}
+
 func TestAccTwingateKubernetesResource_InvalidAddress(t *testing.T) {
 	t.Parallel()
 
@@ -175,6 +214,8 @@ func TestAccTwingateKubernetesResourceUpdateInCluster(t *testing.T) {
 	name := test.RandomName()
 	resourceAddress := "kubernetes.default.svc.cluster.local"
 	gatewayAddress := "10.0.0.2:8080"
+	bearerTokenFile := "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	caFile := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
 
@@ -192,10 +233,12 @@ func TestAccTwingateKubernetesResourceUpdateInCluster(t *testing.T) {
 				),
 			},
 			{
-				Config: prereqs + terraformResourceKubernetesResourceWithInClusterField(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, false),
+				Config: prereqs + terraformResourceKubernetesResourceWithTokenAndCA(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, bearerTokenFile, caFile),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.InCluster, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.BearerTokenFile, bearerTokenFile),
+					sdk.TestCheckResourceAttr(theResource, attr.CAFile, caFile),
 				),
 			},
 		},
@@ -621,6 +664,113 @@ func TestAccTwingateKubernetesResourceAccessGroup(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "0"),
 					acctests.CheckResourceGroupsLen(theResource, 0),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateKubernetesResource_ErrorBearerTokenFileEmptyWhenNotInCluster(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	k8sResTFName := test.TerraformRandName("test_k8s_res")
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	resourceName := test.RandomName()
+	resourceAddress := "kubernetes.default.svc.cluster.local"
+	gatewayAddress := "10.0.2.1:8080"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      prereqs + terraformResourceKubernetesResourceWithInClusterFalseNoToken(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress),
+				ExpectError: regexp.MustCompile(`bearer_token_file cannot be empty`),
+			},
+		},
+	})
+}
+
+func TestAccTwingateKubernetesResource_ErrorCAFileEmptyWhenNotInCluster(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	k8sResTFName := test.TerraformRandName("test_k8s_res")
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	resourceName := test.RandomName()
+	resourceAddress := "kubernetes.default.svc.cluster.local"
+	gatewayAddress := "10.0.2.2:8080"
+	bearerTokenFile := "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      prereqs + terraformResourceKubernetesResourceWithInClusterFalseNoCA(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress, bearerTokenFile),
+				ExpectError: regexp.MustCompile(`ca_file cannot be empty`),
+			},
+		},
+	})
+}
+
+func TestAccTwingateKubernetesResourceCreateWithBearerTokenAndCA(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	k8sResTFName := test.TerraformRandName("test_k8s_res")
+	theResource := acctests.TerraformKubernetesResource(k8sResTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	resourceName := test.RandomName()
+	resourceAddress := "kubernetes.default.svc.cluster.local"
+	gatewayAddress := "10.0.2.3:8080"
+	bearerTokenFile := "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	caFile := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: prereqs + terraformResourceKubernetesResourceWithTokenAndCA(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress, bearerTokenFile, caFile),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.InCluster, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.BearerTokenFile, bearerTokenFile),
+					sdk.TestCheckResourceAttr(theResource, attr.CAFile, caFile),
+				),
+			},
+			{
+				Config: prereqs + terraformResourceKubernetesResourceWithTokenAndCA(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress, bearerTokenFile+".new", caFile+".new"),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.BearerTokenFile, bearerTokenFile+".new"),
+					sdk.TestCheckResourceAttr(theResource, attr.CAFile, caFile+".new"),
 				),
 			},
 		},

@@ -60,6 +60,7 @@ linters:
         - github.com/hashicorp/terraform-plugin-testing/plancheck.PlanCheck
         - github.com/hashicorp/terraform-plugin-framework/ephemeral.EphemeralResourceWithConfigure
         - github.com/hashicorp/terraform-plugin-framework/schema/validator.String
+        - github.com/hashicorp/terraform-plugin-framework/schema/validator.List
     cyclop:
       max-complexity: 25
       ignore-tests: true
