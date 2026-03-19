@@ -42,6 +42,7 @@ ssh:
     {{- else if .SshCA.PrivateKeyFile }}
     manual:
       privateKeyFile: {{ .SshCA.PrivateKeyFile }}
+    {{- else }} null
     {{- end }}
 
   upstreams:
