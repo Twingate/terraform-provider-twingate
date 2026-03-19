@@ -154,7 +154,7 @@ func k8sItem(name, address string, inCluster bool) map[string]fwattr.Value {
 func TestGatewayConfigGenerateContent(t *testing.T) {
 	ctx := context.Background()
 
-	baseSsh := makeSshList(sshItem("ssh-1", "10.0.0.1:22", "admin"))
+	baseSsh := makeSshList(sshItem("ssh-1", "10.0.0.1", "admin"))
 	baseK8s := makeK8sList(k8sItem("k8s-1", "10.0.0.2:6443", true))
 
 	cases := []struct {
@@ -250,8 +250,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 				MetricsPort: types.Int64Value(defaultMetricsPort),
 				SshCA:       defaultSshCA(),
 				SSHResources: makeSshList(
-					sshItem("web", "192.168.1.10:22", "root"),
-					sshItem("db", "192.168.1.11:22", "postgres"),
+					sshItem("web", "192.168.1.10", "root"),
+					sshItem("db", "192.168.1.11", "postgres"),
 				),
 				KubernetesResources: baseK8s,
 				TLS:                 defaultTLS(),

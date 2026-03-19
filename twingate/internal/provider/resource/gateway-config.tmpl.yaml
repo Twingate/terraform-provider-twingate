@@ -48,7 +48,7 @@ ssh:
   upstreams:
   {{- range .SSHResources }}
   - name: {{ .Name }}
-    address: {{ .Address }}
+    address: {{ .Address }}:22
     {{- if .Username }}
     user: {{ .Username }}
     {{- end }}
