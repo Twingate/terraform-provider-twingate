@@ -48,6 +48,8 @@ ssh:
   {{- range .SSHResources }}
   - name: {{ .Name }}
     address: {{ .Address }}
+    {{- if .Username }}
     user: {{ .Username }}
+    {{- end }}
   {{- end }}
 {{- end }}

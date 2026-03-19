@@ -129,6 +129,21 @@ func gatewayConfigWithConflictingCA(tfName, sshName, sshAddress, sshUsername str
 	`, tfName, sshName, sshAddress, sshUsername)
 }
 
+func gatewayConfigWithSSHNoUsername(tfName string, sshName, sshAddress string) string {
+	return fmt.Sprintf(`
+	resource "twingate_gateway_config" "%s" {
+	  ssh_resources = [
+	    {
+	      name    = "%s"
+	      address = "%s"
+	      username = ""
+	    }
+	  ]
+	  kubernetes_resources = []
+	}
+	`, tfName, sshName, sshAddress)
+}
+
 func gatewayConfigBothEmpty(tfName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
@@ -197,6 +212,41 @@ func TestAccTwingateGatewayConfigCreate_WithSSHOnly(t *testing.T) {
 						}
 						if u["user"] != "ubuntu" {
 							return fmt.Errorf("expected upstream user 'ubuntu', got %v", u["user"])
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateGatewayConfigCreate_WithSSHNoUsername(t *testing.T) {
+	t.Parallel()
+
+	tfName := test.TerraformRandName("test_gw_cfg")
+	theResource := acctests.TerraformGatewayConfig(tfName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []sdk.TestStep{
+			{
+				Config: gatewayConfigWithSSHNoUsername(tfName, "web", "10.0.0.1"),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.ID),
+					checkYAMLContent(theResource, func(doc map[string]any) error {
+						ssh, ok := doc["ssh"].(map[string]any)
+						if !ok {
+							return fmt.Errorf("expected ssh block to be present")
+						}
+						upstreams, ok := ssh["upstreams"].([]any)
+						if !ok || len(upstreams) != 1 {
+							return fmt.Errorf("expected 1 ssh upstream, got %v", ssh["upstreams"])
+						}
+						u := upstreams[0].(map[string]any)
+						if _, exists := u["user"]; exists {
+							return fmt.Errorf("expected user field to be absent when username is not set, got %v", u["user"])
 						}
 						return nil
 					}),
