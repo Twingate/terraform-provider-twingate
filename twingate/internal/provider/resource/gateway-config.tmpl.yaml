@@ -1,0 +1,60 @@
+twingate:
+  network: {{ .TwingateNetwork }}
+  host: {{ .TwingateHost }}
+
+port: {{ .Port }}
+metricsPort: {{ .MetricsPort }}
+
+tls:
+  certificateFile: {{ .TLS.CertificateFile }}
+  privateKeyFile: {{ .TLS.PrivateKeyFile }}
+
+{{- if .KubernetesResources }}
+
+kubernetes:
+  upstreams:
+  {{- range .KubernetesResources }}
+  - name: {{ .Name }}
+    address: {{ .Address }}
+    inCluster: {{ .InCluster }}
+  {{- end }}
+{{- end }}
+
+{{- if .SSHResources }}
+
+ssh:
+  gateway:
+    username: {{ .SshGateway.Username }}
+    key:
+      type: {{ .SshGateway.KeyType }}
+    hostCertificate:
+      ttl: {{ .SshGateway.HostCertTTL }}
+    userCertificate:
+      ttl: {{ .SshGateway.UserCertTTL }}
+
+  ca:
+    {{- if .SshCA.VaultAddr }}
+    vault:
+      address: {{ .SshCA.VaultAddr }}
+      caBundleFile: {{ .SshCA.VaultCABundleFile }}
+      mount: {{ .SshCA.VaultMount }}
+      role: {{ .SshCA.VaultRole }}
+      {{- if .SshCA.VaultAuthToken }}
+      auth:
+        token: {{ .SshCA.VaultAuthToken }}
+      {{- end }}
+    {{- else if .SshCA.PrivateKeyFile }}
+    manual:
+      privateKeyFile: {{ .SshCA.PrivateKeyFile }}
+    {{- else }} null
+    {{- end }}
+
+  upstreams:
+  {{- range .SSHResources }}
+  - name: {{ .Name }}
+    address: {{ .Address }}:22
+    {{- if .Username }}
+    user: {{ .Username }}
+    {{- end }}
+  {{- end }}
+{{- end }}

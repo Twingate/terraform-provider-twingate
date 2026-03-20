@@ -8,6 +8,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -54,7 +55,12 @@ func (r *user) Configure(_ context.Context, req resource.ConfigureRequest, _ *re
 		return
 	}
 
-	r.client = req.ProviderData.(*client.Client)
+	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
+	if !ok {
+		return
+	}
+
+	r.client = providerData.Client
 }
 
 func (r *user) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
