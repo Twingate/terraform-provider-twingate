@@ -226,8 +226,8 @@ func TestAccTwingateGatewayConfigCreate_WithSSHOnly(t *testing.T) {
 						if u["name"] != "web" {
 							return fmt.Errorf("expected upstream name 'web', got %v", u["name"])
 						}
-						if u["address"] != "10.0.0.1" {
-							return fmt.Errorf("expected upstream address '10.0.0.1', got %v", u["address"])
+						if u["address"] != "10.0.0.1:22" {
+							return fmt.Errorf("expected upstream address '10.0.0.1:22', got %v", u["address"])
 						}
 						if u["user"] != "ubuntu" {
 							return fmt.Errorf("expected upstream user 'ubuntu', got %v", u["user"])
