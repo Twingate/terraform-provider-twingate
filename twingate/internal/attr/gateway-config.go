@@ -19,4 +19,5 @@ const (
 	VaultCABundleFile   = "vault_ca_bundle_file"
 	VaultMount          = "vault_mount"
 	VaultRole           = "vault_role"
+	VaultAuthToken      = "vault_auth_token"
 )

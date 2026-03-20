@@ -68,6 +68,7 @@ var sshCAObjType = types.ObjectType{
 		"vault_ca_bundle_file": types.StringType,
 		"vault_mount":          types.StringType,
 		"vault_role":           types.StringType,
+		"vault_auth_token":     types.StringType,
 	},
 }
 
@@ -78,6 +79,7 @@ func defaultSshCA() types.Object {
 		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 		"vault_mount":          types.StringValue(defaultVaultMount),
 		"vault_role":           types.StringValue(defaultVaultRole),
+		"vault_auth_token":     types.StringNull(),
 	})
 }
 
@@ -88,6 +90,18 @@ func sshCAWithVault(vaultAddr string) types.Object {
 		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 		"vault_mount":          types.StringValue(defaultVaultMount),
 		"vault_role":           types.StringValue(defaultVaultRole),
+		"vault_auth_token":     types.StringNull(),
+	})
+}
+
+func sshCAWithVaultAndToken(vaultAddr, authToken string) types.Object {
+	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
+		"vault_addr":           types.StringValue(vaultAddr),
+		"private_key_file":     types.StringNull(),
+		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
+		"vault_mount":          types.StringValue(defaultVaultMount),
+		"vault_role":           types.StringValue(defaultVaultRole),
+		"vault_auth_token":     types.StringValue(authToken),
 	})
 }
 
@@ -98,6 +112,7 @@ func sshCAWithPrivateKey(keyFile string) types.Object {
 		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 		"vault_mount":          types.StringValue(defaultVaultMount),
 		"vault_role":           types.StringValue(defaultVaultRole),
+		"vault_auth_token":     types.StringNull(),
 	})
 }
 
@@ -184,6 +199,43 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 				assert.Equal(t, "/etc/ssl/vault-ca.crt", vault["caBundleFile"])
 				assert.Equal(t, "ssh", vault["mount"])
 				assert.Equal(t, "gateway", vault["role"])
+			},
+		},
+		{
+			name: "vault addr and auth token set — ca vault block includes auth",
+			model: gatewayConfigModel{
+				Port:                types.Int64Value(defaultPort),
+				MetricsPort:         types.Int64Value(defaultMetricsPort),
+				SshCA:               sshCAWithVaultAndToken("https://vault.example.com", "s.mytoken"),
+				SSHResources:        baseSsh,
+				KubernetesResources: baseK8s,
+				TLS:                 defaultTLS(),
+				SshGateway:          defaultSshGateway(),
+			},
+			checkYAML: func(t *testing.T, doc map[string]any) {
+				ssh := doc["ssh"].(map[string]any)
+				ca := ssh["ca"].(map[string]any)
+				vault := ca["vault"].(map[string]any)
+				auth := vault["auth"].(map[string]any)
+				assert.Equal(t, "s.mytoken", auth["token"])
+			},
+		},
+		{
+			name: "vault addr set without auth token — no auth block",
+			model: gatewayConfigModel{
+				Port:                types.Int64Value(defaultPort),
+				MetricsPort:         types.Int64Value(defaultMetricsPort),
+				SshCA:               sshCAWithVault("https://vault.example.com"),
+				SSHResources:        baseSsh,
+				KubernetesResources: baseK8s,
+				TLS:                 defaultTLS(),
+				SshGateway:          defaultSshGateway(),
+			},
+			checkYAML: func(t *testing.T, doc map[string]any) {
+				ssh := doc["ssh"].(map[string]any)
+				ca := ssh["ca"].(map[string]any)
+				vault := ca["vault"].(map[string]any)
+				assert.NotContains(t, vault, "auth")
 			},
 		},
 		{

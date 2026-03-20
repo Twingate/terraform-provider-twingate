@@ -98,6 +98,7 @@ type sshCAModel struct {
 	VaultCABundleFile types.String `tfsdk:"vault_ca_bundle_file"`
 	VaultMount        types.String `tfsdk:"vault_mount"`
 	VaultRole         types.String `tfsdk:"vault_role"`
+	VaultAuthToken    types.String `tfsdk:"vault_auth_token"`
 }
 
 type sshResourceRef struct {
@@ -142,6 +143,7 @@ type sshCAData struct {
 	VaultCABundleFile string
 	VaultMount        string
 	VaultRole         string
+	VaultAuthToken    string
 }
 
 type sshResourceData struct {
@@ -179,6 +181,7 @@ func sshCAAttrTypes() map[string]fwattr.Type {
 		attr.VaultCABundleFile: types.StringType,
 		attr.VaultMount:        types.StringType,
 		attr.VaultRole:         types.StringType,
+		attr.VaultAuthToken:    types.StringType,
 	}
 }
 
@@ -221,6 +224,7 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					attr.VaultCABundleFile: types.StringValue(defaultVaultCABundleFile),
 					attr.VaultMount:        types.StringValue(defaultVaultMount),
 					attr.VaultRole:         types.StringValue(defaultVaultRole),
+					attr.VaultAuthToken:    types.StringNull(),
 				})),
 				Attributes: map[string]schema.Attribute{
 					attr.VaultAddr: schema.StringAttribute{
@@ -254,6 +258,11 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 						Computed:    true,
 						Description: fmt.Sprintf("Vault role for signing certificates. Default: %q.", defaultVaultRole),
 						Default:     stringdefault.StaticString(defaultVaultRole),
+					},
+					attr.VaultAuthToken: schema.StringAttribute{
+						Optional:    true,
+						Sensitive:   true,
+						Description: "Vault token used for authentication.",
 					},
 				},
 			},
@@ -435,6 +444,7 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 			VaultCABundleFile: sshCA.VaultCABundleFile.ValueString(),
 			VaultMount:        sshCA.VaultMount.ValueString(),
 			VaultRole:         sshCA.VaultRole.ValueString(),
+			VaultAuthToken:    sshCA.VaultAuthToken.ValueString(),
 		},
 		SSHResources:        sshItems,
 		KubernetesResources: k8sItems,

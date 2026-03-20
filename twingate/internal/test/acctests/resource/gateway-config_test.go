@@ -110,6 +110,25 @@ func gatewayConfigWithPrivateKeyCA(tfName, sshName, sshAddress, sshUsername, key
 	`, tfName, keyFile, sshName, sshAddress, sshUsername)
 }
 
+func gatewayConfigWithSshCAAndToken(tfName, sshName, sshAddress, sshUsername, vaultAddr, authToken string) string {
+	return fmt.Sprintf(`
+	resource "twingate_gateway_config" "%s" {
+	  ssh_ca = {
+	    vault_addr       = "%s"
+	    vault_auth_token = "%s"
+	  }
+	  ssh_resources = [
+	    {
+	      name     = "%s"
+	      address  = "%s"
+	      username = "%s"
+	    }
+	  ]
+	  kubernetes_resources = []
+	}
+	`, tfName, vaultAddr, authToken, sshName, sshAddress, sshUsername)
+}
+
 func gatewayConfigWithConflictingCA(tfName, sshName, sshAddress, sshUsername string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
@@ -418,6 +437,45 @@ func TestAccTwingateGatewayConfig_SshCAWithVault(t *testing.T) {
 						}
 						if _, exists := ca["manual"]; exists {
 							return fmt.Errorf("expected manual block to be absent when vault_addr is set")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateGatewayConfig_SshCAWithVaultAndToken(t *testing.T) {
+	t.Parallel()
+
+	tfName := test.TerraformRandName("test_gw_cfg")
+	theResource := acctests.TerraformGatewayConfig(tfName)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []sdk.TestStep{
+			{
+				Config: gatewayConfigWithSshCAAndToken(tfName, "web", "10.0.0.1", "ubuntu", "https://vault.example.com", "s.mytoken"),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttrSet(theResource, attr.ID),
+					checkYAMLContent(theResource, func(doc map[string]any) error {
+						ssh := doc["ssh"].(map[string]any)
+						ca, ok := ssh["ca"].(map[string]any)
+						if !ok {
+							return fmt.Errorf("expected ssh.ca block to be present")
+						}
+						vault, ok := ca["vault"].(map[string]any)
+						if !ok {
+							return fmt.Errorf("expected ssh.ca.vault block to be present")
+						}
+						auth, ok := vault["auth"].(map[string]any)
+						if !ok {
+							return fmt.Errorf("expected ssh.ca.vault.auth block to be present")
+						}
+						if auth["token"] != "s.mytoken" {
+							return fmt.Errorf("expected vault auth token 's.mytoken', got %v", auth["token"])
 						}
 						return nil
 					}),

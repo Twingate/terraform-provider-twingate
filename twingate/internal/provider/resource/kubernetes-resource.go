@@ -410,7 +410,7 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 		state.IsVisible = types.BoolPointerValue(k8sRes.IsVisible)
 	}
 
-	if !state.Alias.IsNull() || k8sRes.Alias != nil {
+	if !state.Alias.IsNull() {
 		state.Alias = types.StringPointerValue(k8sRes.Alias)
 	}
 

@@ -325,7 +325,7 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 		state.IsVisible = types.BoolPointerValue(sshRes.IsVisible)
 	}
 
-	if !state.Alias.IsNull() || sshRes.Alias != nil {
+	if !state.Alias.IsNull() {
 		state.Alias = types.StringPointerValue(sshRes.Alias)
 	}
 

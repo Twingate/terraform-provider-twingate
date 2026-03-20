@@ -39,6 +39,10 @@ ssh:
       caBundleFile: {{ .SshCA.VaultCABundleFile }}
       mount: {{ .SshCA.VaultMount }}
       role: {{ .SshCA.VaultRole }}
+      {{- if .SshCA.VaultAuthToken }}
+      auth:
+        token: {{ .SshCA.VaultAuthToken }}
+      {{- end }}
     {{- else if .SshCA.PrivateKeyFile }}
     manual:
       privateKeyFile: {{ .SshCA.PrivateKeyFile }}
