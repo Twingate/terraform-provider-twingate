@@ -19,7 +19,7 @@ const (
 	VaultCABundleFile   = "vault_ca_bundle_file"
 	VaultMount          = "vault_mount"
 	VaultRole           = "vault_role"
-	VaultAuthToken      = "vault_auth_token"     // #nosec G101 -- this is a config key name, not a credential
+	VaultAuthToken      = "vault_auth_token" // #nosec G101 -- this is a config key name, not a credential
 	VaultAuthGCPRole    = "vault_auth_gcp_role"
 	VaultAuthGCPType    = "vault_auth_gcp_type"
 )
