@@ -84,6 +84,21 @@ func gqlNullable(val any, name string) gqlVarOption {
 	}
 }
 
+func gqlNullableEmpty(val any, name string) gqlVarOption {
+	return func(values map[string]any) map[string]any {
+		var gqlValue any
+		if isZeroValue(val) {
+			gqlValue = getDefaultEmptyValue(val)
+		} else {
+			gqlValue = getValue(val)
+		}
+
+		values[name] = gqlValue
+
+		return values
+	}
+}
+
 func getValue(val any) any {
 	switch value := val.(type) {
 	case *bool:
@@ -187,6 +202,32 @@ func getNullableValue(val any) any {
 		defaultInt    *int
 		defaultBool   *bool
 		defaultFloat  *float64
+	)
+
+	switch val.(type) {
+	case string, *string:
+		return defaultString
+	case bool, *bool:
+		return defaultBool
+	case int, int32, int64, *int, *int32, *int64:
+		return defaultInt
+	case float32, float64, *float32, *float64:
+		return defaultFloat
+	}
+
+	return nil
+}
+
+func getDefaultEmptyValue(val any) any {
+	if val == nil {
+		return nil
+	}
+
+	var (
+		defaultString string
+		defaultInt    int
+		defaultBool   bool
+		defaultFloat  float64
 	)
 
 	switch val.(type) {

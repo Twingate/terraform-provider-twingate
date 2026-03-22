@@ -583,6 +583,7 @@ func TestAccTwingateSSHResourceAlias(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckNoResourceAttr(theResource, attr.Alias),
+					acctests.CheckSshResourceAlias(theResource, nil),
 				),
 			},
 		},

@@ -99,6 +99,8 @@ type sshCAModel struct {
 	VaultMount        types.String `tfsdk:"vault_mount"`
 	VaultRole         types.String `tfsdk:"vault_role"`
 	VaultAuthToken    types.String `tfsdk:"vault_auth_token"`
+	VaultAuthGCPRole  types.String `tfsdk:"vault_auth_gcp_role"`
+	VaultAuthGCPType  types.String `tfsdk:"vault_auth_gcp_type"`
 }
 
 type sshResourceRef struct {
@@ -144,6 +146,8 @@ type sshCAData struct {
 	VaultMount        string
 	VaultRole         string
 	VaultAuthToken    string
+	VaultAuthGCPRole  string
+	VaultAuthGCPType  string
 }
 
 type sshResourceData struct {
@@ -182,6 +186,8 @@ func sshCAAttrTypes() map[string]fwattr.Type {
 		attr.VaultMount:        types.StringType,
 		attr.VaultRole:         types.StringType,
 		attr.VaultAuthToken:    types.StringType,
+		attr.VaultAuthGCPRole:  types.StringType,
+		attr.VaultAuthGCPType:  types.StringType,
 	}
 }
 
@@ -225,6 +231,8 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					attr.VaultMount:        types.StringValue(defaultVaultMount),
 					attr.VaultRole:         types.StringValue(defaultVaultRole),
 					attr.VaultAuthToken:    types.StringNull(),
+					attr.VaultAuthGCPRole:  types.StringNull(),
+					attr.VaultAuthGCPType:  types.StringNull(),
 				})),
 				Attributes: map[string]schema.Attribute{
 					attr.VaultAddr: schema.StringAttribute{
@@ -262,7 +270,24 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					attr.VaultAuthToken: schema.StringAttribute{
 						Optional:    true,
 						Sensitive:   true,
-						Description: "Vault token used for authentication.",
+						Description: "Vault token used for authentication. Can't be used together with vault_auth_gcp_role.",
+						Validators: []validator.String{
+							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthGCPRole)),
+						},
+					},
+					attr.VaultAuthGCPRole: schema.StringAttribute{
+						Optional:    true,
+						Description: "GCP IAM role for Vault GCP authentication. Can't be used together with vault_auth_token.",
+						Validators: []validator.String{
+							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthToken)),
+						},
+					},
+					attr.VaultAuthGCPType: schema.StringAttribute{
+						Optional:    true,
+						Description: `GCP authentication type for Vault. Can't be used together with vault_auth_token.`,
+						Validators: []validator.String{
+							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthToken)),
+						},
 					},
 				},
 			},
@@ -445,6 +470,8 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 			VaultMount:        sshCA.VaultMount.ValueString(),
 			VaultRole:         sshCA.VaultRole.ValueString(),
 			VaultAuthToken:    sshCA.VaultAuthToken.ValueString(),
+			VaultAuthGCPRole:  sshCA.VaultAuthGCPRole.ValueString(),
+			VaultAuthGCPType:  sshCA.VaultAuthGCPType.ValueString(),
 		},
 		SSHResources:        sshItems,
 		KubernetesResources: k8sItems,

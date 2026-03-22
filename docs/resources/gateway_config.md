@@ -113,7 +113,9 @@ Optional:
 
 - `private_key_file` (String) Path to the SSH CA private key file. Can't be used together with vault_addr.
 - `vault_addr` (String) The Vault server address. Can't be used together with private_key_file.
-- `vault_auth_token` (String, Sensitive) Vault token used for authentication.
+- `vault_auth_gcp_role` (String) GCP IAM role for Vault GCP authentication. Can't be used together with vault_auth_token.
+- `vault_auth_gcp_type` (String) GCP authentication type for Vault. Can't be used together with vault_auth_token.
+- `vault_auth_token` (String, Sensitive) Vault token used for authentication. Can't be used together with vault_auth_gcp_role.
 - `vault_ca_bundle_file` (String) Path to the Vault CA bundle file. Default: "/etc/ssl/vault-ca.crt".
 - `vault_mount` (String) Vault SSH secrets engine mount path. Default: "ssh".
 - `vault_role` (String) Vault role for signing certificates. Default: "gateway".

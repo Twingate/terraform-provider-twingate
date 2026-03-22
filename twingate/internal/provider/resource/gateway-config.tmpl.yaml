@@ -42,6 +42,13 @@ ssh:
       {{- if .SshCA.VaultAuthToken }}
       auth:
         token: {{ .SshCA.VaultAuthToken }}
+      {{- else if .SshCA.VaultAuthGCPRole }}
+      auth:
+        gcp:
+          role: {{ .SshCA.VaultAuthGCPRole }}
+          {{- if .SshCA.VaultAuthGCPType }}
+          type: {{ .SshCA.VaultAuthGCPType }}
+          {{- end }}
       {{- end }}
     {{- else if .SshCA.PrivateKeyFile }}
     manual:

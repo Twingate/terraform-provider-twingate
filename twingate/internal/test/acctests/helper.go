@@ -1194,3 +1194,35 @@ func VersionCheckForWriteOnlyAttributes() []tfversion.TerraformVersionCheck {
 		tfversion.SkipBelow(tfversion.Version1_11_0),
 	}
 }
+
+func CheckSshResourceAlias(resourceName string, expectedAlias *string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		sshResource, err := providerClient.ReadSSHResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("ssh-resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		if sshResource.Alias == nil && expectedAlias != nil {
+			return fmt.Errorf("ssh-resource with ID %s has null alias, expected: %s", resourceID, *expectedAlias) //nolint:err113
+		}
+
+		if sshResource.Alias != nil && expectedAlias == nil {
+			return fmt.Errorf("ssh-resource with ID %s has alias %s, expected null", resourceID, *sshResource.Alias) //nolint:err113
+		}
+
+		if sshResource.Alias == nil && expectedAlias == nil {
+			return nil
+		}
+
+		if *sshResource.Alias != *expectedAlias {
+			return fmt.Errorf("ssh-resource with ID %s has alias %s, expected %s", resourceID, *sshResource.Alias, *expectedAlias) //nolint:err113
+		}
+
+		return nil
+	}
+}

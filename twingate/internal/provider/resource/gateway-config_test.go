@@ -69,6 +69,8 @@ var sshCAObjType = types.ObjectType{
 		"vault_mount":          types.StringType,
 		"vault_role":           types.StringType,
 		"vault_auth_token":     types.StringType,
+		"vault_auth_gcp_role":  types.StringType,
+		"vault_auth_gcp_type":  types.StringType,
 	},
 }
 
@@ -80,6 +82,8 @@ func defaultSshCA() types.Object {
 		"vault_mount":          types.StringValue(defaultVaultMount),
 		"vault_role":           types.StringValue(defaultVaultRole),
 		"vault_auth_token":     types.StringNull(),
+		"vault_auth_gcp_role":  types.StringNull(),
+		"vault_auth_gcp_type":  types.StringNull(),
 	})
 }
 
@@ -91,6 +95,8 @@ func sshCAWithVault(vaultAddr string) types.Object {
 		"vault_mount":          types.StringValue(defaultVaultMount),
 		"vault_role":           types.StringValue(defaultVaultRole),
 		"vault_auth_token":     types.StringNull(),
+		"vault_auth_gcp_role":  types.StringNull(),
+		"vault_auth_gcp_type":  types.StringNull(),
 	})
 }
 
@@ -102,6 +108,21 @@ func sshCAWithVaultAndToken(vaultAddr, authToken string) types.Object {
 		"vault_mount":          types.StringValue(defaultVaultMount),
 		"vault_role":           types.StringValue(defaultVaultRole),
 		"vault_auth_token":     types.StringValue(authToken),
+		"vault_auth_gcp_role":  types.StringNull(),
+		"vault_auth_gcp_type":  types.StringNull(),
+	})
+}
+
+func sshCAWithVaultAndGCP(vaultAddr, gcpRole, gcpType string) types.Object {
+	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
+		"vault_addr":           types.StringValue(vaultAddr),
+		"private_key_file":     types.StringNull(),
+		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
+		"vault_mount":          types.StringValue(defaultVaultMount),
+		"vault_role":           types.StringValue(defaultVaultRole),
+		"vault_auth_token":     types.StringNull(),
+		"vault_auth_gcp_role":  types.StringValue(gcpRole),
+		"vault_auth_gcp_type":  types.StringValue(gcpType),
 	})
 }
 
@@ -113,6 +134,8 @@ func sshCAWithPrivateKey(keyFile string) types.Object {
 		"vault_mount":          types.StringValue(defaultVaultMount),
 		"vault_role":           types.StringValue(defaultVaultRole),
 		"vault_auth_token":     types.StringNull(),
+		"vault_auth_gcp_role":  types.StringNull(),
+		"vault_auth_gcp_type":  types.StringNull(),
 	})
 }
 
@@ -218,6 +241,27 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 				vault := ca["vault"].(map[string]any)
 				auth := vault["auth"].(map[string]any)
 				assert.Equal(t, "s.mytoken", auth["token"])
+			},
+		},
+		{
+			name: "vault addr and gcp auth set — ca vault block includes gcp auth",
+			model: gatewayConfigModel{
+				Port:                types.Int64Value(defaultPort),
+				MetricsPort:         types.Int64Value(defaultMetricsPort),
+				SshCA:               sshCAWithVaultAndGCP("https://vault.example.com", "vm-role", "gce"),
+				SSHResources:        baseSsh,
+				KubernetesResources: baseK8s,
+				TLS:                 defaultTLS(),
+				SshGateway:          defaultSshGateway(),
+			},
+			checkYAML: func(t *testing.T, doc map[string]any) {
+				ssh := doc["ssh"].(map[string]any)
+				ca := ssh["ca"].(map[string]any)
+				vault := ca["vault"].(map[string]any)
+				auth := vault["auth"].(map[string]any)
+				gcp := auth["gcp"].(map[string]any)
+				assert.Equal(t, "vm-role", gcp["role"])
+				assert.Equal(t, "gce", gcp["type"])
 			},
 		},
 		{
