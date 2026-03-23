@@ -280,6 +280,7 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 						Description: "GCP IAM role for Vault GCP authentication. Can't be used together with vault_auth_token.",
 						Validators: []validator.String{
 							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthToken)),
+							stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.VaultAuthGCPType)),
 						},
 					},
 					attr.VaultAuthGCPType: schema.StringAttribute{
@@ -287,6 +288,7 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 						Description: `GCP authentication type for Vault. Can't be used together with vault_auth_token.`,
 						Validators: []validator.String{
 							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthToken)),
+							stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.VaultAuthGCPRole)),
 						},
 					},
 				},

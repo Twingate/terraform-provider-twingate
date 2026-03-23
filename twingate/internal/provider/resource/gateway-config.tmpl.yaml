@@ -46,9 +46,7 @@ ssh:
       auth:
         gcp:
           role: {{ .SshCA.VaultAuthGCPRole }}
-          {{- if .SshCA.VaultAuthGCPType }}
           type: {{ .SshCA.VaultAuthGCPType }}
-          {{- end }}
       {{- end }}
     {{- else if .SshCA.PrivateKeyFile }}
     manual:
