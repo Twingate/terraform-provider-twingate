@@ -84,6 +84,7 @@ func gqlNullable(val any, name string) gqlVarOption {
 	}
 }
 
+//nolint:unparam
 func gqlNullableEmpty(val any, name string) gqlVarOption {
 	return func(values map[string]any) map[string]any {
 		var gqlValue any
