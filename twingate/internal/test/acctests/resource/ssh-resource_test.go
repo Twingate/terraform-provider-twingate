@@ -578,7 +578,6 @@ func TestAccTwingateSSHResourceAlias(t *testing.T) {
 				),
 			},
 			{
-				// Removing alias from config stops tracking it in state; backend keeps its value.
 				Config: prereqs + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
