@@ -2146,11 +2146,9 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 				),
 			},
 			{
-				// alias attr set with emtpy string
-				Config: createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
-				Check: acctests.ComposeTestCheckFunc(
-					sdk.TestCheckResourceAttr(theResource, attr.Alias, ""),
-				),
+				// alias attr set with empty string
+				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
+				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
 			},
 		},
 	})
@@ -2177,6 +2175,10 @@ func TestAccTwingateResourceUpdateWithInvalidAlias(t *testing.T) {
 			},
 			{
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, "test-com"),
+				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
+			},
+			{
+				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
 				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
 			},
 		},
