@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -114,10 +115,12 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			attr.InCluster: schema.BoolAttribute{
 				Optional:    true,
-				Description: "Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource.",
+				Computed:    true,
+				Description: "Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource. Default is `true`.",
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 				},
+				Default: booldefault.StaticBool(true),
 			},
 			attr.BearerTokenFile: schema.StringAttribute{
 				Optional:      true,
@@ -136,6 +139,7 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				Computed:      true,
 				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.",
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+				Default:       booldefault.StaticBool(true),
 			},
 			attr.Alias: schema.StringAttribute{
 				Optional:      true,

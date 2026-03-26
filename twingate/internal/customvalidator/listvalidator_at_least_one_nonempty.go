@@ -32,7 +32,7 @@ func (v atLeastOneNonEmptyValidator) ValidateList(ctx context.Context, req valid
 		return
 	}
 
-	// Current list is empty — check the sibling.
+	// Current list is empty — check the expression.
 	paths, diags := req.Config.PathMatches(ctx, v.sibling)
 	resp.Diagnostics.Append(diags...)
 

@@ -36,10 +36,8 @@ resource "twingate_gateway" "main" {
 # Kubernetes resource accessed via in-cluster DNS
 resource "twingate_kubernetes_resource" "prod_cluster" {
   name              = "Production K8s"
-  address           = "kubernetes.default.svc.cluster.local"
   gateway_id        = twingate_gateway.main.id
   remote_network_id = twingate_remote_network.prod.id
-  in_cluster        = true
 }
 
 # Kubernetes resource accessed via external address
@@ -68,7 +66,7 @@ resource "twingate_kubernetes_resource" "external_cluster" {
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `bearer_token_file` (String) Path to bearer token file.
 - `ca_file` (String) Path to CA certificate file.
-- `in_cluster` (Boolean) Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource.
+- `in_cluster` (Boolean) Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource. Default is `true`.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.

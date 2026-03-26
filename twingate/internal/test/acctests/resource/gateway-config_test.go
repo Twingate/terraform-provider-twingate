@@ -26,14 +26,18 @@ func checkYAMLContent(resourceName string, checkFn func(doc map[string]any) erro
 func gatewayConfigWithSSHOnly(tfName string, sshName, sshAddress, sshUsername string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_resources = [
-	    {
-	      name     = "%s"
-	      address  = "%s"
-	      username = "%s"
-	    }
-	  ]
-	  kubernetes_resources = []
+	  ssh = {
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName, sshName, sshAddress, sshUsername)
 }
@@ -41,14 +45,18 @@ func gatewayConfigWithSSHOnly(tfName string, sshName, sshAddress, sshUsername st
 func gatewayConfigWithK8sOnly(tfName string, k8sName, k8sAddress string, inCluster bool) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_resources = []
-	  kubernetes_resources = [
-	    {
-	      name       = "%s"
-	      address    = "%s"
-	      in_cluster = %v
-	    }
-	  ]
+	  ssh = {
+	    resources = []
+	  }
+	  kubernetes = {
+	    resources = [
+	      {
+	        name       = "%s"
+	        address    = "%s"
+	        in_cluster = %v
+	      }
+	    ]
+	  }
 	}
 	`, tfName, k8sName, k8sAddress, inCluster)
 }
@@ -56,20 +64,24 @@ func gatewayConfigWithK8sOnly(tfName string, k8sName, k8sAddress string, inClust
 func gatewayConfigWithBoth(tfName string, sshName, sshAddress, sshUsername, k8sName, k8sAddress string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_resources = [
-	    {
-	      name     = "%s"
-	      address  = "%s"
-	      username = "%s"
-	    }
-	  ]
-	  kubernetes_resources = [
-	    {
-	      name       = "%s"
-	      address    = "%s"
-	      in_cluster = true
-	    }
-	  ]
+	  ssh = {
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = [
+	      {
+	        name       = "%s"
+	        address    = "%s"
+	        in_cluster = true
+	      }
+	    ]
+	  }
 	}
 	`, tfName, sshName, sshAddress, sshUsername, k8sName, k8sAddress)
 }
@@ -77,17 +89,23 @@ func gatewayConfigWithBoth(tfName string, sshName, sshAddress, sshUsername, k8sN
 func gatewayConfigWithSshCA(tfName, sshName, sshAddress, sshUsername, vaultAddr string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_ca = {
-	    vault_addr = "%s"
-	  }
-	  ssh_resources = [
-	    {
-	      name     = "%s"
-	      address  = "%s"
-	      username = "%s"
+	  ssh = {
+	    ca = {
+	      vault = {
+	        address = "%s"
+	      }
 	    }
-	  ]
-	  kubernetes_resources = []
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName, vaultAddr, sshName, sshAddress, sshUsername)
 }
@@ -95,17 +113,21 @@ func gatewayConfigWithSshCA(tfName, sshName, sshAddress, sshUsername, vaultAddr 
 func gatewayConfigWithPrivateKeyCA(tfName, sshName, sshAddress, sshUsername, keyFile string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_ca = {
-	    private_key_file = "%s"
-	  }
-	  ssh_resources = [
-	    {
-	      name     = "%s"
-	      address  = "%s"
-	      username = "%s"
+	  ssh = {
+	    ca = {
+	      private_key_file = "%s"
 	    }
-	  ]
-	  kubernetes_resources = []
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName, keyFile, sshName, sshAddress, sshUsername)
 }
@@ -113,18 +135,26 @@ func gatewayConfigWithPrivateKeyCA(tfName, sshName, sshAddress, sshUsername, key
 func gatewayConfigWithSshCAAndToken(tfName, sshName, sshAddress, sshUsername, vaultAddr, authToken string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_ca = {
-	    vault_addr       = "%s"
-	    vault_auth_token = "%s"
-	  }
-	  ssh_resources = [
-	    {
-	      name     = "%s"
-	      address  = "%s"
-	      username = "%s"
+	  ssh = {
+	    ca = {
+	      vault = {
+	        address = "%s"
+	      }
+	      auth = {
+	        token = "%s"
+	      }
 	    }
-	  ]
-	  kubernetes_resources = []
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName, vaultAddr, authToken, sshName, sshAddress, sshUsername)
 }
@@ -132,18 +162,24 @@ func gatewayConfigWithSshCAAndToken(tfName, sshName, sshAddress, sshUsername, va
 func gatewayConfigWithConflictingCA(tfName, sshName, sshAddress, sshUsername string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_ca = {
-	    vault_addr       = "https://vault.example.com"
-	    private_key_file = "/etc/ssh/id_ed25519"
-	  }
-	  ssh_resources = [
-	    {
-	      name     = "%s"
-	      address  = "%s"
-	      username = "%s"
+	  ssh = {
+	    ca = {
+	      vault = {
+	        address = "https://vault.example.com"
+	      }
+	      private_key_file = "/etc/ssh/id_ed25519"
 	    }
-	  ]
-	  kubernetes_resources = []
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName, sshName, sshAddress, sshUsername)
 }
@@ -151,14 +187,18 @@ func gatewayConfigWithConflictingCA(tfName, sshName, sshAddress, sshUsername str
 func gatewayConfigWithSSHNoUsername(tfName string, sshName, sshAddress string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_resources = [
-	    {
-	      name    = "%s"
-	      address = "%s"
-	      username = ""
-	    }
-	  ]
-	  kubernetes_resources = []
+	  ssh = {
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = ""
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName, sshName, sshAddress)
 }
@@ -166,8 +206,12 @@ func gatewayConfigWithSSHNoUsername(tfName string, sshName, sshAddress string) s
 func gatewayConfigBothEmpty(tfName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_gateway_config" "%s" {
-	  ssh_resources        = []
-	  kubernetes_resources = []
+	  ssh = {
+	    resources = []
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName)
 }
@@ -184,14 +228,18 @@ func gatewayConfigWithCustomPort(tfName string, port, metricsPort int, sshName, 
 	resource "twingate_gateway_config" "%s" {
 	  port         = %d
 	  metrics_port = %d
-	  ssh_resources = [
-	    {
-	      name     = "%s"
-	      address  = "%s"
-	      username = "%s"
-	    }
-	  ]
-	  kubernetes_resources = []
+	  ssh = {
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
 	}
 	`, tfName, port, metricsPort, sshName, sshAddress, sshUsername)
 }
@@ -216,7 +264,7 @@ func TestAccTwingateGatewayConfigCreate_WithSSHOnly(t *testing.T) {
 							return fmt.Errorf("expected ssh block to be present")
 						}
 						if _, exists := doc["kubernetes"]; exists {
-							return fmt.Errorf("expected kubernetes block to be absent when kubernetes_resources is empty")
+							return fmt.Errorf("expected kubernetes block to be absent when kubernetes resources is empty")
 						}
 						upstreams, ok := ssh["upstreams"].([]any)
 						if !ok || len(upstreams) != 1 {
@@ -295,7 +343,7 @@ func TestAccTwingateGatewayConfigCreate_WithKubernetesOnly(t *testing.T) {
 							return fmt.Errorf("expected kubernetes block to be present")
 						}
 						if _, exists := doc["ssh"]; exists {
-							return fmt.Errorf("expected ssh block to be absent when ssh_resources is empty")
+							return fmt.Errorf("expected ssh block to be absent when ssh resources is empty")
 						}
 						upstreams, ok := k8s["upstreams"].([]any)
 						if !ok || len(upstreams) != 1 {
@@ -359,7 +407,7 @@ func TestAccTwingateGatewayConfig_BothResourcesEmpty(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      gatewayConfigBothEmpty(tfName),
-				ExpectError: regexp.MustCompile(`At least one of "ssh_resources" or "kubernetes_resources" must contain`),
+				ExpectError: regexp.MustCompile(`At least one of "ssh.resources" or "kubernetes.resources" must contain`),
 			},
 		},
 	})
@@ -376,7 +424,7 @@ func TestAccTwingateGatewayConfig_BothResourcesOmitted(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      gatewayConfigBothOmitted(tfName),
-				ExpectError: regexp.MustCompile(`At least one of "ssh_resources" or "kubernetes_resources" must contain`),
+				ExpectError: regexp.MustCompile(`At least one of "ssh.resources" or "kubernetes.resources" must contain`),
 			},
 		},
 	})
@@ -393,7 +441,7 @@ func TestAccTwingateGatewayConfig_SshCAConflictsWith(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      gatewayConfigWithConflictingCA(tfName, "web", "10.0.0.1", "ubuntu"),
-				ExpectError: regexp.MustCompile(`Attribute "ssh_ca.private_key_file" cannot be specified`),
+				ExpectError: regexp.MustCompile(`Attribute "ssh.ca.private_key_file" cannot be specified`),
 			},
 		},
 	})
@@ -436,7 +484,7 @@ func TestAccTwingateGatewayConfig_SshCAWithVault(t *testing.T) {
 							return fmt.Errorf("expected vault role 'gateway', got %v", vault["role"])
 						}
 						if _, exists := ca["manual"]; exists {
-							return fmt.Errorf("expected manual block to be absent when vault_addr is set")
+							return fmt.Errorf("expected manual block to be absent when vault.address is set")
 						}
 						return nil
 					}),

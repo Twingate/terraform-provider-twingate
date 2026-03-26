@@ -39,8 +39,8 @@ resource "twingate_gateway" "main" {
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
 
-resource "twingate_ssh_resource" "bastion" {
-  name       = "SSH Bastion"
+resource "twingate_ssh_resource" "ssh_server" {
+  name       = "SSH Server"
   gateway_id = twingate_gateway.main.id
   remote_network_id = twingate_remote_network.prod.id
   address    = "10.128.0.105"

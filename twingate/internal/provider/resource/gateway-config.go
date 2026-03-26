@@ -45,14 +45,21 @@ const (
 	defaultVaultCABundleFile = "/etc/ssl/vault-ca.crt"
 	defaultVaultMount        = "ssh"
 	defaultVaultRole         = "gateway"
+
+	defaultGCPMount = "gcp"
 )
 
 var (
-	ErrExtractSSHResources        = errors.New("failed to extract ssh_resources")
-	ErrExtractKubernetesResources = errors.New("failed to extract kubernetes_resources")
-	ErrExtractSSHGateway          = errors.New("failed to extract ssh_gateway")
+	ErrExtractSSH                 = errors.New("failed to extract ssh")
+	ErrExtractSSHResources        = errors.New("failed to extract ssh.resources")
+	ErrExtractKubernetes          = errors.New("failed to extract kubernetes")
+	ErrExtractKubernetesResources = errors.New("failed to extract kubernetes.resources")
+	ErrExtractSSHGateway          = errors.New("failed to extract ssh.gateway")
 	ErrExtractTLS                 = errors.New("failed to extract tls")
-	ErrExtractSSHCA               = errors.New("failed to extract ssh_ca")
+	ErrExtractSSHCA               = errors.New("failed to extract ssh.ca")
+	ErrExtractVault               = errors.New("failed to extract vault")
+	ErrExtractAuth                = errors.New("failed to extract auth")
+	ErrExtractGCP                 = errors.New("failed to extract gcp")
 )
 
 //go:embed gateway-config.tmpl.yaml
@@ -69,15 +76,23 @@ type gatewayConfig struct {
 }
 
 type gatewayConfigModel struct {
-	ID                  types.String `tfsdk:"id"`
-	Port                types.Int64  `tfsdk:"port"`
-	MetricsPort         types.Int64  `tfsdk:"metrics_port"`
-	TLS                 types.Object `tfsdk:"tls"`
-	SshGateway          types.Object `tfsdk:"ssh_gateway"`
-	SshCA               types.Object `tfsdk:"ssh_ca"`
-	SSHResources        types.List   `tfsdk:"ssh_resources"`
-	KubernetesResources types.List   `tfsdk:"kubernetes_resources"`
-	Content             types.String `tfsdk:"content"`
+	ID          types.String `tfsdk:"id"`
+	Port        types.Int64  `tfsdk:"port"`
+	MetricsPort types.Int64  `tfsdk:"metrics_port"`
+	TLS         types.Object `tfsdk:"tls"`
+	SSH         types.Object `tfsdk:"ssh"`
+	Kubernetes  types.Object `tfsdk:"kubernetes"`
+	Content     types.String `tfsdk:"content"`
+}
+
+type kubernetesModel struct {
+	Resources types.List `tfsdk:"resources"`
+}
+
+type sshModel struct {
+	Gateway   types.Object `tfsdk:"gateway"`
+	CA        types.Object `tfsdk:"ca"`
+	Resources types.List   `tfsdk:"resources"`
 }
 
 type tlsModel struct {
@@ -93,14 +108,28 @@ type sshGatewayModel struct {
 }
 
 type sshCAModel struct {
-	VaultAddr         types.String `tfsdk:"vault_addr"`
-	PrivateKeyFile    types.String `tfsdk:"private_key_file"`
-	VaultCABundleFile types.String `tfsdk:"vault_ca_bundle_file"`
-	VaultMount        types.String `tfsdk:"vault_mount"`
-	VaultRole         types.String `tfsdk:"vault_role"`
-	VaultAuthToken    types.String `tfsdk:"vault_auth_token"`
-	VaultAuthGCPRole  types.String `tfsdk:"vault_auth_gcp_role"`
-	VaultAuthGCPType  types.String `tfsdk:"vault_auth_gcp_type"`
+	PrivateKeyFile types.String `tfsdk:"private_key_file"`
+	Vault          types.Object `tfsdk:"vault"`
+	Auth           types.Object `tfsdk:"auth"`
+}
+
+type vaultModel struct {
+	Address      types.String `tfsdk:"address"`
+	CABundleFile types.String `tfsdk:"ca_bundle_file"`
+	Mount        types.String `tfsdk:"mount"`
+	Role         types.String `tfsdk:"role"`
+}
+
+type authModel struct {
+	Token types.String `tfsdk:"token"`
+	GCP   types.Object `tfsdk:"gcp"`
+}
+
+type gcpModel struct {
+	Role                types.String `tfsdk:"role"`
+	Type                types.String `tfsdk:"type"`
+	Mount               types.String `tfsdk:"mount"`
+	ServiceAccountEmail types.String `tfsdk:"service_account_email"`
 }
 
 type sshResourceRef struct {
@@ -116,20 +145,28 @@ type kubernetesResourceRef struct {
 }
 
 type gatewayConfigData struct {
-	TwingateNetwork     string
-	TwingateHost        string
-	Port                int64
-	MetricsPort         int64
-	TLS                 tlsData
-	SshGateway          sshGatewayData
-	SshCA               sshCAData
-	SSHResources        []sshResourceData
-	KubernetesResources []kubernetesResourceData
+	TwingateNetwork string
+	TwingateHost    string
+	Port            int64
+	MetricsPort     int64
+	TLS             tlsData
+	SSH             sshData
+	Kubernetes      kubernetesData
 }
 
 type tlsData struct {
 	CertificateFile string
 	PrivateKeyFile  string
+}
+
+type sshData struct {
+	Gateway   sshGatewayData
+	CA        sshCAData
+	Resources []sshResourceData
+}
+
+type kubernetesData struct {
+	Resources []kubernetesResourceData
 }
 
 type sshGatewayData struct {
@@ -140,14 +177,28 @@ type sshGatewayData struct {
 }
 
 type sshCAData struct {
-	VaultAddr         string
-	PrivateKeyFile    string
-	VaultCABundleFile string
-	VaultMount        string
-	VaultRole         string
-	VaultAuthToken    string
-	VaultAuthGCPRole  string
-	VaultAuthGCPType  string
+	PrivateKeyFile string
+	Vault          vaultData
+	Auth           authData
+}
+
+type vaultData struct {
+	Address      string
+	CABundleFile string
+	Mount        string
+	Role         string
+}
+
+type authData struct {
+	Token string
+	GCP   gcpData
+}
+
+type gcpData struct {
+	Role                string
+	Type                string
+	Mount               string
+	ServiceAccountEmail string
 }
 
 type sshResourceData struct {
@@ -178,17 +229,120 @@ func sshGatewayAttrTypes() map[string]fwattr.Type {
 	}
 }
 
+func vaultAttrTypes() map[string]fwattr.Type {
+	return map[string]fwattr.Type{
+		attr.Address:      types.StringType,
+		attr.CABundleFile: types.StringType,
+		attr.Mount:        types.StringType,
+		attr.Role:         types.StringType,
+	}
+}
+
+func gcpAttrTypes() map[string]fwattr.Type {
+	return map[string]fwattr.Type{
+		attr.Role:                types.StringType,
+		attr.Type:                types.StringType,
+		attr.Mount:               types.StringType,
+		attr.ServiceAccountEmail: types.StringType,
+	}
+}
+
+func authAttrTypes() map[string]fwattr.Type {
+	return map[string]fwattr.Type{
+		attr.Token: types.StringType,
+		attr.GCP:   types.ObjectType{AttrTypes: gcpAttrTypes()},
+	}
+}
+
 func sshCAAttrTypes() map[string]fwattr.Type {
 	return map[string]fwattr.Type{
-		attr.VaultAddr:         types.StringType,
-		attr.PrivateKeyFile:    types.StringType,
-		attr.VaultCABundleFile: types.StringType,
-		attr.VaultMount:        types.StringType,
-		attr.VaultRole:         types.StringType,
-		attr.VaultAuthToken:    types.StringType,
-		attr.VaultAuthGCPRole:  types.StringType,
-		attr.VaultAuthGCPType:  types.StringType,
+		attr.PrivateKeyFile: types.StringType,
+		attr.Vault:          types.ObjectType{AttrTypes: vaultAttrTypes()},
+		attr.Auth:           types.ObjectType{AttrTypes: authAttrTypes()},
 	}
+}
+
+func sshResourceElemType() fwattr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]fwattr.Type{
+			attr.Name:     types.StringType,
+			attr.Address:  types.StringType,
+			attr.Username: types.StringType,
+		},
+	}
+}
+
+func kubernetesResourceElemType() fwattr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]fwattr.Type{
+			attr.Name:      types.StringType,
+			attr.Address:   types.StringType,
+			attr.InCluster: types.BoolType,
+		},
+	}
+}
+
+func kubernetesAttrTypes() map[string]fwattr.Type {
+	return map[string]fwattr.Type{
+		attr.Resources: types.ListType{ElemType: kubernetesResourceElemType()},
+	}
+}
+
+func sshAttrTypes() map[string]fwattr.Type {
+	return map[string]fwattr.Type{
+		attr.Gateway:   types.ObjectType{AttrTypes: sshGatewayAttrTypes()},
+		attr.CA:        types.ObjectType{AttrTypes: sshCAAttrTypes()},
+		attr.Resources: types.ListType{ElemType: sshResourceElemType()},
+	}
+}
+
+func defaultGatewayObject() basetypes.ObjectValue {
+	return types.ObjectValueMust(sshGatewayAttrTypes(), map[string]fwattr.Value{
+		attr.Username:    types.StringValue(defaultSSHGatewayUsername),
+		attr.KeyType:     types.StringValue(defaultSSHGatewayKeyType),
+		attr.HostCertTTL: types.StringValue(defaultSSHGatewayHostCertTTL),
+		attr.UserCertTTL: types.StringValue(defaultSSHGatewayUserCertTTL),
+	})
+}
+
+func defaultGCPObject() basetypes.ObjectValue {
+	return types.ObjectValueMust(gcpAttrTypes(), map[string]fwattr.Value{
+		attr.Role:                types.StringNull(),
+		attr.Type:                types.StringNull(),
+		attr.Mount:               types.StringValue(defaultGCPMount),
+		attr.ServiceAccountEmail: types.StringNull(),
+	})
+}
+
+func defaultAuthObject() basetypes.ObjectValue {
+	return types.ObjectValueMust(authAttrTypes(), map[string]fwattr.Value{
+		attr.Token: types.StringNull(),
+		attr.GCP:   defaultGCPObject(),
+	})
+}
+
+func defaultVaultObject() basetypes.ObjectValue {
+	return types.ObjectValueMust(vaultAttrTypes(), map[string]fwattr.Value{
+		attr.Address:      types.StringNull(),
+		attr.CABundleFile: types.StringValue(defaultVaultCABundleFile),
+		attr.Mount:        types.StringValue(defaultVaultMount),
+		attr.Role:         types.StringValue(defaultVaultRole),
+	})
+}
+
+func defaultCAObject() basetypes.ObjectValue {
+	return types.ObjectValueMust(sshCAAttrTypes(), map[string]fwattr.Value{
+		attr.PrivateKeyFile: types.StringNull(),
+		attr.Vault:          defaultVaultObject(),
+		attr.Auth:           defaultAuthObject(),
+	})
+}
+
+func defaultTLSObject() basetypes.ObjectValue {
+	return types.ObjectValueMust(tlsAttrTypes(), map[string]fwattr.Value{
+		attr.CertificateFile: types.StringValue(defaultTLSCertificateFile),
+		attr.PrivateKeyFile:  types.StringValue(defaultTLSPrivateKeyFile),
+	})
 }
 
 func (r *gatewayConfig) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -220,79 +374,6 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			attr.SshCA: schema.SingleNestedAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "SSH CA configuration. Specify either vault_addr or private_key_file, not both.",
-				Default: objectdefault.StaticValue(types.ObjectValueMust(sshCAAttrTypes(), map[string]fwattr.Value{
-					attr.VaultAddr:         types.StringNull(),
-					attr.PrivateKeyFile:    types.StringNull(),
-					attr.VaultCABundleFile: types.StringValue(defaultVaultCABundleFile),
-					attr.VaultMount:        types.StringValue(defaultVaultMount),
-					attr.VaultRole:         types.StringValue(defaultVaultRole),
-					attr.VaultAuthToken:    types.StringNull(),
-					attr.VaultAuthGCPRole:  types.StringNull(),
-					attr.VaultAuthGCPType:  types.StringNull(),
-				})),
-				Attributes: map[string]schema.Attribute{
-					attr.VaultAddr: schema.StringAttribute{
-						Optional:    true,
-						Description: "The Vault server address. Can't be used together with private_key_file.",
-						Validators: []validator.String{
-							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.PrivateKeyFile)),
-						},
-					},
-					attr.PrivateKeyFile: schema.StringAttribute{
-						Optional:    true,
-						Description: "Path to the SSH CA private key file. Can't be used together with vault_addr.",
-						Validators: []validator.String{
-							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAddr)),
-						},
-					},
-					attr.VaultCABundleFile: schema.StringAttribute{
-						Optional:    true,
-						Computed:    true,
-						Description: fmt.Sprintf("Path to the Vault CA bundle file. Default: %q.", defaultVaultCABundleFile),
-						Default:     stringdefault.StaticString(defaultVaultCABundleFile),
-					},
-					attr.VaultMount: schema.StringAttribute{
-						Optional:    true,
-						Computed:    true,
-						Description: fmt.Sprintf("Vault SSH secrets engine mount path. Default: %q.", defaultVaultMount),
-						Default:     stringdefault.StaticString(defaultVaultMount),
-					},
-					attr.VaultRole: schema.StringAttribute{
-						Optional:    true,
-						Computed:    true,
-						Description: fmt.Sprintf("Vault role for signing certificates. Default: %q.", defaultVaultRole),
-						Default:     stringdefault.StaticString(defaultVaultRole),
-					},
-					attr.VaultAuthToken: schema.StringAttribute{
-						Optional:    true,
-						Sensitive:   true,
-						Description: "Vault token used for authentication. Can't be used together with vault_auth_gcp_role.",
-						Validators: []validator.String{
-							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthGCPRole)),
-						},
-					},
-					attr.VaultAuthGCPRole: schema.StringAttribute{
-						Optional:    true,
-						Description: "GCP IAM role for Vault GCP authentication. Can't be used together with vault_auth_token.",
-						Validators: []validator.String{
-							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthToken)),
-							stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.VaultAuthGCPType)),
-						},
-					},
-					attr.VaultAuthGCPType: schema.StringAttribute{
-						Optional:    true,
-						Description: `GCP authentication type for Vault. Can't be used together with vault_auth_token.`,
-						Validators: []validator.String{
-							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.VaultAuthToken)),
-							stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.VaultAuthGCPRole)),
-						},
-					},
-				},
-			},
 			attr.Port: schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
@@ -309,10 +390,7 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Optional:    true,
 				Computed:    true,
 				Description: "TLS configuration for the gateway.",
-				Default: objectdefault.StaticValue(types.ObjectValueMust(tlsAttrTypes(), map[string]fwattr.Value{
-					attr.CertificateFile: types.StringValue(defaultTLSCertificateFile),
-					attr.PrivateKeyFile:  types.StringValue(defaultTLSPrivateKeyFile),
-				})),
+				Default:     objectdefault.StaticValue(defaultTLSObject()),
 				Attributes: map[string]schema.Attribute{
 					attr.CertificateFile: schema.StringAttribute{
 						Optional:    true,
@@ -328,68 +406,170 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					},
 				},
 			},
-			attr.SSHResources: schema.ListAttribute{
-				Optional:    true,
-				Description: "List of SSH resources. Accepts full twingate_ssh_resource references.",
-				ElementType: types.ObjectType{
-					AttrTypes: map[string]fwattr.Type{
-						attr.Name:     types.StringType,
-						attr.Address:  types.StringType,
-						attr.Username: types.StringType,
-					},
-				},
-				Validators: []validator.List{
-					customvalidator.AtLeastOneNonEmptyWith(path.MatchRoot(attr.KubernetesResources)),
-				},
-			},
-			attr.KubernetesResources: schema.ListAttribute{
-				Optional:    true,
-				Description: "List of Kubernetes resources. Accepts full twingate_kubernetes_resource references.",
-				ElementType: types.ObjectType{
-					AttrTypes: map[string]fwattr.Type{
-						attr.Name:      types.StringType,
-						attr.Address:   types.StringType,
-						attr.InCluster: types.BoolType,
-					},
-				},
-				Validators: []validator.List{
-					customvalidator.AtLeastOneNonEmptyWith(path.MatchRoot(attr.SSHResources)),
-				},
-			},
-			attr.SshGateway: schema.SingleNestedAttribute{
+			attr.SSH: schema.SingleNestedAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "SSH gateway settings. All fields are optional and fall back to built-in defaults.",
-				Default: objectdefault.StaticValue(types.ObjectValueMust(sshGatewayAttrTypes(), map[string]fwattr.Value{
-					attr.Username:    types.StringValue(defaultSSHGatewayUsername),
-					attr.KeyType:     types.StringValue(defaultSSHGatewayKeyType),
-					attr.HostCertTTL: types.StringValue(defaultSSHGatewayHostCertTTL),
-					attr.UserCertTTL: types.StringValue(defaultSSHGatewayUserCertTTL),
+				Description: "SSH configuration block containing gateway, CA, and resource settings.",
+				Default: objectdefault.StaticValue(types.ObjectValueMust(sshAttrTypes(), map[string]fwattr.Value{
+					attr.Gateway:   defaultGatewayObject(),
+					attr.CA:        defaultCAObject(),
+					attr.Resources: types.ListValueMust(sshResourceElemType(), []fwattr.Value{}),
 				})),
 				Attributes: map[string]schema.Attribute{
-					attr.Username: schema.StringAttribute{
+					attr.Gateway: schema.SingleNestedAttribute{
 						Optional:    true,
 						Computed:    true,
-						Description: fmt.Sprintf("SSH gateway username. Default: %q.", defaultSSHGatewayUsername),
-						Default:     stringdefault.StaticString(defaultSSHGatewayUsername),
+						Description: "SSH gateway settings. All fields are optional and fall back to built-in defaults.",
+						Default:     objectdefault.StaticValue(defaultGatewayObject()),
+						Attributes: map[string]schema.Attribute{
+							attr.Username: schema.StringAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: fmt.Sprintf("SSH gateway username. Default: %q.", defaultSSHGatewayUsername),
+								Default:     stringdefault.StaticString(defaultSSHGatewayUsername),
+							},
+							attr.KeyType: schema.StringAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: fmt.Sprintf("SSH key type. Default: %q.", defaultSSHGatewayKeyType),
+								Default:     stringdefault.StaticString(defaultSSHGatewayKeyType),
+							},
+							attr.HostCertTTL: schema.StringAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: fmt.Sprintf("Host certificate TTL. Default: %q.", defaultSSHGatewayHostCertTTL),
+								Default:     stringdefault.StaticString(defaultSSHGatewayHostCertTTL),
+							},
+							attr.UserCertTTL: schema.StringAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: fmt.Sprintf("User certificate TTL. Default: %q.", defaultSSHGatewayUserCertTTL),
+								Default:     stringdefault.StaticString(defaultSSHGatewayUserCertTTL),
+							},
+						},
 					},
-					attr.KeyType: schema.StringAttribute{
+					attr.CA: schema.SingleNestedAttribute{
 						Optional:    true,
 						Computed:    true,
-						Description: fmt.Sprintf("SSH key type. Default: %q.", defaultSSHGatewayKeyType),
-						Default:     stringdefault.StaticString(defaultSSHGatewayKeyType),
+						Description: "SSH CA configuration. Specify either vault.address or private_key_file, not both.",
+						Default:     objectdefault.StaticValue(defaultCAObject()),
+						Attributes: map[string]schema.Attribute{
+							attr.PrivateKeyFile: schema.StringAttribute{
+								Optional:    true,
+								Description: "Path to the SSH CA private key file. Can't be used together with vault.address.",
+								Validators: []validator.String{
+									stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.Vault).AtName(attr.Address)),
+								},
+							},
+							attr.Vault: schema.SingleNestedAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: "Vault SSH CA configuration.",
+								Default:     objectdefault.StaticValue(defaultVaultObject()),
+								Attributes: map[string]schema.Attribute{
+									attr.Address: schema.StringAttribute{
+										Optional:    true,
+										Description: "Vault server address. Can't be used together with ca.private_key_file.",
+										Validators: []validator.String{
+											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtParent().AtName(attr.PrivateKeyFile)),
+										},
+									},
+									attr.CABundleFile: schema.StringAttribute{
+										Optional:    true,
+										Computed:    true,
+										Description: fmt.Sprintf("Path to the Vault CA bundle file. Default: %q.", defaultVaultCABundleFile),
+										Default:     stringdefault.StaticString(defaultVaultCABundleFile),
+									},
+									attr.Mount: schema.StringAttribute{
+										Optional:    true,
+										Computed:    true,
+										Description: fmt.Sprintf("Vault SSH secrets engine mount path. Default: %q.", defaultVaultMount),
+										Default:     stringdefault.StaticString(defaultVaultMount),
+									},
+									attr.Role: schema.StringAttribute{
+										Optional:    true,
+										Computed:    true,
+										Description: fmt.Sprintf("Vault role for signing certificates. Default: %q.", defaultVaultRole),
+										Default:     stringdefault.StaticString(defaultVaultRole),
+									},
+								},
+							},
+							attr.Auth: schema.SingleNestedAttribute{
+								Optional:    true,
+								Computed:    true,
+								Description: "Vault authentication configuration.",
+								Default:     objectdefault.StaticValue(defaultAuthObject()),
+								Attributes: map[string]schema.Attribute{
+									attr.Token: schema.StringAttribute{
+										Optional:    true,
+										Sensitive:   true,
+										Description: "Vault token used for authentication. Can't be used together with gcp.",
+										Validators: []validator.String{
+											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.GCP)),
+										},
+									},
+									attr.GCP: schema.SingleNestedAttribute{
+										Optional:    true,
+										Computed:    true,
+										Description: "GCP authentication for Vault. Can't be used together with token.",
+										Default:     objectdefault.StaticValue(defaultGCPObject()),
+										Attributes: map[string]schema.Attribute{
+											attr.Role: schema.StringAttribute{
+												Optional:    true,
+												Description: "GCP IAM role for Vault GCP authentication.",
+												Validators: []validator.String{
+													stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.Type)),
+												},
+											},
+											attr.Type: schema.StringAttribute{
+												Optional:    true,
+												Description: `GCP authentication type for Vault (e.g. "iam" or "gce"). When set to "iam", service_account_email is required.`,
+												Validators: []validator.String{
+													stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.Role)),
+													customvalidator.AlsoRequiresWhenValueIs(path.MatchRelative().AtParent().AtName(attr.ServiceAccountEmail), "iam"),
+												},
+											},
+											attr.Mount: schema.StringAttribute{
+												Optional:    true,
+												Computed:    true,
+												Description: fmt.Sprintf("Vault GCP auth mount path. Default: %q.", defaultGCPMount),
+												Default:     stringdefault.StaticString(defaultGCPMount),
+											},
+											attr.ServiceAccountEmail: schema.StringAttribute{
+												Optional:    true,
+												Description: `Service account email. Required when type is "iam".`,
+											},
+										},
+									},
+								},
+							},
+						},
 					},
-					attr.HostCertTTL: schema.StringAttribute{
+					attr.Resources: schema.ListAttribute{
 						Optional:    true,
-						Computed:    true,
-						Description: fmt.Sprintf("Host certificate TTL. Default: %q.", defaultSSHGatewayHostCertTTL),
-						Default:     stringdefault.StaticString(defaultSSHGatewayHostCertTTL),
+						Description: "List of SSH resources. Accepts full twingate_ssh_resource references.",
+						ElementType: sshResourceElemType(),
+						Validators: []validator.List{
+							customvalidator.AtLeastOneNonEmptyWith(path.MatchRoot(attr.Kubernetes).AtName(attr.Resources)),
+						},
 					},
-					attr.UserCertTTL: schema.StringAttribute{
+				},
+			},
+			attr.Kubernetes: schema.SingleNestedAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Kubernetes configuration block containing resource settings.",
+				Default: objectdefault.StaticValue(types.ObjectValueMust(kubernetesAttrTypes(), map[string]fwattr.Value{
+					attr.Resources: types.ListValueMust(kubernetesResourceElemType(), []fwattr.Value{}),
+				})),
+				Attributes: map[string]schema.Attribute{
+					attr.Resources: schema.ListAttribute{
 						Optional:    true,
-						Computed:    true,
-						Description: fmt.Sprintf("User certificate TTL. Default: %q.", defaultSSHGatewayUserCertTTL),
-						Default:     stringdefault.StaticString(defaultSSHGatewayUserCertTTL),
+						Description: "List of Kubernetes resources. Accepts full twingate_kubernetes_resource references.",
+						ElementType: kubernetesResourceElemType(),
+						Validators: []validator.List{
+							customvalidator.AtLeastOneNonEmptyWith(path.MatchRoot(attr.SSH).AtName(attr.Resources)),
+						},
 					},
 				},
 			},
@@ -407,13 +587,23 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 
 //nolint:funlen
 func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config providerdata.Config) (string, error) {
+	var sshConf sshModel
+	if diags := gateway.SSH.As(ctx, &sshConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+		return "", ErrExtractSSH
+	}
+
 	var sshRefs []sshResourceRef
-	if diags := gateway.SSHResources.ElementsAs(ctx, &sshRefs, false); diags.HasError() {
+	if diags := sshConf.Resources.ElementsAs(ctx, &sshRefs, false); diags.HasError() {
 		return "", ErrExtractSSHResources
 	}
 
+	var k8sConf kubernetesModel
+	if diags := gateway.Kubernetes.As(ctx, &k8sConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+		return "", ErrExtractKubernetes
+	}
+
 	var k8sRefs []kubernetesResourceRef
-	if diags := gateway.KubernetesResources.ElementsAs(ctx, &k8sRefs, false); diags.HasError() {
+	if diags := k8sConf.Resources.ElementsAs(ctx, &k8sRefs, false); diags.HasError() {
 		return "", ErrExtractKubernetesResources
 	}
 
@@ -441,13 +631,28 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 	}
 
 	var sshGW sshGatewayModel
-	if diags := gateway.SshGateway.As(ctx, &sshGW, basetypes.ObjectAsOptions{}); diags.HasError() {
+	if diags := sshConf.Gateway.As(ctx, &sshGW, basetypes.ObjectAsOptions{}); diags.HasError() {
 		return "", ErrExtractSSHGateway
 	}
 
 	var sshCA sshCAModel
-	if diags := gateway.SshCA.As(ctx, &sshCA, basetypes.ObjectAsOptions{}); diags.HasError() {
+	if diags := sshConf.CA.As(ctx, &sshCA, basetypes.ObjectAsOptions{}); diags.HasError() {
 		return "", ErrExtractSSHCA
+	}
+
+	var vaultConf vaultModel
+	if diags := sshCA.Vault.As(ctx, &vaultConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+		return "", ErrExtractVault
+	}
+
+	var authConf authModel
+	if diags := sshCA.Auth.As(ctx, &authConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+		return "", ErrExtractAuth
+	}
+
+	var gcpConf gcpModel
+	if diags := authConf.GCP.As(ctx, &gcpConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+		return "", ErrExtractGCP
 	}
 
 	data := gatewayConfigData{
@@ -459,24 +664,36 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 			CertificateFile: tlsGW.CertificateFile.ValueString(),
 			PrivateKeyFile:  tlsGW.PrivateKeyFile.ValueString(),
 		},
-		SshGateway: sshGatewayData{
-			Username:    sshGW.Username.ValueString(),
-			KeyType:     sshGW.KeyType.ValueString(),
-			HostCertTTL: sshGW.HostCertTTL.ValueString(),
-			UserCertTTL: sshGW.UserCertTTL.ValueString(),
+		SSH: sshData{
+			Gateway: sshGatewayData{
+				Username:    sshGW.Username.ValueString(),
+				KeyType:     sshGW.KeyType.ValueString(),
+				HostCertTTL: sshGW.HostCertTTL.ValueString(),
+				UserCertTTL: sshGW.UserCertTTL.ValueString(),
+			},
+			CA: sshCAData{
+				PrivateKeyFile: sshCA.PrivateKeyFile.ValueString(),
+				Vault: vaultData{
+					Address:      vaultConf.Address.ValueString(),
+					CABundleFile: vaultConf.CABundleFile.ValueString(),
+					Mount:        vaultConf.Mount.ValueString(),
+					Role:         vaultConf.Role.ValueString(),
+				},
+				Auth: authData{
+					Token: authConf.Token.ValueString(),
+					GCP: gcpData{
+						Role:                gcpConf.Role.ValueString(),
+						Type:                gcpConf.Type.ValueString(),
+						Mount:               gcpConf.Mount.ValueString(),
+						ServiceAccountEmail: gcpConf.ServiceAccountEmail.ValueString(),
+					},
+				},
+			},
+			Resources: sshItems,
 		},
-		SshCA: sshCAData{
-			VaultAddr:         sshCA.VaultAddr.ValueString(),
-			PrivateKeyFile:    sshCA.PrivateKeyFile.ValueString(),
-			VaultCABundleFile: sshCA.VaultCABundleFile.ValueString(),
-			VaultMount:        sshCA.VaultMount.ValueString(),
-			VaultRole:         sshCA.VaultRole.ValueString(),
-			VaultAuthToken:    sshCA.VaultAuthToken.ValueString(),
-			VaultAuthGCPRole:  sshCA.VaultAuthGCPRole.ValueString(),
-			VaultAuthGCPType:  sshCA.VaultAuthGCPType.ValueString(),
+		Kubernetes: kubernetesData{
+			Resources: k8sItems,
 		},
-		SSHResources:        sshItems,
-		KubernetesResources: k8sItems,
 	}
 
 	tmpl, err := template.New(gatewayConfigFilename).Parse(gatewayConfigTemplate)

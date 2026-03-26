@@ -41,36 +41,96 @@ resource "twingate_gateway" "main" {
 
 # Kubernetes resource accessed via in-cluster DNS
 resource "twingate_kubernetes_resource" "prod_cluster" {
-  name       = "Production K8s"
+  name              = "Production K8s"
   remote_network_id = twingate_remote_network.prod.id
-  gateway_id = twingate_gateway.main.id
-  in_cluster = true
+  gateway_id        = twingate_gateway.main.id
 }
 
-resource "twingate_ssh_resource" "bastion" {
-  name       = "SSH Bastion"
-  gateway_id = twingate_gateway.main.id
+resource "twingate_ssh_resource" "ssh_server" {
+  name              = "SSH Server"
+  gateway_id        = twingate_gateway.main.id
   remote_network_id = twingate_remote_network.prod.id
-  address    = "10.128.0.105"
-  username   = "ubuntu"
+  address           = "10.128.0.105"
+  username          = "ubuntu"
 }
 
-resource "twingate_ssh_resource" "bastion2" {
-  name       = "SSH Bastion 2"
-  gateway_id = twingate_gateway.main.id
+resource "twingate_ssh_resource" "ssh_server_2" {
+  name              = "SSH Server 2"
+  gateway_id        = twingate_gateway.main.id
   remote_network_id = twingate_remote_network.prod.id
-  address    = "10.128.0.106"
-  username   = "ubuntu-2"
+  address           = "10.128.0.106"
+  username          = "ubuntu-2"
 }
 
 resource "twingate_gateway_config" "config" {
-  ssh_ca = {
-    vault_addr = "10.128.0.100"
-  }
-  ssh_resources = [twingate_ssh_resource.bastion, twingate_ssh_resource.bastion2]
-  kubernetes_resources = [twingate_kubernetes_resource.prod_cluster]
-}
+  # Gateway listen port. Default: 8443.
+  port = 8443
 
+  # Prometheus metrics port. Default: 9090.
+  metrics_port = 9090
+
+  # TLS configuration for the gateway listener.
+  # All fields have built-in defaults and can be omitted.
+  tls = {
+    certificate_file = "/etc/gateway/tls.crt"
+    private_key_file = "/etc/gateway/tls.key"
+  }
+
+  ssh = {
+    # SSH gateway process settings. All fields are optional with built-in defaults.
+    gateway = {
+      username      = "gateway"  # OS user the gateway process runs as. Default: "gateway".
+      key_type      = "ed25519"  # SSH host key algorithm. Default: "ed25519".
+      host_cert_ttl = "24h"      # Validity period for issued host certificates. Default: "24h".
+      user_cert_ttl = "5m"       # Validity period for issued user certificates. Default: "5m".
+    }
+
+    ca = {
+      # SSH CA backed by HashiCorp Vault (mutually exclusive with private_key_file).
+      vault = {
+        address = "https://vault.example.com"
+
+        # Vault SSH secrets engine mount path. Default: "ssh".
+        mount = "ssh"
+
+        # Vault role used to sign certificates. Default: "gateway".
+        role = "gateway"
+
+        # Path to a custom CA bundle for verifying Vault's TLS certificate.
+        # Default: "/etc/ssl/vault-ca.crt".
+        ca_bundle_file = "/etc/ssl/vault-ca.crt"
+      }
+
+      # Vault authentication — choose one of: token or gcp.
+      # auth = {
+      #   # Option 1: static Vault token.
+      #   token = "s.myVaultToken"
+      # }
+
+      auth = {
+        # Option 2: GCP IAM / GCE authentication.
+        gcp = {
+          role  = "my-vault-gcp-role"
+          type  = "iam"  # "iam" or "gce"
+          mount = "gcp"  # Vault GCP auth mount path. Default: "gcp".
+
+          # Required when type = "iam".
+          service_account_email = "gateway-sa@my-project.iam.gserviceaccount.com"
+        }
+      }
+
+      # Alternative: use a local private key file instead of Vault.
+      # Mutually exclusive with vault.address.
+      # private_key_file = "/etc/gateway/ssh_ca_key"
+    }
+
+    resources = [twingate_ssh_resource.ssh_server, twingate_ssh_resource.ssh_server_2]
+  }
+
+  kubernetes = {
+    resources = [twingate_kubernetes_resource.prod_cluster]
+  }
+}
 
 resource "local_sensitive_file" "config" {
   content  = twingate_gateway_config.config.content
@@ -83,12 +143,10 @@ resource "local_sensitive_file" "config" {
 
 ### Optional
 
-- `kubernetes_resources` (List of Object) List of Kubernetes resources. Accepts full twingate_kubernetes_resource references. (see [below for nested schema](#nestedatt--kubernetes_resources))
+- `kubernetes` (Attributes) Kubernetes configuration block containing resource settings. (see [below for nested schema](#nestedatt--kubernetes))
 - `metrics_port` (Number) Gateway metrics port. Default: 9090.
 - `port` (Number) Gateway listen port. Default: 8443.
-- `ssh_ca` (Attributes) SSH CA configuration. Specify either vault_addr or private_key_file, not both. (see [below for nested schema](#nestedatt--ssh_ca))
-- `ssh_gateway` (Attributes) SSH gateway settings. All fields are optional and fall back to built-in defaults. (see [below for nested schema](#nestedatt--ssh_gateway))
-- `ssh_resources` (List of Object) List of SSH resources. Accepts full twingate_ssh_resource references. (see [below for nested schema](#nestedatt--ssh_resources))
+- `ssh` (Attributes) SSH configuration block containing gateway, CA, and resource settings. (see [below for nested schema](#nestedatt--ssh))
 - `tls` (Attributes) TLS configuration for the gateway. (see [below for nested schema](#nestedatt--tls))
 
 ### Read-Only
@@ -96,8 +154,15 @@ resource "local_sensitive_file" "config" {
 - `content` (String, Sensitive) The generated YAML configuration content.
 - `id` (String) SHA-256 hash of the generated config content.
 
-<a id="nestedatt--kubernetes_resources"></a>
-### Nested Schema for `kubernetes_resources`
+<a id="nestedatt--kubernetes"></a>
+### Nested Schema for `kubernetes`
+
+Optional:
+
+- `resources` (List of Object) List of Kubernetes resources. Accepts full twingate_kubernetes_resource references. (see [below for nested schema](#nestedatt--kubernetes--resources))
+
+<a id="nestedatt--kubernetes--resources"></a>
+### Nested Schema for `kubernetes.resources`
 
 Optional:
 
@@ -106,23 +171,59 @@ Optional:
 - `name` (String)
 
 
-<a id="nestedatt--ssh_ca"></a>
-### Nested Schema for `ssh_ca`
+
+<a id="nestedatt--ssh"></a>
+### Nested Schema for `ssh`
 
 Optional:
 
-- `private_key_file` (String) Path to the SSH CA private key file. Can't be used together with vault_addr.
-- `vault_addr` (String) The Vault server address. Can't be used together with private_key_file.
-- `vault_auth_gcp_role` (String) GCP IAM role for Vault GCP authentication. Can't be used together with vault_auth_token.
-- `vault_auth_gcp_type` (String) GCP authentication type for Vault. Can't be used together with vault_auth_token.
-- `vault_auth_token` (String, Sensitive) Vault token used for authentication. Can't be used together with vault_auth_gcp_role.
-- `vault_ca_bundle_file` (String) Path to the Vault CA bundle file. Default: "/etc/ssl/vault-ca.crt".
-- `vault_mount` (String) Vault SSH secrets engine mount path. Default: "ssh".
-- `vault_role` (String) Vault role for signing certificates. Default: "gateway".
+- `ca` (Attributes) SSH CA configuration. Specify either vault.address or private_key_file, not both. (see [below for nested schema](#nestedatt--ssh--ca))
+- `gateway` (Attributes) SSH gateway settings. All fields are optional and fall back to built-in defaults. (see [below for nested schema](#nestedatt--ssh--gateway))
+- `resources` (List of Object) List of SSH resources. Accepts full twingate_ssh_resource references. (see [below for nested schema](#nestedatt--ssh--resources))
+
+<a id="nestedatt--ssh--ca"></a>
+### Nested Schema for `ssh.ca`
+
+Optional:
+
+- `auth` (Attributes) Vault authentication configuration. (see [below for nested schema](#nestedatt--ssh--ca--auth))
+- `private_key_file` (String) Path to the SSH CA private key file. Can't be used together with vault.address.
+- `vault` (Attributes) Vault SSH CA configuration. (see [below for nested schema](#nestedatt--ssh--ca--vault))
+
+<a id="nestedatt--ssh--ca--auth"></a>
+### Nested Schema for `ssh.ca.auth`
+
+Optional:
+
+- `gcp` (Attributes) GCP authentication for Vault. Can't be used together with token. (see [below for nested schema](#nestedatt--ssh--ca--auth--gcp))
+- `token` (String, Sensitive) Vault token used for authentication. Can't be used together with gcp.
+
+<a id="nestedatt--ssh--ca--auth--gcp"></a>
+### Nested Schema for `ssh.ca.auth.gcp`
+
+Optional:
+
+- `mount` (String) Vault GCP auth mount path. Default: "gcp".
+- `role` (String) GCP IAM role for Vault GCP authentication.
+- `service_account_email` (String) Service account email. Required when type is "iam".
+- `type` (String) GCP authentication type for Vault (e.g. "iam" or "gce"). When set to "iam", service_account_email is required.
 
 
-<a id="nestedatt--ssh_gateway"></a>
-### Nested Schema for `ssh_gateway`
+
+<a id="nestedatt--ssh--ca--vault"></a>
+### Nested Schema for `ssh.ca.vault`
+
+Optional:
+
+- `address` (String) Vault server address. Can't be used together with ca.private_key_file.
+- `ca_bundle_file` (String) Path to the Vault CA bundle file. Default: "/etc/ssl/vault-ca.crt".
+- `mount` (String) Vault SSH secrets engine mount path. Default: "ssh".
+- `role` (String) Vault role for signing certificates. Default: "gateway".
+
+
+
+<a id="nestedatt--ssh--gateway"></a>
+### Nested Schema for `ssh.gateway`
 
 Optional:
 
@@ -132,14 +233,15 @@ Optional:
 - `username` (String) SSH gateway username. Default: "gateway".
 
 
-<a id="nestedatt--ssh_resources"></a>
-### Nested Schema for `ssh_resources`
+<a id="nestedatt--ssh--resources"></a>
+### Nested Schema for `ssh.resources`
 
 Optional:
 
 - `address` (String)
 - `name` (String)
 - `username` (String)
+
 
 
 <a id="nestedatt--tls"></a>

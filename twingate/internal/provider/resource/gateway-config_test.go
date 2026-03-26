@@ -61,81 +61,148 @@ func customSshGateway(username, keyType, hostCertTTL, userCertTTL string) types.
 	})
 }
 
+var vaultObjType = types.ObjectType{
+	AttrTypes: map[string]fwattr.Type{
+		"address":        types.StringType,
+		"ca_bundle_file": types.StringType,
+		"mount":          types.StringType,
+		"role":           types.StringType,
+	},
+}
+
+var gcpObjType = types.ObjectType{
+	AttrTypes: map[string]fwattr.Type{
+		"role":                  types.StringType,
+		"type":                  types.StringType,
+		"mount":                 types.StringType,
+		"service_account_email": types.StringType,
+	},
+}
+
+var authObjType = types.ObjectType{
+	AttrTypes: map[string]fwattr.Type{
+		"token": types.StringType,
+		"gcp":   gcpObjType,
+	},
+}
+
 var sshCAObjType = types.ObjectType{
 	AttrTypes: map[string]fwattr.Type{
-		"vault_addr":           types.StringType,
-		"private_key_file":     types.StringType,
-		"vault_ca_bundle_file": types.StringType,
-		"vault_mount":          types.StringType,
-		"vault_role":           types.StringType,
-		"vault_auth_token":     types.StringType,
-		"vault_auth_gcp_role":  types.StringType,
-		"vault_auth_gcp_type":  types.StringType,
+		"private_key_file": types.StringType,
+		"vault":            vaultObjType,
+		"auth":             authObjType,
 	},
+}
+
+func defaultVaultObj() types.Object {
+	return types.ObjectValueMust(vaultObjType.AttrTypes, map[string]fwattr.Value{
+		"address":        types.StringNull(),
+		"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
+		"mount":          types.StringValue(defaultVaultMount),
+		"role":           types.StringValue(defaultVaultRole),
+	})
+}
+
+func defaultGCPObj() types.Object {
+	return types.ObjectValueMust(gcpObjType.AttrTypes, map[string]fwattr.Value{
+		"role":                  types.StringNull(),
+		"type":                  types.StringNull(),
+		"mount":                 types.StringValue(defaultGCPMount),
+		"service_account_email": types.StringNull(),
+	})
+}
+
+func defaultAuthObj() types.Object {
+	return types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
+		"token": types.StringNull(),
+		"gcp":   defaultGCPObj(),
+	})
 }
 
 func defaultSshCA() types.Object {
 	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
-		"vault_addr":           types.StringNull(),
-		"private_key_file":     types.StringNull(),
-		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
-		"vault_mount":          types.StringValue(defaultVaultMount),
-		"vault_role":           types.StringValue(defaultVaultRole),
-		"vault_auth_token":     types.StringNull(),
-		"vault_auth_gcp_role":  types.StringNull(),
-		"vault_auth_gcp_type":  types.StringNull(),
+		"private_key_file": types.StringNull(),
+		"vault":            defaultVaultObj(),
+		"auth":             defaultAuthObj(),
 	})
 }
 
 func sshCAWithVault(vaultAddr string) types.Object {
 	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
-		"vault_addr":           types.StringValue(vaultAddr),
-		"private_key_file":     types.StringNull(),
-		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
-		"vault_mount":          types.StringValue(defaultVaultMount),
-		"vault_role":           types.StringValue(defaultVaultRole),
-		"vault_auth_token":     types.StringNull(),
-		"vault_auth_gcp_role":  types.StringNull(),
-		"vault_auth_gcp_type":  types.StringNull(),
+		"private_key_file": types.StringNull(),
+		"vault": types.ObjectValueMust(vaultObjType.AttrTypes, map[string]fwattr.Value{
+			"address":        types.StringValue(vaultAddr),
+			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
+			"mount":          types.StringValue(defaultVaultMount),
+			"role":           types.StringValue(defaultVaultRole),
+		}),
+		"auth": defaultAuthObj(),
 	})
 }
 
 func sshCAWithVaultAndToken(vaultAddr, authToken string) types.Object {
 	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
-		"vault_addr":           types.StringValue(vaultAddr),
-		"private_key_file":     types.StringNull(),
-		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
-		"vault_mount":          types.StringValue(defaultVaultMount),
-		"vault_role":           types.StringValue(defaultVaultRole),
-		"vault_auth_token":     types.StringValue(authToken),
-		"vault_auth_gcp_role":  types.StringNull(),
-		"vault_auth_gcp_type":  types.StringNull(),
+		"private_key_file": types.StringNull(),
+		"vault": types.ObjectValueMust(vaultObjType.AttrTypes, map[string]fwattr.Value{
+			"address":        types.StringValue(vaultAddr),
+			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
+			"mount":          types.StringValue(defaultVaultMount),
+			"role":           types.StringValue(defaultVaultRole),
+		}),
+		"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
+			"token": types.StringValue(authToken),
+			"gcp":   defaultGCPObj(),
+		}),
 	})
 }
 
 func sshCAWithVaultAndGCP(vaultAddr, gcpRole, gcpType string) types.Object {
 	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
-		"vault_addr":           types.StringValue(vaultAddr),
-		"private_key_file":     types.StringNull(),
-		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
-		"vault_mount":          types.StringValue(defaultVaultMount),
-		"vault_role":           types.StringValue(defaultVaultRole),
-		"vault_auth_token":     types.StringNull(),
-		"vault_auth_gcp_role":  types.StringValue(gcpRole),
-		"vault_auth_gcp_type":  types.StringValue(gcpType),
+		"private_key_file": types.StringNull(),
+		"vault": types.ObjectValueMust(vaultObjType.AttrTypes, map[string]fwattr.Value{
+			"address":        types.StringValue(vaultAddr),
+			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
+			"mount":          types.StringValue(defaultVaultMount),
+			"role":           types.StringValue(defaultVaultRole),
+		}),
+		"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
+			"token": types.StringNull(),
+			"gcp": types.ObjectValueMust(gcpObjType.AttrTypes, map[string]fwattr.Value{
+				"role":                  types.StringValue(gcpRole),
+				"type":                  types.StringValue(gcpType),
+				"mount":                 types.StringValue(defaultGCPMount),
+				"service_account_email": types.StringNull(),
+			}),
+		}),
+	})
+}
+
+func sshCAWithVaultAndGCPFull(vaultAddr, gcpRole, gcpType, gcpMount, serviceAccountEmail string) types.Object {
+	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
+		"private_key_file": types.StringNull(),
+		"vault": types.ObjectValueMust(vaultObjType.AttrTypes, map[string]fwattr.Value{
+			"address":        types.StringValue(vaultAddr),
+			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
+			"mount":          types.StringValue(defaultVaultMount),
+			"role":           types.StringValue(defaultVaultRole),
+		}),
+		"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
+			"token": types.StringNull(),
+			"gcp": types.ObjectValueMust(gcpObjType.AttrTypes, map[string]fwattr.Value{
+				"role":                  types.StringValue(gcpRole),
+				"type":                  types.StringValue(gcpType),
+				"mount":                 types.StringValue(gcpMount),
+				"service_account_email": types.StringValue(serviceAccountEmail),
+			}),
+		}),
 	})
 }
 
 func sshCAWithPrivateKey(keyFile string) types.Object {
 	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
-		"vault_addr":           types.StringNull(),
-		"private_key_file":     types.StringValue(keyFile),
-		"vault_ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
-		"vault_mount":          types.StringValue(defaultVaultMount),
-		"vault_role":           types.StringValue(defaultVaultRole),
-		"vault_auth_token":     types.StringNull(),
-		"vault_auth_gcp_role":  types.StringNull(),
-		"vault_auth_gcp_type":  types.StringNull(),
+		"private_key_file": types.StringValue(keyFile),
+		"vault":            defaultVaultObj(),
+		"auth":             defaultAuthObj(),
 	})
 }
 
@@ -155,6 +222,20 @@ var (
 			"in_cluster": types.BoolType,
 		},
 	}
+
+	sshObjType = types.ObjectType{
+		AttrTypes: map[string]fwattr.Type{
+			"gateway":   sshGatewayObjType,
+			"ca":        sshCAObjType,
+			"resources": types.ListType{ElemType: sshElemType},
+		},
+	}
+
+	k8sObjType = types.ObjectType{
+		AttrTypes: map[string]fwattr.Type{
+			"resources": types.ListType{ElemType: k8sElemType},
+		},
+	}
 )
 
 func makeSshList(items ...map[string]fwattr.Value) types.List {
@@ -171,6 +252,28 @@ func makeK8sList(items ...map[string]fwattr.Value) types.List {
 		elems = append(elems, types.ObjectValueMust(k8sElemType.AttrTypes, item))
 	}
 	return types.ListValueMust(k8sElemType, elems)
+}
+
+func makeSshObj(gateway, ca types.Object, resources types.List) types.Object {
+	return types.ObjectValueMust(sshObjType.AttrTypes, map[string]fwattr.Value{
+		"gateway":   gateway,
+		"ca":        ca,
+		"resources": resources,
+	})
+}
+
+func defaultSshObj(resources types.List) types.Object {
+	return makeSshObj(defaultSshGateway(), defaultSshCA(), resources)
+}
+
+func makeK8sObj(resources types.List) types.Object {
+	return types.ObjectValueMust(k8sObjType.AttrTypes, map[string]fwattr.Value{
+		"resources": resources,
+	})
+}
+
+func defaultK8sObj() types.Object {
+	return makeK8sObj(makeK8sList())
 }
 
 func sshItem(name, address, username string) map[string]fwattr.Value {
@@ -204,13 +307,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "vault addr set — ca uses vault block",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               sshCAWithVault("https://vault.example.com"),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVault("https://vault.example.com"), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -227,13 +328,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "vault addr and auth token set — ca vault block includes auth",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               sshCAWithVaultAndToken("https://vault.example.com", "s.mytoken"),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndToken("https://vault.example.com", "s.mytoken"), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -246,13 +345,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "vault addr and gcp auth set — ca vault block includes gcp auth",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               sshCAWithVaultAndGCP("https://vault.example.com", "vm-role", "gce"),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCP("https://vault.example.com", "vm-role", "gce"), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -265,15 +362,43 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			},
 		},
 		{
+			name: "gcp auth with custom mount rendered",
+			model: gatewayConfigModel{
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCPFull("https://vault.example.com", "vm-role", "gce", "custom-gcp", ""), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
+			},
+			checkYAML: func(t *testing.T, doc map[string]any) {
+				gcp := doc["ssh"].(map[string]any)["ca"].(map[string]any)["vault"].(map[string]any)["auth"].(map[string]any)["gcp"].(map[string]any)
+				assert.Equal(t, "custom-gcp", gcp["mount"])
+				assert.NotContains(t, gcp, "serviceAccountEmail")
+			},
+		},
+		{
+			name: "gcp auth with service account email rendered for iam type",
+			model: gatewayConfigModel{
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCPFull("https://vault.example.com", "vm-role", "iam", defaultGCPMount, "sa@project.iam.gserviceaccount.com"), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
+			},
+			checkYAML: func(t *testing.T, doc map[string]any) {
+				gcp := doc["ssh"].(map[string]any)["ca"].(map[string]any)["vault"].(map[string]any)["auth"].(map[string]any)["gcp"].(map[string]any)
+				assert.Equal(t, defaultGCPMount, gcp["mount"])
+				assert.Equal(t, "sa@project.iam.gserviceaccount.com", gcp["serviceAccountEmail"])
+			},
+		},
+		{
 			name: "vault addr set without auth token — no auth block",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               sshCAWithVault("https://vault.example.com"),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVault("https://vault.example.com"), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -285,13 +410,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "private key file set — ca uses manual block",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               sshCAWithPrivateKey("/etc/ssh/id_ed25519"),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithPrivateKey("/etc/ssh/id_ed25519"), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -305,13 +428,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "both vault addr and private key empty — ca is empty",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -326,13 +447,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			name:   "twingate network is rendered",
 			config: providerdata.Config{Network: "acme-corp", URL: "twingate.com"},
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				twingate := doc["twingate"].(map[string]any)
@@ -344,14 +463,12 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SshCA:       defaultSshCA(),
-				SSHResources: makeSshList(
+				SSH: defaultSshObj(makeSshList(
 					sshItem("web", "192.168.1.10", "root"),
 					sshItem("db", "192.168.1.11", "postgres"),
-				),
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				)),
+				Kubernetes: makeK8sObj(baseK8s),
+				TLS:        defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -369,16 +486,14 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "kubernetes upstreams rendered correctly",
 			model: gatewayConfigModel{
-				Port:         types.Int64Value(defaultPort),
-				MetricsPort:  types.Int64Value(defaultMetricsPort),
-				SshCA:        defaultSshCA(),
-				SSHResources: baseSsh,
-				KubernetesResources: makeK8sList(
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(baseSsh),
+				Kubernetes: makeK8sObj(makeK8sList(
 					k8sItem("prod-cluster", "10.1.0.1:6443", true),
 					k8sItem("dev-cluster", "10.2.0.1:6443", false),
-				),
-				TLS:        defaultTLS(),
-				SshGateway: defaultSshGateway(),
+				)),
+				TLS: defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				k8s := doc["kubernetes"].(map[string]any)
@@ -396,13 +511,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "custom ssh_gateway values are rendered",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          customSshGateway("ops", "rsa", "12h", "30m"),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         makeSshObj(customSshGateway("ops", "rsa", "12h", "30m"), defaultSshCA(), baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -416,13 +529,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "default ssh_gateway values are rendered",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
@@ -436,13 +547,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "custom port and metrics_port are rendered",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(9443),
-				MetricsPort:         types.Int64Value(9091),
-				SshCA:               defaultSshCA(),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(9443),
+				MetricsPort: types.Int64Value(9091),
+				SSH:         defaultSshObj(baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				assert.EqualValues(t, 9443, doc["port"])
@@ -452,13 +561,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "custom tls certificate and key files are rendered",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				TLS:                 customTLS("/custom/tls.crt", "/custom/tls.key"),
-				SshGateway:          defaultSshGateway(),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(baseSsh),
+				TLS:         customTLS("/custom/tls.crt", "/custom/tls.key"),
+				Kubernetes:  makeK8sObj(baseK8s),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				tls := doc["tls"].(map[string]any)
@@ -469,13 +576,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "only ssh resources — kubernetes block absent",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				SSHResources:        baseSsh,
-				KubernetesResources: makeK8sList(),
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(baseSsh),
+				Kubernetes:  makeK8sObj(makeK8sList()),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				assert.Contains(t, doc, "ssh", "expected ssh block to be present")
@@ -485,13 +590,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "only kubernetes resources — ssh block absent",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				SSHResources:        makeSshList(),
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(makeSshList()),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				assert.Contains(t, doc, "kubernetes", "expected kubernetes block to be present")
@@ -501,13 +604,11 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 		{
 			name: "fixed top-level fields are present",
 			model: gatewayConfigModel{
-				Port:                types.Int64Value(defaultPort),
-				MetricsPort:         types.Int64Value(defaultMetricsPort),
-				SshCA:               defaultSshCA(),
-				SSHResources:        baseSsh,
-				KubernetesResources: baseK8s,
-				TLS:                 defaultTLS(),
-				SshGateway:          defaultSshGateway(),
+				Port:        types.Int64Value(defaultPort),
+				MetricsPort: types.Int64Value(defaultMetricsPort),
+				SSH:         defaultSshObj(baseSsh),
+				Kubernetes:  makeK8sObj(baseK8s),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				assert.EqualValues(t, 8443, doc["port"])

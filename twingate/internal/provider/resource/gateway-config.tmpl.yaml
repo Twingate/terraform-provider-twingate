@@ -9,53 +9,57 @@ tls:
   certificateFile: {{ .TLS.CertificateFile }}
   privateKeyFile: {{ .TLS.PrivateKeyFile }}
 
-{{- if .KubernetesResources }}
+{{- if .Kubernetes.Resources }}
 
 kubernetes:
   upstreams:
-  {{- range .KubernetesResources }}
+  {{- range .Kubernetes.Resources }}
   - name: {{ .Name }}
     address: {{ .Address }}
     inCluster: {{ .InCluster }}
   {{- end }}
 {{- end }}
 
-{{- if .SSHResources }}
+{{- if .SSH.Resources }}
 
 ssh:
   gateway:
-    username: {{ .SshGateway.Username }}
+    username: {{ .SSH.Gateway.Username }}
     key:
-      type: {{ .SshGateway.KeyType }}
+      type: {{ .SSH.Gateway.KeyType }}
     hostCertificate:
-      ttl: {{ .SshGateway.HostCertTTL }}
+      ttl: {{ .SSH.Gateway.HostCertTTL }}
     userCertificate:
-      ttl: {{ .SshGateway.UserCertTTL }}
+      ttl: {{ .SSH.Gateway.UserCertTTL }}
 
   ca:
-    {{- if .SshCA.VaultAddr }}
+    {{- if .SSH.CA.Vault.Address }}
     vault:
-      address: {{ .SshCA.VaultAddr }}
-      caBundleFile: {{ .SshCA.VaultCABundleFile }}
-      mount: {{ .SshCA.VaultMount }}
-      role: {{ .SshCA.VaultRole }}
-      {{- if .SshCA.VaultAuthToken }}
+      address: {{ .SSH.CA.Vault.Address }}
+      caBundleFile: {{ .SSH.CA.Vault.CABundleFile }}
+      mount: {{ .SSH.CA.Vault.Mount }}
+      role: {{ .SSH.CA.Vault.Role }}
+      {{- if .SSH.CA.Auth.Token }}
       auth:
-        token: {{ .SshCA.VaultAuthToken }}
-      {{- else if .SshCA.VaultAuthGCPRole }}
+        token: {{ .SSH.CA.Auth.Token }}
+      {{- else if .SSH.CA.Auth.GCP.Role }}
       auth:
         gcp:
-          role: {{ .SshCA.VaultAuthGCPRole }}
-          type: {{ .SshCA.VaultAuthGCPType }}
+          role: {{ .SSH.CA.Auth.GCP.Role }}
+          type: {{ .SSH.CA.Auth.GCP.Type }}
+          mount: {{ .SSH.CA.Auth.GCP.Mount }}
+          {{- if .SSH.CA.Auth.GCP.ServiceAccountEmail }}
+          serviceAccountEmail: {{ .SSH.CA.Auth.GCP.ServiceAccountEmail }}
+          {{- end }}
       {{- end }}
-    {{- else if .SshCA.PrivateKeyFile }}
+    {{- else if .SSH.CA.PrivateKeyFile }}
     manual:
-      privateKeyFile: {{ .SshCA.PrivateKeyFile }}
+      privateKeyFile: {{ .SSH.CA.PrivateKeyFile }}
     {{- else }} null
     {{- end }}
 
   upstreams:
-  {{- range .SSHResources }}
+  {{- range .SSH.Resources }}
   - name: {{ .Name }}
     address: {{ .Address }}:22
     {{- if .Username }}
