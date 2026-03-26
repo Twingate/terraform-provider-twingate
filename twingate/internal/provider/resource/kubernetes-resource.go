@@ -402,6 +402,10 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 	state.RemoteNetworkID = types.StringValue(k8sRes.RemoteNetworkID)
 	state.SecurityPolicyID = types.StringPointerValue(k8sRes.SecurityPolicyID)
 
+	if state.InCluster.IsNull() || state.InCluster.IsUnknown() {
+		state.InCluster = types.BoolValue(k8sRes.Address == defaultKubernetesAddress)
+	}
+
 	if state.BearerTokenFile.IsUnknown() {
 		state.BearerTokenFile = types.StringNull()
 	}

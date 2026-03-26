@@ -66,6 +66,7 @@ var (
 var gatewayConfigTemplate string
 
 var _ resource.Resource = &gatewayConfig{}
+var _ resource.ResourceWithValidateConfig = &gatewayConfig{}
 
 func NewGatewayConfigResource() resource.Resource {
 	return &gatewayConfig{}
@@ -549,9 +550,6 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 						Optional:    true,
 						Description: "List of SSH resources. Accepts full twingate_ssh_resource references.",
 						ElementType: sshResourceElemType(),
-						Validators: []validator.List{
-							customvalidator.AtLeastOneNonEmptyWith(path.MatchRoot(attr.Kubernetes).AtName(attr.Resources)),
-						},
 					},
 				},
 			},
@@ -567,9 +565,6 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 						Optional:    true,
 						Description: "List of Kubernetes resources. Accepts full twingate_kubernetes_resource references.",
 						ElementType: kubernetesResourceElemType(),
-						Validators: []validator.List{
-							customvalidator.AtLeastOneNonEmptyWith(path.MatchRoot(attr.SSH).AtName(attr.Resources)),
-						},
 					},
 				},
 			},
@@ -745,6 +740,41 @@ func (r *gatewayConfig) storeContent(ctx context.Context, getter Getter, setter 
 
 func (r *gatewayConfig) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
 	// Nothing to delete - purely local resource.
+}
+
+func (r *gatewayConfig) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var cfg gatewayConfigModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &cfg)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	sshEmpty := true
+
+	if !cfg.SSH.IsNull() && !cfg.SSH.IsUnknown() {
+		var sshConf sshModel
+		if diags := cfg.SSH.As(ctx, &sshConf, basetypes.ObjectAsOptions{}); !diags.HasError() {
+			sshEmpty = sshConf.Resources.IsNull() || sshConf.Resources.IsUnknown() || len(sshConf.Resources.Elements()) == 0
+		}
+	}
+
+	k8sEmpty := true
+
+	if !cfg.Kubernetes.IsNull() && !cfg.Kubernetes.IsUnknown() {
+		var k8sConf kubernetesModel
+		if diags := cfg.Kubernetes.As(ctx, &k8sConf, basetypes.ObjectAsOptions{}); !diags.HasError() {
+			k8sEmpty = k8sConf.Resources.IsNull() || k8sConf.Resources.IsUnknown() || len(k8sConf.Resources.Elements()) == 0
+		}
+	}
+
+	if sshEmpty && k8sEmpty {
+		resp.Diagnostics.AddError(
+			"Invalid configuration",
+			`At least one of "ssh.resources" or "kubernetes.resources" must contain one or more items.`,
+		)
+	}
 }
 
 type Getter interface {
