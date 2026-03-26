@@ -461,7 +461,7 @@ func TestAccTwingateGatewayConfig_SshCANeitherSet(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      gatewayConfigWithSshCANeitherSet(tfName, "web", "10.0.0.1", "ubuntu"),
-				ExpectError: regexp.MustCompile(`At least one of "ssh.ca.private_key_file" or "ssh.ca.vault.address" must be set`),
+				ExpectError: regexp.MustCompile(`At least one of "ssh.ca.private_key_file" or "ssh.ca.vault.address" must`),
 			},
 		},
 	})

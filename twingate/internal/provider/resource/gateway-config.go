@@ -140,8 +140,10 @@ func (m *sshCAModel) Validate(ctx context.Context) error {
 	privateKeySet := !m.PrivateKeyFile.IsNull() && !m.PrivateKeyFile.IsUnknown() && m.PrivateKeyFile.ValueString() != ""
 
 	var vaultConf vaultModel
-	if diags := m.Vault.As(ctx, &vaultConf, basetypes.ObjectAsOptions{}); diags.HasError() {
-		return ErrFailedDecodeVault
+	if !m.Vault.IsNull() && !m.Vault.IsUnknown() {
+		if diags := m.Vault.As(ctx, &vaultConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+			return ErrFailedDecodeVault
+		}
 	}
 
 	if !privateKeySet && !vaultConf.IsAddressSet() {
