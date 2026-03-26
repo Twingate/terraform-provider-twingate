@@ -89,7 +89,7 @@ sec:
 
 .PHONY: docs
 docs:
-	go tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
+	go tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name terraform-provider-twingate
 
 .PHONY: build.upgrader
 build.upgrader:
