@@ -19,7 +19,7 @@ resource "twingate_ssh_certificate_authority" "ssh" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.prod.id
-  address           = "10.0.0.1:8001"
+  address           = "10.0.0.1:8443"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
@@ -44,7 +44,7 @@ resource "twingate_ssh_resource" "ssh_server_2" {
   gateway_id        = twingate_gateway.main.id
   remote_network_id = twingate_remote_network.prod.id
   address           = "10.128.0.106"
-  username          = "ubuntu-2"
+  username          = "ubuntu"
 }
 
 resource "twingate_gateway_config" "config" {
@@ -84,23 +84,21 @@ resource "twingate_gateway_config" "config" {
         # Path to a custom CA bundle for verifying Vault's TLS certificate.
         # Default: "/etc/ssl/vault-ca.crt".
         ca_bundle_file = "/etc/ssl/vault-ca.crt"
-      }
 
-      # Vault authentication — choose one of: token or gcp.
-      # auth = {
-      #   # Option 1: static Vault token.
-      #   token = "s.myVaultToken"
-      # }
+        # Vault authentication — choose one of: token or gcp.
+        auth = {
+          # Option 1: static Vault token.
+          # token = "s.myVaultToken"
 
-      auth = {
-        # Option 2: GCP IAM / GCE authentication.
-        gcp = {
-          role  = "my-vault-gcp-role"
-          type  = "iam"  # "iam" or "gce"
-          mount = "gcp"  # Vault GCP auth mount path. Default: "gcp".
+          # Option 2: GCP IAM / GCE authentication.
+          gcp = {
+            role  = "my-vault-gcp-role"
+            type  = "iam"  # "iam" or "gce"
+            mount = "gcp"  # Vault GCP auth mount path. Default: "gcp".
 
-          # Required when type = "iam".
-          service_account_email = "gateway-sa@my-project.iam.gserviceaccount.com"
+            # Required when type = "iam".
+            service_account_email = "gateway-sa@my-project.iam.gserviceaccount.com"
+          }
         }
       }
 

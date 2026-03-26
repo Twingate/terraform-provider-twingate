@@ -67,6 +67,7 @@ var vaultObjType = types.ObjectType{
 		"ca_bundle_file": types.StringType,
 		"mount":          types.StringType,
 		"role":           types.StringType,
+		"auth":           authObjType,
 	},
 }
 
@@ -90,7 +91,6 @@ var sshCAObjType = types.ObjectType{
 	AttrTypes: map[string]fwattr.Type{
 		"private_key_file": types.StringType,
 		"vault":            vaultObjType,
-		"auth":             authObjType,
 	},
 }
 
@@ -100,6 +100,7 @@ func defaultVaultObj() types.Object {
 		"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 		"mount":          types.StringValue(defaultVaultMount),
 		"role":           types.StringValue(defaultVaultRole),
+		"auth":           defaultAuthObj(),
 	})
 }
 
@@ -123,7 +124,6 @@ func defaultSshCA() types.Object {
 	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
 		"private_key_file": types.StringNull(),
 		"vault":            defaultVaultObj(),
-		"auth":             defaultAuthObj(),
 	})
 }
 
@@ -135,8 +135,8 @@ func sshCAWithVault(vaultAddr string) types.Object {
 			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 			"mount":          types.StringValue(defaultVaultMount),
 			"role":           types.StringValue(defaultVaultRole),
+			"auth":           defaultAuthObj(),
 		}),
-		"auth": defaultAuthObj(),
 	})
 }
 
@@ -148,10 +148,10 @@ func sshCAWithVaultAndToken(vaultAddr, authToken string) types.Object {
 			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 			"mount":          types.StringValue(defaultVaultMount),
 			"role":           types.StringValue(defaultVaultRole),
-		}),
-		"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
-			"token": types.StringValue(authToken),
-			"gcp":   defaultGCPObj(),
+			"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
+				"token": types.StringValue(authToken),
+				"gcp":   defaultGCPObj(),
+			}),
 		}),
 	})
 }
@@ -164,14 +164,14 @@ func sshCAWithVaultAndGCP(vaultAddr, gcpRole, gcpType string) types.Object {
 			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 			"mount":          types.StringValue(defaultVaultMount),
 			"role":           types.StringValue(defaultVaultRole),
-		}),
-		"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
-			"token": types.StringNull(),
-			"gcp": types.ObjectValueMust(gcpObjType.AttrTypes, map[string]fwattr.Value{
-				"role":                  types.StringValue(gcpRole),
-				"type":                  types.StringValue(gcpType),
-				"mount":                 types.StringValue(defaultGCPMount),
-				"service_account_email": types.StringNull(),
+			"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
+				"token": types.StringNull(),
+				"gcp": types.ObjectValueMust(gcpObjType.AttrTypes, map[string]fwattr.Value{
+					"role":                  types.StringValue(gcpRole),
+					"type":                  types.StringValue(gcpType),
+					"mount":                 types.StringValue(defaultGCPMount),
+					"service_account_email": types.StringNull(),
+				}),
 			}),
 		}),
 	})
@@ -185,14 +185,14 @@ func sshCAWithVaultAndGCPFull(vaultAddr, gcpRole, gcpType, gcpMount, serviceAcco
 			"ca_bundle_file": types.StringValue(defaultVaultCABundleFile),
 			"mount":          types.StringValue(defaultVaultMount),
 			"role":           types.StringValue(defaultVaultRole),
-		}),
-		"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
-			"token": types.StringNull(),
-			"gcp": types.ObjectValueMust(gcpObjType.AttrTypes, map[string]fwattr.Value{
-				"role":                  types.StringValue(gcpRole),
-				"type":                  types.StringValue(gcpType),
-				"mount":                 types.StringValue(gcpMount),
-				"service_account_email": types.StringValue(serviceAccountEmail),
+			"auth": types.ObjectValueMust(authObjType.AttrTypes, map[string]fwattr.Value{
+				"token": types.StringNull(),
+				"gcp": types.ObjectValueMust(gcpObjType.AttrTypes, map[string]fwattr.Value{
+					"role":                  types.StringValue(gcpRole),
+					"type":                  types.StringValue(gcpType),
+					"mount":                 types.StringValue(gcpMount),
+					"service_account_email": types.StringValue(serviceAccountEmail),
+				}),
 			}),
 		}),
 	})
@@ -202,7 +202,6 @@ func sshCAWithPrivateKey(keyFile string) types.Object {
 	return types.ObjectValueMust(sshCAObjType.AttrTypes, map[string]fwattr.Value{
 		"private_key_file": types.StringValue(keyFile),
 		"vault":            defaultVaultObj(),
-		"auth":             defaultAuthObj(),
 	})
 }
 

@@ -139,9 +139,9 @@ func gatewayConfigWithSshCAAndToken(tfName, sshName, sshAddress, sshUsername, va
 	    ca = {
 	      vault = {
 	        address = "%s"
-	      }
-	      auth = {
-	        token = "%s"
+	        auth = {
+	          token = "%s"
+	        }
 	      }
 	    }
 	    resources = [
@@ -157,6 +157,26 @@ func gatewayConfigWithSshCAAndToken(tfName, sshName, sshAddress, sshUsername, va
 	  }
 	}
 	`, tfName, vaultAddr, authToken, sshName, sshAddress, sshUsername)
+}
+
+func gatewayConfigWithSshCANeitherSet(tfName, sshName, sshAddress, sshUsername string) string {
+	return fmt.Sprintf(`
+	resource "twingate_gateway_config" "%s" {
+	  ssh = {
+	    ca = {}
+	    resources = [
+	      {
+	        name     = "%s"
+	        address  = "%s"
+	        username = "%s"
+	      }
+	    ]
+	  }
+	  kubernetes = {
+	    resources = []
+	  }
+	}
+	`, tfName, sshName, sshAddress, sshUsername)
 }
 
 func gatewayConfigWithConflictingCA(tfName, sshName, sshAddress, sshUsername string) string {
@@ -425,6 +445,23 @@ func TestAccTwingateGatewayConfig_BothResourcesOmitted(t *testing.T) {
 			{
 				Config:      gatewayConfigBothOmitted(tfName),
 				ExpectError: regexp.MustCompile(`At least one of "ssh.resources" or "kubernetes.resources" must contain`),
+			},
+		},
+	})
+}
+
+func TestAccTwingateGatewayConfig_SshCANeitherSet(t *testing.T) {
+	t.Parallel()
+
+	tfName := test.TerraformRandName("test_gw_cfg")
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []sdk.TestStep{
+			{
+				Config:      gatewayConfigWithSshCANeitherSet(tfName, "web", "10.0.0.1", "ubuntu"),
+				ExpectError: regexp.MustCompile(`At least one of "ssh.ca.private_key_file" or "ssh.ca.vault.address" must be set`),
 			},
 		},
 	})

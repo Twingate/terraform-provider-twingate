@@ -39,17 +39,17 @@ ssh:
       caBundleFile: {{ .SSH.CA.Vault.CABundleFile }}
       mount: {{ .SSH.CA.Vault.Mount }}
       role: {{ .SSH.CA.Vault.Role }}
-      {{- if .SSH.CA.Auth.Token }}
+      {{- if .SSH.CA.Vault.Auth.Token }}
       auth:
-        token: {{ .SSH.CA.Auth.Token }}
-      {{- else if .SSH.CA.Auth.GCP.Role }}
+        token: {{ .SSH.CA.Vault.Auth.Token }}
+      {{- else if .SSH.CA.Vault.Auth.GCP.Role }}
       auth:
         gcp:
-          role: {{ .SSH.CA.Auth.GCP.Role }}
-          type: {{ .SSH.CA.Auth.GCP.Type }}
-          mount: {{ .SSH.CA.Auth.GCP.Mount }}
-          {{- if .SSH.CA.Auth.GCP.ServiceAccountEmail }}
-          serviceAccountEmail: {{ .SSH.CA.Auth.GCP.ServiceAccountEmail }}
+          role: {{ .SSH.CA.Vault.Auth.GCP.Role }}
+          type: {{ .SSH.CA.Vault.Auth.GCP.Type }}
+          mount: {{ .SSH.CA.Vault.Auth.GCP.Mount }}
+          {{- if .SSH.CA.Vault.Auth.GCP.ServiceAccountEmail }}
+          serviceAccountEmail: {{ .SSH.CA.Vault.Auth.GCP.ServiceAccountEmail }}
           {{- end }}
       {{- end }}
     {{- else if .SSH.CA.PrivateKeyFile }}

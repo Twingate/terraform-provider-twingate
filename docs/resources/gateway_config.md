@@ -34,7 +34,7 @@ resource "twingate_ssh_certificate_authority" "ssh" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.prod.id
-  address           = "10.0.0.1:8001"
+  address           = "10.0.0.1:8443"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
@@ -59,7 +59,7 @@ resource "twingate_ssh_resource" "ssh_server_2" {
   gateway_id        = twingate_gateway.main.id
   remote_network_id = twingate_remote_network.prod.id
   address           = "10.128.0.106"
-  username          = "ubuntu-2"
+  username          = "ubuntu"
 }
 
 resource "twingate_gateway_config" "config" {
@@ -99,23 +99,21 @@ resource "twingate_gateway_config" "config" {
         # Path to a custom CA bundle for verifying Vault's TLS certificate.
         # Default: "/etc/ssl/vault-ca.crt".
         ca_bundle_file = "/etc/ssl/vault-ca.crt"
-      }
 
-      # Vault authentication — choose one of: token or gcp.
-      # auth = {
-      #   # Option 1: static Vault token.
-      #   token = "s.myVaultToken"
-      # }
+        # Vault authentication — choose one of: token or gcp.
+        auth = {
+          # Option 1: static Vault token.
+          # token = "s.myVaultToken"
 
-      auth = {
-        # Option 2: GCP IAM / GCE authentication.
-        gcp = {
-          role  = "my-vault-gcp-role"
-          type  = "iam"  # "iam" or "gce"
-          mount = "gcp"  # Vault GCP auth mount path. Default: "gcp".
+          # Option 2: GCP IAM / GCE authentication.
+          gcp = {
+            role  = "my-vault-gcp-role"
+            type  = "iam"  # "iam" or "gce"
+            mount = "gcp"  # Vault GCP auth mount path. Default: "gcp".
 
-          # Required when type = "iam".
-          service_account_email = "gateway-sa@my-project.iam.gserviceaccount.com"
+            # Required when type = "iam".
+            service_account_email = "gateway-sa@my-project.iam.gserviceaccount.com"
+          }
         }
       }
 
@@ -186,20 +184,30 @@ Optional:
 
 Optional:
 
-- `auth` (Attributes) Vault authentication configuration. (see [below for nested schema](#nestedatt--ssh--ca--auth))
 - `private_key_file` (String) Path to the SSH CA private key file. Can't be used together with vault.address.
 - `vault` (Attributes) Vault SSH CA configuration. (see [below for nested schema](#nestedatt--ssh--ca--vault))
 
-<a id="nestedatt--ssh--ca--auth"></a>
-### Nested Schema for `ssh.ca.auth`
+<a id="nestedatt--ssh--ca--vault"></a>
+### Nested Schema for `ssh.ca.vault`
 
 Optional:
 
-- `gcp` (Attributes) GCP authentication for Vault. Can't be used together with token. (see [below for nested schema](#nestedatt--ssh--ca--auth--gcp))
+- `address` (String) Vault server address. Can't be used together with ca.private_key_file.
+- `auth` (Attributes) Vault authentication configuration. (see [below for nested schema](#nestedatt--ssh--ca--vault--auth))
+- `ca_bundle_file` (String) Path to the Vault CA bundle file. Default: "/etc/ssl/vault-ca.crt".
+- `mount` (String) Vault SSH secrets engine mount path. Default: "ssh".
+- `role` (String) Vault role for signing certificates. Default: "gateway".
+
+<a id="nestedatt--ssh--ca--vault--auth"></a>
+### Nested Schema for `ssh.ca.vault.auth`
+
+Optional:
+
+- `gcp` (Attributes) GCP authentication for Vault. Can't be used together with token. (see [below for nested schema](#nestedatt--ssh--ca--vault--auth--gcp))
 - `token` (String, Sensitive) Vault token used for authentication. Can't be used together with gcp.
 
-<a id="nestedatt--ssh--ca--auth--gcp"></a>
-### Nested Schema for `ssh.ca.auth.gcp`
+<a id="nestedatt--ssh--ca--vault--auth--gcp"></a>
+### Nested Schema for `ssh.ca.vault.auth.gcp`
 
 Optional:
 
@@ -209,16 +217,6 @@ Optional:
 - `type` (String) GCP authentication type for Vault (e.g. "iam" or "gce"). When set to "iam", service_account_email is required.
 
 
-
-<a id="nestedatt--ssh--ca--vault"></a>
-### Nested Schema for `ssh.ca.vault`
-
-Optional:
-
-- `address` (String) Vault server address. Can't be used together with ca.private_key_file.
-- `ca_bundle_file` (String) Path to the Vault CA bundle file. Default: "/etc/ssl/vault-ca.crt".
-- `mount` (String) Vault SSH secrets engine mount path. Default: "ssh".
-- `role` (String) Vault role for signing certificates. Default: "gateway".
 
 
 

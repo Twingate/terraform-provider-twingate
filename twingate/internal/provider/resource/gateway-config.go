@@ -50,16 +50,19 @@ const (
 )
 
 var (
-	ErrExtractSSH                 = errors.New("failed to extract ssh")
-	ErrExtractSSHResources        = errors.New("failed to extract ssh.resources")
-	ErrExtractKubernetes          = errors.New("failed to extract kubernetes")
-	ErrExtractKubernetesResources = errors.New("failed to extract kubernetes.resources")
-	ErrExtractSSHGateway          = errors.New("failed to extract ssh.gateway")
-	ErrExtractTLS                 = errors.New("failed to extract tls")
-	ErrExtractSSHCA               = errors.New("failed to extract ssh.ca")
-	ErrExtractVault               = errors.New("failed to extract vault")
-	ErrExtractAuth                = errors.New("failed to extract auth")
-	ErrExtractGCP                 = errors.New("failed to extract gcp")
+	ErrExtractSSH                       = errors.New("failed to extract ssh")
+	ErrExtractSSHResources              = errors.New("failed to extract ssh.resources")
+	ErrExtractKubernetes                = errors.New("failed to extract kubernetes")
+	ErrExtractKubernetesResources       = errors.New("failed to extract kubernetes.resources")
+	ErrExtractSSHGateway                = errors.New("failed to extract ssh.gateway")
+	ErrExtractTLS                       = errors.New("failed to extract tls")
+	ErrExtractSSHCA                     = errors.New("failed to extract ssh.ca")
+	ErrExtractVault                     = errors.New("failed to extract vault")
+	ErrExtractAuth                      = errors.New("failed to extract auth")
+	ErrExtractGCP                       = errors.New("failed to extract gcp")
+	ErrFailedDecodeVault                = errors.New("failed to decode ssh.ca.vault configuration")
+	ErrAtLeastOnePrivateKeyOrAddressSet = errors.New(`At least one of "ssh.ca.private_key_file" or "ssh.ca.vault.address" must be set.`)
+	ErrAuthNotSet                       = errors.New("ssh.ca.vault.auth must be set")
 )
 
 //go:embed gateway-config.tmpl.yaml
@@ -90,10 +93,26 @@ type kubernetesModel struct {
 	Resources types.List `tfsdk:"resources"`
 }
 
+func (m *kubernetesModel) IsEmptyResources() bool {
+	if m == nil {
+		return true
+	}
+
+	return m.Resources.IsNull() || m.Resources.IsUnknown() || len(m.Resources.Elements()) == 0
+}
+
 type sshModel struct {
 	Gateway   types.Object `tfsdk:"gateway"`
 	CA        types.Object `tfsdk:"ca"`
 	Resources types.List   `tfsdk:"resources"`
+}
+
+func (m *sshModel) IsEmptyResources() bool {
+	if m == nil {
+		return true
+	}
+
+	return m.Resources.IsNull() || m.Resources.IsUnknown() || len(m.Resources.Elements()) == 0
 }
 
 type tlsModel struct {
@@ -111,7 +130,25 @@ type sshGatewayModel struct {
 type sshCAModel struct {
 	PrivateKeyFile types.String `tfsdk:"private_key_file"`
 	Vault          types.Object `tfsdk:"vault"`
-	Auth           types.Object `tfsdk:"auth"`
+}
+
+func (m *sshCAModel) Validate(ctx context.Context) error {
+	if m == nil {
+		return nil
+	}
+
+	privateKeySet := !m.PrivateKeyFile.IsNull() && !m.PrivateKeyFile.IsUnknown() && m.PrivateKeyFile.ValueString() != ""
+
+	var vaultConf vaultModel
+	if diags := m.Vault.As(ctx, &vaultConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+		return ErrFailedDecodeVault
+	}
+
+	if !privateKeySet && !vaultConf.IsAddressSet() {
+		return ErrAtLeastOnePrivateKeyOrAddressSet
+	}
+
+	return nil
 }
 
 type vaultModel struct {
@@ -119,6 +156,27 @@ type vaultModel struct {
 	CABundleFile types.String `tfsdk:"ca_bundle_file"`
 	Mount        types.String `tfsdk:"mount"`
 	Role         types.String `tfsdk:"role"`
+	Auth         types.Object `tfsdk:"auth"`
+}
+
+func (m *vaultModel) IsAddressSet() bool {
+	if m == nil {
+		return false
+	}
+
+	return !m.Address.IsNull() && !m.Address.IsUnknown() && m.Address.ValueString() != ""
+}
+
+func (m *vaultModel) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	if m.IsAddressSet() && (m.Auth.IsNull() || m.Auth.IsUnknown()) {
+		return ErrAuthNotSet
+	}
+
+	return nil
 }
 
 type authModel struct {
@@ -180,7 +238,6 @@ type sshGatewayData struct {
 type sshCAData struct {
 	PrivateKeyFile string
 	Vault          vaultData
-	Auth           authData
 }
 
 type vaultData struct {
@@ -188,6 +245,7 @@ type vaultData struct {
 	CABundleFile string
 	Mount        string
 	Role         string
+	Auth         authData
 }
 
 type authData struct {
@@ -236,6 +294,7 @@ func vaultAttrTypes() map[string]fwattr.Type {
 		attr.CABundleFile: types.StringType,
 		attr.Mount:        types.StringType,
 		attr.Role:         types.StringType,
+		attr.Auth:         types.ObjectType{AttrTypes: authAttrTypes()},
 	}
 }
 
@@ -259,7 +318,6 @@ func sshCAAttrTypes() map[string]fwattr.Type {
 	return map[string]fwattr.Type{
 		attr.PrivateKeyFile: types.StringType,
 		attr.Vault:          types.ObjectType{AttrTypes: vaultAttrTypes()},
-		attr.Auth:           types.ObjectType{AttrTypes: authAttrTypes()},
 	}
 }
 
@@ -328,6 +386,7 @@ func defaultVaultObject() basetypes.ObjectValue {
 		attr.CABundleFile: types.StringValue(defaultVaultCABundleFile),
 		attr.Mount:        types.StringValue(defaultVaultMount),
 		attr.Role:         types.StringValue(defaultVaultRole),
+		attr.Auth:         defaultAuthObject(),
 	})
 }
 
@@ -335,7 +394,6 @@ func defaultCAObject() basetypes.ObjectValue {
 	return types.ObjectValueMust(sshCAAttrTypes(), map[string]fwattr.Value{
 		attr.PrivateKeyFile: types.StringNull(),
 		attr.Vault:          defaultVaultObject(),
-		attr.Auth:           defaultAuthObject(),
 	})
 }
 
@@ -493,52 +551,52 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 										Description: fmt.Sprintf("Vault role for signing certificates. Default: %q.", defaultVaultRole),
 										Default:     stringdefault.StaticString(defaultVaultRole),
 									},
-								},
-							},
-							attr.Auth: schema.SingleNestedAttribute{
-								Optional:    true,
-								Computed:    true,
-								Description: "Vault authentication configuration.",
-								Default:     objectdefault.StaticValue(defaultAuthObject()),
-								Attributes: map[string]schema.Attribute{
-									attr.Token: schema.StringAttribute{
-										Optional:    true,
-										Sensitive:   true,
-										Description: "Vault token used for authentication. Can't be used together with gcp.",
-										Validators: []validator.String{
-											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.GCP)),
-										},
-									},
-									attr.GCP: schema.SingleNestedAttribute{
+									attr.Auth: schema.SingleNestedAttribute{
 										Optional:    true,
 										Computed:    true,
-										Description: "GCP authentication for Vault. Can't be used together with token.",
-										Default:     objectdefault.StaticValue(defaultGCPObject()),
+										Description: "Vault authentication configuration.",
+										Default:     objectdefault.StaticValue(defaultAuthObject()),
 										Attributes: map[string]schema.Attribute{
-											attr.Role: schema.StringAttribute{
+											attr.Token: schema.StringAttribute{
 												Optional:    true,
-												Description: "GCP IAM role for Vault GCP authentication.",
+												Sensitive:   true,
+												Description: "Vault token used for authentication. Can't be used together with gcp.",
 												Validators: []validator.String{
-													stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.Type)),
+													stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName(attr.GCP)),
 												},
 											},
-											attr.Type: schema.StringAttribute{
-												Optional:    true,
-												Description: `GCP authentication type for Vault (e.g. "iam" or "gce"). When set to "iam", service_account_email is required.`,
-												Validators: []validator.String{
-													stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.Role)),
-													customvalidator.AlsoRequiresWhenValueIs(path.MatchRelative().AtParent().AtName(attr.ServiceAccountEmail), "iam"),
-												},
-											},
-											attr.Mount: schema.StringAttribute{
+											attr.GCP: schema.SingleNestedAttribute{
 												Optional:    true,
 												Computed:    true,
-												Description: fmt.Sprintf("Vault GCP auth mount path. Default: %q.", defaultGCPMount),
-												Default:     stringdefault.StaticString(defaultGCPMount),
-											},
-											attr.ServiceAccountEmail: schema.StringAttribute{
-												Optional:    true,
-												Description: `Service account email. Required when type is "iam".`,
+												Description: "GCP authentication for Vault. Can't be used together with token.",
+												Default:     objectdefault.StaticValue(defaultGCPObject()),
+												Attributes: map[string]schema.Attribute{
+													attr.Role: schema.StringAttribute{
+														Optional:    true,
+														Description: "GCP IAM role for Vault GCP authentication.",
+														Validators: []validator.String{
+															stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.Type)),
+														},
+													},
+													attr.Type: schema.StringAttribute{
+														Optional:    true,
+														Description: `GCP authentication type for Vault (e.g. "iam" or "gce"). When set to "iam", service_account_email is required.`,
+														Validators: []validator.String{
+															stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.Role)),
+															customvalidator.AlsoRequiresWhenValueIs(path.MatchRelative().AtParent().AtName(attr.ServiceAccountEmail), "iam"),
+														},
+													},
+													attr.Mount: schema.StringAttribute{
+														Optional:    true,
+														Computed:    true,
+														Description: fmt.Sprintf("Vault GCP auth mount path. Default: %q.", defaultGCPMount),
+														Default:     stringdefault.StaticString(defaultGCPMount),
+													},
+													attr.ServiceAccountEmail: schema.StringAttribute{
+														Optional:    true,
+														Description: `Service account email. Required when type is "iam".`,
+													},
+												},
 											},
 										},
 									},
@@ -641,7 +699,7 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 	}
 
 	var authConf authModel
-	if diags := sshCA.Auth.As(ctx, &authConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+	if diags := vaultConf.Auth.As(ctx, &authConf, basetypes.ObjectAsOptions{}); diags.HasError() {
 		return "", ErrExtractAuth
 	}
 
@@ -673,14 +731,14 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 					CABundleFile: vaultConf.CABundleFile.ValueString(),
 					Mount:        vaultConf.Mount.ValueString(),
 					Role:         vaultConf.Role.ValueString(),
-				},
-				Auth: authData{
-					Token: authConf.Token.ValueString(),
-					GCP: gcpData{
-						Role:                gcpConf.Role.ValueString(),
-						Type:                gcpConf.Type.ValueString(),
-						Mount:               gcpConf.Mount.ValueString(),
-						ServiceAccountEmail: gcpConf.ServiceAccountEmail.ValueString(),
+					Auth: authData{
+						Token: authConf.Token.ValueString(),
+						GCP: gcpData{
+							Role:                gcpConf.Role.ValueString(),
+							Type:                gcpConf.Type.ValueString(),
+							Mount:               gcpConf.Mount.ValueString(),
+							ServiceAccountEmail: gcpConf.ServiceAccountEmail.ValueString(),
+						},
 					},
 				},
 			},
@@ -743,7 +801,11 @@ func (r *gatewayConfig) Delete(_ context.Context, _ resource.DeleteRequest, _ *r
 }
 
 func (r *gatewayConfig) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var cfg gatewayConfigModel
+	var (
+		sshConf sshModel
+		k8sConf kubernetesModel
+		cfg     gatewayConfigModel
+	)
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &cfg)...)
 
@@ -751,29 +813,43 @@ func (r *gatewayConfig) ValidateConfig(ctx context.Context, req resource.Validat
 		return
 	}
 
-	sshEmpty := true
-
 	if !cfg.SSH.IsNull() && !cfg.SSH.IsUnknown() {
-		var sshConf sshModel
-		if diags := cfg.SSH.As(ctx, &sshConf, basetypes.ObjectAsOptions{}); !diags.HasError() {
-			sshEmpty = sshConf.Resources.IsNull() || sshConf.Resources.IsUnknown() || len(sshConf.Resources.Elements()) == 0
+		if diags := cfg.SSH.As(ctx, &sshConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+			resp.Diagnostics.Append(diags...)
+
+			return
 		}
 	}
-
-	k8sEmpty := true
 
 	if !cfg.Kubernetes.IsNull() && !cfg.Kubernetes.IsUnknown() {
-		var k8sConf kubernetesModel
-		if diags := cfg.Kubernetes.As(ctx, &k8sConf, basetypes.ObjectAsOptions{}); !diags.HasError() {
-			k8sEmpty = k8sConf.Resources.IsNull() || k8sConf.Resources.IsUnknown() || len(k8sConf.Resources.Elements()) == 0
+		if diags := cfg.Kubernetes.As(ctx, &k8sConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+			resp.Diagnostics.Append(diags...)
+
+			return
 		}
 	}
 
-	if sshEmpty && k8sEmpty {
+	if sshConf.IsEmptyResources() && k8sConf.IsEmptyResources() {
 		resp.Diagnostics.AddError(
 			"Invalid configuration",
 			`At least one of "ssh.resources" or "kubernetes.resources" must contain one or more items.`,
 		)
+	}
+
+	if !sshConf.CA.IsNull() && !sshConf.CA.IsUnknown() {
+		var caConf sshCAModel
+		if diags := sshConf.CA.As(ctx, &caConf, basetypes.ObjectAsOptions{}); diags.HasError() {
+			resp.Diagnostics.Append(diags...)
+
+			return
+		}
+
+		if err := caConf.Validate(ctx); err != nil {
+			resp.Diagnostics.AddError(
+				"Invalid configuration",
+				err.Error(),
+			)
+		}
 	}
 }
 
