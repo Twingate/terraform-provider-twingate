@@ -29,7 +29,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.prod.id
-  address           = "10.0.0.1:8001"
+  address           = "10.0.0.1:8443"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
 }
 
