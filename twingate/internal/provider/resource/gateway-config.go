@@ -166,7 +166,7 @@ func (m *vaultModel) IsAddressSet() bool {
 		return false
 	}
 
-	return !m.Address.IsNull() && !m.Address.IsUnknown() && m.Address.ValueString() != ""
+	return !m.Address.IsNull()
 }
 
 func (m *vaultModel) Validate() error {
