@@ -88,9 +88,9 @@ Optional:
 
 Optional:
 
-- `approval_mode` (String) This will set the approval model on the edge. The valid values are `AUTOMATIC` and `MANUAL`.
-- `duration` (String) This will set the access duration on the edge. Duration must be between 1 hour and 365 days. The valid values are like `1h` and `2d`.
-- `mode` (String) This will set the access_policy mode on the edge. The valid values are `MANUAL`, `AUTO_LOCK` and `ACCESS_REQUEST`.
+- `approval_mode` (String) This will set the approval model for the policy. The valid values are `AUTOMATIC` and `MANUAL`.
+- `duration` (String) This will set the access duration for the policy. Duration must be between 1 hour and 365 days. Examples of valid values include `1h` and `2d`.
+- `mode` (String) This will set the access_policy mode for the policy. The valid values are `MANUAL`, `AUTO_LOCK` and `ACCESS_REQUEST`.
 
 
 
@@ -99,9 +99,9 @@ Optional:
 
 Optional:
 
-- `approval_mode` (String) This will set the approval model on the edge. The valid values are `AUTOMATIC` and `MANUAL`.
-- `duration` (String) This will set the access duration on the edge. Duration must be between 1 hour and 365 days. The valid values are like `1h` and `2d`.
-- `mode` (String) This will set the access_policy mode on the edge. The valid values are `MANUAL`, `AUTO_LOCK` and `ACCESS_REQUEST`.
+- `approval_mode` (String) This will set the approval model for the policy. The valid values are `AUTOMATIC` and `MANUAL`.
+- `duration` (String) This will set the access duration for the policy. Duration must be between 1 hour and 365 days. Examples of valid values include `1h` and `2d`.
+- `mode` (String) This will set the access_policy mode for the policy. The valid values are `MANUAL`, `AUTO_LOCK` and `ACCESS_REQUEST`.
 
 
 <a id="nestedatt--protocols"></a>

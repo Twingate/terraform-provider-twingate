@@ -375,7 +375,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 				attr.Mode: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					Description: fmt.Sprintf("This will set the access_policy mode on the edge. The valid values are `%s`, `%s` and `%s`.", model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
+					Description: fmt.Sprintf("This will set the access_policy mode for the policy. The valid values are `%s`, `%s` and `%s`.", model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
 					PlanModifiers: []planmodifier.String{
 						UseNullStringWhenValueOmitted(),
 					},
@@ -387,7 +387,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 				attr.Duration: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					Description: "This will set the access duration on the edge. Duration must be between 1 hour and 365 days. The valid values are like `1h` and `2d`.",
+					Description: "This will set the access duration for the policy. Duration must be between 1 hour and 365 days. Examples of valid values include `1h` and `2d`.",
 					PlanModifiers: []planmodifier.String{
 						UseNullStringWhenValueOmitted(),
 						customplanmodifier.Duration(),
@@ -400,7 +400,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 				attr.ApprovalMode: schema.StringAttribute{
 					Optional:    true,
 					Computed:    true,
-					Description: fmt.Sprintf("This will set the approval model on the edge. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
+					Description: fmt.Sprintf("This will set the approval model for the policy. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					PlanModifiers: []planmodifier.String{
 						UseNullStringWhenValueOmitted(),
 					},
