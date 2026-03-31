@@ -28,7 +28,7 @@ make test
 To run acceptance tests against a real Twingate network you first need to define the following 3 environment variables:
 
 ```shell
-export TWINGATE_URL=twingate.com 
+export TWINGATE_URL=twingate.com
 export TWINGATE_NETWORK=<your network slug - <slug>.twingate.com>
 export TWINGATE_API_TOKEN=<API token with Read, Write & Provision permissions>
 ```
