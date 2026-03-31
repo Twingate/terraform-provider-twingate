@@ -8,6 +8,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -51,7 +52,12 @@ func (r *group) Configure(_ context.Context, req resource.ConfigureRequest, _ *r
 		return
 	}
 
-	r.client = req.ProviderData.(*client.Client)
+	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
+	if !ok {
+		return
+	}
+
+	r.client = providerData.Client
 }
 
 func (r *group) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

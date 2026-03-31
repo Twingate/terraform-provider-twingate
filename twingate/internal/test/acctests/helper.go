@@ -246,6 +246,18 @@ func TerraformGateway(name string) string {
 	return ResourceName(resource.TwingateGateway, name)
 }
 
+func TerraformSSHResource(name string) string {
+	return ResourceName(resource.TwingateSSHResource, name)
+}
+
+func TerraformKubernetesResource(name string) string {
+	return ResourceName(resource.TwingateKubernetesResource, name)
+}
+
+func TerraformGatewayConfig(name string) string {
+	return ResourceName(resource.TwingateGatewayConfig, name)
+}
+
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }
@@ -295,6 +307,10 @@ func deleteResource(resourceType, resourceID string) error {
 		err = providerClient.DeleteSSHCertificateAuthority(context.Background(), resourceID)
 	case resource.TwingateGateway:
 		err = providerClient.DeleteGateway(context.Background(), resourceID)
+	case resource.TwingateSSHResource:
+		err = providerClient.DeleteSSHResource(context.Background(), resourceID)
+	case resource.TwingateKubernetesResource:
+		err = providerClient.DeleteKubernetesResource(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -1067,6 +1083,40 @@ func CheckTwingateConnectorAndRemoteNetworkDestroy(s *terraform.State) error {
 	return CheckTwingateRemoteNetworkDestroy(s)
 }
 
+func CheckTwingateKubernetesResourceDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateKubernetesResource {
+			continue
+		}
+
+		id := rs.Primary.ID
+
+		k8sRes, _ := providerClient.ReadKubernetesResource(context.Background(), id)
+		if k8sRes != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, id)
+		}
+	}
+
+	return nil
+}
+
+func CheckTwingateSSHResourceDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateSSHResource {
+			continue
+		}
+
+		id := rs.Primary.ID
+
+		sshRes, _ := providerClient.ReadSSHResource(context.Background(), id)
+		if sshRes != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, id)
+		}
+	}
+
+	return nil
+}
+
 func CheckTwingateGatewayDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resource.TwingateGateway {
@@ -1142,5 +1192,37 @@ func VersionCheckForWriteOnlyAttributes() []tfversion.TerraformVersionCheck {
 	return []tfversion.TerraformVersionCheck{
 		// Write-only attributes are only supported in Terraform 1.11 and later.
 		tfversion.SkipBelow(tfversion.Version1_11_0),
+	}
+}
+
+func CheckSshResourceAlias(resourceName string, expectedAlias *string) sdk.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceID, err := getResourceID(state, resourceName)
+		if err != nil {
+			return err
+		}
+
+		sshResource, err := providerClient.ReadSSHResource(context.Background(), resourceID)
+		if err != nil {
+			return fmt.Errorf("ssh-resource with ID %s failed to read: %w", resourceID, err)
+		}
+
+		if sshResource.Alias == nil && expectedAlias != nil {
+			return fmt.Errorf("ssh-resource with ID %s has null alias, expected: %s", resourceID, *expectedAlias) //nolint:err113
+		}
+
+		if sshResource.Alias != nil && expectedAlias == nil {
+			return fmt.Errorf("ssh-resource with ID %s has alias %s, expected null", resourceID, *sshResource.Alias) //nolint:err113
+		}
+
+		if sshResource.Alias == nil && expectedAlias == nil {
+			return nil
+		}
+
+		if *sshResource.Alias != *expectedAlias {
+			return fmt.Errorf("ssh-resource with ID %s has alias %s, expected %s", resourceID, *sshResource.Alias, *expectedAlias) //nolint:err113
+		}
+
+		return nil
 	}
 }

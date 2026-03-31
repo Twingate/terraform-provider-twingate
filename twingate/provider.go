@@ -11,6 +11,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	twingateDatasource "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/datasource"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
 	twingateResource "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -211,6 +212,7 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 	}
 }
 
+//nolint:funlen
 func (t Twingate) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
 	var config twingateProviderModel
 
@@ -267,9 +269,17 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 		t.version,
 		cacheOpts)
 
-	response.DataSourceData = client
-	response.ResourceData = client
-	response.EphemeralResourceData = client
+	providerData := &providerdata.ProviderData{
+		Client: client,
+		Config: providerdata.Config{
+			Network: network,
+			URL:     url,
+		},
+	}
+
+	response.DataSourceData = providerData
+	response.ResourceData = providerData
+	response.EphemeralResourceData = providerData
 
 	twingateResource.DefaultTags = getDefaultTags(config.DefaultTags)
 }
@@ -485,6 +495,9 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		twingateResource.NewX509CertificateAuthorityResource,
 		twingateResource.NewSSHCertificateAuthorityResource,
 		twingateResource.NewGatewayResource,
+		twingateResource.NewSSHResourceResource,
+		twingateResource.NewKubernetesResourceResource,
+		twingateResource.NewGatewayConfigResource,
 	}
 }
 

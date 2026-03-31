@@ -1,0 +1,69 @@
+twingate:
+  network: {{ .TwingateNetwork }}
+  host: {{ .TwingateHost }}
+
+port: {{ .Port }}
+metricsPort: {{ .MetricsPort }}
+
+tls:
+  certificateFile: {{ .TLS.CertificateFile }}
+  privateKeyFile: {{ .TLS.PrivateKeyFile }}
+
+{{- if .Kubernetes.Resources }}
+
+kubernetes:
+  upstreams:
+  {{- range .Kubernetes.Resources }}
+  - name: {{ .Name }}
+    address: {{ .Address }}
+    inCluster: {{ .InCluster }}
+  {{- end }}
+{{- end }}
+
+{{- if .SSH.Resources }}
+
+ssh:
+  gateway:
+    username: {{ .SSH.Gateway.Username }}
+    key:
+      type: {{ .SSH.Gateway.KeyType }}
+    hostCertificate:
+      ttl: {{ .SSH.Gateway.HostCertTTL }}
+    userCertificate:
+      ttl: {{ .SSH.Gateway.UserCertTTL }}
+
+  ca:
+    {{- if .SSH.CA.Vault.Address }}
+    vault:
+      address: {{ .SSH.CA.Vault.Address }}
+      caBundleFile: {{ .SSH.CA.Vault.CABundleFile }}
+      mount: {{ .SSH.CA.Vault.Mount }}
+      role: {{ .SSH.CA.Vault.Role }}
+      {{- if .SSH.CA.Vault.Auth.Token }}
+      auth:
+        token: {{ .SSH.CA.Vault.Auth.Token }}
+      {{- else if .SSH.CA.Vault.Auth.GCP.Role }}
+      auth:
+        gcp:
+          role: {{ .SSH.CA.Vault.Auth.GCP.Role }}
+          type: {{ .SSH.CA.Vault.Auth.GCP.Type }}
+          mount: {{ .SSH.CA.Vault.Auth.GCP.Mount }}
+          {{- if .SSH.CA.Vault.Auth.GCP.ServiceAccountEmail }}
+          serviceAccountEmail: {{ .SSH.CA.Vault.Auth.GCP.ServiceAccountEmail }}
+          {{- end }}
+      {{- end }}
+    {{- else if .SSH.CA.PrivateKeyFile }}
+    manual:
+      privateKeyFile: {{ .SSH.CA.PrivateKeyFile }}
+    {{- else }} null
+    {{- end }}
+
+  upstreams:
+  {{- range .SSH.Resources }}
+  - name: {{ .Name }}
+    address: {{ .Address }}:22
+    {{- if .Username }}
+    user: {{ .Username }}
+    {{- end }}
+  {{- end }}
+{{- end }}

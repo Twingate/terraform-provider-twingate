@@ -9,6 +9,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -49,7 +50,12 @@ func (r *remoteNetwork) Configure(_ context.Context, req resource.ConfigureReque
 		return
 	}
 
-	r.client = req.ProviderData.(*client.Client)
+	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
+	if !ok {
+		return
+	}
+
+	r.client = providerData.Client
 }
 
 func (r *remoteNetwork) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
