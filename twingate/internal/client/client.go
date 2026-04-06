@@ -42,8 +42,8 @@ const (
 )
 
 var (
-	ErrAPITokenNoSet    = errors.New("api_token not set")
-	ErrDisallowedHost   = errors.New("request to disallowed host")
+	ErrAPITokenNoSet  = errors.New("api_token not set")
+	ErrDisallowedHost = errors.New("request to disallowed host")
 
 	// A regular expression to match the error returned by net/http when the
 	// TLS certificate name is not match with input. This error isn't typed

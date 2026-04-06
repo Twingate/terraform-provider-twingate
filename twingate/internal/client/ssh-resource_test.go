@@ -44,9 +44,9 @@ func TestReadSSHResources(t *testing.T) {
 			},
 		},
 		{
-			name:        "graphql error - error propagated",
+			name:         "graphql error - error propagated",
 			responseBody: `{"errors":[{"message":"server error","locations":[{"line":1,"column":1}]}]}`,
-			expectedErr: true,
+			expectedErr:  true,
 		},
 	}
 
