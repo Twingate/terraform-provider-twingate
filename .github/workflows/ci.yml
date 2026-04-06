@@ -50,6 +50,14 @@ jobs:
     - name: Build
       run: |
         make build
+
+    - name: Run sweepers
+      timeout-minutes: 10
+      env:
+        TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+        TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+        TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+      run: |
         make sweep-all-twingate_x509_certificate_authority
 
   generate:
