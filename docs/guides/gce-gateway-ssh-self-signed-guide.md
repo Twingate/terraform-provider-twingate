@@ -15,14 +15,14 @@ This guide highlights the key sections. A complete, runnable example with full T
 ## Architecture
 
 ```
-                          ┌──────────────── Private VPC ─────────────────────────┐
-                          │                                                      │
-ssh ─► Twingate Client ══════► Connector ─► Gateway (:8443) ─► SSH Server (:22)  │
-                          │                                                      │
-                          └──────────────────────────────────────────────────────┘
+                                 ┌──────────────── Private VPC ─────────────────────────┐
+                                 │                                                      │
+SSH Client ─► Twingate Client ══════► Connector ─► Gateway (:8443) ─► SSH Server (:22)  │
+                                 │                                                      │
+                                 └──────────────────────────────────────────────────────┘
 ```
 
-The `ssh` client opens an SSH connection that is routed to the Gateway. The Gateway terminates the SSH connection and opens a new upstream connection to the SSH Server using a signed SSH certificate.
+The SSH client opens an SSH connection that is routed to the Gateway. The Gateway terminates the SSH connection and opens a new upstream connection to the SSH Server using a signed SSH certificate.
 
 The setup deploys three GCE VMs:
 
