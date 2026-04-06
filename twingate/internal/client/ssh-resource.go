@@ -2,9 +2,11 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 )
 
 //nolint:dupl
@@ -122,6 +124,49 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 	res.GroupsAccess = sshResource.GroupsAccess
 
 	return res, nil
+}
+
+func (client *Client) ReadSSHResources(ctx context.Context) ([]*model.SSHResource, error) {
+	opr := resourceSSHResource.read().withCustomName("readSSHResources")
+
+	variables := newVars(
+		cursor(query.CursorResources),
+		pageLimit(client.pageLimit),
+	)
+
+	response := query.ReadShallowResourcesWithType{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+		return nil, err
+	}
+
+	if err := response.FetchPages(ctx, client.readShallowResourcesWithTypeAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
+	return utils.FilterMap(response.Edges,
+		func(edge *query.ShallowResourceEdge) bool {
+			return edge.Node.Type == "SSHResource"
+		},
+		func(edge *query.ShallowResourceEdge) *model.SSHResource {
+			return &model.SSHResource{
+				ID:   string(edge.Node.ID),
+				Name: edge.Node.Name,
+			}
+		}), nil
+}
+
+func (client *Client) readShallowResourcesWithTypeAfter(ctx context.Context, variables map[string]any, cursor string) (*query.PaginatedResource[*query.ShallowResourceEdge], error) {
+	opr := resourceSSHResource.read().withCustomName("readShallowResourcesWithTypeAfter")
+
+	variables[query.CursorResources] = cursor
+
+	response := query.ReadShallowResourcesWithType{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil {
+		return nil, err
+	}
+
+	//nolint:staticcheck
+	return &response.ShallowResourcesWithType.PaginatedResource, nil
 }
 
 func (client *Client) DeleteSSHResource(ctx context.Context, resourceID string) error {

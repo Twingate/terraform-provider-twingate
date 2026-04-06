@@ -7,8 +7,8 @@ OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate/internal/test/sweepers
-GOLINT_VERSION=v2.6.2
-GOSEC_VERSION=2.22.10
+GOLINT_VERSION=v2.11.4
+GOSEC_VERSION=2.24.6
 
 WORKING_DIR := $(shell pwd)
 
@@ -25,7 +25,19 @@ sweep:
 	$(call check_defined, TWINGATE_NETWORK)
 	$(call check_defined, TWINGATE_API_TOKEN)
 	$(call check_defined, TWINGATE_URL)
-	go test ${SWEEP_FOLDER} -v -sweep=${SWEEP_TENANT} -timeout 60m
+	go test ${SWEEP_FOLDER} -v -sweep=${SWEEP_TENANT} -timeout 60m $(if $(SWEEP_RUN),-sweep-run=$(SWEEP_RUN))
+
+.PHONY: sweep-all
+sweep-all:
+	$(call check_defined, TWINGATE_NETWORK)
+	$(call check_defined, TWINGATE_API_TOKEN)
+	$(call check_defined, TWINGATE_URL)
+	SWEEP_DELETE_ALL=true go test ${SWEEP_FOLDER} -v -sweep=${SWEEP_TENANT} -timeout 60m $(if $(SWEEP_RUN),-sweep-run=$(SWEEP_RUN))
+
+
+.PHONY: sweep-all-twingate_x509_certificate_authority
+sweep-all-twingate_x509_certificate_authority:
+	$(MAKE) sweep-all SWEEP_RUN=twingate_x509_certificate_authority
 
 default: build
 
