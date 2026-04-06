@@ -1,47 +1,50 @@
 ---
-subcategory: "gce"
-page_title: "GCE SSH Gateway Deployment Guide (Self-Signed Certificates)"
-description: "This guide walks you through deploying a Twingate SSH Access Gateway on Google Compute Engine with self-signed certificates"
+subcategory: "gcp"
+page_title: "GCE SSH Gateway with Local SSH CA"
+description: "Deploy a Twingate SSH Access Gateway on Google Compute Engine using a local SSH CA for SSH certificate signing."
 ---
 
-# GCE SSH Gateway Deployment Guide (Self-Signed Certificates)
+# GCE SSH Gateway with local SSH CA
 
-This guide walks you through deploying a complete Twingate SSH access setup on Google Compute Engine (GCE). It creates a Gateway, Connector, and SSH server using self-signed certificates for TLS and SSH CA authentication. For more information about Twingate, please reference the Twingate [documentation](https://docs.twingate.com/docs).
+This guide walks through deploying a Twingate SSH Access Gateway on Google Compute Engine (GCE) using a local SSH CA. The Gateway holds the SSH CA private key and signs SSH certificates directly, enabling certificate-based authentication without an external signing service. For simplicity, the example also uses a self-signed X.509 CA for TLS.
 
-A complete, runnable example is available in the [`examples/gce-gateway-ssh-self-signed`](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/gce-gateway-ssh-self-signed) directory.
+This guide highlights the key sections. A complete, runnable example with full Terraform configurations, startup scripts, and usage instructions is available in the [`examples/gce-gateway-ssh-self-signed`](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/gce-gateway-ssh-self-signed) directory.
+
+~> **Warning:** This example generates private keys and certificates that are stored unencrypted in the Terraform state. Use a [remote backend with encryption](https://developer.hashicorp.com/terraform/language/settings/backends/configuration) to protect sensitive state data.
 
 ## Architecture
 
 ```
-User ──▶ Twingate Client ──▶ Gateway VM (:8443) ──▶ SSH Server VM (:22)
-                                  │
-                          Connector VM (connects
-                          network to Twingate)
+                                 ┌──────────────── Private VPC ─────────────────────────┐
+                                 │                                                      │
+SSH Client ─► Twingate Client ══════► Connector ─► Gateway (:8443) ─► SSH Server (:22)  │
+                                 │                                                      │
+                                 └──────────────────────────────────────────────────────┘
 ```
+
+The SSH client opens an SSH connection that is routed to the Gateway. The Gateway terminates the SSH connection and opens a new upstream connection to the SSH Server using a signed SSH certificate.
 
 The setup deploys three GCE VMs:
 
-- **Gateway VM** — Runs the [Twingate Gateway](https://github.com/Twingate/gateway) binary, terminates TLS, and proxies SSH connections using certificate-based authentication.
-- **Connector VM** — Connects the GCP network to the Twingate control plane.
-- **SSH Server VM** — A target machine configured to trust SSH certificates signed by the gateway's CA.
+- **Connector VM** — Bridges the private VPC to the Twingate Client via a secure tunnel.
+- **Gateway VM** — Runs the [Twingate Gateway](https://github.com/Twingate/gateway) binary and proxies SSH connections using certificate-based authentication.
+- **SSH Server VM** — A target machine configured to trust SSH certificates signed by the Gateway's local CA.
 
 ## Before you begin
 
-* Sign up for an account on the [Twingate website](https://www.twingate.com).
-* Create a Twingate [API key](https://docs.twingate.com/docs/api-overview) with full Read, Write, & Provision permissions.
-* Have a GCP project with Compute Engine API enabled and `gcloud` CLI authenticated.
-* The example provisions its own VPC, subnet, and [Cloud NAT](https://cloud.google.com/nat/docs/overview) so VMs can download binaries from the internet.
+- A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
+- A GCP project with the Compute Engine API enabled and `gcloud` CLI authenticated.
 
-## Setting up the Providers
+-> **Note:** The example provisions its own VPC, subnet, and [Cloud NAT](https://cloud.google.com/nat/docs/overview) so VMs can download binaries from the internet.
 
-This example requires three providers: Twingate (for managing the gateway and SSH resources), Google (for GCE instances), and TLS (for generating certificates).
+## Setting up the providers
 
 ```terraform
 terraform {
   required_providers {
     twingate = {
       source  = "Twingate/twingate"
-      version = ">= 4.1"
+      version = "~> 4.1"
     }
     tls = {
       source  = "hashicorp/tls"
@@ -65,11 +68,11 @@ provider "google" {
 }
 ```
 
-We recommend using [environment variables](https://www.terraform.io/language/values/variables#environment-variables) for sensitive values like the API token.
+~> We recommend using [environment variables](https://www.terraform.io/language/values/variables#environment-variables) for sensitive values like the API token.
 
-## Creating the Certificate Authorities
+## Creating the certificate authorities
 
-The gateway needs two CAs: an X.509 CA for TLS encryption and an SSH CA for signing SSH certificates. This example generates both using Terraform's TLS provider.
+The Gateway needs two CAs: a local SSH CA for signing SSH certificates, and an X.509 CA for TLS encryption (self-signed here for simplicity).
 
 ### X.509 CA (for TLS)
 
@@ -97,9 +100,9 @@ resource "tls_self_signed_cert" "x509_ca" {
 }
 ```
 
-A server certificate is then signed by this CA and used by the gateway for TLS termination.
+A server certificate is then signed by this CA and used by the Gateway for TLS termination. See the full example for the server certificate configuration.
 
-### SSH CA
+### Local SSH CA
 
 ```terraform
 resource "tls_private_key" "ssh_ca" {
@@ -107,45 +110,49 @@ resource "tls_private_key" "ssh_ca" {
 }
 ```
 
-The gateway uses this key pair to sign SSH certificates on the fly, enabling certificate-based authentication instead of password or key-based login.
+The Gateway uses this key to sign SSH certificates on the fly.
 
-## Creating the Twingate Resources
+## Creating the Twingate resources
 
-Register both CAs with Twingate and create the remote network, gateway, connector, and SSH resource:
+Register both CAs with Twingate and create the remote network, Gateway, Connector, and SSH resource:
 
 ```terraform
 resource "twingate_remote_network" "main" {
-  name = "Test SSH"
+  name = "demo-test-ssh"
 }
 
 resource "twingate_ssh_certificate_authority" "ssh" {
-  name       = "SSH CA"
+  name       = "demo-ssh-ca"
   public_key = tls_private_key.ssh_ca.public_key_openssh
 }
 
 resource "twingate_x509_certificate_authority" "tls" {
-  name        = "Gateway X509 CA"
+  name        = "demo-gateway-x509-ca"
   certificate = tls_self_signed_cert.x509_ca.cert_pem
 }
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${google_compute_address.gateway.address}:8443"
+  address           = "${google_compute_address.gateway.address}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
 
 resource "twingate_connector" "main" {
   remote_network_id = twingate_remote_network.main.id
-  name              = "Connector"
+  name              = "demo-connector"
 }
 
 resource "twingate_connector_tokens" "main" {
   connector_id = twingate_connector.main.id
 }
 
+data "twingate_groups" "everyone" {
+  name = "Everyone"
+}
+
 resource "twingate_ssh_resource" "ssh_server" {
-  name              = "SSH Server"
+  name              = "demo-ssh-server"
   address           = google_compute_instance.ssh_server.network_interface[0].network_ip
   alias             = var.resource_alias != "" ? var.resource_alias : null
   remote_network_id = twingate_remote_network.main.id
@@ -157,16 +164,15 @@ resource "twingate_ssh_resource" "ssh_server" {
 }
 ```
 
-The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the gateway can verify the connection.
+The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
-## Configuring the Gateway
+## Configuring the gateway
 
-The `twingate_gateway_config` resource generates the gateway's configuration file. It specifies the TLS certificate paths, SSH CA key path, and certificate TTLs:
+The `twingate_gateway_config` resource generates the Gateway's configuration file. It specifies the TLS certificate paths and SSH CA key path:
 
 ```terraform
 resource "twingate_gateway_config" "config" {
-  port         = 8443
-  metrics_port = 9090
+  port = local.gateway_port
 
   tls = {
     certificate_file = "/opt/gateway/tls.crt"
@@ -175,10 +181,7 @@ resource "twingate_gateway_config" "config" {
 
   ssh = {
     gateway = {
-      username      = "gateway"
-      key_type      = "ed25519"
-      host_cert_ttl = "24h"
-      user_cert_ttl = "5m"
+      username = "gateway"
     }
 
     ca = {
@@ -190,59 +193,30 @@ resource "twingate_gateway_config" "config" {
 }
 ```
 
-## Deploying the GCE Instances
+## Deploying the GCE instances
 
 The three VMs are deployed on a dedicated VPC with Cloud NAT for internet access. Each VM uses a startup script to configure itself:
 
-- **Gateway VM** — Downloads the gateway binary, writes TLS/SSH keys from instance metadata, and starts a systemd service.
 - **Connector VM** — Retrieves connector tokens from metadata and runs the Twingate connector setup script.
-- **SSH Server VM** — Creates a `gateway` user and configures `sshd` to trust the SSH CA.
-
-The gateway VM uses a reserved internal IP so its address is stable and can be registered with Twingate. Keys and certificates are passed to VMs via GCE instance metadata.
-
-See the full Terraform configurations and startup scripts in the [`examples/gce-gateway-ssh-self-signed`](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/gce-gateway-ssh-self-signed) directory.
-
-## Running the Example
-
-1. Clone the repository and navigate to the example:
-
-   ```bash
-   cd examples/gce-gateway-ssh-self-signed
-   ```
-
-2. Copy and edit the variables file:
-
-   ```bash
-   cp terraform.tfvars.example terraform.tfvars
-   # Edit terraform.tfvars with your Twingate and GCP settings
-   ```
-
-3. Initialize and deploy:
-
-   ```bash
-   terraform init
-   terraform apply
-   ```
-
-## Troubleshooting
-
-To view gateway logs, SSH into the gateway VM:
+- **Gateway VM** — Downloads the Gateway binary, writes TLS/SSH keys from instance metadata, and starts a systemd service.
+- **SSH Server VM** — Creates a `gateway` user and configures `sshd` to trust the SSH CA:
 
 ```bash
-# Raw logs
-sudo journalctl -u gateway -f -o cat
+#!/bin/bash
+set -e
 
-# JSON-formatted logs
-sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
+# Create the gateway user account
+useradd -m -s /bin/bash gateway
+
+# Get the SSH CA public key from instance metadata
+CA_KEY=$(curl -sf -H "Metadata-Flavor: Google" \
+  http://metadata.google.internal/computeMetadata/v1/instance/attributes/ssh-ca-public-key)
+
+# Configure sshd to trust certificates signed by our CA
+echo "$CA_KEY" > /etc/ssh/twingate-ca.pub
+echo "TrustedUserCAKeys /etc/ssh/twingate-ca.pub" >> /etc/ssh/sshd_config
+
+systemctl restart sshd
 ```
 
-Common issues:
-- **VMs fail to start**: Ensure the VPC and Cloud NAT are provisioned so VMs can download binaries.
-- **SSH connection fails**: Check that the SSH server's `sshd_config` includes `TrustedUserCAKeys` pointing to the CA public key.
-- **TLS errors**: Verify the server certificate's SAN includes the correct IP or alias.
-
-## Tear Down
-
-```bash
-terraform destroy
-```
+The Gateway VM uses a reserved internal IP so its address is stable and can be registered with Twingate. Keys and certificates are passed to VMs via GCE instance metadata.
