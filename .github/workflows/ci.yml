@@ -16,7 +16,7 @@ on:
       - 'README.md'
     branches:
       - main
-      - added-twingage-ssh-and-kubernetes-resource
+      - fix-sweepeers
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
@@ -50,6 +50,15 @@ jobs:
     - name: Build
       run: |
         make build
+
+    - name: Run sweepers
+      timeout-minutes: 10
+      env:
+        TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+        TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+        TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+      run: |
+        make sweep-all-twingate_x509_certificate_authority
 
   generate:
     name: Test docs up-to-date
@@ -126,7 +135,7 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '1.10.*'
+          - '1.13.*'
           - 'latest'
     steps:
 
@@ -180,8 +189,8 @@ jobs:
       fail-fast: false
       matrix:
         tofu:
-          - '1.7.*'
-          - '1.8.*'
+          - '1.9.*'
+          - '1.10.*'
           - 'latest'
 
     steps:
@@ -196,7 +205,7 @@ jobs:
           cache: true
         id: go
 
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: ${{ matrix.tofu }}
           tofu_wrapper: false
@@ -254,6 +263,7 @@ jobs:
           TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
           TEST_UNIQUE_VALUE: ${{ github.run_id }}-${{ github.run_number }}
         run: |
+          make sweep
           make sweep
 
   # notifies that all test jobs are finished.

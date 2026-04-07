@@ -47,6 +47,19 @@ func Filter[T any](items []T, ok func(item T) bool) []T {
 	return result
 }
 
+// FilterMap - filter down the elements from the given array that pass the test implemented by the provided function and then transform by applying the transform func.
+func FilterMap[T, R any](items []T, ok func(item T) bool, f func(item T) R) []R {
+	result := make([]R, 0)
+
+	for _, item := range items {
+		if ok(item) {
+			result = append(result, f(item))
+		}
+	}
+
+	return result
+}
+
 // MapKeys - collects map keys to slice.
 func MapKeys[T comparable](lookup map[T]bool) []T {
 	result := make([]T, 0, len(lookup))
