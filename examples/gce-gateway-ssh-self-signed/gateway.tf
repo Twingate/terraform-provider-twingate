@@ -13,7 +13,6 @@ resource "google_compute_address" "gateway" {
   name         = "demo-gateway-ip"
   subnetwork   = google_compute_subnetwork.main.id
   address_type = "INTERNAL"
-  region       = var.region
 }
 
 resource "twingate_gateway_config" "config" {
@@ -44,7 +43,6 @@ resource "terraform_data" "gateway_metadata" {
 resource "google_compute_instance" "gateway" {
   name         = "demo-gateway"
   machine_type = "e2-micro"
-  zone         = var.zone
 
   boot_disk {
     initialize_params {

@@ -1,7 +1,6 @@
 resource "google_compute_instance" "connector" {
   name         = "demo-connector"
   machine_type = "e2-micro"
-  zone         = var.zone
 
   boot_disk {
     initialize_params {

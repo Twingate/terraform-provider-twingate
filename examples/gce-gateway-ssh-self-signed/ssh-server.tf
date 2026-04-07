@@ -1,7 +1,6 @@
 resource "google_compute_instance" "ssh_server" {
   name         = "demo-ssh-server"
   machine_type = "e2-micro"
-  zone         = var.zone
 
   boot_disk {
     initialize_params {
