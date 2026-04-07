@@ -10,7 +10,6 @@ resource "google_compute_instance" "connector" {
   }
 
   network_interface {
-    network    = google_compute_network.main.id
     subnetwork = google_compute_subnetwork.main.id
   }
 
