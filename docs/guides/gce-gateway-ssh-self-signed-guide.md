@@ -35,7 +35,7 @@ The setup deploys three GCE VMs:
 - A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
 - A GCP project with the Compute Engine API enabled and `gcloud` CLI authenticated.
 
--> **Note:** The example provisions its own VPC, subnet, and [Cloud NAT](https://cloud.google.com/nat/docs/overview) so VMs can download binaries from the internet.
+-> **Note:** The example provisions its own VPC, private subnet, and [Cloud NAT](https://cloud.google.com/nat/docs/overview) so VMs can download binaries from the internet.
 
 ## Setting up the providers
 
@@ -100,7 +100,7 @@ resource "tls_self_signed_cert" "x509_ca" {
 }
 ```
 
-A server certificate is then signed by this CA and used by the Gateway for TLS termination. See the full example for the server certificate configuration.
+A server certificate is then signed by this CA and used by the Gateway for TLS termination. See the [full example](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/gce-gateway-ssh-self-signed) for the server certificate configuration.
 
 ### Local SSH CA
 

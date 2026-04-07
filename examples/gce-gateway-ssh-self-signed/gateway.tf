@@ -1,12 +1,19 @@
+locals {
+  gateway_port = 8443
+
+  gateway_metadata = {
+    tls-cert       = tls_locally_signed_cert.server.cert_pem
+    tls-key        = tls_private_key.server.private_key_pem
+    ssh-ca-key     = tls_private_key.ssh_ca.private_key_openssh
+    gateway-config = twingate_gateway_config.config.content
+  }
+}
+
 resource "google_compute_address" "gateway" {
   name         = "demo-gateway-ip"
   subnetwork   = google_compute_subnetwork.main.id
   address_type = "INTERNAL"
   region       = var.region
-}
-
-locals {
-  gateway_port = 8443
 }
 
 resource "twingate_gateway_config" "config" {
@@ -27,15 +34,6 @@ resource "twingate_gateway_config" "config" {
     }
 
     resources = [twingate_ssh_resource.ssh_server]
-  }
-}
-
-locals {
-  gateway_metadata = {
-    tls-cert       = tls_locally_signed_cert.server.cert_pem
-    tls-key        = tls_private_key.server.private_key_pem
-    ssh-ca-key     = tls_private_key.ssh_ca.private_key_openssh
-    gateway-config = twingate_gateway_config.config.content
   }
 }
 
