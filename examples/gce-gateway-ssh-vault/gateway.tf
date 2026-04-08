@@ -1,6 +1,6 @@
 resource "vault_pki_secret_backend_cert" "gateway" {
-  backend     = vault_mount.pki.path
-  name        = vault_pki_secret_backend_role.gateway.name
+  backend = vault_mount.pki.path
+  name    = vault_pki_secret_backend_role.gateway.name
 
   common_name = "demo-gateway"
   alt_names   = [twingate_ssh_resource.ssh_server.alias]
@@ -54,7 +54,7 @@ locals {
 }
 
 resource "twingate_gateway_config" "config" {
-  port         = local.gateway_port
+  port = local.gateway_port
 
   tls = {
     certificate_file = "/opt/gateway/tls.crt"
@@ -63,7 +63,7 @@ resource "twingate_gateway_config" "config" {
 
   ssh = {
     gateway = {
-      username      = "gateway"
+      username = "gateway"
     }
 
     ca = {
@@ -71,8 +71,8 @@ resource "twingate_gateway_config" "config" {
         address        = "https://${data.terraform_remote_state.vault.outputs.vault_internal_ip}:8200"
         ca_bundle_file = "/etc/ssl/vault-ca.crt"
 
-        mount          = vault_mount.ssh.path
-        role           = vault_ssh_secret_backend_role.gateway.name
+        mount = vault_mount.ssh.path
+        role  = vault_ssh_secret_backend_role.gateway.name
 
         auth = {
           gcp = {

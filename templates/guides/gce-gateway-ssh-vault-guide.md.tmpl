@@ -40,7 +40,7 @@ The setup deploys four GCE VMs:
 - A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
 - A GCP project with the Compute Engine API enabled and `gcloud` CLI authenticated.
 
--> **Note:** This is a two-step deploy. The `vault/` subdirectory provisions the VPC, subnet, Cloud NAT, and Vault server. The root module reads those outputs via `terraform_remote_state` and requires an IAP tunnel to Vault.
+-> **Note:** This is a two-step deploy. The `vault/` subdirectory provisions the VPC, private subnet, Cloud NAT, and Vault server. The root module reads those outputs via `terraform_remote_state` and requires an IAP tunnel to Vault.
 
 ## Setting up the providers
 
@@ -123,7 +123,7 @@ resource "vault_ssh_secret_backend_role" "gateway" {
 }
 ```
 
-A Vault policy scopes the Gateway to only call its signing endpoint:
+A Vault policy grants the Gateway permission to call the signing endpoint:
 
 ```terraform
 resource "vault_policy" "gateway" {
@@ -189,7 +189,7 @@ resource "vault_gcp_auth_backend_role" "gateway" {
 
 ## Creating the Twingate resources
 
-Register the Vault-managed CAs with Twingate and create the remote network, Gateway, Connector, and SSH resource:
+Register the Vault-managed CAs with Twingate and create the Remote Network, Gateway, Connector, and SSH Resource:
 
 ```terraform
 resource "twingate_ssh_certificate_authority" "vault" {

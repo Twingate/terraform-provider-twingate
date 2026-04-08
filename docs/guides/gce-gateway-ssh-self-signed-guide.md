@@ -115,7 +115,7 @@ The Gateway uses this key to sign SSH certificates on the fly.
 
 ## Creating the Twingate resources
 
-Register both CAs with Twingate and create the remote network, Gateway, Connector, and SSH resource:
+Register both CAs with Twingate and create the Remote Network, Gateway, Connector, and SSH Resource:
 
 ```terraform
 resource "twingate_remote_network" "main" {

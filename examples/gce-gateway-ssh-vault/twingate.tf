@@ -1,10 +1,10 @@
 resource "twingate_remote_network" "main" {
-  name = "demo-test-ssh"
+  name = "demo-vault-ssh-network"
 }
 
 resource "twingate_connector" "main" {
   remote_network_id = twingate_remote_network.main.id
-  name              = "demo-connector"
+  name              = "demo-vault-connector"
 }
 
 resource "twingate_connector_tokens" "main" {
@@ -12,7 +12,7 @@ resource "twingate_connector_tokens" "main" {
 }
 
 resource "twingate_ssh_certificate_authority" "vault" {
-  name       = "Vault SSH CA"
+  name       = "demo-vault-ssh-ca"
   public_key = vault_ssh_secret_backend_ca.ssh.public_key
 }
 
@@ -33,7 +33,7 @@ data "twingate_groups" "everyone" {
 }
 
 resource "twingate_ssh_resource" "ssh_server" {
-  name              = "demo-ssh-server"
+  name              = "demo-vault-ssh-server"
   address           = google_compute_instance.ssh_server.network_interface[0].network_ip
   alias             = var.resource_alias != "" ? var.resource_alias : null
   remote_network_id = twingate_remote_network.main.id

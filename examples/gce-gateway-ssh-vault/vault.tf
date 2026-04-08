@@ -34,7 +34,7 @@ resource "vault_mount" "pki" {
   path                      = "pki"
   type                      = "pki"
   description               = "PKI backend for X.509 certificates"
-  default_lease_ttl_seconds = 3600 # 1 hour
+  default_lease_ttl_seconds = 3600     # 1 hour
   max_lease_ttl_seconds     = 31536000 # 1 year
 }
 
@@ -69,12 +69,12 @@ resource "vault_ssh_secret_backend_ca" "ssh" {
 
 # Gateway needs to request both user and host certificates for SSH access.
 resource "vault_ssh_secret_backend_role" "gateway" {
-  name                    = "gateway"
-  backend                 = vault_mount.ssh.path
+  name    = "gateway"
+  backend = vault_mount.ssh.path
 
-  key_type                = "ca"
-  ttl                     = "720h"  # 30 days
-  max_ttl                 = "8760h" # 365 days
+  key_type = "ca"
+  ttl      = 2592000  # 30 days
+  max_ttl  = 31536000 # 365 days
 
   allow_empty_principals  = true
   allow_host_certificates = true
@@ -99,12 +99,12 @@ resource "vault_policy" "gateway" {
 
 # SSH server only needs to request a host certificate.
 resource "vault_ssh_secret_backend_role" "ssh_server" {
-  name                    = "ssh-server"
-  backend                 = vault_mount.ssh.path
+  name    = "ssh-server"
+  backend = vault_mount.ssh.path
 
-  key_type                = "ca"
-  ttl                     = "720h"  # 30 days
-  max_ttl                 = "8760h" # 365 days
+  key_type = "ca"
+  ttl      = 2592000  # 30 days
+  max_ttl  = 31536000 # 365 days
 
   allow_empty_principals  = true
   allow_host_certificates = true

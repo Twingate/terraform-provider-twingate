@@ -48,7 +48,7 @@ After Vault starts (~60 s), SSH in to get the root token:
 
 ```bash
 gcloud compute ssh demo-vault-server --zone us-central1-a --tunnel-through-iap -- \
-  "sudo cat /opt/vault/init-output.json"
+  "sudo cat /opt/vault/init-output.json" | jq -r .root_token
 ```
 
 ### 2. Deploy the root module

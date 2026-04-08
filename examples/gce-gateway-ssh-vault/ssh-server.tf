@@ -22,6 +22,10 @@ resource "google_compute_instance" "ssh_server" {
     scopes = ["cloud-platform"]
   }
 
+  metadata = {
+    enable-oslogin = "FALSE"
+  }
+
   metadata_startup_script = templatefile("${path.module}/scripts/ssh-server-startup.sh", {
     ssh-ca-public-key = vault_ssh_secret_backend_ca.ssh.public_key
     vault_ca_cert     = data.terraform_remote_state.vault.outputs.vault_tls_cert

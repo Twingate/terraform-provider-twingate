@@ -27,8 +27,8 @@ provider "google" {
 }
 
 provider "vault" {
-  address         = var.vault_addr
-  token           = var.vault_token
+  address = var.vault_addr
+  token   = var.vault_token
   # Running Terraform from a local machine; skip TLS verification to avoid adding the self-signed CA
   skip_tls_verify = true
 }
