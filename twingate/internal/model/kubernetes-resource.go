@@ -14,3 +14,11 @@ type KubernetesResource struct {
 	AccessPolicy     *AccessPolicy
 	GroupsAccess     []AccessGroup
 }
+
+func (r KubernetesResource) GetID() string {
+	return r.ID
+}
+
+func (r KubernetesResource) GetName() string {
+	return r.Name
+}

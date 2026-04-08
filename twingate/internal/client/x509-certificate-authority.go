@@ -1,11 +1,12 @@
-//nolint:dupl
 package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 )
 
 func (client *Client) CreateX509CertificateAuthority(ctx context.Context, name, certificate string) (*model.CertificateAuthority, error) {
@@ -48,6 +49,32 @@ func (client *Client) ReadX509CertificateAuthority(ctx context.Context, certific
 	}
 
 	return response.ToModel(), nil
+}
+
+func (client *Client) ReadX509CertificateAuthorities(ctx context.Context) ([]*model.CertificateAuthority, error) {
+	opr := resourceX509CertificateAuthority.read().withCustomName("readX509CertificateAuthorities")
+
+	variables := newVars(
+		cursor(query.CursorCertificateAuthorities),
+		pageLimit(client.pageLimit),
+	)
+
+	response := query.ReadCertificateAuthorities{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+		return nil, err
+	}
+
+	if err := response.FetchPages(ctx, client.readCertificateAuthoritiesAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
+	return utils.FilterMap(response.Edges,
+		func(edge *query.CertificateAuthorityEdge) bool {
+			return edge.Node.Type == "X509CertificateAuthority"
+		},
+		func(edge *query.CertificateAuthorityEdge) *model.CertificateAuthority {
+			return edge.Node.X509CertificateAuthority.ToModel()
+		}), nil
 }
 
 func (client *Client) DeleteX509CertificateAuthority(ctx context.Context, certificateID string) error {

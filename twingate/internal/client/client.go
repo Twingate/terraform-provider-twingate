@@ -42,7 +42,8 @@ const (
 )
 
 var (
-	ErrAPITokenNoSet = errors.New("api_token not set")
+	ErrAPITokenNoSet  = errors.New("api_token not set")
+	ErrDisallowedHost = errors.New("request to disallowed host")
 
 	// A regular expression to match the error returned by net/http when the
 	// TLS certificate name is not match with input. This error isn't typed
@@ -195,7 +196,8 @@ func NewClient(url string, apiToken string, network string, httpTimeout time.Dur
 		req.Header.Set(headerRequestID, reqID)
 
 		if retryNumber > 0 {
-			log.Printf("[WARN] [id:%s] Failed to call %s (retry %d)", reqID, req.URL.String(), retryNumber)
+			safeURL := strings.NewReplacer("\n", "", "\r", "").Replace(req.URL.String())
+			log.Printf("[WARN] [id:%s] Failed to call %s (retry %d)", reqID, safeURL, retryNumber) // #nosec G706
 		}
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
@@ -278,11 +280,16 @@ func (client *Client) post(ctx context.Context, url string, payload any, headers
 }
 
 func (client *Client) doRequest(req *http.Request) ([]byte, error) {
+	allowedURL, err := url.Parse(client.APIServerURL)
+	if err != nil || req.URL.Host != allowedURL.Host {
+		return nil, fmt.Errorf("%w: %q", ErrDisallowedHost, req.URL.Host)
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(headerAgent, twingateAgentVersion(client.agent, client.version))
 	req.Header.Set(headerCorrelationID, client.correlationID)
 
-	res, err := client.HTTPClient.Do(req)
+	res, err := client.HTTPClient.Do(req) // #nosec G704
 	if err != nil {
 		return nil, fmt.Errorf("can't execute http request: %w", err)
 	}
