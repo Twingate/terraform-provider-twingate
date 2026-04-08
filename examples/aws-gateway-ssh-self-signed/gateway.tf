@@ -2,6 +2,16 @@ locals {
   gateway_port = 8443
 }
 
+# A dedicated ENI gives the gateway a stable private IP that is known before the
+# instance is created, breaking the dependency cycle between the instance,
+# gateway config, and Twingate resources.
+resource "aws_network_interface" "gateway" {
+  subnet_id       = aws_subnet.main.id
+  security_groups = [aws_security_group.internal.id]
+
+  tags = { Name = "demo-gateway-eni" }
+}
+
 resource "twingate_gateway_config" "config" {
   port = local.gateway_port
 
@@ -21,10 +31,13 @@ resource "twingate_gateway_config" "config" {
 }
 
 resource "aws_instance" "gateway" {
-  ami                    = data.aws_ami.debian.id
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.private.id
-  vpc_security_group_ids = [aws_security_group.internal.id]
+  ami           = data.aws_ami.debian.id
+  instance_type = var.instance_type
+
+  network_interface {
+    network_interface_id = aws_network_interface.gateway.id
+    device_index         = 0
+  }
 
   user_data = templatefile("${path.module}/scripts/gateway-startup.sh", {
     tls_cert       = tls_locally_signed_cert.server.cert_pem

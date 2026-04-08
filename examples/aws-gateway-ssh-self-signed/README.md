@@ -49,8 +49,7 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-Connect to the gateway instance via [SSM Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html)
-(the instance has no public IP), then view the logs:
+SSH into the gateway instance via the EC2 console, then view the logs:
 
 ```bash
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'

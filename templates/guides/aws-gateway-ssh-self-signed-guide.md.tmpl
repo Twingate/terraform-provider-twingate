@@ -35,7 +35,7 @@ The setup deploys three EC2 instances:
 - A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
 - An AWS account with credentials configured (`aws configure` or environment variables).
 
--> **Note:** The example provisions its own VPC, private subnet, and [NAT Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html) so instances can download binaries from the internet.
+-> **Note:** The example provisions its own VPC and subnet. Instances receive public IPs by default, so no NAT configuration is needed.
 
 ## Setting up the providers
 
@@ -132,7 +132,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${aws_instance.gateway.private_ip}:${local.gateway_port}"
+  address           = "${aws_network_interface.gateway.private_ip}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }

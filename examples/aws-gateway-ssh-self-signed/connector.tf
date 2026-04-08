@@ -1,7 +1,7 @@
 resource "aws_instance" "connector" {
   ami                    = data.aws_ami.debian.id
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.private.id
+  subnet_id              = aws_subnet.main.id
   vpc_security_group_ids = [aws_security_group.internal.id]
 
   user_data = templatefile("${path.module}/scripts/connector-startup.sh", {

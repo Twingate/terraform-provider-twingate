@@ -92,7 +92,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${aws_instance.gateway.private_ip}:${local.gateway_port}"
+  address           = "${aws_network_interface.gateway.private_ip}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
