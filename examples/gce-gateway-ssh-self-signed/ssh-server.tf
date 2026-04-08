@@ -18,5 +18,4 @@ resource "google_compute_instance" "ssh_server" {
   }
 
   metadata_startup_script = file("${path.module}/scripts/ssh-server-startup.sh")
-
 }
