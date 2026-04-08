@@ -35,7 +35,7 @@ resource "digitalocean_droplet" "gateway" {
   size   = var.do_droplet_size
   image  = "debian-12-x64"
 
-  vpc_uuid = digitalocean_vpc.main.id
+  vpc_uuid = data.digitalocean_vpc.main.id
 
   user_data = templatefile("${path.module}/scripts/gateway-startup.sh", {
     tls_cert       = tls_locally_signed_cert.server.cert_pem

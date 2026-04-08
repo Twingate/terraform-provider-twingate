@@ -4,7 +4,7 @@ resource "digitalocean_droplet" "connector" {
   size   = var.do_droplet_size
   image  = "debian-12-x64"
 
-  vpc_uuid = digitalocean_vpc.main.id
+  vpc_uuid = data.digitalocean_vpc.main.id
 
   user_data = templatefile("${path.module}/scripts/connector-startup.sh", {
     access_token  = twingate_connector_tokens.main.access_token
