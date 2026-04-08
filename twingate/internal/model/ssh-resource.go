@@ -14,3 +14,11 @@ type SSHResource struct {
 	AccessPolicy     *AccessPolicy
 	GroupsAccess     []AccessGroup
 }
+
+func (r SSHResource) GetID() string {
+	return r.ID
+}
+
+func (r SSHResource) GetName() string {
+	return r.Name
+}

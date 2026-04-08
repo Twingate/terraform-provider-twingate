@@ -1,0 +1,9 @@
+# Twingate provider settings
+tg_api_token = "your-api-token"
+tg_network   = "your-network"
+
+# GCP settings
+project_id = "your-gcp-project"
+
+# Optional: alias for the SSH resource (added as a DNS SAN in the TLS cert)
+# resource_alias = "ssh-server.int"

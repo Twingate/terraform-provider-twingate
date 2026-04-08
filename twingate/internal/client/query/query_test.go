@@ -5049,3 +5049,121 @@ func TestReadKubernetesResourceQueryToModel(t *testing.T) {
 		})
 	}
 }
+
+func TestReadCertificateAuthoritiesQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadCertificateAuthorities
+		expected bool
+	}{
+		{
+			name:     "No edges - IsEmpty true",
+			query:    ReadCertificateAuthorities{},
+			expected: true,
+		},
+		{
+			name: "SSH CA edge - IsEmpty false",
+			query: ReadCertificateAuthorities{
+				CertificateAuthorities: CertificateAuthorities{
+					PaginatedResource: PaginatedResource[*CertificateAuthorityEdge]{
+						Edges: []*CertificateAuthorityEdge{
+							{
+								Node: &certificateAuthorityListNode{
+									Type: "SSHCertificateAuthority",
+									SSHCertificateAuthority: certificateAuthority{
+										ID:   "ssh-ca-id",
+										Name: "ssh-ca-name",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "X509 CA edge - IsEmpty false",
+			query: ReadCertificateAuthorities{
+				CertificateAuthorities: CertificateAuthorities{
+					PaginatedResource: PaginatedResource[*CertificateAuthorityEdge]{
+						Edges: []*CertificateAuthorityEdge{
+							{
+								Node: &certificateAuthorityListNode{
+									Type: "X509CertificateAuthority",
+									X509CertificateAuthority: certificateAuthority{
+										ID:   "x509-ca-id",
+										Name: "x509-ca-name",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestReadShallowResourcesWithTypeQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    ReadShallowResourcesWithType
+		expected bool
+	}{
+		{
+			name:     "No edges - IsEmpty true",
+			query:    ReadShallowResourcesWithType{},
+			expected: true,
+		},
+		{
+			name: "SSH resource edge - IsEmpty false",
+			query: ReadShallowResourcesWithType{
+				ShallowResourcesWithType: ShallowResourcesWithType{
+					PaginatedResource: PaginatedResource[*ShallowResourceEdge]{
+						Edges: []*ShallowResourceEdge{
+							{
+								Node: &gqlShallowResource{
+									Type:   "SSHResource",
+									IDName: IDName{ID: graphql.ID("ssh-res-id"), Name: "my-ssh-res"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Kubernetes resource edge - IsEmpty false",
+			query: ReadShallowResourcesWithType{
+				ShallowResourcesWithType: ShallowResourcesWithType{
+					PaginatedResource: PaginatedResource[*ShallowResourceEdge]{
+						Edges: []*ShallowResourceEdge{
+							{
+								Node: &gqlShallowResource{
+									Type:   "KubernetesResource",
+									IDName: IDName{ID: graphql.ID("k8s-res-id"), Name: "my-k8s-res"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}

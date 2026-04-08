@@ -2,9 +2,11 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client/query"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 )
 
 //nolint:dupl
@@ -137,6 +139,35 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 	res.GroupsAccess = k8sResource.GroupsAccess
 
 	return res, nil
+}
+
+func (client *Client) ReadKubernetesResources(ctx context.Context) ([]*model.KubernetesResource, error) {
+	opr := resourceKubernetesResource.read().withCustomName("readKubernetesResources")
+
+	variables := newVars(
+		cursor(query.CursorResources),
+		pageLimit(client.pageLimit),
+	)
+
+	response := query.ReadShallowResourcesWithType{}
+	if err := client.query(ctx, &response, variables, opr, attr{id: "All"}); err != nil && !errors.Is(err, ErrGraphqlResultIsEmpty) {
+		return nil, err
+	}
+
+	if err := response.FetchPages(ctx, client.readShallowResourcesWithTypeAfter, variables); err != nil {
+		return nil, err //nolint
+	}
+
+	return utils.FilterMap(response.Edges,
+		func(edge *query.ShallowResourceEdge) bool {
+			return edge.Node.Type == "KubernetesResource"
+		},
+		func(edge *query.ShallowResourceEdge) *model.KubernetesResource {
+			return &model.KubernetesResource{
+				ID:   string(edge.Node.ID),
+				Name: edge.Node.Name,
+			}
+		}), nil
 }
 
 func (client *Client) DeleteKubernetesResource(ctx context.Context, resourceID string) error {

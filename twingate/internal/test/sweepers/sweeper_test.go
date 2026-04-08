@@ -65,6 +65,8 @@ type readResourcesFunc func(client *client.Client, ctx context.Context) ([]Resou
 
 type deleteResourceFunc func(client *client.Client, ctx context.Context, id string) error
 
+const envSweepDeleteAll = "SWEEP_DELETE_ALL"
+
 func newTestSweeper(resourceName string, readResources readResourcesFunc, deleteResource deleteResourceFunc) func(tenant string) error {
 	return func(tenant string) error {
 		log.Printf("[INFO][SWEEPER_LOG] %s: starting sweeper", resourceName)
@@ -91,9 +93,13 @@ func newTestSweeper(resourceName string, readResources readResourcesFunc, delete
 
 		var ids = make([]string, 0, len(resources))
 
+		deleteAll := os.Getenv(envSweepDeleteAll) != ""
+		if deleteAll {
+			log.Printf("[WARN][SWEEPER_LOG] %s: SWEEP_DELETE_ALL is set — deleting ALL resources regardless of prefix", resourceName)
+		}
 		testPrefix := test.Prefix()
 		for _, elem := range resources {
-			if strings.HasPrefix(elem.GetName(), testPrefix) {
+			if deleteAll || strings.HasPrefix(elem.GetName(), testPrefix) {
 				ids = append(ids, elem.GetID())
 			}
 		}
