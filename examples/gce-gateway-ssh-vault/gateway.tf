@@ -57,8 +57,8 @@ resource "twingate_gateway_config" "config" {
   port = local.gateway_port
 
   tls = {
-    certificate_file = "/opt/gateway/tls.crt"
-    private_key_file = "/opt/gateway/tls.key"
+    certificate_file = "/etc/gateway/tls.crt"
+    private_key_file = "/etc/gateway/tls.key"
   }
 
   ssh = {
