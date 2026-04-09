@@ -165,7 +165,7 @@ resource "twingate_ssh_resource" "ssh_server" {
 
 The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
-## Configuring the Gateway
+## Configuring the gateway
 
 The `twingate_gateway_config` resource generates the Gateway's configuration file. It specifies the TLS certificate paths and SSH CA key path:
 
