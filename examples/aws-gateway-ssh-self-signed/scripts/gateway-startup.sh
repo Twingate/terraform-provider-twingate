@@ -18,13 +18,13 @@ KEY
 
 chmod 600 /etc/gateway/tls.key
 
-cat > "$GATEWAY_DIR/ssh-ca.key" <<'SSHKEY'
+cat > /etc/gateway/ssh-ca.key <<'SSHKEY'
 ${ssh_ca_key}
 SSHKEY
 
-chmod 600 "$GATEWAY_DIR/ssh-ca.key"
+chmod 600 /etc/gateway/ssh-ca.key
 
-cat > "$GATEWAY_DIR/config.yaml" <<'CONFIG'
+cat > /etc/gateway/config.yaml <<'CONFIG'
 ${gateway_config}
 CONFIG
 
@@ -36,7 +36,7 @@ Description=Twingate Access Gateway
 After=network.target
 
 [Service]
-ExecStart=$GATEWAY_DIR/gateway start --config $GATEWAY_DIR/config.yaml
+ExecStart=$GATEWAY_DIR/gateway start --config /etc/gateway/config.yaml
 Restart=always
 RestartSec=5
 

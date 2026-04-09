@@ -61,7 +61,7 @@ resource "tls_locally_signed_cert" "server" {
   ca_private_key_pem = tls_private_key.x509_ca.private_key_pem
   ca_cert_pem        = tls_self_signed_cert.x509_ca.cert_pem
 
-  validity_period_hours = 720 # 30 days
+  validity_period_hours = 8760 # 365 days
 
   allowed_uses = [
     "digital_signature",

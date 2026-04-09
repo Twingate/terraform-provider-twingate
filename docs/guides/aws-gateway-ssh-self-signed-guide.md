@@ -1,6 +1,6 @@
 ---
 subcategory: "aws"
-page_title: "AWS SSH Gateway with Local SSH CA"
+page_title: "AWS SSH Gateway with local SSH CA"
 description: "Deploy a Twingate SSH Access Gateway on AWS using a local SSH CA for SSH certificate signing."
 ---
 
@@ -113,7 +113,7 @@ The Gateway uses this key to sign SSH certificates on the fly.
 
 ## Creating the Twingate resources
 
-Register both CAs with Twingate and create the remote network, Gateway, Connector, and SSH resource:
+Register both CAs with Twingate and create the Remote Network, Gateway, Connector, and SSH Resource:
 
 ```terraform
 resource "twingate_remote_network" "main" {
@@ -184,7 +184,7 @@ resource "twingate_gateway_config" "config" {
     }
 
     ca = {
-      private_key_file = "/opt/gateway/ssh-ca.key"
+      private_key_file = "/etc/gateway/ssh-ca.key"
     }
 
     resources = [twingate_ssh_resource.ssh_server]
