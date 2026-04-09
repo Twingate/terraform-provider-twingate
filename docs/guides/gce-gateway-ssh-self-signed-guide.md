@@ -119,16 +119,16 @@ Register both CAs with Twingate and create the Remote Network, Gateway, Connecto
 
 ```terraform
 resource "twingate_remote_network" "main" {
-  name = "demo-test-ssh"
+  name = "demo-gcp-ssh-network"
 }
 
 resource "twingate_ssh_certificate_authority" "ssh" {
-  name       = "demo-ssh-ca"
+  name       = "demo-gcp-ssh-ca"
   public_key = tls_private_key.ssh_ca.public_key_openssh
 }
 
 resource "twingate_x509_certificate_authority" "tls" {
-  name        = "demo-gateway-x509-ca"
+  name        = "demo-gcp-x509-ca"
   certificate = tls_self_signed_cert.x509_ca.cert_pem
 }
 
@@ -141,7 +141,7 @@ resource "twingate_gateway" "main" {
 
 resource "twingate_connector" "main" {
   remote_network_id = twingate_remote_network.main.id
-  name              = "demo-connector"
+  name              = "demo-gcp-connector"
 }
 
 resource "twingate_connector_tokens" "main" {
@@ -153,7 +153,7 @@ data "twingate_groups" "everyone" {
 }
 
 resource "twingate_ssh_resource" "ssh_server" {
-  name              = "demo-ssh-server"
+  name              = "demo-gcp-ssh-server"
   address           = google_compute_instance.ssh_server.network_interface[0].network_ip
   alias             = var.resource_alias != "" ? var.resource_alias : null
   remote_network_id = twingate_remote_network.main.id
