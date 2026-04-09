@@ -35,7 +35,7 @@ curl -sfL "$BINARY_URL" | tar xz -C "$GATEWAY_DIR"
 # Create systemd service
 cat > /etc/systemd/system/gateway.service <<EOF
 [Unit]
-Description=Twingate Access Gateway
+Description=Twingate Gateway
 After=network.target
 
 [Service]

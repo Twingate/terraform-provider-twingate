@@ -1,12 +1,12 @@
 ---
 subcategory: "gcp"
-page_title: "GCE SSH Gateway with Vault SSH CA"
-description: "Deploy a Twingate SSH Access Gateway on Google Compute Engine using HashiCorp Vault for SSH certificate management."
+page_title: "Gateway for SSH on GCE with Vault SSH CA"
+description: "Deploy a Twingate Gateway for SSH on Google Compute Engine using HashiCorp Vault for SSH certificate management."
 ---
 
-# GCE SSH Gateway with Vault SSH CA
+# Gateway for SSH on GCE with Vault SSH CA
 
-This guide walks through deploying a Twingate SSH Access Gateway on Google Compute Engine (GCE) using HashiCorp Vault as the certificate authority. The Gateway delegates SSH certificate signing to Vault via its SSH secrets engine. VMs authenticate to Vault using GCP identity tokens.
+This guide walks through deploying a Twingate Gateway for SSH on Google Compute Engine (GCE) using HashiCorp Vault as the certificate authority. The Gateway delegates SSH certificate signing to Vault via its SSH secrets engine. VMs authenticate to Vault using GCP identity tokens.
 
 The setup requires a running Vault instance with the SSH secrets engine enabled. The included `vault/` subdirectory provides a sample Vault deployment on GCE for convenience, but you can use any Vault instance — self-hosted, [HCP Vault](https://cloud.hashicorp.com/products/vault), or otherwise.
 
