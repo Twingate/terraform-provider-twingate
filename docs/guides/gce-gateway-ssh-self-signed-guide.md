@@ -1,12 +1,12 @@
 ---
 subcategory: "gcp"
-page_title: "GCE SSH Gateway with Local SSH CA"
-description: "Deploy a Twingate SSH Access Gateway on Google Compute Engine using a local SSH CA for SSH certificate signing."
+page_title: "Gateway for SSH on GCE with Local SSH CA"
+description: "Deploy a Twingate Gateway for SSH on Google Compute Engine using a local SSH CA for SSH certificate signing."
 ---
 
-# GCE SSH Gateway with local SSH CA
+# Gateway for SSH on GCE with local SSH CA
 
-This guide walks through deploying a Twingate SSH Access Gateway on Google Compute Engine (GCE) using a local SSH CA. The Gateway holds the SSH CA private key and signs SSH certificates directly, enabling certificate-based authentication without an external signing service. For simplicity, the example also uses a self-signed X.509 CA for TLS.
+This guide walks through deploying a Twingate Gateway for SSH on Google Compute Engine (GCE) using a local SSH CA. The Gateway holds the SSH CA private key and signs SSH certificates directly, enabling certificate-based authentication without an external signing service. For simplicity, the example also uses a self-signed X.509 CA for TLS.
 
 This guide highlights the key sections. A complete, runnable example with full Terraform configurations, startup scripts, and usage instructions is available in the [`examples/gce-gateway-ssh-self-signed`](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/gce-gateway-ssh-self-signed) directory.
 
