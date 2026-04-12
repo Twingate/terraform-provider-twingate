@@ -193,7 +193,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			attr.Alias: schema.StringAttribute{
 				Optional:      true,
 				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				PlanModifiers: []planmodifier.String{CaseInsensitiveDiff()},
+				PlanModifiers: []planmodifier.String{customplanmodifier.CaseInsensitiveDiff()},
 			},
 			attr.Protocols: protocols(),
 			attr.Tags: schema.MapAttribute{
@@ -207,7 +207,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				ElementType:   types.StringType,
 				Computed:      true,
 				Description:   "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
-				PlanModifiers: []planmodifier.Map{UseDefaultTagsForUnknownModifier()},
+				PlanModifiers: []planmodifier.Map{customplanmodifier.UseDefaultTagsForUnknownModifier(&DefaultTags)},
 			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
@@ -215,7 +215,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
 				PlanModifiers: []planmodifier.String{
-					UseNullPolicyForGroupAccessWhenValueOmitted(),
+					customplanmodifier.UseNullStringWhenValueOmitted(),
 				},
 			},
 			attr.IsVisible: schema.BoolAttribute{
@@ -332,7 +332,7 @@ func groupAccessBlock() schema.SetNestedBlock {
 						stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName(attr.GroupID)),
 					},
 					PlanModifiers: []planmodifier.String{
-						UseNullPolicyForGroupAccessWhenValueOmitted(),
+						customplanmodifier.UseNullStringWhenValueOmitted(),
 					},
 				},
 			},
@@ -377,7 +377,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 					Computed:    true,
 					Description: fmt.Sprintf("This will set the access_policy mode for the policy. The valid values are `%s`, `%s` and `%s`.", model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
 					PlanModifiers: []planmodifier.String{
-						UseNullStringWhenValueOmitted(),
+						customplanmodifier.UseNullStringWhenValueOmitted(),
 					},
 					Validators: []validator.String{
 						stringvalidator.OneOf(model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
@@ -389,7 +389,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 					Computed:    true,
 					Description: "This will set the access duration for the policy. Duration must be between 1 hour and 365 days. Examples of valid values include `1h` and `2d`.",
 					PlanModifiers: []planmodifier.String{
-						UseNullStringWhenValueOmitted(),
+						customplanmodifier.UseNullStringWhenValueOmitted(),
 						customplanmodifier.Duration(),
 					},
 					Validators: []validator.String{
@@ -402,7 +402,7 @@ func accessPolicyBlock() schema.SetNestedBlock {
 					Computed:    true,
 					Description: fmt.Sprintf("This will set the approval model for the policy. The valid values are `%s` and `%s`.", model.ApprovalModeAutomatic, model.ApprovalModeManual),
 					PlanModifiers: []planmodifier.String{
-						UseNullStringWhenValueOmitted(),
+						customplanmodifier.UseNullStringWhenValueOmitted(),
 					},
 					Validators: []validator.String{
 						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),
@@ -1115,7 +1115,6 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 	diagnostics.Append(respState.Set(ctx, state)...)
 }
 
-//nolint:funlen
 func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) {
 	state.ID = types.StringValue(resource.ID)
 	state.Name = types.StringValue(resource.Name)
@@ -1124,6 +1123,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.IsActive = types.BoolValue(resource.IsActive)
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
+	state.Alias = types.StringPointerValue(resource.Alias)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
@@ -1131,10 +1131,6 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 
 	if !state.IsBrowserShortcutEnabled.IsNull() || !reference.IsBrowserShortcutEnabled.IsUnknown() {
 		state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
-	}
-
-	if !state.Alias.IsNull() || !reference.Alias.IsNull() {
-		state.Alias = reference.Alias
 	}
 
 	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
@@ -1177,7 +1173,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 
 	state.GroupAccess = groupAccess
 	state.ServiceAccess = serviceAccess
-	state.TagsAll = makeMapValue(resource.Tags)
+	state.TagsAll = utils.ConvertMapValue(resource.Tags)
 	state.Tags = reference.Tags
 }
 
@@ -1544,44 +1540,6 @@ func convertGroupsAccessToTerraformForImport(ctx context.Context, groupAccess []
 	return makeObjectsSet(ctx, objects...)
 }
 
-func CaseInsensitiveDiff() planmodifier.String {
-	return caseInsensitiveDiffModifier{
-		description: "Handles case insensitive strings",
-	}
-}
-
-type caseInsensitiveDiffModifier struct {
-	description string
-}
-
-func (m caseInsensitiveDiffModifier) Description(_ context.Context) string {
-	return m.description
-}
-
-func (m caseInsensitiveDiffModifier) MarkdownDescription(_ context.Context) string {
-	return m.description
-}
-
-func (m caseInsensitiveDiffModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	// Do not replace on resource creation.
-	if req.State.Raw.IsNull() {
-		return
-	}
-
-	// Do not replace on resource destroy.
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
-	if !req.PlanValue.IsUnknown() && req.StateValue.IsNull() {
-		return
-	}
-
-	if strings.EqualFold(strings.ToLower(req.PlanValue.ValueString()), strings.ToLower(req.StateValue.ValueString())) {
-		resp.PlanValue = req.StateValue
-	}
-}
-
 var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)`)
 
 func isWildcardAddress(address string) bool {
@@ -1612,115 +1570,4 @@ func accessPolicyAttributeTypes() map[string]tfattr.Type {
 		attr.Duration:     types.StringType,
 		attr.ApprovalMode: types.StringType,
 	}
-}
-
-func UseNullPolicyForGroupAccessWhenValueOmitted() planmodifier.String {
-	return useNullPolicyForGroupAccessWhenValueOmitted{}
-}
-
-type useNullPolicyForGroupAccessWhenValueOmitted struct{}
-
-func (m useNullPolicyForGroupAccessWhenValueOmitted) Description(_ context.Context) string {
-	return ""
-}
-
-func (m useNullPolicyForGroupAccessWhenValueOmitted) MarkdownDescription(_ context.Context) string {
-	return ""
-}
-
-func (m useNullPolicyForGroupAccessWhenValueOmitted) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
-		resp.PlanValue = types.StringNull()
-
-		return
-	}
-
-	// Do nothing if there is no state value.
-	if req.StateValue.IsNull() {
-		return
-	}
-
-	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
-	if req.ConfigValue.IsUnknown() {
-		return
-	}
-
-	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
-		resp.PlanValue = types.StringNull()
-	}
-}
-
-func UseNullStringWhenValueOmitted() planmodifier.String {
-	return useNullStringWhenValueOmitted{}
-}
-
-type useNullStringWhenValueOmitted struct{}
-
-func (m useNullStringWhenValueOmitted) Description(_ context.Context) string {
-	return ""
-}
-
-func (m useNullStringWhenValueOmitted) MarkdownDescription(_ context.Context) string {
-	return ""
-}
-
-func (m useNullStringWhenValueOmitted) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if req.StateValue.IsNull() && req.ConfigValue.IsNull() {
-		resp.PlanValue = types.StringNull()
-
-		return
-	}
-
-	// Do nothing if there is no state value.
-	if req.StateValue.IsNull() {
-		return
-	}
-
-	// Do nothing if there is an unknown configuration value, otherwise interpolation gets messed up.
-	if req.ConfigValue.IsUnknown() {
-		return
-	}
-
-	if req.ConfigValue.IsNull() && !req.PlanValue.IsNull() {
-		resp.PlanValue = types.StringNull()
-	}
-}
-
-func UseDefaultTagsForUnknownModifier() planmodifier.Map {
-	return useDefaultTagsForUnknownModifier{}
-}
-
-// useDefaultTagsForUnknownModifier implements the plan modifier.
-type useDefaultTagsForUnknownModifier struct{}
-
-// Description returns a human-readable description of the plan modifier.
-func (m useDefaultTagsForUnknownModifier) Description(_ context.Context) string {
-	return "Once set, the value of this attribute will fallback to Default Tags on unset."
-}
-
-// MarkdownDescription returns a markdown description of the plan modifier.
-func (m useDefaultTagsForUnknownModifier) MarkdownDescription(_ context.Context) string {
-	return "Once set, the value of this attribute will fallback to Default Tags on unset."
-}
-
-// PlanModifyMap implements the plan modification logic.
-func (m useDefaultTagsForUnknownModifier) PlanModifyMap(ctx context.Context, req planmodifier.MapRequest, resp *planmodifier.MapResponse) {
-	tags := types.MapValueMust(types.StringType, map[string]tfattr.Value{})
-	req.Config.GetAttribute(ctx, path.Root(attr.Tags), &tags)
-
-	resp.PlanValue = makeMapValue(mapUnion(DefaultTags, getTags(tags)))
-}
-
-func makeMapValue(values map[string]string) types.Map {
-	if len(values) == 0 {
-		return types.MapNull(types.StringType)
-	}
-
-	rawValues := make(map[string]tfattr.Value, len(values))
-
-	for key, val := range values {
-		rawValues[key] = types.StringValue(val)
-	}
-
-	return types.MapValueMust(types.StringType, rawValues)
 }

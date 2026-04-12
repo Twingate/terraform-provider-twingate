@@ -55,7 +55,7 @@ func accessPolicyBlockResourceStateV3() schema.SetNestedBlock {
 					Optional: true,
 					Computed: true,
 					PlanModifiers: []planmodifier.String{
-						UseNullStringWhenValueOmitted(),
+						customplanmodifier.UseNullStringWhenValueOmitted(),
 					},
 					Validators: []validator.String{
 						stringvalidator.OneOf(model.AccessPolicyModeManual, model.AccessPolicyModeAutoLock, model.AccessPolicyModeAccessRequest),
@@ -66,7 +66,7 @@ func accessPolicyBlockResourceStateV3() schema.SetNestedBlock {
 					Optional: true,
 					Computed: true,
 					PlanModifiers: []planmodifier.String{
-						UseNullStringWhenValueOmitted(),
+						customplanmodifier.UseNullStringWhenValueOmitted(),
 						customplanmodifier.Duration(),
 					},
 					Validators: []validator.String{
@@ -78,7 +78,7 @@ func accessPolicyBlockResourceStateV3() schema.SetNestedBlock {
 					Optional: true,
 					Computed: true,
 					PlanModifiers: []planmodifier.String{
-						UseNullStringWhenValueOmitted(),
+						customplanmodifier.UseNullStringWhenValueOmitted(),
 					},
 					Validators: []validator.String{
 						stringvalidator.OneOf(model.ApprovalModeAutomatic, model.ApprovalModeManual),

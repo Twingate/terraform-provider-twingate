@@ -2148,7 +2148,7 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 			{
 				// alias attr set with empty string
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
-				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
+				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
 			},
 		},
 	})
@@ -2175,11 +2175,11 @@ func TestAccTwingateResourceUpdateWithInvalidAlias(t *testing.T) {
 			},
 			{
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, "test-com"),
-				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
+				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
 			},
 			{
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
-				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
+				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
 			},
 		},
 	})
@@ -2199,7 +2199,40 @@ func TestAccTwingateResourceCreateWithInvalidAlias(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, "test-com"),
-				ExpectError: regexp.MustCompile("Alias must be a[\\n\\s]+valid DNS name"),
+				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceUpdateAlias(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test29"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+	const aliasName = "test.com"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				// alias attr commented out, means it has nil state
+				Config: createResource29WithoutAlias(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckNoResourceAttr(theResource, attr.Alias),
+				),
+			},
+			{
+				Config: createResource29(terraformResourceName, remoteNetworkName, resourceName, aliasName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Name, resourceName),
+					sdk.TestCheckResourceAttr(theResource, attr.Alias, aliasName),
+				),
 			},
 		},
 	})
