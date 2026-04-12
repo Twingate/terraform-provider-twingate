@@ -27,6 +27,8 @@ var (
 	udpPortsLen                = attr.LenAttr(attr.Protocols, attr.UDP, attr.Ports)
 	accessGroupIdsLen          = attr.Len(attr.AccessGroup)
 	accessServiceAccountIdsLen = attr.Len(attr.AccessService)
+
+	ErrInvalidDNS = regexp.MustCompile(`Alias\s+must\s+be\s+a\s+valid\s+DNS`)
 )
 
 func TestAccTwingateResourceCreate(t *testing.T) {
@@ -2148,7 +2150,7 @@ func TestAccTwingateResourceCreateWithAlias(t *testing.T) {
 			{
 				// alias attr set with empty string
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
-				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
+				ExpectError: ErrInvalidDNS,
 			},
 		},
 	})
@@ -2175,11 +2177,11 @@ func TestAccTwingateResourceUpdateWithInvalidAlias(t *testing.T) {
 			},
 			{
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, "test-com"),
-				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
+				ExpectError: ErrInvalidDNS,
 			},
 			{
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, ""),
-				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
+				ExpectError: ErrInvalidDNS,
 			},
 		},
 	})
@@ -2199,7 +2201,7 @@ func TestAccTwingateResourceCreateWithInvalidAlias(t *testing.T) {
 		Steps: []sdk.TestStep{
 			{
 				Config:      createResource29(terraformResourceName, remoteNetworkName, resourceName, "test-com"),
-				ExpectError: regexp.MustCompile("Alias must be a valid DNS"),
+				ExpectError: ErrInvalidDNS,
 			},
 		},
 	})
