@@ -7,9 +7,11 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customplanmodifier"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -121,14 +123,14 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			attr.Alias: schema.StringAttribute{
 				Optional:      true,
 				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				PlanModifiers: []planmodifier.String{CaseInsensitiveDiff()},
+				PlanModifiers: []planmodifier.String{customplanmodifier.CaseInsensitiveDiff()},
 			},
 			attr.SecurityPolicyID: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
 				PlanModifiers: []planmodifier.String{
-					UseNullPolicyForGroupAccessWhenValueOmitted(),
+					customplanmodifier.UseNullStringWhenValueOmitted(),
 				},
 			},
 			attr.Tags: schema.MapAttribute{
@@ -334,7 +336,7 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 		state.Alias = types.StringPointerValue(sshRes.Alias)
 	}
 
-	state.Tags = makeMapValue(sshRes.Tags)
+	state.Tags = utils.ConvertMapValue(sshRes.Tags)
 
 	if sshRes.Protocols != nil {
 		prots, diags := convertProtocolsToTerraform(sshRes.Protocols, &state.Protocols)

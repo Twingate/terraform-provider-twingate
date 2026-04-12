@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -100,4 +101,50 @@ func MakeStringSet(values []string) types.Set {
 	return types.SetValueMust(types.StringType, Map(values, func(value string) tfattr.Value {
 		return types.StringValue(value)
 	}))
+}
+
+// MapUnion - for given two maps A and B,
+// If A = {'a': 1, 'b': 2} and B = {'a': 3, 'c': 4}, then the union of A and B is {'a': 3, 'b': 2, 'c': 4}.
+func MapUnion(mapA, mapB map[string]string) map[string]string {
+	if len(mapA) == 0 {
+		return mapB
+	}
+
+	if len(mapB) == 0 {
+		return mapA
+	}
+
+	result := make(map[string]string, max(len(mapA), len(mapB)))
+	maps.Copy(result, mapA)
+	maps.Copy(result, mapB)
+
+	return result
+}
+
+func ConvertMap(raw types.Map) map[string]string {
+	if raw.IsNull() || raw.IsUnknown() || len(raw.Elements()) == 0 {
+		return nil
+	}
+
+	result := make(map[string]string, len(raw.Elements()))
+
+	for key, val := range raw.Elements() {
+		result[key] = val.(types.String).ValueString()
+	}
+
+	return result
+}
+
+func ConvertMapValue(input map[string]string) types.Map {
+	if len(input) == 0 {
+		return types.MapNull(types.StringType)
+	}
+
+	raw := make(map[string]tfattr.Value, len(input))
+
+	for key, val := range input {
+		raw[key] = types.StringValue(val)
+	}
+
+	return types.MapValueMust(types.StringType, raw)
 }
