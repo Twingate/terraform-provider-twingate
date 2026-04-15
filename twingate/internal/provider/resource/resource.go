@@ -125,6 +125,64 @@ func (r *twingateResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 
 	tagsAll := utils.ConvertMapValue(utils.MapUnion(r.defaultTags, userTags))
 	resp.Plan.SetAttribute(ctx, path.Root(attr.TagsAll), tagsAll)
+
+	// Suppress access_policy drift when the config omits the block and state holds only
+	// the API default values (mode=MANUAL, approval_mode=MANUAL, no duration).
+	// ModifyPlan runs after all attribute-level plan modifiers, so this override is final.
+	suppressAccessPolicyDefaultDrift(ctx, req, resp)
+}
+
+// suppressAccessPolicyDefaultDrift prevents spurious drift after import: Twingate always
+// returns a default access_policy (mode=MANUAL, approval_mode=MANUAL), but if the user's
+// config has no access_policy block we should treat those defaults as "unmanaged" and keep
+// the plan equal to state so no change is shown or applied.
+func suppressAccessPolicyDefaultDrift(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip on create (no state yet) or destroy.
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// Only act when the user has not configured access_policy.
+	var configAccessPolicy types.Set
+	req.Config.GetAttribute(ctx, path.Root(attr.AccessPolicy), &configAccessPolicy)
+
+	if !configAccessPolicy.IsNull() && len(configAccessPolicy.Elements()) > 0 {
+		return
+	}
+
+	// Get the state's access_policy value.
+	var stateAccessPolicy types.Set
+	req.State.GetAttribute(ctx, path.Root(attr.AccessPolicy), &stateAccessPolicy)
+
+	if stateAccessPolicy.IsNull() || len(stateAccessPolicy.Elements()) == 0 {
+		return
+	}
+
+	// Check that every element in state is a default value.
+	for _, elem := range stateAccessPolicy.Elements() {
+		obj, ok := elem.(types.Object)
+		if !ok {
+			return
+		}
+
+		attrs := obj.Attributes()
+
+		mode, _ := attrs[attr.Mode].(types.String)
+		approvalMode, _ := attrs[attr.ApprovalMode].(types.String)
+		duration, _ := attrs[attr.Duration].(types.String)
+
+		modeIsDefault := mode.IsNull() || mode.ValueString() == model.AccessPolicyModeManual
+		approvalModeIsDefault := approvalMode.IsNull() || approvalMode.ValueString() == model.ApprovalModeManual
+		durationIsDefault := duration.IsNull() || duration.ValueString() == ""
+
+		if !modeIsDefault || !approvalModeIsDefault || !durationIsDefault {
+			return
+		}
+	}
+
+	// All state values are defaults and config has no access_policy — keep plan = state
+	// so Terraform sees no diff and applies no change.
+	resp.Plan.SetAttribute(ctx, path.Root(attr.AccessPolicy), stateAccessPolicy)
 }
 
 func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
