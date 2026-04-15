@@ -1,4 +1,5 @@
-# Generate a self-signed X.509 CA for the gateway
+# --- TLS Certificate Resources ---
+
 resource "tls_private_key" "x509_ca" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -15,13 +16,13 @@ resource "tls_self_signed_cert" "x509_ca" {
   is_ca_certificate     = true
 
   allowed_uses = [
-    "cert_signing",
     "digital_signature",
     "key_encipherment",
+    "cert_signing",
+    "crl_signing",
   ]
 }
 
-# Generate a server TLS certificate signed by the CA
 resource "tls_private_key" "server" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -31,11 +32,11 @@ resource "tls_cert_request" "server" {
   private_key_pem = tls_private_key.server.private_key_pem
 
   subject {
-    common_name = "Twingate Gateway"
+    common_name = "gateway"
   }
 
   dns_names    = var.resource_alias != "" ? [var.resource_alias] : []
-  ip_addresses = [google_compute_instance.ssh_server.network_interface[0].network_ip]
+  ip_addresses = [digitalocean_droplet.ssh_server.ipv4_address_private]
 }
 
 resource "tls_locally_signed_cert" "server" {
@@ -52,35 +53,36 @@ resource "tls_locally_signed_cert" "server" {
   ]
 }
 
-# Generate a fixed SSH CA key pair for the gateway
 resource "tls_private_key" "ssh_ca" {
   algorithm = "ED25519"
 }
 
+# --- Twingate Resources ---
+
 resource "twingate_remote_network" "main" {
-  name = "demo-gcp-ssh-network"
+  name = "demo-test-ssh"
 }
 
 resource "twingate_ssh_certificate_authority" "ssh" {
-  name       = "demo-gcp-ssh-ca"
+  name       = "demo-ssh-ca"
   public_key = tls_private_key.ssh_ca.public_key_openssh
 }
 
 resource "twingate_x509_certificate_authority" "tls" {
-  name        = "demo-gcp-x509-ca"
+  name        = "demo-gateway-x509-ca"
   certificate = tls_self_signed_cert.x509_ca.cert_pem
 }
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${google_compute_address.gateway.address}:${local.gateway_port}"
+  address           = "${digitalocean_reserved_ip.gateway.ip_address}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
 
 resource "twingate_connector" "main" {
   remote_network_id = twingate_remote_network.main.id
-  name              = "demo-gcp-connector"
+  name              = "demo-connector"
 }
 
 resource "twingate_connector_tokens" "main" {
@@ -92,11 +94,11 @@ data "twingate_groups" "everyone" {
 }
 
 resource "twingate_ssh_resource" "ssh_server" {
-  name              = "demo-gcp-ssh-server"
-  address           = google_compute_instance.ssh_server.network_interface[0].network_ip
-  alias             = var.resource_alias != "" ? var.resource_alias : null
+  name              = "demo-ssh-server"
+  address           = digitalocean_droplet.ssh_server.ipv4_address_private
   remote_network_id = twingate_remote_network.main.id
   gateway_id        = twingate_gateway.main.id
+  alias             = var.resource_alias != "" ? var.resource_alias : null
 
   access_group {
     group_id = data.twingate_groups.everyone.groups[0].id

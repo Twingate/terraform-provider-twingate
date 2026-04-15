@@ -3,7 +3,6 @@ package resource
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
@@ -193,24 +192,6 @@ func setUnion(setA, setB []string) []string {
 	for key := range set {
 		result = append(result, key)
 	}
-
-	return result
-}
-
-// mapUnion - for given two maps A and B,
-// If A = {'a': 1, 'b': 2} and B = {'a': 3, 'c': 4}, then the union of A and B is {'a': 3, 'b': 2, 'c': 4}.
-func mapUnion(mapA, mapB map[string]string) map[string]string {
-	if len(mapA) == 0 {
-		return mapB
-	}
-
-	if len(mapB) == 0 {
-		return mapA
-	}
-
-	result := make(map[string]string, max(len(mapA), len(mapB)))
-	maps.Copy(result, mapA)
-	maps.Copy(result, mapB)
 
 	return result
 }
