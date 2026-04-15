@@ -8,6 +8,7 @@ type Config struct {
 }
 
 type ProviderData struct {
-	Client *client.Client
-	Config Config
+	Client      *client.Client
+	Config      Config
+	DefaultTags map[string]string
 }

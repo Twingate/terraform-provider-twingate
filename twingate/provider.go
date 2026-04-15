@@ -275,13 +275,12 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 			Network: network,
 			URL:     url,
 		},
+		DefaultTags: getDefaultTags(config.DefaultTags),
 	}
 
 	response.DataSourceData = providerData
 	response.ResourceData = providerData
 	response.EphemeralResourceData = providerData
-
-	twingateResource.DefaultTags = getDefaultTags(config.DefaultTags)
 }
 
 func getCacheOptions(config types.Object) (client.CacheOptions, error) {
