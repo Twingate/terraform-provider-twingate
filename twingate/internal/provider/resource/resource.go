@@ -44,8 +44,6 @@ const (
 )
 
 var (
-	DefaultTags map[string]string //nolint:gochecknoglobals
-
 	ErrPortsWithPolicyAllowAll            = errors.New(model.PolicyAllowAll + " policy does not allow specifying ports.")
 	ErrPortsWithPolicyDenyAll             = errors.New(model.PolicyDenyAll + " policy does not allow specifying ports.")
 	ErrPolicyRestrictedWithoutPorts       = errors.New(model.PolicyRestricted + " policy requires specifying ports.")
@@ -62,7 +60,8 @@ func NewResourceResource() resource.Resource {
 }
 
 type twingateResource struct {
-	client *client.Client
+	client      *client.Client
+	defaultTags map[string]string
 }
 
 type resourceModel struct {
@@ -99,6 +98,33 @@ func (r *twingateResource) Configure(_ context.Context, req resource.ConfigureRe
 	}
 
 	r.client = providerData.Client
+	r.defaultTags = providerData.DefaultTags
+}
+
+func (r *twingateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip during destroy plans.
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// Read the user-declared tags from config. If the user omitted tags (config is null),
+	// fall back to the user-declared portion stored in state (set during ImportState as
+	// API tags minus provider default tags).
+	var configTags types.Map
+	req.Config.GetAttribute(ctx, path.Root(attr.Tags), &configTags)
+
+	var userTags map[string]string
+
+	if configTags.IsNull() || configTags.IsUnknown() {
+		var stateTags types.Map
+		req.State.GetAttribute(ctx, path.Root(attr.Tags), &stateTags)
+		userTags = utils.ConvertMap(stateTags)
+	} else {
+		userTags = utils.ConvertMap(configTags)
+	}
+
+	tagsAll := utils.ConvertMapValue(utils.MapUnion(r.defaultTags, userTags))
+	resp.Plan.SetAttribute(ctx, path.Root(attr.TagsAll), tagsAll)
 }
 
 func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -156,6 +182,10 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 
 		resp.State.SetAttribute(ctx, path.Root(attr.AccessService), accessServiceAccount)
 	}
+
+	resp.State.SetAttribute(ctx, path.Root(attr.TagsAll), utils.ConvertMapValue(res.Tags))
+	userTags := utils.MapDifference(res.Tags, r.defaultTags)
+	resp.State.SetAttribute(ctx, path.Root(attr.Tags), utils.ConvertMapValue(userTags))
 }
 
 //nolint:funlen
@@ -204,10 +234,9 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
 			attr.TagsAll: schema.MapAttribute{
-				ElementType:   types.StringType,
-				Computed:      true,
-				Description:   "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
-				PlanModifiers: []planmodifier.Map{customplanmodifier.UseDefaultTagsForUnknownModifier(&DefaultTags)},
+				ElementType: types.StringType,
+				Computed:    true,
+				Description: "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
 			},
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{

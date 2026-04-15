@@ -148,3 +148,25 @@ func ConvertMapValue(input map[string]string) types.Map {
 
 	return types.MapValueMust(types.StringType, raw)
 }
+
+// MapDifference returns a map with all keys from mapA that are NOT present in mapB.
+// Returns nil when the result would be empty.
+func MapDifference(mapA, mapB map[string]string) map[string]string {
+	if len(mapA) == 0 {
+		return nil
+	}
+
+	result := make(map[string]string)
+
+	for k, v := range mapA {
+		if _, exists := mapB[k]; !exists {
+			result[k] = v
+		}
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	return result
+}
