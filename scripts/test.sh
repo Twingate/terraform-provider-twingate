@@ -7,9 +7,10 @@ TEST_RESULTS=${TEST_RESULTS:-"./test_results"}
 
 mkdir -p "${TEST_RESULTS}"
 
-MAIN_COVDIR="${TEST_RESULTS}/covdata-main"
-RETRY_COVDIR="${TEST_RESULTS}/covdata-retry"
-MERGED_COVDIR="${TEST_RESULTS}/covdata-merged"
+TEST_RESULTS_ABS="$(cd "${TEST_RESULTS}" && pwd)"
+MAIN_COVDIR="${TEST_RESULTS_ABS}/covdata-main"
+RETRY_COVDIR="${TEST_RESULTS_ABS}/covdata-retry"
+MERGED_COVDIR="${TEST_RESULTS_ABS}/covdata-merged"
 rm -rf "${MAIN_COVDIR}" "${RETRY_COVDIR}" "${MERGED_COVDIR}"
 mkdir -p "${MAIN_COVDIR}" "${RETRY_COVDIR}" "${MERGED_COVDIR}"
 
