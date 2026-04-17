@@ -79,7 +79,6 @@ require (
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad // indirect
 	github.com/yuin/goldmark v1.7.7 // indirect
 	github.com/yuin/goldmark-meta v1.1.0 // indirect
 	github.com/zclconf/go-cty v1.17.0 // indirect
@@ -101,6 +100,5 @@ require (
 
 tool (
 	github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
-	github.com/wadey/gocovmerge
 	gotest.tools/gotestsum
 )
