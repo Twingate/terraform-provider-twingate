@@ -50,8 +50,7 @@ func (d *gateway) Configure(_ context.Context, req datasource.ConfigureRequest, 
 		return
 	}
 
-	httpClient := providerData.Client
-	d.client = httpClient
+	d.client = providerData.Client
 }
 
 func (d *gateway) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

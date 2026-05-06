@@ -49,8 +49,7 @@ func (d *x509CertificateAuthority) Configure(_ context.Context, req datasource.C
 		return
 	}
 
-	httpClient := providerData.Client
-	d.client = httpClient
+	d.client = providerData.Client
 }
 
 func (d *x509CertificateAuthority) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

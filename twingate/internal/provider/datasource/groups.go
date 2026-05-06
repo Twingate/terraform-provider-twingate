@@ -64,8 +64,7 @@ func (d *groups) Configure(ctx context.Context, req datasource.ConfigureRequest,
 		return
 	}
 
-	client := providerData.Client
-	d.client = client
+	d.client = providerData.Client
 }
 
 //nolint:funlen

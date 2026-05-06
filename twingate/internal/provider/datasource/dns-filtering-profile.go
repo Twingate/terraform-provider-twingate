@@ -90,8 +90,7 @@ func (d *dnsFilteringProfile) Configure(ctx context.Context, req datasource.Conf
 		return
 	}
 
-	client := providerData.Client
-	d.client = client
+	d.client = providerData.Client
 }
 
 func (d *dnsFilteringProfile) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) { //nolint:funlen

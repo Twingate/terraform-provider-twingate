@@ -63,8 +63,7 @@ func (d *serviceAccounts) Configure(ctx context.Context, req datasource.Configur
 		return
 	}
 
-	client := providerData.Client
-	d.client = client
+	d.client = providerData.Client
 }
 
 func (d *serviceAccounts) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {

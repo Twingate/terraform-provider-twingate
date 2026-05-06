@@ -58,8 +58,7 @@ func (d *resources) Configure(ctx context.Context, req datasource.ConfigureReque
 		return
 	}
 
-	client := providerData.Client
-	d.client = client
+	d.client = providerData.Client
 }
 
 func protocolSchema() schema.SingleNestedAttribute {

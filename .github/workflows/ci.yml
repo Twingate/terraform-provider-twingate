@@ -16,7 +16,7 @@ on:
       - 'README.md'
     branches:
       - main
-      - feature/allow-filter-cached-resources-by-network
+      - feature/added-datasource-sync-to-s3
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:

@@ -120,9 +120,9 @@ type serverURL struct {
 	url string
 }
 
-func newServerURL(network, url string) serverURL {
+func newServerURL(url string) serverURL {
 	return serverURL{
-		url: fmt.Sprintf("https://%s.%s", network, url),
+		url: url,
 	}
 }
 
@@ -133,11 +133,11 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 	}
 
 	if err != nil {
-		log.Printf("[WARN] [RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
+		log.Printf("[TWINGATE_LOG] [WARN] [RETRY_POLICY] [id:%s] error: %s", reqID, err.Error())
 	}
 
 	if ctx.Err() != nil {
-		log.Printf("[WARN] [RETRY_POLICY] [id:%s] context error: %s", reqID, ctx.Err().Error())
+		log.Printf("[TWINGATE_LOG] [WARN] [RETRY_POLICY] [id:%s] context error: %s", reqID, ctx.Err().Error())
 	}
 
 	// do not retry if API token not set
@@ -161,13 +161,13 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 	}
 
 	if resp != nil {
-		log.Printf("[WARN] [RETRY_POLICY] [id:%s] going to retry call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
+		log.Printf("[TWINGATE_LOG] [WARN] [RETRY_POLICY] [id:%s] going to retry call %s, status %s", reqID, resp.Request.URL.String(), resp.Status)
 
 		if resp.Request.GetBody != nil {
 			reqBody, _ := resp.Request.GetBody()
 			if reqBody != nil {
 				reqBodyBytes, _ := io.ReadAll(reqBody)
-				log.Printf("[WARN] [RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
+				log.Printf("[TWINGATE_LOG] [WARN] [RETRY_POLICY] [id:%s] request: %s", reqID, string(reqBodyBytes))
 			}
 		}
 
@@ -175,7 +175,7 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 			body, bodyErr := io.ReadAll(resp.Body)
 			if bodyErr == nil {
 				resp.Body = io.NopCloser(bytes.NewBuffer(body))
-				log.Printf("[WARN] [RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
+				log.Printf("[TWINGATE_LOG] [WARN] [RETRY_POLICY] [id:%s] response: %s", reqID, string(body))
 			}
 		}
 	}
@@ -183,10 +183,7 @@ func customRetryPolicy(ctx context.Context, resp *http.Response, err error) (boo
 	return true, nil
 }
 
-func NewClient(ctx context.Context, url string, apiToken string, network string, httpTimeout time.Duration, httpRetryMax int, agent, version string, opts CacheOptions) *Client {
-	correlationID, _ := uuid.GenerateUUID()
-
-	sURL := newServerURL(network, url)
+func NewCustomRetryableClient(httpTimeout time.Duration, httpRetryMax int, apiToken, agent, version, correlationID string) *http.Client {
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.Logger = nil
 	retryableClient.CheckRetry = customRetryPolicy
@@ -196,14 +193,24 @@ func NewClient(ctx context.Context, url string, apiToken string, network string,
 		req.Header.Set(headerRequestID, reqID)
 
 		if retryNumber > 0 {
-			safeURL := strings.NewReplacer("\n", "", "\r", "").Replace(req.URL.String())
-			log.Printf("[WARN] [id:%s] Failed to call %s (retry %d)", reqID, safeURL, retryNumber) // #nosec G706
+			log.Printf("[TWINGATE_LOG] [WARN] [id:%s] Failed to call %s (retry %d)", reqID, SafeURL(req.URL.String()), retryNumber) // #nosec G706
 		}
 	}
 	retryableClient.HTTPClient.Timeout = httpTimeout
 	retryableClient.HTTPClient.Transport = newTransport(retryableClient.HTTPClient.Transport, apiToken, agent, version, correlationID)
 
-	httpClient := retryableClient.StandardClient()
+	return retryableClient.StandardClient()
+}
+
+func SafeURL(url string) string {
+	return strings.NewReplacer("\n", "", "\r", "").Replace(url)
+}
+
+func NewClient(ctx context.Context, regionalURL, apiToken string, httpTimeout time.Duration, httpRetryMax int, agent, version string, opts CacheOptions) *Client {
+	correlationID, _ := uuid.GenerateUUID()
+
+	sURL := newServerURL(regionalURL)
+	httpClient := NewCustomRetryableClient(httpTimeout, httpRetryMax, apiToken, agent, version, correlationID)
 
 	client := Client{
 		HTTPClient:       httpClient,
@@ -219,7 +226,7 @@ func NewClient(ctx context.Context, url string, apiToken string, network string,
 		ratelimiter:   make(chan struct{}, getRateLimit()),
 	}
 
-	log.Printf("[INFO] Using Server URL %s", sURL.newGraphqlServerURL())
+	log.Printf("[TWINGATE_LOG] [INFO] Using Server URL %s", sURL.newGraphqlServerURL())
 
 	if opts.GroupsEnabled || opts.ResourceEnabled {
 		cache.setClient(ctx, &client, opts)
@@ -296,7 +303,7 @@ func (client *Client) doRequest(req *http.Request) ([]byte, error) {
 
 	defer func(closer io.Closer) {
 		if err := closer.Close(); err != nil {
-			log.Printf("[ERROR] Error Closing: %s", err)
+			log.Printf("[TWINGATE_LOG] [ERR] Error Closing: %s", err)
 		}
 	}(res.Body)
 

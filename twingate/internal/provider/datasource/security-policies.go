@@ -56,8 +56,7 @@ func (d *securityPolicies) Configure(ctx context.Context, req datasource.Configu
 		return
 	}
 
-	client := providerData.Client
-	d.client = client
+	d.client = providerData.Client
 }
 
 func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {

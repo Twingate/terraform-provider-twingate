@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -29,9 +30,8 @@ func getHTTPTimeout(key string, duration time.Duration) time.Duration {
 
 func TwingateClient() (*client.Client, error) {
 	return client.NewClient(context.Background(),
-			os.Getenv(twingate.EnvURL),
+			fmt.Sprintf("https://%s.%s", os.Getenv(twingate.EnvNetwork), os.Getenv(twingate.EnvURL)),
 			os.Getenv(twingate.EnvAPIToken),
-			os.Getenv(twingate.EnvNetwork),
 			getHTTPTimeout(twingate.EnvHTTPTimeout, testTimeoutDuration),
 			testHTTPRetry,
 			client.DefaultAgent,

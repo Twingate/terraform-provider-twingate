@@ -54,8 +54,7 @@ func (d *remoteNetwork) Configure(ctx context.Context, req datasource.ConfigureR
 		return
 	}
 
-	client := providerData.Client
-	d.client = client
+	d.client = providerData.Client
 }
 
 func (d *remoteNetwork) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {

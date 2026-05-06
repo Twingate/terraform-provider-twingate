@@ -20,7 +20,7 @@ import (
 
 func newTestClient(ctx context.Context) *Client {
 	return NewClient(ctx,
-		"twindev.com", "xxxx", "test",
+		"https://test.twindev.com", "xxxx",
 		time.Duration(1)*time.Second, 0, DefaultAgent, "test", skipCache,
 	)
 }
@@ -82,7 +82,7 @@ func TestClientAPITokenNotSet(t *testing.T) {
 	defer os.Setenv(EnvAPIToken, apiToken)
 
 	client := NewClient(t.Context(),
-		"twindev.com", "", "test",
+		"https://test.twindev.com", "",
 		time.Duration(1)*time.Second, 0, DefaultAgent, "test", skipCache,
 	)
 
@@ -98,7 +98,7 @@ func TestClientAPITokenNotSet(t *testing.T) {
 
 func TestClientInvalidServerAddress(t *testing.T) {
 	client := NewClient(t.Context(),
-		"beamreach.twingate.com", "XXXXX", "beamreach",
+		"https://beamreach.twingate.com", "XXXXX",
 		time.Duration(10)*time.Second, 3, DefaultAgent, "test", skipCache,
 	)
 
@@ -109,8 +109,7 @@ func TestClientInvalidServerAddress(t *testing.T) {
 
 	_, err := client.post(context.TODO(), "/hello", "hello", nil)
 
-	assert.ErrorContains(t, err, `x509`)
-	assert.ErrorContains(t, err, `certificate`)
+	assert.ErrorContains(t, err, `status 404`)
 }
 
 func TestCustomRetryPolicy(t *testing.T) {

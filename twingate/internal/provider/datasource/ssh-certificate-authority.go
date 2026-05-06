@@ -49,8 +49,7 @@ func (d *sshCertificateAuthority) Configure(_ context.Context, req datasource.Co
 		return
 	}
 
-	httpClient := providerData.Client
-	d.client = httpClient
+	d.client = providerData.Client
 }
 
 func (d *sshCertificateAuthority) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

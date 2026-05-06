@@ -56,8 +56,7 @@ func (d *connectors) Configure(ctx context.Context, req datasource.ConfigureRequ
 		return
 	}
 
-	client := providerData.Client
-	d.client = client
+	d.client = providerData.Client
 }
 
 //nolint:funlen

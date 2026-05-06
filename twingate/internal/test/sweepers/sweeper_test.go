@@ -45,9 +45,8 @@ func sharedClient(tenant string) (*client.Client, error) {
 	}
 
 	return client.NewClient(context.Background(),
-			os.Getenv(twingate.EnvURL),
+			fmt.Sprintf("https://%s.%s", os.Getenv(twingate.EnvNetwork), os.Getenv(twingate.EnvURL)),
 			os.Getenv(twingate.EnvAPIToken),
-			os.Getenv(twingate.EnvNetwork),
 			getEnv(twingate.EnvHTTPTimeout, 30*time.Second),
 			2,
 			client.DefaultAgent,
