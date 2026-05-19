@@ -55,7 +55,7 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '1.13.*'
+          - '1.14.*'
           - 'latest'
     steps:
     - name: Check out code into the Go module directory

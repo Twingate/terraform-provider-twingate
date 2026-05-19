@@ -6,8 +6,8 @@
 ## Requirements
 
 - Bash
-- [Go](https://golang.org/doc/install) 1.24 (to build the provider plugin)
-- [Terraform](https://www.terraform.io/downloads.html) 1.x
+- [Go](https://golang.org/doc/install) 1.26 (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) 1.14.x
 
 ## Build
 
