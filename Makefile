@@ -7,8 +7,8 @@ OS_ARCH=darwin_amd64
 GOBINPATH=$(shell go env GOPATH)/bin
 SWEEP_TENANT=terraformtests
 SWEEP_FOLDER=./twingate/internal/test/sweepers
-GOLINT_VERSION=v2.11.4
-GOSEC_VERSION=2.24.6
+GOLINT_VERSION=$(shell sed -n 's|^FROM golangci/golangci-lint:||p' tools/golint.Dockerfile)
+GOSEC_VERSION=$(shell sed -n 's|^FROM securego/gosec:||p' tools/gosec.Dockerfile)
 
 WORKING_DIR := $(shell pwd)
 

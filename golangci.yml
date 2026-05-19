@@ -28,10 +28,13 @@ linters:
     - wsl
     - embeddedstructfieldcheck
     - noinlineerr
+    - gomodguard
+    - goconst
   fast: false
 
   enable:
     - wsl_v5
+    - gomodguard_v2
 
   settings:
     wsl_v5:
