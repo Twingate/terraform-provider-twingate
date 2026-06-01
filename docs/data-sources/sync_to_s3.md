@@ -39,5 +39,5 @@ output "oidc_prefix" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `oidc_prefix` (String) The IAM Identity Provider prefix (return only if type "oidc"). Example: tenant.twingate.com/oidc/v2
-- `oidc_url` (String) The IAM Identity Provider URL (return only if type "oidc"). Example: https://tenant.twingate.com/oidc/v2
+- `oidc_prefix` (String) The IAM Identity Provider prefix (return only if type "oidc"). Example: tenant.twingate.com/oidc
+- `oidc_url` (String) The IAM Identity Provider URL (return only if type "oidc"). Example: https://tenant.twingate.com/oidc

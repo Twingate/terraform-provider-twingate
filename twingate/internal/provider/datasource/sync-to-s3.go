@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	oidcAPI     = "/oidc/v2"
+	oidcAPI     = "/oidc"
 	httpsPrefix = "https://"
 	defaultType = model.SyncToS3TypeOIDC
 )
