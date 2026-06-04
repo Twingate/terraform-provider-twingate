@@ -100,3 +100,19 @@ resource "twingate_group" "devops" {
   name = "devops"
 }
 ```
+
+The same applies to the `twingate_group` and `twingate_groups` data sources, where `security_policy_id` was previously exposed as a read-only attribute.
+
+In v3.x.x, the following was valid:
+
+```terraform
+data "twingate_group" "devops" {
+  id = "R3JvdXA6MzQ4OTE="
+}
+
+output "devops_security_policy_id" {
+  value = data.twingate_group.devops.security_policy_id
+}
+```
+
+From v4.0.0 and onward, `security_policy_id` is no longer returned and any references to it must be removed
