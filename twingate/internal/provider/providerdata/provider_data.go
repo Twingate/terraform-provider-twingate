@@ -3,9 +3,8 @@ package providerdata
 import "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
 
 type Config struct {
-	RegionalURL string
-	Network     string
-	URL         string
+	Network string
+	URL     string
 }
 
 type ProviderData struct {
