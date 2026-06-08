@@ -9,6 +9,10 @@ description: "This document covers how to migrate from v3 to v4 of the Twingate 
 This guide covers how to migrate from v3.x.x to v4.0.0 of the Twingate Terraform provider. Migration needs to be done for the following objects:
 - Resources
     - `twingate_resource`
+    - `twingate_group`
+- Data Sources
+    - `twingate_group`
+    - `twingate_groups`
 
 ## Migrating Resources
 
@@ -38,7 +42,7 @@ resource "twingate_resource" "resource" {
 
   approval_mode = "MANUAL"
   usage_based_autolock_duration_days = 2
-  
+
   access_group {
     group_id = data.twingate_groups.devops.id
     security_policy_id = twingate_security_policy.no_mfa.id
@@ -73,3 +77,42 @@ resource "twingate_resource" "resource" {
   }
 }
 ```
+
+## Migrating Groups
+
+The `security_policy_id` attribute has been removed from the `twingate_group` resource and from the `twingate_group` and `twingate_groups` data sources.
+
+Security policies are now configured per-resource through the `access_policy` block (see [Migrating Resources](#migrating-resources) above).
+
+In v3.x.x, the following was valid:
+
+```terraform
+resource "twingate_group" "devops" {
+  name               = "devops"
+  security_policy_id = twingate_security_policy.no_mfa.id
+}
+```
+
+From v4.0.0 and onward, the `security_policy_id` attribute must be removed:
+
+```terraform
+resource "twingate_group" "devops" {
+  name = "devops"
+}
+```
+
+The same applies to the `twingate_group` and `twingate_groups` data sources, where `security_policy_id` was previously exposed as a read-only attribute.
+
+In v3.x.x, the following was valid:
+
+```terraform
+data "twingate_group" "devops" {
+  id = "R3JvdXA6MzQ4OTE="
+}
+
+output "devops_security_policy_id" {
+  value = data.twingate_group.devops.security_policy_id
+}
+```
+
+From v4.0.0 and onward, `security_policy_id` is no longer returned and any references to it must be removed

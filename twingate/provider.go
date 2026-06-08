@@ -3,7 +3,6 @@ package twingate
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
 	twingateResource "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
-	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -276,11 +274,10 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 		return
 	}
 
-	regionalURL := resolveRegionalURL(network, url, time.Duration(httpTimeout)*time.Second, httpMaxRetry, apiToken, t.agent, t.version)
-
+	originalURL := client.SafeURL(fmt.Sprintf("https://%s.%s", network, url))
 	client := client.NewClient(
 		ctx,
-		regionalURL,
+		originalURL,
 		apiToken,
 		time.Duration(httpTimeout)*time.Second,
 		httpMaxRetry,
@@ -291,9 +288,8 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	providerData := &providerdata.ProviderData{
 		Client: client,
 		Config: providerdata.Config{
-			RegionalURL: regionalURL,
-			Network:     network,
-			URL:         url,
+			Network: network,
+			URL:     url,
 		},
 		DefaultTags: getDefaultTags(config.DefaultTags),
 	}
@@ -301,35 +297,6 @@ func (t Twingate) Configure(ctx context.Context, request provider.ConfigureReque
 	response.DataSourceData = providerData
 	response.ResourceData = providerData
 	response.EphemeralResourceData = providerData
-}
-
-// resolveRegionalURL returns the regional URL without a slash at the end.
-func resolveRegionalURL(network, url string, timeout time.Duration, retryMax int, apiToken, agent, version string) string {
-	correlationID, _ := uuid.GenerateUUID()
-	originalURL := client.SafeURL(fmt.Sprintf("https://%s.%s", network, url))
-	httpClient := client.NewCustomRetryableClient(timeout, retryMax, apiToken, agent, version, correlationID)
-	resp, err := httpClient.Get(originalURL)
-
-	defer func() {
-		if resp == nil {
-			return
-		}
-
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("[TWINGATE_LOG] [ERR] Failed to close response body: %v", err)
-		}
-	}()
-
-	if err != nil {
-		log.Printf("[TWINGATE_LOG] [ERR] Failed to resolve regional URL: %v", err)
-
-		return originalURL
-	}
-
-	resolvedURL := client.SafeURL("https://" + resp.Request.URL.Host)
-	log.Printf("[TWINGATE_LOG] [INFO] Resolved regional URL: %s -> %s", originalURL, resolvedURL) // #nosec G706
-
-	return resolvedURL
 }
 
 func getCacheOptions(config types.Object) (client.CacheOptions, error) {
@@ -542,7 +509,6 @@ func (t Twingate) DataSources(ctx context.Context) []func() datasource.DataSourc
 		twingateDatasource.NewX509CertificateAuthorityDatasource,
 		twingateDatasource.NewSSHCertificateAuthorityDatasource,
 		twingateDatasource.NewGatewayDatasource,
-		twingateDatasource.NewSyncToS3Datasource,
 	}
 }
 
