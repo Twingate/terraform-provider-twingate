@@ -204,7 +204,7 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 					PaginatedResource: PaginatedResource[*ResourceEdge]{
 						Edges: []*ResourceEdge{
 							{
-								Node: &ResourceNode{
+								Node: &gqlNetworkResource{ResourceNode: ResourceNode{
 									IDName: IDName{
 										ID:   "resource-id",
 										Name: "resource-name",
@@ -216,7 +216,7 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 									},
 									IsVisible:                true,
 									IsBrowserShortcutEnabled: false,
-								},
+								}},
 							},
 						},
 					},
@@ -2646,12 +2646,12 @@ func TestReadResourcesByName_IsEmpty(t *testing.T) {
 					PaginatedResource: PaginatedResource[*ResourceEdge]{
 						Edges: []*ResourceEdge{
 							{
-								Node: &ResourceNode{
+								Node: &gqlNetworkResource{ResourceNode: ResourceNode{
 									IDName: IDName{
 										ID:   "123",
 										Name: "TestResource",
 									},
-								},
+								}},
 							},
 						},
 					},
@@ -2827,12 +2827,12 @@ func TestReadResources_IsEmpty(t *testing.T) {
 					PaginatedResource: PaginatedResource[*ResourceEdge]{
 						Edges: []*ResourceEdge{
 							{
-								Node: &ResourceNode{
+								Node: &gqlNetworkResource{ResourceNode: ResourceNode{
 									IDName: IDName{
 										ID:   "123",
 										Name: "TestResource",
 									},
-								},
+								}},
 							},
 						},
 					},
