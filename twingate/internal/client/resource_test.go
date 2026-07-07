@@ -8,6 +8,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewRoutingMode(t *testing.T) {
+	through := model.RoutingModeThroughTwingate
+	empty := ""
+
+	bypassVal := RoutingMode(model.RoutingModeBypassTwingate)
+	throughVal := RoutingMode(through)
+
+	cases := []struct {
+		name     string
+		input    *string
+		expected *RoutingMode
+	}{
+		{name: "nil", input: nil, expected: nil},
+		{name: "empty", input: &empty, expected: nil},
+		{name: "through", input: &through, expected: &throughVal},
+		{name: "bypass", input: strPtr(model.RoutingModeBypassTwingate), expected: &bypassVal},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, newRoutingMode(c.input))
+		})
+	}
+}
+
 func TestNewPorts(t *testing.T) {
 	var cases = []struct {
 		ports    []*model.PortRange

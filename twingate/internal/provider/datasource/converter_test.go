@@ -168,6 +168,7 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 						},
 					},
 				},
+				{ID: "resource-2", RoutingMode: strPtrRoutingMode(model.RoutingModeBypassTwingate)},
 			},
 			expected: []resourceModel{
 				{
@@ -177,6 +178,7 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 					RemoteNetworkID: types.StringValue("network-id"),
 					Protocols:       nil,
 					Tags:            types.MapNull(types.StringType),
+					RoutingMode:     types.StringNull(),
 				},
 				{
 					ID:              types.StringValue("resource-1"),
@@ -194,7 +196,17 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 							Ports:  []types.String{},
 						},
 					},
-					Tags: types.MapNull(types.StringType),
+					Tags:        types.MapNull(types.StringType),
+					RoutingMode: types.StringNull(),
+				},
+				{
+					ID:              types.StringValue("resource-2"),
+					Name:            types.StringValue(""),
+					Address:         types.StringValue(""),
+					RemoteNetworkID: types.StringValue(""),
+					Protocols:       nil,
+					Tags:            types.MapNull(types.StringType),
+					RoutingMode:     types.StringValue(model.RoutingModeBypassTwingate),
 				},
 			},
 		},
@@ -207,6 +219,8 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 		})
 	}
 }
+
+func strPtrRoutingMode(s string) *string { return &s }
 
 func TestTerraformServicesDatasourceID(t *testing.T) {
 	cases := []struct {

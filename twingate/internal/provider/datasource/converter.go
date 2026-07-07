@@ -44,6 +44,7 @@ func convertResourcesToTerraform(resources []*model.Resource) []resourceModel {
 			RemoteNetworkID: types.StringValue(resource.RemoteNetworkID),
 			Protocols:       convertProtocolsToTerraform(resource.Protocols),
 			Tags:            tags,
+			RoutingMode:     types.StringPointerValue(resource.RoutingMode),
 		}
 	})
 }

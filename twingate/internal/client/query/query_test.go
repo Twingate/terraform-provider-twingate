@@ -245,6 +245,19 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 	}
 }
 
+func TestResourceNodeToModelRoutingMode(t *testing.T) {
+	bypass := model.RoutingModeBypassTwingate
+
+	node := ResourceNode{
+		IDName:      IDName{ID: "resource-id", Name: "resource-name"},
+		RoutingMode: bypass,
+	}
+
+	result := node.ToModel()
+
+	assert.Equal(t, &bypass, result.RoutingMode)
+}
+
 func TestReadConnectorsQueryToModel(t *testing.T) {
 	cases := []struct {
 		query    ReadConnectors

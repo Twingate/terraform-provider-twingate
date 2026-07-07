@@ -20,7 +20,7 @@ type Resources struct {
 }
 
 type ResourceEdge struct {
-	Node *ResourceNode
+	Node *ResourceNode `graphql:"... on NetworkResource"`
 }
 
 func (r Resources) ToModel() []*model.Resource {

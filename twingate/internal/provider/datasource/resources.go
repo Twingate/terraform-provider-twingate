@@ -143,6 +143,10 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 							Computed:    true,
 							Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
 						},
+						attr.RoutingMode: schema.StringAttribute{
+							Computed:    true,
+							Description: "The routing mode of the Resource.",
+						},
 						attr.Protocols: schema.SingleNestedAttribute{
 							Description: "Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed.",
 							Computed:    true,
