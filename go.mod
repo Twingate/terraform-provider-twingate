@@ -16,7 +16,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.53.0
-	golang.org/x/sync v0.21.0
+	golang.org/x/sync v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
