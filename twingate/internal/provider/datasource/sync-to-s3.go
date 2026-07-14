@@ -64,7 +64,7 @@ func (d *syncToS3) Configure(ctx context.Context, req datasource.ConfigureReques
 
 func (d *syncToS3) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: userDescription,
+		Description: `The datasource would allow users automate and get the oidc url used for the resources aws_iam_role, aws_iam_openid_connect_provider. For more information, see Twingate's [documentation](https://www.twingate.com/docs/syncing-data-to-s3).`,
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,

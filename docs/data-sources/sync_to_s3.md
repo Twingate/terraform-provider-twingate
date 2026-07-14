@@ -3,12 +3,12 @@
 page_title: "twingate_sync_to_s3 Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's documentation https://docs.twingate.com/docs/users.
+  The datasource would allow users automate and get the oidc url used for the resources aws_iam_role, aws_iam_openid_connect_provider. For more information, see Twingate's documentation https://www.twingate.com/docs/syncing-data-to-s3.
 ---
 
 # twingate_sync_to_s3 (Data Source)
 
-Users in Twingate can be given access to Twingate Resources and may either be added manually or automatically synchronized with a 3rd party identity provider. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/users).
+The datasource would allow users automate and get the oidc url used for the resources aws_iam_role, aws_iam_openid_connect_provider. For more information, see Twingate's [documentation](https://www.twingate.com/docs/syncing-data-to-s3).
 
 ## Example Usage
 
