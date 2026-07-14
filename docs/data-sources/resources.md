@@ -58,6 +58,7 @@ Read-Only:
 - `name` (String) The name of the Resource
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--resources--protocols))
 - `remote_network_id` (String) Remote Network ID where the Resource lives
+- `routing_mode` (String) The routing mode of the Resource.
 - `tags` (Map of String) The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.
 
 <a id="nestedatt--resources--protocols"></a>

@@ -25,4 +25,5 @@ const (
 	AccessPolicy                   = "access_policy"
 	Mode                           = "mode"
 	Duration                       = "duration"
+	RoutingMode                    = "routing_mode"
 )

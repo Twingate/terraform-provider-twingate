@@ -156,6 +156,18 @@ func NewGroupAccessApprovalMode(accessPolicy *model.AccessPolicy) *AccessApprova
 	return &val
 }
 
+type RoutingMode string
+
+func newRoutingMode(routingMode *string) *RoutingMode {
+	if routingMode == nil || *routingMode == "" {
+		return nil
+	}
+
+	val := RoutingMode(*routingMode)
+
+	return &val
+}
+
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	opr := resourceResource.create()
 
@@ -168,6 +180,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newRoutingMode(input.RoutingMode), "routingMode"),
 		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
 		gqlVar(newTagInputs(input.Tags), "tags"),
@@ -405,6 +418,7 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
 		gqlNullable(input.Alias, "alias"),
 		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
+		gqlVar(newRoutingMode(input.RoutingMode), "routingMode"),
 		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
 		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
 		gqlVar(newTagInputs(input.Tags), "tags"),

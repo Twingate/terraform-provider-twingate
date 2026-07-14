@@ -30,8 +30,8 @@ func (q ReadResource) IsEmpty() bool {
 }
 
 type gqlResource struct {
-	ResourceNode
-	Access Access `graphql:"access(after: $accessEndCursor, first: $pageLimit)"`
+	ResourceNode `graphql:"... on NetworkResource"`
+	Access       Access `graphql:"access(after: $accessEndCursor, first: $pageLimit)"`
 }
 
 type Access struct {
@@ -76,6 +76,7 @@ type ResourceNode struct {
 	SecurityPolicy           *gqlSecurityPolicy
 	Tags                     []Tag
 	ApprovalMode             string
+	RoutingMode              string
 	AccessPolicy             *AccessPolicy
 }
 
@@ -153,6 +154,7 @@ func (r ResourceNode) ToModel() *model.Resource {
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
 		Alias:                    optionalString(r.Alias),
 		SecurityPolicyID:         optionalString(securityPolicy),
+		RoutingMode:              optionalString(r.RoutingMode),
 		Tags:                     tagsToModel(r.Tags),
 		AccessPolicy:             accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
 	}

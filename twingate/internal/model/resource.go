@@ -29,6 +29,9 @@ const (
 	AccessPolicyModeManual        = "MANUAL"
 	AccessPolicyModeAutoLock      = "AUTO_LOCK"
 	AccessPolicyModeAccessRequest = "ACCESS_REQUEST"
+
+	RoutingModeThroughTwingate = "THROUGH_TWINGATE"
+	RoutingModeBypassTwingate  = "BYPASS_TWINGATE"
 )
 
 var (
@@ -41,6 +44,9 @@ var (
 
 //nolint:gochecknoglobals
 var Policies = []string{PolicyRestricted, PolicyAllowAll, PolicyDenyAll}
+
+//nolint:gochecknoglobals
+var RoutingModes = []string{RoutingModeThroughTwingate, RoutingModeBypassTwingate}
 
 type AccessPolicy struct {
 	Mode         *string
@@ -156,6 +162,7 @@ type Resource struct {
 	IsBrowserShortcutEnabled *bool
 	Alias                    *string
 	SecurityPolicyID         *string
+	RoutingMode              *string
 	Tags                     map[string]string
 }
 
