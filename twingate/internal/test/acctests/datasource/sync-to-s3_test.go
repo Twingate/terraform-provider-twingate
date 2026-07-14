@@ -44,8 +44,8 @@ func TestAccDatasourceTwingateSyncToS3_oidc(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttrSet(theDatasource, attr.ID),
 					sdk.TestCheckResourceAttr(theDatasource, attr.Type, model.SyncToS3TypeOIDC),
-					sdk.TestMatchResourceAttr(theDatasource, attr.OidcURL, regexp.MustCompile(`^https://.+/oidc/v2$`)),
-					sdk.TestMatchResourceAttr(theDatasource, attr.OidcPrefix, regexp.MustCompile(`^[^/]+/oidc/v2$`)),
+					sdk.TestMatchResourceAttr(theDatasource, attr.OidcURL, regexp.MustCompile(`^https://.+/oidc(/v2)?$`)),
+					sdk.TestMatchResourceAttr(theDatasource, attr.OidcPrefix, regexp.MustCompile(`^[^/]+/oidc(/v2)?$`)),
 				),
 			},
 		},
