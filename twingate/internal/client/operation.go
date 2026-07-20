@@ -28,6 +28,7 @@ const (
 	resourceGateway                  resource = "gateway"
 	resourceSSHResource              resource = "SSH resource"
 	resourceKubernetesResource       resource = "Kubernetes resource"
+	resourceSyncToS3                 resource = "sync to s3"
 )
 
 const (

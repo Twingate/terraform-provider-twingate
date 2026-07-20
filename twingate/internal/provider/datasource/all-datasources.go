@@ -18,6 +18,7 @@ const (
 	TwingateX509CertificateAuthority = "twingate_x509_certificate_authority"
 	TwingateSSHCertificateAuthority  = "twingate_ssh_certificate_authority"
 	TwingateGateway                  = "twingate_gateway"
+	TwingateSyncToS3                 = "twingate_sync_to_s3"
 
 	computedDatasourceIDDescription = "The ID of this resource."
 
