@@ -20,7 +20,15 @@ type Resources struct {
 }
 
 type ResourceEdge struct {
-	Node *ResourceNode
+	Node *gqlNetworkResource
+}
+
+// gqlNetworkResource selects the NetworkResource fields of the Resource interface
+// returned by the `resources` connection. The `... on NetworkResource` type
+// condition must sit on an embedded field (as in gqlResource), not on the named
+// `node` field, otherwise the decoder has no `node` field to unmarshal into.
+type gqlNetworkResource struct {
+	ResourceNode `graphql:"... on NetworkResource"`
 }
 
 func (r Resources) ToModel() []*model.Resource {

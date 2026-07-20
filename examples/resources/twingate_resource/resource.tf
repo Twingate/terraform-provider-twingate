@@ -127,6 +127,8 @@ resource "twingate_resource" "resource" {
 
   is_active = true
 
+  routing_mode = "THROUGH_TWINGATE"
+
   tags = {
     environment = "dev"
     owner       = "devops"

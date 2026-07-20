@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -29,6 +30,7 @@ func TestAccDatasourceTwingateResource_basic(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.Name, resourceName),
 					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.PathAttr(attr.Tags, "owner"), "example_owner"),
+					resource.TestCheckResourceAttr("data.twingate_resource.out_dr1", attr.RoutingMode, model.RoutingModeBypassTwingate),
 				),
 			},
 		},
@@ -45,27 +47,18 @@ func testDatasourceTwingateResource(networkName, resourceName string) string {
 	  name = "%s"
 	  address = "acc-test.com"
 	  remote_network_id = twingate_remote_network.test_dr1.id
-	  protocols = {
-	    allow_icmp = true
-	    tcp = {
-	      policy = "RESTRICTED"
-	      ports = ["80-83", "85"]
-	    }
-	    udp = {
-	      policy = "ALLOW_ALL"
-	      ports = []
-	    }
-	  }
 
 	  tags = {
 	    owner = "example_owner"
 	  }
+
+	  routing_mode = "%s"
 	}
 
 	data "twingate_resource" "out_dr1" {
 	  id = twingate_resource.test_dr1.id
 	}
-	`, networkName, resourceName)
+	`, networkName, resourceName, model.RoutingModeBypassTwingate)
 }
 
 func TestAccDatasourceTwingateResource_ResourceDoesNotExists(t *testing.T) {

@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func TestSetIntersection(t *testing.T) {
@@ -184,6 +187,45 @@ func TestIsWildcardAddress(t *testing.T) {
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 			assert.Equal(t, c.expected, isWildcardAddress(c.address))
+		})
+	}
+}
+
+func TestValidateBypassRoutingMode(t *testing.T) {
+	through := model.RoutingModeThroughTwingate
+	bypass := model.RoutingModeBypassTwingate
+	policy := "policy-id"
+
+	allowAll := &model.Protocols{TCP: model.DefaultProtocol(), UDP: model.DefaultProtocol()}
+	restrictedTCP := &model.Protocols{TCP: model.NewProtocol(model.PolicyRestricted, nil), UDP: model.DefaultProtocol()}
+	denyAllUDP := &model.Protocols{TCP: model.DefaultProtocol(), UDP: model.NewProtocol(model.PolicyDenyAll, nil)}
+
+	cases := []struct {
+		name          string
+		routingMode   *string
+		address       string
+		securityPol   types.String
+		accessGroups  []model.AccessGroup
+		protocols     *model.Protocols
+		expectedError error
+	}{
+		{name: "nil routing mode", routingMode: nil, address: "*.example.com", securityPol: types.StringNull(), expectedError: nil},
+		{name: "through ignores wildcard", routingMode: &through, address: "*.example.com", securityPol: types.StringNull(), expectedError: nil},
+		{name: "through ignores restricted ports", routingMode: &through, address: "public.example.com", securityPol: types.StringNull(), protocols: restrictedTCP, expectedError: nil},
+		{name: "bypass clean", routingMode: &bypass, address: "public.example.com", securityPol: types.StringNull(), expectedError: nil},
+		{name: "bypass allow-all protocols", routingMode: &bypass, address: "public.example.com", securityPol: types.StringNull(), protocols: allowAll, expectedError: nil},
+		{name: "bypass wildcard star", routingMode: &bypass, address: "*.example.com", securityPol: types.StringNull(), expectedError: ErrBypassRoutingWithWildcardAddress},
+		{name: "bypass wildcard question", routingMode: &bypass, address: "a?.example.com", securityPol: types.StringNull(), expectedError: ErrBypassRoutingWithWildcardAddress},
+		{name: "bypass resource security policy", routingMode: &bypass, address: "public.example.com", securityPol: types.StringValue(policy), expectedError: ErrBypassRoutingWithSecurityPolicy},
+		{name: "bypass group security policy", routingMode: &bypass, address: "public.example.com", securityPol: types.StringNull(), accessGroups: []model.AccessGroup{{GroupID: "g1", SecurityPolicyID: &policy}}, expectedError: ErrBypassRoutingWithSecurityPolicy},
+		{name: "bypass restricted tcp ports", routingMode: &bypass, address: "public.example.com", securityPol: types.StringNull(), protocols: restrictedTCP, expectedError: ErrBypassRoutingWithPortRestriction},
+		{name: "bypass deny-all udp ports", routingMode: &bypass, address: "public.example.com", securityPol: types.StringNull(), protocols: denyAllUDP, expectedError: ErrBypassRoutingWithPortRestriction},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			err := validateBypassRoutingMode(c.routingMode, c.address, c.securityPol, c.accessGroups, c.protocols)
+			assert.ErrorIs(t, err, c.expectedError)
 		})
 	}
 }

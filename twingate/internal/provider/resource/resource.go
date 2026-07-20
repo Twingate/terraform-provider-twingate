@@ -50,6 +50,9 @@ var (
 	ErrInvalidAttributeCombination        = errors.New("invalid attribute combination")
 	ErrWildcardAddressWithEnabledShortcut = errors.New("Resources with a CIDR range or wildcard can't have the browser shortcut enabled.")
 	ErrWrongGlobalID                      = errors.New("Unable to parse global ID")
+	ErrBypassRoutingWithWildcardAddress   = errors.New("Bypass Resources cannot have a wildcard address")
+	ErrBypassRoutingWithSecurityPolicy    = errors.New("Bypass Resources cannot have a security policy")
+	ErrBypassRoutingWithPortRestriction   = errors.New("Bypass Resources cannot have port restrictions")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -79,6 +82,7 @@ type resourceModel struct {
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
 	Alias                    types.String `tfsdk:"alias"`
 	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
+	RoutingMode              types.String `tfsdk:"routing_mode"`
 	Tags                     types.Map    `tfsdk:"tags"`
 	TagsAll                  types.Map    `tfsdk:"tags_all"`
 }
@@ -196,6 +200,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 	}
 
 	resp.State.SetAttribute(ctx, path.Root(attr.SecurityPolicyID), types.StringPointerValue(res.SecurityPolicyID))
+	resp.State.SetAttribute(ctx, path.Root(attr.RoutingMode), types.StringPointerValue(res.RoutingMode))
 	resp.State.SetAttribute(ctx, path.Root(attr.Alias), types.StringPointerValue(res.Alias))
 	resp.State.SetAttribute(ctx, path.Root(attr.IsAuthoritative), types.BoolValue(true))
 
@@ -317,6 +322,18 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "Controls whether an \"Open in Browser\" shortcut will be shown for this Resource in the Twingate Client. Default is `false`.",
 				Default:     booldefault.StaticBool(false),
+			},
+			attr.RoutingMode: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Controls whether traffic to this Resource is routed through Twingate or bypassed. Valid values are `" + model.RoutingModeThroughTwingate + "` (default) and `" + model.RoutingModeBypassTwingate + "`. `" + model.RoutingModeBypassTwingate + "` requires a Resource with no security policy, a non-wildcard address and cannot have port restrictions.",
+				Default:     stringdefault.StaticString(model.RoutingModeThroughTwingate),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.RoutingModes...),
+				},
 			},
 			attr.ID: schema.StringAttribute{
 				Computed:      true,
@@ -784,8 +801,8 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 
 	isBrowserShortcutEnabled := getOptionalBool(plan.IsBrowserShortcutEnabled)
 
-	if isBrowserShortcutEnabled != nil && *isBrowserShortcutEnabled && isWildcardAddress(plan.Address.ValueString()) {
-		return nil, ErrWildcardAddressWithEnabledShortcut
+	if err := validateResourceConstraints(plan, accessGroups, protocols, isBrowserShortcutEnabled); err != nil {
+		return nil, err
 	}
 
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
@@ -807,6 +824,7 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
+		RoutingMode:              plan.RoutingMode.ValueStringPointer(),
 		Tags:                     getTags(plan.TagsAll),
 	}, nil
 }
@@ -1067,6 +1085,7 @@ func isResourceChanged(plan, state *resourceModel) bool {
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
 		!plan.Alias.Equal(state.Alias) ||
 		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
+		!plan.RoutingMode.Equal(state.RoutingMode) ||
 		!plan.Tags.Equal(state.Tags) || !plan.TagsAll.Equal(state.TagsAll) ||
 		!plan.AccessPolicy.Equal(state.AccessPolicy)
 }
@@ -1211,6 +1230,7 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
 	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
 	state.Alias = types.StringPointerValue(resource.Alias)
+	state.RoutingMode = types.StringPointerValue(resource.RoutingMode)
 
 	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
 		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
@@ -1631,6 +1651,58 @@ var cidrRgxp = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}(/\d+)`)
 
 func isWildcardAddress(address string) bool {
 	return strings.ContainsAny(address, "*?") || cidrRgxp.MatchString(address)
+}
+
+// validateResourceConstraints runs the apply-time cross-attribute checks that the
+// schema alone can't express (browser-shortcut vs. wildcard, and the BYPASS_TWINGATE
+// routing-mode constraints).
+func validateResourceConstraints(plan *resourceModel, accessGroups []model.AccessGroup, protocols *model.Protocols, isBrowserShortcutEnabled *bool) error {
+	if isBrowserShortcutEnabled != nil && *isBrowserShortcutEnabled && isWildcardAddress(plan.Address.ValueString()) {
+		return ErrWildcardAddressWithEnabledShortcut
+	}
+
+	return validateBypassRoutingMode(plan.RoutingMode.ValueStringPointer(), plan.Address.ValueString(), plan.SecurityPolicyID, accessGroups, protocols)
+}
+
+func validateBypassRoutingMode(routingMode *string, address string, securityPolicyID types.String, accessGroups []model.AccessGroup, protocols *model.Protocols) error {
+	if routingMode == nil || *routingMode != model.RoutingModeBypassTwingate {
+		return nil
+	}
+
+	if strings.ContainsAny(address, "*?") {
+		return ErrBypassRoutingWithWildcardAddress
+	}
+
+	if !securityPolicyID.IsNull() && !securityPolicyID.IsUnknown() && securityPolicyID.ValueString() != "" {
+		return ErrBypassRoutingWithSecurityPolicy
+	}
+
+	for _, group := range accessGroups {
+		if group.SecurityPolicyID != nil && *group.SecurityPolicyID != "" {
+			return ErrBypassRoutingWithSecurityPolicy
+		}
+	}
+
+	if hasPortRestriction(protocols) {
+		return ErrBypassRoutingWithPortRestriction
+	}
+
+	return nil
+}
+
+// hasPortRestriction reports whether the resource restricts ports on any protocol.
+// BYPASS_TWINGATE routes traffic outside Twingate, so port-level policies (anything
+// other than ALLOW_ALL — i.e. RESTRICTED or DENY_ALL) can't be enforced and are rejected.
+func hasPortRestriction(protocols *model.Protocols) bool {
+	if protocols == nil {
+		return false
+	}
+
+	return protocolRestricted(protocols.TCP) || protocolRestricted(protocols.UDP)
+}
+
+func protocolRestricted(protocol *model.Protocol) bool {
+	return protocol != nil && protocol.Policy != "" && protocol.Policy != model.PolicyAllowAll
 }
 
 func accessGroupAttributeTypes() map[string]tfattr.Type {

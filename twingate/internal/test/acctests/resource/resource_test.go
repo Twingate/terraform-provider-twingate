@@ -857,6 +857,7 @@ func TestAccTwingateResourceImport(t *testing.T) {
 					attr.Address:                            "acc-test.com.12",
 					attr.Alias:                              "test.alias",
 					attr.SecurityPolicyID:                   testPolicy,
+					attr.RoutingMode:                        model.RoutingModeThroughTwingate,
 					tcpPolicy:                               model.PolicyRestricted,
 					tcpPortsLen:                             "2",
 					firstTCPPort:                            "80",
@@ -4423,7 +4424,7 @@ func createResourceWithAccessPolicyManualMode(groupName, remoteNetwork, resource
 	  access_group {
 		group_id           = twingate_group.%[1]s.id
 		security_policy_id = "%[4]s"
-	
+
 		access_policy {
 		  mode          = "MANUAL"
 		  duration      = "48h"
@@ -4432,4 +4433,214 @@ func createResourceWithAccessPolicyManualMode(groupName, remoteNetwork, resource
 
 	}
 	`, groupName, remoteNetwork, resource, securityPolicyID)
+}
+
+func TestAccTwingateResourceRoutingMode(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test_routing_mode"
+	theResource := acctests.TerraformResource(terraformResourceName)
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				// omitted routing_mode defaults to THROUGH_TWINGATE
+				Config: createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.RoutingMode, model.RoutingModeThroughTwingate),
+				),
+			},
+			{
+				// no drift when omitted
+				PlanOnly: true,
+				Config:   createSimpleResource(terraformResourceName, remoteNetworkName, resourceName),
+			},
+			{
+				Config: createResourceWithRoutingMode(terraformResourceName, remoteNetworkName, resourceName, "acc-test-bypass.com", model.RoutingModeBypassTwingate),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.RoutingMode, model.RoutingModeBypassTwingate),
+				),
+			},
+			{
+				// no drift after applying bypass
+				PlanOnly: true,
+				Config:   createResourceWithRoutingMode(terraformResourceName, remoteNetworkName, resourceName, "acc-test-bypass.com", model.RoutingModeBypassTwingate),
+			},
+		},
+	})
+}
+
+func TestAccTwingateResourceBypassRoutingModeWithWildcardFails(t *testing.T) {
+	t.Parallel()
+
+	const terraformResourceName = "test_routing_mode_wildcard"
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithRoutingMode(terraformResourceName, remoteNetworkName, resourceName, "*.acc-test.com", model.RoutingModeBypassTwingate),
+				ExpectError: regexp.MustCompile("Bypass Resources cannot have a wildcard address"),
+			},
+		},
+	})
+}
+
+func createResourceWithRoutingMode(terraformResourceName, networkName, resourceName, address, routingMode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%s" {
+	  name = "%s"
+	}
+	resource "twingate_resource" "%s" {
+	  name = "%s"
+	  address = "%s"
+	  remote_network_id = twingate_remote_network.%s.id
+	  routing_mode = "%s"
+	}
+	`, terraformResourceName, networkName, terraformResourceName, resourceName, address, terraformResourceName, routingMode)
+}
+
+func TestAccTwingateResourceBypassRoutingModeWithDeniedPorts(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceDeniedPortsAndRoutingMode(remoteNetworkName, resourceName, model.RoutingModeBypassTwingate),
+				ExpectError: regexp.MustCompile("Bypass Resources cannot have port restrictions"),
+			},
+		},
+	})
+}
+
+func createResourceDeniedPortsAndRoutingMode(remoteNetwork, resource, routingMode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  routing_mode = "%[3]s"
+	  protocols = {
+	    allow_icmp = true
+	    tcp = {
+	      policy = "DENY_ALL"
+	      ports = []
+	    }
+	    udp = {
+	      policy = "ALLOW_ALL"
+	      ports = []
+	    }
+	  }
+	}
+	`, remoteNetwork, resource, routingMode)
+}
+
+func TestAccTwingateResourceBypassRoutingModeWithSecurityPolicyFails(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	_, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithSecurityPolicyAndRoutingMode(remoteNetworkName, resourceName, testPolicy, model.RoutingModeBypassTwingate),
+				ExpectError: regexp.MustCompile("Bypass Resources cannot have a security policy"),
+			},
+		},
+	})
+}
+
+func createResourceWithSecurityPolicyAndRoutingMode(remoteNetwork, resource, policyID, routingMode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s" {
+	  name = "%[1]s"
+	}
+	resource "twingate_resource" "%[2]s" {
+	  name = "%[2]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[1]s.id
+	  security_policy_id = "%[3]s"
+	  routing_mode = "%[4]s"
+	}
+	`, remoteNetwork, resource, policyID, routingMode)
+}
+
+func TestAccTwingateResourceBypassRoutingModeWithGroupsSecurityPolicyFails(t *testing.T) {
+	t.Parallel()
+
+	groupName := test.RandomGroupName()
+	remoteNetworkName := test.RandomName()
+	resourceName := test.RandomResourceName()
+
+	_, testPolicy := preparePolicies(t)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      createResourceWithAccessPolicyAndRoutingMode(groupName, remoteNetworkName, resourceName, testPolicy, model.RoutingModeBypassTwingate),
+				ExpectError: regexp.MustCompile("Bypass Resources cannot have a security policy"),
+			},
+		},
+	})
+}
+
+func createResourceWithAccessPolicyAndRoutingMode(groupName, remoteNetwork, resource, securityPolicyID, routingMode string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "%[1]s" {
+      name = "%[1]s"
+    }
+	resource "twingate_remote_network" "%[2]s" {
+	  name = "%[2]s"
+	}
+	resource "twingate_resource" "%[3]s" {
+	  name = "%[3]s"
+	  address = "acc-test-address.com"
+	  remote_network_id = twingate_remote_network.%[2]s.id
+	  
+	  access_policy {
+	    mode          = "MANUAL"
+	    duration      = "48h"
+	  }
+
+	  access_group {
+		group_id           = twingate_group.%[1]s.id
+		security_policy_id = "%[4]s"
+
+		access_policy {
+		  mode          = "MANUAL"
+		  duration      = "48h"
+		}
+	  }
+
+	  routing_mode = "%[5]s"
+	}
+	`, groupName, remoteNetwork, resource, securityPolicyID, routingMode)
 }

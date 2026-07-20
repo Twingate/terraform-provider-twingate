@@ -34,6 +34,7 @@ type resourceModel struct {
 	RemoteNetworkID types.String    `tfsdk:"remote_network_id"`
 	Tags            types.Map       `tfsdk:"tags"`
 	Protocols       *protocolsModel `tfsdk:"protocols"`
+	RoutingMode     types.String    `tfsdk:"routing_mode"`
 }
 
 type protocolsModel struct {
@@ -109,6 +110,10 @@ func (d *resource) Schema(ctx context.Context, req datasource.SchemaRequest, res
 				Computed:    true,
 				Description: "The `tags` attribute consists of a key-value pairs that correspond with tags to be set on the resource.",
 			},
+			attr.RoutingMode: schema.StringAttribute{
+				Computed:    true,
+				Description: "The routing mode of the Resource. Either `" + model.RoutingModeThroughTwingate + "` or `" + model.RoutingModeBypassTwingate + "`.",
+			},
 		},
 		Blocks: map[string]schema.Block{
 			attr.Protocols: schema.SingleNestedBlock{
@@ -148,6 +153,7 @@ func (d *resource) Read(ctx context.Context, req datasource.ReadRequest, resp *d
 	data.Name = types.StringValue(resource.Name)
 	data.Address = types.StringValue(resource.Address)
 	data.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
+	data.RoutingMode = types.StringPointerValue(resource.RoutingMode)
 	data.Protocols = convertProtocolsToTerraform(resource.Protocols)
 	tags, diags := convertTagsToTerraform(resource.Tags)
 

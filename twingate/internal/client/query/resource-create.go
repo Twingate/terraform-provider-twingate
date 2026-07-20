@@ -1,7 +1,7 @@
 package query
 
 type CreateResource struct {
-	ResourceEntityResponse `graphql:"resourceCreate(name: $name, address: $address, remoteNetworkId: $remoteNetworkId, protocols: $protocols, isVisible: $isVisible, isBrowserShortcutEnabled: $isBrowserShortcutEnabled, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, approvalMode: $approvalMode, accessPolicy: $accessPolicy)"`
+	ResourceEntityResponse `graphql:"resourceCreate(name: $name, address: $address, remoteNetworkId: $remoteNetworkId, protocols: $protocols, isVisible: $isVisible, isBrowserShortcutEnabled: $isBrowserShortcutEnabled, alias: $alias, securityPolicyId: $securityPolicyId, routingMode: $routingMode, tags: $tags, approvalMode: $approvalMode, accessPolicy: $accessPolicy)"`
 }
 
 func (q CreateResource) IsEmpty() bool {
