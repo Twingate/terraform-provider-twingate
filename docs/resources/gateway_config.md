@@ -77,6 +77,8 @@ resource "twingate_gateway_config" "config" {
   }
 
   ssh = {
+    enabled = true
+
     # SSH gateway process settings. All fields are optional with built-in defaults.
     gateway = {
       username      = "gateway"  # OS user the gateway process runs as. Default: "gateway".
@@ -122,11 +124,10 @@ resource "twingate_gateway_config" "config" {
       # private_key_file = "/etc/gateway/ssh_ca_key"
     }
 
-    resources = [twingate_ssh_resource.ssh_server, twingate_ssh_resource.ssh_server_2]
   }
 
   kubernetes = {
-    resources = [twingate_kubernetes_resource.prod_cluster]
+    enabled = true
   }
 }
 
@@ -141,10 +142,10 @@ resource "local_sensitive_file" "config" {
 
 ### Optional
 
-- `kubernetes` (Attributes) Kubernetes configuration block containing resource settings. (see [below for nested schema](#nestedatt--kubernetes))
+- `kubernetes` (Attributes) Kubernetes configuration block. (see [below for nested schema](#nestedatt--kubernetes))
 - `metrics_port` (Number) Gateway metrics port. Default: 9090.
 - `port` (Number) Gateway listen port. Default: 8443.
-- `ssh` (Attributes) SSH configuration block containing gateway, CA, and resource settings. (see [below for nested schema](#nestedatt--ssh))
+- `ssh` (Attributes) SSH configuration block containing gateway and CA settings. (see [below for nested schema](#nestedatt--ssh))
 - `tls` (Attributes) TLS configuration for the gateway. (see [below for nested schema](#nestedatt--tls))
 
 ### Read-Only
@@ -157,17 +158,7 @@ resource "local_sensitive_file" "config" {
 
 Optional:
 
-- `resources` (List of Object) List of Kubernetes resources. Accepts full twingate_kubernetes_resource references. (see [below for nested schema](#nestedatt--kubernetes--resources))
-
-<a id="nestedatt--kubernetes--resources"></a>
-### Nested Schema for `kubernetes.resources`
-
-Optional:
-
-- `address` (String)
-- `in_cluster` (Boolean)
-- `name` (String)
-
+- `enabled` (Boolean) Whether Kubernetes is enabled on the gateway. Default: false.
 
 
 <a id="nestedatt--ssh"></a>
@@ -176,8 +167,8 @@ Optional:
 Optional:
 
 - `ca` (Attributes) SSH CA configuration. Specify either vault.address or private_key_file, not both. (see [below for nested schema](#nestedatt--ssh--ca))
+- `enabled` (Boolean) Whether the SSH protocol is enabled on the gateway. Default: false.
 - `gateway` (Attributes) SSH gateway settings. All fields are optional and fall back to built-in defaults. (see [below for nested schema](#nestedatt--ssh--gateway))
-- `resources` (List of Object) List of SSH resources. Accepts full twingate_ssh_resource references. (see [below for nested schema](#nestedatt--ssh--resources))
 
 <a id="nestedatt--ssh--ca"></a>
 ### Nested Schema for `ssh.ca`
@@ -229,16 +220,6 @@ Optional:
 - `key_type` (String) SSH key type. Default: "ed25519".
 - `user_cert_ttl` (String) User certificate TTL. Default: "5m".
 - `username` (String) SSH gateway username. Default: "gateway".
-
-
-<a id="nestedatt--ssh--resources"></a>
-### Nested Schema for `ssh.resources`
-
-Optional:
-
-- `address` (String)
-- `name` (String)
-- `username` (String)
 
 
 

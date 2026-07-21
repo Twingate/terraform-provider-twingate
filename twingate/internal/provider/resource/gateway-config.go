@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -51,9 +52,7 @@ const (
 
 var (
 	ErrExtractSSH                       = errors.New("failed to extract ssh")
-	ErrExtractSSHResources              = errors.New("failed to extract ssh.resources")
 	ErrExtractKubernetes                = errors.New("failed to extract kubernetes")
-	ErrExtractKubernetesResources       = errors.New("failed to extract kubernetes.resources")
 	ErrExtractSSHGateway                = errors.New("failed to extract ssh.gateway")
 	ErrExtractTLS                       = errors.New("failed to extract tls")
 	ErrExtractSSHCA                     = errors.New("failed to extract ssh.ca")
@@ -90,29 +89,13 @@ type gatewayConfigModel struct {
 }
 
 type kubernetesModel struct {
-	Resources types.List `tfsdk:"resources"`
-}
-
-func (m *kubernetesModel) IsEmptyResources() bool {
-	if m == nil {
-		return true
-	}
-
-	return m.Resources.IsNull() || m.Resources.IsUnknown() || len(m.Resources.Elements()) == 0
+	Enabled types.Bool `tfsdk:"enabled"`
 }
 
 type sshModel struct {
-	Gateway   types.Object `tfsdk:"gateway"`
-	CA        types.Object `tfsdk:"ca"`
-	Resources types.List   `tfsdk:"resources"`
-}
-
-func (m *sshModel) IsEmptyResources() bool {
-	if m == nil {
-		return true
-	}
-
-	return m.Resources.IsNull() || m.Resources.IsUnknown() || len(m.Resources.Elements()) == 0
+	Enabled types.Bool   `tfsdk:"enabled"`
+	Gateway types.Object `tfsdk:"gateway"`
+	CA      types.Object `tfsdk:"ca"`
 }
 
 type tlsModel struct {
@@ -193,18 +176,6 @@ type gcpModel struct {
 	ServiceAccountEmail types.String `tfsdk:"service_account_email"`
 }
 
-type sshResourceRef struct {
-	Name     types.String `tfsdk:"name"`
-	Address  types.String `tfsdk:"address"`
-	Username types.String `tfsdk:"username"`
-}
-
-type kubernetesResourceRef struct {
-	Name      types.String `tfsdk:"name"`
-	Address   types.String `tfsdk:"address"`
-	InCluster types.Bool   `tfsdk:"in_cluster"`
-}
-
 type gatewayConfigData struct {
 	TwingateNetwork string
 	TwingateHost    string
@@ -221,13 +192,13 @@ type tlsData struct {
 }
 
 type sshData struct {
-	Gateway   sshGatewayData
-	CA        sshCAData
-	Resources []sshResourceData
+	Enabled bool
+	Gateway sshGatewayData
+	CA      sshCAData
 }
 
 type kubernetesData struct {
-	Resources []kubernetesResourceData
+	Enabled bool
 }
 
 type sshGatewayData struct {
@@ -260,18 +231,6 @@ type gcpData struct {
 	Type                string
 	Mount               string
 	ServiceAccountEmail string
-}
-
-type sshResourceData struct {
-	Name     string
-	Address  string
-	Username string
-}
-
-type kubernetesResourceData struct {
-	Name      string
-	Address   string
-	InCluster bool
 }
 
 func tlsAttrTypes() map[string]fwattr.Type {
@@ -323,37 +282,17 @@ func sshCAAttrTypes() map[string]fwattr.Type {
 	}
 }
 
-func sshResourceElemType() fwattr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]fwattr.Type{
-			attr.Name:     types.StringType,
-			attr.Address:  types.StringType,
-			attr.Username: types.StringType,
-		},
-	}
-}
-
-func kubernetesResourceElemType() fwattr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]fwattr.Type{
-			attr.Name:      types.StringType,
-			attr.Address:   types.StringType,
-			attr.InCluster: types.BoolType,
-		},
-	}
-}
-
 func kubernetesAttrTypes() map[string]fwattr.Type {
 	return map[string]fwattr.Type{
-		attr.Resources: types.ListType{ElemType: kubernetesResourceElemType()},
+		attr.Enabled: types.BoolType,
 	}
 }
 
 func sshAttrTypes() map[string]fwattr.Type {
 	return map[string]fwattr.Type{
-		attr.Gateway:   types.ObjectType{AttrTypes: sshGatewayAttrTypes()},
-		attr.CA:        types.ObjectType{AttrTypes: sshCAAttrTypes()},
-		attr.Resources: types.ListType{ElemType: sshResourceElemType()},
+		attr.Enabled: types.BoolType,
+		attr.Gateway: types.ObjectType{AttrTypes: sshGatewayAttrTypes()},
+		attr.CA:      types.ObjectType{AttrTypes: sshCAAttrTypes()},
 	}
 }
 
@@ -470,13 +409,19 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 			attr.SSH: schema.SingleNestedAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "SSH configuration block containing gateway, CA, and resource settings.",
+				Description: "SSH configuration block containing gateway and CA settings.",
 				Default: objectdefault.StaticValue(types.ObjectValueMust(sshAttrTypes(), map[string]fwattr.Value{
-					attr.Gateway:   defaultGatewayObject(),
-					attr.CA:        defaultCAObject(),
-					attr.Resources: types.ListValueMust(sshResourceElemType(), []fwattr.Value{}),
+					attr.Enabled: types.BoolValue(false),
+					attr.Gateway: defaultGatewayObject(),
+					attr.CA:      defaultCAObject(),
 				})),
 				Attributes: map[string]schema.Attribute{
+					attr.Enabled: schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "Whether the SSH protocol is enabled on the gateway. Default: false.",
+						Default:     booldefault.StaticBool(false),
+					},
 					attr.Gateway: schema.SingleNestedAttribute{
 						Optional:    true,
 						Computed:    true,
@@ -606,25 +551,21 @@ func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp
 							},
 						},
 					},
-					attr.Resources: schema.ListAttribute{
-						Optional:    true,
-						Description: "List of SSH resources. Accepts full twingate_ssh_resource references.",
-						ElementType: sshResourceElemType(),
-					},
 				},
 			},
 			attr.Kubernetes: schema.SingleNestedAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Kubernetes configuration block containing resource settings.",
+				Description: "Kubernetes configuration block.",
 				Default: objectdefault.StaticValue(types.ObjectValueMust(kubernetesAttrTypes(), map[string]fwattr.Value{
-					attr.Resources: types.ListValueMust(kubernetesResourceElemType(), []fwattr.Value{}),
+					attr.Enabled: types.BoolValue(false),
 				})),
 				Attributes: map[string]schema.Attribute{
-					attr.Resources: schema.ListAttribute{
+					attr.Enabled: schema.BoolAttribute{
 						Optional:    true,
-						Description: "List of Kubernetes resources. Accepts full twingate_kubernetes_resource references.",
-						ElementType: kubernetesResourceElemType(),
+						Computed:    true,
+						Description: "Whether Kubernetes is enabled on the gateway. Default: false.",
+						Default:     booldefault.StaticBool(false),
 					},
 				},
 			},
@@ -647,37 +588,9 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 		return "", ErrExtractSSH
 	}
 
-	var sshRefs []sshResourceRef
-	if diags := sshConf.Resources.ElementsAs(ctx, &sshRefs, false); diags.HasError() {
-		return "", ErrExtractSSHResources
-	}
-
 	var k8sConf kubernetesModel
 	if diags := gateway.Kubernetes.As(ctx, &k8sConf, basetypes.ObjectAsOptions{}); diags.HasError() {
 		return "", ErrExtractKubernetes
-	}
-
-	var k8sRefs []kubernetesResourceRef
-	if diags := k8sConf.Resources.ElementsAs(ctx, &k8sRefs, false); diags.HasError() {
-		return "", ErrExtractKubernetesResources
-	}
-
-	sshItems := make([]sshResourceData, 0, len(sshRefs))
-	for _, s := range sshRefs {
-		sshItems = append(sshItems, sshResourceData{
-			Name:     s.Name.ValueString(),
-			Address:  s.Address.ValueString(),
-			Username: s.Username.ValueString(),
-		})
-	}
-
-	k8sItems := make([]kubernetesResourceData, 0, len(k8sRefs))
-	for _, k := range k8sRefs {
-		k8sItems = append(k8sItems, kubernetesResourceData{
-			Name:      k.Name.ValueString(),
-			Address:   k.Address.ValueString(),
-			InCluster: k.InCluster.ValueBool(),
-		})
 	}
 
 	var tlsGW tlsModel
@@ -720,6 +633,7 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 			PrivateKeyFile:  tlsGW.PrivateKeyFile.ValueString(),
 		},
 		SSH: sshData{
+			Enabled: sshConf.Enabled.ValueBool(),
 			Gateway: sshGatewayData{
 				Username:    sshGW.Username.ValueString(),
 				KeyType:     sshGW.KeyType.ValueString(),
@@ -744,10 +658,9 @@ func (gateway *gatewayConfigModel) generateContent(ctx context.Context, config p
 					},
 				},
 			},
-			Resources: sshItems,
 		},
 		Kubernetes: kubernetesData{
-			Resources: k8sItems,
+			Enabled: k8sConf.Enabled.ValueBool(),
 		},
 	}
 
@@ -831,10 +744,10 @@ func (r *gatewayConfig) ValidateConfig(ctx context.Context, req resource.Validat
 		}
 	}
 
-	if sshConf.IsEmptyResources() && k8sConf.IsEmptyResources() {
+	if !sshConf.Enabled.ValueBool() && !k8sConf.Enabled.ValueBool() {
 		resp.Diagnostics.AddError(
 			"Invalid configuration",
-			`At least one of "ssh.resources" or "kubernetes.resources" must contain one or more items.`,
+			`At least one of "ssh.enabled" or "kubernetes.enabled" must be true.`,
 		)
 	}
 

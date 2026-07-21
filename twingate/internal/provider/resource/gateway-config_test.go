@@ -206,96 +206,41 @@ func sshCAWithPrivateKey(keyFile string) types.Object {
 }
 
 var (
-	sshElemType = types.ObjectType{
-		AttrTypes: map[string]fwattr.Type{
-			"name":     types.StringType,
-			"address":  types.StringType,
-			"username": types.StringType,
-		},
-	}
-
-	k8sElemType = types.ObjectType{
-		AttrTypes: map[string]fwattr.Type{
-			"name":       types.StringType,
-			"address":    types.StringType,
-			"in_cluster": types.BoolType,
-		},
-	}
-
 	sshObjType = types.ObjectType{
 		AttrTypes: map[string]fwattr.Type{
-			"gateway":   sshGatewayObjType,
-			"ca":        sshCAObjType,
-			"resources": types.ListType{ElemType: sshElemType},
+			"enabled": types.BoolType,
+			"gateway": sshGatewayObjType,
+			"ca":      sshCAObjType,
 		},
 	}
 
 	k8sObjType = types.ObjectType{
 		AttrTypes: map[string]fwattr.Type{
-			"resources": types.ListType{ElemType: k8sElemType},
+			"enabled": types.BoolType,
 		},
 	}
 )
 
-func makeSshList(items ...map[string]fwattr.Value) types.List {
-	elems := make([]fwattr.Value, 0, len(items))
-	for _, item := range items {
-		elems = append(elems, types.ObjectValueMust(sshElemType.AttrTypes, item))
-	}
-	return types.ListValueMust(sshElemType, elems)
-}
-
-func makeK8sList(items ...map[string]fwattr.Value) types.List {
-	elems := make([]fwattr.Value, 0, len(items))
-	for _, item := range items {
-		elems = append(elems, types.ObjectValueMust(k8sElemType.AttrTypes, item))
-	}
-	return types.ListValueMust(k8sElemType, elems)
-}
-
-func makeSshObj(gateway, ca types.Object, resources types.List) types.Object {
+func makeSshObj(gateway, ca types.Object, enabled bool) types.Object {
 	return types.ObjectValueMust(sshObjType.AttrTypes, map[string]fwattr.Value{
-		"gateway":   gateway,
-		"ca":        ca,
-		"resources": resources,
+		"enabled": types.BoolValue(enabled),
+		"gateway": gateway,
+		"ca":      ca,
 	})
 }
 
-func defaultSshObj(resources types.List) types.Object {
-	return makeSshObj(defaultSshGateway(), defaultSshCA(), resources)
+func defaultSshObj(enabled bool) types.Object {
+	return makeSshObj(defaultSshGateway(), defaultSshCA(), enabled)
 }
 
-func makeK8sObj(resources types.List) types.Object {
+func makeK8sObj(enabled bool) types.Object {
 	return types.ObjectValueMust(k8sObjType.AttrTypes, map[string]fwattr.Value{
-		"resources": resources,
+		"enabled": types.BoolValue(enabled),
 	})
-}
-
-func defaultK8sObj() types.Object {
-	return makeK8sObj(makeK8sList())
-}
-
-func sshItem(name, address, username string) map[string]fwattr.Value {
-	return map[string]fwattr.Value{
-		"name":     types.StringValue(name),
-		"address":  types.StringValue(address),
-		"username": types.StringValue(username),
-	}
-}
-
-func k8sItem(name, address string, inCluster bool) map[string]fwattr.Value {
-	return map[string]fwattr.Value{
-		"name":       types.StringValue(name),
-		"address":    types.StringValue(address),
-		"in_cluster": types.BoolValue(inCluster),
-	}
 }
 
 func TestGatewayConfigGenerateContent(t *testing.T) {
 	ctx := context.Background()
-
-	baseSsh := makeSshList(sshItem("ssh-1", "10.0.0.1", "admin"))
-	baseK8s := makeK8sList(k8sItem("k8s-1", "10.0.0.2:6443", true))
 
 	cases := []struct {
 		name      string
@@ -308,8 +253,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVault("https://vault.example.com"), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVault("https://vault.example.com"), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -329,8 +274,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndToken("https://vault.example.com", "s.mytoken"), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndToken("https://vault.example.com", "s.mytoken"), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -346,8 +291,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCP("https://vault.example.com", "vm-role", "gce"), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCP("https://vault.example.com", "vm-role", "gce"), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -365,8 +310,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCPFull("https://vault.example.com", "vm-role", "gce", "custom-gcp", ""), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCPFull("https://vault.example.com", "vm-role", "gce", "custom-gcp", ""), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -380,8 +325,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCPFull("https://vault.example.com", "vm-role", "iam", defaultGCPMount, "sa@project.iam.gserviceaccount.com"), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVaultAndGCPFull("https://vault.example.com", "vm-role", "iam", defaultGCPMount, "sa@project.iam.gserviceaccount.com"), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -395,8 +340,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVault("https://vault.example.com"), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithVault("https://vault.example.com"), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -411,8 +356,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(defaultSshGateway(), sshCAWithPrivateKey("/etc/ssh/id_ed25519"), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(defaultSshGateway(), sshCAWithPrivateKey("/etc/ssh/id_ed25519"), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -429,8 +374,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -448,8 +393,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -458,53 +403,32 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			},
 		},
 		{
-			name: "ssh upstreams rendered correctly",
+			name: "ssh block has no upstreams",
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH: defaultSshObj(makeSshList(
-					sshItem("web", "192.168.1.10", "root"),
-					sshItem("db", "192.168.1.11", "postgres"),
-				)),
-				Kubernetes: makeK8sObj(baseK8s),
-				TLS:        defaultTLS(),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(true),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				ssh := doc["ssh"].(map[string]any)
-				upstreams := ssh["upstreams"].([]any)
-				assert.Len(t, upstreams, 2)
-				u0 := upstreams[0].(map[string]any)
-				assert.Equal(t, "web", u0["name"])
-				assert.Equal(t, "192.168.1.10:22", u0["address"])
-				assert.Equal(t, "root", u0["user"])
-				u1 := upstreams[1].(map[string]any)
-				assert.Equal(t, "db", u1["name"])
-				assert.Equal(t, "postgres", u1["user"])
+				assert.Contains(t, ssh, "gateway", "expected gateway block inside ssh")
+				assert.NotContains(t, ssh, "upstreams", "expected no upstreams key inside ssh")
 			},
 		},
 		{
-			name: "kubernetes upstreams rendered correctly",
+			name: "kubernetes block renders as empty map",
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(baseSsh),
-				Kubernetes: makeK8sObj(makeK8sList(
-					k8sItem("prod-cluster", "10.1.0.1:6443", true),
-					k8sItem("dev-cluster", "10.2.0.1:6443", false),
-				)),
-				TLS: defaultTLS(),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(true),
+				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				k8s := doc["kubernetes"].(map[string]any)
-				upstreams := k8s["upstreams"].([]any)
-				assert.Len(t, upstreams, 2)
-				u0 := upstreams[0].(map[string]any)
-				assert.Equal(t, "prod-cluster", u0["name"])
-				assert.Equal(t, "10.1.0.1:6443", u0["address"])
-				assert.Equal(t, true, u0["inCluster"])
-				u1 := upstreams[1].(map[string]any)
-				assert.Equal(t, "dev-cluster", u1["name"])
-				assert.Equal(t, false, u1["inCluster"])
+				assert.Empty(t, k8s, "expected kubernetes to render as an empty map")
 			},
 		},
 		{
@@ -512,8 +436,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         makeSshObj(customSshGateway("ops", "rsa", "12h", "30m"), defaultSshCA(), baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         makeSshObj(customSshGateway("ops", "rsa", "12h", "30m"), defaultSshCA(), true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -530,8 +454,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -548,8 +472,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(9443),
 				MetricsPort: types.Int64Value(9091),
-				SSH:         defaultSshObj(baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -562,9 +486,9 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(baseSsh),
+				SSH:         defaultSshObj(true),
 				TLS:         customTLS("/custom/tls.crt", "/custom/tls.key"),
-				Kubernetes:  makeK8sObj(baseK8s),
+				Kubernetes:  makeK8sObj(true),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
 				tls := doc["tls"].(map[string]any)
@@ -573,12 +497,12 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			},
 		},
 		{
-			name: "only ssh resources — kubernetes block absent",
+			name: "only ssh enabled — kubernetes block absent",
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(baseSsh),
-				Kubernetes:  makeK8sObj(makeK8sList()),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(false),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -587,12 +511,12 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			},
 		},
 		{
-			name: "only kubernetes resources — ssh block absent",
+			name: "only kubernetes enabled — ssh block absent",
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(makeSshList()),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         defaultSshObj(false),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {
@@ -605,8 +529,8 @@ func TestGatewayConfigGenerateContent(t *testing.T) {
 			model: gatewayConfigModel{
 				Port:        types.Int64Value(defaultPort),
 				MetricsPort: types.Int64Value(defaultMetricsPort),
-				SSH:         defaultSshObj(baseSsh),
-				Kubernetes:  makeK8sObj(baseK8s),
+				SSH:         defaultSshObj(true),
+				Kubernetes:  makeK8sObj(true),
 				TLS:         defaultTLS(),
 			},
 			checkYAML: func(t *testing.T, doc map[string]any) {

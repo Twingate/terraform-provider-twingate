@@ -20,12 +20,10 @@ resource "twingate_gateway_config" "config" {
   }
 
   ssh = {
+    enabled = true
+
     gateway = { username = "gateway" }
     ca      = { private_key_file = "/etc/gateway/ssh-ca.key" }
-
-    resources = [
-      twingate_ssh_resource.ssh_server,
-    ]
   }
 }
 

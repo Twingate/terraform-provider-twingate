@@ -62,6 +62,8 @@ resource "twingate_gateway_config" "config" {
   }
 
   ssh = {
+    enabled = true
+
     gateway = {
       username = "gateway"
     }
@@ -83,7 +85,5 @@ resource "twingate_gateway_config" "config" {
         }
       }
     }
-
-    resources = [twingate_ssh_resource.ssh_server]
   }
 }

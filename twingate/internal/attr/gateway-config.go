@@ -5,6 +5,7 @@ const (
 	PrivateKeyFile      = "private_key_file"
 	Kubernetes          = "kubernetes"
 	Content             = "content"
+	Enabled             = "enabled"
 	SSH                 = "ssh"
 	Gateway             = "gateway"
 	CA                  = "ca"
