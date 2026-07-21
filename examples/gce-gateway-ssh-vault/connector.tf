@@ -17,7 +17,7 @@ resource "google_compute_instance" "connector" {
   metadata = {
     connector-access-token  = twingate_connector_tokens.main.access_token
     connector-refresh-token = twingate_connector_tokens.main.refresh_token
-    connector-url           = "https://${var.tg_network}.twingate.com"
+    connector-url           = "https://${var.tg_network}.${var.tg_url}"
   }
 
   metadata_startup_script = file("${path.module}/scripts/connector-startup.sh")

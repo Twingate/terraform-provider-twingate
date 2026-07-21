@@ -1,6 +1,7 @@
 # Twingate provider settings
 tg_api_token = "your-api-token"
 tg_network   = "your-network"
+# tg_url     = "twingate.com"  # override the default Twingate domain
 
 # GCP settings
 project_id = "your-gcp-project"
