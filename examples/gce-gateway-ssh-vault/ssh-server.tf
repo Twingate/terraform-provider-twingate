@@ -17,6 +17,8 @@ resource "google_compute_instance" "ssh_server" {
     subnetwork = data.terraform_remote_state.vault.outputs.subnetwork_id
   }
 
+  tags = ["iap-ssh"]
+
   service_account {
     email  = google_service_account.vm.email
     scopes = ["cloud-platform"]

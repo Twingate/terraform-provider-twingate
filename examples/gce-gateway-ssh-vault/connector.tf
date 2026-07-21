@@ -12,6 +12,8 @@ resource "google_compute_instance" "connector" {
     subnetwork = data.terraform_remote_state.vault.outputs.subnetwork_id
   }
 
+  tags = ["iap-ssh"]
+
   metadata = {
     connector-access-token  = twingate_connector_tokens.main.access_token
     connector-refresh-token = twingate_connector_tokens.main.refresh_token
