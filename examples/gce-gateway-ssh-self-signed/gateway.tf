@@ -55,6 +55,8 @@ resource "google_compute_instance" "gateway" {
     network_ip = google_compute_address.gateway.address
   }
 
+  tags = ["iap-ssh"]
+
   metadata = local.gateway_metadata
 
   metadata_startup_script = file("${path.module}/scripts/gateway-startup.sh")
