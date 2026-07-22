@@ -9,18 +9,12 @@ tls:
   certificateFile: {{ .TLS.CertificateFile }}
   privateKeyFile: {{ .TLS.PrivateKeyFile }}
 
-{{- if .Kubernetes.Resources }}
+{{- if .Kubernetes.Enabled }}
 
-kubernetes:
-  upstreams:
-  {{- range .Kubernetes.Resources }}
-  - name: {{ .Name }}
-    address: {{ .Address }}
-    inCluster: {{ .InCluster }}
-  {{- end }}
+kubernetes: {}
 {{- end }}
 
-{{- if .SSH.Resources }}
+{{- if .SSH.Enabled }}
 
 ssh:
   gateway:
@@ -57,13 +51,4 @@ ssh:
       privateKeyFile: {{ .SSH.CA.PrivateKeyFile }}
     {{- else }} null
     {{- end }}
-
-  upstreams:
-  {{- range .SSH.Resources }}
-  - name: {{ .Name }}
-    address: {{ .Address }}:22
-    {{- if .Username }}
-    user: {{ .Username }}
-    {{- end }}
-  {{- end }}
 {{- end }}

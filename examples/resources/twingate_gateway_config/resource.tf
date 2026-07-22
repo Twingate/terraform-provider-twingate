@@ -62,6 +62,8 @@ resource "twingate_gateway_config" "config" {
   }
 
   ssh = {
+    enabled = true
+
     # SSH gateway process settings. All fields are optional with built-in defaults.
     gateway = {
       username      = "gateway"  # OS user the gateway process runs as. Default: "gateway".
@@ -107,11 +109,10 @@ resource "twingate_gateway_config" "config" {
       # private_key_file = "/etc/gateway/ssh_ca_key"
     }
 
-    resources = [twingate_ssh_resource.ssh_server, twingate_ssh_resource.ssh_server_2]
   }
 
   kubernetes = {
-    resources = [twingate_kubernetes_resource.prod_cluster]
+    enabled = true
   }
 }
 
