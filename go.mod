@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
 	github.com/hasura/go-graphql-client v0.16.0
 	github.com/iancoleman/strcase v0.3.0
-	github.com/jarcoal/httpmock v1.4.1
+	github.com/jarcoal/httpmock v1.4.2
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.54.0
