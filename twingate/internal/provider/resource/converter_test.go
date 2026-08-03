@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -172,4 +173,74 @@ func TestEqualPorts(t *testing.T) {
 			assert.Equal(t, c.expected, actual)
 		})
 	}
+}
+
+func TestConvertGroupsAccessToTerraform(t *testing.T) {
+	ctx := context.Background()
+
+	cases := []struct {
+		name        string
+		groupAccess []model.AccessGroup
+		reference   types.Set
+		expected    types.Set
+	}{
+		{
+			name: "null security_policy_id in the reference is preserved when the API returns the effective policy",
+			groupAccess: []model.AccessGroup{
+				{GroupID: "test-group-id", SecurityPolicyID: stringPtr("test-policy-id")},
+			},
+			reference: makeTestAccessGroupSet(ctx, makeTestAccessGroup(ctx, "test-group-id", types.StringNull())),
+			expected:  makeTestAccessGroupSet(ctx, makeTestAccessGroup(ctx, "test-group-id", types.StringNull())),
+		},
+		{
+			name: "empty security_policy_id in the reference is preserved when the API returns the effective policy",
+			groupAccess: []model.AccessGroup{
+				{GroupID: "test-group-id", SecurityPolicyID: stringPtr("test-policy-id")},
+			},
+			reference: makeTestAccessGroupSet(ctx, makeTestAccessGroup(ctx, "test-group-id", types.StringValue(""))),
+			expected:  makeTestAccessGroupSet(ctx, makeTestAccessGroup(ctx, "test-group-id", types.StringValue(""))),
+		},
+		{
+			name: "security_policy_id set in the reference keeps the API value",
+			groupAccess: []model.AccessGroup{
+				{GroupID: "test-group-id", SecurityPolicyID: stringPtr("test-policy-id")},
+			},
+			reference: makeTestAccessGroupSet(ctx, makeTestAccessGroup(ctx, "test-group-id", types.StringValue("test-policy-id"))),
+			expected:  makeTestAccessGroupSet(ctx, makeTestAccessGroup(ctx, "test-group-id", types.StringValue("test-policy-id"))),
+		},
+		{
+			name: "group missing from the reference keeps the API value",
+			groupAccess: []model.AccessGroup{
+				{GroupID: "test-group-id", SecurityPolicyID: stringPtr("test-policy-id")},
+			},
+			reference: makeObjectsSetNull(ctx, accessGroupAttributeTypes()),
+			expected:  makeTestAccessGroupSet(ctx, makeTestAccessGroup(ctx, "test-group-id", types.StringValue("test-policy-id"))),
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual, diags := convertGroupsAccessToTerraform(ctx, c.groupAccess, c.reference)
+
+			assert.False(t, diags.HasError())
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func makeTestAccessGroup(ctx context.Context, groupID string, securityPolicyID types.String) types.Object {
+	return types.ObjectValueMust(accessGroupAttributeTypes(), map[string]tfattr.Value{
+		attr.GroupID:          types.StringValue(groupID),
+		attr.SecurityPolicyID: securityPolicyID,
+		attr.AccessPolicy:     makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+	})
+}
+
+func makeTestAccessGroupSet(ctx context.Context, groups ...types.Object) types.Set {
+	elements := make([]tfattr.Value, 0, len(groups))
+	for _, group := range groups {
+		elements = append(elements, group)
+	}
+
+	return types.SetValueMust(types.ObjectNull(accessGroupAttributeTypes()).Type(ctx), elements)
 }
