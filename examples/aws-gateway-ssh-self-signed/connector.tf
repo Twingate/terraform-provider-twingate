@@ -7,7 +7,7 @@ resource "aws_instance" "connector" {
   user_data = templatefile("${path.module}/scripts/connector-startup.sh", {
     access_token  = twingate_connector_tokens.main.access_token
     refresh_token = twingate_connector_tokens.main.refresh_token
-    twingate_url  = "https://${var.tg_network}.twingate.com"
+    twingate_url  = "https://${var.tg_network}.${var.tg_url}"
   })
 
   root_block_device {

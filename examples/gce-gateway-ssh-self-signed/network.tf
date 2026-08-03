@@ -20,6 +20,20 @@ resource "google_compute_firewall" "internal" {
   source_ranges = [google_compute_subnetwork.main.ip_cidr_range]
 }
 
+# Allow SSH from the IAP tunnel so the VMs (no external IP) can be reached for debugging
+resource "google_compute_firewall" "allow_iap" {
+  name    = "demo-allow-iap"
+  network = google_compute_network.main.id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["35.235.240.0/20"]
+  target_tags   = ["iap-ssh"]
+}
+
 # Cloud NAT allows instances without external IPs to reach the internet
 resource "google_compute_router" "main" {
   name    = "demo-router"

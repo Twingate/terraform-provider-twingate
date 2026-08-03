@@ -18,6 +18,7 @@ terraform {
 provider "twingate" {
   api_token = var.tg_api_token
   network   = var.tg_network
+  url       = var.tg_url
 }
 
 provider "aws" {

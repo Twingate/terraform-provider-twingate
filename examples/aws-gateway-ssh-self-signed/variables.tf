@@ -9,6 +9,12 @@ variable "tg_network" {
   type        = string
 }
 
+variable "tg_url" {
+  description = "Twingate URL base domain"
+  type        = string
+  default     = "twingate.com"
+}
+
 variable "resource_alias" {
   description = "Optional DNS alias for the SSH resource (added as a DNS SAN in the TLS cert)"
   type        = string

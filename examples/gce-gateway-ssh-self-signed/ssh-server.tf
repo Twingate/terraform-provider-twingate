@@ -12,6 +12,8 @@ resource "google_compute_instance" "ssh_server" {
     subnetwork = google_compute_subnetwork.main.id
   }
 
+  tags = ["iap-ssh"]
+
   metadata = {
     enable-oslogin    = "FALSE" # Disabled because the Gateway uses SSH CA-based authentication
     ssh-ca-public-key = tls_private_key.ssh_ca.public_key_openssh

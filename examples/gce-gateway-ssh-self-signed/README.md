@@ -50,7 +50,13 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-SSH into the gateway VM via IAP (the VM has no external IP), then view the logs:
+Every VM (`demo-gateway`, `demo-connector`, `demo-ssh-server`) is tagged `iap-ssh` and reachable via IAP, even though none has an external IP:
+
+```bash
+gcloud compute ssh demo-gateway --tunnel-through-iap
+```
+
+On the gateway, view the logs:
 
 ```bash
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'

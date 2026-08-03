@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-# Check https://github.com/Twingate/gateway/releases for the latest version
-BINARY_URL="https://github.com/Twingate/gateway/releases/download/v0.13.0/gateway_Linux_x86_64.tar.gz"
+BINARY_URL="https://github.com/Twingate/gateway/releases/latest/download/gateway_Linux_x86_64.tar.gz"
 GATEWAY_DIR="/etc/gateway"
 
 mkdir -p "$GATEWAY_DIR"
