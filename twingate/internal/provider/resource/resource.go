@@ -1594,6 +1594,11 @@ func convertGroupsAccessToTerraform(ctx context.Context, groupAccess []model.Acc
 		referenceGroup, exists := referenceLookup[access.GroupID]
 		if exists {
 			referenceAccessPolicy = referenceGroup.AccessPolicy
+
+			// restore security_policy_id when it's not set in the reference, the API returns the effective policy
+			if referenceGroup.SecurityPolicyID == nil || *referenceGroup.SecurityPolicyID == "" {
+				attributes[attr.SecurityPolicyID] = types.StringPointerValue(referenceGroup.SecurityPolicyID)
+			}
 		}
 
 		accessPolicy, diags := convertAccessPolicyToTerraform(ctx, access.AccessPolicy, referenceAccessPolicy)
