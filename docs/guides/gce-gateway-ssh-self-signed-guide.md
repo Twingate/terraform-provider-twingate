@@ -169,28 +169,46 @@ The optional `alias` field lets users connect using a friendly name (e.g., `ssh-
 
 ## Configuring the Gateway
 
-The `twingate_gateway_config` resource generates the Gateway's configuration file. It specifies the TLS certificate paths and SSH CA key path:
+The Gateway reads its settings from a YAML file. The TLS and SSH CA paths must match where the startup script writes those files:
+
+```yaml
+twingate:
+  network: ${twingate_network}
+  host: ${twingate_host}
+
+port: ${port}
+metricsPort: 9090
+
+tls:
+  certificateFile: /etc/gateway/tls.crt
+  privateKeyFile: /etc/gateway/tls.key
+
+ssh:
+  gateway:
+    username: gateway
+    key:
+      type: ed25519
+    hostCertificate:
+      ttl: 24h
+    userCertificate:
+      ttl: 5m
+
+  ca:
+    manual:
+      privateKeyFile: /etc/gateway/ssh-ca.key
+```
+
+`templatefile()` fills in the network and port, and the result goes to the instance's startup script:
 
 ```terraform
-resource "twingate_gateway_config" "config" {
-  port = local.gateway_port
+locals {
+  gateway_port = 8443
 
-  tls = {
-    certificate_file = "/etc/gateway/tls.crt"
-    private_key_file = "/etc/gateway/tls.key"
-  }
-
-  ssh = {
-    gateway = {
-      username = "gateway"
-    }
-
-    ca = {
-      private_key_file = "/etc/gateway/ssh-ca.key"
-    }
-
-    resources = [twingate_ssh_resource.ssh_server]
-  }
+  gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
+    twingate_network = var.tg_network
+    twingate_host    = var.tg_url
+    port             = local.gateway_port
+  })
 }
 ```
 

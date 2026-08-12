@@ -224,46 +224,66 @@ resource "twingate_ssh_resource" "ssh_server" {
 
 ## Configuring the Gateway
 
-The `ssh.ca.vault` block configures the Gateway to delegate SSH certificate signing to Vault:
+The Gateway reads its settings from a YAML file. The TLS and Vault CA paths must match where the startup script writes those files.
 
-- **`address`** and **`ca_bundle_file`** — The Vault server URL and the CA bundle used to verify its TLS certificate.
+The `ssh.ca.vault` block delegates SSH certificate signing to Vault:
+
+- **`address`** and **`caBundleFile`** — The Vault server URL and the CA bundle used to verify its TLS certificate.
 - **`mount`** and **`role`** — The SSH secrets engine mount path and the signing role that defines certificate parameters (TTL, extensions, etc.).
 - **`auth.gcp`** — The Gateway authenticates to Vault at runtime using its GCE instance identity token. The `mount` and `role` reference the GCP auth backend configured in Vault.
 
+```yaml
+twingate:
+  network: ${twingate_network}
+  host: ${twingate_host}
+
+port: ${port}
+metricsPort: 9090
+
+tls:
+  certificateFile: /etc/gateway/tls.crt
+  privateKeyFile: /etc/gateway/tls.key
+
+ssh:
+  gateway:
+    username: gateway
+    key:
+      type: ed25519
+    hostCertificate:
+      ttl: 24h
+    userCertificate:
+      ttl: 5m
+
+  ca:
+    vault:
+      address: ${vault_address}
+      caBundleFile: /etc/ssl/vault-ca.crt
+      mount: ${vault_ssh_mount}
+      role: ${vault_ssh_role}
+      auth:
+        gcp:
+          type: gce
+          mount: ${vault_gcp_mount}
+          role: ${vault_gcp_role}
+```
+
+`templatefile()` pulls the Vault mounts and roles from the resources that created them, and the result goes to the Gateway VM's startup script:
+
 ```terraform
-resource "twingate_gateway_config" "config" {
-  port = local.gateway_port
+locals {
+  gateway_port = 8443
 
-  tls = {
-    certificate_file = "/etc/gateway/tls.crt"
-    private_key_file = "/etc/gateway/tls.key"
-  }
+  gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
+    twingate_network = var.tg_network
+    twingate_host    = var.tg_url
+    port             = local.gateway_port
 
-  ssh = {
-    gateway = {
-      username = "gateway"
-    }
-
-    ca = {
-      vault = {
-        address        = "https://${data.terraform_remote_state.vault.outputs.vault_internal_ip}:8200"
-        ca_bundle_file = "/etc/ssl/vault-ca.crt"
-
-        mount          = vault_mount.ssh.path
-        role           = vault_ssh_secret_backend_role.gateway.name
-
-        auth = {
-          gcp = {
-            type  = "gce"
-            mount = vault_auth_backend.gcp.path
-            role  = vault_gcp_auth_backend_role.gateway.role
-          }
-        }
-      }
-    }
-
-    resources = [twingate_ssh_resource.ssh_server]
-  }
+    vault_address   = "https://${data.terraform_remote_state.vault.outputs.vault_internal_ip}:8200"
+    vault_ssh_mount = vault_mount.ssh.path
+    vault_ssh_role  = vault_ssh_secret_backend_role.gateway.name
+    vault_gcp_mount = vault_auth_backend.gcp.path
+    vault_gcp_role  = vault_gcp_auth_backend_role.gateway.role
+  })
 }
 ```
 
