@@ -61,16 +61,9 @@ data "aws_ami" "latest" {
       "twingate/images/hvm-ssd/twingate-amd64-*",
     ]
   }
-    # Disable IMDSv1
-    metadata_options {
-    http_tokens            = "required"
-    http_endpoint          = "enabled"
-  }
   owners = ["617935088040"]
 }
 ```
-
-We've included an option to disable IMDSv1 based on industry-standard EC2 security approaches discussed here: [Get the full benefits of IMDSv2 and disable IMDSv1 across your AWS infrastructure](https://aws.amazon.com/blogs/security/get-the-full-benefits-of-imdsv2-and-disable-imdsv1-across-your-aws-infrastructure/)
 
 Now, let's go ahead and deploy the AMI. For this example, we're creating a new VPC and security group, but you can use an existing one too. We'll deploy the Connector on a private subnet, because it doesn't need and shouldn't have a public IP address. Note the shell script that we use to configure the Connector tokens when the AMI launches.
 
@@ -122,6 +115,13 @@ module "ec2_tenant_connector" {
   vpc_security_group_ids = [module.demo_sg.security_group_id]
   subnet_id              = module.demo_vpc.private_subnets[0]
 
+  # Require IMDSv2, which disables IMDSv1
+  metadata_options = {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
   root_block_device = [
     {
       encrypted = true
@@ -130,15 +130,17 @@ module "ec2_tenant_connector" {
 }
 ```
 
+We've set `http_tokens = "required"` to disable IMDSv1 on the Connector instance, based on industry-standard EC2 security approaches discussed here: [Get the full benefits of IMDSv2 and disable IMDSv1 across your AWS infrastructure](https://aws.amazon.com/blogs/security/get-the-full-benefits-of-imdsv2-and-disable-imdsv1-across-your-aws-infrastructure/). Note that the `ec2-instance` module's `metadata_options` variable replaces its default map rather than merging with it, so `http_put_response_hop_limit` is set explicitly here.
+
 ## Creating Resources
 
 Now that you've deployed the Connector, we can create Resources on the same Remote Network that can be accessed through Twingate. For this example, we'll assume you already have an `aws_instance` defined. You'll need to define the Group ID explicitly, which you can pull from the [Admin API](https://docs.twingate.com/docs/api-overview).
 
 ```terraform
 resource "twingate_resource" "tg_instance" {
-  name = "My AWS Instance"
-  address = aws_instance.my_instance.private_dns
-  remote_network_id = twingate_remote_network.my_aws_network.id
+  name              = "My AWS Instance"
+  address           = aws_instance.my_instance.private_dns
+  remote_network_id = twingate_remote_network.aws_network.id
   access {
     group_ids = ["R3JvdXG6OGky"]
   }
