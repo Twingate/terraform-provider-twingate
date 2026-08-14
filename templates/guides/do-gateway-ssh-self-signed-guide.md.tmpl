@@ -167,7 +167,7 @@ The optional `alias` field lets users connect using a friendly name (e.g., `ssh-
 
 ## Configuring the gateway
 
-The Gateway reads its settings from a YAML file. The TLS and SSH CA paths must match where the startup script writes those files:
+The Gateway reads its settings from a YAML configuration file. The TLS and SSH CA paths are hardcoded and must match where the startup script writes those files:
 
 ```yaml
 twingate:

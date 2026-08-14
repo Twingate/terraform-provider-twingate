@@ -224,7 +224,7 @@ resource "twingate_ssh_resource" "ssh_server" {
 
 ## Configuring the Gateway
 
-The Gateway reads its settings from a YAML file. The TLS and Vault CA paths must match where the startup script writes those files.
+The Gateway reads its settings from a YAML configuration file. The TLS and Vault CA paths are hardcoded and must match where the startup script writes those files.
 
 The `ssh.ca.vault` block delegates SSH certificate signing to Vault:
 
