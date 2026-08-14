@@ -11,7 +11,6 @@ const (
 	KeyType             = "key_type"
 	HostCertTTL         = "host_cert_ttl"
 	UserCertTTL         = "user_cert_ttl"
-	Port                = "port"
 	MetricsPort         = "metrics_port"
 	TLS                 = "tls"
 	CertificateFile     = "certificate_file"
