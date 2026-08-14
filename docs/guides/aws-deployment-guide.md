@@ -61,9 +61,16 @@ data "aws_ami" "latest" {
       "twingate/images/hvm-ssd/twingate-amd64-*",
     ]
   }
+    # Disable IMDSv1
+    metadata_options {
+    http_tokens            = "required"
+    http_endpoint          = "enabled"
+  }
   owners = ["617935088040"]
 }
 ```
+
+We've included an option to disable IMDSv1 based on industry-standard EC2 security approaches discussed here: [Get the full benefits of IMDSv2 and disable IMDSv1 across your AWS infrastructure](https://aws.amazon.com/blogs/security/get-the-full-benefits-of-imdsv2-and-disable-imdsv1-across-your-aws-infrastructure/)
 
 Now, let's go ahead and deploy the AMI. For this example, we're creating a new VPC and security group, but you can use an existing one too. We'll deploy the Connector on a private subnet, because it doesn't need and shouldn't have a public IP address. Note the shell script that we use to configure the Connector tokens when the AMI launches.
 
