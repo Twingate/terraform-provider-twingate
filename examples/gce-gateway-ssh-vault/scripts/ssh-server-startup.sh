@@ -3,7 +3,7 @@ set -euo pipefail
 
 apt-get update -qq && apt-get install -y -qq jq
 
-# Create the gateway user
+# Create the gateway user account
 useradd -m -s /bin/bash gateway
 
 # Write the SSH CA public key from templatefile variable
