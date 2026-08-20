@@ -217,7 +217,14 @@ CA_KEY=$(curl -sf -H "Metadata-Flavor: Google" \
 echo "$CA_KEY" > /etc/ssh/twingate-ca.pub
 echo "TrustedUserCAKeys /etc/ssh/twingate-ca.pub" >> /etc/ssh/sshd_config
 
+# Only accept the "gateway" principal, and only for the "gateway" account
+mkdir -p /etc/ssh/auth_principals
+echo "gateway" > /etc/ssh/auth_principals/gateway
+echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
+
 systemctl restart sshd
 ```
+
+The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
 The Gateway VM uses a reserved internal IP so its address is stable and can be registered with Twingate. Keys and certificates are passed to VMs via GCE instance metadata.
