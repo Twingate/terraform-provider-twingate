@@ -31,8 +31,9 @@ resource "twingate_gateway_config" "config" {
 }
 
 resource "aws_instance" "gateway" {
-  ami           = data.aws_ami.debian.id
-  instance_type = var.instance_type
+  ami                  = data.aws_ami.debian.id
+  instance_type        = var.instance_type
+  iam_instance_profile = local.instance_profile_name
 
   network_interface {
     network_interface_id = aws_network_interface.gateway.id
