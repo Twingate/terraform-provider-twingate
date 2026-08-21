@@ -70,10 +70,9 @@ func (client *Client) CreateWebAppResource(ctx context.Context, webAppResource *
 		return nil, err
 	}
 
+	// client.mutate already fails with ErrGraphqlResultIsEmpty when the payload
+	// entity is missing, so ToModel never returns nil here.
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
 
 	if len(webAppResource.GroupsAccess) > 0 {
 		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(webAppResource.GroupsAccess)); err != nil {
@@ -144,9 +143,6 @@ func (client *Client) UpdateWebAppResource(ctx context.Context, webAppResource *
 	}
 
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
 
 	res.GroupsAccess = webAppResource.GroupsAccess
 
