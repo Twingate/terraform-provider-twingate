@@ -45,7 +45,6 @@ resource "twingate_ssh_resource" "ssh_server" {
   alias      = "test.int"
   remote_network_id = twingate_remote_network.prod.id
   address    = "10.128.0.105"
-  username   = "ubuntu"
 }
 ```
 
@@ -68,7 +67,6 @@ resource "twingate_ssh_resource" "ssh_server" {
 - `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
-- `username` (String) The username to use when connecting to the SSH Resource.
 
 ### Read-Only
 
