@@ -135,3 +135,35 @@ terraform state rm twingate_gateway_config.<name>
 ```
 
 The resource was purely local and never created a remote object, so nothing else is required. The SSH Gateway guides show the complete configuration.
+
+## Migrating SSH Resource Username
+
+The `username` attribute has been removed from the `twingate_ssh_resource` resource. It only ever fed the Gateway's configuration file, which listed each SSH upstream along with the user to connect as. The Gateway now takes the username from the runtime connection, so with `twingate_gateway_config` gone the attribute has nothing left to configure.
+
+In v4.x.x, the following was valid:
+
+```terraform
+resource "twingate_ssh_resource" "ssh_server" {
+  name              = "SSH Server"
+  address           = "10.128.0.105"
+  remote_network_id = twingate_remote_network.prod.id
+  gateway_id        = twingate_gateway.main.id
+
+  username = "ubuntu"
+}
+```
+
+From v5.0.0 and onward, the `username` attribute must be removed:
+
+```terraform
+resource "twingate_ssh_resource" "ssh_server" {
+  name              = "SSH Server"
+  address           = "10.128.0.105"
+  remote_network_id = twingate_remote_network.prod.id
+  gateway_id        = twingate_gateway.main.id
+}
+```
+
+A configuration that still sets `username` fails with `Unsupported argument`. No state change is needed, because the attribute never reached the Twingate API.
+
+This is a different setting from `ssh.gateway.username` in the Gateway's configuration file, which names the operating system user the Gateway process runs as. That one is still required.
