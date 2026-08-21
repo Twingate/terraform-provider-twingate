@@ -88,7 +88,7 @@ func (r *webAppResource) ImportState(ctx context.Context, req resource.ImportSta
 //nolint:funlen
 func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Web App Resources are Twingate resources accessed via a Gateway, which proxies HTTP traffic from a downstream port to an upstream port.",
+		Description: "Web App Resources are Twingate resources accessed via a Gateway.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,

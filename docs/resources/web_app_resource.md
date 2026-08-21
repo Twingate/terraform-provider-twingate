@@ -3,12 +3,12 @@
 page_title: "twingate_web_app_resource Resource - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Web App Resources are Twingate resources accessed via a Gateway, which proxies HTTP traffic from a downstream port to an upstream port.
+  Web App Resources are Twingate resources accessed via a Gateway.
 ---
 
 # twingate_web_app_resource (Resource)
 
-Web App Resources are Twingate resources accessed via a Gateway, which proxies HTTP traffic from a downstream port to an upstream port.
+Web App Resources are Twingate resources accessed via a Gateway.
 
 ## Example Usage
 
