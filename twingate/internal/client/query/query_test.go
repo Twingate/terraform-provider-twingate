@@ -5273,8 +5273,8 @@ func TestCreateWebAppResourceQueryToModel(t *testing.T) {
 				Address:               "internal.acme.com",
 				RemoteNetworkID:       "rn-id",
 				GatewayID:             "gw-id",
-				UpstreamPort:          8080,
-				DownstreamPort:        80,
+				Upstream:              model.WebAppUpstream{Port: 8080},
+				Downstream:            model.WebAppDownstream{Port: 80},
 				RequestHeaderRewrites: map[string]string{"x-user": "{{username}}"},
 			},
 		},
@@ -5295,8 +5295,8 @@ func TestCreateWebAppResourceQueryToModel(t *testing.T) {
 			assert.Equal(t, c.expected.Address, actual.Address)
 			assert.Equal(t, c.expected.RemoteNetworkID, actual.RemoteNetworkID)
 			assert.Equal(t, c.expected.GatewayID, actual.GatewayID)
-			assert.Equal(t, c.expected.UpstreamPort, actual.UpstreamPort)
-			assert.Equal(t, c.expected.DownstreamPort, actual.DownstreamPort)
+			assert.Equal(t, c.expected.Upstream, actual.Upstream)
+			assert.Equal(t, c.expected.Downstream, actual.Downstream)
 			assert.Equal(t, c.expected.RequestHeaderRewrites, actual.RequestHeaderRewrites)
 		})
 	}
@@ -5365,8 +5365,8 @@ func TestReadWebAppResourceQuery(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "web-res-id", res.ID)
 		assert.Equal(t, "gw-id", res.GatewayID)
-		assert.Equal(t, int64(8080), res.UpstreamPort)
-		assert.Equal(t, int64(80), res.DownstreamPort)
+		assert.Equal(t, model.WebAppUpstream{Port: 8080}, res.Upstream)
+		assert.Equal(t, model.WebAppDownstream{Port: 80}, res.Downstream)
 		assert.Nil(t, res.RequestHeaderRewrites)
 	})
 }

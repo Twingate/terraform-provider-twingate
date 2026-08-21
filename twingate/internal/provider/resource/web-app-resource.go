@@ -180,6 +180,7 @@ func webAppPort(description string) schema.SingleNestedAttribute {
 }
 
 // webAppPortValue reads the port out of an `upstream` or `downstream` object.
+// Both sides share this helper; the model keeps them as distinct types.
 func webAppPortValue(ctx context.Context, obj types.Object) (int64, diag.Diagnostics) {
 	var portModel webAppPortModel
 
@@ -250,8 +251,8 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		Alias:                 getOptionalString(plan.Alias),
 		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:                  getTags(plan.Tags),
-		UpstreamPort:          upstreamPort,
-		DownstreamPort:        downstreamPort,
+		Upstream:              model.WebAppUpstream{Port: upstreamPort},
+		Downstream:            model.WebAppDownstream{Port: downstreamPort},
 		RequestHeaderRewrites: getHeaderRewrites(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
 		GroupsAccess:          accessGroups,
@@ -393,10 +394,10 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 	state.Tags = utils.ConvertMapValue(webAppRes.Tags)
 	state.RequestHeaderRewrites = convertHeaderRewrites(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
-	upstream, diags := webAppPortObject(ctx, webAppRes.UpstreamPort)
+	upstream, diags := webAppPortObject(ctx, webAppRes.Upstream.Port)
 	diagnostics.Append(diags...)
 
-	downstream, diags := webAppPortObject(ctx, webAppRes.DownstreamPort)
+	downstream, diags := webAppPortObject(ctx, webAppRes.Downstream.Port)
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {

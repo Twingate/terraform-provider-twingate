@@ -69,8 +69,8 @@ func (g gqlWebAppResource) ToModel() *model.WebAppResource {
 		Alias:                 optionalString(g.Alias),
 		SecurityPolicyID:      securityPolicyID(g.SecurityPolicy),
 		Tags:                  tagsToModel(g.Tags),
-		UpstreamPort:          g.Upstream.Port,
-		DownstreamPort:        g.Downstream.Port,
+		Upstream:              model.WebAppUpstream{Port: g.Upstream.Port},
+		Downstream:            model.WebAppDownstream{Port: g.Downstream.Port},
 		RequestHeaderRewrites: headerRewritesToModel(g.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
 	}

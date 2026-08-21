@@ -1,5 +1,13 @@
 package model
 
+type WebAppUpstream struct {
+	Port int64
+}
+
+type WebAppDownstream struct {
+	Port int64
+}
+
 type WebAppResource struct {
 	ID                    string
 	Name                  string
@@ -10,8 +18,8 @@ type WebAppResource struct {
 	Alias                 *string
 	SecurityPolicyID      *string
 	Tags                  map[string]string
-	UpstreamPort          int64
-	DownstreamPort        int64
+	Upstream              WebAppUpstream
+	Downstream            WebAppDownstream
 	RequestHeaderRewrites map[string]string
 	AccessPolicy          *AccessPolicy
 	GroupsAccess          []AccessGroup
