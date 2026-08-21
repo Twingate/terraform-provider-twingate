@@ -119,6 +119,48 @@ func TestAccTwingateWebAppResourceCreate(t *testing.T) {
 	})
 }
 
+// TestAccTwingateWebAppResourceImport imports a resource with every optional
+// attribute populated, so `ImportStateVerify` catches anything the import path
+// drops.
+func TestAccTwingateWebAppResourceImport(t *testing.T) {
+	t.Parallel()
+
+	setup := newWebAppTestSetup(t, "10.0.0.8:8080")
+
+	const optionalAttributes = `
+	  is_visible = false
+	  tags = {
+	    env = "prod"
+	  }
+	  request_header_rewrites = {
+	    "X-Twingate-User" = "{{username}}"
+	  }`
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: setup.config(8080, 80, optionalAttributes),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.IsVisible, "false"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Tags, "env"), "prod"),
+					sdk.TestCheckResourceAttr(setup.theResource,
+						attr.PathAttr(attr.RequestHeaderRewrites, "X-Twingate-User"), "{{username}}"),
+				),
+			},
+			{
+				ResourceName:      setup.theResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccTwingateWebAppResourceUpdatePorts(t *testing.T) {
 	t.Parallel()
 
