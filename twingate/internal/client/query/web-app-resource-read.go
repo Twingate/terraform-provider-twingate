@@ -40,8 +40,8 @@ type gqlWebAppResourceNode struct {
 		Gateway struct {
 			ID graphql.ID
 		}
-		Upstream              WebAppPort
-		Downstream            WebAppPort
+		Upstream              WebAppUpstream
+		Downstream            WebAppDownstream
 		RequestHeaderRewrites []KeyValuePair
 	} `graphql:"... on WebAppResource"`
 }

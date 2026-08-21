@@ -5261,8 +5261,8 @@ func TestCreateWebAppResourceQueryToModel(t *testing.T) {
 						Address:               struct{ Value string }{Value: "internal.acme.com"},
 						RemoteNetwork:         struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
 						Gateway:               struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
-						Upstream:              WebAppPort{Port: 8080},
-						Downstream:            WebAppPort{Port: 80},
+						Upstream:              WebAppUpstream{Port: 8080},
+						Downstream:            WebAppDownstream{Port: 80},
 						RequestHeaderRewrites: []KeyValuePair{{Key: "x-user", Value: "{{username}}"}},
 					},
 				},
@@ -5356,8 +5356,8 @@ func TestReadWebAppResourceQuery(t *testing.T) {
 			},
 		}
 		query.Resource.WebAppResourceFragment.Gateway.ID = graphql.ID("gw-id")
-		query.Resource.WebAppResourceFragment.Upstream = WebAppPort{Port: 8080}
-		query.Resource.WebAppResourceFragment.Downstream = WebAppPort{Port: 80}
+		query.Resource.WebAppResourceFragment.Upstream = WebAppUpstream{Port: 8080}
+		query.Resource.WebAppResourceFragment.Downstream = WebAppDownstream{Port: 80}
 
 		assert.False(t, query.IsEmpty())
 

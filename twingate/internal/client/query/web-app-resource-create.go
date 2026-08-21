@@ -32,7 +32,11 @@ type KeyValuePair struct {
 	Value string
 }
 
-type WebAppPort struct {
+type WebAppUpstream struct {
+	Port int64
+}
+
+type WebAppDownstream struct {
 	Port int64
 }
 
@@ -53,8 +57,8 @@ type gqlWebAppResource struct {
 	Tags                  []Tag
 	ApprovalMode          string
 	AccessPolicy          *AccessPolicy
-	Upstream              WebAppPort
-	Downstream            WebAppPort
+	Upstream              WebAppUpstream
+	Downstream            WebAppDownstream
 	RequestHeaderRewrites []KeyValuePair
 }
 
