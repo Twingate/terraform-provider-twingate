@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCaseInsensitiveUniqueKeys(t *testing.T) {
@@ -22,9 +23,9 @@ func TestCaseInsensitiveUniqueKeys(t *testing.T) {
 	}
 
 	cases := []struct {
-		name        string
-		input       types.Map
-		expectError bool
+		name           string
+		input          types.Map
+		expectedDetail string
 	}{
 		{
 			name:  "null map - no error",
@@ -43,14 +44,9 @@ func TestCaseInsensitiveUniqueKeys(t *testing.T) {
 			input: buildMap("x-a", "x-b", "x-c"),
 		},
 		{
-			name:        "keys differing only by case - error",
-			input:       buildMap("X-Twingate-User", "x-twingate-user"),
-			expectError: true,
-		},
-		{
-			name:        "mixed case collision among distinct keys - error",
-			input:       buildMap("x-a", "X-A", "x-b"),
-			expectError: true,
+			name:           "collision among distinct keys - reports the colliding pair",
+			input:          buildMap("X-Twingate-User", "x-other", "x-twingate-user"),
+			expectedDetail: `Keys "X-Twingate-User" and "x-twingate-user" differ only by case.`,
 		},
 	}
 
@@ -63,7 +59,16 @@ func TestCaseInsensitiveUniqueKeys(t *testing.T) {
 				ConfigValue: c.input,
 			}, resp)
 
-			assert.Equal(t, c.expectError, resp.Diagnostics.HasError())
+			if c.expectedDetail == "" {
+				assert.False(t, resp.Diagnostics.HasError())
+
+				return
+			}
+
+			require.True(t, resp.Diagnostics.HasError())
+			require.Len(t, resp.Diagnostics.Errors(), 1)
+			assert.Equal(t, "Duplicate key", resp.Diagnostics.Errors()[0].Summary())
+			assert.Equal(t, c.expectedDetail, resp.Diagnostics.Errors()[0].Detail())
 		})
 	}
 }
