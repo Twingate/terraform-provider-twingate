@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
