@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customvalidator"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	fwattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"

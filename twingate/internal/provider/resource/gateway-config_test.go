@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	fwattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
