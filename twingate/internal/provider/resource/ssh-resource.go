@@ -42,7 +42,6 @@ type sshResourceModel struct {
 	Address          types.String `tfsdk:"address"`
 	GatewayID        types.String `tfsdk:"gateway_id"`
 	RemoteNetworkID  types.String `tfsdk:"remote_network_id"`
-	Username         types.String `tfsdk:"username"`
 	IsVisible        types.Bool   `tfsdk:"is_visible"`
 	Alias            types.String `tfsdk:"alias"`
 	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
@@ -102,14 +101,6 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			attr.RemoteNetworkID: schema.StringAttribute{
 				Required:    true,
 				Description: "The ID of the Remote Network the SSH Resource belongs to.",
-			},
-			attr.Username: schema.StringAttribute{
-				Optional:           true,
-				DeprecationMessage: "This argument is deprecated and will be removed in a future release.",
-				Description:        "The username to use when connecting to the SSH Resource.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:    true,

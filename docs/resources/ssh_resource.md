@@ -45,7 +45,6 @@ resource "twingate_ssh_resource" "ssh_server" {
   alias      = "test.int"
   remote_network_id = twingate_remote_network.prod.id
   address    = "10.128.0.105"
-  username   = "ubuntu"
 }
 ```
 
@@ -67,7 +66,6 @@ resource "twingate_ssh_resource" "ssh_server" {
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
-- `username` (String, Deprecated) The username to use when connecting to the SSH Resource.
 
 ### Read-Only
 

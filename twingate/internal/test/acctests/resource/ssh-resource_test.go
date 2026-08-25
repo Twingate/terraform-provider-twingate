@@ -50,18 +50,6 @@ func terraformResourceSSHResource(tfName, gatewayTFName, remoteNetworkTFName, na
 	`, tfName, name, address, gatewayTFName, remoteNetworkTFName)
 }
 
-func terraformResourceSSHResourceWithUsername(tfName, gatewayTFName, remoteNetworkTFName, name, address, username string) string {
-	return fmt.Sprintf(`
-	resource "twingate_ssh_resource" "%s" {
-	  name              = "%s"
-	  address           = "%s"
-	  gateway_id        = twingate_gateway.%s.id
-	  remote_network_id = twingate_remote_network.%s.id
-	  username          = "%s"
-	}
-	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, username)
-}
-
 func TestAccTwingateSSHResource_InvalidAddress(t *testing.T) {
 	t.Parallel()
 
@@ -179,49 +167,6 @@ func TestAccTwingateSSHResourceUpdateName(t *testing.T) {
 
 						return nil
 					}),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTwingateSSHResourceUpdateUsername(t *testing.T) {
-	t.Parallel()
-
-	remoteNetworkTFName := test.TerraformRandName("test_rn")
-	x509TFName := test.TerraformRandName("test_x509")
-	sshCATFName := test.TerraformRandName("test_ssh_ca")
-	gatewayTFName := test.TerraformRandName("test_gw")
-	sshResTFName := test.TerraformRandName("test_ssh_res")
-	theResource := acctests.TerraformSSHResource(sshResTFName)
-	certPEM := acctests.GenerateCACertPEM(t)
-	publicKey := acctests.GenerateSSHPublicKey(t)
-	name := test.RandomName()
-	username1 := test.RandomName()
-	username2 := test.RandomName()
-	resourceAddress := "10.0.0.2"
-	gatewayAddress := "10.0.0.2:8080"
-
-	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
-		CheckDestroy:             acctests.CheckTwingateSSHResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: prereqs + terraformResourceSSHResourceWithUsername(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, username1),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.Username, username1),
-				),
-			},
-			{
-				Config: prereqs + terraformResourceSSHResourceWithUsername(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, username2),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.Username, username2),
 				),
 			},
 		},
