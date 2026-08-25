@@ -13,9 +13,6 @@ self-signed X.509 and SSH certificate authorities.
 - Terraform >= 1.4
 - A Twingate account with an [API token](https://docs.twingate.com/docs/api-overview)
 - An AWS account with credentials configured (`aws configure` or environment variables)
-- The [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-  and the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
-  to open a shell for troubleshooting instances (see [Troubleshooting](#troubleshooting))
 
 ## Usage
 
@@ -53,11 +50,11 @@ ssh ssh-server.int
 ## Troubleshooting
 
 The instances have no public IP and no open SSH port. Open a shell on the
-gateway instance over the private network path with SSM Session Manager, then
+gateway instance over the private network path with an EIC endpoint, then
 view the logs:
 
 ```bash
-aws ssm start-session --target "$(terraform output -raw gateway_instance_id)"
+aws ec2-instance-connect ssh --instance-id "$(terraform output -raw gateway_instance_id)" --os-user admin
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
 ```
 

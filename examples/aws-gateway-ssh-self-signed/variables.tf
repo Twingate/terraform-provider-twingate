@@ -32,3 +32,9 @@ variable "instance_type" {
   type        = string
   default     = "t3.large"
 }
+
+variable "ssh_public_key" {
+  description = "Public key for debug access to servers (e.g. contents of ~/.ssh/id_ed25519.pub)"
+  type        = string
+  sensitive   = true
+}

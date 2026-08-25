@@ -104,3 +104,32 @@ resource "aws_security_group" "internal" {
 
   tags = { Name = "demo-internal-sg" }
 }
+
+resource "aws_security_group" "eic" {
+  name   = "demo-eic-endpoint"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    protocol    = "tcp"
+    from_port   = 22
+    to_port     = 22
+    cidr_blocks = [aws_subnet.main.cidr_block]
+  }
+
+  tags = { Name = "demo-eic-endpoint-sg" }
+}
+
+resource "aws_key_pair" "debug-key" {
+  key_name   = "debug-key"
+  public_key = var.ssh_public_key
+}
+
+resource "aws_security_group_rule" "eic_to_internal_ssh" {
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 22
+  to_port                  = 22
+  security_group_id        = aws_security_group.internal.id
+  source_security_group_id = aws_security_group.eic.id
+}
+
