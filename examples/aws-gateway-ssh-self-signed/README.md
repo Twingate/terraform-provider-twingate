@@ -58,14 +58,6 @@ aws ec2-instance-connect ssh --instance-id "$(terraform output -raw gateway_inst
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
 ```
 
-If you have not added an output for the instance ID, look it up by tag:
-
-```bash
-aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=demo-gateway" \
-  --query "Reservations[].Instances[].InstanceId" --output text
-```
-
 ## Clean up
 
 ```bash
