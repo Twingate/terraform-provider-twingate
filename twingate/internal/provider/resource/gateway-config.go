@@ -426,7 +426,8 @@ func (r *gatewayConfig) Configure(_ context.Context, req resource.ConfigureReque
 //nolint:funlen
 func (r *gatewayConfig) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Generates a Gateway configuration YAML from SSH and Kubernetes resources.",
+		DeprecationMessage: "This resource is deprecated and will be removed in a future release.",
+		Description:        "Generates a Gateway configuration YAML from SSH and Kubernetes resources.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,

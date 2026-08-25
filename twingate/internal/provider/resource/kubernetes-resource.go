@@ -163,7 +163,7 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.Protocols: protocols(),
+			attr.Protocols: protocols("This argument is deprecated and will be removed in a future release."),
 		},
 		Blocks: map[string]schema.Block{
 			attr.AccessPolicy: accessPolicyBlock(),
