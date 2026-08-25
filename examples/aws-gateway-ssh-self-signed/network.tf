@@ -119,8 +119,8 @@ resource "aws_security_group" "eic" {
   tags = { Name = "demo-eic-endpoint-sg" }
 }
 
-resource "aws_key_pair" "debug-key" {
-  key_name_prefix = "debug-key-"
+resource "aws_key_pair" "debug_key" {
+  key_name_prefix = "debug_key-"
   public_key      = var.ssh_public_key
 }
 

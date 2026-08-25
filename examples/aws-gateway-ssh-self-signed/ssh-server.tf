@@ -3,7 +3,7 @@ resource "aws_instance" "ssh_server" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.main.id
   vpc_security_group_ids = [aws_security_group.internal.id]
-  key_name               = aws_key_pair.debug-key.key_name
+  key_name               = aws_key_pair.debug_key.key_name
 
   user_data = templatefile("${path.module}/scripts/ssh-server-startup.sh", {
     ssh_ca_public_key = tls_private_key.ssh_ca.public_key_openssh
