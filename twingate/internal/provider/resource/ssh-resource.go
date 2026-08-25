@@ -42,12 +42,10 @@ type sshResourceModel struct {
 	Address          types.String `tfsdk:"address"`
 	GatewayID        types.String `tfsdk:"gateway_id"`
 	RemoteNetworkID  types.String `tfsdk:"remote_network_id"`
-	Username         types.String `tfsdk:"username"`
 	IsVisible        types.Bool   `tfsdk:"is_visible"`
 	Alias            types.String `tfsdk:"alias"`
 	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
 	Tags             types.Map    `tfsdk:"tags"`
-	Protocols        types.Object `tfsdk:"protocols"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
 }
@@ -104,14 +102,6 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Required:    true,
 				Description: "The ID of the Remote Network the SSH Resource belongs to.",
 			},
-			attr.Username: schema.StringAttribute{
-				Optional:           true,
-				DeprecationMessage: "This argument is deprecated and will be removed in a future release.",
-				Description:        "The username to use when connecting to the SSH Resource.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -141,7 +131,6 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.Protocols: protocols("This argument is deprecated and will be removed in a future release."),
 		},
 		Blocks: map[string]schema.Block{
 			attr.AccessPolicy: accessPolicyBlock(),
@@ -166,13 +155,6 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	prots, err := convertProtocols(&plan.Protocols)
-	if err != nil {
-		addErr(&resp.Diagnostics, err, operationCreate, TwingateSSHResource)
-
-		return
-	}
-
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationCreate, TwingateSSHResource)
@@ -189,7 +171,6 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getTags(plan.Tags),
-		Protocols:        prots,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -231,13 +212,6 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	prots, err := convertProtocols(&plan.Protocols)
-	if err != nil {
-		addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
-
-		return
-	}
-
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateSSHResource)
@@ -263,7 +237,6 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getTags(plan.Tags),
-		Protocols:        prots,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -308,7 +281,6 @@ func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateSSHResource)
 }
 
-//nolint:funlen
 func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, state *sshResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -338,17 +310,6 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 	}
 
 	state.Tags = utils.ConvertMapValue(sshRes.Tags)
-
-	if sshRes.Protocols != nil {
-		prots, diags := convertProtocolsToTerraform(sshRes.Protocols, &state.Protocols)
-		diagnostics.Append(diags...)
-
-		if diagnostics.HasError() {
-			return
-		}
-
-		state.Protocols = prots
-	}
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {
