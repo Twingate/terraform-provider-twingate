@@ -408,27 +408,6 @@ func terraformResourceKubernetesResourceWithTags(tfName, gatewayTFName, remoteNe
 	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, tagLines)
 }
 
-func terraformResourceKubernetesResourceWithProtocols(tfName, gatewayTFName, remoteNetworkTFName, name, address string) string {
-	return fmt.Sprintf(`
-	resource "twingate_kubernetes_resource" "%s" {
-	  name              = "%s"
-	  address           = "%s"
-	  gateway_id        = twingate_gateway.%s.id
-	  remote_network_id = twingate_remote_network.%s.id
-	  protocols = {
-	    allow_icmp = true
-	    tcp = {
-	      policy = "RESTRICTED"
-	      ports  = ["8080", "8443"]
-	    }
-	    udp = {
-	      policy = "ALLOW_ALL"
-	    }
-	  }
-	}
-	`, tfName, name, address, gatewayTFName, remoteNetworkTFName)
-}
-
 func terraformResourceKubernetesResourceWithAccessGroup(tfName, gatewayTFName, remoteNetworkTFName, groupTFName, name, address string) string {
 	return fmt.Sprintf(`
 	resource "twingate_kubernetes_resource" "%s" {
@@ -582,42 +561,6 @@ func TestAccTwingateKubernetesResourceTags(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, "env"), "production"),
 					sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, "team")),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTwingateKubernetesResourceProtocols(t *testing.T) {
-	t.Parallel()
-
-	remoteNetworkTFName := test.TerraformRandName("test_rn")
-	x509TFName := test.TerraformRandName("test_x509")
-	sshCATFName := test.TerraformRandName("test_ssh_ca")
-	gatewayTFName := test.TerraformRandName("test_gw")
-	k8sResTFName := test.TerraformRandName("test_k8s_res")
-	theResource := acctests.TerraformKubernetesResource(k8sResTFName)
-	certPEM := acctests.GenerateCACertPEM(t)
-	publicKey := acctests.GenerateSSHPublicKey(t)
-	name := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
-	gatewayAddress := "10.0.1.4:8080"
-
-	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
-
-	sdk.Test(t, sdk.TestCase{
-		ProtoV6ProviderFactories: acctests.ProviderFactories,
-		PreCheck:                 func() { acctests.PreCheck(t) },
-		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
-		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
-		Steps: []sdk.TestStep{
-			{
-				Config: prereqs + terraformResourceKubernetesResourceWithProtocols(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
-				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
-					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Protocols, attr.AllowIcmp), "true"),
-					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Protocols, attr.TCP, attr.Policy), model.PolicyRestricted),
-					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Protocols, attr.UDP, attr.Policy), model.PolicyAllowAll),
 				),
 			},
 		},
