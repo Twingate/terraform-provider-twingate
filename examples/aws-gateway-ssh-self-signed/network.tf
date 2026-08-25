@@ -120,8 +120,8 @@ resource "aws_security_group" "eic" {
 }
 
 resource "aws_key_pair" "debug-key" {
-  key_name   = "debug-key"
-  public_key = var.ssh_public_key
+  key_name_prefix = "debug-key-"
+  public_key      = var.ssh_public_key
 }
 
 resource "aws_security_group_rule" "eic_to_internal_ssh" {
