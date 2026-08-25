@@ -10,7 +10,7 @@ resource "aws_vpc" "main" {
 }
 
 # Private subnet for all instances. They receive no public IP and reach the
-# internet through the NAT gateway; operators connect via SSM Session Manager.
+# internet through the NAT gateway; operators connect via an EC2 Instance Connect Endpoint (EIC).
 resource "aws_subnet" "main" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
