@@ -363,11 +363,17 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 	}
 }
 
-func protocols() schema.SingleNestedAttribute {
+func protocols(optionalDeprecationMessage ...string) schema.SingleNestedAttribute {
+	var deprecationMessage string
+	if len(optionalDeprecationMessage) > 0 {
+		deprecationMessage = optionalDeprecationMessage[0]
+	}
+
 	return schema.SingleNestedAttribute{
-		Optional: true,
-		Computed: true,
-		Default:  objectdefault.StaticValue(defaultProtocolsObject()),
+		Optional:           true,
+		Computed:           true,
+		Default:            objectdefault.StaticValue(defaultProtocolsObject()),
+		DeprecationMessage: deprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			attr.AllowIcmp: schema.BoolAttribute{
 				Optional:    true,

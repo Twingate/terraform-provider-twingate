@@ -57,7 +57,6 @@ type kubernetesResourceModel struct {
 	Alias            types.String `tfsdk:"alias"`
 	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
 	Tags             types.Map    `tfsdk:"tags"`
-	Protocols        types.Object `tfsdk:"protocols"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
 }
@@ -163,7 +162,6 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.Protocols: protocols(),
 		},
 		Blocks: map[string]schema.Block{
 			attr.AccessPolicy: accessPolicyBlock(),
@@ -203,13 +201,6 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	protocols, err := convertProtocols(&plan.Protocols)
-	if err != nil {
-		addErr(&resp.Diagnostics, err, operationCreate, TwingateKubernetesResource)
-
-		return
-	}
-
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationCreate, TwingateKubernetesResource)
@@ -237,7 +228,6 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getTags(plan.Tags),
-		Protocols:        protocols,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -294,13 +284,6 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	prots, err := convertProtocols(&plan.Protocols)
-	if err != nil {
-		addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
-
-		return
-	}
-
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateKubernetesResource)
@@ -337,7 +320,6 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getTags(plan.Tags),
-		Protocols:        prots,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -425,17 +407,6 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 	}
 
 	state.Tags = utils.ConvertMapValue(k8sRes.Tags)
-
-	if k8sRes.Protocols != nil {
-		prots, diags := convertProtocolsToTerraform(k8sRes.Protocols, &state.Protocols)
-		diagnostics.Append(diags...)
-
-		if diagnostics.HasError() {
-			return
-		}
-
-		state.Protocols = prots
-	}
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {
