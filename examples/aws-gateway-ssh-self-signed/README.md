@@ -49,8 +49,8 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-The instances have no public IP and no open SSH port. Open a shell on the
-gateway instance over the private network path with an EIC endpoint, then
+The instances have no public IP and do not expose SSH publicly. For troubleshooting,
+open a shell on the gateway instance via the EC2 Instance Connect Endpoint (EIC), then
 view the logs:
 
 ```bash
