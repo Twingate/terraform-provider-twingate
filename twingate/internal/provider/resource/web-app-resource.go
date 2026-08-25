@@ -56,8 +56,6 @@ type webAppResourceModel struct {
 	GroupAccess           types.Set    `tfsdk:"access_group"`
 }
 
-// The two sides hold the same attributes today, but the API models them as
-// separate types and they are expected to diverge, so keep them apart here too.
 type webAppUpstreamModel struct {
 	Port types.Int64 `tfsdk:"port"`
 }
