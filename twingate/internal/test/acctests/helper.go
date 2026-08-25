@@ -254,10 +254,6 @@ func TerraformKubernetesResource(name string) string {
 	return ResourceName(resource.TwingateKubernetesResource, name)
 }
 
-func TerraformGatewayConfig(name string) string {
-	return ResourceName(resource.TwingateGatewayConfig, name)
-}
-
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }

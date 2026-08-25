@@ -9,7 +9,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 )
 
-//nolint:dupl
 func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.SSHResource) (*model.SSHResource, error) {
 	opr := resourceSSHResource.create()
 
@@ -22,7 +21,6 @@ func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.
 		gqlNullable(sshResource.Alias, "alias"),
 		gqlNullableID(sshResource.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(sshResource.Tags), "tags"),
-		gqlVar(newProtocolsInput(sshResource.Protocols), "protocols"),
 		gqlVar(NewAccessPolicyInput(sshResource.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(sshResource.AccessPolicy), "approvalMode"),
 	)
@@ -105,7 +103,6 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 		gqlNullable(sshResource.Alias, "alias"),
 		gqlNullableID(sshResource.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(sshResource.Tags), "tags"),
-		gqlVar(newProtocolsInput(sshResource.Protocols), "protocols"),
 		gqlVar(NewAccessPolicyInput(sshResource.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(sshResource.AccessPolicy), "approvalMode"),
 	)

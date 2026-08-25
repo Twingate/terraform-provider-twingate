@@ -9,7 +9,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 )
 
-//nolint:dupl
 func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource *model.KubernetesResource) (*model.KubernetesResource, error) {
 	opr := resourceKubernetesResource.create()
 
@@ -22,7 +21,6 @@ func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource 
 		gqlNullable(k8sResource.Alias, "alias"),
 		gqlNullableID(k8sResource.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(k8sResource.Tags), "tags"),
-		gqlVar(newProtocolsInput(k8sResource.Protocols), "protocols"),
 		gqlVar(NewAccessPolicyInput(k8sResource.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(k8sResource.AccessPolicy), "approvalMode"),
 	)
@@ -120,7 +118,6 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 		gqlNullable(k8sResource.Alias, "alias"),
 		gqlNullableID(k8sResource.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(k8sResource.Tags), "tags"),
-		gqlVar(newProtocolsInput(k8sResource.Protocols), "protocols"),
 		gqlVar(NewAccessPolicyInput(k8sResource.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(k8sResource.AccessPolicy), "approvalMode"),
 	)

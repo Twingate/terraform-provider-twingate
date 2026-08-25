@@ -30,7 +30,6 @@ type gqlKubernetesResourceNode struct {
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
-	Protocols                  *Protocols
 	IsVisible                  bool
 	Alias                      string
 	SecurityPolicy             *gqlSecurityPolicy
@@ -56,7 +55,6 @@ func (n gqlKubernetesResourceNode) ToModel() (*model.KubernetesResource, error) 
 		Alias:            optionalString(n.Alias),
 		SecurityPolicyID: securityPolicyID(n.SecurityPolicy),
 		Tags:             tagsToModel(n.Tags),
-		Protocols:        protocolsToModel(n.Protocols),
 		AccessPolicy:     accessPolicyToModel(n.AccessPolicy, &n.ApprovalMode),
 	}
 

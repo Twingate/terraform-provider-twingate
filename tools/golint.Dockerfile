@@ -1,1 +1,1 @@
-FROM golangci/golangci-lint:v2.12.2
+FROM golangci/golangci-lint:v2.13.1

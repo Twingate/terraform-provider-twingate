@@ -4707,7 +4707,6 @@ func TestCreateSSHResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
-				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -4780,7 +4779,6 @@ func TestUpdateSSHResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
-				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -4855,7 +4853,6 @@ func TestReadSSHResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
-				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -4930,7 +4927,6 @@ func TestCreateKubernetesResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
-				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -5003,7 +4999,6 @@ func TestUpdateKubernetesResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
-				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}
@@ -5078,7 +5073,6 @@ func TestReadKubernetesResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
-				Protocols:       model.DefaultProtocols(),
 			},
 		},
 	}

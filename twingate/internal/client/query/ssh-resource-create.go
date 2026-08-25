@@ -7,7 +7,7 @@ import (
 
 //nolint:lll
 type CreateSSHResource struct {
-	SSHResourceEntityResponse `graphql:"sshResourceCreate(name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, protocols: $protocols, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
+	SSHResourceEntityResponse `graphql:"sshResourceCreate(name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
 }
 
 func (q CreateSSHResource) IsEmpty() bool {
@@ -38,7 +38,6 @@ type gqlSSHResource struct {
 	Gateway struct {
 		ID graphql.ID
 	}
-	Protocols      *Protocols
 	IsVisible      bool
 	Alias          string
 	SecurityPolicy *gqlSecurityPolicy
@@ -58,7 +57,6 @@ func (g gqlSSHResource) ToModel() *model.SSHResource {
 		Alias:            optionalString(g.Alias),
 		SecurityPolicyID: securityPolicyID(g.SecurityPolicy),
 		Tags:             tagsToModel(g.Tags),
-		Protocols:        protocolsToModel(g.Protocols),
 		AccessPolicy:     accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
 	}
 }
