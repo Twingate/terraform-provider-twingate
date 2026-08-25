@@ -103,14 +103,6 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Required:    true,
 				Description: "The ID of the Remote Network the SSH Resource belongs to.",
 			},
-			attr.Username: schema.StringAttribute{
-				Optional:           true,
-				DeprecationMessage: "This argument is deprecated and will be removed in a future release.",
-				Description:        "The username to use when connecting to the SSH Resource.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
 			attr.IsVisible: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
