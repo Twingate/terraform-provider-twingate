@@ -68,6 +68,7 @@ resource "twingate_kubernetes_resource" "external_cluster" {
 - `ca_file` (String) Path to CA certificate file.
 - `in_cluster` (Boolean) Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource. Default is `true`.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
+- `protocols` (Attributes, Deprecated) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
 
