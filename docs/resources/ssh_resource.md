@@ -64,9 +64,10 @@ resource "twingate_ssh_resource" "ssh_server" {
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
-- `protocols` (Attributes) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
+- `protocols` (Attributes, Deprecated) Restrict access to certain protocols and ports. By default or when this argument is not defined, there is no restriction, and all protocols and ports are allowed. (see [below for nested schema](#nestedatt--protocols))
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
+- `username` (String, Deprecated) The username to use when connecting to the SSH Resource.
 
 ### Read-Only
 
