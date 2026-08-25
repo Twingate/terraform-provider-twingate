@@ -153,8 +153,8 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.Upstream:   webAppPort("The upstream configuration. The connection between the Gateway and the upstream resource."),
-			attr.Downstream: webAppPort("The downstream configuration. The connection between the protocol client and the Gateway."),
+			attr.Upstream:   webAppUpstream(),
+			attr.Downstream: webAppDownstream(),
 			attr.RequestHeaderRewrites: schema.MapAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
@@ -171,10 +171,26 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 	}
 }
 
-func webAppPort(description string) schema.SingleNestedAttribute {
+func webAppUpstream() schema.SingleNestedAttribute {
 	return schema.SingleNestedAttribute{
 		Required:    true,
-		Description: description,
+		Description: "The upstream configuration. The connection between the Gateway and the upstream resource.",
+		Attributes: map[string]schema.Attribute{
+			attr.Port: schema.Int64Attribute{
+				Required:    true,
+				Description: fmt.Sprintf("The port number. Must be between %d and %d inclusive.", model.MinPortValue, model.MaxPortValue),
+				Validators: []validator.Int64{
+					int64validator.Between(model.MinPortValue, model.MaxPortValue),
+				},
+			},
+		},
+	}
+}
+
+func webAppDownstream() schema.SingleNestedAttribute {
+	return schema.SingleNestedAttribute{
+		Required:    true,
+		Description: "The downstream configuration. The connection between the protocol client and the Gateway.",
 		Attributes: map[string]schema.Attribute{
 			attr.Port: schema.Int64Attribute{
 				Required:    true,
