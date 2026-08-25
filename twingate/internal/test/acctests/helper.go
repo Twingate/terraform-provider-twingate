@@ -258,10 +258,6 @@ func TerraformWebAppResource(name string) string {
 	return ResourceName(resource.TwingateWebAppResource, name)
 }
 
-func TerraformGatewayConfig(name string) string {
-	return ResourceName(resource.TwingateGatewayConfig, name)
-}
-
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }
