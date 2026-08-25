@@ -88,7 +88,7 @@ func newWebAppTestSetup(t *testing.T, gatewayAddress string) webAppTestSetup {
 	}
 }
 
-// config leaves tls out of both stream blocks, so it also covers the attribute
+// config leaves TLS out of both stream blocks, so it also covers the attribute
 // falling back to its default.
 func (s webAppTestSetup) config(upstreamPort, downstreamPort int, extra string) string {
 	return s.configStreams(fmt.Sprintf("port = %d", upstreamPort), fmt.Sprintf("port = %d", downstreamPort), extra)
@@ -209,9 +209,6 @@ func TestAccTwingateWebAppResourceUpdatePorts(t *testing.T) {
 	})
 }
 
-// TestAccTwingateWebAppResourceUpdateTLS walks tls through its three states:
-// omitted, on, and off again. Each step must leave an empty plan, otherwise the
-// computed default drifts against whatever the API returns.
 func TestAccTwingateWebAppResourceUpdateTLS(t *testing.T) {
 	t.Parallel()
 
