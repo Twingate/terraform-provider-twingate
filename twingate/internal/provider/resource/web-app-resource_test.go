@@ -121,14 +121,26 @@ func TestGetHeaderRewrites(t *testing.T) {
 	}
 }
 
-func TestWebAppPortRoundTrip(t *testing.T) {
+func TestWebAppUpstreamRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
-	obj, diags := webAppPortObject(ctx, 8080)
+	obj, diags := webAppUpstreamObject(ctx, 8080)
 	require.False(t, diags.HasError())
 
-	port, diags := webAppPortValue(ctx, obj)
+	upstream, diags := webAppUpstreamValue(ctx, obj)
 	require.False(t, diags.HasError())
 
-	assert.Equal(t, int64(8080), port)
+	assert.Equal(t, int64(8080), upstream.Port.ValueInt64())
+}
+
+func TestWebAppDownstreamRoundTrip(t *testing.T) {
+	ctx := context.Background()
+
+	obj, diags := webAppDownstreamObject(ctx, 80)
+	require.False(t, diags.HasError())
+
+	downstream, diags := webAppDownstreamValue(ctx, obj)
+	require.False(t, diags.HasError())
+
+	assert.Equal(t, int64(80), downstream.Port.ValueInt64())
 }

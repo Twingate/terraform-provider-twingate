@@ -56,11 +56,21 @@ type webAppResourceModel struct {
 	GroupAccess           types.Set    `tfsdk:"access_group"`
 }
 
-type webAppPortModel struct {
+// The two sides hold the same attributes today, but the API models them as
+// separate types and they are expected to diverge, so keep them apart here too.
+type webAppUpstreamModel struct {
 	Port types.Int64 `tfsdk:"port"`
 }
 
-var webAppPortAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
+type webAppDownstreamModel struct {
+	Port types.Int64 `tfsdk:"port"`
+}
+
+var webAppUpstreamAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
+	attr.Port: types.Int64Type,
+}
+
+var webAppDownstreamAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
 	attr.Port: types.Int64Type,
 }
 
@@ -179,18 +189,28 @@ func webAppPort(description string) schema.SingleNestedAttribute {
 	}
 }
 
-// webAppPortValue reads the port out of an `upstream` or `downstream` object.
-// Both sides share this helper; the model keeps them as distinct types.
-func webAppPortValue(ctx context.Context, obj types.Object) (int64, diag.Diagnostics) {
-	var portModel webAppPortModel
+func webAppUpstreamValue(ctx context.Context, obj types.Object) (webAppUpstreamModel, diag.Diagnostics) {
+	var upstream webAppUpstreamModel
 
-	diags := obj.As(ctx, &portModel, basetypes.ObjectAsOptions{})
+	diags := obj.As(ctx, &upstream, basetypes.ObjectAsOptions{})
 
-	return portModel.Port.ValueInt64(), diags
+	return upstream, diags
 }
 
-func webAppPortObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
-	return types.ObjectValueFrom(ctx, webAppPortAttributeTypes, webAppPortModel{Port: types.Int64Value(port)})
+func webAppDownstreamValue(ctx context.Context, obj types.Object) (webAppDownstreamModel, diag.Diagnostics) {
+	var downstream webAppDownstreamModel
+
+	diags := obj.As(ctx, &downstream, basetypes.ObjectAsOptions{})
+
+	return downstream, diags
+}
+
+func webAppUpstreamObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, webAppUpstreamAttributeTypes, webAppUpstreamModel{Port: types.Int64Value(port)})
+}
+
+func webAppDownstreamObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{Port: types.Int64Value(port)})
 }
 
 // getHeaderRewrites converts the configured map for the API. Header rewrites and
@@ -232,10 +252,10 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		return nil
 	}
 
-	upstreamPort, diags := webAppPortValue(ctx, plan.Upstream)
+	upstream, diags := webAppUpstreamValue(ctx, plan.Upstream)
 	diagnostics.Append(diags...)
 
-	downstreamPort, diags := webAppPortValue(ctx, plan.Downstream)
+	downstream, diags := webAppDownstreamValue(ctx, plan.Downstream)
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
@@ -251,8 +271,8 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		Alias:                 getOptionalString(plan.Alias),
 		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:                  getTags(plan.Tags),
-		Upstream:              model.WebAppUpstream{Port: upstreamPort},
-		Downstream:            model.WebAppDownstream{Port: downstreamPort},
+		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64()},
+		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64()},
 		RequestHeaderRewrites: getHeaderRewrites(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
 		GroupsAccess:          accessGroups,
@@ -394,10 +414,10 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 	state.Tags = utils.ConvertMapValue(webAppRes.Tags)
 	state.RequestHeaderRewrites = convertHeaderRewrites(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
-	upstream, diags := webAppPortObject(ctx, webAppRes.Upstream.Port)
+	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port)
 	diagnostics.Append(diags...)
 
-	downstream, diags := webAppPortObject(ctx, webAppRes.Downstream.Port)
+	downstream, diags := webAppDownstreamObject(ctx, webAppRes.Downstream.Port)
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
