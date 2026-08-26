@@ -19,6 +19,10 @@ ssh:
     userCertificate:
       ttl: 5m
 
+  upstreams:
+    - name: ${ssh_server_name}
+      address: ${ssh_server_address}:22
+
   ca:
     manual:
       privateKeyFile: /etc/gateway/ssh-ca.key
