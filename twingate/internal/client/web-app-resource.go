@@ -162,7 +162,7 @@ func (client *Client) ReadWebAppResources(ctx context.Context) ([]*model.WebAppR
 		return nil, err
 	}
 
-	if err := response.FetchPages(ctx, client.readShallowResourcesWithTypeAfter, variables); err != nil {
+	if err := response.FetchPages(withOperationCtx(ctx, opr), client.readShallowResourcesWithTypeAfter, variables); err != nil {
 		return nil, err //nolint
 	}
 
