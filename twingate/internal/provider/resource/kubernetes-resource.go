@@ -29,9 +29,10 @@ import (
 const defaultKubernetesAddress = "kubernetes.default.svc.cluster.local"
 
 var (
-	ErrBearerTokenFileEmpty = errors.New("bearer_token_file cannot be empty")
-	ErrCAFileEmpty          = errors.New("ca_file cannot be empty")
-	ErrAddressEmpty         = errors.New("address cannot be empty")
+	ErrBearerTokenFileEmpty    = errors.New("bearer_token_file cannot be empty")
+	ErrCAFileEmpty             = errors.New("ca_file cannot be empty")
+	ErrAddressEmpty            = errors.New("address cannot be empty")
+	ErrAddressCannotBeModified = errors.New("address cannot be modified when in_cluster is true (in_cluster must be set to false to modify address)")
 )
 
 var _ resource.Resource = &kubernetesResource{}
@@ -210,6 +211,12 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 
 	address := plan.Address.ValueString()
 	if plan.InCluster.ValueBool() {
+		if address != defaultKubernetesAddress && address != "" {
+			addErr(&resp.Diagnostics, ErrAddressCannotBeModified, operationCreate, TwingateKubernetesResource)
+
+			return
+		}
+
 		address = defaultKubernetesAddress
 	}
 
@@ -267,6 +274,12 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 
 			return
 		}
+	}
+
+	if plan.InCluster.ValueBool() && plan.Address.ValueString() != defaultKubernetesAddress {
+		addErr(&resp.Diagnostics, ErrAddressCannotBeModified, operationUpdate, TwingateKubernetesResource)
+
+		return
 	}
 
 	var state kubernetesResourceModel

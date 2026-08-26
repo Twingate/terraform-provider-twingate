@@ -765,3 +765,72 @@ func TestAccTwingateKubernetesResourceAccessPolicy(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateKubernetesResource_ErrorInClusterWithCustomAddress(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	k8sResTFName := test.TerraformRandName("test_k8s_res")
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	resourceName := test.RandomName()
+	resourceAddress := "k8s-api.example.com"
+	gatewayAddress := "10.0.2.2:8080"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:      prereqs + terraformResourceKubernetesResource(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress),
+				ExpectError: regexp.MustCompile(`address cannot be modified when in_cluster is true`),
+			},
+		},
+	})
+}
+
+func TestAccTwingateKubernetesResource_ErrorInClusterWithCustomAddressOnUpdate(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	k8sResTFName := test.TerraformRandName("test_k8s_res")
+	theResource := acctests.TerraformKubernetesResource(k8sResTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	resourceName := test.RandomName()
+	defaultResourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := "k8s-api.example.com"
+	gatewayAddress := "10.0.2.2:8080"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: prereqs + terraformResourceKubernetesResource(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, defaultResourceAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Address, defaultResourceAddress),
+				),
+			},
+			{
+				Config:      prereqs + terraformResourceKubernetesResource(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress),
+				ExpectError: regexp.MustCompile(`address cannot be modified when in_cluster is true`),
+			},
+		},
+	})
+}
