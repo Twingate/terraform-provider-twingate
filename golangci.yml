@@ -65,6 +65,7 @@ linters:
         - github.com/hashicorp/terraform-plugin-framework/ephemeral.EphemeralResourceWithConfigure
         - github.com/hashicorp/terraform-plugin-framework/schema/validator.String
         - github.com/hashicorp/terraform-plugin-framework/schema/validator.List
+        - github.com/hashicorp/terraform-plugin-framework/schema/validator.Map
         - github.com/hashicorp/terraform-plugin-framework/attr.Type
     cyclop:
       max-complexity: 25

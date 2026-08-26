@@ -5203,3 +5203,194 @@ func TestReadShallowResourcesWithTypeQueryIsEmpty(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateWebAppResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateWebAppResource
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    CreateWebAppResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: CreateWebAppResource{
+				WebAppResourceEntityResponse: WebAppResourceEntityResponse{
+					Entity: &gqlWebAppResource{
+						IDName: IDName{ID: graphql.ID("web-res-id")},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestCreateWebAppResourceQueryToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    CreateWebAppResource
+		expected *model.WebAppResource
+	}{
+		{
+			name:     "Nil entity - returns nil",
+			query:    CreateWebAppResource{},
+			expected: nil,
+		},
+		{
+			name: "Non-nil entity - returns model",
+			query: CreateWebAppResource{
+				WebAppResourceEntityResponse: WebAppResourceEntityResponse{
+					Entity: &gqlWebAppResource{
+						IDName:                IDName{ID: graphql.ID("web-res-id"), Name: "web-res"},
+						Address:               struct{ Value string }{Value: "internal.acme.com"},
+						RemoteNetwork:         struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+						Gateway:               struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						Upstream:              WebAppUpstream{Port: 8080},
+						Downstream:            WebAppDownstream{Port: 80},
+						RequestHeaderRewrites: []KeyValuePair{{Key: "x-user", Value: "{{username}}"}},
+					},
+				},
+			},
+			expected: &model.WebAppResource{
+				ID:                    "web-res-id",
+				Name:                  "web-res",
+				Address:               "internal.acme.com",
+				RemoteNetworkID:       "rn-id",
+				GatewayID:             "gw-id",
+				Upstream:              model.WebAppUpstream{Port: 8080},
+				Downstream:            model.WebAppDownstream{Port: 80},
+				RequestHeaderRewrites: map[string]string{"x-user": "{{username}}"},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := c.query.ToModel()
+
+			if c.expected == nil {
+				assert.Nil(t, actual)
+
+				return
+			}
+
+			assert.Equal(t, c.expected.ID, actual.ID)
+			assert.Equal(t, c.expected.Name, actual.Name)
+			assert.Equal(t, c.expected.Address, actual.Address)
+			assert.Equal(t, c.expected.RemoteNetworkID, actual.RemoteNetworkID)
+			assert.Equal(t, c.expected.GatewayID, actual.GatewayID)
+			assert.Equal(t, c.expected.Upstream, actual.Upstream)
+			assert.Equal(t, c.expected.Downstream, actual.Downstream)
+			assert.Equal(t, c.expected.RequestHeaderRewrites, actual.RequestHeaderRewrites)
+		})
+	}
+}
+
+func TestUpdateWebAppResourceQueryIsEmpty(t *testing.T) {
+	cases := []struct {
+		name     string
+		query    UpdateWebAppResource
+		expected bool
+	}{
+		{
+			name:     "Nil entity - IsEmpty true",
+			query:    UpdateWebAppResource{},
+			expected: true,
+		},
+		{
+			name: "Non-nil entity - IsEmpty false",
+			query: UpdateWebAppResource{
+				WebAppResourceEntityResponse: WebAppResourceEntityResponse{
+					Entity: &gqlWebAppResource{
+						IDName: IDName{ID: graphql.ID("web-res-id")},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.query.IsEmpty())
+		})
+	}
+}
+
+func TestUpdateWebAppResourceQueryToModelNil(t *testing.T) {
+	assert.Nil(t, UpdateWebAppResource{}.ToModel())
+}
+
+func TestReadWebAppResourceQuery(t *testing.T) {
+	t.Run("Nil resource - IsEmpty true and nil model", func(t *testing.T) {
+		query := ReadWebAppResource{}
+
+		assert.True(t, query.IsEmpty())
+
+		res, err := query.ToModel()
+		assert.NoError(t, err)
+		assert.Nil(t, res)
+	})
+
+	t.Run("Non-nil resource - reads fields from the inline fragment", func(t *testing.T) {
+		query := ReadWebAppResource{
+			Resource: &gqlWebAppResourceNode{
+				IDName:  IDName{ID: graphql.ID("web-res-id"), Name: "web-res"},
+				Address: struct{ Value string }{Value: "internal.acme.com"},
+			},
+		}
+		query.Resource.WebAppResourceFragment.Gateway.ID = graphql.ID("gw-id")
+		query.Resource.WebAppResourceFragment.Upstream = WebAppUpstream{Port: 8080}
+		query.Resource.WebAppResourceFragment.Downstream = WebAppDownstream{Port: 80}
+
+		assert.False(t, query.IsEmpty())
+
+		res, err := query.ToModel()
+		assert.NoError(t, err)
+		assert.Equal(t, "web-res-id", res.ID)
+		assert.Equal(t, "gw-id", res.GatewayID)
+		assert.Equal(t, model.WebAppUpstream{Port: 8080}, res.Upstream)
+		assert.Equal(t, model.WebAppDownstream{Port: 80}, res.Downstream)
+		assert.Nil(t, res.RequestHeaderRewrites)
+	})
+}
+
+func TestHeaderRewritesToModel(t *testing.T) {
+	cases := []struct {
+		name     string
+		pairs    []KeyValuePair
+		expected map[string]string
+	}{
+		{
+			name:     "nil list - returns nil so an absent field stays absent",
+			pairs:    nil,
+			expected: nil,
+		},
+		{
+			name:     "empty list - returns nil so a cleared field stays absent",
+			pairs:    []KeyValuePair{},
+			expected: nil,
+		},
+		{
+			name:     "populated list - returns a map",
+			pairs:    []KeyValuePair{{Key: "x-a", Value: "1"}, {Key: "x-b", Value: "2"}},
+			expected: map[string]string{"x-a": "1", "x-b": "2"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, headerRewritesToModel(c.pairs))
+		})
+	}
+}
