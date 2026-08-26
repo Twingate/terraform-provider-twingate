@@ -562,7 +562,6 @@ func (t Twingate) Resources(ctx context.Context) []func() resource.Resource {
 		twingateResource.NewSSHResourceResource,
 		twingateResource.NewKubernetesResourceResource,
 		twingateResource.NewWebAppResourceResource,
-		twingateResource.NewGatewayConfigResource,
 	}
 }
 
