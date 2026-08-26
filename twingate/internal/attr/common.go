@@ -8,10 +8,9 @@ const (
 	Type              = "type"
 	IsActive          = "is_active"
 	Port              = "port"
-
-	FilterByRegexp   = "_regexp"
-	FilterByContains = "_contains"
-	FilterByExclude  = "_exclude"
-	FilterByPrefix   = "_prefix"
-	FilterBySuffix   = "_suffix"
+	FilterByRegexp    = "_regexp"
+	FilterByContains  = "_contains"
+	FilterByExclude   = "_exclude"
+	FilterByPrefix    = "_prefix"
+	FilterBySuffix    = "_suffix"
 )
