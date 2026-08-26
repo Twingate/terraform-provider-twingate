@@ -254,6 +254,10 @@ func TerraformKubernetesResource(name string) string {
 	return ResourceName(resource.TwingateKubernetesResource, name)
 }
 
+func TerraformWebAppResource(name string) string {
+	return ResourceName(resource.TwingateWebAppResource, name)
+}
+
 func TerraformDatasourceUsers(name string) string {
 	return DatasourceName(datasource.TwingateUsers, name)
 }
@@ -307,6 +311,8 @@ func deleteResource(resourceType, resourceID string) error {
 		err = providerClient.DeleteSSHResource(context.Background(), resourceID)
 	case resource.TwingateKubernetesResource:
 		err = providerClient.DeleteKubernetesResource(context.Background(), resourceID)
+	case resource.TwingateWebAppResource:
+		err = providerClient.DeleteWebAppResource(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -1106,6 +1112,23 @@ func CheckTwingateSSHResourceDestroy(s *terraform.State) error {
 
 		sshRes, _ := providerClient.ReadSSHResource(context.Background(), id)
 		if sshRes != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, id)
+		}
+	}
+
+	return nil
+}
+
+func CheckTwingateWebAppResourceDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateWebAppResource {
+			continue
+		}
+
+		id := rs.Primary.ID
+
+		webAppRes, _ := providerClient.ReadWebAppResource(context.Background(), id)
+		if webAppRes != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, id)
 		}
 	}
