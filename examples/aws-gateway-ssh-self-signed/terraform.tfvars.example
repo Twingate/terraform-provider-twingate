@@ -8,6 +8,3 @@ tg_network   = "your-network"
 
 # Optional: alias for the SSH resource (added as a DNS SAN in the TLS cert)
 # resource_alias = "ssh-server.int"
-
-# SSH public key for instance access (contents of your public key file)
-ssh_public_key = "ssh-ed25519 AAAA... user@host"
