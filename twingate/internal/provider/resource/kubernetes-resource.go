@@ -102,7 +102,7 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			attr.Address: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "The address of the Kubernetes Resource (IP or FQDN).",
+				Description: "The address of the Kubernetes Resource (IP or FQDN). It should be omitted when `in_cluster` is set to `true`. If you want to set custom address, `in_cluster` should be set to `false`.",
 				Validators: []validator.String{
 					customvalidator.Address(),
 				},
@@ -127,13 +127,13 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			attr.BearerTokenFile: schema.StringAttribute{
 				Optional:      true,
 				Computed:      true,
-				Description:   "Path to bearer token file.",
+				Description:   "Path to bearer token file. It's required when `in_cluster` is set to `false`.",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.CAFile: schema.StringAttribute{
 				Optional:      true,
 				Computed:      true,
-				Description:   "Path to CA certificate file.",
+				Description:   "Path to CA certificate file. It's required when `in_cluster` is set to `false`.",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			attr.IsVisible: schema.BoolAttribute{
