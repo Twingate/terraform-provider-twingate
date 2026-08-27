@@ -7,7 +7,7 @@ until curl -sf --connect-timeout 5 https://github.com > /dev/null 2>&1; do
 done
 
 # Check https://github.com/Twingate/gateway/releases for the latest version
-BINARY_URL="https://github.com/Twingate/gateway/releases/download/v0.13.0/gateway_Linux_x86_64.tar.gz"
+BINARY_URL="https://github.com/Twingate/gateway/releases/download/v1.1.0/gateway_Linux_x86_64.tar.gz"
 GATEWAY_DIR="/etc/gateway"
 
 mkdir -p "$GATEWAY_DIR"

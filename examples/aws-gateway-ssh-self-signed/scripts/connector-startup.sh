@@ -6,6 +6,7 @@ until curl -sf --connect-timeout 5 https://binaries.twingate.com > /dev/null 2>&
   sleep 2
 done
 
+until sudo apt-get update -y; do sleep 5; done
 
 curl "https://binaries.twingate.com/connector/setup.sh" | \
   sudo TWINGATE_ACCESS_TOKEN="${access_token}" \
