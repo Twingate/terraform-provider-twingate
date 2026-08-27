@@ -119,11 +119,6 @@ resource "aws_security_group" "eic" {
   tags = { Name = "demo-eic-endpoint-sg" }
 }
 
-resource "aws_key_pair" "debug_key" {
-  key_name_prefix = "debug_key-"
-  public_key      = var.ssh_public_key
-}
-
 resource "aws_security_group_rule" "eic_to_internal_ssh" {
   type                     = "ingress"
   protocol                 = "tcp"

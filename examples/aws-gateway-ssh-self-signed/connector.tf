@@ -1,9 +1,8 @@
 resource "aws_instance" "connector" {
-  ami                    = data.aws_ami.debian.id
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.main.id
   vpc_security_group_ids = [aws_security_group.internal.id]
-  key_name               = aws_key_pair.debug_key.key_name
 
   user_data = templatefile("${path.module}/scripts/connector-startup.sh", {
     access_token  = twingate_connector_tokens.main.access_token

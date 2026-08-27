@@ -54,7 +54,7 @@ open a shell on the gateway instance via the EC2 Instance Connect Endpoint (EIC)
 view the logs:
 
 ```bash
-aws ec2-instance-connect ssh --instance-id "$(terraform output -raw gateway_instance_id)" --os-user admin
+aws ec2-instance-connect ssh --instance-id "$(terraform output -raw gateway_instance_id)" --os-user ubuntu
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
 ```
 

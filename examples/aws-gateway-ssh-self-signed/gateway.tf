@@ -26,9 +26,8 @@ resource "terraform_data" "gateway_config" {
 }
 
 resource "aws_instance" "gateway" {
-  ami           = data.aws_ami.debian.id
+  ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
-  key_name      = aws_key_pair.debug_key.key_name
 
   network_interface {
     network_interface_id = aws_network_interface.gateway.id
