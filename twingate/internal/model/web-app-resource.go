@@ -2,10 +2,12 @@ package model
 
 type WebAppUpstream struct {
 	Port int64
+	TLS  bool
 }
 
 type WebAppDownstream struct {
 	Port int64
+	TLS  bool
 }
 
 type WebAppResource struct {

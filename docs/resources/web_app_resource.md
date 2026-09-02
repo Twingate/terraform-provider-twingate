@@ -40,10 +40,12 @@ resource "twingate_web_app_resource" "internal_app" {
   address           = "internal.acme.com"
   alias             = "app.int"
   downstream = {
-    port = 80
+    port = 443
+    tls  = true
   }
   upstream = {
-    port = 8080
+    port = 8443
+    tls  = true
   }
   request_header_rewrites = {
     "X-Twingate-User" = "{{username}}"
@@ -84,6 +86,10 @@ Required:
 
 - `port` (Number) The port number. Must be between 1 and 65535 inclusive.
 
+Optional:
+
+- `tls` (Boolean) Whether TLS is enabled on the downstream connection. Default is `false`.
+
 
 <a id="nestedatt--upstream"></a>
 ### Nested Schema for `upstream`
@@ -91,6 +97,10 @@ Required:
 Required:
 
 - `port` (Number) The port number. Must be between 1 and 65535 inclusive.
+
+Optional:
+
+- `tls` (Boolean) Whether TLS is enabled on the upstream connection. Default is `false`.
 
 
 <a id="nestedblock--access_group"></a>
