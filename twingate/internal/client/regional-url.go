@@ -53,15 +53,16 @@ func resolveRegionalURL(ctx context.Context, originalURL string, key regionalURL
 	resp, err := httpClient.Do(req) // #nosec G704
 
 	defer func() {
+		// The body must be closed first: a connection only returns to the idle
+		// pool once its body is closed, so closing idle connections before that
+		// would leave this request's connection in the pool.
+		if resp != nil {
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("[TWINGATE_LOG] [ERR] Failed to close response body: %v", err)
+			}
+		}
+
 		httpClient.CloseIdleConnections()
-
-		if resp == nil {
-			return
-		}
-
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("[TWINGATE_LOG] [ERR] Failed to close response body: %v", err)
-		}
 	}()
 
 	if err != nil {
@@ -73,13 +74,18 @@ func resolveRegionalURL(ctx context.Context, originalURL string, key regionalURL
 	resolvedURL := SafeURL("https://" + resp.Request.URL.Host)
 
 	// A non-retryable error response arrives here with err == nil, and its final
-	// host is the unresolved one, so caching it would pin the process to the
-	// redirect host. 5xx cannot reach this point: retryablehttp retries those and
-	// returns an error once the attempts are exhausted.
-	if resp.StatusCode < http.StatusBadRequest {
-		resolvedRegionalURLs.Store(key, resolvedURL)
+	// host may be the unresolved one, so caching it would pin the process to the
+	// redirect host. The status alone cannot tell a failed lookup apart from a
+	// successful redirect to a host that then rejected the request, so the result
+	// is used for this call but not cached. 5xx cannot reach this point:
+	// retryablehttp retries those and returns an error once attempts are spent.
+	if resp.StatusCode >= http.StatusBadRequest {
+		log.Printf("[TWINGATE_LOG] [WARN] Regional URL lookup for %s returned status %d, not caching %s", originalURL, resp.StatusCode, resolvedURL) // #nosec G706
+
+		return resolvedURL
 	}
 
+	resolvedRegionalURLs.Store(key, resolvedURL)
 	log.Printf("[TWINGATE_LOG] [INFO] Resolved regional URL: %s -> %s", originalURL, resolvedURL) // #nosec G706
 
 	return resolvedURL

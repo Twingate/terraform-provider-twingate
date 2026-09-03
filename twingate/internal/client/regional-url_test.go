@@ -1,7 +1,9 @@
 package client
 
 import (
+	"bytes"
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -102,10 +104,20 @@ func TestResolveRegionalURLDoesNotCacheErrorResponse(t *testing.T) {
 	key := regionalURLKey{network: "cache-error", url: "example.test"}
 	t.Cleanup(func() { resolvedRegionalURLs.Delete(key) })
 
+	var logs bytes.Buffer
+
+	prev := log.Writer()
+	log.SetOutput(&logs)
+
+	t.Cleanup(func() { log.SetOutput(prev) })
+
 	resolveRegionalURL(context.Background(), server.URL, key, 10*time.Second, 0, "token", "TF", "test")
 
 	_, cached := resolvedRegionalURLs.Load(key)
 	assert.False(t, cached, "an error response must not be cached")
+	assert.NotContains(t, logs.String(), "Resolved regional URL",
+		"an error response must not be logged as a successful resolution")
+	assert.Contains(t, logs.String(), "returned status 404")
 
 	resolveRegionalURL(context.Background(), server.URL, key, 10*time.Second, 0, "token", "TF", "test")
 
