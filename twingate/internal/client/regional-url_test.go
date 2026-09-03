@@ -12,28 +12,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestResolveRegionalURLReturnsMemoizedValue(t *testing.T) {
+func TestResolveRegionalURLReturnsCachedValue(t *testing.T) {
 	const (
-		network = "memoized-network"
+		network = "cached-network"
 		url     = "example.test"
 	)
 
 	key := regionalURLKey{network: network, url: url}
-	resolvedRegionalURLs.Store(key, "https://memoized-network.us1.example.test")
+	resolvedRegionalURLs.Store(key, "https://cached-network.us1.example.test")
 
 	t.Cleanup(func() { resolvedRegionalURLs.Delete(key) })
 
 	// A cancelled context guarantees any HTTP attempt would fail, so returning
-	// the stored value proves the memo short-circuits before the request.
+	// the stored value proves the cache short-circuits before the request.
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	resolved := ResolveRegionalURL(ctx, network, url, time.Second, 0, "token", "TF", "test")
 
-	assert.Equal(t, "https://memoized-network.us1.example.test", resolved)
+	assert.Equal(t, "https://cached-network.us1.example.test", resolved)
 }
 
-func TestResolveRegionalURLDoesNotMemoizeFailures(t *testing.T) {
+func TestResolveRegionalURLDoesNotCacheFailures(t *testing.T) {
 	const (
 		network = "unresolvable-network"
 		url     = "invalid.test"
@@ -49,11 +49,11 @@ func TestResolveRegionalURLDoesNotMemoizeFailures(t *testing.T) {
 
 	assert.Equal(t, "https://unresolvable-network.invalid.test", resolved)
 
-	_, memoized := resolvedRegionalURLs.Load(key)
-	assert.False(t, memoized, "a failed resolve must not be memoized")
+	_, cached := resolvedRegionalURLs.Load(key)
+	assert.False(t, cached, "a failed resolve must not be cached")
 }
 
-func TestResolveRegionalURLMemoizesSuccessfulLookup(t *testing.T) {
+func TestResolveRegionalURLCachesSuccessfulLookup(t *testing.T) {
 	var redirectHits, regionalHits atomic.Int64
 
 	regional := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func TestResolveRegionalURLMemoizesSuccessfulLookup(t *testing.T) {
 	}))
 	defer redirect.Close()
 
-	key := regionalURLKey{network: "memo-success", url: "example.test"}
+	key := regionalURLKey{network: "cache-success", url: "example.test"}
 	t.Cleanup(func() { resolvedRegionalURLs.Delete(key) })
 
 	first := resolveRegionalURL(context.Background(), redirect.URL, key, 10*time.Second, 0, "token", "TF", "test")
@@ -84,14 +84,14 @@ func TestResolveRegionalURLMemoizesSuccessfulLookup(t *testing.T) {
 	second := resolveRegionalURL(context.Background(), redirect.URL, key, 10*time.Second, 0, "token", "TF", "test")
 
 	assert.Equal(t, first, second)
-	assert.Equal(t, int64(1), redirectHits.Load(), "second lookup must come from the memo")
-	assert.Equal(t, int64(1), regionalHits.Load(), "second lookup must come from the memo")
+	assert.Equal(t, int64(1), redirectHits.Load(), "second lookup must come from the cache")
+	assert.Equal(t, int64(1), regionalHits.Load(), "second lookup must come from the cache")
 }
 
-func TestResolveRegionalURLDoesNotMemoizeErrorResponse(t *testing.T) {
+func TestResolveRegionalURLDoesNotCacheErrorResponse(t *testing.T) {
 	var hits atomic.Int64
 
-	// A 4xx is not retried, so it reaches the memoization check with a nil error
+	// A 4xx is not retried, so it reaches the cache check with a nil error
 	// and a final host that was never redirected.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
@@ -99,15 +99,15 @@ func TestResolveRegionalURLDoesNotMemoizeErrorResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	key := regionalURLKey{network: "memo-error", url: "example.test"}
+	key := regionalURLKey{network: "cache-error", url: "example.test"}
 	t.Cleanup(func() { resolvedRegionalURLs.Delete(key) })
 
 	resolveRegionalURL(context.Background(), server.URL, key, 10*time.Second, 0, "token", "TF", "test")
 
-	_, memoized := resolvedRegionalURLs.Load(key)
-	assert.False(t, memoized, "an error response must not be memoized")
+	_, cached := resolvedRegionalURLs.Load(key)
+	assert.False(t, cached, "an error response must not be cached")
 
 	resolveRegionalURL(context.Background(), server.URL, key, 10*time.Second, 0, "token", "TF", "test")
 
-	assert.Equal(t, int64(2), hits.Load(), "an unmemoized lookup must be retried on the next call")
+	assert.Equal(t, int64(2), hits.Load(), "an uncached lookup must be retried on the next call")
 }
