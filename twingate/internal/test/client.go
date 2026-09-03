@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -29,10 +28,27 @@ func getHTTPTimeout(key string, duration time.Duration) time.Duration {
 }
 
 func TwingateClient() (*client.Client, error) {
+	apiToken := os.Getenv(twingate.EnvAPIToken)
+	httpTimeout := getHTTPTimeout(twingate.EnvHTTPTimeout, testTimeoutDuration)
+
+	// Resolve the regional URL once, the same way the provider does in Configure,
+	// so every request goes straight to the regional host instead of being
+	// redirected on each call.
+	regionalURL := client.ResolveRegionalURL(
+		context.Background(),
+		os.Getenv(twingate.EnvNetwork),
+		os.Getenv(twingate.EnvURL),
+		httpTimeout,
+		testHTTPRetry,
+		apiToken,
+		client.DefaultAgent,
+		"test",
+	)
+
 	return client.NewClient(context.Background(),
-			fmt.Sprintf("https://%s.%s", os.Getenv(twingate.EnvNetwork), os.Getenv(twingate.EnvURL)),
-			os.Getenv(twingate.EnvAPIToken),
-			getHTTPTimeout(twingate.EnvHTTPTimeout, testTimeoutDuration),
+			regionalURL,
+			apiToken,
+			httpTimeout,
 			testHTTPRetry,
 			client.DefaultAgent,
 			"test",
