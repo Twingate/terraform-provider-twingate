@@ -26,12 +26,21 @@ var resolvedRegionalURLs sync.Map //nolint:gochecknoglobals
 // ResolveRegionalURL returns the regional URL without a slash at the end.
 func ResolveRegionalURL(ctx context.Context, network, url string, timeout time.Duration, retryMax int, apiToken, agent, version string) string {
 	memoKey := regionalURLKey{network: network, url: url}
+	originalURL := SafeURL(fmt.Sprintf("https://%s.%s", network, url))
+
+	return resolveRegionalURL(ctx, originalURL, memoKey, timeout, retryMax, apiToken, agent, version)
+}
+
+// resolveRegionalURL performs the lookup for an already-built URL. It is split
+// out from ResolveRegionalURL so that tests can point it at a local server,
+// which avoids needing a locally trusted certificate for the https:// host that
+// ResolveRegionalURL constructs.
+func resolveRegionalURL(ctx context.Context, originalURL string, memoKey regionalURLKey, timeout time.Duration, retryMax int, apiToken, agent, version string) string {
 	if cached, ok := resolvedRegionalURLs.Load(memoKey); ok {
 		return cached.(string) //nolint:forcetypeassert
 	}
 
 	correlationID, _ := uuid.GenerateUUID()
-	originalURL := SafeURL(fmt.Sprintf("https://%s.%s", network, url))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, originalURL, nil)
 	if err != nil {
