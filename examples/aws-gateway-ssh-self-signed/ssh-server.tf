@@ -1,5 +1,5 @@
 resource "aws_instance" "ssh_server" {
-  ami                    = data.aws_ami.debian.id
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.main.id
   vpc_security_group_ids = [aws_security_group.internal.id]
