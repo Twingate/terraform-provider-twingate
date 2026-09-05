@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
+const defaultAddress = "kubernetes.default.svc.cluster.local"
+
 func terraformResourceKubernetesResource(tfName, gatewayTFName, remoteNetworkTFName, name, address string) string {
 	return fmt.Sprintf(`
 	resource "twingate_kubernetes_resource" "%s" {
@@ -119,7 +121,7 @@ func TestAccTwingateKubernetesResourceCreate(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.0.1:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -158,7 +160,7 @@ func TestAccTwingateKubernetesResourceUpdateName(t *testing.T) {
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	name1 := test.RandomName()
 	name2 := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.0.2:8080"
 	resourceID := new(string)
 
@@ -212,7 +214,8 @@ func TestAccTwingateKubernetesResourceUpdateInCluster(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	name := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
+	customResourceAddress := "k8s-api.example.com"
 	gatewayAddress := "10.0.0.2:8080"
 	bearerTokenFile := "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	caFile := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
@@ -230,15 +233,29 @@ func TestAccTwingateKubernetesResourceUpdateInCluster(t *testing.T) {
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.InCluster, "true"),
+					sdk.TestCheckNoResourceAttr(theResource, attr.BearerTokenFile),
+					sdk.TestCheckNoResourceAttr(theResource, attr.CAFile),
+					sdk.TestCheckResourceAttr(theResource, attr.Address, resourceAddress),
 				),
 			},
 			{
-				Config: prereqs + terraformResourceKubernetesResourceWithTokenAndCA(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, bearerTokenFile, caFile),
+				Config: prereqs + terraformResourceKubernetesResourceWithTokenAndCA(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, customResourceAddress, bearerTokenFile, caFile),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.InCluster, "false"),
 					sdk.TestCheckResourceAttr(theResource, attr.BearerTokenFile, bearerTokenFile),
 					sdk.TestCheckResourceAttr(theResource, attr.CAFile, caFile),
+					sdk.TestCheckResourceAttr(theResource, attr.Address, customResourceAddress),
+				),
+			},
+			{
+				Config: prereqs + terraformResourceKubernetesResourceWithInClusterField(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.InCluster, "true"),
+					sdk.TestCheckNoResourceAttr(theResource, attr.BearerTokenFile),
+					sdk.TestCheckNoResourceAttr(theResource, attr.CAFile),
+					sdk.TestCheckResourceAttr(theResource, attr.Address, resourceAddress),
 				),
 			},
 		},
@@ -257,7 +274,7 @@ func TestAccTwingateKubernetesResourceDelete(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.0.5:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -297,7 +314,7 @@ func TestAccTwingateKubernetesResourceReCreateAfterDeletion(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.0.6:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -340,7 +357,7 @@ func TestAccTwingateKubernetesResourceImport(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.0.7:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -450,7 +467,7 @@ func TestAccTwingateKubernetesResourceIsVisible(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	name := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.1.1:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -491,7 +508,7 @@ func TestAccTwingateKubernetesResourceAlias(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	name := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.1.2:8080"
 	alias := "k8s-alias.internal"
 	newAlias := "k8s-alias.internal.new"
@@ -534,7 +551,7 @@ func TestAccTwingateKubernetesResourceTags(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	name := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.1.3:8080"
 	tags1 := map[string]string{"env": "staging", "team": "platform"}
 	tags2 := map[string]string{"env": "production"}
@@ -580,7 +597,7 @@ func TestAccTwingateKubernetesResourceAccessGroup(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	name := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.1.5:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -624,7 +641,7 @@ func TestAccTwingateKubernetesResource_ErrorBearerTokenFileEmptyWhenNotInCluster
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.2.1:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -637,7 +654,7 @@ func TestAccTwingateKubernetesResource_ErrorBearerTokenFileEmptyWhenNotInCluster
 		Steps: []sdk.TestStep{
 			{
 				Config:      prereqs + terraformResourceKubernetesResourceWithInClusterFalseNoToken(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress),
-				ExpectError: regexp.MustCompile(`bearer_token_file cannot be empty`),
+				ExpectError: regexp.MustCompile(`(?s)bearer_token_file.+must be set to a non-empty value`),
 			},
 		},
 	})
@@ -654,7 +671,7 @@ func TestAccTwingateKubernetesResource_ErrorCAFileEmptyWhenNotInCluster(t *testi
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.2.2:8080"
 	bearerTokenFile := "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
@@ -668,7 +685,7 @@ func TestAccTwingateKubernetesResource_ErrorCAFileEmptyWhenNotInCluster(t *testi
 		Steps: []sdk.TestStep{
 			{
 				Config:      prereqs + terraformResourceKubernetesResourceWithInClusterFalseNoCA(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress, bearerTokenFile),
-				ExpectError: regexp.MustCompile(`ca_file cannot be empty`),
+				ExpectError: regexp.MustCompile(`(?s)ca_file.+must be set to a non-empty value`),
 			},
 		},
 	})
@@ -686,7 +703,7 @@ func TestAccTwingateKubernetesResourceCreateWithBearerTokenAndCA(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.2.3:8080"
 	bearerTokenFile := "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	caFile := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
@@ -732,7 +749,7 @@ func TestAccTwingateKubernetesResourceAccessPolicy(t *testing.T) {
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	name := test.RandomName()
-	resourceAddress := "kubernetes.default.svc.cluster.local"
+	resourceAddress := defaultAddress
 	gatewayAddress := "10.0.1.6:8080"
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
@@ -790,7 +807,7 @@ func TestAccTwingateKubernetesResource_ErrorInClusterWithCustomAddress(t *testin
 		Steps: []sdk.TestStep{
 			{
 				Config:      prereqs + terraformResourceKubernetesResource(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress),
-				ExpectError: regexp.MustCompile(`address cannot be modified when in_cluster is true`),
+				ExpectError: regexp.MustCompile(`(?s)address.+must be omitted or set to`),
 			},
 		},
 	})
@@ -808,7 +825,7 @@ func TestAccTwingateKubernetesResource_ErrorInClusterWithCustomAddressOnUpdate(t
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
 	resourceName := test.RandomName()
-	defaultResourceAddress := "kubernetes.default.svc.cluster.local"
+	defaultResourceAddress := defaultAddress
 	resourceAddress := "k8s-api.example.com"
 	gatewayAddress := "10.0.2.2:8080"
 
@@ -829,7 +846,7 @@ func TestAccTwingateKubernetesResource_ErrorInClusterWithCustomAddressOnUpdate(t
 			},
 			{
 				Config:      prereqs + terraformResourceKubernetesResource(k8sResTFName, gatewayTFName, remoteNetworkTFName, resourceName, resourceAddress),
-				ExpectError: regexp.MustCompile(`address cannot be modified when in_cluster is true`),
+				ExpectError: regexp.MustCompile(`(?s)address.+must be omitted or set to`),
 			},
 		},
 	})
