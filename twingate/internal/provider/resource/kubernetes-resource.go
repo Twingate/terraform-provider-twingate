@@ -97,7 +97,7 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			attr.Address: schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "The address of the Kubernetes Resource (IP or FQDN). It should be omitted when `in_cluster` is set to `true`.",
+				Description: "The address of the Kubernetes Resource (IP or FQDN).",
 				Validators: []validator.String{
 					customvalidator.Address(),
 					customvalidator.HasValueWhenBoolEquals(path.Root(attr.InCluster), true, defaultKubernetesAddress),

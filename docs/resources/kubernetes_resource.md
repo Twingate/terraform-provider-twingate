@@ -62,7 +62,7 @@ resource "twingate_kubernetes_resource" "external_cluster" {
 
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
-- `address` (String) The address of the Kubernetes Resource (IP or FQDN). It should be omitted when `in_cluster` is set to `true`.
+- `address` (String) The address of the Kubernetes Resource (IP or FQDN).
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `bearer_token_file` (String) Path to bearer token file. It's required when `in_cluster` is set to `false`.
 - `ca_file` (String) Path to CA certificate file. It's required when `in_cluster` is set to `false`.
