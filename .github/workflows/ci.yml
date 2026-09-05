@@ -16,7 +16,7 @@ on:
       - 'README.md'
     branches:
       - main
-      - deprecate/resource-attributes-for-next-release
+      - update/terraform-matrix
 
 # Ensures only 1 action runs per PR and previous is canceled on new trigger
 concurrency:
@@ -162,7 +162,7 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '1.14.*'
+          - '1.15.*'
           - 'latest'
     steps:
 
@@ -216,8 +216,8 @@ jobs:
       fail-fast: false
       matrix:
         tofu:
-          - '1.9.*'
           - '1.10.*'
+          - '1.11.*'
           - 'latest'
 
     steps:
