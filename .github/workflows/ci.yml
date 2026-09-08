@@ -122,7 +122,10 @@ jobs:
         files: ./test_results/final_coverage.out
         flags: unit
         disable_search: true
-        fail_ci_if_error: true
+        # Fork PRs get no OIDC token, so the action falls back to a tokenless
+        # upload — which can hit GitHub's shared rate limit. Don't fail a
+        # contributor's CI over that; stay strict everywhere else.
+        fail_ci_if_error: ${{ !github.event.pull_request.head.repo.fork }}
 
   cleanup-before-acctests:
     name: Cleanup before acceptance tests
