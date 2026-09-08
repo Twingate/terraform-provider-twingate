@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
@@ -1135,6 +1136,36 @@ func TestBuildGroupsFilter(t *testing.T) {
 				IsActive: optionalBool(false),
 			},
 			expected: &GroupFilterInput{
+				Type: GroupTypeFilterOperatorInput{
+					In: []string{model.GroupTypeManual},
+				},
+				IsActive: BooleanFilterOperatorInput{Eq: false},
+			},
+		},
+		{
+			filter: &model.GroupsFilter{
+				NameIn:     []string{"Group A", "Group B"},
+				NameFilter: attr.FilterByIn,
+			},
+			expected: &GroupFilterInput{
+				Name: &StringFilterOperationInput{
+					In: []string{"Group A", "Group B"},
+				},
+				Type:     defaultType,
+				IsActive: defaultActive,
+			},
+		},
+		{
+			filter: &model.GroupsFilter{
+				NameIn:     []string{"Group A"},
+				NameFilter: attr.FilterByIn,
+				Types:      []string{"MANUAL"},
+				IsActive:   optionalBool(false),
+			},
+			expected: &GroupFilterInput{
+				Name: &StringFilterOperationInput{
+					In: []string{"Group A"},
+				},
 				Type: GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeManual},
 				},

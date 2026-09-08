@@ -62,6 +62,11 @@ func (g Group) Match(filter ResourceFilter) bool {
 		return false
 	}
 
+	// filter by list of names
+	if names := filter.GetNameIn(); len(names) > 0 && !slices.Contains(names, g.Name) {
+		return false
+	}
+
 	// filter by name
 	if name := filter.GetName(); name != "" {
 		switch filter.GetFilterBy() {
@@ -104,6 +109,7 @@ func (g Group) Match(filter ResourceFilter) bool {
 type GroupsFilter struct {
 	Name       *string
 	NameFilter string
+	NameIn     []string
 	Types      []string
 	IsActive   *bool
 }
@@ -124,6 +130,14 @@ func (f *GroupsFilter) GetFilterBy() string {
 	return f.NameFilter
 }
 
+func (f *GroupsFilter) GetNameIn() []string {
+	if f == nil {
+		return nil
+	}
+
+	return f.NameIn
+}
+
 func (f *GroupsFilter) GetTypes() []string {
 	return f.Types
 }
@@ -137,7 +151,7 @@ func (f *GroupsFilter) IsNil() bool {
 }
 
 func (f *GroupsFilter) HasNotSupportedFilters() bool {
-	return f != nil && !slices.Contains([]string{"", attr.FilterByRegexp, attr.FilterByContains, attr.FilterByExclude, attr.FilterByPrefix, attr.FilterBySuffix}, f.NameFilter)
+	return f != nil && !slices.Contains([]string{"", attr.FilterByRegexp, attr.FilterByContains, attr.FilterByExclude, attr.FilterByPrefix, attr.FilterBySuffix, attr.FilterByIn}, f.NameFilter)
 }
 
 func (f *GroupsFilter) GetTags() map[string]string {
@@ -163,6 +177,10 @@ func (f *GroupsFilter) String() string {
 		}
 
 		parts = append(parts, fmt.Sprintf("Name(%s)=%q", match, f.GetName()))
+	}
+
+	if len(f.NameIn) > 0 {
+		parts = append(parts, fmt.Sprintf("Name(in)=%v", f.NameIn))
 	}
 
 	if len(f.Types) > 0 {

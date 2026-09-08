@@ -14,4 +14,5 @@ const (
 	FilterByExclude  = "_exclude"
 	FilterByPrefix   = "_prefix"
 	FilterBySuffix   = "_suffix"
+	FilterByIn       = "_in"
 )
