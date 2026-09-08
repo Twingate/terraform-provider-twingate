@@ -301,7 +301,7 @@ set -euo pipefail
 
 apt-get update -qq && apt-get install -y -qq jq
 
-# Create the gateway user
+# Create the gateway user account
 useradd -m -s /bin/bash gateway
 
 # Authenticate to Vault via GCP auth
@@ -328,11 +328,18 @@ RESPONSE=$(curl -s --fail-with-body \
 
 echo "$RESPONSE" | jq -r '.data.signed_key' > /etc/ssh/ssh_host_ed25519_key-cert.pub
 
-# Configure sshd to trust CA and present host certificate
+# Configure sshd to trust CA certs and present host certificate
 echo "TrustedUserCAKeys /etc/ssh/vault-ssh-ca.pub" >> /etc/ssh/sshd_config
 echo "HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub" >> /etc/ssh/sshd_config
 
+# Only accept the "gateway" principal, and only for the "gateway" account
+mkdir -p /etc/ssh/auth_principals
+echo "gateway" > /etc/ssh/auth_principals/gateway
+echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
+
 systemctl restart sshd
 ```
+
+The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
 The Gateway and SSH Server VMs use `templatefile()` to inject Vault-specific variables (CA certificate, Vault address, role names) into their startup scripts. The Gateway VM uses a reserved internal IP so its address is stable and can be registered with Twingate.
