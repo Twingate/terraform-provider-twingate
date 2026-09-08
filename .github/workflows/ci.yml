@@ -116,7 +116,7 @@ jobs:
         make test
 
     - name: Send coverage
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         use_oidc: true
         files: ./test_results/final_coverage.out
@@ -212,7 +212,7 @@ jobs:
         make testacc
 
     - name: Send coverage
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         use_oidc: true
         files: ./test_results/final_coverage.out
