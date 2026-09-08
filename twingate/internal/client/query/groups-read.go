@@ -46,6 +46,14 @@ type StringFilterOperationInput struct {
 	In         []string `json:"in"`
 }
 
+func NewStringFilterInOperationInput(names []string) *StringFilterOperationInput {
+	if len(names) == 0 {
+		return nil
+	}
+
+	return &StringFilterOperationInput{In: names}
+}
+
 func NewStringFilterOperationInput(name, filter string) *StringFilterOperationInput {
 	if filter == "" && name == "" {
 		return nil
@@ -98,6 +106,10 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 
 	if input.Name != nil {
 		filter.Name = NewStringFilterOperationInput(*input.Name, input.NameFilter)
+	}
+
+	if len(input.NameIn) > 0 {
+		filter.Name = NewStringFilterInOperationInput(input.NameIn)
 	}
 
 	if len(input.Types) > 0 {

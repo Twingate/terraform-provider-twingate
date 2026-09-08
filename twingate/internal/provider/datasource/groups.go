@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
@@ -19,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var ErrGroupsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+var ErrGroupsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &groups{}
@@ -40,6 +42,7 @@ type groupsModel struct {
 	NameExclude  types.String `tfsdk:"name_exclude"`
 	NamePrefix   types.String `tfsdk:"name_prefix"`
 	NameSuffix   types.String `tfsdk:"name_suffix"`
+	NameIn       types.Set    `tfsdk:"name_in"`
 	Types        types.Set    `tfsdk:"types"`
 	IsActive     types.Bool   `tfsdk:"is_active"`
 	Groups       []groupModel `tfsdk:"groups"`
@@ -100,6 +103,15 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 				Optional:    true,
 				Description: "The name of the group must end with the value.",
 			},
+			attr.Name + attr.FilterByIn: schema.SetAttribute{
+				Optional:    true,
+				ElementType: types.StringType,
+				Description: "Returns only groups that exactly match one of the names in the list.",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+				},
+			},
 			attr.IsActive: schema.BoolAttribute{
 				Optional:    true,
 				Description: "Returns only Groups matching the specified state.",
@@ -151,7 +163,12 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 		return
 	}
 
-	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	nameFilters := CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+	if len(data.NameIn.Elements()) > 0 {
+		nameFilters++
+	}
+
+	if nameFilters > 1 {
 		addErr(&resp.Diagnostics, ErrGroupsDatasourceShouldSetOneOptionalNameAttribute, TwingateGroups)
 
 		return
@@ -168,15 +185,21 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 
 	data.Groups = convertGroupsToTerraform(groups)
 
-	id := "all-groups"
-	if filter.HasName() {
-		id = "groups-by-name-" + *filter.Name
-	}
-
-	data.ID = types.StringValue(id)
+	data.ID = types.StringValue(groupsDatasourceID(filter))
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func groupsDatasourceID(filter *model.GroupsFilter) string {
+	switch {
+	case filter.HasName():
+		return "groups-by-name-" + filter.GetName()
+	case len(filter.GetNameIn()) > 0:
+		return "groups-by-name-in-" + strings.Join(filter.GetNameIn(), ",")
+	default:
+		return "all-groups"
+	}
 }
 
 func buildFilter(data *groupsModel) *model.GroupsFilter {
@@ -220,13 +243,23 @@ func buildFilter(data *groupsModel) *model.GroupsFilter {
 		IsActive:   data.IsActive.ValueBoolPointer(),
 	}
 
+	if len(data.NameIn.Elements()) > 0 {
+		groupFilter.NameIn = utils.Map(data.NameIn.Elements(), func(item tfattr.Value) string {
+			return item.(types.String).ValueString()
+		})
+		groupFilter.NameFilter = attr.FilterByIn
+
+		// keep a stable order so that the datasource id does not depend on the order in the config
+		slices.Sort(groupFilter.NameIn)
+	}
+
 	if len(data.Types.Elements()) > 0 {
 		groupFilter.Types = utils.Map(data.Types.Elements(), func(item tfattr.Value) string {
 			return item.(types.String).ValueString()
 		})
 	}
 
-	if groupFilter.Name == nil && len(groupFilter.Types) == 0 && groupFilter.IsActive == nil {
+	if groupFilter.Name == nil && len(groupFilter.NameIn) == 0 && len(groupFilter.Types) == 0 && groupFilter.IsActive == nil {
 		return nil
 	}
 

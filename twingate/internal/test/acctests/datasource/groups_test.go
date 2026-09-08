@@ -374,3 +374,93 @@ func TestAccDatasourceTwingateGroupsWithFilterByRegexp(t *testing.T) {
 		},
 	})
 }
+
+func TestAccDatasourceTwingateGroupsWithFilterByNameIn(t *testing.T) {
+	t.Parallel()
+
+	prefix := test.Prefix() + "-" + acctest.RandString(5)
+	resourceName := test.RandomResourceName()
+
+	theDatasource := "data.twingate_groups." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateGroupsWithFilterByNameIn(
+					resourceName,
+					prefix+"_g1",
+					prefix+"_g2",
+					prefix+"_g3",
+				),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, groupsLen, "2"),
+				),
+			},
+		},
+	})
+}
+
+func testDatasourceTwingateGroupsWithFilterByNameIn(resourceName, name1, name2, name3 string) string {
+	return fmt.Sprintf(`
+	resource "twingate_group" "%[1]s_1" {
+	  name = "%[2]s"
+	}
+
+	resource "twingate_group" "%[1]s_2" {
+	  name = "%[3]s"
+	}
+
+	resource "twingate_group" "%[1]s_3" {
+	  name = "%[4]s"
+	}
+
+	data "twingate_groups" "%[1]s" {
+	  name_in = ["%[2]s", "%[3]s"]
+	  types = ["MANUAL"]
+	  is_active = true
+
+	  depends_on = [twingate_group.%[1]s_1, twingate_group.%[1]s_2, twingate_group.%[1]s_3]
+	}
+	`, resourceName, name1, name2, name3)
+}
+
+func TestAccDatasourceTwingateGroupsWithFilterByNameIn_emptyList(t *testing.T) {
+	t.Parallel()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				data "twingate_groups" "test_name_in_empty" {
+				  name_in = []
+				}
+				`,
+				ExpectError: regexp.MustCompile("at least 1 elements"),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceTwingateGroupsWithFilterByNameIn_ErrorConflictsWithName(t *testing.T) {
+	t.Parallel()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				data "twingate_groups" "test_name_in_conflict" {
+				  name = "group-1"
+				  name_in = ["group-1", "group-2"]
+				}
+				`,
+				ExpectError: regexp.MustCompile("Only one of name, name_regex"),
+			},
+		},
+	})
+}
