@@ -53,6 +53,8 @@ resource "twingate_connector" "aws_connector" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 terraform import twingate_connector.aws_connector Q29ubmVjdG9yOjI2NzM=
 ```
