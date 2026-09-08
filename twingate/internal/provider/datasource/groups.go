@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var ErrGroupsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
+var ErrGroupsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regexp, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &groups{}

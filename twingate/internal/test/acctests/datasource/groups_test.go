@@ -459,7 +459,7 @@ func TestAccDatasourceTwingateGroupsWithFilterByNameIn_ErrorConflictsWithName(t 
 				  name_in = ["group-1", "group-2"]
 				}
 				`,
-				ExpectError: regexp.MustCompile("Only one of name, name_regex"),
+				ExpectError: regexp.MustCompile("Only one of name, name_regexp"),
 			},
 		},
 	})
