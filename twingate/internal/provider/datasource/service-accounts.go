@@ -156,7 +156,7 @@ func (d *serviceAccounts) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	data.ID = types.StringValue(terraformServicesDatasourceID(data.Name.ValueString(), filter.Values))
+	data.ID = types.StringValue(terraformServicesDatasourceID(filter.Name, filter.Values))
 	data.ServiceAccounts = convertServicesToTerraform(accounts)
 
 	// Save data into Terraform state
