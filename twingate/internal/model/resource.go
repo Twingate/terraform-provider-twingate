@@ -208,6 +208,7 @@ type ResourceFilter interface {
 	IsNil() bool
 	HasNotSupportedFilters() bool
 	GetFilterBy() string
+	GetNameIn() []string
 	GetTypes() []string
 	GetIsActive() *bool
 	GetTags() map[string]string
@@ -443,6 +444,11 @@ func (f *ResourcesFilter) GetName() string {
 
 func (f *ResourcesFilter) GetFilterBy() string {
 	return f.NameFilter
+}
+
+func (f *ResourcesFilter) GetNameIn() []string {
+	// not supported
+	return nil
 }
 
 func (f *ResourcesFilter) GetTypes() []string {
