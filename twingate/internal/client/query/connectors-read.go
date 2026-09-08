@@ -41,8 +41,8 @@ type ConnectorFilterInput struct {
 	Name *StringFilterOperationInput `json:"name"`
 }
 
-func NewConnectorFilterInput(name, filter string) *ConnectorFilterInput {
+func NewConnectorFilterInput(name *StringFilterOperationInput) *ConnectorFilterInput {
 	return &ConnectorFilterInput{
-		Name: NewStringFilterOperationInput(name, filter),
+		Name: name,
 	}
 }

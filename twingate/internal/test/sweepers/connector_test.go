@@ -17,7 +17,7 @@ func init() {
 		Name: resourceConnector,
 		F: newTestSweeper(resourceConnector,
 			func(c *client.Client, ctx context.Context) ([]Resource, error) {
-				resources, err := c.ReadConnectors(ctx, test.Prefix(), attr.FilterByPrefix)
+				resources, err := c.ReadConnectors(ctx, &client.StringFilter{Name: test.Prefix(), Filter: attr.FilterByPrefix})
 				if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 					return nil, err
 				}

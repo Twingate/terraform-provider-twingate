@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -68,39 +67,8 @@ func (g Group) Match(filter ResourceFilter) bool {
 	}
 
 	// filter by name
-	if name := filter.GetName(); name != "" {
-		switch filter.GetFilterBy() {
-		case "":
-			if g.Name != name {
-				return false
-			}
-
-		case attr.FilterByContains:
-			if !strings.Contains(g.Name, name) {
-				return false
-			}
-
-		case attr.FilterByExclude:
-			if strings.Contains(g.Name, name) {
-				return false
-			}
-
-		case attr.FilterByPrefix:
-			if !strings.HasPrefix(g.Name, name) {
-				return false
-			}
-
-		case attr.FilterBySuffix:
-			if !strings.HasSuffix(g.Name, name) {
-				return false
-			}
-
-		case attr.FilterByRegexp:
-			matched, err := regexp.MatchString(name, g.Name)
-			if err != nil || !matched {
-				return false
-			}
-		}
+	if name := filter.GetName(); name != "" && !matchName(g.Name, name, filter.GetFilterBy()) {
+		return false
 	}
 
 	return true

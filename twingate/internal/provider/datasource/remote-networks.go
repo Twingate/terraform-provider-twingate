@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var ErrRemoteNetworksDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+var ErrRemoteNetworksDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &remoteNetworks{}
@@ -36,6 +36,7 @@ type remoteNetworksModel struct {
 	NameExclude    types.String         `tfsdk:"name_exclude"`
 	NamePrefix     types.String         `tfsdk:"name_prefix"`
 	NameSuffix     types.String         `tfsdk:"name_suffix"`
+	NameIn         types.Set            `tfsdk:"name_in"`
 	RemoteNetworks []remoteNetworkModel `tfsdk:"remote_networks"`
 }
 
@@ -94,6 +95,7 @@ func (d *remoteNetworks) Schema(ctx context.Context, req datasource.SchemaReques
 				Optional:    true,
 				Description: "The name of the remote network must end with the value.",
 			},
+			attr.Name + attr.FilterByIn: InFilterAttribute("Returns only remote networks that exactly match one of the names in the list."),
 
 			attr.RemoteNetworks: schema.ListNestedAttribute{
 				Computed:    true,
@@ -133,15 +135,15 @@ func (d *remoteNetworks) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	name, filter := GetNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
-
-	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)+CountSetAttributes(data.NameIn) > 1 {
 		addErr(&resp.Diagnostics, ErrRemoteNetworksDatasourceShouldSetOneOptionalNameAttribute, TwingateRemoteNetworks)
 
 		return
 	}
 
-	networks, err := d.client.ReadRemoteNetworks(ctx, name, filter)
+	filter := GetStringFilter(data.NameIn, data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+
+	networks, err := d.client.ReadRemoteNetworks(ctx, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateRemoteNetworks)
 
