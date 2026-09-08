@@ -15,7 +15,7 @@ const (
 	TwingateGateway                  = "twingate_gateway"
 	TwingateSSHResource              = "twingate_ssh_resource"
 	TwingateKubernetesResource       = "twingate_kubernetes_resource"
-	TwingateGatewayConfig            = "twingate_gateway_config"
+	TwingateWebAppResource           = "twingate_web_app_resource"
 
 	operationCreate = "create"
 	operationRead   = "read"

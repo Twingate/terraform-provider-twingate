@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 

@@ -1,5 +1,11 @@
 locals {
   gateway_port = 8443
+
+  gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
+    twingate_network = var.tg_network
+    twingate_host    = var.tg_url
+    port             = local.gateway_port
+  })
 }
 
 resource "digitalocean_reserved_ip" "gateway" {
@@ -11,22 +17,10 @@ resource "digitalocean_reserved_ip_assignment" "gateway" {
   droplet_id = digitalocean_droplet.gateway.id
 }
 
-resource "twingate_gateway_config" "config" {
-  port = local.gateway_port
-
-  tls = {
-    certificate_file = "/etc/gateway/tls.crt"
-    private_key_file = "/etc/gateway/tls.key"
-  }
-
-  ssh = {
-    gateway = { username = "gateway" }
-    ca      = { private_key_file = "/etc/gateway/ssh-ca.key" }
-
-    resources = [
-      twingate_ssh_resource.ssh_server,
-    ]
-  }
+# replace_triggered_by only accepts resource references, so the rendered config is
+# wrapped here to replace the gateway whenever it changes.
+resource "terraform_data" "gateway_config" {
+  input = local.gateway_config
 }
 
 resource "digitalocean_droplet" "gateway" {
@@ -41,12 +35,12 @@ resource "digitalocean_droplet" "gateway" {
     tls_cert       = tls_locally_signed_cert.server.cert_pem
     tls_key        = tls_private_key.server.private_key_pem
     ssh_ca_key     = tls_private_key.ssh_ca.private_key_openssh
-    gateway_config = twingate_gateway_config.config.content
+    gateway_config = local.gateway_config
   })
 
   lifecycle {
     replace_triggered_by = [
-      twingate_gateway_config.config,
+      terraform_data.gateway_config,
     ]
   }
 }

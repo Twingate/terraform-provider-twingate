@@ -22,7 +22,7 @@ func NewPortNotInRangeError(port int) *PortNotInRangeError {
 }
 
 func (e *PortNotInRangeError) Error() string {
-	return fmt.Sprintf("port %d not in the range of %d-%d", e.Port, minPortValue, maxPortValue)
+	return fmt.Sprintf("port %d not in the range of %d-%d", e.Port, MinPortValue, MaxPortValue)
 }
 
 type PortRangeNotRisingSequenceError struct {

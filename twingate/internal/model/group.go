@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 )
 
 const (

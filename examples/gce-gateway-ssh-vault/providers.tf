@@ -2,7 +2,7 @@ terraform {
   required_providers {
     twingate = {
       source  = "Twingate/twingate"
-      version = "~> 4.1"
+      version = "~> 5.0"
     }
     google = {
       source  = "hashicorp/google"

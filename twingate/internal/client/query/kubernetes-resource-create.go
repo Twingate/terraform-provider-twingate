@@ -1,13 +1,13 @@
 package query
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 )
 
 //nolint:lll
 type CreateKubernetesResource struct {
-	KubernetesResourceEntityResponse `graphql:"kubernetesResourceCreate(name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, protocols: $protocols, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
+	KubernetesResourceEntityResponse `graphql:"kubernetesResourceCreate(name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
 }
 
 func (q CreateKubernetesResource) IsEmpty() bool {
@@ -38,7 +38,6 @@ type gqlKubernetesResource struct {
 	Gateway struct {
 		ID graphql.ID
 	}
-	Protocols      *Protocols
 	IsVisible      bool
 	Alias          string
 	SecurityPolicy *gqlSecurityPolicy
@@ -58,7 +57,6 @@ func (g gqlKubernetesResource) ToModel() *model.KubernetesResource {
 		Alias:            optionalString(g.Alias),
 		SecurityPolicyID: securityPolicyID(g.SecurityPolicy),
 		Tags:             tagsToModel(g.Tags),
-		Protocols:        protocolsToModel(g.Protocols),
 		AccessPolicy:     accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
 	}
 }

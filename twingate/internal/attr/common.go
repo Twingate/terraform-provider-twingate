@@ -7,6 +7,7 @@ const (
 	RemoteNetworkName = "remote_network_name"
 	Type              = "type"
 	IsActive          = "is_active"
+	Port              = "port"
 
 	FilterByRegexp   = "_regexp"
 	FilterByContains = "_contains"

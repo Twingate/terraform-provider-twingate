@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	minPortValue = 1
-	maxPortValue = 65535
+	MinPortValue = 1
+	MaxPortValue = 65535
 )
 
 func validatePort(str string) (int, error) {
@@ -16,7 +16,7 @@ func validatePort(str string) (int, error) {
 		return 0, fmt.Errorf("port `%s` is not a valid integer: %w", str, err)
 	}
 
-	if port < minPortValue || port > maxPortValue {
+	if port < MinPortValue || port > MaxPortValue {
 		return 0, NewPortNotInRangeError(int(port))
 	}
 

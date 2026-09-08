@@ -1,6 +1,6 @@
 package query
 
-import "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 
 type UpdateGateway struct {
 	GatewayEntityResponse `graphql:"gatewayUpdate(id: $id, address: $address, remoteNetworkId: $remoteNetworkId, x509CAId: $x509CAId, sshCAId: $sshCAId)"`

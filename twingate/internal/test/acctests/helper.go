@@ -18,13 +18,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/datasource"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/resource"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/datasource"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -254,8 +254,8 @@ func TerraformKubernetesResource(name string) string {
 	return ResourceName(resource.TwingateKubernetesResource, name)
 }
 
-func TerraformGatewayConfig(name string) string {
-	return ResourceName(resource.TwingateGatewayConfig, name)
+func TerraformWebAppResource(name string) string {
+	return ResourceName(resource.TwingateWebAppResource, name)
 }
 
 func TerraformDatasourceUsers(name string) string {
@@ -311,6 +311,8 @@ func deleteResource(resourceType, resourceID string) error {
 		err = providerClient.DeleteSSHResource(context.Background(), resourceID)
 	case resource.TwingateKubernetesResource:
 		err = providerClient.DeleteKubernetesResource(context.Background(), resourceID)
+	case resource.TwingateWebAppResource:
+		err = providerClient.DeleteWebAppResource(context.Background(), resourceID)
 	default:
 		err = fmt.Errorf("%s %w", resourceType, ErrUnknownResourceType)
 	}
@@ -1110,6 +1112,23 @@ func CheckTwingateSSHResourceDestroy(s *terraform.State) error {
 
 		sshRes, _ := providerClient.ReadSSHResource(context.Background(), id)
 		if sshRes != nil {
+			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, id)
+		}
+	}
+
+	return nil
+}
+
+func CheckTwingateWebAppResourceDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != resource.TwingateWebAppResource {
+			continue
+		}
+
+		id := rs.Primary.ID
+
+		webAppRes, _ := providerClient.ReadWebAppResource(context.Background(), id)
+		if webAppRes != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, id)
 		}
 	}
