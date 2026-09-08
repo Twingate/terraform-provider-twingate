@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	ErrUsersDatasourceShouldSetOneOptionalEmailAttribute     = errors.New("Only one of email, email_regex, email_contains, email_exclude, email_prefix, email_suffix or email_in must be set.")
-	ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute = errors.New("Only one of first_name, first_name_regex, first_name_contains, first_name_exclude, first_name_prefix or first_name_suffix must be set.")
-	ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute  = errors.New("Only one of last_name, last_name_regex, last_name_contains, last_name_exclude, last_name_prefix or last_name_suffix must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalEmailAttribute     = errors.New("Only one of email, email_regexp, email_contains, email_exclude, email_prefix, email_suffix or email_in must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute = errors.New("Only one of first_name, first_name_regexp, first_name_contains, first_name_exclude, first_name_prefix or first_name_suffix must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute  = errors.New("Only one of last_name, last_name_regexp, last_name_contains, last_name_exclude, last_name_prefix or last_name_suffix must be set.")
 )
 
 // Ensure the implementation satisfies the desired interfaces.

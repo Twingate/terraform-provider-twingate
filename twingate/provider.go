@@ -43,7 +43,7 @@ const (
 	EnvHTTPMaxRetry = "TWINGATE_HTTP_MAX_RETRY"
 )
 
-var ErrCacheFilterShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+var ErrCacheFilterShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regexp, name_contains, name_exclude, name_prefix or name_suffix must be set.")
 
 var _ provider.Provider = &Twingate{}
 
