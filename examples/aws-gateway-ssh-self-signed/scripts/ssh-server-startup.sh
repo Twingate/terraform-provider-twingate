@@ -9,4 +9,4 @@ PUBKEY
 
 echo "TrustedUserCAKeys /etc/ssh/twingate-ca.pub" >> /etc/ssh/sshd_config
 
-systemctl restart sshd
+sudo systemctl restart sshd

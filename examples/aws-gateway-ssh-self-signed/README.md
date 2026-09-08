@@ -49,9 +49,12 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-SSH into the gateway instance via the EC2 console, then view the logs:
+The instances have no public IP and do not expose SSH publicly. For troubleshooting,
+open a shell on the gateway instance via the EC2 Instance Connect Endpoint (EIC), then
+view the logs:
 
 ```bash
+aws ec2-instance-connect ssh --instance-id "$(terraform output -raw gateway_instance_id)" --os-user ubuntu
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
 ```
 

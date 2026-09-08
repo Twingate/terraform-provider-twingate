@@ -2,9 +2,11 @@ locals {
   gateway_port = 8443
 
   gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
-    twingate_network = var.tg_network
-    twingate_host    = var.tg_url
-    port             = local.gateway_port
+    twingate_network   = var.tg_network
+    twingate_host      = var.tg_url
+    port               = local.gateway_port
+    ssh_server_name    = twingate_ssh_resource.ssh_server.name
+    ssh_server_address = aws_instance.ssh_server.private_ip
   })
 }
 
@@ -24,7 +26,7 @@ resource "terraform_data" "gateway_config" {
 }
 
 resource "aws_instance" "gateway" {
-  ami           = data.aws_ami.debian.id
+  ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
 
   network_interface {
