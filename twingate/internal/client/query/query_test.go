@@ -1,12 +1,14 @@
 package query
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"testing"
 	"time"
 
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 	"github.com/stretchr/testify/assert"
@@ -1040,11 +1042,6 @@ func optionalBool(val bool) *bool {
 
 func TestBuildGroupsFilter(t *testing.T) {
 	defaultActive := BooleanFilterOperatorInput{Eq: true}
-	defaultType := GroupTypeFilterOperatorInput{
-		In: []string{model.GroupTypeManual,
-			model.GroupTypeSynced,
-			model.GroupTypeSystem},
-	}
 
 	testCases := []struct {
 		filter   *model.GroupsFilter
@@ -1060,14 +1057,13 @@ func TestBuildGroupsFilter(t *testing.T) {
 				Name: &StringFilterOperationInput{
 					Eq: optionalString("Group"),
 				},
-				Type:     defaultType,
 				IsActive: defaultActive,
 			},
 		},
 		{
 			filter: &model.GroupsFilter{Types: []string{"MANUAL"}},
 			expected: &GroupFilterInput{
-				Type: GroupTypeFilterOperatorInput{
+				Type: &GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeManual},
 				},
 				IsActive: defaultActive,
@@ -1076,7 +1072,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 		{
 			filter: &model.GroupsFilter{Types: []string{"SYSTEM"}},
 			expected: &GroupFilterInput{
-				Type: GroupTypeFilterOperatorInput{
+				Type: &GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeSystem},
 				},
 				IsActive: defaultActive,
@@ -1085,7 +1081,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 		{
 			filter: &model.GroupsFilter{Types: []string{"SYNCED"}},
 			expected: &GroupFilterInput{
-				Type: GroupTypeFilterOperatorInput{
+				Type: &GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeSynced},
 				},
 				IsActive: defaultActive,
@@ -1094,14 +1090,12 @@ func TestBuildGroupsFilter(t *testing.T) {
 		{
 			filter: &model.GroupsFilter{IsActive: optionalBool(true)},
 			expected: &GroupFilterInput{
-				Type:     defaultType,
 				IsActive: BooleanFilterOperatorInput{Eq: true},
 			},
 		},
 		{
 			filter: &model.GroupsFilter{IsActive: optionalBool(false)},
 			expected: &GroupFilterInput{
-				Type:     defaultType,
 				IsActive: BooleanFilterOperatorInput{Eq: false},
 			},
 		},
@@ -1111,7 +1105,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 				IsActive: optionalBool(false),
 			},
 			expected: &GroupFilterInput{
-				Type: GroupTypeFilterOperatorInput{
+				Type: &GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeSystem},
 				},
 				IsActive: BooleanFilterOperatorInput{Eq: false},
@@ -1123,7 +1117,7 @@ func TestBuildGroupsFilter(t *testing.T) {
 				IsActive: optionalBool(true),
 			},
 			expected: &GroupFilterInput{
-				Type: GroupTypeFilterOperatorInput{
+				Type: &GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeManual},
 				},
 				IsActive: BooleanFilterOperatorInput{Eq: true},
@@ -1135,7 +1129,36 @@ func TestBuildGroupsFilter(t *testing.T) {
 				IsActive: optionalBool(false),
 			},
 			expected: &GroupFilterInput{
-				Type: GroupTypeFilterOperatorInput{
+				Type: &GroupTypeFilterOperatorInput{
+					In: []string{model.GroupTypeManual},
+				},
+				IsActive: BooleanFilterOperatorInput{Eq: false},
+			},
+		},
+		{
+			filter: &model.GroupsFilter{
+				NameIn:     []string{"Group A", "Group B"},
+				NameFilter: attr.FilterByIn,
+			},
+			expected: &GroupFilterInput{
+				Name: &StringFilterOperationInput{
+					In: []string{"Group A", "Group B"},
+				},
+				IsActive: defaultActive,
+			},
+		},
+		{
+			filter: &model.GroupsFilter{
+				NameIn:     []string{"Group A"},
+				NameFilter: attr.FilterByIn,
+				Types:      []string{"MANUAL"},
+				IsActive:   optionalBool(false),
+			},
+			expected: &GroupFilterInput{
+				Name: &StringFilterOperationInput{
+					In: []string{"Group A"},
+				},
+				Type: &GroupTypeFilterOperatorInput{
 					In: []string{model.GroupTypeManual},
 				},
 				IsActive: BooleanFilterOperatorInput{Eq: false},
@@ -1147,6 +1170,56 @@ func TestBuildGroupsFilter(t *testing.T) {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
 
 			assert.Equal(t, td.expected, NewGroupFilterInput(td.filter))
+		})
+	}
+}
+
+func TestBuildGroupsFilterSerialization(t *testing.T) {
+	// GraphQL input-object keys, deliberately spelled out here rather than reused
+	// from the attr package, which holds terraform schema names (`is_active`).
+	const (
+		typeKey     = "type"
+		isActiveKey = "isActive"
+	)
+
+	testCases := []struct {
+		name         string
+		filter       *model.GroupsFilter
+		expectedType map[string]any
+	}{
+		{
+			name:   "types not set: the type filter is not sent",
+			filter: &model.GroupsFilter{Name: optionalString("foo"), NameFilter: attr.FilterByContains},
+		},
+		{
+			name:   "only is_active set: the type filter is not sent",
+			filter: &model.GroupsFilter{IsActive: optionalBool(true)},
+		},
+		{
+			name:         "types set: the type filter carries exactly those values",
+			filter:       &model.GroupsFilter{Types: []string{model.GroupTypeManual}},
+			expectedType: map[string]any{"in": []any{model.GroupTypeManual}},
+		},
+	}
+
+	for _, td := range testCases {
+		t.Run(td.name, func(t *testing.T) {
+			payload, err := json.Marshal(NewGroupFilterInput(td.filter))
+			assert.NoError(t, err)
+
+			var actual map[string]any
+
+			assert.NoError(t, json.Unmarshal(payload, &actual))
+
+			typeFilter, ok := actual[typeKey]
+			assert.Equal(t, td.expectedType != nil, ok, "unexpected `type` filter in payload %s", payload)
+
+			if td.expectedType != nil {
+				assert.Equal(t, td.expectedType, typeFilter)
+			}
+
+			// the isActive filter is deliberately sent on every request
+			assert.Contains(t, actual, isActiveKey)
 		})
 	}
 }
