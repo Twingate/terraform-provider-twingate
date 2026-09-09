@@ -81,7 +81,7 @@ require (
 	github.com/yuin/goldmark v1.8.6 // indirect
 	github.com/yuin/goldmark-meta v1.1.0 // indirect
 	github.com/zclconf/go-cty v1.19.0 // indirect
-	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
+	go.abhg.dev/goldmark/frontmatter v0.3.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
 	golang.org/x/mod v0.41.0 // indirect
