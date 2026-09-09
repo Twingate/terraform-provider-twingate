@@ -31,9 +31,9 @@ func (u Groups) ToModel() []*model.Group {
 }
 
 type GroupFilterInput struct {
-	Name     *StringFilterOperationInput  `json:"name"`
-	Type     GroupTypeFilterOperatorInput `json:"type"`
-	IsActive BooleanFilterOperatorInput   `json:"isActive"`
+	Name     *StringFilterOperationInput   `json:"name"`
+	Type     *GroupTypeFilterOperatorInput `json:"type,omitempty"`
+	IsActive BooleanFilterOperatorInput    `json:"isActive"`
 }
 
 type StringFilterOperationInput struct {
@@ -92,15 +92,8 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 		return nil
 	}
 
-	// default filter settings
+	// groups are filtered by active state unless the caller asks otherwise
 	filter := &GroupFilterInput{
-		Type: GroupTypeFilterOperatorInput{
-			In: []string{
-				model.GroupTypeManual,
-				model.GroupTypeSynced,
-				model.GroupTypeSystem,
-			},
-		},
 		IsActive: BooleanFilterOperatorInput{Eq: true},
 	}
 
@@ -113,7 +106,7 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 	}
 
 	if len(input.Types) > 0 {
-		filter.Type.In = input.Types
+		filter.Type = &GroupTypeFilterOperatorInput{In: input.Types}
 	}
 
 	if input.IsActive != nil {
