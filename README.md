@@ -1,7 +1,7 @@
 
 # Twingate Terraform Provider
 
-[![Coverage Status](https://coveralls.io/repos/github/Twingate/terraform-provider-twingate/badge.svg?branch=main&t=rqgifB)](https://coveralls.io/github/Twingate/terraform-provider-twingate?branch=main)
+[![codecov](https://codecov.io/gh/Twingate/terraform-provider-twingate/branch/main/graph/badge.svg)](https://codecov.io/gh/Twingate/terraform-provider-twingate)
 
 ## Requirements
 
