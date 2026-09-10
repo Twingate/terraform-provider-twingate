@@ -133,7 +133,7 @@ jobs:
     name: Matrix Acceptance Tests
     needs: [build]
     runs-on: ubuntu-latest
-#    if: "!github.event.pull_request.head.repo.fork"
+    if: "!github.event.pull_request.head.repo.fork"
     permissions:
       contents: read
       id-token: write
