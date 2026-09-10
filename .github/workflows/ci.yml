@@ -16,7 +16,6 @@ on:
       - 'README.md'
     branches:
       - main
-      - fix/twingate_kubernetes_resource-address-update
 
 # Dependabot PRs all sweep the same shared Twingate tenant, so they share one
 # concurrency group and queue rather than run in parallel. Every other run keeps
