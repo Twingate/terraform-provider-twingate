@@ -1,7 +1,6 @@
 package customplanmodifier
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -14,45 +13,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUseStringWhenBoolEquals(t *testing.T) {
-	const (
-		inCluster      = "in_cluster"
-		address        = "address"
-		defaultAddress = "kubernetes.default.svc.cluster.local"
-		customAddress  = "k8s-api.example.com"
-	)
+// Attribute names mirroring the in_cluster/address pair of
+// twingate_kubernetes_resource, the first user of this plan modifier.
+const (
+	testInCluster      = "in_cluster"
+	testAddress        = "address"
+	testDefaultAddress = "kubernetes.default.svc.cluster.local"
+	testCustomAddress  = "k8s-api.example.com"
+)
 
-	planSchema := schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			inCluster: schema.BoolAttribute{Optional: true, Computed: true},
-			address:   schema.StringAttribute{Optional: true, Computed: true},
-		},
-	}
+var (
+	siblingTrue    = tftypes.NewValue(tftypes.Bool, true)
+	siblingFalse   = tftypes.NewValue(tftypes.Bool, false)
+	siblingNull    = tftypes.NewValue(tftypes.Bool, nil)
+	siblingUnknown = tftypes.NewValue(tftypes.Bool, tftypes.UnknownValue)
 
-	objectType := tftypes.Object{
+	inClusterAddressType = tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			inCluster: tftypes.Bool,
-			address:   tftypes.String,
+			testInCluster: tftypes.Bool,
+			testAddress:   tftypes.String,
 		},
 	}
+)
 
-	buildPlan := func(sibling tftypes.Value) tfsdk.Plan {
-		return tfsdk.Plan{
-			Schema: planSchema,
-			Raw: tftypes.NewValue(objectType, map[string]tftypes.Value{
-				inCluster: sibling,
-				address:   tftypes.NewValue(tftypes.String, tftypes.UnknownValue),
-			}),
-		}
+// inClusterAddressPlan wraps raw in a plan whose schema holds one bool and one
+// string attribute.
+func inClusterAddressPlan(raw tftypes.Value) tfsdk.Plan {
+	return tfsdk.Plan{
+		Schema: schema.Schema{
+			Attributes: map[string]schema.Attribute{
+				testInCluster: schema.BoolAttribute{Optional: true, Computed: true},
+				testAddress:   schema.StringAttribute{Optional: true, Computed: true},
+			},
+		},
+		Raw: raw,
 	}
+}
 
-	var (
-		siblingTrue    = tftypes.NewValue(tftypes.Bool, true)
-		siblingFalse   = tftypes.NewValue(tftypes.Bool, false)
-		siblingNull    = tftypes.NewValue(tftypes.Bool, nil)
-		siblingUnknown = tftypes.NewValue(tftypes.Bool, tftypes.UnknownValue)
-	)
+// planWithSibling builds a plan where the bool sibling has the given value and the
+// string attribute is still unknown, as it is before the modifier runs on create.
+func planWithSibling(sibling tftypes.Value) tfsdk.Plan {
+	return inClusterAddressPlan(tftypes.NewValue(inClusterAddressType, map[string]tftypes.Value{
+		testInCluster: sibling,
+		testAddress:   tftypes.NewValue(tftypes.String, tftypes.UnknownValue),
+	}))
+}
 
+func TestUseStringWhenBoolEquals(t *testing.T) {
 	cases := []struct {
 		name           string
 		sibling        tftypes.Value
@@ -66,14 +73,14 @@ func TestUseStringWhenBoolEquals(t *testing.T) {
 			sibling:     siblingTrue,
 			configValue: types.StringNull(),
 			planValue:   types.StringUnknown(),
-			expected:    types.StringValue(defaultAddress),
+			expected:    types.StringValue(testDefaultAddress),
 		},
 		{
 			name:        "sibling matches, value omitted with prior state - replans to the fixed value",
 			sibling:     siblingTrue,
 			configValue: types.StringNull(),
-			planValue:   types.StringValue(customAddress),
-			expected:    types.StringValue(defaultAddress),
+			planValue:   types.StringValue(testCustomAddress),
+			expected:    types.StringValue(testDefaultAddress),
 		},
 		{
 			name:        "sibling does not match - leaves the plan untouched",
@@ -99,23 +106,23 @@ func TestUseStringWhenBoolEquals(t *testing.T) {
 		{
 			name:        "sibling matches, value pinned to the fixed value - leaves the config alone",
 			sibling:     siblingTrue,
-			configValue: types.StringValue(defaultAddress),
-			planValue:   types.StringValue(defaultAddress),
-			expected:    types.StringValue(defaultAddress),
+			configValue: types.StringValue(testDefaultAddress),
+			planValue:   types.StringValue(testDefaultAddress),
+			expected:    types.StringValue(testDefaultAddress),
 		},
 		{
 			name:        "sibling does not match, custom value - never overrides the config",
 			sibling:     siblingFalse,
-			configValue: types.StringValue(customAddress),
-			planValue:   types.StringValue(customAddress),
-			expected:    types.StringValue(customAddress),
+			configValue: types.StringValue(testCustomAddress),
+			planValue:   types.StringValue(testCustomAddress),
+			expected:    types.StringValue(testCustomAddress),
 		},
 		{
 			name:        "sibling unknown, custom value - no error",
 			sibling:     siblingUnknown,
-			configValue: types.StringValue(customAddress),
-			planValue:   types.StringValue(customAddress),
-			expected:    types.StringValue(customAddress),
+			configValue: types.StringValue(testCustomAddress),
+			planValue:   types.StringValue(testCustomAddress),
+			expected:    types.StringValue(testCustomAddress),
 		},
 		{
 			name:        "sibling matches, value unknown - no error",
@@ -127,9 +134,9 @@ func TestUseStringWhenBoolEquals(t *testing.T) {
 		{
 			name:           "sibling defaulted in the plan, custom value - reports error",
 			sibling:        siblingTrue,
-			configValue:    types.StringValue(customAddress),
-			planValue:      types.StringValue(customAddress),
-			expected:       types.StringValue(customAddress),
+			configValue:    types.StringValue(testCustomAddress),
+			planValue:      types.StringValue(testCustomAddress),
+			expected:       types.StringValue(testCustomAddress),
 			expectedDetail: `"address" must be omitted or set to "kubernetes.default.svc.cluster.local" when "in_cluster" is true.`,
 		},
 	}
@@ -138,11 +145,11 @@ func TestUseStringWhenBoolEquals(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			resp := &planmodifier.StringResponse{PlanValue: c.planValue}
 
-			UseStringWhenBoolEquals(path.Root(inCluster), true, defaultAddress).PlanModifyString(context.Background(), planmodifier.StringRequest{
-				Path:        path.Root(address),
+			UseStringWhenBoolEquals(path.Root(testInCluster), true, testDefaultAddress).PlanModifyString(t.Context(), planmodifier.StringRequest{
+				Path:        path.Root(testAddress),
 				ConfigValue: c.configValue,
 				PlanValue:   c.planValue,
-				Plan:        buildPlan(c.sibling),
+				Plan:        planWithSibling(c.sibling),
 			}, resp)
 
 			assert.Equal(t, c.expected, resp.PlanValue)
@@ -159,4 +166,46 @@ func TestUseStringWhenBoolEquals(t *testing.T) {
 			assert.Equal(t, c.expectedDetail, resp.Diagnostics.Errors()[0].Detail())
 		})
 	}
+}
+
+func TestUseStringWhenBoolEqualsDescription(t *testing.T) {
+	modifier := UseStringWhenBoolEquals(path.Root(testInCluster), true, testDefaultAddress)
+
+	expected := `value defaults to "kubernetes.default.svc.cluster.local" when "in_cluster" is true`
+	assert.Equal(t, expected, modifier.Description(t.Context()))
+	assert.Equal(t, expected, modifier.MarkdownDescription(t.Context()))
+}
+
+// On destroy the whole plan is null: there is no sibling to read and nothing to
+// pin, so the modifier must leave the plan untouched without diagnostics.
+func TestUseStringWhenBoolEqualsSkipsDestroy(t *testing.T) {
+	resp := &planmodifier.StringResponse{PlanValue: types.StringNull()}
+
+	UseStringWhenBoolEquals(path.Root(testInCluster), true, testDefaultAddress).PlanModifyString(t.Context(), planmodifier.StringRequest{
+		Path:        path.Root(testAddress),
+		ConfigValue: types.StringNull(),
+		PlanValue:   types.StringNull(),
+		Plan:        inClusterAddressPlan(tftypes.NewValue(inClusterAddressType, nil)),
+	}, resp)
+
+	assert.Equal(t, types.StringNull(), resp.PlanValue)
+	assert.False(t, resp.Diagnostics.HasError())
+}
+
+// A sibling path missing from the schema is a wiring mistake in the resource: it
+// must surface as a diagnostic instead of silently skipping the modifier.
+func TestUseStringWhenBoolEqualsSiblingLookupError(t *testing.T) {
+	resp := &planmodifier.StringResponse{PlanValue: types.StringUnknown()}
+
+	UseStringWhenBoolEquals(path.Root("missing"), true, testDefaultAddress).PlanModifyString(t.Context(), planmodifier.StringRequest{
+		Path:        path.Root(testAddress),
+		ConfigValue: types.StringNull(),
+		PlanValue:   types.StringUnknown(),
+		Plan:        planWithSibling(siblingTrue),
+	}, resp)
+
+	assert.Equal(t, types.StringUnknown(), resp.PlanValue)
+	require.True(t, resp.Diagnostics.HasError())
+	require.Len(t, resp.Diagnostics.Errors(), 1)
+	assert.Equal(t, "Plan Read Error", resp.Diagnostics.Errors()[0].Summary())
 }

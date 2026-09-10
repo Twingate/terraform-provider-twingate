@@ -1,13 +1,10 @@
 package customvalidator
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/stretchr/testify/assert"
@@ -15,42 +12,6 @@ import (
 )
 
 func TestNonEmptyWhenBoolEquals(t *testing.T) {
-	const (
-		inCluster       = "in_cluster"
-		bearerTokenFile = "bearer_token_file"
-	)
-
-	configSchema := schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			inCluster:       schema.BoolAttribute{Optional: true, Computed: true},
-			bearerTokenFile: schema.StringAttribute{Optional: true, Computed: true},
-		},
-	}
-
-	objectType := tftypes.Object{
-		AttributeTypes: map[string]tftypes.Type{
-			inCluster:       tftypes.Bool,
-			bearerTokenFile: tftypes.String,
-		},
-	}
-
-	buildConfig := func(sibling, value tftypes.Value) tfsdk.Config {
-		return tfsdk.Config{
-			Schema: configSchema,
-			Raw: tftypes.NewValue(objectType, map[string]tftypes.Value{
-				inCluster:       sibling,
-				bearerTokenFile: value,
-			}),
-		}
-	}
-
-	var (
-		siblingFalse   = tftypes.NewValue(tftypes.Bool, false)
-		siblingTrue    = tftypes.NewValue(tftypes.Bool, true)
-		siblingNull    = tftypes.NewValue(tftypes.Bool, nil)
-		siblingUnknown = tftypes.NewValue(tftypes.Bool, tftypes.UnknownValue)
-	)
-
 	cases := []struct {
 		name           string
 		sibling        tftypes.Value
@@ -108,10 +69,10 @@ func TestNonEmptyWhenBoolEquals(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			resp := &validator.StringResponse{}
 
-			NonEmptyWhenBoolEquals(path.Root(inCluster), false).ValidateString(context.Background(), validator.StringRequest{
-				Path:        path.Root(bearerTokenFile),
+			NonEmptyWhenBoolEquals(path.Root(testInCluster), false).ValidateString(t.Context(), validator.StringRequest{
+				Path:        path.Root(testBearerTokenFile),
 				ConfigValue: c.configValue,
-				Config:      buildConfig(c.sibling, c.rawValue),
+				Config:      boolSiblingConfig(testInCluster, testBearerTokenFile, c.sibling, c.rawValue),
 			}, resp)
 
 			if c.expectedDetail == "" {
@@ -126,4 +87,42 @@ func TestNonEmptyWhenBoolEquals(t *testing.T) {
 			assert.Equal(t, c.expectedDetail, resp.Diagnostics.Errors()[0].Detail())
 		})
 	}
+}
+
+func TestNonEmptyWhenBoolEqualsDescription(t *testing.T) {
+	v := NonEmptyWhenBoolEquals(path.Root(testInCluster), false)
+
+	expected := `string must be set to a non-empty value when "in_cluster" is false`
+	assert.Equal(t, expected, v.Description(t.Context()))
+	assert.Equal(t, expected, v.MarkdownDescription(t.Context()))
+}
+
+// On destroy Terraform hands validators a null config, so a missing value must
+// not be reported even though the sibling would otherwise require it.
+func TestNonEmptyWhenBoolEqualsSkipsDestroy(t *testing.T) {
+	resp := &validator.StringResponse{}
+
+	NonEmptyWhenBoolEquals(path.Root(testInCluster), false).ValidateString(t.Context(), validator.StringRequest{
+		Path:        path.Root(testBearerTokenFile),
+		ConfigValue: types.StringNull(),
+		Config:      boolSiblingNullConfig(testInCluster, testBearerTokenFile),
+	}, resp)
+
+	assert.False(t, resp.Diagnostics.HasError())
+}
+
+// A sibling path missing from the schema is a wiring mistake in the resource: it
+// must surface as a diagnostic instead of silently accepting the missing value.
+func TestNonEmptyWhenBoolEqualsSiblingLookupError(t *testing.T) {
+	resp := &validator.StringResponse{}
+
+	NonEmptyWhenBoolEquals(path.Root("missing"), false).ValidateString(t.Context(), validator.StringRequest{
+		Path:        path.Root(testBearerTokenFile),
+		ConfigValue: types.StringNull(),
+		Config:      boolSiblingConfig(testInCluster, testBearerTokenFile, siblingFalse, tftypes.NewValue(tftypes.String, nil)),
+	}, resp)
+
+	require.True(t, resp.Diagnostics.HasError())
+	require.Len(t, resp.Diagnostics.Errors(), 1)
+	assert.Equal(t, "Configuration Read Error", resp.Diagnostics.Errors()[0].Summary())
 }
