@@ -17,10 +17,12 @@ on:
     branches:
       - main
 
-# Ensures only 1 action runs per PR and previous is canceled on new trigger
+# Dependabot PRs all sweep the same shared Twingate tenant, so they share one
+# concurrency group and queue rather than run in parallel. Every other run keeps
+# its own per-PR group and still cancels superseded runs on a new push.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.user.login == 'dependabot[bot]' && 'dependabot' || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
 
 jobs:
   build:

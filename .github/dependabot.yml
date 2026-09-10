@@ -10,11 +10,42 @@ updates:
   open-pull-requests-limit: 10
   allow:
     - dependency-type: all
+  # Batch minor/patch bumps into a single PR so dependabot stops opening them in
+  # bursts -- CI serializes dependabot runs (see ci.yml) because acceptance tests
+  # share one Twingate tenant, and a burst of PRs just queues behind each other.
+  #
+  # Scoped to minor+patch deliberately: dependabot/fetch-metadata reports the
+  # HIGHEST semver bump across a grouped PR, so folding majors in here would make
+  # the group report semver-major and silently stop automerge-dependabot.yaml from
+  # merging the whole batch. Majors stay as individual PRs, reviewed by hand.
+  groups:
+    gomod-minor-patch:
+      patterns:
+        - "*"
+      update-types:
+        - minor
+        - patch
 - package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "daily"
+  open-pull-requests-limit: 3
+  groups:
+    github-actions-minor-patch:
+      patterns:
+        - "*"
+      update-types:
+        - minor
+        - patch
 - package-ecosystem: "docker"
   directory: "/tools"
   schedule:
     interval: "daily"
+  open-pull-requests-limit: 3
+  groups:
+    docker-minor-patch:
+      patterns:
+        - "*"
+      update-types:
+        - minor
+        - patch
