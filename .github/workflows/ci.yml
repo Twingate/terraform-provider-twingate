@@ -16,6 +16,7 @@ on:
       - 'README.md'
     branches:
       - main
+      - fix/sweep-x509-certs
 
 # Dependabot PRs all sweep the same shared Twingate tenant, so they share one
 # concurrency group and queue rather than run in parallel. Every other run keeps
@@ -129,41 +130,9 @@ jobs:
         # contributor's CI over that; stay strict everywhere else.
         fail_ci_if_error: ${{ !github.event.pull_request.head.repo.fork }}
 
-  cleanup-before-acctests:
-    name: Cleanup before acceptance tests
-    runs-on: ubuntu-latest
-    if: "!github.event.pull_request.head.repo.fork"
-    timeout-minutes: 10
-    steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-        id: go
-
-      - name: go env
-        run: echo "GOCACHE=$(go env GOCACHE)" >> $GITHUB_ENV
-
-      - name: Get dependencies
-        run: |
-          go mod download
-
-      - name: Run x509 certificate authority sweepers
-        timeout-minutes: 10
-        env:
-          TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
-          TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
-          TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
-        run: |
-          make sweep-all-twingate_x509_certificate_authority
-
   tests-acceptance:
     name: Matrix Acceptance Tests
-    needs: [build, cleanup-before-acctests]
+    needs: [build]
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
     permissions:
@@ -224,7 +193,7 @@ jobs:
 
   tests-acceptance-opentofu:
     name: OpenTofu Matrix Acceptance Tests
-    needs: [build, cleanup-before-acctests]
+    needs: [build]
     runs-on: ubuntu-latest
     if: "!github.event.pull_request.head.repo.fork"
     strategy:
