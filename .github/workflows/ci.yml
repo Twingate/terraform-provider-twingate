@@ -16,7 +16,6 @@ on:
       - 'README.md'
     branches:
       - main
-      - fix/sweep-x509-certs
 
 # Dependabot PRs all sweep the same shared Twingate tenant, so they share one
 # concurrency group and queue rather than run in parallel. Every other run keeps
