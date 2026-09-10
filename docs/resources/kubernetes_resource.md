@@ -64,8 +64,8 @@ resource "twingate_kubernetes_resource" "external_cluster" {
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
 - `address` (String) The address of the Kubernetes Resource (IP or FQDN).
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
-- `bearer_token_file` (String) Path to bearer token file.
-- `ca_file` (String) Path to CA certificate file.
+- `bearer_token_file` (String) Path to bearer token file. It's required when `in_cluster` is set to `false`.
+- `ca_file` (String) Path to CA certificate file. It's required when `in_cluster` is set to `false`.
 - `in_cluster` (Boolean) Whether the Gateway is running inside the same Kubernetes cluster that is represented by the Kubernetes Resource. Default is `true`.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
