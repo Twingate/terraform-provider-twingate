@@ -1,0 +1,51 @@
+# Deletes all x509 certificate authorities (CAs) from the test Twingate tenant
+name: Cleanup Certificate Authorities
+permissions: read-all
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Cleanup
+    if: "!github.event.repository.fork"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check that no test runs are in progress
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for workflow in ci.yml smoketests.yml; do
+            active=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow" --limit 100 \
+              --json status --jq '[.[] | select(.status != "completed")] | length')
+            if [ "$active" -gt 0 ]; then
+              echo "::error::$workflow has $active run(s) in progress. Wait for them to finish or cancel them, then run this workflow again."
+              exit 1
+            fi
+          done
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+        id: go
+
+      - name: go env
+        run: echo "GOCACHE=$(go env GOCACHE)" >> $GITHUB_ENV
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: Run sweepers
+        timeout-minutes: 10
+        env:
+          TWINGATE_URL: ${{ secrets.TWINGATE_URL }}
+          TWINGATE_NETWORK: ${{ secrets.TWINGATE_NETWORK }}
+          TWINGATE_API_TOKEN: ${{ secrets.TWINGATE_API_TOKEN }}
+        run: |
+          make sweep-all-twingate_x509_certificate_authority
