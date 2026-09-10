@@ -45,6 +45,13 @@ module "ec2_tenant_connector" {
   vpc_security_group_ids = [module.demo_sg.security_group_id]
   subnet_id              = module.demo_vpc.private_subnets[0]
 
+  # Require IMDSv2, which disables IMDSv1
+  metadata_options = {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
   root_block_device = [
     {
       encrypted = true
