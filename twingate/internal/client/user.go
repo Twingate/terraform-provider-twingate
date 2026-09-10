@@ -9,11 +9,6 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 )
 
-type StringFilter struct {
-	Name   string
-	Filter string
-}
-
 type UsersFilter struct {
 	Email     *StringFilter
 	FirstName *StringFilter
@@ -26,18 +21,10 @@ func NewUserFilterInput(filter *UsersFilter) *query.UserFilterInput {
 		return nil
 	}
 
-	queryFilter := &query.UserFilterInput{}
-
-	if filter.FirstName != nil {
-		queryFilter.FirstName = query.NewStringFilterOperationInput(filter.FirstName.Name, filter.FirstName.Filter)
-	}
-
-	if filter.LastName != nil {
-		queryFilter.LastName = query.NewStringFilterOperationInput(filter.LastName.Name, filter.LastName.Filter)
-	}
-
-	if filter.Email != nil {
-		queryFilter.Email = query.NewStringFilterOperationInput(filter.Email.Name, filter.Email.Filter)
+	queryFilter := &query.UserFilterInput{
+		FirstName: filter.FirstName.ToQuery(),
+		LastName:  filter.LastName.ToQuery(),
+		Email:     filter.Email.ToQuery(),
 	}
 
 	if len(filter.Roles) > 0 {

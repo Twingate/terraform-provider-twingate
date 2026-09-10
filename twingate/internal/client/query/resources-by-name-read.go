@@ -1,5 +1,7 @@
 package query
 
+import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+
 type ReadResourcesByName struct {
 	Resources `graphql:"resources(filter: $filter, after: $resourcesEndCursor, first: $pageLimit)"`
 }
@@ -14,11 +16,21 @@ type ResourceFilterInput struct {
 	RemoteNetworkID *RemoteNetworkIdFilterOperationInput `json:"remoteNetworkId"`
 }
 
-func NewResourceFilterInput(name, filter string, tags map[string]string, remoteNetworkId *string) *ResourceFilterInput {
+func NewResourceFilterInput(input *model.ResourcesFilter) *ResourceFilterInput {
+	if input == nil {
+		return nil
+	}
+
+	name := NewStringFilterOperationInput(input.GetName(), input.NameFilter)
+
+	if len(input.NameIn) > 0 {
+		name = NewStringFilterInOperationInput(input.NameIn)
+	}
+
 	return &ResourceFilterInput{
-		Name:            NewStringFilterOperationInput(name, filter),
-		Tags:            NewTagsFilterOperatorInput(tags),
-		RemoteNetworkID: NewRemoteNetworkIdFilterOperationInput(remoteNetworkId),
+		Name:            name,
+		Tags:            NewTagsFilterOperatorInput(input.Tags),
+		RemoteNetworkID: NewRemoteNetworkIdFilterOperationInput(input.RemoteNetworkID),
 	}
 }
 

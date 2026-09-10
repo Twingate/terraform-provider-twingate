@@ -1375,7 +1375,7 @@ func TestNewConnectorFilterInput(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := NewConnectorFilterInput(c.name, c.filter)
+			actual := NewConnectorFilterInput(NewStringFilterOperationInput(c.name, c.filter))
 
 			assert.Equal(t, c.expected, actual)
 		})
@@ -2167,7 +2167,7 @@ func TestRemoteNetworkFilter(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			result := NewRemoteNetworkFilterInput(c.inputName, c.inputFilter)
+			result := NewRemoteNetworkFilterInput(NewStringFilterOperationInput(c.inputName, c.inputFilter))
 
 			assert.Equal(t, c.expectedFilter, result.Name)
 		})
@@ -2774,7 +2774,45 @@ func TestResourceFilter(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			result := NewResourceFilterInput(c.inputName, c.inputFilter, nil, nil)
+			result := NewResourceFilterInput(&model.ResourcesFilter{Name: &c.inputName, NameFilter: c.inputFilter})
+
+			assert.Equal(t, c.expectedFilter, result.Name)
+		})
+	}
+}
+
+func TestResourceFilterNameIn(t *testing.T) {
+	cases := []struct {
+		name           string
+		filter         *model.ResourcesFilter
+		expectedFilter *StringFilterOperationInput
+	}{
+		{
+			name:           "nil filter",
+			filter:         nil,
+			expectedFilter: nil,
+		},
+		{
+			name:           "list of names",
+			filter:         &model.ResourcesFilter{NameIn: []string{"res-1", "res-2"}, NameFilter: attr.FilterByIn},
+			expectedFilter: &StringFilterOperationInput{In: []string{"res-1", "res-2"}},
+		},
+		{
+			name:           "list of names wins over the single name",
+			filter:         &model.ResourcesFilter{Name: optionalString("res-3"), NameIn: []string{"res-1"}, NameFilter: attr.FilterByIn},
+			expectedFilter: &StringFilterOperationInput{In: []string{"res-1"}},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			result := NewResourceFilterInput(c.filter)
+
+			if c.filter == nil {
+				assert.Nil(t, result)
+
+				return
+			}
 
 			assert.Equal(t, c.expectedFilter, result.Name)
 		})
@@ -2821,7 +2859,7 @@ func TestResourceFilterTags(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			result := NewResourceFilterInput("", "", c.tags, nil)
+			result := NewResourceFilterInput(&model.ResourcesFilter{Tags: c.tags})
 
 			if c.expectedFilter == nil {
 				assert.Nil(t, result.Tags)
@@ -2858,7 +2896,7 @@ func TestResourceFilterRemoteNetworkId(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			result := NewResourceFilterInput("", "", nil, c.remoteNetworkId)
+			result := NewResourceFilterInput(&model.ResourcesFilter{RemoteNetworkID: c.remoteNetworkId})
 
 			assert.Equal(t, c.expectedFilter, result.RemoteNetworkID)
 		})
@@ -3222,7 +3260,7 @@ func TestSecurityPolicyFilter(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			result := NewSecurityPolicyFilterField(c.inputName, c.inputFilter)
+			result := NewSecurityPolicyFilterField(NewStringFilterOperationInput(c.inputName, c.inputFilter))
 
 			assert.Equal(t, c.expectedFilter, result.Name)
 		})
@@ -3786,7 +3824,7 @@ func TestServiceAccountFilter(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			result := NewServiceAccountFilterInput(c.inputName, c.inputFilter)
+			result := NewServiceAccountFilterInput(NewStringFilterOperationInput(c.inputName, c.inputFilter))
 
 			if c.inputName == "" {
 				assert.Nil(t, result)

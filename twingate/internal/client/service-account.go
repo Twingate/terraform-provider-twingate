@@ -116,20 +116,11 @@ func (client *Client) readServiceAccountsAfter(ctx context.Context, variables ma
 	return &response.PaginatedResource, nil
 }
 
-func (client *Client) ReadServiceAccounts(ctx context.Context, input ...string) ([]*model.ServiceAccount, error) {
+func (client *Client) ReadServiceAccounts(ctx context.Context, filter *StringFilter) ([]*model.ServiceAccount, error) {
 	opr := resourceServiceAccount.read()
 
-	var name, filter string
-	if len(input) > 0 {
-		name = input[0]
-	}
-
-	if len(input) > 1 {
-		filter = input[1]
-	}
-
 	variables := newVars(
-		gqlNullable(query.NewServiceAccountFilterInput(name, filter), "filter"),
+		gqlNullable(query.NewServiceAccountFilterInput(filter.ToQuery()), "filter"),
 		cursor(query.CursorServices),
 		cursor(query.CursorResources),
 		cursor(query.CursorServiceKeys),

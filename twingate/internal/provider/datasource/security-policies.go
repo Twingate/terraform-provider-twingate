@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var ErrSecurityPoliciesDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+var ErrSecurityPoliciesDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regexp, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &securityPolicies{}
@@ -34,6 +34,7 @@ type securityPoliciesModel struct {
 	NameExclude      types.String          `tfsdk:"name_exclude"`
 	NamePrefix       types.String          `tfsdk:"name_prefix"`
 	NameSuffix       types.String          `tfsdk:"name_suffix"`
+	NameIn           types.Set             `tfsdk:"name_in"`
 	SecurityPolicies []securityPolicyModel `tfsdk:"security_policies"`
 }
 
@@ -91,6 +92,7 @@ func (d *securityPolicies) Schema(ctx context.Context, req datasource.SchemaRequ
 				Optional:    true,
 				Description: "The name of the security policy must end with the value.",
 			},
+			attr.Name + attr.FilterByIn: InFilterAttribute("Returns only security policies that exactly match one of the names in the list."),
 			attr.SecurityPolicies: schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
@@ -120,15 +122,15 @@ func (d *securityPolicies) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	name, filter := GetNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
-
-	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)+CountSetAttributes(data.NameIn) > 1 {
 		addErr(&resp.Diagnostics, ErrSecurityPoliciesDatasourceShouldSetOneOptionalNameAttribute, TwingateSecurityPolicies)
 
 		return
 	}
 
-	policies, err := d.client.ReadSecurityPolicies(ctx, name, filter)
+	filter := GetStringFilter(data.NameIn, data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+
+	policies, err := d.client.ReadSecurityPolicies(ctx, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateSecurityPolicy)
 

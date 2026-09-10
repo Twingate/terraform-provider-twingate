@@ -2,6 +2,7 @@ package twingate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -41,6 +42,8 @@ const (
 	EnvHTTPTimeout  = "TWINGATE_HTTP_TIMEOUT"
 	EnvHTTPMaxRetry = "TWINGATE_HTTP_MAX_RETRY"
 )
+
+var ErrCacheFilterShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regexp, name_contains, name_exclude, name_prefix or name_suffix must be set.")
 
 var _ provider.Provider = &Twingate{}
 
@@ -362,7 +365,7 @@ func parseResourcesFilter(config types.Object) (*model.ResourcesFilter, error) {
 	value, filter := twingateDatasource.GetNameFilter(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix)
 
 	if twingateDatasource.CountOptionalAttributes(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix) > 1 {
-		return nil, twingateDatasource.ErrResourcesDatasourceShouldSetOneOptionalNameAttribute
+		return nil, ErrCacheFilterShouldSetOneOptionalNameAttribute
 	}
 
 	tags := attrs[attr.Tags].(types.Map)
@@ -414,7 +417,7 @@ func parseGroupFilter(config types.Object) (*model.GroupsFilter, error) {
 	value, filter := twingateDatasource.GetNameFilter(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix)
 
 	if twingateDatasource.CountOptionalAttributes(name, nameRegexp, nameContains, nameExclude, namePrefix, nameSuffix) > 1 {
-		return nil, twingateDatasource.ErrResourcesDatasourceShouldSetOneOptionalNameAttribute
+		return nil, ErrCacheFilterShouldSetOneOptionalNameAttribute
 	}
 
 	groupFilter := &model.GroupsFilter{

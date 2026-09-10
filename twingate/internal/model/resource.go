@@ -3,7 +3,6 @@ package model
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -235,40 +234,14 @@ func (r Resource) Match(filter ResourceFilter) bool {
 		}
 	}
 
+	// filter by list of names
+	if names := filter.GetNameIn(); len(names) > 0 && !slices.Contains(names, r.Name) {
+		return false
+	}
+
 	// filter by name
-	if name := filter.GetName(); name != "" {
-		switch filter.GetFilterBy() {
-		case "":
-			if r.Name != name {
-				return false
-			}
-
-		case attr.FilterByContains:
-			if !strings.Contains(r.Name, name) {
-				return false
-			}
-
-		case attr.FilterByExclude:
-			if strings.Contains(r.Name, name) {
-				return false
-			}
-
-		case attr.FilterByPrefix:
-			if !strings.HasPrefix(r.Name, name) {
-				return false
-			}
-
-		case attr.FilterBySuffix:
-			if !strings.HasSuffix(r.Name, name) {
-				return false
-			}
-
-		case attr.FilterByRegexp:
-			matched, err := regexp.MatchString(name, r.Name)
-			if err != nil || !matched {
-				return false
-			}
-		}
+	if name := filter.GetName(); name != "" && !matchName(r.Name, name, filter.GetFilterBy()) {
+		return false
 	}
 
 	// filter by remote network id
@@ -425,6 +398,7 @@ func (p *Protocol) ToTerraform() []any {
 type ResourcesFilter struct {
 	Name              *string
 	NameFilter        string
+	NameIn            []string
 	Tags              map[string]string
 	RemoteNetworkID   *string
 	RemoteNetworkName *string
@@ -447,8 +421,11 @@ func (f *ResourcesFilter) GetFilterBy() string {
 }
 
 func (f *ResourcesFilter) GetNameIn() []string {
-	// not supported
-	return nil
+	if f == nil {
+		return nil
+	}
+
+	return f.NameIn
 }
 
 func (f *ResourcesFilter) GetTypes() []string {
@@ -466,7 +443,7 @@ func (f *ResourcesFilter) IsNil() bool {
 }
 
 func (f *ResourcesFilter) HasNotSupportedFilters() bool {
-	return f != nil && !slices.Contains([]string{"", attr.FilterByRegexp, attr.FilterByContains, attr.FilterByExclude, attr.FilterByPrefix, attr.FilterBySuffix}, f.NameFilter)
+	return f != nil && !slices.Contains([]string{"", attr.FilterByRegexp, attr.FilterByContains, attr.FilterByExclude, attr.FilterByPrefix, attr.FilterBySuffix, attr.FilterByIn}, f.NameFilter)
 }
 
 func (f *ResourcesFilter) GetTags() map[string]string {
@@ -491,6 +468,10 @@ func (f *ResourcesFilter) String() string {
 		}
 
 		parts = append(parts, fmt.Sprintf("Name(%s)=%q", match, f.GetName()))
+	}
+
+	if len(f.NameIn) > 0 {
+		parts = append(parts, fmt.Sprintf("Name(in)=%v", f.NameIn))
 	}
 
 	if len(f.Tags) > 0 {
