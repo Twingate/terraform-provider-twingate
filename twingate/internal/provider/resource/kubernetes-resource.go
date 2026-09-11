@@ -233,7 +233,7 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.Tags),
+		Tags:             getKeyValueMap(plan.Tags),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -329,7 +329,7 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.Tags),
+		Tags:             getKeyValueMap(plan.Tags),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})

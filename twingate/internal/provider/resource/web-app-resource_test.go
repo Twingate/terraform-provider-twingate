@@ -84,9 +84,9 @@ func TestConvertHeaderRewrites(t *testing.T) {
 	}
 }
 
-// getHeaderRewrites feeds the client, which sends an empty list for a nil map.
+// getKeyValueMap feeds the client, which sends an empty list for a nil map.
 // Both null and empty must reach the API as "clear the stored rewrites".
-func TestGetHeaderRewrites(t *testing.T) {
+func TestGetKeyValueMap(t *testing.T) {
 	cases := []struct {
 		name     string
 		input    types.Map
@@ -116,7 +116,7 @@ func TestGetHeaderRewrites(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, getHeaderRewrites(c.input))
+			assert.Equal(t, c.expected, getKeyValueMap(c.input))
 		})
 	}
 }
