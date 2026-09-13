@@ -32,9 +32,6 @@ func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource 
 	}
 
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
 
 	if len(k8sResource.GroupsAccess) > 0 {
 		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(k8sResource.GroupsAccess)); err != nil {
@@ -129,9 +126,6 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 	}
 
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
 
 	res.GroupsAccess = k8sResource.GroupsAccess
 
