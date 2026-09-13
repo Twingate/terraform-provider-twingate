@@ -1245,3 +1245,32 @@ func CheckSshResourceAlias(resourceName string, expectedAlias *string) sdk.TestC
 		return nil
 	}
 }
+
+// TerraformProviderWithDefaultTags renders a provider block that only sets
+// default_tags; credentials still come from the environment.
+func TerraformProviderWithDefaultTags(tags map[string]string) string {
+	lines := make([]string, 0, len(tags))
+	for k, v := range tags {
+		lines = append(lines, fmt.Sprintf(`      %s = "%s"`, k, v))
+	}
+
+	return fmt.Sprintf(`
+	provider "twingate" {
+	  default_tags = {
+	    tags = {
+%s
+	    }
+	  }
+	}
+	`, strings.Join(lines, "\n"))
+}
+
+// TerraformTagsBlock renders a `tags = {...}` attribute for embedding in a resource.
+func TerraformTagsBlock(tags map[string]string) string {
+	lines := make([]string, 0, len(tags))
+	for k, v := range tags {
+		lines = append(lines, fmt.Sprintf(`    %s = "%s"`, k, v))
+	}
+
+	return fmt.Sprintf("tags = {\n%s\n  }", strings.Join(lines, "\n"))
+}

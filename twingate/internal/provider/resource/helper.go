@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -194,4 +199,49 @@ func setUnion(setA, setB []string) []string {
 	}
 
 	return result
+}
+
+// tagsAllAttribute is the computed attribute holding the merge of provider default
+// tags and the user-declared `tags`. It is the value sent to the API.
+func tagsAllAttribute() schema.MapAttribute {
+	return schema.MapAttribute{
+		ElementType: types.StringType,
+		Computed:    true,
+		Description: "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
+	}
+}
+
+// planTagsAll stores the merge of provider default tags and user-declared tags in the
+// planned `tags_all`. User tags come from config; when the config omits `tags` (null or
+// unknown) the user-declared portion kept in state is used instead, which ImportState
+// stores as API tags minus provider default tags. Destroy plans are left untouched.
+func planTagsAll(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse, defaultTags map[string]string) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	var configTags types.Map
+
+	req.Config.GetAttribute(ctx, path.Root(attr.Tags), &configTags)
+
+	var userTags map[string]string
+
+	if configTags.IsNull() || configTags.IsUnknown() {
+		var stateTags types.Map
+
+		req.State.GetAttribute(ctx, path.Root(attr.Tags), &stateTags)
+		userTags = utils.ConvertMap(stateTags)
+	} else {
+		userTags = utils.ConvertMap(configTags)
+	}
+
+	tagsAll := utils.ConvertMapValue(utils.MapUnion(defaultTags, userTags))
+	resp.Plan.SetAttribute(ctx, path.Root(attr.TagsAll), tagsAll)
+}
+
+// setImportedTags records the tags of an imported resource: `tags_all` holds every API
+// tag, `tags` only the user-declared portion (API tags minus provider default tags).
+func setImportedTags(ctx context.Context, state *tfsdk.State, apiTags, defaultTags map[string]string) {
+	state.SetAttribute(ctx, path.Root(attr.TagsAll), utils.ConvertMapValue(apiTags))
+	state.SetAttribute(ctx, path.Root(attr.Tags), utils.ConvertMapValue(utils.MapDifference(apiTags, defaultTags)))
 }

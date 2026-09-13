@@ -29,14 +29,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-var _ resource.Resource = &webAppResource{}
+var (
+	_ resource.Resource               = &webAppResource{}
+	_ resource.ResourceWithModifyPlan = &webAppResource{}
+)
 
 func NewWebAppResourceResource() resource.Resource {
 	return &webAppResource{}
 }
 
 type webAppResource struct {
-	client *client.Client
+	client      *client.Client
+	defaultTags map[string]string
 }
 
 type webAppResourceModel struct {
@@ -49,6 +53,7 @@ type webAppResourceModel struct {
 	Alias                 types.String `tfsdk:"alias"`
 	SecurityPolicyID      types.String `tfsdk:"security_policy_id"`
 	Tags                  types.Map    `tfsdk:"tags"`
+	TagsAll               types.Map    `tfsdk:"tags_all"`
 	Upstream              types.Object `tfsdk:"upstream"`
 	Downstream            types.Object `tfsdk:"downstream"`
 	RequestHeaderRewrites types.Map    `tfsdk:"request_header_rewrites"`
@@ -87,10 +92,25 @@ func (r *webAppResource) Configure(_ context.Context, req resource.ConfigureRequ
 	}
 
 	r.client = providerData.Client
+	r.defaultTags = providerData.DefaultTags
+}
+
+// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`.
+func (r *webAppResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	planTagsAll(ctx, req, resp, r.defaultTags)
 }
 
 func (r *webAppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+
+	res, err := r.client.ReadWebAppResource(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to import state", err.Error())
+
+		return
+	}
+
+	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
 }
 
 //nolint:funlen
@@ -153,6 +173,7 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
+			attr.TagsAll:    tagsAllAttribute(),
 			attr.Upstream:   webAppUpstream(),
 			attr.Downstream: webAppDownstream(),
 			attr.RequestHeaderRewrites: schema.MapAttribute{
@@ -284,7 +305,7 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		IsVisible:             getOptionalBool(plan.IsVisible),
 		Alias:                 getOptionalString(plan.Alias),
 		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:                  getTags(plan.Tags),
+		Tags:                  getTags(plan.TagsAll),
 		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64()},
 		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64()},
 		RequestHeaderRewrites: getHeaderRewrites(plan.RequestHeaderRewrites),
@@ -425,7 +446,8 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 		state.Alias = types.StringPointerValue(webAppRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValue(webAppRes.Tags)
+	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
+	state.TagsAll = utils.ConvertMapValue(webAppRes.Tags)
 	state.RequestHeaderRewrites = convertHeaderRewrites(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
 	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port)
