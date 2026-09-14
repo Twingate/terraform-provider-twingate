@@ -335,7 +335,7 @@ func (client *Client) ReadFullResourcesByName(ctx context.Context, filter *model
 	opr := resourceResource.read().withCustomName("readFullResourcesByName")
 
 	variables := newVars(
-		gqlNullable(query.NewResourceFilterInput(filter.GetName(), filter.GetFilterBy(), filter.GetTags(), filter.RemoteNetworkID), "filter"),
+		gqlNullable(query.NewResourceFilterInput(filter), "filter"),
 		cursor(query.CursorAccess),
 		cursor(query.CursorResources),
 		pageLimit(extendedPageLimit),
@@ -509,7 +509,7 @@ func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.Res
 	}
 
 	variables := newVars(
-		gqlNullable(query.NewResourceFilterInput(filter.GetName(), filter.GetFilterBy(), filter.GetTags(), filter.RemoteNetworkID), "filter"),
+		gqlNullable(query.NewResourceFilterInput(filter), "filter"),
 		cursor(query.CursorResources),
 		pageLimit(client.pageLimit),
 	)

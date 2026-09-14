@@ -635,7 +635,7 @@ func ListSecurityPolicies() ([]*model.SecurityPolicy, error) {
 		return nil, ErrClientNotInitialized
 	}
 
-	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background(), "", "")
+	securityPolicies, err := providerClient.ReadSecurityPolicies(context.Background(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all security policies: %w", err)
 	}

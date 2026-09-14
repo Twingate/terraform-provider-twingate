@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	ErrUsersDatasourceShouldSetOneOptionalEmailAttribute     = errors.New("Only one of email, email_regex, email_contains, email_exclude, email_prefix or email_suffix must be set.")
-	ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute = errors.New("Only one of first_name, first_name_regex, first_name_contains, first_name_exclude, first_name_prefix or first_name_suffix must be set.")
-	ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute  = errors.New("Only one of last_name, last_name_regex, last_name_contains, last_name_exclude, last_name_prefix or last_name_suffix must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalEmailAttribute     = errors.New("Only one of email, email_regexp, email_contains, email_exclude, email_prefix, email_suffix or email_in must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalFirstNameAttribute = errors.New("Only one of first_name, first_name_regexp, first_name_contains, first_name_exclude, first_name_prefix or first_name_suffix must be set.")
+	ErrUsersDatasourceShouldSetOneOptionalLastNameAttribute  = errors.New("Only one of last_name, last_name_regexp, last_name_contains, last_name_exclude, last_name_prefix or last_name_suffix must be set.")
 )
 
 // Ensure the implementation satisfies the desired interfaces.
@@ -44,6 +44,7 @@ type usersModel struct {
 	EmailExclude      types.String `tfsdk:"email_exclude"`
 	EmailPrefix       types.String `tfsdk:"email_prefix"`
 	EmailSuffix       types.String `tfsdk:"email_suffix"`
+	EmailIn           types.Set    `tfsdk:"email_in"`
 	FirstName         types.String `tfsdk:"first_name"`
 	FirstNameRegexp   types.String `tfsdk:"first_name_regexp"`
 	FirstNameContains types.String `tfsdk:"first_name_contains"`
@@ -118,6 +119,7 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 				Optional:    true,
 				Description: "The email of the user must end with the value.",
 			},
+			attr.Email + attr.FilterByIn: InFilterAttribute("Returns only users that exactly match one of the emails in the list."),
 
 			// first name
 
@@ -228,9 +230,9 @@ func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 	}
 
 	// email
-	email, emailFilter := GetNameFilter(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix)
+	emailFilter := GetStringFilter(data.EmailIn, data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix)
 
-	if CountOptionalAttributes(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix) > 1 {
+	if CountOptionalAttributes(data.Email, data.EmailRegexp, data.EmailContains, data.EmailExclude, data.EmailPrefix, data.EmailSuffix)+CountSetAttributes(data.EmailIn) > 1 {
 		addErr(&resp.Diagnostics, ErrUsersDatasourceShouldSetOneOptionalEmailAttribute, TwingateResources)
 
 		return
@@ -256,12 +258,12 @@ func (d *users) Read(ctx context.Context, req datasource.ReadRequest, resp *data
 
 	var filter *client.UsersFilter
 
-	if email != "" || firstName != "" || lastName != "" || len(data.Roles.Elements()) > 0 {
+	if !emailFilter.IsEmpty() || firstName != "" || lastName != "" || len(data.Roles.Elements()) > 0 {
 		filter = &client.UsersFilter{}
 	}
 
-	if email != "" {
-		filter.Email = &client.StringFilter{Name: email, Filter: emailFilter}
+	if !emailFilter.IsEmpty() {
+		filter.Email = emailFilter
 	}
 
 	if firstName != "" {

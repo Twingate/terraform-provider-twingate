@@ -130,3 +130,36 @@ func TestAccDatasourceTwingateSecurityPoliciesFilterByRegexp(t *testing.T) {
 		},
 	})
 }
+
+func TestAccDatasourceTwingateSecurityPoliciesFilterByNameIn(t *testing.T) {
+	t.Parallel()
+
+	securityPolicies, err := acctests.ListSecurityPolicies()
+	if err != nil {
+		t.Skip("can't run test:", err)
+	}
+
+	if len(securityPolicies) < 2 {
+		t.Skip("can't run test: expected at least 2 security policies")
+	}
+
+	names := []string{securityPolicies[0].Name, securityPolicies[1].Name}
+	theDatasource := "data.twingate_security_policies.filtered_name_in"
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []sdk.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				data "twingate_security_policies" "filtered_name_in" {
+				  name_in = ["%s", "%s"]
+				}
+				`, names[0], names[1]),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theDatasource, attr.Len(attr.SecurityPolicies), "2"),
+				),
+			},
+		},
+	})
+}

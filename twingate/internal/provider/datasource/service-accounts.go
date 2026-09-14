@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
@@ -13,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var ErrServiceAccountsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+var ErrServiceAccountsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regexp, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &serviceAccounts{}
@@ -34,6 +35,7 @@ type serviceAccountsModel struct {
 	NameExclude     types.String          `tfsdk:"name_exclude"`
 	NamePrefix      types.String          `tfsdk:"name_prefix"`
 	NameSuffix      types.String          `tfsdk:"name_suffix"`
+	NameIn          types.Set             `tfsdk:"name_in"`
 	ServiceAccounts []serviceAccountModel `tfsdk:"service_accounts"`
 }
 
@@ -98,6 +100,7 @@ func (d *serviceAccounts) Schema(ctx context.Context, req datasource.SchemaReque
 				Optional:    true,
 				Description: "The name of the service account must end with the value.",
 			},
+			attr.Name + attr.FilterByIn: InFilterAttribute("Returns only service accounts that exactly match one of the names in the list."),
 			attr.ServiceAccounts: schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "List of Service Accounts",
@@ -138,33 +141,35 @@ func (d *serviceAccounts) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	name, filter := GetNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
-
-	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)+CountSetAttributes(data.NameIn) > 1 {
 		addErr(&resp.Diagnostics, ErrServiceAccountsDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
 
 		return
 	}
 
-	accounts, err := d.client.ReadServiceAccounts(ctx, name, filter)
+	filter := GetStringFilter(data.NameIn, data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+
+	accounts, err := d.client.ReadServiceAccounts(ctx, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateServiceAccounts)
 
 		return
 	}
 
-	data.ID = types.StringValue(terraformServicesDatasourceID(data.Name.ValueString()))
+	data.ID = types.StringValue(terraformServicesDatasourceID(filter.Name, filter.Values))
 	data.ServiceAccounts = convertServicesToTerraform(accounts)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func terraformServicesDatasourceID(name string) string {
-	id := "all-services"
-	if name != "" {
-		id = "service-by-name-" + name
+func terraformServicesDatasourceID(name string, nameIn []string) string {
+	switch {
+	case name != "":
+		return "service-by-name-" + name
+	case len(nameIn) > 0:
+		return "service-by-name-in-" + strings.Join(nameIn, ",")
+	default:
+		return "all-services"
 	}
-
-	return id
 }

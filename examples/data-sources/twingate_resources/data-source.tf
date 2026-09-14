@@ -5,6 +5,7 @@ data "twingate_resources" "foo" {
   #  name_exclude = "<your resource's name to exclude>"
   #  name_prefix = "<prefix of resource name>"
   #  name_suffix = "<suffix of resource name>"
+  #  name_in = ["<your resource's name>", "<another resource's name>"]
 
   # tags = {
   #   environment = "dev"

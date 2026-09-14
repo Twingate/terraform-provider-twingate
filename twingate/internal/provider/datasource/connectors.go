@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var ErrConnectorsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+var ErrConnectorsDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regexp, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &connectors{}
@@ -34,6 +34,7 @@ type connectorsModel struct {
 	NameExclude  types.String     `tfsdk:"name_exclude"`
 	NamePrefix   types.String     `tfsdk:"name_prefix"`
 	NameSuffix   types.String     `tfsdk:"name_suffix"`
+	NameIn       types.Set        `tfsdk:"name_in"`
 	Connectors   []connectorModel `tfsdk:"connectors"`
 }
 
@@ -93,6 +94,7 @@ func (d *connectors) Schema(ctx context.Context, req datasource.SchemaRequest, r
 				Optional:    true,
 				Description: "The name of the connector must end with the value.",
 			},
+			attr.Name + attr.FilterByIn: InFilterAttribute("Returns only connectors that exactly match one of the names in the list."),
 
 			// computed
 			attr.Connectors: schema.ListNestedAttribute{
@@ -154,15 +156,15 @@ func (d *connectors) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	name, filter := GetNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
-
-	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)+CountSetAttributes(data.NameIn) > 1 {
 		addErr(&resp.Diagnostics, ErrConnectorsDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
 
 		return
 	}
 
-	connectors, err := d.client.ReadConnectors(ctx, name, filter)
+	filter := GetStringFilter(data.NameIn, data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+
+	connectors, err := d.client.ReadConnectors(ctx, filter)
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
 		addErr(&resp.Diagnostics, err, TwingateConnectors)
 
