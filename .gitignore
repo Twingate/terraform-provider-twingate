@@ -13,6 +13,7 @@
 .*.swp
 *.iml
 *.test
+*.tmp
 
 # terraform files
 terraform.tfvars

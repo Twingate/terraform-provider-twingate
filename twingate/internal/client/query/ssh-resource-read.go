@@ -2,7 +2,7 @@
 package query
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 )
 
@@ -30,7 +30,6 @@ type gqlSSHResourceNode struct {
 	RemoteNetwork struct {
 		ID graphql.ID
 	}
-	Protocols           *Protocols
 	IsVisible           bool
 	Alias               string
 	SecurityPolicy      *gqlSecurityPolicy
@@ -56,7 +55,6 @@ func (n gqlSSHResourceNode) ToModel() (*model.SSHResource, error) {
 		Alias:            optionalString(n.Alias),
 		SecurityPolicyID: securityPolicyID(n.SecurityPolicy),
 		Tags:             tagsToModel(n.Tags),
-		Protocols:        protocolsToModel(n.Protocols),
 		AccessPolicy:     accessPolicyToModel(n.AccessPolicy, &n.ApprovalMode),
 	}
 

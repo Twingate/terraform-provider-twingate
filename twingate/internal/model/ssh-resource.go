@@ -10,7 +10,6 @@ type SSHResource struct {
 	Alias            *string
 	SecurityPolicyID *string
 	Tags             map[string]string
-	Protocols        *Protocols
 	AccessPolicy     *AccessPolicy
 	GroupsAccess     []AccessGroup
 }

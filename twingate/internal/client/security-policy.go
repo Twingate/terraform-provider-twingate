@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 )
 
 const queryReadSecurityPolicies = "readSecurityPolicies"

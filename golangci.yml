@@ -20,6 +20,7 @@ linters:
   default: all
   disable:
     - exhaustruct
+    - exhaustruct_v5
     - forcetypeassert
     - lll
     - revive
@@ -64,6 +65,7 @@ linters:
         - github.com/hashicorp/terraform-plugin-framework/ephemeral.EphemeralResourceWithConfigure
         - github.com/hashicorp/terraform-plugin-framework/schema/validator.String
         - github.com/hashicorp/terraform-plugin-framework/schema/validator.List
+        - github.com/hashicorp/terraform-plugin-framework/schema/validator.Map
         - github.com/hashicorp/terraform-plugin-framework/attr.Type
     cyclop:
       max-complexity: 25
@@ -83,7 +85,7 @@ linters:
               - "!$test"
             allow:
               - $gostd
-              - github.com/Twingate/terraform-provider-twingate/v4/twingate
+              - github.com/Twingate/terraform-provider-twingate/v5/twingate
               - github.com/hasura/go-graphql-client
               - github.com/hashicorp/
               - github.com/iancoleman/strcase

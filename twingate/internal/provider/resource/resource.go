@@ -9,15 +9,15 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customplanmodifier"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customplanmodifier"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -363,11 +363,17 @@ func (r *twingateResource) UpgradeState(ctx context.Context) map[int64]resource.
 	}
 }
 
-func protocols() schema.SingleNestedAttribute {
+func protocols(optionalDeprecationMessage ...string) schema.SingleNestedAttribute {
+	var deprecationMessage string
+	if len(optionalDeprecationMessage) > 0 {
+		deprecationMessage = optionalDeprecationMessage[0]
+	}
+
 	return schema.SingleNestedAttribute{
-		Optional: true,
-		Computed: true,
-		Default:  objectdefault.StaticValue(defaultProtocolsObject()),
+		Optional:           true,
+		Computed:           true,
+		Default:            objectdefault.StaticValue(defaultProtocolsObject()),
+		DeprecationMessage: deprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			attr.AllowIcmp: schema.BoolAttribute{
 				Optional:    true,

@@ -30,5 +30,4 @@ resource "twingate_ssh_resource" "ssh_server" {
   alias      = "test.int"
   remote_network_id = twingate_remote_network.prod.id
   address    = "10.128.0.105"
-  username   = "ubuntu"
 }

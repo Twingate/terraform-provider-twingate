@@ -3,7 +3,7 @@ set -euo pipefail
 
 apt-get update -qq && apt-get install -y -qq jq
 
-# Create the gateway user
+# Create the gateway user account
 useradd -m -s /bin/bash gateway
 
 # Write the SSH CA public key from templatefile variable
@@ -71,10 +71,13 @@ echo "$SIGNED_CERT" > /etc/ssh/ssh_host_ed25519_key-cert.pub
 chmod 640 /etc/ssh/ssh_host_ed25519_key-cert.pub
 
 # Configure sshd to trust CA certs and present host certificate
-cat >> /etc/ssh/sshd_config <<EOF
-TrustedUserCAKeys /etc/ssh/vault-ssh-ca.pub
-HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub
-EOF
+echo "TrustedUserCAKeys /etc/ssh/vault-ssh-ca.pub" >> /etc/ssh/sshd_config
+echo "HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub" >> /etc/ssh/sshd_config
+
+# Only accept the "gateway" principal, and only for the "gateway" account
+mkdir -p /etc/ssh/auth_principals
+echo "gateway" > /etc/ssh/auth_principals/gateway
+echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
 
 systemctl restart sshd
 echo "SSH server configured with Vault-signed host certificate"

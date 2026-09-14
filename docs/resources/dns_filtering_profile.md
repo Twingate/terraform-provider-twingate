@@ -154,6 +154,8 @@ Optional:
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 terraform import twingate_dns_filtering_profile.example RG5zRmlsdGVyaW5nUHJvZmlsZToxY2I4YzM0YTc0
 ```

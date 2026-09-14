@@ -3,7 +3,7 @@ package client
 import (
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
 	"github.com/stretchr/testify/assert"
 )
 

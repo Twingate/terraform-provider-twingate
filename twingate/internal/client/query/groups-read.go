@@ -1,9 +1,9 @@
 package query
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 )
 
 const CursorGroups = "groupsEndCursor"
@@ -31,9 +31,9 @@ func (u Groups) ToModel() []*model.Group {
 }
 
 type GroupFilterInput struct {
-	Name     *StringFilterOperationInput  `json:"name"`
-	Type     GroupTypeFilterOperatorInput `json:"type"`
-	IsActive BooleanFilterOperatorInput   `json:"isActive"`
+	Name     *StringFilterOperationInput   `json:"name"`
+	Type     *GroupTypeFilterOperatorInput `json:"type,omitempty"`
+	IsActive BooleanFilterOperatorInput    `json:"isActive"`
 }
 
 type StringFilterOperationInput struct {
@@ -44,6 +44,14 @@ type StringFilterOperationInput struct {
 	Regexp     *string  `json:"regexp"`
 	Contains   *string  `json:"contains"`
 	In         []string `json:"in"`
+}
+
+func NewStringFilterInOperationInput(names []string) *StringFilterOperationInput {
+	if len(names) == 0 {
+		return nil
+	}
+
+	return &StringFilterOperationInput{In: names}
 }
 
 func NewStringFilterOperationInput(name, filter string) *StringFilterOperationInput {
@@ -84,15 +92,8 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 		return nil
 	}
 
-	// default filter settings
+	// groups are filtered by active state unless the caller asks otherwise
 	filter := &GroupFilterInput{
-		Type: GroupTypeFilterOperatorInput{
-			In: []string{
-				model.GroupTypeManual,
-				model.GroupTypeSynced,
-				model.GroupTypeSystem,
-			},
-		},
 		IsActive: BooleanFilterOperatorInput{Eq: true},
 	}
 
@@ -100,8 +101,12 @@ func NewGroupFilterInput(input *model.GroupsFilter) *GroupFilterInput {
 		filter.Name = NewStringFilterOperationInput(*input.Name, input.NameFilter)
 	}
 
+	if len(input.NameIn) > 0 {
+		filter.Name = NewStringFilterInOperationInput(input.NameIn)
+	}
+
 	if len(input.Types) > 0 {
-		filter.Type.In = input.Types
+		filter.Type = &GroupTypeFilterOperatorInput{In: input.Types}
 	}
 
 	if input.IsActive != nil {

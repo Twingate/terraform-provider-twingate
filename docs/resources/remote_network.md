@@ -43,6 +43,8 @@ resource "twingate_remote_network" "aws_network" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 terraform import twingate_remote_network.network UmVtb3RlTmV0d29zaipgMKIkNg==
 ```

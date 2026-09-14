@@ -1,0 +1,32 @@
+twingate:
+  network: ${twingate_network}
+  host: ${twingate_host}
+
+port: ${port}
+metricsPort: 9090
+
+tls:
+  certificateFile: /etc/gateway/tls.crt
+  privateKeyFile: /etc/gateway/tls.key
+
+ssh:
+  gateway:
+    username: gateway
+    key:
+      type: ed25519
+    hostCertificate:
+      ttl: 24h
+    userCertificate:
+      ttl: 5m
+
+  ca:
+    vault:
+      address: ${vault_address}
+      caBundleFile: /etc/ssl/vault-ca.crt
+      mount: ${vault_ssh_mount}
+      role: ${vault_ssh_role}
+      auth:
+        gcp:
+          type: gce
+          mount: ${vault_gcp_mount}
+          role: ${vault_gcp_role}

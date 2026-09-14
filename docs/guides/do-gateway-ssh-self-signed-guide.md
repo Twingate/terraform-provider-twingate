@@ -44,7 +44,7 @@ terraform {
   required_providers {
     twingate = {
       source  = "Twingate/twingate"
-      version = "~> 4.1"
+      version = "~> 5.0"
     }
     tls = {
       source  = "hashicorp/tls"
@@ -167,28 +167,46 @@ The optional `alias` field lets users connect using a friendly name (e.g., `ssh-
 
 ## Configuring the gateway
 
-The `twingate_gateway_config` resource generates the Gateway's configuration file. It specifies the TLS certificate paths and SSH CA key path:
+The Gateway reads its settings from a YAML configuration file. The TLS and SSH CA paths are hardcoded and must match where the startup script writes those files:
+
+```yaml
+twingate:
+  network: ${twingate_network}
+  host: ${twingate_host}
+
+port: ${port}
+metricsPort: 9090
+
+tls:
+  certificateFile: /etc/gateway/tls.crt
+  privateKeyFile: /etc/gateway/tls.key
+
+ssh:
+  gateway:
+    username: gateway
+    key:
+      type: ed25519
+    hostCertificate:
+      ttl: 24h
+    userCertificate:
+      ttl: 5m
+
+  ca:
+    manual:
+      privateKeyFile: /etc/gateway/ssh-ca.key
+```
+
+`templatefile()` fills in the network and port, and the result goes to the instance's startup script:
 
 ```terraform
-resource "twingate_gateway_config" "config" {
-  port = local.gateway_port
+locals {
+  gateway_port = 8443
 
-  tls = {
-    certificate_file = "/etc/gateway/tls.crt"
-    private_key_file = "/etc/gateway/tls.key"
-  }
-
-  ssh = {
-    gateway = {
-      username = "gateway"
-    }
-
-    ca = {
-      private_key_file = "/etc/gateway/ssh-ca.key"
-    }
-
-    resources = [twingate_ssh_resource.ssh_server]
-  }
+  gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
+    twingate_network = var.tg_network
+    twingate_host    = var.tg_url
+    port             = local.gateway_port
+  })
 }
 ```
 
@@ -215,7 +233,14 @@ PUBKEY
 # Configure sshd to trust certificates signed by our CA
 echo "TrustedUserCAKeys /etc/ssh/twingate-ca.pub" >> /etc/ssh/sshd_config
 
+# Only accept the "gateway" principal, and only for the "gateway" account
+mkdir -p /etc/ssh/auth_principals
+echo "gateway" > /etc/ssh/auth_principals/gateway
+echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
+
 systemctl restart sshd
 ```
+
+The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
 The Gateway Droplet uses a reserved IP so its address is stable and can be registered with Twingate. Keys and certificates are injected into Droplets via `templatefile()` in `user_data`.

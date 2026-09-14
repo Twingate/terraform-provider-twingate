@@ -1,10 +1,10 @@
 package query
 
-import "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 
 //nolint:lll
 type UpdateSSHResource struct {
-	SSHResourceEntityResponse `graphql:"sshResourceUpdate(id: $id, name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, protocols: $protocols, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
+	SSHResourceEntityResponse `graphql:"sshResourceUpdate(id: $id, name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
 }
 
 func (q UpdateSSHResource) IsEmpty() bool {

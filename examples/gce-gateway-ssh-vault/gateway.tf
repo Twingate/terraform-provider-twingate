@@ -45,45 +45,22 @@ resource "google_compute_instance" "gateway" {
     tls-cert       = vault_pki_secret_backend_cert.gateway.certificate
     tls-key        = vault_pki_secret_backend_cert.gateway.private_key
     vault_ca_cert  = data.terraform_remote_state.vault.outputs.vault_tls_cert
-    gateway-config = twingate_gateway_config.config.content
+    gateway-config = local.gateway_config
   })
 }
 
 locals {
   gateway_port = 8443
-}
 
-resource "twingate_gateway_config" "config" {
-  port = local.gateway_port
+  gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
+    twingate_network = var.tg_network
+    twingate_host    = var.tg_url
+    port             = local.gateway_port
 
-  tls = {
-    certificate_file = "/etc/gateway/tls.crt"
-    private_key_file = "/etc/gateway/tls.key"
-  }
-
-  ssh = {
-    gateway = {
-      username = "gateway"
-    }
-
-    ca = {
-      vault = {
-        address        = "https://${data.terraform_remote_state.vault.outputs.vault_internal_ip}:8200"
-        ca_bundle_file = "/etc/ssl/vault-ca.crt"
-
-        mount = vault_mount.ssh.path
-        role  = vault_ssh_secret_backend_role.gateway.name
-
-        auth = {
-          gcp = {
-            type  = "gce"
-            mount = vault_auth_backend.gcp.path
-            role  = vault_gcp_auth_backend_role.gateway.role
-          }
-        }
-      }
-    }
-
-    resources = [twingate_ssh_resource.ssh_server]
-  }
+    vault_address   = "https://${data.terraform_remote_state.vault.outputs.vault_internal_ip}:8200"
+    vault_ssh_mount = vault_mount.ssh.path
+    vault_ssh_role  = vault_ssh_secret_backend_role.gateway.name
+    vault_gcp_mount = vault_auth_backend.gcp.path
+    vault_gcp_role  = vault_gcp_auth_backend_role.gateway.role
+  })
 }

@@ -29,7 +29,7 @@ const (
 
 	headerAPIKey        = "X-Api-Key" // #nosec G101
 	headerAgent         = "User-Agent"
-	headerCorrelationID = "X-Correlation-Id"
+	headerCorrelationID = "X-Correlation-ID"
 	headerRequestID     = "X-Twingate-Request-Id"
 
 	defaultPageLimit  = 50
