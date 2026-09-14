@@ -765,3 +765,33 @@ func TestAccTwingateKubernetesResourceAccessPolicy(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateKubernetesResourceDefaultTags(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	k8sResTFName := test.TerraformRandName("test_k8s_res")
+	theResource := acctests.TerraformKubernetesResource(k8sResTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	name := test.RandomName()
+	resourceAddress := "kubernetes.default.svc.cluster.local"
+	gatewayAddress := "10.0.3.2:8080"
+
+	userTags := map[string]string{"owner": "example_team", "application": "custom_application"}
+	defaultTags := map[string]string{"env": "stage", "application": "default_application"}
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+	resourceConfig := terraformResourceKubernetesResourceWithTags(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, userTags)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
+		Steps:                    defaultTagsSteps(theResource, prereqs+resourceConfig, defaultTags),
+	})
+}

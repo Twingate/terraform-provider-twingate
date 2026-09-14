@@ -370,3 +370,22 @@ func TestAccTwingateWebAppResourceDeleteNonExisting(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTwingateWebAppResourceDefaultTags(t *testing.T) {
+	t.Parallel()
+
+	setup := newWebAppTestSetup(t, "10.0.3.3:8080")
+
+	userTags := map[string]string{"owner": "example_team", "application": "custom_application"}
+	defaultTags := map[string]string{"env": "stage", "application": "default_application"}
+
+	config := setup.config(8080, 80, acctests.TerraformTagsBlock(userTags))
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+		Steps:                    defaultTagsSteps(setup.theResource, config, defaultTags),
+	})
+}

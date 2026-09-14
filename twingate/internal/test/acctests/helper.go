@@ -1245,3 +1245,94 @@ func CheckSshResourceAlias(resourceName string, expectedAlias *string) sdk.TestC
 		return nil
 	}
 }
+
+// TerraformProviderWithDefaultTags renders a provider block that only sets
+// default_tags; credentials still come from the environment.
+func TerraformProviderWithDefaultTags(tags map[string]string) string {
+	lines := make([]string, 0, len(tags))
+	for k, v := range tags {
+		lines = append(lines, fmt.Sprintf(`      %s = "%s"`, k, v))
+	}
+
+	return fmt.Sprintf(`
+	provider "twingate" {
+	  default_tags = {
+	    tags = {
+%s
+	    }
+	  }
+	}
+	`, strings.Join(lines, "\n"))
+}
+
+// TerraformTagsBlock renders a `tags = {...}` attribute for embedding in a resource.
+func TerraformTagsBlock(tags map[string]string) string {
+	lines := make([]string, 0, len(tags))
+	for k, v := range tags {
+		lines = append(lines, fmt.Sprintf(`    %s = "%s"`, k, v))
+	}
+
+	return fmt.Sprintf("tags = {\n%s\n  }", strings.Join(lines, "\n"))
+}
+
+// CheckGatewayResourceTags reads a gateway-backed resource (SSH, Kubernetes or Web
+// App) through its own API query and asserts one tag value. CheckTwingateResourceTags
+// cannot be used for these types: the generic resource query selects its fields under
+// a NetworkResource fragment, which they do not match, so it always returns no tags.
+func CheckGatewayResourceTags(resourceName, tag, expectedValue string) sdk.TestCheckFunc {
+	return func(s *terraform.State) error {
+		resourceState, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
+		}
+
+		if resourceState.Primary.ID == "" {
+			return ErrResourceIDNotSet
+		}
+
+		tags, err := readGatewayResourceTags(resourceState.Type, resourceState.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		if len(tags) == 0 {
+			return ErrEmptyTagsList
+		}
+
+		if tags[tag] != expectedValue {
+			return fmt.Errorf("expected tag %s value %v, got %v", tag, expectedValue, tags[tag]) //nolint:err113
+		}
+
+		return nil
+	}
+}
+
+func readGatewayResourceTags(resourceType, resourceID string) (map[string]string, error) {
+	ctx := context.Background()
+
+	switch resourceType {
+	case resource.TwingateSSHResource:
+		res, err := providerClient.ReadSSHResource(ctx, resourceID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read %s %s: %w", resourceType, resourceID, err)
+		}
+
+		return res.Tags, nil
+	case resource.TwingateKubernetesResource:
+		res, err := providerClient.ReadKubernetesResource(ctx, resourceID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read %s %s: %w", resourceType, resourceID, err)
+		}
+
+		return res.Tags, nil
+	case resource.TwingateWebAppResource:
+		res, err := providerClient.ReadWebAppResource(ctx, resourceID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read %s %s: %w", resourceType, resourceID, err)
+		}
+
+		return res.Tags, nil
+	default:
+		return nil, fmt.Errorf("%w: %s", ErrUnknownResourceType, resourceType)
+	}
+}
