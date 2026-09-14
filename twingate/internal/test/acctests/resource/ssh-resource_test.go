@@ -716,9 +716,9 @@ func defaultTagsSteps(theResource, config string, defaultTags map[string]string)
 				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagOwner), "example_team"),
 				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagApp), "custom_application"),
 				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagEnv), "stage"),
-				acctests.CheckTwingateResourceTags(theResource, tagOwner, "example_team"),
-				acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
-				acctests.CheckTwingateResourceTags(theResource, tagEnv, "stage"),
+				acctests.CheckGatewayResourceTags(theResource, tagOwner, "example_team"),
+				acctests.CheckGatewayResourceTags(theResource, tagApp, "custom_application"),
+				acctests.CheckGatewayResourceTags(theResource, tagEnv, "stage"),
 			),
 		},
 		{
@@ -733,8 +733,8 @@ func defaultTagsSteps(theResource, config string, defaultTags map[string]string)
 				sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, tagEnv)),
 				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagApp), "custom_application"),
 				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagEnv), "prod"),
-				acctests.CheckTwingateResourceTags(theResource, tagApp, "custom_application"),
-				acctests.CheckTwingateResourceTags(theResource, tagEnv, "prod"),
+				acctests.CheckGatewayResourceTags(theResource, tagApp, "custom_application"),
+				acctests.CheckGatewayResourceTags(theResource, tagEnv, "prod"),
 			),
 		},
 	}

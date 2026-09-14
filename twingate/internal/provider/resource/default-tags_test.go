@@ -377,8 +377,10 @@ func TestGatewayResourcesPlanTagsAll(t *testing.T) {
 }
 
 func TestGatewayResourcesImportSplitsTags(t *testing.T) {
-	defaults := map[string]string{"env": "prod"}
-	apiTags := map[string]string{"env": "prod", "owner": "team"}
+	// `application` is a default key the user overrode with a different value: the
+	// API value can only have come from the user, so it must stay in `tags`.
+	defaults := map[string]string{"env": "prod", "application": "default_app"}
+	apiTags := map[string]string{"env": "prod", "owner": "team", "application": "custom_app"}
 
 	for _, c := range gatewayResourceCases() {
 		t.Run(c.name, func(t *testing.T) {
@@ -400,7 +402,8 @@ func TestGatewayResourcesImportSplitsTags(t *testing.T) {
 			require.False(t, resp.State.GetAttribute(t.Context(), path.Root(attr.ID), &id).HasError())
 			assert.Equal(t, "res-1", id.ValueString())
 
-			assert.Equal(t, stringMap(map[string]string{"owner": "team"}), stateMap(t, resp.State, attr.Tags), "tags must exclude provider defaults")
+			assert.Equal(t, stringMap(map[string]string{"owner": "team", "application": "custom_app"}), stateMap(t, resp.State, attr.Tags),
+				"tags must exclude provider defaults but keep user overrides of default keys")
 			assert.Equal(t, stringMap(apiTags), stateMap(t, resp.State, attr.TagsAll), "tags_all must hold every API tag")
 		})
 	}

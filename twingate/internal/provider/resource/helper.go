@@ -240,7 +240,9 @@ func planTagsAll(ctx context.Context, req resource.ModifyPlanRequest, resp *reso
 }
 
 // setImportedTags records the tags of an imported resource: `tags_all` holds every API
-// tag, `tags` only the user-declared portion (API tags minus provider default tags).
+// tag, `tags` only the user-declared portion. A tag is treated as user-declared unless
+// it matches a provider default by both key and value, so a user override of a default
+// key survives the import.
 func setImportedTags(ctx context.Context, state *tfsdk.State, apiTags, defaultTags map[string]string) {
 	state.SetAttribute(ctx, path.Root(attr.TagsAll), utils.ConvertMapValue(apiTags))
 	state.SetAttribute(ctx, path.Root(attr.Tags), utils.ConvertMapValue(utils.MapDifference(apiTags, defaultTags)))
