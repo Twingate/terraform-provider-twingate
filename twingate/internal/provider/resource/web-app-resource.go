@@ -227,23 +227,6 @@ func webAppDownstreamObject(ctx context.Context, port int64) (types.Object, diag
 	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{Port: types.Int64Value(port)})
 }
 
-// convertHeaderRewrites maps the API response back into state. The API drops the
-// field once it holds no entries, so an empty response is ambiguous: it matches
-// both an omitted attribute and an explicitly empty map. Mirror whichever form
-// was declared, otherwise `{}` in config would be stored as null and drift on
-// every plan.
-func convertHeaderRewrites(rewrites map[string]string, state types.Map) types.Map {
-	if len(rewrites) > 0 {
-		return utils.ConvertMapValue(rewrites)
-	}
-
-	if !state.IsNull() && !state.IsUnknown() && len(state.Elements()) == 0 {
-		return state
-	}
-
-	return types.MapNull(types.StringType)
-}
-
 func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResourceModel, diagnostics *diag.Diagnostics, operation string) *model.WebAppResource {
 	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
 	if err != nil {
@@ -418,8 +401,8 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 		state.Alias = types.StringPointerValue(webAppRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValue(webAppRes.Tags)
-	state.RequestHeaderRewrites = convertHeaderRewrites(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
+	state.Tags = utils.ConvertMapValueWithReference(webAppRes.Tags, state.Tags)
+	state.RequestHeaderRewrites = utils.ConvertMapValueWithReference(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
 	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port)
 	diagnostics.Append(diags...)

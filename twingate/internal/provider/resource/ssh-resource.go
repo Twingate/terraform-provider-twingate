@@ -309,7 +309,7 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 		state.Alias = types.StringPointerValue(sshRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValue(sshRes.Tags)
+	state.Tags = utils.ConvertMapValueWithReference(sshRes.Tags, state.Tags)
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {

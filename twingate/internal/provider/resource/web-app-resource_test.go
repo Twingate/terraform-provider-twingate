@@ -25,67 +25,6 @@ func stringMap(pairs map[string]string) types.Map {
 	return types.MapValueMust(types.StringType, elements)
 }
 
-// The API stores nothing for both a null and an empty map, so the response alone
-// cannot tell them apart. State has to mirror what was declared or the attribute
-// drifts on every plan.
-func TestConvertHeaderRewrites(t *testing.T) {
-	cases := []struct {
-		name     string
-		rewrites map[string]string
-		state    types.Map
-		expected types.Map
-	}{
-		{
-			name:     "populated response - converted regardless of state",
-			rewrites: map[string]string{"x-a": "1"},
-			state:    types.MapNull(types.StringType),
-			expected: stringMap(map[string]string{"x-a": "1"}),
-		},
-		{
-			name:     "populated response overrides an empty state",
-			rewrites: map[string]string{"x-a": "1"},
-			state:    emptyStringMap(),
-			expected: stringMap(map[string]string{"x-a": "1"}),
-		},
-		{
-			name:     "empty response, attribute omitted - stays null",
-			rewrites: nil,
-			state:    types.MapNull(types.StringType),
-			expected: types.MapNull(types.StringType),
-		},
-		{
-			name:     "empty response, attribute declared empty - stays empty",
-			rewrites: nil,
-			state:    emptyStringMap(),
-			expected: emptyStringMap(),
-		},
-		{
-			name:     "empty response, state populated - drift surfaces as null",
-			rewrites: nil,
-			state:    stringMap(map[string]string{"x-a": "1"}),
-			expected: types.MapNull(types.StringType),
-		},
-		{
-			name:     "empty response, state unknown - resolves to null",
-			rewrites: nil,
-			state:    types.MapUnknown(types.StringType),
-			expected: types.MapNull(types.StringType),
-		},
-		{
-			name:     "empty map response is treated the same as nil",
-			rewrites: map[string]string{},
-			state:    emptyStringMap(),
-			expected: emptyStringMap(),
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, convertHeaderRewrites(c.rewrites, c.state))
-		})
-	}
-}
-
 // getKeyValueMap feeds the client, which sends an empty list for a nil map.
 // Both null and empty must reach the API as "clear the stored rewrites".
 func TestGetKeyValueMap(t *testing.T) {
@@ -216,6 +155,13 @@ func TestWebAppResourceKeyValueMaps(t *testing.T) {
 			apiHeaderRewrites:      map[string]string{"x-forwarded-host": "app.internal"},
 			expectedTags:           stringMap(map[string]string{"env": "prod"}),
 			expectedHeaderRewrites: stringMap(map[string]string{"x-forwarded-host": "app.internal"}),
+		},
+		{
+			name:                   "empty maps - state keeps the empty maps from the plan",
+			planTags:               emptyStringMap(),
+			planHeaderRewrites:     emptyStringMap(),
+			expectedTags:           emptyStringMap(),
+			expectedHeaderRewrites: emptyStringMap(),
 		},
 	}
 

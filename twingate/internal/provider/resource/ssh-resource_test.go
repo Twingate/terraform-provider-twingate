@@ -62,6 +62,12 @@ func TestSSHResourceTags(t *testing.T) {
 			apiTags:       map[string]string{"env": "prod", "team": "infra"},
 			expectedState: stringMap(map[string]string{"env": "prod", "team": "infra"}),
 		},
+		{
+			name:          "empty tags - state keeps the empty map from the plan",
+			planTags:      emptyStringMap(),
+			apiTags:       nil,
+			expectedState: emptyStringMap(),
+		},
 	}
 
 	for _, c := range cases {

@@ -416,7 +416,7 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 		state.Alias = types.StringPointerValue(k8sRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValue(k8sRes.Tags)
+	state.Tags = utils.ConvertMapValueWithReference(k8sRes.Tags, state.Tags)
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {
