@@ -86,8 +86,8 @@ func TestReadWebAppResource(t *testing.T) {
 		"approvalMode": "MANUAL",
 		"accessPolicy": {"mode": "APPROVAL_REQUIRED", "durationSeconds": 3600},
 		"access": {"pageInfo": {"endCursor": "", "hasNextPage": false}, "edges": []},
-		"upstream": {"port": 8080},
-		"downstream": {"port": 80},
+		"upstream": {"port": 8080, "tls": true},
+		"downstream": {"port": 8443, "tls": true},
 		"requestHeaderRewrites": [{"key": "x-user", "value": "{{username}}"}]
 	}`
 
@@ -158,8 +158,8 @@ const webAppEntity = `{
 	"tags": [{"key": "env", "value": "prod"}],
 	"approvalMode": "MANUAL",
 	"accessPolicy": {"mode": "APPROVAL_REQUIRED", "durationSeconds": 3600},
-	"upstream": {"port": 8080},
-	"downstream": {"port": 80},
+	"upstream": {"port": 8080, "tls": true},
+	"downstream": {"port": 8443, "tls": true},
 	"requestHeaderRewrites": [{"key": "x-user", "value": "{{username}}"}]
 }`
 
@@ -181,8 +181,8 @@ func expectedWebAppResource() *model.WebAppResource {
 		Alias:                 &alias,
 		SecurityPolicyID:      &securityPolicyID,
 		Tags:                  map[string]string{"env": "prod"},
-		Upstream:              model.WebAppUpstream{Port: 8080},
-		Downstream:            model.WebAppDownstream{Port: 80},
+		Upstream:              model.WebAppUpstream{Port: 8080, TLS: true},
+		Downstream:            model.WebAppDownstream{Port: 8443, TLS: true},
 		RequestHeaderRewrites: map[string]string{"x-user": "{{username}}"},
 		AccessPolicy: &model.AccessPolicy{
 			Mode:         &accessMode,
@@ -198,8 +198,8 @@ func webAppInput() *model.WebAppResource {
 		Address:         "internal.acme.com",
 		GatewayID:       "gw-1",
 		RemoteNetworkID: "rn-1",
-		Upstream:        model.WebAppUpstream{Port: 8080},
-		Downstream:      model.WebAppDownstream{Port: 80},
+		Upstream:        model.WebAppUpstream{Port: 8080, TLS: true},
+		Downstream:      model.WebAppDownstream{Port: 8443, TLS: true},
 	}
 }
 

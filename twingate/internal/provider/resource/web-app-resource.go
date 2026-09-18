@@ -58,18 +58,22 @@ type webAppResourceModel struct {
 
 type webAppUpstreamModel struct {
 	Port types.Int64 `tfsdk:"port"`
+	TLS  types.Bool  `tfsdk:"tls"`
 }
 
 type webAppDownstreamModel struct {
 	Port types.Int64 `tfsdk:"port"`
+	TLS  types.Bool  `tfsdk:"tls"`
 }
 
 var webAppUpstreamAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
 	attr.Port: types.Int64Type,
+	attr.TLS:  types.BoolType,
 }
 
 var webAppDownstreamAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
 	attr.Port: types.Int64Type,
+	attr.TLS:  types.BoolType,
 }
 
 func (r *webAppResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -183,6 +187,12 @@ func webAppUpstream() schema.SingleNestedAttribute {
 					int64validator.Between(model.MinPortValue, model.MaxPortValue),
 				},
 			},
+			attr.TLS: schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Whether TLS is enabled on the upstream connection. Default is `false`.",
+				Default:     booldefault.StaticBool(false),
+			},
 		},
 	}
 }
@@ -198,6 +208,12 @@ func webAppDownstream() schema.SingleNestedAttribute {
 				Validators: []validator.Int64{
 					int64validator.Between(model.MinPortValue, model.MaxPortValue),
 				},
+			},
+			attr.TLS: schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Whether TLS is enabled on the downstream connection. Default is `false`.",
+				Default:     booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -219,12 +235,18 @@ func webAppDownstreamValue(ctx context.Context, obj types.Object) (webAppDownstr
 	return downstream, diags
 }
 
-func webAppUpstreamObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
-	return types.ObjectValueFrom(ctx, webAppUpstreamAttributeTypes, webAppUpstreamModel{Port: types.Int64Value(port)})
+func webAppUpstreamObject(ctx context.Context, port int64, tls bool) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, webAppUpstreamAttributeTypes, webAppUpstreamModel{
+		Port: types.Int64Value(port),
+		TLS:  types.BoolValue(tls),
+	})
 }
 
-func webAppDownstreamObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
-	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{Port: types.Int64Value(port)})
+func webAppDownstreamObject(ctx context.Context, port int64, tls bool) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{
+		Port: types.Int64Value(port),
+		TLS:  types.BoolValue(tls),
+	})
 }
 
 // getHeaderRewrites converts the configured map for the API. Header rewrites and
@@ -285,8 +307,8 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		Alias:                 getOptionalString(plan.Alias),
 		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:                  getTags(plan.Tags),
-		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64()},
-		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64()},
+		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64(), TLS: upstream.TLS.ValueBool()},
+		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64(), TLS: downstream.TLS.ValueBool()},
 		RequestHeaderRewrites: getHeaderRewrites(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
 		GroupsAccess:          accessGroups,
@@ -428,10 +450,10 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 	state.Tags = utils.ConvertMapValue(webAppRes.Tags)
 	state.RequestHeaderRewrites = convertHeaderRewrites(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
-	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port)
+	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port, webAppRes.Upstream.TLS)
 	diagnostics.Append(diags...)
 
-	downstream, diags := webAppDownstreamObject(ctx, webAppRes.Downstream.Port)
+	downstream, diags := webAppDownstreamObject(ctx, webAppRes.Downstream.Port, webAppRes.Downstream.TLS)
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
