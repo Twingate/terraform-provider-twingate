@@ -124,23 +124,25 @@ func TestGetHeaderRewrites(t *testing.T) {
 func TestWebAppUpstreamRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
-	obj, diags := webAppUpstreamObject(ctx, 8080)
+	obj, diags := webAppUpstreamObject(ctx, 8080, true)
 	require.False(t, diags.HasError())
 
 	upstream, diags := webAppUpstreamValue(ctx, obj)
 	require.False(t, diags.HasError())
 
 	assert.Equal(t, int64(8080), upstream.Port.ValueInt64())
+	assert.True(t, upstream.TLS.ValueBool())
 }
 
 func TestWebAppDownstreamRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
-	obj, diags := webAppDownstreamObject(ctx, 80)
+	obj, diags := webAppDownstreamObject(ctx, 80, false)
 	require.False(t, diags.HasError())
 
 	downstream, diags := webAppDownstreamValue(ctx, obj)
 	require.False(t, diags.HasError())
 
 	assert.Equal(t, int64(80), downstream.Port.ValueInt64())
+	assert.False(t, downstream.TLS.ValueBool())
 }
