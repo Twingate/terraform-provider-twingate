@@ -4,8 +4,23 @@ import (
 	"fmt"
 	"testing"
 
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
 )
+
+func emptyStringMap() types.Map {
+	return types.MapValueMust(types.StringType, map[string]tfattr.Value{})
+}
+
+func stringMap(pairs map[string]string) types.Map {
+	elements := make(map[string]tfattr.Value, len(pairs))
+	for key, value := range pairs {
+		elements[key] = types.StringValue(value)
+	}
+
+	return types.MapValueMust(types.StringType, elements)
+}
 
 func TestMapDifference(t *testing.T) {
 	cases := []struct {
@@ -104,6 +119,67 @@ func TestMapUnion(t *testing.T) {
 			actual := MapUnion(c.mapA, c.mapB)
 
 			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+// The API stores nothing for both a null and an empty map, so the response alone
+// cannot tell them apart. State has to mirror what was declared or the attribute
+// drifts on every plan.
+func TestConvertMapValueWithReference(t *testing.T) {
+	cases := []struct {
+		name      string
+		input     map[string]string
+		reference types.Map
+		expected  types.Map
+	}{
+		{
+			name:      "populated response - converted regardless of state",
+			input:     map[string]string{"x-a": "1"},
+			reference: types.MapNull(types.StringType),
+			expected:  stringMap(map[string]string{"x-a": "1"}),
+		},
+		{
+			name:      "populated response overrides an empty state",
+			input:     map[string]string{"x-a": "1"},
+			reference: emptyStringMap(),
+			expected:  stringMap(map[string]string{"x-a": "1"}),
+		},
+		{
+			name:      "empty response, attribute omitted - stays null",
+			input:     nil,
+			reference: types.MapNull(types.StringType),
+			expected:  types.MapNull(types.StringType),
+		},
+		{
+			name:      "empty response, attribute declared empty - stays empty",
+			input:     nil,
+			reference: emptyStringMap(),
+			expected:  emptyStringMap(),
+		},
+		{
+			name:      "empty response, state populated - drift surfaces as null",
+			input:     nil,
+			reference: stringMap(map[string]string{"x-a": "1"}),
+			expected:  types.MapNull(types.StringType),
+		},
+		{
+			name:      "empty response, state unknown - resolves to null",
+			input:     nil,
+			reference: types.MapUnknown(types.StringType),
+			expected:  types.MapNull(types.StringType),
+		},
+		{
+			name:      "empty map response is treated the same as nil",
+			input:     map[string]string{},
+			reference: emptyStringMap(),
+			expected:  emptyStringMap(),
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, ConvertMapValueWithReference(c.input, c.reference))
 		})
 	}
 }

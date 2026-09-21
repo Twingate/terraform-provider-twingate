@@ -191,7 +191,7 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.TagsAll),
+		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -257,7 +257,7 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.TagsAll),
+		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})

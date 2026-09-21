@@ -248,30 +248,6 @@ func webAppDownstreamObject(ctx context.Context, port int64) (types.Object, diag
 	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{Port: types.Int64Value(port)})
 }
 
-// getHeaderRewrites converts the configured map for the API. Header rewrites and
-// tags are both plain string maps, so the tag converter applies: a null, unknown
-// or empty map becomes nil, which the client sends as an empty list.
-func getHeaderRewrites(rawRewrites types.Map) map[string]string {
-	return getTags(rawRewrites)
-}
-
-// convertHeaderRewrites maps the API response back into state. The API drops the
-// field once it holds no entries, so an empty response is ambiguous: it matches
-// both an omitted attribute and an explicitly empty map. Mirror whichever form
-// was declared, otherwise `{}` in config would be stored as null and drift on
-// every plan.
-func convertHeaderRewrites(rewrites map[string]string, state types.Map) types.Map {
-	if len(rewrites) > 0 {
-		return utils.ConvertMapValue(rewrites)
-	}
-
-	if !state.IsNull() && !state.IsUnknown() && len(state.Elements()) == 0 {
-		return state
-	}
-
-	return types.MapNull(types.StringType)
-}
-
 func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResourceModel, diagnostics *diag.Diagnostics, operation string) *model.WebAppResource {
 	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
 	if err != nil {
@@ -305,10 +281,10 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		IsVisible:             getOptionalBool(plan.IsVisible),
 		Alias:                 getOptionalString(plan.Alias),
 		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:                  getTags(plan.TagsAll),
+		Tags:                  getKeyValueMap(plan.TagsAll),
 		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64()},
 		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64()},
-		RequestHeaderRewrites: getHeaderRewrites(plan.RequestHeaderRewrites),
+		RequestHeaderRewrites: getKeyValueMap(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
 		GroupsAccess:          accessGroups,
 	}
@@ -448,7 +424,7 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 
 	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
 	state.TagsAll = utils.ConvertMapValue(webAppRes.Tags)
-	state.RequestHeaderRewrites = convertHeaderRewrites(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
+	state.RequestHeaderRewrites = utils.ConvertMapValueWithReference(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
 	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port)
 	diagnostics.Append(diags...)
