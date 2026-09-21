@@ -170,7 +170,7 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.Tags),
+		Tags:             getKeyValueMap(plan.Tags),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -236,7 +236,7 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.Tags),
+		Tags:             getKeyValueMap(plan.Tags),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -309,7 +309,7 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 		state.Alias = types.StringPointerValue(sshRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValue(sshRes.Tags)
+	state.Tags = utils.ConvertMapValueWithReference(sshRes.Tags, state.Tags)
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {

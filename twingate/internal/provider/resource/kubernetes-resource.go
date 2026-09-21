@@ -233,7 +233,7 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.Tags),
+		Tags:             getKeyValueMap(plan.Tags),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -329,7 +329,7 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getTags(plan.Tags),
+		Tags:             getKeyValueMap(plan.Tags),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -416,7 +416,7 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 		state.Alias = types.StringPointerValue(k8sRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValue(k8sRes.Tags)
+	state.Tags = utils.ConvertMapValueWithReference(k8sRes.Tags, state.Tags)
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {
