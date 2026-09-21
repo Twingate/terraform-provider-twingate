@@ -32,9 +32,6 @@ func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.
 	}
 
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
 
 	if len(sshResource.GroupsAccess) > 0 {
 		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(sshResource.GroupsAccess)); err != nil {
@@ -114,10 +111,6 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 	}
 
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
-
 	res.GroupsAccess = sshResource.GroupsAccess
 
 	return res, nil
