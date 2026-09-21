@@ -85,6 +85,27 @@ func gatewayResourceCases() []gatewayResourceCase {
 	}
 }
 
+// networkResourceCase is twingate_resource. It plans and imports tags the same way
+// the gateway-backed resources do, but its create and read payloads differ, so it
+// joins only the plan and import tests.
+func networkResourceCase() gatewayResourceCase {
+	return gatewayResourceCase{
+		name:        TwingateResource,
+		newResource: NewResourceResource,
+		readQuery:   "resource",
+		requiredAttrs: map[string]tftypes.Value{
+			attr.Name:            tftypes.NewValue(tftypes.String, "res"),
+			attr.Address:         tftypes.NewValue(tftypes.String, "10.0.0.1"),
+			attr.RemoteNetworkID: tftypes.NewValue(tftypes.String, "rn-1"),
+		},
+		entityExtra: `,"protocols":null,"isActive":true,"isBrowserShortcutEnabled":false,"routingMode":""`,
+	}
+}
+
+func taggedResourceCases() []gatewayResourceCase {
+	return append(gatewayResourceCases(), networkResourceCase())
+}
+
 func portObject(port int64) tftypes.Value {
 	objType := tftypes.Object{AttributeTypes: map[string]tftypes.Type{attr.Port: tftypes.Number}}
 
@@ -113,9 +134,15 @@ func (c gatewayResourceCase) entityJSON(id string, tags map[string]string, withA
 		access = `,"access":{"pageInfo":{"endCursor":"","hasNextPage":false},"edges":[]}`
 	}
 
-	return fmt.Sprintf(`{"id":%q,"name":"res","address":{"value":"10.0.0.1"},"remoteNetwork":{"id":"rn-1"},"gateway":{"id":"gw-1"},`+
+	// twingate_resource is not gateway-backed, so its query does not select the gateway.
+	gateway := ""
+	if _, ok := c.requiredAttrs[attr.GatewayID]; ok {
+		gateway = `"gateway":{"id":"gw-1"},`
+	}
+
+	return fmt.Sprintf(`{"id":%q,"name":"res","address":{"value":"10.0.0.1"},"remoteNetwork":{"id":"rn-1"},%s`+
 		`"isVisible":true,"alias":null,"securityPolicy":null,"tags":%s,"approvalMode":"MANUAL","accessPolicy":null%s%s}`,
-		id, tagsJSON(tags), access, c.entityExtra)
+		id, gateway, tagsJSON(tags), access, c.entityExtra)
 }
 
 func (c gatewayResourceCase) readResponse(id string, tags map[string]string) string {
@@ -328,7 +355,7 @@ func runModifyPlan(t *testing.T, c gatewayResourceCase, defaultTags map[string]s
 func TestGatewayResourcesPlanTagsAll(t *testing.T) {
 	defaults := map[string]string{"env": "stage", "app": "default_app"}
 
-	for _, c := range gatewayResourceCases() {
+	for _, c := range taggedResourceCases() {
 		t.Run(c.name, func(t *testing.T) {
 			t.Run("config tags merged with provider defaults, config wins", func(t *testing.T) {
 				plan := runModifyPlan(t, c, defaults, tagsValue(map[string]string{"owner": "team", "app": "custom_app"}), tagsValue(nil), false)
@@ -382,7 +409,7 @@ func TestGatewayResourcesImportSplitsTags(t *testing.T) {
 	defaults := map[string]string{"env": "prod", "application": "default_app"}
 	apiTags := map[string]string{"env": "prod", "owner": "team", "application": "custom_app"}
 
-	for _, c := range gatewayResourceCases() {
+	for _, c := range taggedResourceCases() {
 		t.Run(c.name, func(t *testing.T) {
 			cl, requests := mockedClient(t)
 			respondWith(t, cl, requests, c.readResponse("res-1", apiTags))
@@ -405,6 +432,31 @@ func TestGatewayResourcesImportSplitsTags(t *testing.T) {
 			assert.Equal(t, stringMap(map[string]string{"owner": "team", "application": "custom_app"}), stateMap(t, resp.State, attr.Tags),
 				"tags must exclude provider defaults but keep user overrides of default keys")
 			assert.Equal(t, stringMap(apiTags), stateMap(t, resp.State, attr.TagsAll), "tags_all must hold every API tag")
+		})
+	}
+}
+
+// Import needs the API tags to split them into `tags` and `tags_all`, so a failed
+// read is reported instead of leaving a half-imported state.
+func TestGatewayResourcesImportReportsReadError(t *testing.T) {
+	for _, c := range taggedResourceCases() {
+		t.Run(c.name, func(t *testing.T) {
+			cl, requests := mockedClient(t)
+			respondWith(t, cl, requests, graphqlErrorResponse)
+
+			res := configuredResource(t, c, cl, map[string]string{"env": "prod"})
+			s := schemaOf(t, res)
+
+			importer, ok := res.(resource.ResourceWithImportState)
+			require.True(t, ok)
+
+			resp := &resource.ImportStateResponse{State: tfsdk.State{Schema: s, Raw: nullObject(t, s)}}
+			importer.ImportState(t.Context(), resource.ImportStateRequest{ID: "res-unreadable"}, resp)
+
+			require.Len(t, resp.Diagnostics.Errors(), 1)
+			assert.Equal(t, "failed to import state", resp.Diagnostics.Errors()[0].Summary())
+			assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), "api failure")
+			assert.NotEmpty(t, *requests, "the resource must be read from the API")
 		})
 	}
 }
