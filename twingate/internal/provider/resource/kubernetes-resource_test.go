@@ -64,6 +64,7 @@ func inClusterKubernetesModel(t *testing.T) kubernetesResourceModel {
 		Alias:            types.StringNull(),
 		SecurityPolicyID: types.StringNull(),
 		Tags:             types.MapNull(types.StringType),
+		TagsAll:          types.MapNull(types.StringType),
 		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
 	}
@@ -212,8 +213,11 @@ func TestKubernetesResourceConfigure(t *testing.T) {
 }
 
 func TestKubernetesResourceImportState(t *testing.T) {
+	// Import reads the resource to split its tags into `tags` and `tags_all`.
+	k8sResource, _ := newMockedKubernetesResource(t, `{"data":{"resource":`+kubernetesNodeJSON(defaultKubernetesAddress)+`}}`)
+
 	resp := &resource.ImportStateResponse{State: emptyKubernetesState(t)}
-	(&kubernetesResource{}).ImportState(t.Context(), resource.ImportStateRequest{ID: testK8sID}, resp)
+	k8sResource.ImportState(t.Context(), resource.ImportStateRequest{ID: testK8sID}, resp)
 
 	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
@@ -462,6 +466,7 @@ func testKubernetesModel(t *testing.T, tags types.Map) kubernetesResourceModel {
 		Alias:            types.StringNull(),
 		SecurityPolicyID: types.StringNull(),
 		Tags:             tags,
+		TagsAll:          plannedTagsAll(tags),
 		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
 	}

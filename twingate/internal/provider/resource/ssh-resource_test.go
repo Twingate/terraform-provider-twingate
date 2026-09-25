@@ -23,6 +23,7 @@ func testSSHModel(t *testing.T, tags types.Map) sshResourceModel {
 		Alias:            types.StringNull(),
 		SecurityPolicyID: types.StringNull(),
 		Tags:             tags,
+		TagsAll:          plannedTagsAll(tags),
 		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
 	}

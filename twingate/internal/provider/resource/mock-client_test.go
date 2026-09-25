@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
@@ -49,6 +51,12 @@ func newMockedClient(t *testing.T, responseBody string) (*client.Client, *string
 	})
 
 	return apiClient, &requestBody
+}
+
+// plannedTagsAll is the `tags_all` value ModifyPlan computes for the given `tags`
+// when the provider declares no default tags.
+func plannedTagsAll(tags types.Map) types.Map {
+	return utils.ConvertMapValue(getKeyValueMap(tags))
 }
 
 // requestVariable extracts one GraphQL variable from a captured request body.

@@ -105,6 +105,7 @@ func testWebAppModel(t *testing.T, tags, headerRewrites types.Map) webAppResourc
 		Alias:                 types.StringNull(),
 		SecurityPolicyID:      types.StringNull(),
 		Tags:                  tags,
+		TagsAll:               plannedTagsAll(tags),
 		Upstream:              upstream,
 		Downstream:            downstream,
 		RequestHeaderRewrites: headerRewrites,
