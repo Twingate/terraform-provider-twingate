@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 
 	attrs "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -422,6 +424,37 @@ func TestHandler_MatchResourcesByName(t *testing.T) {
 	res, ok := matched[0].(*model.Resource)
 	assert.True(t, ok)
 	assert.Equal(t, "res2", res.ID)
+}
+
+func TestHandler_MatchResourcesByNameIn(t *testing.T) {
+	mockResources := []*model.Resource{
+		{ID: "res1", Name: "prod"},
+		{ID: "res2", Name: "test"},
+		{ID: "res3", Name: "stage"},
+	}
+
+	handler := &handler[*model.Resource, *model.ResourcesFilter]{
+		readResources: func(ctx context.Context) ([]*model.Resource, error) {
+			return mockResources, nil
+		},
+	}
+
+	err := handler.init()
+	assert.NoError(t, err)
+
+	matched := handler.matchResources(&model.ResourcesFilter{
+		NameIn:     []string{"prod", "stage"},
+		NameFilter: attrs.FilterByIn,
+	})
+
+	assert.Len(t, matched, 2)
+
+	ids := utils.Map(matched, func(item any) string {
+		return item.(*model.Resource).ID
+	})
+	sort.Strings(ids)
+
+	assert.Equal(t, []string{"res1", "res3"}, ids)
 }
 
 func TestHandler_MatchResourcesByNameAndTag(t *testing.T) {

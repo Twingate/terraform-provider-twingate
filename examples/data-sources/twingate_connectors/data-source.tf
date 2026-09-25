@@ -5,4 +5,5 @@ data "twingate_connectors" "all" {
   #  name_exclude = "<your connector's name to exclude>"
   #  name_prefix = "<prefix of connector name>"
   #  name_suffix = "<suffix of connector name>"
+  #  name_in = ["<your connector's name>", "<another connector's name>"]
 }

@@ -438,3 +438,57 @@ func TestAccessPolicy_ParseDurationSupportsDays(t *testing.T) {
 		assert.Equal(t, 36*time.Hour, duration)
 	})
 }
+
+func TestResourceMatchByNameIn(t *testing.T) {
+	resource := model.Resource{ID: "id", Name: "Resource A", Tags: map[string]string{"env": "prod"}}
+
+	cases := []struct {
+		filter   *model.ResourcesFilter
+		expected bool
+	}{
+		{
+			filter:   nil,
+			expected: true,
+		},
+		{
+			filter:   &model.ResourcesFilter{NameIn: []string{"Resource A"}, NameFilter: attr.FilterByIn},
+			expected: true,
+		},
+		{
+			filter:   &model.ResourcesFilter{NameIn: []string{"Resource B", "Resource A"}, NameFilter: attr.FilterByIn},
+			expected: true,
+		},
+		{
+			filter:   &model.ResourcesFilter{NameIn: []string{"Resource B"}, NameFilter: attr.FilterByIn},
+			expected: false,
+		},
+		{
+			filter:   &model.ResourcesFilter{NameIn: []string{"resource a"}, NameFilter: attr.FilterByIn},
+			expected: false,
+		},
+		{
+			filter: &model.ResourcesFilter{
+				NameIn:     []string{"Resource A"},
+				NameFilter: attr.FilterByIn,
+				Tags:       map[string]string{"env": "dev"},
+			},
+			expected: false,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			assert.False(t, c.filter.HasNotSupportedFilters())
+			assert.Equal(t, c.expected, resource.Match(c.filter))
+		})
+	}
+}
+
+func TestResourcesFilterWithNameInString(t *testing.T) {
+	filter := &model.ResourcesFilter{
+		NameIn:     []string{"Resource A", "Resource B"},
+		NameFilter: attr.FilterByIn,
+	}
+
+	assert.Equal(t, `ResourcesFilter{Name(in)=[Resource A Resource B]}`, filter.String())
+}

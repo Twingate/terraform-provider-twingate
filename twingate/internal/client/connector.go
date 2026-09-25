@@ -76,11 +76,11 @@ func (client *Client) ReadConnector(ctx context.Context, connectorID string) (*m
 	return response.ToModel(), nil
 }
 
-func (client *Client) ReadConnectors(ctx context.Context, name, filter string) ([]*model.Connector, error) {
+func (client *Client) ReadConnectors(ctx context.Context, filter *StringFilter) ([]*model.Connector, error) {
 	opr := resourceConnector.read()
 
 	variables := newVars(
-		gqlNullable(query.NewConnectorFilterInput(name, filter), "filter"),
+		gqlNullable(query.NewConnectorFilterInput(filter.ToQuery()), "filter"),
 		cursor(query.CursorConnectors),
 		pageLimit(client.pageLimit),
 	)

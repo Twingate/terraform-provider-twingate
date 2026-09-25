@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
@@ -14,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var ErrResourcesDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regex, name_contains, name_exclude, name_prefix or name_suffix must be set.")
+var ErrResourcesDatasourceShouldSetOneOptionalNameAttribute = errors.New("Only one of name, name_regexp, name_contains, name_exclude, name_prefix, name_suffix or name_in must be set.")
 
 // Ensure the implementation satisfies the desired interfaces.
 var _ datasource.DataSource = &resources{}
@@ -35,6 +36,7 @@ type resourcesModel struct {
 	NameExclude  types.String    `tfsdk:"name_exclude"`
 	NamePrefix   types.String    `tfsdk:"name_prefix"`
 	NameSuffix   types.String    `tfsdk:"name_suffix"`
+	NameIn       types.Set       `tfsdk:"name_in"`
 	Tags         types.Map       `tfsdk:"tags"`
 	Resources    []resourceModel `tfsdk:"resources"`
 }
@@ -111,6 +113,7 @@ func (d *resources) Schema(ctx context.Context, req datasource.SchemaRequest, re
 				Optional:    true,
 				Description: "The name of the resource must end with the value.",
 			},
+			attr.Name + attr.FilterByIn: InFilterAttribute("Returns only resources that exactly match one of the names in the list."),
 			attr.Tags: schema.MapAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
@@ -176,17 +179,18 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		return
 	}
 
-	name, filter := GetNameFilter(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
-
-	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix) > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)+CountSetAttributes(data.NameIn) > 1 {
 		addErr(&resp.Diagnostics, ErrResourcesDatasourceShouldSetOneOptionalNameAttribute, TwingateResources)
 
 		return
 	}
 
+	nameFilter := GetStringFilter(data.NameIn, data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
+
 	resources, err := d.client.ReadResourcesByName(client.WithCallerCtx(ctx, datasourceKey), &model.ResourcesFilter{
-		Name:       &name,
-		NameFilter: filter,
+		Name:       &nameFilter.Name,
+		NameFilter: nameFilter.Filter,
+		NameIn:     nameFilter.Values,
 		Tags:       GetTags(data.Tags),
 	})
 	if err != nil && !errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -195,11 +199,19 @@ func (d *resources) Read(ctx context.Context, req datasource.ReadRequest, resp *
 		return
 	}
 
-	data.ID = types.StringValue("query resources by name: " + name)
+	data.ID = types.StringValue(resourcesDatasourceID(nameFilter))
 	data.Resources = convertResourcesToTerraform(resources)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func resourcesDatasourceID(filter *client.StringFilter) string {
+	if len(filter.Values) > 0 {
+		return "query resources by name in: " + strings.Join(filter.Values, ",")
+	}
+
+	return "query resources by name: " + filter.Name
 }
 
 func GetTags(rawTags types.Map) map[string]string {
