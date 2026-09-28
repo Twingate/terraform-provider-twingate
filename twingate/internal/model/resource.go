@@ -234,13 +234,13 @@ func (r Resource) Match(filter ResourceFilter) bool {
 		}
 	}
 
-	// filter by list of names
-	if names := filter.GetNameIn(); len(names) > 0 && !slices.Contains(names, r.Name) {
-		return false
-	}
-
-	// filter by name
-	if name := filter.GetName(); name != "" && !matchName(r.Name, name, filter.GetFilterBy()) {
+	// filter by list of names, which takes precedence over the single name filter
+	// (same as the API query built from the filter)
+	if names := filter.GetNameIn(); len(names) > 0 {
+		if !slices.Contains(names, r.Name) {
+			return false
+		}
+	} else if name := filter.GetName(); name != "" && !matchName(r.Name, name, filter.GetFilterBy()) {
 		return false
 	}
 
