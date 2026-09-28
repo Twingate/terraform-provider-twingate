@@ -558,6 +558,79 @@ func TestAccTwingateSSHResourceTags(t *testing.T) {
 	})
 }
 
+// Tags and header rewrites share the same API shape: nothing is stored for an
+// empty map, so `tags = {}` must round-trip as an empty map rather than null or
+// Terraform rejects the apply as an inconsistent result.
+func TestAccTwingateSSHResourceEmptyTags(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	sshResTFName := test.TerraformRandName("test_ssh_res")
+	theResource := acctests.TerraformSSHResource(sshResTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	name := test.RandomName()
+	resourceAddress := "10.0.1.21"
+	gatewayAddress := "10.0.1.21:8080"
+	tags := map[string]string{"env": "dev"}
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	emptyPlan := sdk.ConfigPlanChecks{
+		PostApplyPostRefresh: []plancheck.PlanCheck{
+			plancheck.ExpectEmptyPlan(),
+		},
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateSSHResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				// Explicitly empty on create: `{}` must be kept in state.
+				Config:           prereqs + terraformResourceSSHResourceWithTags(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, nil),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Tags+".%", "0"),
+				),
+			},
+			{
+				Config:           prereqs + terraformResourceSSHResourceWithTags(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, tags),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Tags+".%", "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, "env"), "dev"),
+				),
+			},
+			{
+				// Explicitly empty on update: the API clears the tags, state keeps `{}`.
+				Config:           prereqs + terraformResourceSSHResourceWithTags(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, nil),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Tags+".%", "0"),
+				),
+			},
+			{
+				// Omitted: state must return to null, still without drift.
+				Config:           prereqs + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, attr.Tags),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTwingateSSHResourceAccessGroup(t *testing.T) {
 	t.Parallel()
 

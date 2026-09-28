@@ -831,22 +831,22 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 		RoutingMode:              plan.RoutingMode.ValueStringPointer(),
-		Tags:                     getTags(plan.TagsAll),
+		Tags:                     getKeyValueMap(plan.TagsAll),
 	}, nil
 }
 
-func getTags(rawTags types.Map) map[string]string {
-	if rawTags.IsNull() || rawTags.IsUnknown() || len(rawTags.Elements()) == 0 {
+func getKeyValueMap(typesMap types.Map) map[string]string {
+	if typesMap.IsNull() || typesMap.IsUnknown() || len(typesMap.Elements()) == 0 {
 		return nil
 	}
 
-	tags := make(map[string]string, len(rawTags.Elements()))
+	keyValueMap := make(map[string]string, len(typesMap.Elements()))
 
-	for key, val := range rawTags.Elements() {
-		tags[key] = val.(types.String).ValueString()
+	for key, val := range typesMap.Elements() {
+		keyValueMap[key] = val.(types.String).ValueString()
 	}
 
-	return tags
+	return keyValueMap
 }
 
 func checkGlobalID(val string) error {
