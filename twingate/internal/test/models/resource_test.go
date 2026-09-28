@@ -474,6 +474,14 @@ func TestResourceMatchByNameIn(t *testing.T) {
 			},
 			expected: false,
 		},
+		{
+			// name_in takes precedence over the single name filter
+			filter: &model.ResourcesFilter{
+				Name:   toStringPtr("Resource B"),
+				NameIn: []string{"Resource A"},
+			},
+			expected: true,
+		},
 	}
 
 	for n, c := range cases {
