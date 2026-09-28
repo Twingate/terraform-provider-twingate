@@ -50,6 +50,11 @@ func TestStringFilterToQuery(t *testing.T) {
 			filter:   &client.StringFilter{Filter: attr.FilterByIn},
 			expected: nil,
 		},
+		{
+			name:     "list filter without values falls back to the single value",
+			filter:   &client.StringFilter{Name: "test", Filter: attr.FilterByIn},
+			expected: &query.StringFilterOperationInput{Eq: optionalString("test")},
+		},
 	}
 
 	for _, c := range cases {
