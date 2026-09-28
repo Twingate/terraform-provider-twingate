@@ -106,29 +106,7 @@ func (r *twingateResource) Configure(_ context.Context, req resource.ConfigureRe
 }
 
 func (r *twingateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// Skip during destroy plans.
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
-	// Read the user-declared tags from config. If the user omitted tags (config is null),
-	// fall back to the user-declared portion stored in state (set during ImportState as
-	// API tags minus provider default tags).
-	var configTags types.Map
-	req.Config.GetAttribute(ctx, path.Root(attr.Tags), &configTags)
-
-	var userTags map[string]string
-
-	if configTags.IsNull() || configTags.IsUnknown() {
-		var stateTags types.Map
-		req.State.GetAttribute(ctx, path.Root(attr.Tags), &stateTags)
-		userTags = utils.ConvertMap(stateTags)
-	} else {
-		userTags = utils.ConvertMap(configTags)
-	}
-
-	tagsAll := utils.ConvertMapValue(utils.MapUnion(r.defaultTags, userTags))
-	resp.Plan.SetAttribute(ctx, path.Root(attr.TagsAll), tagsAll)
+	planTagsAll(ctx, req, resp, r.defaultTags)
 
 	// Suppress access_policy drift when the config omits the block and state holds only
 	// the API default values (mode=MANUAL, approval_mode=MANUAL, no duration).
@@ -246,9 +224,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		resp.State.SetAttribute(ctx, path.Root(attr.AccessService), accessServiceAccount)
 	}
 
-	resp.State.SetAttribute(ctx, path.Root(attr.TagsAll), utils.ConvertMapValue(res.Tags))
-	userTags := utils.MapDifference(res.Tags, r.defaultTags)
-	resp.State.SetAttribute(ctx, path.Root(attr.Tags), utils.ConvertMapValue(userTags))
+	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
 }
 
 //nolint:funlen
@@ -296,11 +272,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.TagsAll: schema.MapAttribute{
-				ElementType: types.StringType,
-				Computed:    true,
-				Description: "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
-			},
+			attr.TagsAll: tagsAllAttribute(),
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
 				Optional:    true,

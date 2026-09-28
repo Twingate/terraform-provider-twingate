@@ -33,14 +33,18 @@ var (
 	ErrAddressCannotBeModified = errors.New("address cannot be modified when in_cluster is true (in_cluster must be set to false to modify address)")
 )
 
-var _ resource.Resource = &kubernetesResource{}
+var (
+	_ resource.Resource               = &kubernetesResource{}
+	_ resource.ResourceWithModifyPlan = &kubernetesResource{}
+)
 
 func NewKubernetesResourceResource() resource.Resource {
 	return &kubernetesResource{}
 }
 
 type kubernetesResource struct {
-	client *client.Client
+	client      *client.Client
+	defaultTags map[string]string
 }
 
 type kubernetesResourceModel struct {
@@ -56,6 +60,7 @@ type kubernetesResourceModel struct {
 	Alias            types.String `tfsdk:"alias"`
 	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
 	Tags             types.Map    `tfsdk:"tags"`
+	TagsAll          types.Map    `tfsdk:"tags_all"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
 }
@@ -75,10 +80,25 @@ func (r *kubernetesResource) Configure(_ context.Context, req resource.Configure
 	}
 
 	r.client = providerData.Client
+	r.defaultTags = providerData.DefaultTags
+}
+
+// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`.
+func (r *kubernetesResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	planTagsAll(ctx, req, resp, r.defaultTags)
 }
 
 func (r *kubernetesResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+
+	res, err := r.client.ReadKubernetesResource(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to import state", err.Error())
+
+		return
+	}
+
+	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
 }
 
 //nolint:funlen
@@ -162,6 +182,7 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
+			attr.TagsAll: tagsAllAttribute(),
 		},
 		Blocks: map[string]schema.Block{
 			attr.AccessPolicy: accessPolicyBlock(),
@@ -233,7 +254,7 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getKeyValueMap(plan.Tags),
+		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -329,7 +350,7 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		IsVisible:        getOptionalBool(plan.IsVisible),
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getKeyValueMap(plan.Tags),
+		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -416,7 +437,8 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 		state.Alias = types.StringPointerValue(k8sRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValueWithReference(k8sRes.Tags, state.Tags)
+	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
+	state.TagsAll = utils.ConvertMapValue(k8sRes.Tags)
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {
