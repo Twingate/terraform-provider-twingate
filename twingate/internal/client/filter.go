@@ -23,7 +23,7 @@ func (f *StringFilter) ToQuery() *query.StringFilterOperationInput {
 		return nil
 	}
 
-	if f.Filter == attrs.FilterByIn {
+	if f.Filter == attrs.FilterByIn && len(f.Values) > 0 {
 		return query.NewStringFilterInOperationInput(f.Values)
 	}
 
