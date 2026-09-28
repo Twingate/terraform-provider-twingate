@@ -6,10 +6,8 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -88,14 +86,26 @@ func CountSetAttributes(attributes ...types.Set) int {
 
 // SetValues converts a set of strings into a sorted slice. The order is stable so
 // that the datasource id does not depend on the order in the config.
+// Null or unknown sets and elements, and empty strings, are skipped.
 func SetValues(set types.Set) []string {
-	if len(set.Elements()) == 0 {
+	if set.IsNull() || set.IsUnknown() {
 		return nil
 	}
 
-	values := utils.Map(set.Elements(), func(item tfattr.Value) string {
-		return item.(types.String).ValueString()
-	})
+	var values []string
+
+	for _, item := range set.Elements() {
+		value, ok := item.(types.String)
+		if !ok || value.IsNull() || value.IsUnknown() || value.ValueString() == "" {
+			continue
+		}
+
+		values = append(values, value.ValueString())
+	}
+
+	if len(values) == 0 {
+		return nil
+	}
 
 	slices.Sort(values)
 
