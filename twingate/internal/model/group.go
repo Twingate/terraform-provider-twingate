@@ -61,13 +61,13 @@ func (g Group) Match(filter ResourceFilter) bool {
 		return false
 	}
 
-	// filter by list of names
-	if names := filter.GetNameIn(); len(names) > 0 && !slices.Contains(names, g.Name) {
-		return false
-	}
-
-	// filter by name
-	if name := filter.GetName(); name != "" && !matchName(g.Name, name, filter.GetFilterBy()) {
+	// filter by list of names, which takes precedence over the single name filter
+	// (same as the API query built from the filter)
+	if names := filter.GetNameIn(); len(names) > 0 {
+		if !slices.Contains(names, g.Name) {
+			return false
+		}
+	} else if name := filter.GetName(); name != "" && !matchName(g.Name, name, filter.GetFilterBy()) {
 		return false
 	}
 
