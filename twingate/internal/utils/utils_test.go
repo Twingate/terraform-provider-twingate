@@ -35,15 +35,21 @@ func TestMapDifference(t *testing.T) {
 			expected: map[string]string{"a": "1", "b": "2"},
 		},
 		{
-			// Overlapping key is removed; non-overlapping key survives.
+			// Same key and value in B is removed; non-overlapping key survives.
 			mapA:     map[string]string{"a": "1", "b": "2"},
-			mapB:     map[string]string{"b": "99"},
+			mapB:     map[string]string{"b": "2"},
 			expected: map[string]string{"a": "1"},
 		},
 		{
-			// Full overlap → nil.
+			// Same key but different value in B survives: the entry is not B's.
+			mapA:     map[string]string{"a": "1", "b": "2"},
+			mapB:     map[string]string{"b": "99"},
+			expected: map[string]string{"a": "1", "b": "2"},
+		},
+		{
+			// Full overlap of identical entries → nil.
 			mapA:     map[string]string{"a": "1"},
-			mapB:     map[string]string{"a": "99"},
+			mapB:     map[string]string{"a": "1"},
 			expected: nil,
 		},
 		{
