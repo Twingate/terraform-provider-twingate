@@ -491,7 +491,9 @@ func (client *Client) UpdateResourceActiveState(ctx context.Context, resource *m
 func (client *Client) ReadResourcesByName(ctx context.Context, filter *model.ResourcesFilter) ([]*model.Resource, error) {
 	opr := resourceResource.read().withCustomName("readResourcesByName")
 
-	// cache is not used when cache filter config set or cache disabled
+	// The cache is consulted only when caching is enabled for this type AND a cache
+	// filter is set. Any match short-circuits the API call, so the configured cache
+	// filter also scopes what this lookup can return.
 	if isCacheReady[*model.Resource]() {
 		if matched := matchResources[*model.Resource](filter); len(matched) > 0 {
 			log.Printf(
