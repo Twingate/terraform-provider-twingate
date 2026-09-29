@@ -9,24 +9,15 @@ resource "aws_vpc" "main" {
   tags = { Name = "demo-vpc" }
 }
 
-# Private subnet for all instances. They receive no public IP and reach the
-# internet through the NAT gateway; operators connect via an EC2 Instance Connect Endpoint (EIC).
+# All instances get a public IP for outbound internet access. Inbound traffic is
+# restricted by the security group below.
 resource "aws_subnet" "main" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
+  cidr_block              = "10.0.0.0/24"
   availability_zone       = data.aws_availability_zones.available.names[0]
-  map_public_ip_on_launch = false
+  map_public_ip_on_launch = true
 
-  tags = { Name = "demo-private-subnet" }
-}
-
-# Public subnet hosts only the NAT gateway.
-resource "aws_subnet" "public" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.0.0/24"
-  availability_zone = data.aws_availability_zones.available.names[0]
-
-  tags = { Name = "demo-public-subnet" }
+  tags = { Name = "demo-subnet" }
 }
 
 resource "aws_internet_gateway" "main" {
@@ -35,24 +26,7 @@ resource "aws_internet_gateway" "main" {
   tags = { Name = "demo-igw" }
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
-
-  tags = { Name = "demo-nat-eip" }
-}
-
-# NAT gateway provides outbound internet for the private instances so they can
-# pull packages, reach Twingate, and register with SSM.
-resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public.id
-
-  tags = { Name = "demo-nat" }
-
-  depends_on = [aws_internet_gateway.main]
-}
-
-resource "aws_route_table" "public" {
+resource "aws_route_table" "main" {
   vpc_id = aws_vpc.main.id
 
   route {
@@ -60,23 +34,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = { Name = "demo-public-rt" }
-}
-
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table" "main" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
-
-  tags = { Name = "demo-private-rt" }
+  tags = { Name = "demo-rt" }
 }
 
 resource "aws_route_table_association" "main" {
@@ -105,26 +63,18 @@ resource "aws_security_group" "internal" {
   tags = { Name = "demo-internal-sg" }
 }
 
-resource "aws_security_group" "eic" {
-  name   = "demo-eic-endpoint"
-  vpc_id = aws_vpc.main.id
-
-  egress {
-    protocol    = "tcp"
-    from_port   = 22
-    to_port     = 22
-    cidr_blocks = [aws_subnet.main.cidr_block]
-  }
-
-  tags = { Name = "demo-eic-endpoint-sg" }
+# AWS-managed list of the IP ranges the console's EC2 Instance Connect uses.
+data "aws_ec2_managed_prefix_list" "eic" {
+  name = "com.amazonaws.${var.aws_region}.ec2-instance-connect"
 }
 
-resource "aws_security_group_rule" "eic_to_internal_ssh" {
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 22
-  to_port                  = 22
-  security_group_id        = aws_security_group.internal.id
-  source_security_group_id = aws_security_group.eic.id
-}
+resource "aws_security_group_rule" "debug_ssh" {
+  count = var.debug_ssh ? 1 : 0
 
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 22
+  to_port           = 22
+  security_group_id = aws_security_group.internal.id
+  prefix_list_ids   = [data.aws_ec2_managed_prefix_list.eic.id]
+}

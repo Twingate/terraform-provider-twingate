@@ -8,3 +8,6 @@ tg_network   = "your-network"
 
 # Optional: alias for the SSH resource (added as a DNS SAN in the TLS cert)
 # resource_alias = "ssh-server.int"
+
+# Optional: allow EC2 Instance Connect from the AWS console for debugging
+# debug_ssh = true

@@ -1,5 +1,5 @@
 output "gateway_instance_id" {
-  description = "EC2 instance ID of the gateway (use with: aws ec2-instance-connect ssh --instance-id <id> --os-user ubuntu)"
+  description = "EC2 instance ID of the gateway"
   value       = aws_instance.gateway.id
 }
 

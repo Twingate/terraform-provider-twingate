@@ -49,13 +49,30 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-The instances have no public IP and do not expose SSH publicly. For troubleshooting,
-open a shell on the gateway instance via the EC2 Instance Connect Endpoint (EIC), then
-view the logs:
+Each instance has a public IP for outbound traffic, but the security group only
+allows inbound traffic between the instances themselves. To open a shell from the
+AWS console, turn on `debug_ssh`, which allows port 22 from AWS's EC2 Instance
+Connect IP range only:
 
 ```bash
-aws ec2-instance-connect ssh --instance-id "$(terraform output -raw gateway_instance_id)" --os-user ubuntu
+terraform apply -var debug_ssh=true
+```
+
+In the AWS console, open **EC2 > Instances > demo-gateway > Connect > EC2 Instance
+Connect**, choose **Connect using public IP**, and log in as `ubuntu`. Your IAM
+identity needs the `ec2-instance-connect:SendSSHPublicKey` permission. No SSH key
+pair is required.
+
+On the gateway, view the logs:
+
+```bash
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
+```
+
+When you're done, close port 22 again:
+
+```bash
+terraform apply -var debug_ssh=false
 ```
 
 ## Clean up
