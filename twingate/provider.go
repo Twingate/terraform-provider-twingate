@@ -116,7 +116,7 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 					},
 					attr.ResourcesFilter: schema.SingleNestedAttribute{
 						Optional:    true,
-						Description: "Specifies the filter for the resources to be cached.",
+						Description: "Specifies the filter for the resources to be cached. This filter also scopes what the `twingate_resources` datasource can return: lookups are answered from the cache when any cached resource matches, so resources excluded by this filter are not returned.",
 						Attributes: map[string]schema.Attribute{
 							attr.Name: schema.StringAttribute{
 								Optional:    true,
@@ -169,7 +169,7 @@ func (t Twingate) Schema(ctx context.Context, request provider.SchemaRequest, re
 					},
 					attr.GroupsFilter: schema.SingleNestedAttribute{
 						Optional:    true,
-						Description: "Specifies the filter for the groups to be cached.",
+						Description: "Specifies the filter for the groups to be cached. This filter also scopes what the `twingate_groups` datasource can return: lookups are answered from the cache when any cached group matches, so groups excluded by this filter are not returned.",
 						Attributes: map[string]schema.Attribute{
 							attr.Name: schema.StringAttribute{
 								Optional:    true,
