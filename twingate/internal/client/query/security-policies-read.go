@@ -34,8 +34,8 @@ type SecurityPolicyFilterField struct {
 	Name *StringFilterOperationInput `json:"name"`
 }
 
-func NewSecurityPolicyFilterField(name, filter string) *SecurityPolicyFilterField {
+func NewSecurityPolicyFilterField(name *StringFilterOperationInput) *SecurityPolicyFilterField {
 	return &SecurityPolicyFilterField{
-		Name: NewStringFilterOperationInput(name, filter),
+		Name: name,
 	}
 }

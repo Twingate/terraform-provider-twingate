@@ -88,6 +88,14 @@ func TestGroupMatchByNameIn(t *testing.T) {
 			},
 			expected: false,
 		},
+		{
+			// name_in takes precedence over the single name filter
+			filter: &model.GroupsFilter{
+				Name:   toStringPtr("Group B"),
+				NameIn: []string{"Group A"},
+			},
+			expected: true,
+		},
 	}
 
 	for n, c := range cases {
