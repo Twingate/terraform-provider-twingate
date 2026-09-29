@@ -57,8 +57,8 @@ func (n gqlWebAppResourceNode) ToModel() (*model.WebAppResource, error) {
 		Alias:                 optionalString(n.Alias),
 		SecurityPolicyID:      securityPolicyID(n.SecurityPolicy),
 		Tags:                  tagsToModel(n.Tags),
-		Upstream:              model.WebAppUpstream{Port: n.WebAppResourceFragment.Upstream.Port},
-		Downstream:            model.WebAppDownstream{Port: n.WebAppResourceFragment.Downstream.Port},
+		Upstream:              model.WebAppUpstream{Port: n.WebAppResourceFragment.Upstream.Port, TLSMode: n.WebAppResourceFragment.Upstream.TLSMode},
+		Downstream:            model.WebAppDownstream{Port: n.WebAppResourceFragment.Downstream.Port, TLSMode: n.WebAppResourceFragment.Downstream.TLSMode},
 		RequestHeaderRewrites: headerRewritesToModel(n.WebAppResourceFragment.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicyToModel(n.AccessPolicy, &n.ApprovalMode),
 	}

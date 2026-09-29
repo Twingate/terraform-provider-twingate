@@ -5328,8 +5328,8 @@ func TestCreateWebAppResourceQueryToModel(t *testing.T) {
 						Address:               struct{ Value string }{Value: "internal.acme.com"},
 						RemoteNetwork:         struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
 						Gateway:               struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
-						Upstream:              WebAppUpstream{Port: 8080},
-						Downstream:            WebAppDownstream{Port: 80},
+						Upstream:              WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
+						Downstream:            WebAppDownstream{Port: 80, TLSMode: model.TLSServerModeNone},
 						RequestHeaderRewrites: []KeyValuePair{{Key: "x-user", Value: "{{username}}"}},
 					},
 				},
@@ -5340,8 +5340,8 @@ func TestCreateWebAppResourceQueryToModel(t *testing.T) {
 				Address:               "internal.acme.com",
 				RemoteNetworkID:       "rn-id",
 				GatewayID:             "gw-id",
-				Upstream:              model.WebAppUpstream{Port: 8080},
-				Downstream:            model.WebAppDownstream{Port: 80},
+				Upstream:              model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
+				Downstream:            model.WebAppDownstream{Port: 80, TLSMode: model.TLSServerModeNone},
 				RequestHeaderRewrites: map[string]string{"x-user": "{{username}}"},
 			},
 		},
@@ -5423,8 +5423,8 @@ func TestReadWebAppResourceQuery(t *testing.T) {
 			},
 		}
 		query.Resource.WebAppResourceFragment.Gateway.ID = graphql.ID("gw-id")
-		query.Resource.WebAppResourceFragment.Upstream = WebAppUpstream{Port: 8080}
-		query.Resource.WebAppResourceFragment.Downstream = WebAppDownstream{Port: 80}
+		query.Resource.WebAppResourceFragment.Upstream = WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeInsecure}
+		query.Resource.WebAppResourceFragment.Downstream = WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13}
 
 		assert.False(t, query.IsEmpty())
 
@@ -5432,8 +5432,8 @@ func TestReadWebAppResourceQuery(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "web-res-id", res.ID)
 		assert.Equal(t, "gw-id", res.GatewayID)
-		assert.Equal(t, model.WebAppUpstream{Port: 8080}, res.Upstream)
-		assert.Equal(t, model.WebAppDownstream{Port: 80}, res.Downstream)
+		assert.Equal(t, model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeInsecure}, res.Upstream)
+		assert.Equal(t, model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13}, res.Downstream)
 		assert.Nil(t, res.RequestHeaderRewrites)
 	})
 }

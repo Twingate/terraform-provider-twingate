@@ -40,10 +40,12 @@ resource "twingate_web_app_resource" "internal_app" {
   address           = "internal.acme.com"
   alias             = "app.int"
   downstream = {
-    port = 80
+    port     = 443
+    tls_mode = "TLS13"
   }
   upstream = {
-    port = 8080
+    port     = 8443
+    tls_mode = "VERIFY_FULL"
   }
   request_header_rewrites = {
     "X-Twingate-User" = "{{username}}"
@@ -85,6 +87,10 @@ Required:
 
 - `port` (Number) The port number. Must be between 1 and 65535 inclusive.
 
+Optional:
+
+- `tls_mode` (String) How the Gateway serves TLS on the downstream connection. One of "TLS13" or "NONE". Defaults to "NONE".
+
 
 <a id="nestedatt--upstream"></a>
 ### Nested Schema for `upstream`
@@ -92,6 +98,10 @@ Required:
 Required:
 
 - `port` (Number) The port number. Must be between 1 and 65535 inclusive.
+
+Optional:
+
+- `tls_mode` (String) How the Gateway verifies TLS on the upstream connection. One of "VERIFY_FULL", "VERIFY_CA", "INSECURE" or "NONE". Defaults to "NONE".
 
 
 <a id="nestedblock--access_group"></a>
