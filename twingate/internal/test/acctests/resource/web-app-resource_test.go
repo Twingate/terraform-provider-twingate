@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test/acctests"
@@ -32,7 +33,7 @@ func webAppResourcePrerequisites(remoteNetworkName, remoteNetworkTFName, x509TFN
 	`, remoteNetworkTFName, remoteNetworkName, x509TFName, test.RandomName(), certPEM, gatewayTFName, remoteNetworkTFName, gatewayAddress, x509TFName)
 }
 
-func terraformResourceWebApp(tfName, gatewayTFName, remoteNetworkTFName, name, address string, upstreamPort, downstreamPort int, extra string) string {
+func terraformResourceWebApp(tfName, gatewayTFName, remoteNetworkTFName, name, address, upstream, downstream, extra string) string {
 	return fmt.Sprintf(`
 	resource "twingate_web_app_resource" "%s" {
 	  name              = "%s"
@@ -40,14 +41,18 @@ func terraformResourceWebApp(tfName, gatewayTFName, remoteNetworkTFName, name, a
 	  gateway_id        = twingate_gateway.%s.id
 	  remote_network_id = twingate_remote_network.%s.id
 	  upstream = {
-	    port = %d
+	    %s
 	  }
 	  downstream = {
-	    port = %d
+	    %s
 	  }
 	  %s
 	}
-	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, upstreamPort, downstreamPort, extra)
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, upstream, downstream, extra)
+}
+
+func webAppStreamBody(port int, tlsMode string) string {
+	return fmt.Sprintf("port     = %d\n\t    tls_mode = %q", port, tlsMode)
 }
 
 type webAppTestSetup struct {
@@ -80,9 +85,15 @@ func newWebAppTestSetup(t *testing.T, gatewayAddress string) webAppTestSetup {
 	}
 }
 
+// config leaves `tls_mode` out of both stream blocks, so it also covers the
+// attribute falling back to its default.
 func (s webAppTestSetup) config(upstreamPort, downstreamPort int, extra string) string {
+	return s.configStreams(fmt.Sprintf("port = %d", upstreamPort), fmt.Sprintf("port = %d", downstreamPort), extra)
+}
+
+func (s webAppTestSetup) configStreams(upstream, downstream, extra string) string {
 	return s.prereqs + terraformResourceWebApp(s.webAppTFName, s.gatewayTFName, s.remoteNetworkTFName,
-		s.resourceName, s.resourceAddress, upstreamPort, downstreamPort, extra)
+		s.resourceName, s.resourceAddress, upstream, downstream, extra)
 }
 
 func TestAccTwingateWebAppResourceCreate(t *testing.T) {
@@ -107,6 +118,8 @@ func TestAccTwingateWebAppResourceCreate(t *testing.T) {
 					sdk.TestCheckResourceAttrSet(setup.theResource, attr.RemoteNetworkID),
 					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.Port), "8080"),
 					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.Port), "80"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.TLSMode), model.TLSClientModeNone),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.TLSMode), model.TLSServerModeNone),
 					sdk.TestCheckNoResourceAttr(setup.theResource, attr.RequestHeaderRewrites),
 				),
 			},
@@ -143,10 +156,13 @@ func TestAccTwingateWebAppResourceImport(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: setup.config(8080, 80, optionalAttributes),
+				Config: setup.configStreams(webAppStreamBody(8443, model.TLSClientModeVerifyFull),
+					webAppStreamBody(443, model.TLSServerModeTLS13), optionalAttributes),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(setup.theResource),
 					sdk.TestCheckResourceAttr(setup.theResource, attr.IsVisible, "false"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.TLSMode), model.TLSClientModeVerifyFull),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.TLSMode), model.TLSServerModeTLS13),
 					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Tags, "env"), "prod"),
 					sdk.TestCheckResourceAttr(setup.theResource,
 						attr.PathAttr(attr.RequestHeaderRewrites, "X-Twingate-User"), "{{username}}"),
@@ -185,6 +201,69 @@ func TestAccTwingateWebAppResourceUpdatePorts(t *testing.T) {
 					acctests.CheckTwingateResourceExists(setup.theResource),
 					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.Port), "9090"),
 					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.Port), "443"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateWebAppResourceUpdateTLSMode(t *testing.T) {
+	t.Parallel()
+
+	setup := newWebAppTestSetup(t, "10.0.0.7:8080")
+
+	emptyPlan := sdk.ConfigPlanChecks{
+		PostApplyPostRefresh: []plancheck.PlanCheck{
+			plancheck.ExpectEmptyPlan(),
+		},
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config:           setup.config(8080, 80, ""),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.TLSMode), model.TLSClientModeNone),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.TLSMode), model.TLSServerModeNone),
+				),
+			},
+			{
+				Config: setup.configStreams(webAppStreamBody(8443, model.TLSClientModeVerifyFull),
+					webAppStreamBody(443, model.TLSServerModeTLS13), ""),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.TLSMode), model.TLSClientModeVerifyFull),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.TLSMode), model.TLSServerModeTLS13),
+				),
+			},
+			{
+				// Only the upstream changes, so a swapped upstream/downstream
+				// mapping shows up as a diff.
+				Config: setup.configStreams(webAppStreamBody(8443, model.TLSClientModeInsecure),
+					webAppStreamBody(443, model.TLSServerModeTLS13), ""),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.TLSMode), model.TLSClientModeInsecure),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.TLSMode), model.TLSServerModeTLS13),
+				),
+			},
+			{
+				// Removing `tls_mode` from config must reset both sides to the
+				// default rather than keep the value stored by the previous step.
+				Config:           setup.config(8080, 80, ""),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Upstream, attr.TLSMode), model.TLSClientModeNone),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Downstream, attr.TLSMode), model.TLSServerModeNone),
 				),
 			},
 		},
@@ -366,6 +445,49 @@ func TestAccTwingateWebAppResource_InvalidPorts(t *testing.T) {
 				Steps: []sdk.TestStep{
 					{
 						Config:      setup.config(c.upstreamPort, c.downstreamPort, ""),
+						ExpectError: c.expectedErr,
+					},
+				},
+			})
+		})
+	}
+}
+
+func TestAccTwingateWebAppResource_InvalidTLSMode(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		upstream    string
+		downstream  string
+		expectedErr *regexp.Regexp
+	}{
+		{
+			name:        "server mode on upstream",
+			upstream:    webAppStreamBody(8080, model.TLSServerModeTLS13),
+			downstream:  "port = 80",
+			expectedErr: regexp.MustCompile(`value must be one of`),
+		},
+		{
+			name:        "client mode on downstream",
+			upstream:    "port = 8080",
+			downstream:  webAppStreamBody(443, model.TLSClientModeVerifyFull),
+			expectedErr: regexp.MustCompile(`value must be one of`),
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			setup := newWebAppTestSetup(t, "10.0.0.9:8080")
+
+			sdk.Test(t, sdk.TestCase{
+				ProtoV6ProviderFactories: acctests.ProviderFactories,
+				PreCheck:                 func() { acctests.PreCheck(t) },
+				TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+				CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+				Steps: []sdk.TestStep{
+					{
+						Config:      setup.configStreams(c.upstream, c.downstream, ""),
 						ExpectError: c.expectedErr,
 					},
 				},

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -77,10 +78,10 @@ func gatewayResourceCases() []gatewayResourceCase {
 				attr.Address:         tftypes.NewValue(tftypes.String, "internal.acme.com"),
 				attr.GatewayID:       tftypes.NewValue(tftypes.String, "gw-1"),
 				attr.RemoteNetworkID: tftypes.NewValue(tftypes.String, "rn-1"),
-				attr.Upstream:        portObject(8080),
-				attr.Downstream:      portObject(80),
+				attr.Upstream:        webAppStreamObject(8080, model.TLSClientModeNone),
+				attr.Downstream:      webAppStreamObject(80, model.TLSServerModeNone),
 			},
-			entityExtra: `,"upstream":{"port":8080},"downstream":{"port":80},"requestHeaderRewrites":[]`,
+			entityExtra: `,"upstream":{"port":8080,"tlsMode":"NONE"},"downstream":{"port":80,"tlsMode":"NONE"},"requestHeaderRewrites":[]`,
 		},
 	}
 }
@@ -106,11 +107,12 @@ func taggedResourceCases() []gatewayResourceCase {
 	return append(gatewayResourceCases(), networkResourceCase())
 }
 
-func portObject(port int64) tftypes.Value {
-	objType := tftypes.Object{AttributeTypes: map[string]tftypes.Type{attr.Port: tftypes.Number}}
+func webAppStreamObject(port int64, tlsMode string) tftypes.Value {
+	objType := tftypes.Object{AttributeTypes: map[string]tftypes.Type{attr.Port: tftypes.Number, attr.TLSMode: tftypes.String}}
 
 	return tftypes.NewValue(objType, map[string]tftypes.Value{
-		attr.Port: tftypes.NewValue(tftypes.Number, port),
+		attr.Port:    tftypes.NewValue(tftypes.Number, port),
+		attr.TLSMode: tftypes.NewValue(tftypes.String, tlsMode),
 	})
 }
 
