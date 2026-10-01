@@ -6,11 +6,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/resource"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -558,6 +558,79 @@ func TestAccTwingateSSHResourceTags(t *testing.T) {
 	})
 }
 
+// Tags and header rewrites share the same API shape: nothing is stored for an
+// empty map, so `tags = {}` must round-trip as an empty map rather than null or
+// Terraform rejects the apply as an inconsistent result.
+func TestAccTwingateSSHResourceEmptyTags(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	sshResTFName := test.TerraformRandName("test_ssh_res")
+	theResource := acctests.TerraformSSHResource(sshResTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	name := test.RandomName()
+	resourceAddress := "10.0.1.21"
+	gatewayAddress := "10.0.1.21:8080"
+	tags := map[string]string{"env": "dev"}
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	emptyPlan := sdk.ConfigPlanChecks{
+		PostApplyPostRefresh: []plancheck.PlanCheck{
+			plancheck.ExpectEmptyPlan(),
+		},
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateSSHResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				// Explicitly empty on create: `{}` must be kept in state.
+				Config:           prereqs + terraformResourceSSHResourceWithTags(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, nil),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Tags+".%", "0"),
+				),
+			},
+			{
+				Config:           prereqs + terraformResourceSSHResourceWithTags(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, tags),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Tags+".%", "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, "env"), "dev"),
+				),
+			},
+			{
+				// Explicitly empty on update: the API clears the tags, state keeps `{}`.
+				Config:           prereqs + terraformResourceSSHResourceWithTags(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, nil),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Tags+".%", "0"),
+				),
+			},
+			{
+				// Omitted: state must return to null, still without drift.
+				Config:           prereqs + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckNoResourceAttr(theResource, attr.Tags),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTwingateSSHResourceAccessGroup(t *testing.T) {
 	t.Parallel()
 
@@ -646,4 +719,96 @@ func TestAccTwingateSSHResourceAccessPolicy(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccTwingateSSHResourceDefaultTags(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	sshResTFName := test.TerraformRandName("test_ssh_res")
+	theResource := acctests.TerraformSSHResource(sshResTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	name := test.RandomName()
+	resourceAddress := "10.0.3.1"
+	gatewayAddress := "10.0.3.1:8080"
+
+	const (
+		tagOwner = "owner"
+		tagApp   = "application"
+		tagEnv   = "env"
+	)
+
+	userTags := map[string]string{tagOwner: "example_team", tagApp: "custom_application"}
+	defaultTags := map[string]string{tagEnv: "stage", tagApp: "default_application"}
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+	resourceConfig := terraformResourceSSHResourceWithTags(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, userTags)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateSSHResourceDestroy,
+		Steps:                    defaultTagsSteps(theResource, prereqs+resourceConfig, defaultTags),
+	})
+}
+
+// defaultTagsSteps exercises provider default tags against a gateway-backed resource
+// declared with tags owner=example_team and application=custom_application:
+// no defaults, defaults merged (user value wins), import, then a changed default.
+func defaultTagsSteps(theResource, config string, defaultTags map[string]string) []sdk.TestStep {
+	const (
+		tagOwner = "owner"
+		tagApp   = "application"
+		tagEnv   = "env"
+	)
+
+	return []sdk.TestStep{
+		{
+			Config: config,
+			Check: acctests.ComposeTestCheckFunc(
+				acctests.CheckTwingateResourceExists(theResource),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tagOwner), "example_team"),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tagApp), "custom_application"),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagOwner), "example_team"),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagApp), "custom_application"),
+				sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagEnv)),
+			),
+		},
+		{
+			Config: acctests.TerraformProviderWithDefaultTags(defaultTags) + config,
+			Check: acctests.ComposeTestCheckFunc(
+				acctests.CheckTwingateResourceExists(theResource),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tagOwner), "example_team"),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Tags, tagApp), "custom_application"),
+				sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, tagEnv)),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagOwner), "example_team"),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagApp), "custom_application"),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagEnv), "stage"),
+				acctests.CheckGatewayResourceTags(theResource, tagOwner, "example_team"),
+				acctests.CheckGatewayResourceTags(theResource, tagApp, "custom_application"),
+				acctests.CheckGatewayResourceTags(theResource, tagEnv, "stage"),
+			),
+		},
+		{
+			ResourceName:      theResource,
+			ImportState:       true,
+			ImportStateVerify: true,
+		},
+		{
+			Config: acctests.TerraformProviderWithDefaultTags(map[string]string{tagEnv: "prod"}) + config,
+			Check: acctests.ComposeTestCheckFunc(
+				acctests.CheckTwingateResourceExists(theResource),
+				sdk.TestCheckNoResourceAttr(theResource, attr.PathAttr(attr.Tags, tagEnv)),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagApp), "custom_application"),
+				sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.TagsAll, tagEnv), "prod"),
+				acctests.CheckGatewayResourceTags(theResource, tagApp, "custom_application"),
+				acctests.CheckGatewayResourceTags(theResource, tagEnv, "prod"),
+			),
+		},
+	}
 }

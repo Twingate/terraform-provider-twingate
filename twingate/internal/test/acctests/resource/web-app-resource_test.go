@@ -5,10 +5,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/resource"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/test/acctests"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/resource"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -264,6 +264,71 @@ func TestAccTwingateWebAppResourceHeaderRewrites(t *testing.T) {
 	})
 }
 
+// Tags and header rewrites share the same API shape: nothing is stored for an
+// empty map, so `tags = {}` must round-trip as an empty map rather than null or
+// Terraform rejects the apply as an inconsistent result.
+func TestAccTwingateWebAppResourceEmptyTags(t *testing.T) {
+	t.Parallel()
+
+	setup := newWebAppTestSetup(t, "10.0.0.21:8080")
+
+	const populated = `
+	  tags = {
+	    env = "dev"
+	  }`
+
+	emptyPlan := sdk.ConfigPlanChecks{
+		PostApplyPostRefresh: []plancheck.PlanCheck{
+			plancheck.ExpectEmptyPlan(),
+		},
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				// Explicitly empty on create: `{}` must be kept in state.
+				Config:           setup.config(8080, 80, "tags = {}"),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Tags+".%", "0"),
+				),
+			},
+			{
+				Config:           setup.config(8080, 80, populated),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Tags+".%", "1"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.PathAttr(attr.Tags, "env"), "dev"),
+				),
+			},
+			{
+				// Explicitly empty on update: the API clears the tags, state keeps `{}`.
+				Config:           setup.config(8080, 80, "tags = {}"),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Tags+".%", "0"),
+				),
+			},
+			{
+				// Omitted: state must return to null, still without drift.
+				Config:           setup.config(8080, 80, ""),
+				ConfigPlanChecks: emptyPlan,
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckNoResourceAttr(setup.theResource, attr.Tags),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTwingateWebAppResource_InvalidPorts(t *testing.T) {
 	t.Parallel()
 
@@ -368,5 +433,24 @@ func TestAccTwingateWebAppResourceDeleteNonExisting(t *testing.T) {
 				ExpectNonEmptyPlan: true,
 			},
 		},
+	})
+}
+
+func TestAccTwingateWebAppResourceDefaultTags(t *testing.T) {
+	t.Parallel()
+
+	setup := newWebAppTestSetup(t, "10.0.3.3:8080")
+
+	userTags := map[string]string{"owner": "example_team", "application": "custom_application"}
+	defaultTags := map[string]string{"env": "stage", "application": "default_application"}
+
+	config := setup.config(8080, 80, acctests.TerraformTagsBlock(userTags))
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+		Steps:                    defaultTagsSteps(setup.theResource, config, defaultTags),
 	})
 }

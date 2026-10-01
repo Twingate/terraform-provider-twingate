@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customplanmodifier"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customplanmodifier"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customvalidator"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -29,14 +29,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-var _ resource.Resource = &webAppResource{}
+var (
+	_ resource.Resource               = &webAppResource{}
+	_ resource.ResourceWithModifyPlan = &webAppResource{}
+)
 
 func NewWebAppResourceResource() resource.Resource {
 	return &webAppResource{}
 }
 
 type webAppResource struct {
-	client *client.Client
+	client      *client.Client
+	defaultTags map[string]string
 }
 
 type webAppResourceModel struct {
@@ -49,6 +53,7 @@ type webAppResourceModel struct {
 	Alias                 types.String `tfsdk:"alias"`
 	SecurityPolicyID      types.String `tfsdk:"security_policy_id"`
 	Tags                  types.Map    `tfsdk:"tags"`
+	TagsAll               types.Map    `tfsdk:"tags_all"`
 	Upstream              types.Object `tfsdk:"upstream"`
 	Downstream            types.Object `tfsdk:"downstream"`
 	RequestHeaderRewrites types.Map    `tfsdk:"request_header_rewrites"`
@@ -87,10 +92,25 @@ func (r *webAppResource) Configure(_ context.Context, req resource.ConfigureRequ
 	}
 
 	r.client = providerData.Client
+	r.defaultTags = providerData.DefaultTags
+}
+
+// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`.
+func (r *webAppResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	planTagsAll(ctx, req, resp, r.defaultTags)
 }
 
 func (r *webAppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
+
+	res, err := r.client.ReadWebAppResource(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to import state", err.Error())
+
+		return
+	}
+
+	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
 }
 
 //nolint:funlen
@@ -153,6 +173,7 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
+			attr.TagsAll:    tagsAllAttribute(),
 			attr.Upstream:   webAppUpstream(),
 			attr.Downstream: webAppDownstream(),
 			attr.RequestHeaderRewrites: schema.MapAttribute{
@@ -227,30 +248,6 @@ func webAppDownstreamObject(ctx context.Context, port int64) (types.Object, diag
 	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{Port: types.Int64Value(port)})
 }
 
-// getHeaderRewrites converts the configured map for the API. Header rewrites and
-// tags are both plain string maps, so the tag converter applies: a null, unknown
-// or empty map becomes nil, which the client sends as an empty list.
-func getHeaderRewrites(rawRewrites types.Map) map[string]string {
-	return getTags(rawRewrites)
-}
-
-// convertHeaderRewrites maps the API response back into state. The API drops the
-// field once it holds no entries, so an empty response is ambiguous: it matches
-// both an omitted attribute and an explicitly empty map. Mirror whichever form
-// was declared, otherwise `{}` in config would be stored as null and drift on
-// every plan.
-func convertHeaderRewrites(rewrites map[string]string, state types.Map) types.Map {
-	if len(rewrites) > 0 {
-		return utils.ConvertMapValue(rewrites)
-	}
-
-	if !state.IsNull() && !state.IsUnknown() && len(state.Elements()) == 0 {
-		return state
-	}
-
-	return types.MapNull(types.StringType)
-}
-
 func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResourceModel, diagnostics *diag.Diagnostics, operation string) *model.WebAppResource {
 	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
 	if err != nil {
@@ -284,10 +281,10 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		IsVisible:             getOptionalBool(plan.IsVisible),
 		Alias:                 getOptionalString(plan.Alias),
 		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:                  getTags(plan.Tags),
+		Tags:                  getKeyValueMap(plan.TagsAll),
 		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64()},
 		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64()},
-		RequestHeaderRewrites: getHeaderRewrites(plan.RequestHeaderRewrites),
+		RequestHeaderRewrites: getKeyValueMap(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
 		GroupsAccess:          accessGroups,
 	}
@@ -425,8 +422,9 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 		state.Alias = types.StringPointerValue(webAppRes.Alias)
 	}
 
-	state.Tags = utils.ConvertMapValue(webAppRes.Tags)
-	state.RequestHeaderRewrites = convertHeaderRewrites(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
+	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
+	state.TagsAll = utils.ConvertMapValue(webAppRes.Tags)
+	state.RequestHeaderRewrites = utils.ConvertMapValueWithReference(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
 	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port)
 	diagnostics.Append(diags...)

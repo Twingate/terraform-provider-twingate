@@ -9,15 +9,15 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customplanmodifier"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/customvalidator"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customplanmodifier"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/provider/providerdata"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -106,29 +106,7 @@ func (r *twingateResource) Configure(_ context.Context, req resource.ConfigureRe
 }
 
 func (r *twingateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// Skip during destroy plans.
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
-	// Read the user-declared tags from config. If the user omitted tags (config is null),
-	// fall back to the user-declared portion stored in state (set during ImportState as
-	// API tags minus provider default tags).
-	var configTags types.Map
-	req.Config.GetAttribute(ctx, path.Root(attr.Tags), &configTags)
-
-	var userTags map[string]string
-
-	if configTags.IsNull() || configTags.IsUnknown() {
-		var stateTags types.Map
-		req.State.GetAttribute(ctx, path.Root(attr.Tags), &stateTags)
-		userTags = utils.ConvertMap(stateTags)
-	} else {
-		userTags = utils.ConvertMap(configTags)
-	}
-
-	tagsAll := utils.ConvertMapValue(utils.MapUnion(r.defaultTags, userTags))
-	resp.Plan.SetAttribute(ctx, path.Root(attr.TagsAll), tagsAll)
+	planTagsAll(ctx, req, resp, r.defaultTags)
 
 	// Suppress access_policy drift when the config omits the block and state holds only
 	// the API default values (mode=MANUAL, approval_mode=MANUAL, no duration).
@@ -246,9 +224,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		resp.State.SetAttribute(ctx, path.Root(attr.AccessService), accessServiceAccount)
 	}
 
-	resp.State.SetAttribute(ctx, path.Root(attr.TagsAll), utils.ConvertMapValue(res.Tags))
-	userTags := utils.MapDifference(res.Tags, r.defaultTags)
-	resp.State.SetAttribute(ctx, path.Root(attr.Tags), utils.ConvertMapValue(userTags))
+	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
 }
 
 //nolint:funlen
@@ -296,11 +272,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.TagsAll: schema.MapAttribute{
-				ElementType: types.StringType,
-				Computed:    true,
-				Description: "A map of key-value pairs that represents all tags on this resource, including default tags from provider configuration.",
-			},
+			attr.TagsAll: tagsAllAttribute(),
 			// computed
 			attr.SecurityPolicyID: schema.StringAttribute{
 				Optional:    true,
@@ -831,22 +803,22 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
 		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 		RoutingMode:              plan.RoutingMode.ValueStringPointer(),
-		Tags:                     getTags(plan.TagsAll),
+		Tags:                     getKeyValueMap(plan.TagsAll),
 	}, nil
 }
 
-func getTags(rawTags types.Map) map[string]string {
-	if rawTags.IsNull() || rawTags.IsUnknown() || len(rawTags.Elements()) == 0 {
+func getKeyValueMap(typesMap types.Map) map[string]string {
+	if typesMap.IsNull() || typesMap.IsUnknown() || len(typesMap.Elements()) == 0 {
 		return nil
 	}
 
-	tags := make(map[string]string, len(rawTags.Elements()))
+	keyValueMap := make(map[string]string, len(typesMap.Elements()))
 
-	for key, val := range rawTags.Elements() {
-		tags[key] = val.(types.String).ValueString()
+	for key, val := range typesMap.Elements() {
+		keyValueMap[key] = val.(types.String).ValueString()
 	}
 
-	return tags
+	return keyValueMap
 }
 
 func checkGlobalID(val string) error {

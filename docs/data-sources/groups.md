@@ -20,6 +20,7 @@ data "twingate_groups" "foo" {
   #  name_exclude = "<your group's name to exclude>"
   #  name_prefix = "<prefix of resource name>"
   #  name_suffix = "<suffix of resource name>"
+  #  name_in = ["<your group's name>", "<another group's name>"]
 }
 
 # Group names are not constrained to be unique within Twingate,
@@ -35,6 +36,7 @@ data "twingate_groups" "foo" {
 - `name` (String) Returns only groups that exactly match this name. If no options are passed it will return all resources. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the group.
 - `name_exclude` (String) Match when the exact value does not exist in the name of the group.
+- `name_in` (Set of String) Returns only groups that exactly match one of the names in the list.
 - `name_prefix` (String) The name of the group must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the group.
 - `name_suffix` (String) The name of the group must end with the value.

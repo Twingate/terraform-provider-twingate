@@ -149,8 +149,27 @@ func ConvertMapValue(input map[string]string) types.Map {
 	return types.MapValueMust(types.StringType, raw)
 }
 
-// MapDifference returns a map with all keys from mapA that are NOT present in mapB.
-// Returns nil when the result would be empty.
+// ConvertMapValueWithReference maps a key-value API response back into state.
+// The API drops such fields once they hold no entries, so an empty response is
+// ambiguous: it matches both an omitted attribute and an explicitly empty map.
+// Mirror whichever form the reference (plan or prior state) declared, otherwise
+// `{}` in config would be stored as null and Terraform would reject the apply
+// as an inconsistent result.
+func ConvertMapValueWithReference(input map[string]string, reference types.Map) types.Map {
+	if len(input) > 0 {
+		return ConvertMapValue(input)
+	}
+
+	if !reference.IsNull() && !reference.IsUnknown() && len(reference.Elements()) == 0 {
+		return reference
+	}
+
+	return types.MapNull(types.StringType)
+}
+
+// MapDifference returns the entries of mapA that are NOT present in mapB with the same
+// key and value. An entry whose key exists in mapB under a different value is kept,
+// since it is not mapB's entry. Returns nil when the result would be empty.
 func MapDifference(mapA, mapB map[string]string) map[string]string {
 	if len(mapA) == 0 {
 		return nil
@@ -159,7 +178,7 @@ func MapDifference(mapA, mapB map[string]string) map[string]string {
 	result := make(map[string]string)
 
 	for k, v := range mapA {
-		if _, exists := mapB[k]; !exists {
+		if other, exists := mapB[k]; !exists || other != v {
 			result[k] = v
 		}
 	}

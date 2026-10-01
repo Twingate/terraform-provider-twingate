@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client/query"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/utils"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client/query"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 )
 
 func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource *model.KubernetesResource) (*model.KubernetesResource, error) {
@@ -32,9 +32,6 @@ func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource 
 	}
 
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
 
 	if len(k8sResource.GroupsAccess) > 0 {
 		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(k8sResource.GroupsAccess)); err != nil {
@@ -129,9 +126,6 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 	}
 
 	res := response.ToModel()
-	if res == nil {
-		return nil, nil //nolint:nilnil
-	}
 
 	res.GroupsAccess = k8sResource.GroupsAccess
 

@@ -44,7 +44,7 @@ terraform {
   required_providers {
     twingate = {
       source  = "Twingate/twingate"
-      version = "~> 4.1"
+      version = "~> 5.0"
     }
     tls = {
       source  = "hashicorp/tls"
@@ -233,7 +233,14 @@ PUBKEY
 # Configure sshd to trust certificates signed by our CA
 echo "TrustedUserCAKeys /etc/ssh/twingate-ca.pub" >> /etc/ssh/sshd_config
 
+# Only accept the "gateway" principal, and only for the "gateway" account
+mkdir -p /etc/ssh/auth_principals
+echo "gateway" > /etc/ssh/auth_principals/gateway
+echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
+
 systemctl restart sshd
 ```
+
+The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
 Keys and certificates are injected into instances via `templatefile()` in `user_data`.

@@ -1,6 +1,6 @@
 package providerdata
 
-import "github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/client"
+import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
 
 type Config struct {
 	RegionalURL string

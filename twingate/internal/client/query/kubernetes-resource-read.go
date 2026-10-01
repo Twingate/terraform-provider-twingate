@@ -2,7 +2,7 @@
 package query
 
 import (
-	"github.com/Twingate/terraform-provider-twingate/v4/twingate/internal/model"
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/hasura/go-graphql-client"
 )
 

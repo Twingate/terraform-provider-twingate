@@ -5,6 +5,7 @@ data "twingate_groups" "foo" {
   #  name_exclude = "<your group's name to exclude>"
   #  name_prefix = "<prefix of resource name>"
   #  name_suffix = "<suffix of resource name>"
+  #  name_in = ["<your group's name>", "<another group's name>"]
 }
 
 # Group names are not constrained to be unique within Twingate,
