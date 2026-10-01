@@ -16,4 +16,5 @@ echo "TrustedUserCAKeys /etc/ssh/twingate-ca.pub" >> /etc/ssh/sshd_config
 mkdir -p /etc/ssh/auth_principals
 echo "gateway" > /etc/ssh/auth_principals/gateway
 echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
-systemctl restart sshd
+
+systemctl restart ssh
