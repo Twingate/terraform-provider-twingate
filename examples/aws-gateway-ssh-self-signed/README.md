@@ -18,7 +18,6 @@ self-signed certificates.
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
-terraform apply
 ```
 
 Fill out the `terraform.tfvars` file.
