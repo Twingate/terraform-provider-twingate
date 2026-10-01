@@ -9,8 +9,9 @@ resource "aws_vpc" "main" {
   tags = { Name = "demo-vpc" }
 }
 
-# All instances get a public IP for outbound internet access. Inbound traffic is
-# restricted by the security group below.
+# All instances are on a public subnet to make debugging easier.
+# All access is still restricted by the security group below as well as toggleable firewall rules.
+# Production implementations should be moved to a private subnet.
 resource "aws_subnet" "main" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.0.0/24"
