@@ -12,4 +12,8 @@ PUBKEY
 # Configure sshd to trust certificates signed by our CA
 echo "TrustedUserCAKeys /etc/ssh/twingate-ca.pub" >> /etc/ssh/sshd_config
 
-sudo systemctl restart sshd
+# Only accept the "gateway" principal, and only for the "gateway" account
+mkdir -p /etc/ssh/auth_principals
+echo "gateway" > /etc/ssh/auth_principals/gateway
+echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
+systemctl restart ssh
