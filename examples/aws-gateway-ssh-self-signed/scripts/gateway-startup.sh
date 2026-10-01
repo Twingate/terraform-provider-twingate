@@ -1,7 +1,13 @@
 #!/bin/bash
 set -e
 
-BINARY_URL="https://github.com/Twingate/gateway/releases/latest/download/gateway_Linux_x86_64.tar.gz"
+# Wait until the gateway can reach GitHub. This is a work around for making sure outbound connectivity is available
+until curl -sf --connect-timeout 5 https://github.com > /dev/null 2>&1; do
+  sleep 2
+done
+
+# Pinned gateway version; check https://github.com/Twingate/gateway/releases for updates
+BINARY_URL="https://github.com/Twingate/gateway/releases/download/v1.1.0/gateway_Linux_x86_64.tar.gz"
 GATEWAY_DIR="/etc/gateway"
 
 mkdir -p "$GATEWAY_DIR"

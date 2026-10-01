@@ -30,5 +30,12 @@ variable "aws_region" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t3.large"
+  default     = "t3.micro"
 }
+
+variable "debug_ssh" {
+  description = "Open port 22 to the AWS EC2 Instance Connect range so instances can be reached from the AWS console"
+  type        = bool
+  default     = false
+}
+

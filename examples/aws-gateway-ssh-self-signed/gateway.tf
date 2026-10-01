@@ -1,20 +1,16 @@
 locals {
   gateway_port = 8443
 
+  # Pinned so twingate_gateway can use the address before the instance exists.
+  gateway_private_ip = cidrhost(aws_subnet.main.cidr_block, 10)
+
   gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
-    twingate_network = var.tg_network
-    twingate_host    = var.tg_url
-    port             = local.gateway_port
+    twingate_network   = var.tg_network
+    twingate_host      = var.tg_url
+    port               = local.gateway_port
+    ssh_server_name    = twingate_ssh_resource.ssh_server.name
+    ssh_server_address = aws_instance.ssh_server.private_ip
   })
-}
-
-# A dedicated ENI gives the gateway a stable private IP that is known before the
-# instance is created, so twingate_gateway can use it as its address.
-resource "aws_network_interface" "gateway" {
-  subnet_id       = aws_subnet.main.id
-  security_groups = [aws_security_group.internal.id]
-
-  tags = { Name = "demo-gateway-eni" }
 }
 
 # replace_triggered_by only accepts resource references, so the rendered config is
@@ -24,13 +20,11 @@ resource "terraform_data" "gateway_config" {
 }
 
 resource "aws_instance" "gateway" {
-  ami           = data.aws_ami.debian.id
-  instance_type = var.instance_type
-
-  network_interface {
-    network_interface_id = aws_network_interface.gateway.id
-    device_index         = 0
-  }
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.main.id
+  private_ip             = local.gateway_private_ip
+  vpc_security_group_ids = [aws_security_group.internal.id]
 
   user_data = templatefile("${path.module}/scripts/gateway-startup.sh", {
     tls_cert       = tls_locally_signed_cert.server.cert_pem

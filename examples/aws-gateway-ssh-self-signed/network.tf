@@ -9,9 +9,12 @@ resource "aws_vpc" "main" {
   tags = { Name = "demo-vpc" }
 }
 
+# All instances are on a public subnet to make debugging easier.
+# All access is still restricted by the security group below as well as toggleable firewall rules.
+# Production implementations should be moved to a private subnet.
 resource "aws_subnet" "main" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
+  cidr_block              = "10.0.0.0/24"
   availability_zone       = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
 
@@ -51,6 +54,17 @@ resource "aws_security_group" "internal" {
     self      = true
   }
 
+  dynamic "ingress" {
+    for_each = var.debug_ssh ? [1] : []
+
+    content {
+      protocol        = "tcp"
+      from_port       = 22
+      to_port         = 22
+      prefix_list_ids = [data.aws_ec2_managed_prefix_list.eic.id]
+    }
+  }
+
   egress {
     protocol    = "-1"
     from_port   = 0
@@ -59,4 +73,9 @@ resource "aws_security_group" "internal" {
   }
 
   tags = { Name = "demo-internal-sg" }
+}
+
+# AWS-managed list of the IP ranges the console's EC2 Instance Connect uses.
+data "aws_ec2_managed_prefix_list" "eic" {
+  name = "com.amazonaws.${var.aws_region}.ec2-instance-connect"
 }
