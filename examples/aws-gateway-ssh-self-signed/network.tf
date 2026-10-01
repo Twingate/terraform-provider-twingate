@@ -53,6 +53,17 @@ resource "aws_security_group" "internal" {
     self      = true
   }
 
+  dynamic "ingress" {
+    for_each = var.debug_ssh ? [1] : []
+
+    content {
+      protocol        = "tcp"
+      from_port       = 22
+      to_port         = 22
+      prefix_list_ids = [data.aws_ec2_managed_prefix_list.eic.id]
+    }
+  }
+
   egress {
     protocol    = "-1"
     from_port   = 0
@@ -66,15 +77,4 @@ resource "aws_security_group" "internal" {
 # AWS-managed list of the IP ranges the console's EC2 Instance Connect uses.
 data "aws_ec2_managed_prefix_list" "eic" {
   name = "com.amazonaws.${var.aws_region}.ec2-instance-connect"
-}
-
-resource "aws_security_group_rule" "debug_ssh" {
-  count = var.debug_ssh ? 1 : 0
-
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 22
-  to_port           = 22
-  security_group_id = aws_security_group.internal.id
-  prefix_list_ids   = [data.aws_ec2_managed_prefix_list.eic.id]
 }
