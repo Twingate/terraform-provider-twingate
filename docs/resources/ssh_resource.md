@@ -45,6 +45,14 @@ resource "twingate_ssh_resource" "ssh_server" {
   alias      = "test.int"
   remote_network_id = twingate_remote_network.prod.id
   address    = "10.128.0.105"
+
+  # Optional. Both default to port 22 when omitted.
+  downstream = {
+    port = 2222
+  }
+  upstream = {
+    port = 22
+  }
 }
 ```
 
@@ -63,9 +71,11 @@ resource "twingate_ssh_resource" "ssh_server" {
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
+- `downstream` (Attributes) The downstream configuration. The connection between the SSH client and the Gateway. Default port is `22`. (see [below for nested schema](#nestedatt--downstream))
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
+- `upstream` (Attributes) The upstream configuration. The connection between the Gateway and the SSH server. Default port is `22`. (see [below for nested schema](#nestedatt--upstream))
 
 ### Read-Only
 
@@ -100,3 +110,19 @@ Optional:
 - `approval_mode` (String) This will set the approval model for the policy. The valid values are `AUTOMATIC` and `MANUAL`.
 - `duration` (String) This will set the access duration for the policy. Duration must be between 1 hour and 365 days. Examples of valid values include `1h` and `2d`.
 - `mode` (String) This will set the access_policy mode for the policy. The valid values are `MANUAL`, `AUTO_LOCK` and `ACCESS_REQUEST`.
+
+
+<a id="nestedatt--downstream"></a>
+### Nested Schema for `downstream`
+
+Required:
+
+- `port` (Number) The port number. Must be between 1 and 65535 inclusive.
+
+
+<a id="nestedatt--upstream"></a>
+### Nested Schema for `upstream`
+
+Required:
+
+- `port` (Number) The port number. Must be between 1 and 65535 inclusive.

@@ -4770,6 +4770,8 @@ func TestCreateSSHResourceQueryToModel(t *testing.T) {
 						Address:       struct{ Value string }{Value: "10.0.0.1"},
 						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
 						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						Downstream:    SSHDownstream{Port: 22},
+						Upstream:      SSHUpstream{Port: 2222},
 					},
 				},
 			},
@@ -4780,6 +4782,8 @@ func TestCreateSSHResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
+				Downstream:      &model.SSHDownstream{Port: 22},
+				Upstream:        &model.SSHUpstream{Port: 2222},
 			},
 		},
 	}
@@ -4842,6 +4846,8 @@ func TestUpdateSSHResourceQueryToModel(t *testing.T) {
 						Address:       struct{ Value string }{Value: "10.0.0.2"},
 						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
 						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						Downstream:    SSHDownstream{Port: 22},
+						Upstream:      SSHUpstream{Port: 2222},
 					},
 				},
 			},
@@ -4852,6 +4858,8 @@ func TestUpdateSSHResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
+				Downstream:      &model.SSHDownstream{Port: 22},
+				Upstream:        &model.SSHUpstream{Port: 2222},
 			},
 		},
 	}
@@ -4914,8 +4922,12 @@ func TestReadSSHResourceQueryToModel(t *testing.T) {
 						Gateway struct {
 							ID graphql.ID
 						}
+						Downstream SSHDownstream
+						Upstream   SSHUpstream
 					}{
-						Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						Gateway:    struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						Downstream: SSHDownstream{Port: 22},
+						Upstream:   SSHUpstream{Port: 2222},
 					},
 				},
 			},
@@ -4926,6 +4938,8 @@ func TestReadSSHResourceQueryToModel(t *testing.T) {
 				RemoteNetworkID: "rn-id",
 				GatewayID:       "gw-id",
 				IsVisible:       optionalBool(false),
+				Downstream:      &model.SSHDownstream{Port: 22},
+				Upstream:        &model.SSHUpstream{Port: 2222},
 			},
 		},
 	}

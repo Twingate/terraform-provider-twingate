@@ -24,21 +24,23 @@ func testSSHModel(t *testing.T, tags types.Map) sshResourceModel {
 		SecurityPolicyID: types.StringNull(),
 		Tags:             tags,
 		TagsAll:          plannedTagsAll(tags),
+		Downstream:       types.ObjectUnknown(sshPortAttributeTypes),
+		Upstream:         types.ObjectUnknown(sshPortAttributeTypes),
 		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
 	}
 }
 
 // sshEntityResponse is a successful create or update mutation payload whose
-// entity echoes the given tags.
-func sshEntityResponse(t *testing.T, mutation string, tags map[string]string) string {
+// entity echoes the given tags and ports.
+func sshEntityResponse(t *testing.T, mutation string, tags map[string]string, downstreamPort, upstreamPort int64) string {
 	t.Helper()
 
 	return fmt.Sprintf(`{"data":{%q:{"ok":true,"error":null,"entity":{"id":%q,"name":%q,"address":{"value":%q},`+
 		`"remoteNetwork":{"id":%q},"gateway":{"id":%q},"isVisible":true,"alias":"","securityPolicy":null,`+
-		`"tags":%s,"approvalMode":"","accessPolicy":null}}}}`,
+		`"tags":%s,"downstream":{"port":%d},"upstream":{"port":%d},"approvalMode":"","accessPolicy":null}}}}`,
 		mutation, testResourceID, testResourceName, testResourceAddress, testRemoteNetworkID, testGatewayID,
-		keyValueJSON(t, tags))
+		keyValueJSON(t, tags), downstreamPort, upstreamPort)
 }
 
 // Tags reach the API as a list of key-value inputs on both create and update: an
@@ -73,7 +75,7 @@ func TestSSHResourceTags(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("create: "+c.name, func(t *testing.T) {
-			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceCreate", c.apiTags))
+			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceCreate", c.apiTags, 22, 22))
 			sshRes := &sshResource{client: apiClient}
 
 			resp := &resource.CreateResponse{State: nullStateOf(t, sshRes)}
@@ -92,7 +94,7 @@ func TestSSHResourceTags(t *testing.T) {
 		})
 
 		t.Run("update: "+c.name, func(t *testing.T) {
-			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceUpdate", c.apiTags))
+			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceUpdate", c.apiTags, 22, 22))
 			sshRes := &sshResource{client: apiClient}
 
 			stateModel := testSSHModel(t, stringMap(map[string]string{"stale": "tag"}))
@@ -117,4 +119,103 @@ func TestSSHResourceTags(t *testing.T) {
 			assert.Equal(t, c.expectedState, state.Tags)
 		})
 	}
+}
+
+// An omitted port block is planned as unknown and sent as null so the API applies
+// its default; whatever port the API returns lands in state.
+func TestSSHResourcePorts(t *testing.T) {
+	cases := []struct {
+		name               string
+		planDownstream     types.Object
+		planUpstream       types.Object
+		expectedDownstream any
+		expectedUpstream   any
+		apiDownstreamPort  int64
+		apiUpstreamPort    int64
+	}{
+		{
+			name:               "omitted - null is sent and the API default is stored",
+			planDownstream:     types.ObjectUnknown(sshPortAttributeTypes),
+			planUpstream:       types.ObjectUnknown(sshPortAttributeTypes),
+			expectedDownstream: nil,
+			expectedUpstream:   nil,
+			apiDownstreamPort:  22,
+			apiUpstreamPort:    22,
+		},
+		{
+			name:               "set - ports are sent",
+			planDownstream:     sshPortObjectOf(t, 2222),
+			planUpstream:       sshPortObjectOf(t, 22022),
+			expectedDownstream: map[string]any{"port": float64(2222)},
+			expectedUpstream:   map[string]any{"port": float64(22022)},
+			apiDownstreamPort:  2222,
+			apiUpstreamPort:    22022,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run("create: "+c.name, func(t *testing.T) {
+			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceCreate", nil, c.apiDownstreamPort, c.apiUpstreamPort))
+			sshRes := &sshResource{client: apiClient}
+
+			planModel := testSSHModel(t, types.MapNull(types.StringType))
+			planModel.Downstream = c.planDownstream
+			planModel.Upstream = c.planUpstream
+
+			resp := &resource.CreateResponse{State: nullStateOf(t, sshRes)}
+			sshRes.Create(t.Context(), resource.CreateRequest{
+				Plan: planOf(t, sshRes, planModel),
+			}, resp)
+
+			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			assert.Equal(t, c.expectedDownstream, requestVariable(t, *requestBody, "downstream"))
+			assert.Equal(t, c.expectedUpstream, requestVariable(t, *requestBody, "upstream"))
+
+			var state sshResourceModel
+
+			readStateInto(t, resp.State, &state)
+			assert.Equal(t, sshPortObjectOf(t, c.apiDownstreamPort), state.Downstream)
+			assert.Equal(t, sshPortObjectOf(t, c.apiUpstreamPort), state.Upstream)
+		})
+
+		t.Run("update: "+c.name, func(t *testing.T) {
+			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceUpdate", nil, c.apiDownstreamPort, c.apiUpstreamPort))
+			sshRes := &sshResource{client: apiClient}
+
+			stateModel := testSSHModel(t, types.MapNull(types.StringType))
+			stateModel.ID = types.StringValue(testResourceID)
+			stateModel.Downstream = sshPortObjectOf(t, 22)
+			stateModel.Upstream = sshPortObjectOf(t, 22)
+
+			planModel := testSSHModel(t, types.MapNull(types.StringType))
+			planModel.ID = types.StringValue(testResourceID)
+			planModel.Downstream = c.planDownstream
+			planModel.Upstream = c.planUpstream
+
+			resp := &resource.UpdateResponse{State: stateOf(t, sshRes, stateModel)}
+			sshRes.Update(t.Context(), resource.UpdateRequest{
+				Plan:  planOf(t, sshRes, planModel),
+				State: stateOf(t, sshRes, stateModel),
+			}, resp)
+
+			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			assert.Equal(t, c.expectedDownstream, requestVariable(t, *requestBody, "downstream"))
+			assert.Equal(t, c.expectedUpstream, requestVariable(t, *requestBody, "upstream"))
+
+			var state sshResourceModel
+
+			readStateInto(t, resp.State, &state)
+			assert.Equal(t, sshPortObjectOf(t, c.apiDownstreamPort), state.Downstream)
+			assert.Equal(t, sshPortObjectOf(t, c.apiUpstreamPort), state.Upstream)
+		})
+	}
+}
+
+func sshPortObjectOf(t *testing.T, port int64) types.Object {
+	t.Helper()
+
+	obj, diags := sshPortObject(t.Context(), port)
+	require.False(t, diags.HasError(), diags)
+
+	return obj
 }

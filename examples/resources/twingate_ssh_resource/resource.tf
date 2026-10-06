@@ -30,4 +30,12 @@ resource "twingate_ssh_resource" "ssh_server" {
   alias      = "test.int"
   remote_network_id = twingate_remote_network.prod.id
   address    = "10.128.0.105"
+
+  # Optional. Both default to port 22 when omitted.
+  downstream = {
+    port = 2222
+  }
+  upstream = {
+    port = 22
+  }
 }

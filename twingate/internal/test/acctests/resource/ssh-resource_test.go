@@ -391,6 +391,23 @@ func terraformResourceSSHResourceWithTags(tfName, gatewayTFName, remoteNetworkTF
 	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, tagLines)
 }
 
+func terraformResourceSSHResourceWithPorts(tfName, gatewayTFName, remoteNetworkTFName, name, address string, downstreamPort, upstreamPort int) string {
+	return fmt.Sprintf(`
+	resource "twingate_ssh_resource" "%s" {
+	  name              = "%s"
+	  address           = "%s"
+	  gateway_id        = twingate_gateway.%s.id
+	  remote_network_id = twingate_remote_network.%s.id
+	  downstream = {
+	    port = %d
+	  }
+	  upstream = {
+	    port = %d
+	  }
+	}
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, downstreamPort, upstreamPort)
+}
+
 func terraformResourceSSHResourceWithAccessGroup(tfName, gatewayTFName, remoteNetworkTFName, groupTFName, name, address string) string {
 	return fmt.Sprintf(`
 	resource "twingate_ssh_resource" "%s" {
@@ -626,6 +643,53 @@ func TestAccTwingateSSHResourceEmptyTags(t *testing.T) {
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckNoResourceAttr(theResource, attr.Tags),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTwingateSSHResourcePorts(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	sshResTFName := test.TerraformRandName("test_ssh_res")
+	theResource := acctests.TerraformSSHResource(sshResTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	name := test.RandomName()
+	resourceAddress := "10.0.1.1"
+	gatewayAddress := "10.0.1.1:8080"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateSSHResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: prereqs + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Downstream, attr.Port), "22"),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Upstream, attr.Port), "22"),
+				),
+			},
+			{
+				Config: prereqs + terraformResourceSSHResourceWithPorts(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, 2222, 22022),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Downstream, attr.Port), "2222"),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Upstream, attr.Port), "22022"),
+				),
+			},
+			{
+				Config:   prereqs + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				PlanOnly: true,
 			},
 		},
 	})

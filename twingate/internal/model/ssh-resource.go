@@ -1,5 +1,13 @@
 package model
 
+type SSHDownstream struct {
+	Port int64
+}
+
+type SSHUpstream struct {
+	Port int64
+}
+
 type SSHResource struct {
 	ID               string
 	Name             string
@@ -10,6 +18,8 @@ type SSHResource struct {
 	Alias            *string
 	SecurityPolicyID *string
 	Tags             map[string]string
+	Downstream       *SSHDownstream
+	Upstream         *SSHUpstream
 	AccessPolicy     *AccessPolicy
 	GroupsAccess     []AccessGroup
 }

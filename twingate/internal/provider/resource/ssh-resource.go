@@ -12,6 +12,8 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -19,11 +21,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var (
@@ -51,8 +55,18 @@ type sshResourceModel struct {
 	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
 	Tags             types.Map    `tfsdk:"tags"`
 	TagsAll          types.Map    `tfsdk:"tags_all"`
+	Downstream       types.Object `tfsdk:"downstream"`
+	Upstream         types.Object `tfsdk:"upstream"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
+}
+
+type sshPortModel struct {
+	Port types.Int64 `tfsdk:"port"`
+}
+
+var sshPortAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
+	attr.Port: types.Int64Type,
 }
 
 func (r *sshResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -151,13 +165,70 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.TagsAll: tagsAllAttribute(),
+			attr.TagsAll:    tagsAllAttribute(),
+			attr.Downstream: sshPortAttribute("The downstream configuration. The connection between the SSH client and the Gateway. Default port is `22`."),
+			attr.Upstream:   sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server. Default port is `22`."),
 		},
 		Blocks: map[string]schema.Block{
 			attr.AccessPolicy: accessPolicyBlock(),
 			attr.AccessGroup:  groupAccessBlock(),
 		},
 	}
+}
+
+// The API applies its default when the attribute is omitted, so the value read
+// back is kept in state and UseStateForUnknown stops it from planning as unknown.
+func sshPortAttribute(description string) schema.SingleNestedAttribute {
+	return schema.SingleNestedAttribute{
+		Optional:    true,
+		Computed:    true,
+		Description: description,
+		PlanModifiers: []planmodifier.Object{
+			objectplanmodifier.UseStateForUnknown(),
+		},
+		Attributes: map[string]schema.Attribute{
+			attr.Port: schema.Int64Attribute{
+				Required:    true,
+				Description: fmt.Sprintf("The port number. Must be between %d and %d inclusive.", model.MinPortValue, model.MaxPortValue),
+				Validators: []validator.Int64{
+					int64validator.Between(model.MinPortValue, model.MaxPortValue),
+				},
+			},
+		},
+	}
+}
+
+func sshPortValue(ctx context.Context, obj types.Object, diagnostics *diag.Diagnostics) *int64 {
+	if obj.IsNull() || obj.IsUnknown() {
+		return nil
+	}
+
+	var port sshPortModel
+
+	diagnostics.Append(obj.As(ctx, &port, basetypes.ObjectAsOptions{})...)
+
+	return port.Port.ValueInt64Pointer()
+}
+
+func sshPortObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, sshPortAttributeTypes, sshPortModel{Port: types.Int64Value(port)})
+}
+
+func sshResourcePorts(ctx context.Context, plan *sshResourceModel, diagnostics *diag.Diagnostics) (*model.SSHDownstream, *model.SSHUpstream) {
+	var (
+		downstream *model.SSHDownstream
+		upstream   *model.SSHUpstream
+	)
+
+	if port := sshPortValue(ctx, plan.Downstream, diagnostics); port != nil {
+		downstream = &model.SSHDownstream{Port: *port}
+	}
+
+	if port := sshPortValue(ctx, plan.Upstream, diagnostics); port != nil {
+		upstream = &model.SSHUpstream{Port: *port}
+	}
+
+	return downstream, upstream
 }
 
 func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -183,6 +254,11 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
+	downstream, upstream := sshResourcePorts(ctx, &plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	sshRes, err := r.client.CreateSSHResource(ctx, &model.SSHResource{
 		Name:             plan.Name.ValueString(),
 		Address:          plan.Address.ValueString(),
@@ -192,6 +268,8 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getKeyValueMap(plan.TagsAll),
+		Downstream:       downstream,
+		Upstream:         upstream,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -240,6 +318,11 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
+	downstream, upstream := sshResourcePorts(ctx, &plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	if !plan.GroupAccess.Equal(state.GroupAccess) {
 		if err := r.updateSSHResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, accessGroups); err != nil {
 			addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
@@ -258,6 +341,8 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		Alias:            getOptionalString(plan.Alias),
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getKeyValueMap(plan.TagsAll),
+		Downstream:       downstream,
+		Upstream:         upstream,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
 	})
@@ -302,6 +387,7 @@ func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateSSHResource)
 }
 
+//nolint:funlen
 func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, state *sshResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -332,6 +418,19 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 
 	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
 	state.TagsAll = utils.ConvertMapValue(sshRes.Tags)
+
+	downstream, diags := sshPortObject(ctx, sshRes.Downstream.Port)
+	diagnostics.Append(diags...)
+
+	upstream, diags := sshPortObject(ctx, sshRes.Upstream.Port)
+	diagnostics.Append(diags...)
+
+	if diagnostics.HasError() {
+		return
+	}
+
+	state.Downstream = downstream
+	state.Upstream = upstream
 
 	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
 	if err != nil {
