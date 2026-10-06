@@ -5,11 +5,9 @@ locals {
   gateway_private_ip = cidrhost(aws_subnet.main.cidr_block, 10)
 
   gateway_config = templatefile("${path.module}/config.yaml.tftpl", {
-    twingate_network   = var.tg_network
-    twingate_host      = var.tg_url
-    port               = local.gateway_port
-    ssh_server_name    = twingate_ssh_resource.ssh_server.name
-    ssh_server_address = aws_instance.ssh_server.private_ip
+    twingate_network = var.tg_network
+    twingate_host    = var.tg_url
+    port             = local.gateway_port
   })
 }
 
