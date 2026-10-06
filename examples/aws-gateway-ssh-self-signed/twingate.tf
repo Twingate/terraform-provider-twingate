@@ -1,12 +1,12 @@
 # --- AMI Lookup ---
 
-data "aws_ami" "debian" {
+data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["136693071363"] # Debian official
+  owners      = ["099720109477"] # Canonical
 
   filter {
     name   = "name"
-    values = ["debian-12-amd64-*"]
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
   }
 
   filter {
@@ -92,7 +92,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${aws_network_interface.gateway.private_ip}:${local.gateway_port}"
+  address           = "${local.gateway_private_ip}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
