@@ -24,8 +24,8 @@ func testSSHModel(t *testing.T, tags types.Map) sshResourceModel {
 		SecurityPolicyID: types.StringNull(),
 		Tags:             tags,
 		TagsAll:          plannedTagsAll(tags),
-		Downstream:       types.ObjectUnknown(sshPortAttributeTypes),
-		Upstream:         types.ObjectUnknown(sshPortAttributeTypes),
+		Downstream:       sshPortObjectOf(t, defaultSSHPort),
+		Upstream:         sshPortObjectOf(t, defaultSSHPort),
 		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
 	}
@@ -121,8 +121,8 @@ func TestSSHResourceTags(t *testing.T) {
 	}
 }
 
-// An omitted port block is planned as unknown and sent as null so the API applies
-// its default; whatever port the API returns lands in state.
+// The planned `downstream` and `upstream` ports, including the schema default,
+// are sent explicitly; whatever port the API returns lands in state.
 func TestSSHResourcePorts(t *testing.T) {
 	cases := []struct {
 		name               string
@@ -134,13 +134,13 @@ func TestSSHResourcePorts(t *testing.T) {
 		apiUpstreamPort    int64
 	}{
 		{
-			name:               "omitted - null is sent and the API default is stored",
-			planDownstream:     types.ObjectUnknown(sshPortAttributeTypes),
-			planUpstream:       types.ObjectUnknown(sshPortAttributeTypes),
-			expectedDownstream: nil,
-			expectedUpstream:   nil,
-			apiDownstreamPort:  22,
-			apiUpstreamPort:    22,
+			name:               "default - port 22 is sent",
+			planDownstream:     sshPortObjectOf(t, defaultSSHPort),
+			planUpstream:       sshPortObjectOf(t, defaultSSHPort),
+			expectedDownstream: map[string]any{"port": float64(defaultSSHPort)},
+			expectedUpstream:   map[string]any{"port": float64(defaultSSHPort)},
+			apiDownstreamPort:  defaultSSHPort,
+			apiUpstreamPort:    defaultSSHPort,
 		},
 		{
 			name:               "set - ports are sent",

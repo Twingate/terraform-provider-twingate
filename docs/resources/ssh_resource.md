@@ -71,11 +71,11 @@ resource "twingate_ssh_resource" "ssh_server" {
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
-- `downstream` (Attributes) The downstream configuration. The connection between the SSH client and the Gateway. Default port is `22`. (see [below for nested schema](#nestedatt--downstream))
+- `downstream` (Attributes) The downstream configuration. The connection between the SSH client and the Gateway. (see [below for nested schema](#nestedatt--downstream))
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `security_policy_id` (String) The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.
 - `tags` (Map of String) A map of key-value pair tags to set on this resource.
-- `upstream` (Attributes) The upstream configuration. The connection between the Gateway and the SSH server. Default port is `22`. (see [below for nested schema](#nestedatt--upstream))
+- `upstream` (Attributes) The upstream configuration. The connection between the Gateway and the SSH server. (see [below for nested schema](#nestedatt--upstream))
 
 ### Read-Only
 
@@ -115,14 +115,14 @@ Optional:
 <a id="nestedatt--downstream"></a>
 ### Nested Schema for `downstream`
 
-Required:
+Optional:
 
-- `port` (Number) The port number. Must be between 1 and 65535 inclusive.
+- `port` (Number) The port number. Must be between 1 and 65535 inclusive. Defaults to `22`.
 
 
 <a id="nestedatt--upstream"></a>
 ### Nested Schema for `upstream`
 
-Required:
+Optional:
 
-- `port` (Number) The port number. Must be between 1 and 65535 inclusive.
+- `port` (Number) The port number. Must be between 1 and 65535 inclusive. Defaults to `22`.

@@ -20,8 +20,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -64,6 +65,8 @@ type sshResourceModel struct {
 type sshPortModel struct {
 	Port types.Int64 `tfsdk:"port"`
 }
+
+const defaultSSHPort = 22
 
 var sshPortAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
 	attr.Port: types.Int64Type,
@@ -166,8 +169,8 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
 			attr.TagsAll:    tagsAllAttribute(),
-			attr.Downstream: sshPortAttribute("The downstream configuration. The connection between the SSH client and the Gateway. Default port is `22`."),
-			attr.Upstream:   sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server. Default port is `22`."),
+			attr.Downstream: sshPortAttribute("The downstream configuration. The connection between the SSH client and the Gateway."),
+			attr.Upstream:   sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server."),
 		},
 		Blocks: map[string]schema.Block{
 			attr.AccessPolicy: accessPolicyBlock(),
@@ -176,20 +179,22 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	}
 }
 
-// The API applies its default when the attribute is omitted, so the value read
-// back is kept in state and UseStateForUnknown stops it from planning as unknown.
+// The object default covers an omitted block, since nested attribute defaults
+// apply only when the parent object is configured.
 func sshPortAttribute(description string) schema.SingleNestedAttribute {
 	return schema.SingleNestedAttribute{
 		Optional:    true,
 		Computed:    true,
 		Description: description,
-		PlanModifiers: []planmodifier.Object{
-			objectplanmodifier.UseStateForUnknown(),
-		},
+		Default: objectdefault.StaticValue(types.ObjectValueMust(sshPortAttributeTypes, map[string]tfattr.Value{
+			attr.Port: types.Int64Value(defaultSSHPort),
+		})),
 		Attributes: map[string]schema.Attribute{
 			attr.Port: schema.Int64Attribute{
-				Required:    true,
-				Description: fmt.Sprintf("The port number. Must be between %d and %d inclusive.", model.MinPortValue, model.MaxPortValue),
+				Optional:    true,
+				Computed:    true,
+				Default:     int64default.StaticInt64(defaultSSHPort),
+				Description: fmt.Sprintf("The port number. Must be between %d and %d inclusive. Defaults to `%d`.", model.MinPortValue, model.MaxPortValue, defaultSSHPort),
 				Validators: []validator.Int64{
 					int64validator.Between(model.MinPortValue, model.MaxPortValue),
 				},

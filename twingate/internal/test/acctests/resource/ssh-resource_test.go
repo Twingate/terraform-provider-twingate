@@ -688,8 +688,12 @@ func TestAccTwingateSSHResourcePorts(t *testing.T) {
 				),
 			},
 			{
-				Config:   prereqs + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
-				PlanOnly: true,
+				Config: prereqs + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Downstream, attr.Port), "22"),
+					sdk.TestCheckResourceAttr(theResource, attr.PathAttr(attr.Upstream, attr.Port), "22"),
+				),
 			},
 		},
 	})
