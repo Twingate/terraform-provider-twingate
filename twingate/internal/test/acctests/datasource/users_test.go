@@ -702,3 +702,35 @@ func terraformDatasourceUsersByEmailAndFirstNameLastNamePrefixAndRole(prefix, re
 	}
 `, prefix, role, resourceName)
 }
+
+func TestAccDatasourceTwingateUsersFilterByEmailIn(t *testing.T) {
+	t.Parallel()
+
+	users, err := acctests.GetTestUsers()
+	if err != nil {
+		t.Skip("can't run test:", err)
+	}
+
+	if len(users) < 2 {
+		t.Skip("can't run test: expected at least 2 users")
+	}
+
+	const theDatasource = "data.twingate_users.filtered_email_in"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				data "twingate_users" "filtered_email_in" {
+				  email_in = ["%s", "%s"]
+				}
+				`, users[0].Email, users[1].Email),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, attr.Len(attr.Users), "2"),
+				),
+			},
+		},
+	})
+}

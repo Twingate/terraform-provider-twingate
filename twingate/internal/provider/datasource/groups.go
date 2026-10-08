@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
@@ -103,15 +102,7 @@ func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp 
 				Optional:    true,
 				Description: "The name of the group must end with the value.",
 			},
-			attr.Name + attr.FilterByIn: schema.SetAttribute{
-				Optional:    true,
-				ElementType: types.StringType,
-				Description: "Returns only groups that exactly match one of the names in the list.",
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
-				},
-			},
+			attr.Name + attr.FilterByIn: InFilterAttribute("Returns only groups that exactly match one of the names in the list."),
 			attr.IsActive: schema.BoolAttribute{
 				Optional:    true,
 				Description: "Returns only Groups matching the specified state.",
@@ -163,12 +154,7 @@ func (d *groups) Read(ctx context.Context, req datasource.ReadRequest, resp *dat
 		return
 	}
 
-	nameFilters := CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)
-	if len(data.NameIn.Elements()) > 0 {
-		nameFilters++
-	}
-
-	if nameFilters > 1 {
+	if CountOptionalAttributes(data.Name, data.NameRegexp, data.NameContains, data.NameExclude, data.NamePrefix, data.NameSuffix)+CountSetAttributes(data.NameIn) > 1 {
 		addErr(&resp.Diagnostics, ErrGroupsDatasourceShouldSetOneOptionalNameAttribute, TwingateGroups)
 
 		return
@@ -243,14 +229,9 @@ func buildFilter(data *groupsModel) *model.GroupsFilter {
 		IsActive:   data.IsActive.ValueBoolPointer(),
 	}
 
-	if len(data.NameIn.Elements()) > 0 {
-		groupFilter.NameIn = utils.Map(data.NameIn.Elements(), func(item tfattr.Value) string {
-			return item.(types.String).ValueString()
-		})
+	if nameIn := SetValues(data.NameIn); len(nameIn) > 0 {
+		groupFilter.NameIn = nameIn
 		groupFilter.NameFilter = attr.FilterByIn
-
-		// keep a stable order so that the datasource id does not depend on the order in the config
-		slices.Sort(groupFilter.NameIn)
 	}
 
 	if len(data.Types.Elements()) > 0 {

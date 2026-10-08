@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -816,7 +817,7 @@ func TestReadServicesOk(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, serviceAccounts)
@@ -830,7 +831,7 @@ func TestReadServicesRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
@@ -852,7 +853,7 @@ func TestReadServicesEmptyResponse(t *testing.T) {
 		httpmock.RegisterResponder("POST", c.GraphqlServerURL,
 			httpmock.NewStringResponder(http.StatusOK, jsonResponse))
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.NoError(t, err)
@@ -889,7 +890,7 @@ func TestReadServicesRequestErrorOnFetchingServices(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
@@ -937,7 +938,7 @@ func TestReadServicesEmptyResponseOnFetchingServices(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -1067,7 +1068,7 @@ func TestReadServicesRequestErrorOnFetchingResources(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
@@ -1218,7 +1219,7 @@ func TestReadServicesEmptyResponseOnFetchingResources(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -1384,7 +1385,7 @@ func TestReadServicesRequestErrorOnFetchingKeys(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, graphqlErr(c, "failed to read service account with id All", errBadRequest))
@@ -1571,7 +1572,7 @@ func TestReadServicesEmptyResponseOnFetchingKeys(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background())
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), nil)
 
 		assert.Nil(t, serviceAccounts)
 		assert.EqualError(t, err, `failed to read service account with id All: query result is empty`)
@@ -1693,7 +1694,7 @@ func TestReadServicesByNameOk(t *testing.T) {
 			),
 		)
 
-		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), "test-2")
+		serviceAccounts, err := c.ReadServiceAccounts(context.Background(), &client.StringFilter{Name: "test-2"})
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, expected, serviceAccounts)
