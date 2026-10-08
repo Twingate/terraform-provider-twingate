@@ -7,7 +7,7 @@ import (
 
 //nolint:lll
 type CreateSSHResource struct {
-	SSHResourceEntityResponse `graphql:"sshResourceCreate(name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
+	SSHResourceEntityResponse `graphql:"sshResourceCreate(name: $name, address: $address, gatewayId: $gatewayId, remoteNetworkId: $remoteNetworkId, isVisible: $isVisible, alias: $alias, securityPolicyId: $securityPolicyId, tags: $tags, downstream: $downstream, upstream: $upstream, accessPolicy: $accessPolicy, approvalMode: $approvalMode)"`
 }
 
 func (q CreateSSHResource) IsEmpty() bool {
@@ -27,6 +27,14 @@ type SSHResourceEntityResponse struct {
 	OkError
 }
 
+type SSHDownstream struct {
+	Port int64
+}
+
+type SSHUpstream struct {
+	Port int64
+}
+
 type gqlSSHResource struct {
 	IDName
 	Address struct {
@@ -42,6 +50,8 @@ type gqlSSHResource struct {
 	Alias          string
 	SecurityPolicy *gqlSecurityPolicy
 	Tags           []Tag
+	Downstream     SSHDownstream
+	Upstream       SSHUpstream
 	ApprovalMode   string
 	AccessPolicy   *AccessPolicy
 }
@@ -57,6 +67,8 @@ func (g gqlSSHResource) ToModel() *model.SSHResource {
 		Alias:            optionalString(g.Alias),
 		SecurityPolicyID: securityPolicyID(g.SecurityPolicy),
 		Tags:             tagsToModel(g.Tags),
+		Downstream:       &model.SSHDownstream{Port: g.Downstream.Port},
+		Upstream:         &model.SSHUpstream{Port: g.Upstream.Port},
 		AccessPolicy:     accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
 	}
 }

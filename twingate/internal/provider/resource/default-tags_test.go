@@ -53,6 +53,7 @@ func gatewayResourceCases() []gatewayResourceCase {
 				attr.GatewayID:       tftypes.NewValue(tftypes.String, "gw-1"),
 				attr.RemoteNetworkID: tftypes.NewValue(tftypes.String, "rn-1"),
 			},
+			entityExtra: `,"downstream":{"port":22},"upstream":{"port":22}`,
 		},
 		{
 			name:        TwingateKubernetesResource,
