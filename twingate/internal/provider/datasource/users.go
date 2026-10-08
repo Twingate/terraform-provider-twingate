@@ -178,7 +178,7 @@ func (d *users) Schema(ctx context.Context, req datasource.SchemaRequest, resp *
 			attr.Roles: schema.SetAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
-				Description: "Returns users that match a list of roles. Valid roles: `ADMIN`, `DEVOPS`, `SUPPORT`, `MEMBER`.",
+				Description: fmt.Sprintf("Returns users that match a list of roles. Valid roles: %s.", utils.DocList(model.UserRoles)),
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(stringvalidator.OneOf(model.UserRoles...)),
 				},
