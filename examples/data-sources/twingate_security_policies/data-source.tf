@@ -5,4 +5,5 @@ data "twingate_security_policies" "all" {
   #  name_exclude = "<your security policy's name to exclude>"
   #  name_prefix = "<prefix of security policy name>"
   #  name_suffix = "<suffix of security policy name>"
+  #  name_in = ["<your security policy's name>", "<another security policy's name>"]
 }
