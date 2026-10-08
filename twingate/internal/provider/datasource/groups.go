@@ -72,7 +72,7 @@ func (d *groups) Configure(ctx context.Context, req datasource.ConfigureRequest,
 //nolint:funlen
 func (d *groups) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).",
+		Description: "Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups). When the provider is configured with a cache filter for this type, lookups are answered from the cache whenever any cached object matches, so objects excluded by that filter are not returned. See the provider `cache` documentation.",
 		Attributes: map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
