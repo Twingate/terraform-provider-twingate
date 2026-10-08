@@ -20,6 +20,7 @@ data "twingate_users" "all" {
   #  email_exclude = "<your user's email to exclude>"
   #  email_prefix = "<prefix of user email>"
   #  email_suffix = "<suffix of user email>"
+  #  email_in = ["<your user's email>", "<another user's email>"]
 
   #  first_name = "<your user's first name>"
   #  first_name_regexp = "<regular expression of user first name>"
@@ -47,6 +48,7 @@ data "twingate_users" "all" {
 - `email` (String) Returns only users that exactly match this email.
 - `email_contains` (String) Match when the value exist in the email of the user.
 - `email_exclude` (String) Match when the value does not exist in the email of the user.
+- `email_in` (Set of String) Returns only users that exactly match one of the emails in the list.
 - `email_prefix` (String) The email of the user must start with the value.
 - `email_regexp` (String) The regular expression match of the email of the user.
 - `email_suffix` (String) The email of the user must end with the value.

@@ -334,3 +334,54 @@ func TestAccDatasourceTwingateConnectorsFilterByRegexp(t *testing.T) {
 		},
 	})
 }
+
+func TestAccDatasourceTwingateConnectorsFilterByNameIn(t *testing.T) {
+	t.Parallel()
+
+	resourceName := test.RandomResourceName()
+	prefix := test.Prefix() + "-" + acctest.RandString(5)
+	theDatasource := "data.twingate_connectors." + resourceName
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testDatasourceTwingateConnectorsFilterByNameIn(resourceName, test.RandomName(), prefix),
+				Check: acctests.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(theDatasource, connectorsLen, "2"),
+				),
+			},
+		},
+	})
+}
+
+func testDatasourceTwingateConnectorsFilterByNameIn(resourceName, networkName, prefix string) string {
+	return fmt.Sprintf(`
+	resource "twingate_remote_network" "%[1]s_network" {
+		name = "%[2]s"
+	}
+
+	resource "twingate_connector" "%[1]s_1" {
+		remote_network_id = twingate_remote_network.%[1]s_network.id
+		name = "%[3]s_c1"
+	}
+
+	resource "twingate_connector" "%[1]s_2" {
+		remote_network_id = twingate_remote_network.%[1]s_network.id
+		name = "%[3]s_c2"
+	}
+
+	resource "twingate_connector" "%[1]s_3" {
+		remote_network_id = twingate_remote_network.%[1]s_network.id
+		name = "%[3]s_c3"
+	}
+
+	data "twingate_connectors" "%[1]s" {
+		name_in = ["%[3]s_c1", "%[3]s_c2"]
+
+		depends_on = [twingate_connector.%[1]s_1, twingate_connector.%[1]s_2, twingate_connector.%[1]s_3]
+	}
+	`, resourceName, networkName, prefix)
+}
