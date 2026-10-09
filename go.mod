@@ -16,7 +16,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/crypto v0.57.0
-	golang.org/x/sync v0.23.0
+	golang.org/x/sync v0.24.0
 )
 
 require (
@@ -56,7 +56,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.25.0 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform-exec v0.25.3 // indirect
-	github.com/hashicorp/terraform-json v0.28.0 // indirect
+	github.com/hashicorp/terraform-json v0.29.0 // indirect
 	github.com/hashicorp/terraform-plugin-docs v0.25.0 // indirect
 	github.com/hashicorp/terraform-plugin-log v0.11.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1 // indirect
@@ -64,7 +64,7 @@ require (
 	github.com/hashicorp/terraform-svchost v0.2.1 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/huandu/xstrings v1.6.2 // indirect
-	github.com/mattn/go-colorable v0.1.15 // indirect
+	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mattn/go-runewidth v0.0.30 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
