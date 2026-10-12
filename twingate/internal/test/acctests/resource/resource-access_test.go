@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/resource"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/test/acctests"
 	sdk "github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -16,7 +15,7 @@ func TestAccTwingateResourceAccessGroup(t *testing.T) {
 	t.Parallel()
 
 	const terraformName = "ra1"
-	theAccess := acctests.ResourceName(resource.TwingateResourceAccess, terraformName)
+	theAccess := acctests.TerraformResourceAccess(terraformName)
 	theResource := acctests.TerraformResource(terraformName)
 	remoteNetworkName := test.RandomName()
 	resourceName := test.RandomResourceName()
@@ -35,7 +34,7 @@ func TestAccTwingateResourceAccessGroup(t *testing.T) {
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
 		PreCheck:                 func() { acctests.PreCheck(t) },
-		CheckDestroy:             acctests.CheckTwingateResourceDestroy,
+		CheckDestroy:             acctests.CheckTwingateResourceAccessDestroy,
 		Steps: []sdk.TestStep{
 			{
 				Config: terraformResourceAccessGroup(terraformName, remoteNetworkName, resourceName, groupName, ""),
@@ -87,7 +86,7 @@ func TestAccTwingateResourceAccessGroup(t *testing.T) {
 				Check: acctests.CheckResourceGroupsLen(theResource, 1),
 			},
 			{
-				Config: terraformResourceAccessGroupRemoved(terraformName, remoteNetworkName, resourceName, groupName),
+				Config: resourceAccessPrerequisites(terraformName, remoteNetworkName, resourceName, groupName),
 				Check:  acctests.CheckResourceGroupsLen(theResource, 0),
 			},
 		},
@@ -95,7 +94,7 @@ func TestAccTwingateResourceAccessGroup(t *testing.T) {
 }
 
 func terraformResourceAccessGroup(terraformName, remoteNetworkName, resourceName, groupName, extra string) string {
-	return terraformResourceAccessGroupRemoved(terraformName, remoteNetworkName, resourceName, groupName) + fmt.Sprintf(`
+	return resourceAccessPrerequisites(terraformName, remoteNetworkName, resourceName, groupName) + fmt.Sprintf(`
 	resource "twingate_resource_access" "%[1]s" {
 	  resource_id = twingate_resource.%[1]s.id
 	  group_id    = twingate_group.%[1]s.id
@@ -104,7 +103,7 @@ func terraformResourceAccessGroup(terraformName, remoteNetworkName, resourceName
 	`, terraformName, extra)
 }
 
-func terraformResourceAccessGroupRemoved(terraformName, remoteNetworkName, resourceName, groupName string) string {
+func resourceAccessPrerequisites(terraformName, remoteNetworkName, resourceName, groupName string) string {
 	return fmt.Sprintf(`
 	resource "twingate_remote_network" "%[1]s" {
 	  name = "%[2]s"

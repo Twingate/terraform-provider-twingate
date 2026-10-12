@@ -2,83 +2,49 @@ package resource
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	testAccessResourceID    = "UmVzb3VyY2U6MQ=="
-	testAccessGroupID       = "R3JvdXA6MQ=="
-	testAccessOtherGroupID  = "R3JvdXA6Mg=="
-	testAccessPolicyID      = "U2VjdXJpdHlQb2xpY3k6MQ=="
-	testAccessDefaultPolicy = "U2VjdXJpdHlQb2xpY3k6MA=="
+	testGroupID                 = "R3JvdXA6MQ=="
+	testOtherGroupID            = "R3JvdXA6Mg=="
+	testSecurityPolicyID        = "U2VjdXJpdHlQb2xpY3k6MQ=="
+	testDefaultSecurityPolicyID = "U2VjdXJpdHlQb2xpY3k6MA=="
+	testResourceAccessID        = testResourceID + resourceAccessIDSeparator + testGroupID
 )
 
-type resourceAccessAPI struct {
-	readResponse string
-	mutations    []string
+var resourceAccessMutationResponses = map[string]string{
+	"resourceAccessAdd":    `{"data":{"resourceAccessAdd":{"ok":true,"error":null}}}`,
+	"resourceAccessRemove": `{"data":{"resourceAccessRemove":{"ok":true,"error":null}}}`,
 }
 
-func newResourceAccessMockedClient(t *testing.T, readResponse string) (*client.Client, *resourceAccessAPI) {
+func newMockedResourceAccess(t *testing.T, readResponse string) (*resourceAccess, *[]string) {
 	t.Helper()
 
-	apiClient := client.NewClient(t.Context(), "https://test.twindev.com", "xxxx",
-		time.Second, 0, client.DefaultAgent, "test", client.CacheOptions{})
+	apiClient, requests := newRoutedMockedClient(t, readResponse, resourceAccessMutationResponses)
 
-	httpmock.ActivateNonDefault(apiClient.HTTPClient)
-	t.Cleanup(httpmock.DeactivateAndReset)
-
-	api := &resourceAccessAPI{readResponse: readResponse}
-
-	httpmock.RegisterResponder(http.MethodPost, apiClient.GraphqlServerURL, func(req *http.Request) (*http.Response, error) {
-		raw, err := io.ReadAll(req.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		body := string(raw)
-
-		switch {
-		case strings.Contains(body, "resourceAccessAdd"):
-			api.mutations = append(api.mutations, body)
-
-			return httpmock.NewStringResponse(http.StatusOK, `{"data":{"resourceAccessAdd":{"ok":true,"error":null}}}`), nil
-		case strings.Contains(body, "resourceAccessRemove"):
-			api.mutations = append(api.mutations, body)
-
-			return httpmock.NewStringResponse(http.StatusOK, `{"data":{"resourceAccessRemove":{"ok":true,"error":null}}}`), nil
-		default:
-			return httpmock.NewStringResponse(http.StatusOK, api.readResponse), nil
-		}
-	})
-
-	return apiClient, api
+	return &resourceAccess{client: apiClient}, requests
 }
 
 func accessReadResponse(edges ...string) string {
 	return fmt.Sprintf(`{"data":{"resource":{"id":%q,"access":{"pageInfo":{"endCursor":"","hasNextPage":false},"edges":[%s]}}}}`,
-		testAccessResourceID, strings.Join(edges, ","))
+		testResourceID, strings.Join(edges, ","))
 }
 
-func groupEdge(groupID, policyID string, accessPolicy string) string {
+func groupEdge(groupID, securityPolicyID, accessPolicy string) string {
 	if accessPolicy == "" {
 		accessPolicy = `null`
 	}
 
 	return fmt.Sprintf(`{"node":{"__typename":"Group","id":%q},"securityPolicy":{"id":%q,"name":"policy"},"approvalMode":"AUTOMATIC","accessPolicy":%s}`,
-		groupID, policyID, accessPolicy)
+		groupID, securityPolicyID, accessPolicy)
 }
 
 func accessPolicySet(t *testing.T, mode, approvalMode, duration string) types.Set {
@@ -111,138 +77,205 @@ func nullAccessPolicySet(t *testing.T) types.Set {
 	return makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes())
 }
 
-func groupAccessModel(t *testing.T, securityPolicyID types.String, accessPolicy types.Set) resourceAccessModel {
+func testResourceAccessModel(t *testing.T, securityPolicyID types.String, accessPolicy types.Set) resourceAccessModel {
 	t.Helper()
 
 	return resourceAccessModel{
 		ID:               types.StringUnknown(),
-		ResourceID:       types.StringValue(testAccessResourceID),
-		GroupID:          types.StringValue(testAccessGroupID),
+		ResourceID:       types.StringValue(testResourceID),
+		GroupID:          types.StringValue(testGroupID),
 		SecurityPolicyID: securityPolicyID,
 		AccessPolicy:     accessPolicy,
 	}
 }
 
-func createResourceAccess(t *testing.T, apiClient *client.Client, plan resourceAccessModel) (resourceAccessModel, *resource.CreateResponse) {
+func accessInput(t *testing.T, requestBody string) map[string]any {
 	t.Helper()
 
-	res := &resourceAccess{client: apiClient}
-	req := resource.CreateRequest{Plan: planOf(t, res, &plan)}
-	resp := &resource.CreateResponse{State: nullStateOf(t, res)}
+	access, ok := requestVariable(t, requestBody, "access").([]any)
+	require.True(t, ok, requestBody)
+	require.Len(t, access, 1)
 
-	res.Create(t.Context(), req, resp)
+	input, ok := access[0].(map[string]any)
+	require.True(t, ok, requestBody)
 
-	var state resourceAccessModel
-	if !resp.Diagnostics.HasError() && !resp.State.Raw.IsNull() {
-		readStateInto(t, resp.State, &state)
+	return input
+}
+
+func TestResourceAccessCreate(t *testing.T) {
+	cases := []struct {
+		name                     string
+		plan                     resourceAccessModel
+		apiEdge                  string
+		expectedSecurityPolicyID any
+		expectedApprovalMode     any
+		expectedAccessPolicy     map[string]any
+		expectedState            resourceAccessModel
+	}{
+		{
+			name:                     "security policy and access policy are sent",
+			plan:                     testResourceAccessModel(t, types.StringValue(testSecurityPolicyID), accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "30d")),
+			apiEdge:                  groupEdge(testGroupID, testSecurityPolicyID, `{"mode":"AUTO_LOCK","durationSeconds":2592000}`),
+			expectedSecurityPolicyID: testSecurityPolicyID,
+			expectedApprovalMode:     "AUTOMATIC",
+			expectedAccessPolicy:     map[string]any{"mode": "AUTO_LOCK", "durationSeconds": float64(2592000)},
+			expectedState:            testResourceAccessModel(t, types.StringValue(testSecurityPolicyID), accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "30d")),
+		},
+		{
+			name:                     "omitted security policy stays null in state",
+			plan:                     testResourceAccessModel(t, types.StringNull(), nullAccessPolicySet(t)),
+			apiEdge:                  groupEdge(testGroupID, testDefaultSecurityPolicyID, `{"mode":"MANUAL","durationSeconds":null}`),
+			expectedSecurityPolicyID: nil,
+			expectedApprovalMode:     nil,
+			expectedAccessPolicy:     map[string]any{"mode": "MANUAL", "durationSeconds": nil},
+			expectedState:            testResourceAccessModel(t, types.StringNull(), nullAccessPolicySet(t)),
+		},
 	}
 
-	return state, resp
-}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			res, requests := newMockedResourceAccess(t, accessReadResponse(
+				c.apiEdge,
+				groupEdge(testOtherGroupID, testDefaultSecurityPolicyID, ""),
+			))
 
-func TestResourceAccessCreateGroup(t *testing.T) {
-	apiClient, api := newResourceAccessMockedClient(t, accessReadResponse(
-		groupEdge(testAccessGroupID, testAccessPolicyID, `{"mode":"AUTO_LOCK","durationSeconds":2592000}`),
-		groupEdge(testAccessOtherGroupID, testAccessDefaultPolicy, ""),
-	))
+			resp := &resource.CreateResponse{State: nullStateOf(t, res)}
+			res.Create(t.Context(), resource.CreateRequest{Plan: planOf(t, res, c.plan)}, resp)
 
-	plan := groupAccessModel(t, types.StringValue(testAccessPolicyID), accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "30d"))
+			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			assert.Equal(t, map[string]any{
+				"principalId":      testGroupID,
+				"securityPolicyId": c.expectedSecurityPolicyID,
+				"approvalMode":     c.expectedApprovalMode,
+				"accessPolicy":     c.expectedAccessPolicy,
+			}, accessInput(t, (*requests)[0]))
 
-	state, resp := createResourceAccess(t, apiClient, plan)
-	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			var state resourceAccessModel
 
-	require.Len(t, api.mutations, 1)
-	access := requestVariable(t, api.mutations[0], "access").([]any)
-	require.Len(t, access, 1)
-	assert.Equal(t, map[string]any{
-		"principalId":      testAccessGroupID,
-		"securityPolicyId": testAccessPolicyID,
-		"approvalMode":     "AUTOMATIC",
-		"accessPolicy":     map[string]any{"mode": "AUTO_LOCK", "durationSeconds": float64(2592000)},
-	}, access[0])
+			readStateInto(t, resp.State, &state)
 
-	assert.Equal(t, testAccessResourceID+":"+testAccessGroupID, state.ID.ValueString())
-	assert.Equal(t, testAccessPolicyID, state.SecurityPolicyID.ValueString())
-	assert.True(t, state.AccessPolicy.Equal(accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "30d")), state.AccessPolicy.String())
-}
-
-func TestResourceAccessCreateGroupWithoutSecurityPolicy(t *testing.T) {
-	apiClient, api := newResourceAccessMockedClient(t, accessReadResponse(
-		groupEdge(testAccessGroupID, testAccessDefaultPolicy, `{"mode":"MANUAL","durationSeconds":null}`),
-	))
-
-	state, resp := createResourceAccess(t, apiClient, groupAccessModel(t, types.StringNull(), nullAccessPolicySet(t)))
-	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
-
-	access := requestVariable(t, api.mutations[0], "access").([]any)
-	assert.Nil(t, access[0].(map[string]any)["securityPolicyId"])
-
-	assert.True(t, state.SecurityPolicyID.IsNull())
-	assert.True(t, state.AccessPolicy.IsNull())
+			c.expectedState.ID = types.StringValue(testResourceAccessID)
+			assert.Equal(t, c.expectedState, state)
+		})
+	}
 }
 
 func TestResourceAccessCreateRejectsInvalidGroupID(t *testing.T) {
-	cases := map[string]string{
-		"not a global id":    "not-a-global-id",
-		"service account id": "U2VydmljZUFjY291bnQ6MQ==",
+	cases := []struct {
+		name    string
+		groupID string
+	}{
+		{
+			name:    "not a global id",
+			groupID: "not-a-global-id",
+		},
+		{
+			name:    "service account id",
+			groupID: "U2VydmljZUFjY291bnQ6MQ==",
+		},
 	}
 
-	for name, groupID := range cases {
-		t.Run(name, func(t *testing.T) {
-			apiClient, api := newResourceAccessMockedClient(t, accessReadResponse())
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			res, requests := newMockedResourceAccess(t, accessReadResponse())
 
-			plan := groupAccessModel(t, types.StringNull(), nullAccessPolicySet(t))
-			plan.GroupID = types.StringValue(groupID)
+			plan := testResourceAccessModel(t, types.StringNull(), nullAccessPolicySet(t))
+			plan.GroupID = types.StringValue(c.groupID)
 
-			_, resp := createResourceAccess(t, apiClient, plan)
+			resp := &resource.CreateResponse{State: nullStateOf(t, res)}
+			res.Create(t.Context(), resource.CreateRequest{Plan: planOf(t, res, plan)}, resp)
+
 			require.True(t, resp.Diagnostics.HasError())
 			assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), ErrResourceAccessNotGroupID.Error())
-			assert.Empty(t, api.mutations)
+			assert.Empty(t, *requests)
 		})
 	}
 }
 
 func TestResourceAccessCreateFailsWhenGroupMissingAfterWrite(t *testing.T) {
-	apiClient, api := newResourceAccessMockedClient(t, accessReadResponse(
-		groupEdge(testAccessOtherGroupID, testAccessDefaultPolicy, ""),
+	res, requests := newMockedResourceAccess(t, accessReadResponse(
+		groupEdge(testOtherGroupID, testDefaultSecurityPolicyID, ""),
 	))
 
-	_, resp := createResourceAccess(t, apiClient, groupAccessModel(t, types.StringNull(), nullAccessPolicySet(t)))
+	resp := &resource.CreateResponse{State: nullStateOf(t, res)}
+	res.Create(t.Context(), resource.CreateRequest{
+		Plan: planOf(t, res, testResourceAccessModel(t, types.StringNull(), nullAccessPolicySet(t))),
+	}, resp)
+
 	require.True(t, resp.Diagnostics.HasError())
 	assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), ErrResourceAccessNotFound.Error())
-	assert.Len(t, api.mutations, 1)
+	assert.Len(t, *requests, 2)
 }
 
-func readResourceAccess(t *testing.T, apiClient *client.Client, current resourceAccessModel) tfsdk.State {
-	t.Helper()
+func TestResourceAccessUpdate(t *testing.T) {
+	cases := []struct {
+		name                     string
+		state                    resourceAccessModel
+		plan                     resourceAccessModel
+		apiEdge                  string
+		expectedSecurityPolicyID any
+		expectedState            resourceAccessModel
+	}{
+		{
+			name:                     "security policy and access policy change in place",
+			state:                    testResourceAccessModel(t, types.StringValue(testDefaultSecurityPolicyID), nullAccessPolicySet(t)),
+			plan:                     testResourceAccessModel(t, types.StringValue(testSecurityPolicyID), accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "2d")),
+			apiEdge:                  groupEdge(testGroupID, testSecurityPolicyID, `{"mode":"AUTO_LOCK","durationSeconds":172800}`),
+			expectedSecurityPolicyID: testSecurityPolicyID,
+			expectedState:            testResourceAccessModel(t, types.StringValue(testSecurityPolicyID), accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "2d")),
+		},
+		{
+			name:                     "removed security policy is sent as null",
+			state:                    testResourceAccessModel(t, types.StringValue(testSecurityPolicyID), nullAccessPolicySet(t)),
+			plan:                     testResourceAccessModel(t, types.StringNull(), nullAccessPolicySet(t)),
+			apiEdge:                  groupEdge(testGroupID, testDefaultSecurityPolicyID, ""),
+			expectedSecurityPolicyID: nil,
+			expectedState:            testResourceAccessModel(t, types.StringNull(), nullAccessPolicySet(t)),
+		},
+	}
 
-	res := &resourceAccess{client: apiClient}
-	resp := &resource.ReadResponse{State: stateOf(t, res, &current)}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			res, requests := newMockedResourceAccess(t, accessReadResponse(c.apiEdge))
 
-	res.Read(t.Context(), resource.ReadRequest{State: stateOf(t, res, &current)}, resp)
-	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			c.state.ID = types.StringValue(testResourceAccessID)
+			c.plan.ID = types.StringValue(testResourceAccessID)
 
-	return resp.State
+			resp := &resource.UpdateResponse{State: stateOf(t, res, c.state)}
+			res.Update(t.Context(), resource.UpdateRequest{
+				Plan:  planOf(t, res, c.plan),
+				State: stateOf(t, res, c.state),
+			}, resp)
+
+			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			assert.Equal(t, testResourceID, requestVariable(t, (*requests)[0], "id"))
+			assert.Equal(t, c.expectedSecurityPolicyID, accessInput(t, (*requests)[0])["securityPolicyId"])
+
+			var state resourceAccessModel
+
+			readStateInto(t, resp.State, &state)
+
+			c.expectedState.ID = types.StringValue(testResourceAccessID)
+			assert.Equal(t, c.expectedState, state)
+		})
+	}
 }
 
 func TestResourceAccessRead(t *testing.T) {
-	current := groupAccessModel(t, types.StringValue(testAccessPolicyID), nullAccessPolicySet(t))
-	current.ID = types.StringValue(testAccessResourceID + ":" + testAccessGroupID)
-
 	cases := []struct {
-		name          string
-		response      string
-		expectRemoved bool
-		expectPolicy  string
+		name                     string
+		response                 string
+		expectRemoved            bool
+		expectedSecurityPolicyID string
 	}{
 		{
-			name:         "security policy changed outside terraform",
-			response:     accessReadResponse(groupEdge(testAccessGroupID, testAccessDefaultPolicy, "")),
-			expectPolicy: testAccessDefaultPolicy,
+			name:                     "security policy changed outside terraform",
+			response:                 accessReadResponse(groupEdge(testGroupID, testDefaultSecurityPolicyID, "")),
+			expectedSecurityPolicyID: testDefaultSecurityPolicyID,
 		},
 		{
 			name:          "group no longer has access",
-			response:      accessReadResponse(groupEdge(testAccessOtherGroupID, testAccessPolicyID, "")),
+			response:      accessReadResponse(groupEdge(testOtherGroupID, testSecurityPolicyID, "")),
 			expectRemoved: true,
 		},
 		{
@@ -254,67 +287,86 @@ func TestResourceAccessRead(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			apiClient, _ := newResourceAccessMockedClient(t, c.response)
+			res, _ := newMockedResourceAccess(t, c.response)
 
-			state := readResourceAccess(t, apiClient, current)
+			current := testResourceAccessModel(t, types.StringValue(testSecurityPolicyID), nullAccessPolicySet(t))
+			current.ID = types.StringValue(testResourceAccessID)
+
+			resp := &resource.ReadResponse{State: stateOf(t, res, current)}
+			res.Read(t.Context(), resource.ReadRequest{State: stateOf(t, res, current)}, resp)
+
+			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
 			if c.expectRemoved {
-				assert.True(t, state.Raw.IsNull())
+				assert.True(t, resp.State.Raw.IsNull())
 
 				return
 			}
 
-			var got resourceAccessModel
-			readStateInto(t, state, &got)
-			assert.Equal(t, c.expectPolicy, got.SecurityPolicyID.ValueString())
+			var state resourceAccessModel
+
+			readStateInto(t, resp.State, &state)
+			assert.Equal(t, types.StringValue(c.expectedSecurityPolicyID), state.SecurityPolicyID)
 		})
 	}
 }
 
 func TestResourceAccessDelete(t *testing.T) {
-	apiClient, api := newResourceAccessMockedClient(t, accessReadResponse())
+	res, requests := newMockedResourceAccess(t, accessReadResponse())
 
-	current := groupAccessModel(t, types.StringNull(), nullAccessPolicySet(t))
-	current.ID = types.StringValue(testAccessResourceID + ":" + testAccessGroupID)
+	current := testResourceAccessModel(t, types.StringNull(), nullAccessPolicySet(t))
+	current.ID = types.StringValue(testResourceAccessID)
 
-	res := &resourceAccess{client: apiClient}
-	resp := &resource.DeleteResponse{State: stateOf(t, res, &current)}
-	res.Delete(t.Context(), resource.DeleteRequest{State: stateOf(t, res, &current)}, resp)
+	resp := &resource.DeleteResponse{State: stateOf(t, res, current)}
+	res.Delete(t.Context(), resource.DeleteRequest{State: stateOf(t, res, current)}, resp)
+
 	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
-
-	require.Len(t, api.mutations, 1)
-	assert.Equal(t, testAccessResourceID, requestVariable(t, api.mutations[0], "id"))
-	assert.Equal(t, []any{testAccessGroupID}, requestVariable(t, api.mutations[0], "principalIds"))
+	require.Len(t, *requests, 1)
+	assert.Equal(t, testResourceID, requestVariable(t, (*requests)[0], "id"))
+	assert.Equal(t, []any{testGroupID}, requestVariable(t, (*requests)[0], "principalIds"))
 }
 
-func TestResourceAccessImport(t *testing.T) {
+func TestResourceAccessImportState(t *testing.T) {
 	cases := []struct {
-		name        string
-		id          string
-		expectError bool
-		check       func(t *testing.T, state resourceAccessModel)
+		name          string
+		id            string
+		expectError   bool
+		expectedState resourceAccessModel
 	}{
 		{
-			name: "group",
-			id:   testAccessResourceID + ":" + testAccessGroupID,
-			check: func(t *testing.T, state resourceAccessModel) {
-				assert.Equal(t, testAccessGroupID, state.GroupID.ValueString())
-				assert.Equal(t, testAccessPolicyID, state.SecurityPolicyID.ValueString())
-				assert.True(t, state.AccessPolicy.Equal(accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "1h")), state.AccessPolicy.String())
+			name: "group with access",
+			id:   testResourceAccessID,
+			expectedState: resourceAccessModel{
+				ID:               types.StringValue(testResourceAccessID),
+				ResourceID:       types.StringValue(testResourceID),
+				GroupID:          types.StringValue(testGroupID),
+				SecurityPolicyID: types.StringValue(testSecurityPolicyID),
+				AccessPolicy:     accessPolicySet(t, "AUTO_LOCK", "AUTOMATIC", "1h"),
 			},
 		},
-		{name: "principal without access", id: testAccessResourceID + ":" + testAccessOtherGroupID, expectError: true},
-		{name: "missing separator", id: testAccessResourceID, expectError: true},
-		{name: "missing principal", id: testAccessResourceID + ":", expectError: true},
+		{
+			name:        "group without access",
+			id:          testResourceID + resourceAccessIDSeparator + testOtherGroupID,
+			expectError: true,
+		},
+		{
+			name:        "missing separator",
+			id:          testResourceID,
+			expectError: true,
+		},
+		{
+			name:        "missing group id",
+			id:          testResourceID + resourceAccessIDSeparator,
+			expectError: true,
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			apiClient, _ := newResourceAccessMockedClient(t, accessReadResponse(
-				groupEdge(testAccessGroupID, testAccessPolicyID, `{"mode":"AUTO_LOCK","durationSeconds":3600}`),
+			res, _ := newMockedResourceAccess(t, accessReadResponse(
+				groupEdge(testGroupID, testSecurityPolicyID, `{"mode":"AUTO_LOCK","durationSeconds":3600}`),
 			))
 
-			res := &resourceAccess{client: apiClient}
 			resp := &resource.ImportStateResponse{State: nullStateOf(t, res)}
 			res.ImportState(t.Context(), resource.ImportStateRequest{ID: c.id}, resp)
 
@@ -327,10 +379,9 @@ func TestResourceAccessImport(t *testing.T) {
 			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
 			var state resourceAccessModel
+
 			readStateInto(t, resp.State, &state)
-			assert.Equal(t, c.id, state.ID.ValueString())
-			assert.Equal(t, testAccessResourceID, state.ResourceID.ValueString())
-			c.check(t, state)
+			assert.Equal(t, c.expectedState, state)
 		})
 	}
 }
