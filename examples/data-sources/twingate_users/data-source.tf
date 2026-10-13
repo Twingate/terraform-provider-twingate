@@ -21,5 +21,5 @@ data "twingate_users" "all" {
   #  last_name_prefix = "<prefix of user last name>"
   #  last_name_suffix = "<suffix of user last name>"
 
-  #  roles = ["ADMIN", "DEVOPS", "SUPPORT", "MEMBER"]
+  #  roles = ["ADMIN", "DEVOPS", "SUPPORT", "MEMBER", "ACCESS_REVIEWER", "INTERNET_SECURITY", "HELPDESK", "BILLING"]
 }
