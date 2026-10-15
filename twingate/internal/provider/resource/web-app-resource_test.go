@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -65,34 +66,36 @@ func TestGetKeyValueMap(t *testing.T) {
 func TestWebAppUpstreamRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
-	obj, diags := webAppUpstreamObject(ctx, 8080)
+	obj, diags := webAppUpstreamObject(ctx, model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyCA})
 	require.False(t, diags.HasError())
 
 	upstream, diags := webAppUpstreamValue(ctx, obj)
 	require.False(t, diags.HasError())
 
 	assert.Equal(t, int64(8080), upstream.Port.ValueInt64())
+	assert.Equal(t, model.TLSClientModeVerifyCA, upstream.TLSMode.ValueString())
 }
 
 func TestWebAppDownstreamRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
-	obj, diags := webAppDownstreamObject(ctx, 80)
+	obj, diags := webAppDownstreamObject(ctx, model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13})
 	require.False(t, diags.HasError())
 
 	downstream, diags := webAppDownstreamValue(ctx, obj)
 	require.False(t, diags.HasError())
 
-	assert.Equal(t, int64(80), downstream.Port.ValueInt64())
+	assert.Equal(t, int64(443), downstream.Port.ValueInt64())
+	assert.Equal(t, model.TLSServerModeTLS13, downstream.TLSMode.ValueString())
 }
 
 func testWebAppModel(t *testing.T, tags, headerRewrites types.Map) webAppResourceModel {
 	t.Helper()
 
-	upstream, diags := webAppUpstreamObject(t.Context(), 8080)
+	upstream, diags := webAppUpstreamObject(t.Context(), model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull})
 	require.False(t, diags.HasError(), diags)
 
-	downstream, diags := webAppDownstreamObject(t.Context(), 80)
+	downstream, diags := webAppDownstreamObject(t.Context(), model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13})
 	require.False(t, diags.HasError(), diags)
 
 	return webAppResourceModel{
@@ -121,7 +124,7 @@ func webAppEntityResponse(t *testing.T, mutation string, tags, headerRewrites ma
 
 	return fmt.Sprintf(`{"data":{%q:{"ok":true,"error":null,"entity":{"id":%q,"name":%q,"address":{"value":%q},`+
 		`"remoteNetwork":{"id":%q},"gateway":{"id":%q},"isVisible":true,"alias":"","securityPolicy":null,`+
-		`"tags":%s,"approvalMode":"","accessPolicy":null,"upstream":{"port":8080},"downstream":{"port":80},`+
+		`"tags":%s,"approvalMode":"","accessPolicy":null,"upstream":{"port":8080,"tlsMode":"VERIFY_FULL"},"downstream":{"port":443,"tlsMode":"TLS13"},`+
 		`"requestHeaderRewrites":%s}}}}`,
 		mutation, testResourceID, testResourceName, testResourceAddress, testRemoteNetworkID, testGatewayID,
 		keyValueJSON(t, tags), keyValueJSON(t, headerRewrites))
@@ -177,6 +180,8 @@ func TestWebAppResourceKeyValueMaps(t *testing.T) {
 			}, resp)
 
 			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			assert.Equal(t, map[string]any{"port": float64(8080), "tlsMode": "VERIFY_FULL"}, requestVariable(t, *requestBody, "upstream"))
+			assert.Equal(t, map[string]any{"port": float64(443), "tlsMode": "TLS13"}, requestVariable(t, *requestBody, "downstream"))
 			assert.ElementsMatch(t, keyValueInputs(c.apiTags), requestVariable(t, *requestBody, "tags"))
 			assert.ElementsMatch(t, keyValueInputs(c.apiHeaderRewrites), requestVariable(t, *requestBody, "requestHeaderRewrites"))
 
@@ -206,6 +211,8 @@ func TestWebAppResourceKeyValueMaps(t *testing.T) {
 
 			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 			assert.Equal(t, testResourceID, requestVariable(t, *requestBody, "id"))
+			assert.Equal(t, map[string]any{"port": float64(8080), "tlsMode": "VERIFY_FULL"}, requestVariable(t, *requestBody, "upstream"))
+			assert.Equal(t, map[string]any{"port": float64(443), "tlsMode": "TLS13"}, requestVariable(t, *requestBody, "downstream"))
 			assert.ElementsMatch(t, keyValueInputs(c.apiTags), requestVariable(t, *requestBody, "tags"))
 			assert.ElementsMatch(t, keyValueInputs(c.apiHeaderRewrites), requestVariable(t, *requestBody, "requestHeaderRewrites"))
 
