@@ -178,8 +178,10 @@ port: ${port}
 metricsPort: 9090
 
 tls:
-  certificateFile: /etc/gateway/tls.crt
-  privateKeyFile: /etc/gateway/tls.key
+  certificates:
+    files:
+      - certificateFile: /etc/gateway/tls.crt
+        privateKeyFile: /etc/gateway/tls.key
 
 ssh:
   gateway:
@@ -192,7 +194,7 @@ ssh:
       ttl: 5m
 
   ca:
-    manual:
+    local:
       privateKeyFile: /etc/gateway/ssh-ca.key
 ```
 
@@ -238,7 +240,7 @@ mkdir -p /etc/ssh/auth_principals
 echo "gateway" > /etc/ssh/auth_principals/gateway
 echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
 
-systemctl restart sshd
+systemctl restart ssh
 ```
 
 The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
