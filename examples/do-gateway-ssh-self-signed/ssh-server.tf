@@ -2,7 +2,7 @@ resource "digitalocean_droplet" "ssh_server" {
   name   = "demo-ssh-server"
   region = var.do_region
   size   = var.do_droplet_size
-  image  = "debian-12-x64"
+  image  = "debian-13-x64"
 
   vpc_uuid = data.digitalocean_vpc.main.id
 
