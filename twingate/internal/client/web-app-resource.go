@@ -13,11 +13,13 @@ import (
 // with the GraphQL schema: the client derives the variable type from the Go type
 // name, so a rename silently produces an invalid query.
 type WebAppUpstreamInput struct {
-	Port int64 `json:"port"`
+	Port    int64  `json:"port"`
+	TLSMode string `json:"tlsMode"`
 }
 
 type WebAppDownstreamInput struct {
-	Port int64 `json:"port"`
+	Port    int64  `json:"port"`
+	TLSMode string `json:"tlsMode"`
 }
 
 type KeyValueInputObject struct {
@@ -51,8 +53,8 @@ func newWebAppResourceVars(webAppResource *model.WebAppResource) []gqlVarOption 
 		gqlNullable(webAppResource.Alias, "alias"),
 		gqlNullableID(webAppResource.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(webAppResource.Tags), "tags"),
-		gqlVar(WebAppUpstreamInput{Port: webAppResource.Upstream.Port}, "upstream"),
-		gqlVar(WebAppDownstreamInput{Port: webAppResource.Downstream.Port}, "downstream"),
+		gqlVar(WebAppUpstreamInput{Port: webAppResource.Upstream.Port, TLSMode: webAppResource.Upstream.TLSMode}, "upstream"),
+		gqlVar(WebAppDownstreamInput{Port: webAppResource.Downstream.Port, TLSMode: webAppResource.Downstream.TLSMode}, "downstream"),
 		gqlVar(newKeyValueInputs(webAppResource.RequestHeaderRewrites), "requestHeaderRewrites"),
 		gqlVar(NewAccessPolicyInput(webAppResource.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(webAppResource.AccessPolicy), "approvalMode"),
