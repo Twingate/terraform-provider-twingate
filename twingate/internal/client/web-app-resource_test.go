@@ -86,8 +86,8 @@ func TestReadWebAppResource(t *testing.T) {
 		"approvalMode": "MANUAL",
 		"accessPolicy": {"mode": "APPROVAL_REQUIRED", "durationSeconds": 3600},
 		"access": {"pageInfo": {"endCursor": "", "hasNextPage": false}, "edges": []},
-		"upstream": {"port": 8080},
-		"downstream": {"port": 80},
+		"upstream": {"port": 8080, "tlsMode": "VERIFY_FULL"},
+		"downstream": {"port": 443, "tlsMode": "TLS13"},
 		"requestHeaderRewrites": [{"key": "x-user", "value": "{{username}}"}]
 	}`
 
@@ -158,8 +158,8 @@ const webAppEntity = `{
 	"tags": [{"key": "env", "value": "prod"}],
 	"approvalMode": "MANUAL",
 	"accessPolicy": {"mode": "APPROVAL_REQUIRED", "durationSeconds": 3600},
-	"upstream": {"port": 8080},
-	"downstream": {"port": 80},
+	"upstream": {"port": 8080, "tlsMode": "VERIFY_FULL"},
+	"downstream": {"port": 443, "tlsMode": "TLS13"},
 	"requestHeaderRewrites": [{"key": "x-user", "value": "{{username}}"}]
 }`
 
@@ -181,8 +181,8 @@ func expectedWebAppResource() *model.WebAppResource {
 		Alias:                 &alias,
 		SecurityPolicyID:      &securityPolicyID,
 		Tags:                  map[string]string{"env": "prod"},
-		Upstream:              model.WebAppUpstream{Port: 8080},
-		Downstream:            model.WebAppDownstream{Port: 80},
+		Upstream:              model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
+		Downstream:            model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13},
 		RequestHeaderRewrites: map[string]string{"x-user": "{{username}}"},
 		AccessPolicy: &model.AccessPolicy{
 			Mode:         &accessMode,
@@ -198,8 +198,8 @@ func webAppInput() *model.WebAppResource {
 		Address:         "internal.acme.com",
 		GatewayID:       "gw-1",
 		RemoteNetworkID: "rn-1",
-		Upstream:        model.WebAppUpstream{Port: 8080},
-		Downstream:      model.WebAppDownstream{Port: 80},
+		Upstream:        model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
+		Downstream:      model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13},
 	}
 }
 
