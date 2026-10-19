@@ -33,11 +33,13 @@ type KeyValuePair struct {
 }
 
 type WebAppUpstream struct {
-	Port int64
+	Port    int64
+	TLSMode string
 }
 
 type WebAppDownstream struct {
-	Port int64
+	Port    int64
+	TLSMode string
 }
 
 type gqlWebAppResource struct {
@@ -73,8 +75,8 @@ func (g gqlWebAppResource) ToModel() *model.WebAppResource {
 		Alias:                 optionalString(g.Alias),
 		SecurityPolicyID:      securityPolicyID(g.SecurityPolicy),
 		Tags:                  tagsToModel(g.Tags),
-		Upstream:              model.WebAppUpstream{Port: g.Upstream.Port},
-		Downstream:            model.WebAppDownstream{Port: g.Downstream.Port},
+		Upstream:              model.WebAppUpstream{Port: g.Upstream.Port, TLSMode: g.Upstream.TLSMode},
+		Downstream:            model.WebAppDownstream{Port: g.Downstream.Port, TLSMode: g.Downstream.TLSMode},
 		RequestHeaderRewrites: headerRewritesToModel(g.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
 	}
