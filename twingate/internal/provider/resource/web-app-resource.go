@@ -13,6 +13,7 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -22,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -62,19 +64,23 @@ type webAppResourceModel struct {
 }
 
 type webAppUpstreamModel struct {
-	Port types.Int64 `tfsdk:"port"`
+	Port    types.Int64  `tfsdk:"port"`
+	TLSMode types.String `tfsdk:"tls_mode"`
 }
 
 type webAppDownstreamModel struct {
-	Port types.Int64 `tfsdk:"port"`
+	Port    types.Int64  `tfsdk:"port"`
+	TLSMode types.String `tfsdk:"tls_mode"`
 }
 
 var webAppUpstreamAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
-	attr.Port: types.Int64Type,
+	attr.Port:    types.Int64Type,
+	attr.TLSMode: types.StringType,
 }
 
 var webAppDownstreamAttributeTypes = map[string]tfattr.Type{ //nolint:gochecknoglobals
-	attr.Port: types.Int64Type,
+	attr.Port:    types.Int64Type,
+	attr.TLSMode: types.StringType,
 }
 
 func (r *webAppResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -204,6 +210,15 @@ func webAppUpstream() schema.SingleNestedAttribute {
 					int64validator.Between(model.MinPortValue, model.MaxPortValue),
 				},
 			},
+			attr.TLSMode: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: `How the Gateway verifies TLS on the upstream connection. One of "VERIFY_FULL", "VERIFY_CA", "INSECURE" or "NONE". Defaults to "NONE".`,
+				Default:     stringdefault.StaticString(model.TLSClientModeNone),
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.TLSClientModes...),
+				},
+			},
 		},
 	}
 }
@@ -218,6 +233,15 @@ func webAppDownstream() schema.SingleNestedAttribute {
 				Description: fmt.Sprintf("The port number. Must be between %d and %d inclusive.", model.MinPortValue, model.MaxPortValue),
 				Validators: []validator.Int64{
 					int64validator.Between(model.MinPortValue, model.MaxPortValue),
+				},
+			},
+			attr.TLSMode: schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: `How the Gateway serves TLS on the downstream connection. One of "TLS13" or "NONE". Defaults to "NONE".`,
+				Default:     stringdefault.StaticString(model.TLSServerModeNone),
+				Validators: []validator.String{
+					stringvalidator.OneOf(model.TLSServerModes...),
 				},
 			},
 		},
@@ -240,12 +264,18 @@ func webAppDownstreamValue(ctx context.Context, obj types.Object) (webAppDownstr
 	return downstream, diags
 }
 
-func webAppUpstreamObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
-	return types.ObjectValueFrom(ctx, webAppUpstreamAttributeTypes, webAppUpstreamModel{Port: types.Int64Value(port)})
+func webAppUpstreamObject(ctx context.Context, upstream model.WebAppUpstream) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, webAppUpstreamAttributeTypes, webAppUpstreamModel{
+		Port:    types.Int64Value(upstream.Port),
+		TLSMode: types.StringValue(upstream.TLSMode),
+	})
 }
 
-func webAppDownstreamObject(ctx context.Context, port int64) (types.Object, diag.Diagnostics) {
-	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{Port: types.Int64Value(port)})
+func webAppDownstreamObject(ctx context.Context, downstream model.WebAppDownstream) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, webAppDownstreamAttributeTypes, webAppDownstreamModel{
+		Port:    types.Int64Value(downstream.Port),
+		TLSMode: types.StringValue(downstream.TLSMode),
+	})
 }
 
 func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResourceModel, diagnostics *diag.Diagnostics, operation string) *model.WebAppResource {
@@ -282,8 +312,8 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		Alias:                 getOptionalString(plan.Alias),
 		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:                  getKeyValueMap(plan.TagsAll),
-		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64()},
-		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64()},
+		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64(), TLSMode: upstream.TLSMode.ValueString()},
+		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64(), TLSMode: downstream.TLSMode.ValueString()},
 		RequestHeaderRewrites: getKeyValueMap(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
 		GroupsAccess:          accessGroups,
@@ -426,10 +456,10 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 	state.TagsAll = utils.ConvertMapValue(webAppRes.Tags)
 	state.RequestHeaderRewrites = utils.ConvertMapValueWithReference(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
-	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream.Port)
+	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream)
 	diagnostics.Append(diags...)
 
-	downstream, diags := webAppDownstreamObject(ctx, webAppRes.Downstream.Port)
+	downstream, diags := webAppDownstreamObject(ctx, webAppRes.Downstream)
 	diagnostics.Append(diags...)
 
 	if diagnostics.HasError() {
