@@ -178,8 +178,10 @@ port: ${port}
 metricsPort: 9090
 
 tls:
-  certificateFile: /etc/gateway/tls.crt
-  privateKeyFile: /etc/gateway/tls.key
+  certificates:
+    files:
+      - certificateFile: /etc/gateway/tls.crt
+        privateKeyFile: /etc/gateway/tls.key
 
 ssh:
   gateway:
@@ -192,7 +194,7 @@ ssh:
       ttl: 5m
 
   ca:
-    manual:
+    local:
       privateKeyFile: /etc/gateway/ssh-ca.key
 ```
 
