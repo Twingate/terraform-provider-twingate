@@ -1,4 +1,3 @@
-//nolint:dupl
 package query
 
 import (
@@ -41,6 +40,8 @@ type gqlSSHResourceNode struct {
 		Gateway struct {
 			ID graphql.ID
 		}
+		Downstream SSHDownstream
+		Upstream   SSHUpstream
 	} `graphql:"... on SSHResource"`
 }
 
@@ -55,6 +56,8 @@ func (n gqlSSHResourceNode) ToModel() (*model.SSHResource, error) {
 		Alias:            optionalString(n.Alias),
 		SecurityPolicyID: securityPolicyID(n.SecurityPolicy),
 		Tags:             tagsToModel(n.Tags),
+		Downstream:       &model.SSHDownstream{Port: n.SSHResourceFragment.Downstream.Port},
+		Upstream:         &model.SSHUpstream{Port: n.SSHResourceFragment.Upstream.Port},
 		AccessPolicy:     accessPolicyToModel(n.AccessPolicy, &n.ApprovalMode),
 	}
 

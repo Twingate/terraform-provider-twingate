@@ -19,6 +19,45 @@ You need an API key to use Twingate's Terraform provider. See our [documentation
 
 Visit our [documentation](https://docs.twingate.com/docs) for more information on configuring and using Twingate.
 
+## Caching and datasource filters
+
+The provider can cache Resources and Groups to cut down on API calls. When a cache
+filter is configured, that filter also scopes what the `twingate_resources` and
+`twingate_groups` datasources can see.
+
+```hcl
+provider "twingate" {
+  cache = {
+    resource_enabled = true
+    resources_filter = {
+      remote_network_name = "production"
+    }
+  }
+}
+```
+
+With the above, a datasource lookup is answered from the cache whenever at least one
+cached Resource matches:
+
+```hcl
+data "twingate_resources" "example" {
+  # `billing-db` is in the "production" remote network, `staging-api` is not.
+  name_in = ["billing-db", "staging-api"]
+}
+```
+
+Only `billing-db` is returned. The cache holds just the Resources matching
+`resources_filter`, so `staging-api` is outside it and is not included. This is
+intended: a cache filter defines the working set the provider operates on.
+
+~> **Note** If nothing in the cache matches, the provider falls back to querying the
+API and returns the full result. A lookup that partially matches the cache is
+answered from the cache alone, so results depend on what the cache filter admits.
+
+To have datasources always search every object, omit the cache filter
+(`resources_filter` / `groups_filter`) or disable caching for that type with
+`resource_enabled = false` / `groups_enabled = false`.
+
 ## Example Usage
 
 ```terraform
@@ -60,9 +99,9 @@ This is optional and shouldn't be changed under normal circumstances.
 Optional:
 
 - `groups_enabled` (Boolean) Specifies whether the provider should cache groups. The default value is `true`.
-- `groups_filter` (Attributes) Specifies the filter for the groups to be cached. (see [below for nested schema](#nestedatt--cache--groups_filter))
+- `groups_filter` (Attributes) Specifies the filter for the groups to be cached. This filter also scopes what the `twingate_groups` datasource can return: lookups are answered from the cache when any cached group matches, so groups excluded by this filter are not returned. (see [below for nested schema](#nestedatt--cache--groups_filter))
 - `resource_enabled` (Boolean) Specifies whether the provider should cache resources. The default value is `true`.
-- `resources_filter` (Attributes) Specifies the filter for the resources to be cached. (see [below for nested schema](#nestedatt--cache--resources_filter))
+- `resources_filter` (Attributes) Specifies the filter for the resources to be cached. This filter also scopes what the `twingate_resources` datasource can return: lookups are answered from the cache when any cached resource matches, so resources excluded by this filter are not returned. (see [below for nested schema](#nestedatt--cache--resources_filter))
 
 <a id="nestedatt--cache--groups_filter"></a>
 ### Nested Schema for `cache.groups_filter`

@@ -225,6 +225,7 @@ func strPtrRoutingMode(s string) *string { return &s }
 func TestTerraformServicesDatasourceID(t *testing.T) {
 	cases := []struct {
 		input    string
+		inputIn  []string
 		expected string
 	}{
 		{
@@ -235,11 +236,20 @@ func TestTerraformServicesDatasourceID(t *testing.T) {
 			input:    "hello",
 			expected: "service-by-name-hello",
 		},
+		{
+			inputIn:  []string{"a", "b"},
+			expected: "service-by-name-in-a,b",
+		},
+		{
+			input:    "hello",
+			inputIn:  []string{"a"},
+			expected: "service-by-name-hello",
+		},
 	}
 
 	for n, c := range cases {
 		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
-			actual := terraformServicesDatasourceID(c.input)
+			actual := terraformServicesDatasourceID(c.input, c.inputIn)
 			assert.Equal(t, c.expected, actual)
 		})
 	}

@@ -110,12 +110,12 @@ type ServiceAccountFilterInput struct {
 	Name *StringFilterOperationInput `json:"name"`
 }
 
-func NewServiceAccountFilterInput(name, filter string) *ServiceAccountFilterInput {
-	if name == "" {
+func NewServiceAccountFilterInput(name *StringFilterOperationInput) *ServiceAccountFilterInput {
+	if name == nil {
 		return nil
 	}
 
 	return &ServiceAccountFilterInput{
-		Name: NewStringFilterOperationInput(name, filter),
+		Name: name,
 	}
 }

@@ -5,6 +5,7 @@ data "twingate_users" "all" {
   #  email_exclude = "<your user's email to exclude>"
   #  email_prefix = "<prefix of user email>"
   #  email_suffix = "<suffix of user email>"
+  #  email_in = ["<your user's email>", "<another user's email>"]
 
   #  first_name = "<your user's first name>"
   #  first_name_regexp = "<regular expression of user first name>"
@@ -20,5 +21,5 @@ data "twingate_users" "all" {
   #  last_name_prefix = "<prefix of user last name>"
   #  last_name_suffix = "<suffix of user last name>"
 
-  #  roles = ["ADMIN", "DEVOPS", "SUPPORT", "MEMBER"]
+  #  roles = ["ADMIN", "DEVOPS", "SUPPORT", "MEMBER", "ACCESS_REVIEWER", "INTERNET_SECURITY", "HELPDESK", "BILLING"]
 }

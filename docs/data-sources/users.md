@@ -20,6 +20,7 @@ data "twingate_users" "all" {
   #  email_exclude = "<your user's email to exclude>"
   #  email_prefix = "<prefix of user email>"
   #  email_suffix = "<suffix of user email>"
+  #  email_in = ["<your user's email>", "<another user's email>"]
 
   #  first_name = "<your user's first name>"
   #  first_name_regexp = "<regular expression of user first name>"
@@ -35,7 +36,7 @@ data "twingate_users" "all" {
   #  last_name_prefix = "<prefix of user last name>"
   #  last_name_suffix = "<suffix of user last name>"
 
-  #  roles = ["ADMIN", "DEVOPS", "SUPPORT", "MEMBER"]
+  #  roles = ["ADMIN", "DEVOPS", "SUPPORT", "MEMBER", "ACCESS_REVIEWER", "INTERNET_SECURITY", "HELPDESK", "BILLING"]
 }
 ```
 
@@ -47,6 +48,7 @@ data "twingate_users" "all" {
 - `email` (String) Returns only users that exactly match this email.
 - `email_contains` (String) Match when the value exist in the email of the user.
 - `email_exclude` (String) Match when the value does not exist in the email of the user.
+- `email_in` (Set of String) Returns only users that exactly match one of the emails in the list.
 - `email_prefix` (String) The email of the user must start with the value.
 - `email_regexp` (String) The regular expression match of the email of the user.
 - `email_suffix` (String) The email of the user must end with the value.
@@ -62,7 +64,7 @@ data "twingate_users" "all" {
 - `last_name_prefix` (String) The last name of the user must start with the value.
 - `last_name_regexp` (String) The regular expression match of the last name of the user.
 - `last_name_suffix` (String) The last name of the user must end with the value.
-- `roles` (Set of String) Returns users that match a list of roles. Valid roles: `ADMIN`, `DEVOPS`, `SUPPORT`, `MEMBER`.
+- `roles` (Set of String) Returns users that match a list of roles. Valid roles: ADMIN, DEVOPS, SUPPORT, MEMBER, ACCESS_REVIEWER, INTERNET_SECURITY, HELPDESK or BILLING.
 
 ### Read-Only
 
@@ -78,5 +80,5 @@ Read-Only:
 - `first_name` (String) The first name of the User
 - `id` (String) The ID of the User
 - `last_name` (String) The last name of the User
-- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, MEMBER or ACCESS_REVIEWER.
+- `role` (String) Indicates the User's role. Either ADMIN, DEVOPS, SUPPORT, MEMBER, ACCESS_REVIEWER, INTERNET_SECURITY, HELPDESK or BILLING.
 - `type` (String) Indicates the User's type. Either MANUAL or SYNCED.

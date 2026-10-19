@@ -5,4 +5,5 @@ data "twingate_service_accounts" "foo" {
   #  name_exclude = "<your service account's name to exclude>"
   #  name_prefix = "<prefix of service account name>"
   #  name_suffix = "<suffix of service account name>"
+  #  name_in = ["<your service account's name>", "<another service account's name>"]
 }

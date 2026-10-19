@@ -5,4 +5,5 @@ data "twingate_remote_networks" "all" {
   #  name_exclude = "<your network's name to exclude>"
   #  name_prefix = "<prefix of network name>"
   #  name_suffix = "<suffix of network name>"
+  #  name_in = ["<your network's name>", "<another network's name>"]
 }

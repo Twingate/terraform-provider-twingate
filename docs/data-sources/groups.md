@@ -3,12 +3,12 @@
 page_title: "twingate_groups Data Source - terraform-provider-twingate"
 subcategory: ""
 description: |-
-  Groups are how users are authorized to access Resources. For more information, see Twingate's documentation https://docs.twingate.com/docs/groups.
+  Groups are how users are authorized to access Resources. For more information, see Twingate's documentation https://docs.twingate.com/docs/groups. When the provider is configured with a cache filter for this type, lookups are answered from the cache whenever any cached object matches, so objects excluded by that filter are not returned. See the provider cache documentation.
 ---
 
 # twingate_groups (Data Source)
 
-Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups).
+Groups are how users are authorized to access Resources. For more information, see Twingate's [documentation](https://docs.twingate.com/docs/groups). When the provider is configured with a cache filter for this type, lookups are answered from the cache whenever any cached object matches, so objects excluded by that filter are not returned. See the provider `cache` documentation.
 
 ## Example Usage
 

@@ -3,11 +3,14 @@ package model
 import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 
 const (
-	UserRoleAdmin          = "ADMIN"
-	UserRoleDevops         = "DEVOPS"
-	UserRoleSupport        = "SUPPORT"
-	UserRoleMember         = "MEMBER"
-	UserRoleAccessReviewer = "ACCESS_REVIEWER"
+	UserRoleAdmin            = "ADMIN"
+	UserRoleDevops           = "DEVOPS"
+	UserRoleSupport          = "SUPPORT"
+	UserRoleMember           = "MEMBER"
+	UserRoleAccessReviewer   = "ACCESS_REVIEWER"
+	UserRoleInternetSecurity = "INTERNET_SECURITY"
+	UserRoleHelpdesk         = "HELPDESK"
+	UserRoleBilling          = "BILLING"
 
 	UserStateActive   = "ACTIVE"
 	UserStatePending  = "PENDING"
@@ -21,7 +24,10 @@ const DefaultUserRole = UserRoleMember
 
 //nolint:gochecknoglobals
 var (
-	UserRoles = []string{UserRoleAdmin, UserRoleDevops, UserRoleSupport, UserRoleMember, UserRoleAccessReviewer}
+	UserRoles = []string{
+		UserRoleAdmin, UserRoleDevops, UserRoleSupport, UserRoleMember, UserRoleAccessReviewer,
+		UserRoleInternetSecurity, UserRoleHelpdesk, UserRoleBilling,
+	}
 	UserTypes = []string{UserTypeManual, UserTypeSynced}
 )
 

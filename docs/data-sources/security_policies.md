@@ -20,6 +20,7 @@ data "twingate_security_policies" "all" {
   #  name_exclude = "<your security policy's name to exclude>"
   #  name_prefix = "<prefix of security policy name>"
   #  name_suffix = "<suffix of security policy name>"
+  #  name_in = ["<your security policy's name>", "<another security policy's name>"]
 }
 ```
 
@@ -31,6 +32,7 @@ data "twingate_security_policies" "all" {
 - `name` (String) Returns only security policies that exactly match this name. If no options are passed it will return all security policies. Only one option can be used at a time.
 - `name_contains` (String) Match when the value exist in the name of the security policy.
 - `name_exclude` (String) Match when the exact value does not exist in the name of the security policy.
+- `name_in` (Set of String) Returns only security policies that exactly match one of the names in the list.
 - `name_prefix` (String) The name of the security policy must start with the value.
 - `name_regexp` (String) The regular expression match of the name of the security policy.
 - `name_suffix` (String) The name of the security policy must end with the value.

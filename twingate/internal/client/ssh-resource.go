@@ -9,6 +9,32 @@ import (
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 )
 
+// SSHDownstreamInput and SSHUpstreamInput must keep their names in sync with the
+// GraphQL schema: the client derives the variable type from the Go type name.
+type SSHDownstreamInput struct {
+	Port int64 `json:"port"`
+}
+
+type SSHUpstreamInput struct {
+	Port int64 `json:"port"`
+}
+
+func newSSHDownstreamInput(downstream *model.SSHDownstream) *SSHDownstreamInput {
+	if downstream == nil {
+		return nil
+	}
+
+	return &SSHDownstreamInput{Port: downstream.Port}
+}
+
+func newSSHUpstreamInput(upstream *model.SSHUpstream) *SSHUpstreamInput {
+	if upstream == nil {
+		return nil
+	}
+
+	return &SSHUpstreamInput{Port: upstream.Port}
+}
+
 func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.SSHResource) (*model.SSHResource, error) {
 	opr := resourceSSHResource.create()
 
@@ -21,6 +47,8 @@ func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.
 		gqlNullable(sshResource.Alias, "alias"),
 		gqlNullableID(sshResource.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(sshResource.Tags), "tags"),
+		gqlNullable(newSSHDownstreamInput(sshResource.Downstream), "downstream"),
+		gqlNullable(newSSHUpstreamInput(sshResource.Upstream), "upstream"),
 		gqlVar(NewAccessPolicyInput(sshResource.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(sshResource.AccessPolicy), "approvalMode"),
 	)
@@ -100,6 +128,8 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 		gqlNullable(sshResource.Alias, "alias"),
 		gqlNullableID(sshResource.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newTagInputs(sshResource.Tags), "tags"),
+		gqlNullable(newSSHDownstreamInput(sshResource.Downstream), "downstream"),
+		gqlNullable(newSSHUpstreamInput(sshResource.Upstream), "upstream"),
 		gqlVar(NewAccessPolicyInput(sshResource.AccessPolicy), "accessPolicy"),
 		gqlVar(NewAccessApprovalMode(sshResource.AccessPolicy), "approvalMode"),
 	)

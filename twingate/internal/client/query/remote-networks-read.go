@@ -33,8 +33,8 @@ type RemoteNetworkFilterInput struct {
 	Name *StringFilterOperationInput `json:"name"`
 }
 
-func NewRemoteNetworkFilterInput(name, filter string) *RemoteNetworkFilterInput {
+func NewRemoteNetworkFilterInput(name *StringFilterOperationInput) *RemoteNetworkFilterInput {
 	return &RemoteNetworkFilterInput{
-		Name: NewStringFilterOperationInput(name, filter),
+		Name: name,
 	}
 }
