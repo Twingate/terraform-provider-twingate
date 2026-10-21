@@ -8,15 +8,6 @@ locals {
   })
 }
 
-resource "digitalocean_reserved_ip" "gateway" {
-  region = var.do_region
-}
-
-resource "digitalocean_reserved_ip_assignment" "gateway" {
-  ip_address = digitalocean_reserved_ip.gateway.ip_address
-  droplet_id = digitalocean_droplet.gateway.id
-}
-
 # replace_triggered_by only accepts resource references, so the rendered config is
 # wrapped here to replace the gateway whenever it changes.
 resource "terraform_data" "gateway_config" {
