@@ -1,7 +1,7 @@
 # DigitalOcean Gateway + HTTPS Resource (Self-Signed Certificates)
 
 This example deploys a Twingate Gateway, Connector, and [httpbin](https://github.com/mccutchen/go-httpbin)
-test web app on DigitalOcean, using a self-signed X.509 certificate authority.
+test Web App on DigitalOcean, using a self-signed X.509 certificate authority.
 
 > **Warning:** This example generates private keys and certificates that are stored
 > unencrypted in the Terraform state. Use a
@@ -29,8 +29,8 @@ See `variables.tf` for the full list of inputs.
 ## Network access
 
 A DigitalOcean cloud firewall (`network.tf`) allows inbound traffic to the Gateway,
-Connector, and httpbin droplets only from inside the VPC. Outbound connections are
-unrestricted. Components talk to each other over private IPs: the Connector reaches the
+Connector, and httpbin Droplets only from inside the VPC. Outbound connections are
+unrestricted. Components talk to each other over private IPs. The Connector reaches the
 Gateway on its private address, and the Gateway reaches httpbin on its private address.
 
 ## Trust the CA certificate
