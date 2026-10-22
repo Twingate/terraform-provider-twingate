@@ -33,6 +33,23 @@ Connector, and httpbin Droplets only from inside the VPC. Outbound connections a
 unrestricted. Components talk to each other over private IPs. The Connector reaches the
 Gateway on its private address, and the Gateway reaches httpbin on its private address.
 
+## Access control
+
+Both Twingate Resources grant access to the `Everyone` group so the example works out of the box. After you've confirmed it works, replace `data.twingate_groups.everyone` in `twingate.tf` with the groups that should have access. The `demo-gateway-ssh` Resource is for debugging, so limit it to administrators:
+
+```hcl
+data "twingate_groups" "admins" {
+  name = "<your admin group>"
+}
+
+resource "twingate_resource" "gateway_ssh" {
+  # ...
+  access_group {
+    group_id = data.twingate_groups.admins.groups[0].id
+  }
+}
+```
+
 ## Trust the CA certificate
 
 The Gateway serves a certificate signed by the self-signed CA in this example.
@@ -85,7 +102,12 @@ Then view the logs:
 journalctl -u gateway -f -o cat
 ```
 
-If the Connector failed to install, you won't be able to access the Droplet via Twingate. You can remove the firewall rule for SSH or access the Droplet through the recovery console. The recovery console can be accessed from the Droplet Overview (**Droplet Overview > Settings > Recovery console > Launch Console**). You will follow the same SSH process as above by logging in with the `root` user.
+If the Connector failed to install, you won't be able to access the Droplet via Twingate. You have two options:
+
+- Temporarily add an inbound rule to the `demo-https-vpc-only` firewall that allows TCP port 22 from your public IP only, then SSH to the Droplet's public IP. Remove the rule when you're done.
+- Access the Droplet through the recovery console from the Droplet Overview (**Droplet Overview > Settings > Recovery console > Launch Console**).
+
+Either way, log in with the `root` user as described above.
 
 To access the Connector or httpbin Droplets over Twingate, add a Resource for them in the Admin Console.
 
