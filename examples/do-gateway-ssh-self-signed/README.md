@@ -70,7 +70,12 @@ Then view the logs:
 journalctl -u gateway -f -o cat
 ```
 
-If the Connector failed to install, you won't be able to access the Droplet via Twingate. You can remove the firewall rule for SSH or access the Droplet through the recovery console. The recovery console can be accessed from the Droplet Overview (**Droplet Overview > Settings > Recovery console > Launch Console**). You will follow the same SSH process as above by logging in with the `root` user.
+If the Connector failed to install, you won't be able to access the Droplet via Twingate. You have two options:
+
+- Temporarily add an inbound rule to the `demo-ssh-vpc-only` firewall that allows TCP port 22 from your public IP only, then SSH to the Droplet's public IP. Remove the rule when you're done.
+- Access the Droplet through the recovery console from the Droplet Overview (**Droplet Overview > Settings > Recovery console > Launch Console**).
+
+Either way, log in with the `root` user as described above.
 
 To access the Connector Droplet over Twingate, add a Resource for it in the Admin Console.
 
