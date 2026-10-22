@@ -2,16 +2,15 @@ data "digitalocean_vpc" "main" {
   region = var.do_region
 }
 
+resource "digitalocean_tag" "vpc_only" {
+  name = "demo-ssh-vpc-only"
+}
+
 # Allows inbound traffic only from inside the VPC. Every droplet only needs outbound
 # connections to the internet (Twingate, package mirrors).
 resource "digitalocean_firewall" "vpc_only" {
   name = "demo-ssh-vpc-only"
-
-  droplet_ids = [
-    digitalocean_droplet.gateway.id,
-    digitalocean_droplet.connector.id,
-    digitalocean_droplet.ssh_server.id,
-  ]
+  tags = [digitalocean_tag.vpc_only.id]
 
   inbound_rule {
     protocol         = "tcp"
