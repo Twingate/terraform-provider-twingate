@@ -113,7 +113,7 @@ The Gateway uses this key to sign SSH certificates on the fly.
 
 ## Creating the Twingate resources
 
-Register both CAs with Twingate and create the Remote Network, Gateway, Connector, and SSH Resource:
+Register both CAs with Twingate and create the Remote Network, Gateway, Connector, SSH Resource, and a debug Resource for SSH access to the Gateway Droplet:
 
 ```terraform
 resource "twingate_remote_network" "main" {
@@ -132,7 +132,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${digitalocean_reserved_ip.gateway.ip_address}:${local.gateway_port}"
+  address           = "${digitalocean_droplet.gateway.ipv4_address_private}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
@@ -161,7 +161,31 @@ resource "twingate_ssh_resource" "ssh_server" {
     group_id = data.twingate_groups.everyone.groups[0].id
   }
 }
+
+# SSH access to the Gateway droplet through the Connector, for troubleshooting.
+resource "twingate_resource" "gateway_ssh" {
+  name              = "demo-gateway-ssh"
+  address           = digitalocean_droplet.gateway.ipv4_address_private
+  remote_network_id = twingate_remote_network.main.id
+
+  protocols = {
+    allow_icmp = false
+    tcp = {
+      policy = "RESTRICTED"
+      ports  = ["22"]
+    }
+    udp = {
+      policy = "DENY_ALL"
+    }
+  }
+
+  access_group {
+    group_id = data.twingate_groups.everyone.groups[0].id
+  }
+}
 ```
+
+The Gateway is registered with its private IP, so the Connector reaches it inside the VPC. The `demo-gateway-ssh` Resource is a regular Twingate Resource routed through the Connector, so you can SSH to the Gateway Droplet for troubleshooting even though the firewall blocks inbound SSH from the internet. Once your deployment is working as expected, this can be removed.
 
 The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
@@ -217,7 +241,7 @@ locals {
 The three Droplets are deployed on a dedicated VPC. Each Droplet uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
 
 - **Connector Droplet** — Receives connector tokens via template variables and runs the Twingate connector setup script.
-- **Gateway Droplet** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service. A reserved IP provides a stable address for Twingate registration.
+- **Gateway Droplet** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service. Twingate reaches it on its private IP.
 - **SSH Server Droplet** — Creates a `gateway` user and configures `sshd` to trust the SSH CA:
 
 ```bash
@@ -245,4 +269,27 @@ systemctl restart sshd
 
 The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
-The Gateway Droplet uses a reserved IP so its address is stable and can be registered with Twingate. Keys and certificates are injected into Droplets via `templatefile()` in `user_data`.
+Keys and certificates are injected into Droplets via `templatefile()` in `user_data`.
+
+## Restricting inbound traffic
+
+A DigitalOcean cloud firewall allows inbound traffic to all three Droplets only from inside the VPC, and leaves outbound connections unrestricted:
+
+```terraform
+resource "digitalocean_tag" "vpc_only" {
+  name = "demo-ssh-vpc-only"
+}
+
+resource "digitalocean_firewall" "vpc_only" {
+  name = "demo-ssh-vpc-only"
+  tags = [digitalocean_tag.vpc_only.id]
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "1-65535"
+    source_addresses = [data.digitalocean_vpc.main.ip_range]
+  }
+
+  # ... matching UDP and ICMP inbound rules, and outbound rules to 0.0.0.0/0 and ::/0
+}
+```
