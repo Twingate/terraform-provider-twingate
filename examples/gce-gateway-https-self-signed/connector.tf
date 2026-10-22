@@ -21,4 +21,7 @@ resource "google_compute_instance" "connector" {
   }
 
   metadata_startup_script = file("${path.module}/scripts/connector-startup.sh")
+
+  # The startup script downloads the Connector installer, so NAT must exist before boot
+  depends_on = [google_compute_router_nat.main]
 }

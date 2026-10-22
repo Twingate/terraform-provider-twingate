@@ -45,6 +45,9 @@ resource "google_compute_instance" "gateway" {
 
   metadata_startup_script = file("${path.module}/scripts/gateway-startup.sh")
 
+  # The startup script downloads the Gateway binary, so NAT must exist before boot
+  depends_on = [google_compute_router_nat.main]
+
   lifecycle {
     replace_triggered_by = [terraform_data.gateway_metadata]
   }

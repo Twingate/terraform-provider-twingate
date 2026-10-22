@@ -23,4 +23,7 @@ resource "google_compute_instance" "httpbin" {
   }
 
   metadata_startup_script = file("${path.module}/scripts/httpbin-startup.sh")
+
+  # The startup script installs Docker and pulls the image, so NAT must exist before boot
+  depends_on = [google_compute_router_nat.main]
 }
