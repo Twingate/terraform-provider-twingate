@@ -21,12 +21,15 @@ resource "digitalocean_droplet" "gateway" {
   image  = "debian-13-x64"
 
   vpc_uuid = data.digitalocean_vpc.main.id
+  tags     = [digitalocean_tag.vpc_only.id]
 
   user_data = templatefile("${path.module}/scripts/gateway-startup.sh", {
     tls_cert       = tls_locally_signed_cert.server.cert_pem
     tls_key        = tls_private_key.server.private_key_pem
     gateway_config = local.gateway_config
   })
+
+  depends_on = [digitalocean_firewall.vpc_only]
 
   lifecycle {
     replace_triggered_by = [

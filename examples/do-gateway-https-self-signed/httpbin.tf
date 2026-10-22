@@ -10,9 +10,12 @@ resource "digitalocean_droplet" "httpbin" {
   image  = "docker-20-04"
 
   vpc_uuid = data.digitalocean_vpc.main.id
+  tags     = [digitalocean_tag.vpc_only.id]
 
   user_data = <<-EOT
     #!/bin/bash
     docker run -d --restart always -p ${local.httpbin_port}:8080 mccutchen/go-httpbin
   EOT
+
+  depends_on = [digitalocean_firewall.vpc_only]
 }
