@@ -187,6 +187,8 @@ resource "twingate_resource" "gateway_ssh" {
 
 The Gateway is registered with its private IP, so the Connector reaches it inside the VPC. The `demo-gateway-ssh` Resource is a regular Twingate Resource routed through the Connector, so you can SSH to the Gateway Droplet for troubleshooting even though the firewall blocks inbound SSH from the internet. Once your deployment is working as expected, this can be removed.
 
+-> **Note:** Both Resources grant access to the `Everyone` group so the example works right away. Once it's running, give each Resource the groups that should use it. For example, keep `demo-ssh-server` for the teams that need the SSH server and limit the `demo-gateway-ssh` debug Resource to administrators.
+
 The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
 ## Configuring the gateway

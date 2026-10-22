@@ -89,6 +89,8 @@ resource "twingate_connector_tokens" "main" {
   connector_id = twingate_connector.main.id
 }
 
+# Everyone has access so the example works immediately. Replace this with the groups
+# that should reach each Resource (e.g. admins only for demo-gateway-ssh).
 data "twingate_groups" "everyone" {
   name = "Everyone"
 }

@@ -33,6 +33,23 @@ Connector, and SSH server droplets only from inside the VPC. Outbound connection
 unrestricted. Components talk to each other over private IPs: the Connector reaches the
 Gateway on its private address, and the Gateway reaches the SSH server on its private address.
 
+## Access control
+
+Both Twingate Resources grant access to the `Everyone` group so the example works out of the box. After you've confirmed it works, replace `data.twingate_groups.everyone` in `twingate.tf` with the groups that should have access. The `demo-gateway-ssh` Resource is for debugging, so limit it to administrators:
+
+```hcl
+data "twingate_groups" "admins" {
+  name = "<your admin group>"
+}
+
+resource "twingate_resource" "gateway_ssh" {
+  # ...
+  access_group {
+    group_id = data.twingate_groups.admins.groups[0].id
+  }
+}
+```
+
 ## Resource alias
 
 By default, users connect to the SSH server by its internal IP:
