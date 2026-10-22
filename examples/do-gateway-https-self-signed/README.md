@@ -88,7 +88,7 @@ resource_alias = "httpbin.example.int"
 
 ## Troubleshooting
 
-With the Twingate Client connected, SSH into the Gateway droplet through the
+With the Twingate Client connected, SSH into the Gateway Droplet through the
 `demo-gateway-ssh` Resource. Use the private IP shown on the Resource and the root
 password. If it is the first time accessing the Droplet, you will need the password associated with the Droplet that DigitalOcean emails to the owner of the API key. You will then be prompted to change the password and log in again:
 

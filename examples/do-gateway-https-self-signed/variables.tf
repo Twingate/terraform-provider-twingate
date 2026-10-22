@@ -34,7 +34,7 @@ variable "do_region" {
 }
 
 variable "do_droplet_size" {
-  description = "DigitalOcean droplet size"
+  description = "DigitalOcean Droplet size"
   type        = string
   default     = "s-1vcpu-1gb"
 }
