@@ -29,7 +29,7 @@ See `variables.tf` for the full list of inputs.
 ## Network access
 
 A DigitalOcean cloud firewall (`network.tf`) allows inbound traffic to the Gateway,
-Connector, and SSH server droplets only from inside the VPC. Outbound connections are
+Connector, and SSH server Droplets only from inside the VPC. Outbound connections are
 unrestricted. Components talk to each other over private IPs: the Connector reaches the
 Gateway on its private address, and the Gateway reaches the SSH server on its private address.
 

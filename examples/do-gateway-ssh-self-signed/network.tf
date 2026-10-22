@@ -6,7 +6,7 @@ resource "digitalocean_tag" "vpc_only" {
   name = "demo-ssh-vpc-only"
 }
 
-# Allows inbound traffic only from inside the VPC. Every droplet only needs outbound
+# Allows inbound traffic only from inside the VPC. Every Droplet only needs outbound
 # connections to the internet (Twingate, package mirrors).
 resource "digitalocean_firewall" "vpc_only" {
   name = "demo-ssh-vpc-only"

@@ -95,7 +95,7 @@ data "twingate_groups" "everyone" {
   name = "Everyone"
 }
 
-# SSH access to the Gateway droplet through the Connector, for troubleshooting.
+# SSH access to the Gateway Droplet through the Connector, for troubleshooting.
 resource "twingate_resource" "gateway_ssh" {
   name              = "demo-gateway-ssh"
   address           = digitalocean_droplet.gateway.ipv4_address_private
