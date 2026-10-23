@@ -71,8 +71,7 @@ resource_alias = "httpbin.example.int"
 
 This adds the alias as a DNS SAN on the Gateway's TLS certificate and sets it as
 the Resource alias in the Twingate Client. The alias is the certificate's only SAN,
-so changing it reissues the certificate and replaces the Gateway VM. This will also
-require installing the new certificate to your machine's trust store. Wildcards can
+so changing it reissues the certificate and replaces the Gateway VM. Wildcards can
 be used to support multiple aliases and avoid the overhead related to reissuing the certificate. See the `tls_cert_request` block in `twingate.tf` for an example.
 
 ## Troubleshooting
