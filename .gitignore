@@ -57,3 +57,5 @@ test_results
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
 
+# Example CA certificates
+examples/**/*.crt
