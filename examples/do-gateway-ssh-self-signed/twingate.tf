@@ -75,7 +75,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${digitalocean_reserved_ip.gateway.ip_address}:${local.gateway_port}"
+  address           = "${digitalocean_droplet.gateway.ipv4_address_private}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
@@ -89,8 +89,32 @@ resource "twingate_connector_tokens" "main" {
   connector_id = twingate_connector.main.id
 }
 
+# Everyone has access so the example works immediately. Replace this with the groups
+# that should reach each Resource (e.g. admins only for demo-gateway-ssh).
 data "twingate_groups" "everyone" {
   name = "Everyone"
+}
+
+# SSH access to the Gateway Droplet through the Connector, for troubleshooting.
+resource "twingate_resource" "gateway_ssh" {
+  name              = "demo-gateway-ssh"
+  address           = digitalocean_droplet.gateway.ipv4_address_private
+  remote_network_id = twingate_remote_network.main.id
+
+  protocols = {
+    allow_icmp = false
+    tcp = {
+      policy = "RESTRICTED"
+      ports  = ["22"]
+    }
+    udp = {
+      policy = "DENY_ALL"
+    }
+  }
+
+  access_group {
+    group_id = data.twingate_groups.everyone.groups[0].id
+  }
 }
 
 resource "twingate_ssh_resource" "ssh_server" {

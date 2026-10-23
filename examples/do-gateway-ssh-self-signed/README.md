@@ -26,6 +26,30 @@ terraform apply
 
 See `variables.tf` for the full list of inputs.
 
+## Network access
+
+A DigitalOcean cloud firewall (`network.tf`) allows inbound traffic to the Gateway,
+Connector, and SSH server Droplets only from inside the VPC. Outbound connections are
+unrestricted. Components talk to each other over private IPs: the Connector reaches the
+Gateway on its private address, and the Gateway reaches the SSH server on its private address.
+
+## Access control
+
+Both Twingate Resources grant access to the `Everyone` group so the example works out of the box. After you've confirmed it works, replace `data.twingate_groups.everyone` in `twingate.tf` with the groups that should have access. The `demo-gateway-ssh` Resource is for debugging, so limit it to administrators:
+
+```hcl
+data "twingate_groups" "admins" {
+  name = "<your admin group>"
+}
+
+resource "twingate_resource" "gateway_ssh" {
+  # ...
+  access_group {
+    group_id = data.twingate_groups.admins.groups[0].id
+  }
+}
+```
+
 ## Resource alias
 
 By default, users connect to the SSH server by its internal IP:
@@ -49,11 +73,30 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-SSH into the gateway droplet, then view the logs:
+With the Twingate Client connected, SSH into the Gateway droplet through the
+`demo-gateway-ssh` Resource. Use the private IP shown on the Resource and the root
+password. If it is the first time accessing the Droplet, you will need the password associated with the Droplet that DigitalOcean emails to the owner of the API key. You will then be prompted to change the password and log in again:
 
 ```bash
-sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
+ssh root@<gateway-private-ip>
 ```
+
+Then view the logs:
+
+```bash
+journalctl -u gateway -f -o cat
+```
+
+If the Connector failed to install, you won't be able to access the Droplet via Twingate. You have two options:
+
+- Temporarily add an inbound rule to the `demo-ssh-vpc-only` firewall that allows TCP port 22 from your public IP only, then SSH to the Droplet's public IP. Remove the rule when you're done.
+- Access the Droplet through the recovery console from the Droplet Overview (**Droplet Overview > Settings > Recovery console > Launch Console**).
+
+Either way, log in with the `root` user as described above.
+
+To access the Connector Droplet over Twingate, add a Resource for it in the Admin Console.
+
+The break glass recovery console troubleshooting steps will work for any of the Droplets.
 
 ## Clean up
 
