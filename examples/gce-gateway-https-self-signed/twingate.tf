@@ -43,6 +43,8 @@ resource "tls_cert_request" "server" {
     common_name = "Twingate Gateway"
   }
 
+  # Replace this with a wildcard to cover multiple aliases
+  # For example: ["*.example.com"]
   dns_names = [var.resource_alias]
 }
 

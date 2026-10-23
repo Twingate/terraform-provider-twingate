@@ -27,13 +27,6 @@ terraform apply
 
 See `variables.tf` for the full list of inputs.
 
-## Network access
-
-None of the VMs have an external IP. Cloud NAT gives them outbound internet access,
-and a firewall rule (`network.tf`) allows inbound TCP only from inside the subnet. The
-Connector reaches the Gateway on its internal address, and the Gateway reaches httpbin
-on its internal address.
-
 ## Access control
 
 The Twingate Resource grants access to the `Everyone` group so the example works out of
@@ -44,7 +37,7 @@ the box. After you've confirmed it works, replace `data.twingate_groups.everyone
 
 The Gateway serves a certificate signed by the self-signed CA in this example.
 `terraform apply` writes the CA certificate to `gce_example_https_ca.crt` in this directory. Add it to
-your machine's trust store so your browser accepts the Gateway's certificate.
+your machine's trust store so your browser accepts the Gateway's certificate. Without it, you will continue to see unsafe connection warnings even when accessing the Resource over HTTPS.
 
 macOS:
 
@@ -75,6 +68,10 @@ If you would like to access the Resource under a different hostname, set `resour
 ```hcl
 resource_alias = "httpbin.example.int"
 ```
+
+This adds the alias as a DNS SAN on the Gateway's TLS certificate and sets it as
+the Resource alias in the Twingate Client. The alias is the certificate's only SAN, so
+changing it reissues the certificate and replaces the Gateway VM. Wildcards can be used to avoid this.
 
 ## Troubleshooting
 
