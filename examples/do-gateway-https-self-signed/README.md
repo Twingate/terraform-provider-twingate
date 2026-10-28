@@ -54,7 +54,7 @@ resource "twingate_resource" "gateway_ssh" {
 
 The Gateway serves a certificate signed by the self-signed CA in this example.
 `terraform apply` writes the CA certificate to `do_example_https_ca.crt` in this directory. Add it to
-your machine's trust store so your browser accepts the Gateway's certificate.
+your machine's trust store so your browser accepts the Gateway's certificate. Without it, you will continue to see unsafe connection warnings even when accessing the Resource over HTTPS.
 
 macOS:
 
@@ -77,14 +77,57 @@ With the Twingate Client connected, open:
 https://do-nyc-http-bin.demo.int/headers
 ```
 
+Or test from the command line:
+
+```bash
+curl https://do-nyc-http-bin.demo.int/headers
+```
+
 httpbin echoes back the request headers it receives, so you can confirm the
 headers configured under `webApp.requestHeaders` in `config.yaml.tftpl` and in `twingate.tf` under `twingate_web_app_resource.request_header_rewrites` are injected by the Gateway.
 
-If you would like to access the Resource under a different hostname, set `resource_alias` in the `terraform.tfvars` file:
+Changing the `resource_alias` variable in the `terraform.tfvars` file allows you to define what hostname you would like to access the Resource from. This example uses `do-nyc-http-bin.demo.int` but any hostname following the `host.domain.tld` pattern will work. Another example would be the following:
 
 ```hcl
 resource_alias = "httpbin.example.int"
 ```
+
+This adds the alias as a DNS SAN on the Gateway's TLS certificate and sets it as
+the Resource alias in the Twingate Client. The alias is the certificate's only SAN,
+so changing it reissues the certificate and replaces the Gateway Droplet. Wildcards can
+be used to support multiple aliases and avoid the overhead related to reissuing the certificate. See the `tls_cert_request` block in `twingate.tf` for an example.
+
+## CA rotation
+
+The CA certificate is valid for one year (`validity_period_hours` in `twingate.tf`).
+To rotate it before it expires, or if its private key is compromised:
+
+1. Replace the CA private key. Terraform generates a new CA certificate, reissues the
+   server certificate, updates the Twingate X.509 CA, replaces the Gateway Droplet, and
+   overwrites `do_example_https_ca.crt`:
+
+   ```bash
+   terraform apply -replace=tls_private_key.x509_ca
+   ```
+
+2. Remove the old CA certificate from your trust store, then add the new one.
+
+   macOS:
+
+   ```bash
+   sudo security delete-certificate -c "DO HTTPS Example Twingate Gateway CA" /Library/Keychains/System.keychain
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain do_example_https_ca.crt
+   ```
+
+   Debian/Ubuntu:
+
+   ```bash
+   sudo cp do_example_https_ca.crt /usr/local/share/ca-certificates/twingate-gateway-ca.crt
+   sudo update-ca-certificates --fresh
+   ```
+
+3. Redistribute the new `do_example_https_ca.crt` to every other client that trusts
+   the old CA. Until a client trusts the new CA, it will see certificate warnings.
 
 ## Troubleshooting
 
