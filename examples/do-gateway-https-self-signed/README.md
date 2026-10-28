@@ -103,8 +103,9 @@ The CA certificate is valid for one year (`validity_period_hours` in `twingate.t
 To rotate it before it expires, or if its private key is compromised:
 
 1. Replace the CA private key. Terraform generates a new CA certificate, reissues the
-   server certificate, updates the Twingate X.509 CA, replaces the Gateway Droplet, and
-   overwrites `do_example_https_ca.crt`:
+   server certificate, registers the new CA with Twingate, points the Gateway at it,
+   deletes the old CA, replaces the Gateway Droplet, and overwrites
+   `do_example_https_ca.crt`:
 
    ```bash
    terraform apply -replace=tls_private_key.x509_ca

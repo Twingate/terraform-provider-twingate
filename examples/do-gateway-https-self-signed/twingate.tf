@@ -68,8 +68,17 @@ resource "twingate_remote_network" "main" {
 }
 
 resource "twingate_x509_certificate_authority" "tls" {
-  name        = "demo-gateway-x509-ca"
+  # CA names must be unique, so the suffix lets the old and new CA coexist during
+  # rotation. Since the certificate is write-only, the name change is also what
+  # tells Terraform to replace this CA when the certificate changes.
+  name        = "demo-gateway-x509-ca-${substr(sha256(tls_self_signed_cert.x509_ca.cert_pem), 0, 8)}"
   certificate = tls_self_signed_cert.x509_ca.cert_pem
+
+  # The Gateway references this CA, so the API refuses to delete it while in use.
+  # Create the new CA and repoint the Gateway before deleting the old one.
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "twingate_gateway" "main" {
