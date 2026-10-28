@@ -35,8 +35,6 @@ The setup deploys three GCE VMs:
 - A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
 - A GCP project with the Compute Engine API enabled and `gcloud` CLI authenticated.
 
--> **Note:** The example provisions its own VPC, private subnet, and [Cloud NAT](https://cloud.google.com/nat/docs/overview) so VMs can download binaries from the internet.
-
 ## Setting up the providers
 
 ```terraform
