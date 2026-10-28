@@ -45,6 +45,7 @@ website/node_modules
 
 # examples
 examples_local/
+examples/**/*.crt
 
 # vendors
 vendor/
@@ -56,6 +57,3 @@ test_results
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
-
-# Example CA certificates
-examples/**/*.crt
