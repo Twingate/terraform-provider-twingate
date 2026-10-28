@@ -35,8 +35,6 @@ The setup deploys three DigitalOcean Droplets:
 - A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
 - A DigitalOcean account with an [API token](https://docs.digitalocean.com/reference/api/create-personal-access-token/).
 
--> **Note:** The example provisions its own VPC. Droplets receive public IPs by default, so no NAT configuration is needed.
-
 ## Setting up the providers
 
 ```terraform
@@ -275,7 +273,7 @@ Keys and certificates are injected into Droplets via `templatefile()` in `user_d
 
 ## Restricting inbound traffic
 
-A DigitalOcean cloud firewall allows inbound traffic to all three Droplets only from inside the VPC, and leaves outbound connections unrestricted:
+A DigitalOcean cloud firewall allows inbound traffic to all three Droplets only from inside the VPC, and leaves outbound connections unrestricted. Add `tags = [digitalocean_tag.vpc_only.id]` and `depends_on = [digitalocean_firewall.vpc_only]` to each Droplet resource to enforce the firewall rules.
 
 ```terraform
 resource "digitalocean_tag" "vpc_only" {
