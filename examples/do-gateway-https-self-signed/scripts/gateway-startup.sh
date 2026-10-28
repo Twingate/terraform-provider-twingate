@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 BINARY_URL="https://github.com/Twingate/gateway/releases/latest/download/gateway_Linux_x86_64.tar.gz"
 GATEWAY_DIR="/etc/gateway"
