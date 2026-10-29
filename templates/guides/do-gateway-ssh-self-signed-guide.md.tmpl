@@ -238,7 +238,7 @@ locals {
 
 ## Deploying the Droplets
 
-The three Droplets are deployed on a dedicated VPC. Each Droplet uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
+The three Droplets are deployed on the region's default VPC. Each Droplet uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
 
 - **Connector Droplet** — Receives connector tokens via template variables and runs the Twingate connector setup script.
 - **Gateway Droplet** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service. Twingate reaches it on its private IP.
