@@ -22,7 +22,7 @@ Browser ─► Twingate Client ════════► Connector ─► Gate
                                  └───────────────────────────────────────────────────┘
 ```
 
-The browser opens an HTTPS connection to the Resource alias, which is routed to the Gateway. The Gateway terminates TLS using its server certificate, adds request headers, and forwards the request to httpbin over HTTP.
+The browser opens an HTTPS connection to the Gateway, using the Resource alias as the hostname. The Gateway terminates TLS using its server certificate, adds request headers, and forwards the request to httpbin over HTTP.
 
 The setup deploys three GCE VMs:
 
@@ -121,6 +121,11 @@ resource "local_file" "x509_ca_cert" {
 The server certificate uses the Resource alias as its only DNS SAN. Use a wildcard such as `*.example.com` to cover multiple aliases without reissuing the certificate:
 
 ```terraform
+resource "tls_private_key" "server" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "tls_cert_request" "server" {
   private_key_pem = tls_private_key.server.private_key_pem
 
