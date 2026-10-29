@@ -22,7 +22,7 @@ Browser ─► Twingate Client ════════► Connector ─► Gate
                                  └───────────────────────────────────────────────────┘
 ```
 
-The browser opens an HTTPS connection to the Resource alias, which is routed to the Gateway. The Gateway terminates TLS using its server certificate, adds request headers, and forwards the request to httpbin over HTTP.
+The browser opens an HTTPS connection to the Gateway, using the Resource alias as the hostname. The Gateway terminates TLS using its server certificate, adds request headers, and forwards the request to httpbin over HTTP.
 
 The setup deploys three DigitalOcean Droplets:
 
@@ -113,6 +113,11 @@ resource "local_file" "x509_ca_cert" {
 The server certificate uses the Resource alias as its only DNS SAN. Use a wildcard such as `*.example.com` to cover multiple aliases without reissuing the certificate:
 
 ```terraform
+resource "tls_private_key" "server" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "tls_cert_request" "server" {
   private_key_pem = tls_private_key.server.private_key_pem
 
@@ -148,8 +153,17 @@ resource "twingate_remote_network" "main" {
 }
 
 resource "twingate_x509_certificate_authority" "tls" {
-  name        = "demo-gateway-x509-ca"
+  # CA names must be unique, so the suffix lets the old and new CA coexist during
+  # rotation. Since the certificate is write-only, the name change is also what
+  # tells Terraform to replace this CA when the certificate changes.
+  name        = "demo-gateway-x509-ca-${substr(sha256(tls_self_signed_cert.x509_ca.cert_pem), 0, 8)}"
   certificate = tls_self_signed_cert.x509_ca.cert_pem
+
+  # The Gateway references this CA, so the API refuses to delete it while in use.
+  # Create the new CA and repoint the Gateway before deleting the old one.
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "twingate_gateway" "main" {

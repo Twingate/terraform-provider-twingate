@@ -148,7 +148,17 @@ journalctl -u gateway -f -o cat
 
 If the Connector failed to install, you won't be able to access the Droplet via Twingate. You have two options:
 
-- Temporarily add an inbound rule to the `demo-https-vpc-only` firewall that allows TCP port 22 from your public IP only, then SSH to the Droplet's public IP. Remove the rule when you're done.
+- Temporarily allow SSH from your public IP by adding this rule to the `digitalocean_firewall.vpc_only` resource in `network.tf`, then run `terraform apply`:
+
+  ```hcl
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "22"
+    source_addresses = ["<your-public-ip>/32"] # find it with `curl -4 ifconfig.me`
+  }
+  ```
+
+  SSH to the Droplet's public IP. When you're done, remove the rule and run `terraform apply` again.
 - Access the Droplet through the recovery console from the Droplet Overview (**Droplet Overview > Settings > Recovery console > Launch Console**).
 
 Either way, log in with the `root` user as described above.

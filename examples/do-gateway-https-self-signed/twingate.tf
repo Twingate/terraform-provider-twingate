@@ -19,7 +19,6 @@ resource "tls_self_signed_cert" "x509_ca" {
     "digital_signature",
     "key_encipherment",
     "cert_signing",
-    "crl_signing",
   ]
 }
 
