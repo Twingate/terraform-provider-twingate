@@ -45,6 +45,7 @@ website/node_modules
 
 # examples
 examples_local/
+examples/**/*.crt
 
 # vendors
 vendor/
