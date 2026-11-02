@@ -10,7 +10,7 @@ test Web App on GCE, using a self-signed X.509 certificate authority.
 
 ## Prerequisites
 
-- Terraform >= 1.4
+- Terraform >= 1.11
 - A Twingate account with an [API token](https://docs.twingate.com/docs/api-overview)
 - A GCP project with the Compute Engine API enabled
 - `gcloud` CLI authenticated, with Application Default Credentials for Terraform:
