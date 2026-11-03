@@ -6,8 +6,8 @@ resource "digitalocean_tag" "vpc_only" {
   name = "demo-ssh-vpc-only"
 }
 
-# Allows inbound traffic only from inside the VPC. Every Droplet only needs outbound
-# connections to the internet (Twingate, package mirrors).
+# Allows inbound traffic from inside the VPC, plus SSH from anywhere for troubleshooting.
+# Every Droplet only needs outbound connections to the internet (Twingate, package mirrors).
 resource "digitalocean_firewall" "vpc_only" {
   name = "demo-ssh-vpc-only"
   tags = [digitalocean_tag.vpc_only.id]
@@ -27,6 +27,12 @@ resource "digitalocean_firewall" "vpc_only" {
   inbound_rule {
     protocol         = "icmp"
     source_addresses = [data.digitalocean_vpc.main.ip_range]
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "22"
+    source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   outbound_rule {

@@ -111,7 +111,7 @@ The Gateway uses this key to sign SSH certificates on the fly.
 
 ## Creating the Twingate resources
 
-Register both CAs with Twingate and create the Remote Network, Gateway, Connector, SSH Resource, and a debug Resource for SSH access to the Gateway Droplet:
+Register both CAs with Twingate and create the Remote Network, Gateway, Connector, and SSH Resource:
 
 ```terraform
 resource "twingate_remote_network" "main" {
@@ -159,33 +159,11 @@ resource "twingate_ssh_resource" "ssh_server" {
     group_id = data.twingate_groups.everyone.groups[0].id
   }
 }
-
-# SSH access to the Gateway Droplet through the Connector, for troubleshooting.
-resource "twingate_resource" "gateway_ssh" {
-  name              = "demo-gateway-ssh"
-  address           = digitalocean_droplet.gateway.ipv4_address_private
-  remote_network_id = twingate_remote_network.main.id
-
-  protocols = {
-    allow_icmp = false
-    tcp = {
-      policy = "RESTRICTED"
-      ports  = ["22"]
-    }
-    udp = {
-      policy = "DENY_ALL"
-    }
-  }
-
-  access_group {
-    group_id = data.twingate_groups.everyone.groups[0].id
-  }
-}
 ```
 
-The Gateway is registered with its private IP, so the Connector reaches it inside the VPC. The `demo-gateway-ssh` Resource is a regular Twingate Resource routed through the Connector, so you can SSH to the Gateway Droplet for troubleshooting even though the firewall blocks inbound SSH from the internet. Once your deployment is working as expected, this can be removed.
+The Gateway is registered with its private IP, so the Connector reaches it inside the VPC.
 
--> **Note:** Both Resources grant access to the `Everyone` group so the example works right away. Once it's running, give each Resource the groups that should use it. For example, keep `demo-ssh-server` for the teams that need the SSH server and limit the `demo-gateway-ssh` debug Resource to administrators.
+-> **Note:** The SSH Resource grants access to the `Everyone` group so the example works right away. Once it's running, replace it with the groups that should reach the SSH server.
 
 The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
@@ -273,7 +251,7 @@ Keys and certificates are injected into Droplets via `templatefile()` in `user_d
 
 ## Restricting inbound traffic
 
-A DigitalOcean cloud firewall allows inbound traffic to all three Droplets only from inside the VPC, and leaves outbound connections unrestricted. Add `tags = [digitalocean_tag.vpc_only.id]` and `depends_on = [digitalocean_firewall.vpc_only]` to each Droplet resource to enforce the firewall rules.
+A DigitalOcean cloud firewall allows inbound traffic to all three Droplets from inside the VPC, plus SSH (port 22) from anywhere for troubleshooting, and leaves outbound connections unrestricted. Add `tags = [digitalocean_tag.vpc_only.id]` and `depends_on = [digitalocean_firewall.vpc_only]` to each Droplet resource to enforce the firewall rules.
 
 ```terraform
 resource "digitalocean_tag" "vpc_only" {
@@ -288,6 +266,12 @@ resource "digitalocean_firewall" "vpc_only" {
     protocol         = "tcp"
     port_range       = "1-65535"
     source_addresses = [data.digitalocean_vpc.main.ip_range]
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "22"
+    source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   # ... matching UDP and ICMP inbound rules, and outbound rules to 0.0.0.0/0 and ::/0

@@ -95,28 +95,6 @@ data "twingate_groups" "everyone" {
   name = "Everyone"
 }
 
-# SSH access to the Gateway Droplet through the Connector, for troubleshooting.
-resource "twingate_resource" "gateway_ssh" {
-  name              = "demo-gateway-ssh"
-  address           = digitalocean_droplet.gateway.ipv4_address_private
-  remote_network_id = twingate_remote_network.main.id
-
-  protocols = {
-    allow_icmp = false
-    tcp = {
-      policy = "RESTRICTED"
-      ports  = ["22"]
-    }
-    udp = {
-      policy = "DENY_ALL"
-    }
-  }
-
-  access_group {
-    group_id = data.twingate_groups.everyone.groups[0].id
-  }
-}
-
 resource "twingate_ssh_resource" "ssh_server" {
   name              = "demo-ssh-server"
   address           = digitalocean_droplet.ssh_server.ipv4_address_private
