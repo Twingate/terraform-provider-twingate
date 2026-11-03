@@ -10,7 +10,7 @@ test Web App on DigitalOcean, using a self-signed X.509 certificate authority.
 
 ## Prerequisites
 
-- Terraform >= 1.4
+- Terraform >= 1.11
 - A Twingate account with an [API token](https://docs.twingate.com/docs/api-overview)
 - A DigitalOcean account with an [API token](https://docs.digitalocean.com/reference/api/create-personal-access-token/)
 
