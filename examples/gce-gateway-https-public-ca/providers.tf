@@ -32,5 +32,5 @@ provider "google" {
 }
 
 provider "acme" {
-  server_url = local.letsencrypt.server_url
+  server_url = "https://acme-v02.api.letsencrypt.org/directory"
 }

@@ -25,12 +25,6 @@ variable "acme_email" {
   type        = string
 }
 
-variable "letsencrypt_staging" {
-  description = "Issue from the Let's Encrypt staging environment, which has higher rate limits but is not publicly trusted"
-  type        = bool
-  default     = false
-}
-
 variable "project_id" {
   description = "GCP project ID"
   type        = string

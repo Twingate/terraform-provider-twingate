@@ -4,18 +4,6 @@ locals {
   # The Twingate Client connects with the alias, so it must be covered by the wildcard
   # certificate. No public DNS record is needed for it, only the ACME challenge record.
   resource_alias = "httpbin.${var.domain}"
-
-  # Staging issues from a separate, untrusted hierarchy, so the ACME server, the root
-  # registered with Twingate, and the preferred chain all switch together
-  letsencrypt = var.letsencrypt_staging ? {
-    server_url      = "https://acme-staging-v02.api.letsencrypt.org/directory"
-    root_file       = "letsencrypt-stg-root-x1.pem"
-    preferred_chain = "(STAGING) Pretend Pear X1"
-    } : {
-    server_url      = "https://acme-v02.api.letsencrypt.org/directory"
-    root_file       = "isrg-root-x1.pem"
-    preferred_chain = "ISRG Root X1"
-  }
 }
 
 # ACME account with Let's Encrypt
@@ -38,7 +26,7 @@ resource "acme_certificate" "gateway" {
   key_type = "2048"
   # Let's Encrypt offers more than one chain (for example, YR1 -> Root YR, cross-signed by
   # ISRG Root X1). Ask for the one that ends at the root registered with Twingate below.
-  preferred_chain = local.letsencrypt.preferred_chain
+  preferred_chain = "ISRG Root X1"
 
   # Reissued on the next `terraform apply` once fewer than 30 days remain (certificates last 90 days)
   min_days_remaining = 30
@@ -58,11 +46,11 @@ resource "twingate_remote_network" "main" {
   name = "demo-gcp-https-public-ca-network"
 }
 
-# The Let's Encrypt root the Gateway's certificate chains to (ISRG Root X1, or Pretend Pear X1
-# for staging). It has to be the root, since Let's Encrypt picks the intermediate per order.
+# The Let's Encrypt root the Gateway's certificate chains to (ISRG Root X1). It has to be
+# the root, since Let's Encrypt picks the intermediate per order.
 resource "twingate_x509_certificate_authority" "letsencrypt" {
   name        = "demo-gcp-https-public-ca-letsencrypt-root"
-  certificate = file("${path.module}/${local.letsencrypt.root_file}")
+  certificate = file("${path.module}/isrg-root-x1.pem")
 }
 
 resource "twingate_gateway" "main" {
