@@ -14,14 +14,20 @@ chains to a publicly trusted root, clients do not need to install a CA certifica
 
 ## Prerequisites
 
-- Terraform >= 1.4
+- Terraform >= 1.11
 - A Twingate account with an [API token](https://docs.twingate.com/docs/api-overview)
 - A GCP project with the Compute Engine and Cloud DNS APIs enabled
 - A domain you control, delegated to a **public** Cloud DNS zone in that project
 - `gcloud` CLI authenticated, with [Application Default Credentials](https://cloud.google.com/docs/authentication/provide-credentials-adc)
-  for Terraform (`gcloud auth application-default login`). The ACME provider uses the same
-  credentials to create the challenge TXT record, so they need permission to change records in
-  the zone (for example, `roles/dns.admin`).
+  for Terraform:
+
+  ```bash
+  gcloud auth login
+  gcloud auth application-default login
+  ```
+
+  The ACME provider uses the same credentials to create the challenge TXT record, so they need
+  permission to change records in the zone (for example, `roles/dns.admin`).
 
 ## Usage
 
@@ -53,27 +59,6 @@ root the Gateway's certificate chains to. It is registered with Twingate as the 
 CA. Twingate needs the root rather than an intermediate, because Let's Encrypt can choose a
 different intermediate for each certificate it issues.
 
-## Let's Encrypt staging
-
-Let's Encrypt production has strict [rate limits](https://letsencrypt.org/docs/rate-limits/),
-including 5 failed validations per hostname per hour. While iterating, set:
-
-```hcl
-letsencrypt_staging = true
-```
-
-This issues from the [staging environment](https://letsencrypt.org/docs/staging-environment/) and
-registers its root, `letsencrypt-stg-root-x1.pem` ((STAGING) Pretend Pear X1), with Twingate
-instead. The Twingate Client accepts the Gateway's certificate, but browsers will show a
-certificate warning unless you add the staging root to your trust store.
-
-Switching between staging and production changes the ACME server, so replace the ACME account
-along with the certificate:
-
-```bash
-terraform apply -replace=acme_registration.main
-```
-
 ## Renewal
 
 Let's Encrypt certificates are valid for 90 days. The certificate is not renewed automatically:
@@ -86,6 +71,12 @@ With the Twingate Client connected, open:
 
 ```text
 https://httpbin.<domain>/headers
+```
+
+Or test from the command line:
+
+```bash
+curl https://httpbin.<domain>/headers
 ```
 
 httpbin echoes back the request headers it receives, so you can confirm the
@@ -112,7 +103,9 @@ sudo docker ps --filter name=httpbin
 ```
 
 If certificate issuance fails during `terraform apply`, check that `domain` is in a public zone
-in `project_id` and that your credentials can create records in it.
+in `project_id` and that your credentials can create records in it. Let's Encrypt
+[rate limits](https://letsencrypt.org/docs/rate-limits/) failed validations to 5 per hostname per
+hour, so fix the cause before retrying.
 
 ## Clean up
 
