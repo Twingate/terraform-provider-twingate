@@ -21,7 +21,7 @@ variable "domain" {
 }
 
 variable "acme_email" {
-  description = "Email address for the Let's Encrypt account (expiry notices)"
+  description = "Email address for the Let's Encrypt account"
   type        = string
 }
 

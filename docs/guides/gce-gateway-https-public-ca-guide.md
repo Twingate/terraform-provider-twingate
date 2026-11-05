@@ -8,7 +8,7 @@ description: "Deploy a Twingate Gateway for an HTTPS Web App on Google Compute E
 
 This guide walks through deploying a Twingate Gateway on Google Compute Engine (GCE) in front of a private Web App. The Gateway terminates TLS for the Resource using a wildcard certificate issued by [Let's Encrypt](https://letsencrypt.org/), then forwards each request to the upstream app with identity headers injected. The example uses [httpbin](https://github.com/mccutchen/go-httpbin) as the Web App so you can see the injected headers.
 
-Terraform requests the certificate with the [ACME provider](https://registry.terraform.io/providers/vancluever/acme/latest/docs), proving domain ownership with a DNS-01 challenge against Cloud DNS. Because the certificate chains to a publicly trusted root, clients do not need to install a CA certificate.
+Terraform requests the certificate with the [ACME provider](https://registry.terraform.io/providers/vancluever/acme/latest/docs) and proves domain ownership with a DNS-01 challenge against Cloud DNS. The certificate chains to a publicly trusted root, so clients do not need to install a CA certificate.
 
 This guide highlights the key sections. A complete, runnable example with full Terraform configurations, startup scripts, and usage instructions is available in the [`examples/gce-gateway-https-public-ca`](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/gce-gateway-https-public-ca) directory.
 
@@ -139,7 +139,7 @@ resource "acme_certificate" "gateway" {
 }
 ```
 
-Let's Encrypt certificates are valid for 90 days and are not renewed automatically. Running `terraform apply` within 30 days of expiry issues a new certificate and replaces the Gateway VM.
+Let's Encrypt certificates are valid for 90 days, and nothing renews them in the background. Run `terraform apply` within 30 days of expiry to issue a new certificate. The apply also replaces the Gateway VM.
 
 ## Creating the Twingate Resources
 

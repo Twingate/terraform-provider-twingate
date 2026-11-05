@@ -3,9 +3,9 @@
 This example deploys a Twingate Gateway, Connector, and [httpbin](https://github.com/mccutchen/go-httpbin)
 test Web App on GCE, using a wildcard certificate issued by [Let's Encrypt](https://letsencrypt.org/).
 
-Terraform requests the certificate with the [ACME provider](https://registry.terraform.io/providers/vancluever/acme/latest/docs),
-proving domain ownership with a DNS-01 challenge against Cloud DNS. Because the certificate
-chains to a publicly trusted root, clients do not need to install a CA certificate.
+Terraform requests the certificate with the [ACME provider](https://registry.terraform.io/providers/vancluever/acme/latest/docs)
+and proves domain ownership with a DNS-01 challenge against Cloud DNS. The certificate chains to
+a publicly trusted root, so clients do not need to install a CA certificate.
 
 > **Warning:** This example stores the Gateway's private key and the ACME account key
 > unencrypted in the Terraform state. Use a
@@ -55,15 +55,15 @@ the box. After you've confirmed it works, replace `data.twingate_groups.everyone
 ## Certificate authority
 
 `isrg-root-x1.pem` is [ISRG Root X1](https://letsencrypt.org/certificates/), the Let's Encrypt
-root the Gateway's certificate chains to. It is registered with Twingate as the Gateway's X.509
-CA. Twingate needs the root rather than an intermediate, because Let's Encrypt can choose a
+root the Gateway's certificate chains to. The example registers it with Twingate as the Gateway's
+X.509 CA. Twingate needs the root rather than an intermediate, because Let's Encrypt can choose a
 different intermediate for each certificate it issues.
 
 ## Renewal
 
-Let's Encrypt certificates are valid for 90 days. The certificate is not renewed automatically:
-running `terraform apply` within 30 days of expiry (`min_days_remaining` in `twingate.tf`)
-issues a new one and replaces the Gateway VM.
+Let's Encrypt certificates are valid for 90 days, and nothing renews them in the background. Run
+`terraform apply` within 30 days of expiry (`min_days_remaining` in `twingate.tf`) to issue a new
+certificate. The apply also replaces the Gateway VM.
 
 ## Accessing httpbin
 
@@ -79,8 +79,9 @@ Or test from the command line:
 curl https://httpbin.<domain>/headers
 ```
 
-httpbin echoes back the request headers it receives, so you can confirm the
-headers configured under `webApp.requestHeaders` in `config.yaml.tftpl` and in `twingate.tf` under `twingate_web_app_resource.request_header_rewrites` are injected by the Gateway.
+httpbin echoes back the request headers it receives. Use it to confirm that the Gateway injects
+the headers from `webApp.requestHeaders` in `config.yaml.tftpl` and from
+`twingate_web_app_resource.request_header_rewrites` in `twingate.tf`.
 
 ## Troubleshooting
 
