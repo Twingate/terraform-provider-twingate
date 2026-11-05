@@ -10,6 +10,3 @@ project_id = "your-gcp-project"
 # The certificate covers *.<domain>, and the Resource alias is httpbin.<domain>
 domain     = "gce.example.com"
 acme_email = "you@example.com"
-
-# Optional: issue from Let's Encrypt staging while iterating (not publicly trusted)
-# letsencrypt_staging = true
