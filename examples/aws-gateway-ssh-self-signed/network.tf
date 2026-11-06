@@ -40,6 +40,9 @@ resource "aws_route_table_association" "main" {
   route_table_id = aws_route_table.main.id
 }
 
+# Allows inbound traffic between instances in the group, plus SSH from anywhere for
+# troubleshooting. Every instance only needs outbound connections to the internet
+# (Twingate, package mirrors).
 resource "aws_security_group" "internal" {
   name   = "demo-internal"
   vpc_id = aws_vpc.main.id
@@ -49,6 +52,14 @@ resource "aws_security_group" "internal" {
     from_port = 0
     to_port   = 65535
     self      = true
+  }
+
+  ingress {
+    protocol         = "tcp"
+    from_port        = 22
+    to_port          = 22
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
