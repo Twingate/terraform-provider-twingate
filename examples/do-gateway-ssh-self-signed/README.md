@@ -26,6 +26,18 @@ terraform apply
 
 See `variables.tf` for the full list of inputs.
 
+## Network access
+
+A DigitalOcean cloud firewall (`network.tf`) allows inbound traffic to the Gateway,
+Connector, and SSH server Droplets from inside the VPC, plus SSH (port 22) from anywhere
+for troubleshooting. Outbound connections are unrestricted. Components talk to each other
+over private IPs: the Connector reaches the Gateway on its private address, and the Gateway
+reaches the SSH server on its private address.
+
+## Access control
+
+The SSH Resource grants access to the `Everyone` group so the example works out of the box. After you've confirmed it works, replace `data.twingate_groups.everyone` in `twingate.tf` with the groups that should have access.
+
 ## Resource alias
 
 By default, users connect to the SSH server by its internal IP:
@@ -49,11 +61,19 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-SSH into the gateway droplet, then view the logs:
+SSH into the Gateway Droplet on its public IP as `root` or use the built in web console. If it is the first time accessing the Droplet, you will need the password associated with the Droplet that DigitalOcean emails to the owner of the API key. You will then be prompted to change the password and log in again:
 
 ```bash
-sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
+ssh root@<gateway-public-ip>
 ```
+
+Then view the logs:
+
+```bash
+journalctl -u gateway -f -o cat
+```
+
+The Connector and SSH server Droplets are reachable the same way.
 
 ## Clean up
 
