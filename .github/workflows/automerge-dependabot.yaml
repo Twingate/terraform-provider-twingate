@@ -8,7 +8,9 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && !github.event.repository.fork }}
+    # Both checks: user.login = Dependabot opened the PR; actor = Dependabot
+    # triggered this run (so a human-pushed commit on its branch isn't auto-approved).
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && github.actor == 'dependabot[bot]' && !github.event.repository.fork }}
     steps:
       - name: Dependabot metadata
         id: metadata
