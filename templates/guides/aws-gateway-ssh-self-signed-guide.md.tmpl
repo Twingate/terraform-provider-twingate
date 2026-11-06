@@ -132,7 +132,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${aws_network_interface.gateway.private_ip}:${local.gateway_port}"
+  address           = "${aws_instance.gateway.private_ip}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
@@ -162,6 +162,10 @@ resource "twingate_ssh_resource" "ssh_server" {
   }
 }
 ```
+
+The Gateway is registered with its private IP, so the Connector reaches it inside the VPC.
+
+-> **Note:** The SSH Resource grants access to the `Everyone` group so the example works right away. Once it's running, replace it with the groups that should reach the SSH server.
 
 The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
@@ -214,10 +218,10 @@ locals {
 
 ## Deploying the EC2 instances
 
-The three instances are deployed on a private subnet with a NAT Gateway for internet access. Each instance uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
+The three instances are deployed on a public subnet in the example's VPC. Each instance uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
 
 - **Connector Instance** — Receives connector tokens via template variables and runs the Twingate connector setup script.
-- **Gateway Instance** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service.
+- **Gateway Instance** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service. Twingate reaches it on its private IP.
 - **SSH Server Instance** — Creates a `gateway` user and configures `sshd` to trust the SSH CA:
 
 ```bash
@@ -240,9 +244,44 @@ mkdir -p /etc/ssh/auth_principals
 echo "gateway" > /etc/ssh/auth_principals/gateway
 echo "AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u" >> /etc/ssh/sshd_config
 
-systemctl restart sshd
+systemctl restart ssh
 ```
 
 The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
 Keys and certificates are injected into instances via `templatefile()` in `user_data`.
+
+## Restricting inbound traffic
+
+A security group allows inbound TCP traffic between all three instances, plus SSH (port 22) from anywhere for troubleshooting, and leaves outbound connections unrestricted. Each instance is attached to it with `vpc_security_group_ids = [aws_security_group.internal.id]`.
+
+```terraform
+resource "aws_security_group" "internal" {
+  name   = "demo-internal"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    protocol  = "tcp"
+    from_port = 0
+    to_port   = 65535
+    self      = true
+  }
+
+  ingress {
+    protocol         = "tcp"
+    from_port        = 22
+    to_port          = 22
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+```
+
+SSH to the instances uses EC2 Instance Connect, which authorizes each connection with your AWS credentials. To limit port 22 to the EC2 Instance Connect service instead of the whole internet, replace the CIDR blocks with `prefix_list_ids = [data.aws_ec2_managed_prefix_list.instance_connect.id]`, where the data source looks up `com.amazonaws.<region>.ec2-instance-connect`. That blocks the AWS CLI method, which connects from your own IP.

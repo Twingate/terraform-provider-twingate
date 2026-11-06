@@ -26,6 +26,18 @@ terraform apply
 
 See `variables.tf` for the full list of inputs.
 
+## Network access
+
+A security group (`network.tf`) allows inbound TCP traffic between the Gateway,
+Connector, and SSH server instances, plus SSH (port 22) from anywhere for
+troubleshooting. Outbound connections are unrestricted. Components talk to each other
+over private IPs: the Connector reaches the Gateway on its private address, and the Gateway
+reaches the SSH server on its private address.
+
+## Access control
+
+The SSH Resource grants access to the `Everyone` group so the example works out of the box. After you've confirmed it works, replace `data.twingate_groups.everyone` in `twingate.tf` with the groups that should have access.
+
 ## Resource alias
 
 By default, users connect to the SSH server by its internal IP:
@@ -49,11 +61,27 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-SSH into the gateway instance via the EC2 console, then view the logs:
+SSH into the Gateway instance as `ubuntu` with EC2 Instance Connect, either from the EC2
+console (**Instances > demo-gateway > Connect**) or with the AWS CLI (v2.12+):
 
 ```bash
-sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
+aws ec2-instance-connect ssh \
+  --instance-id "$(terraform output -json instance_ids | jq -r .gateway)" \
+  --os-user ubuntu
 ```
+
+`terraform output instance_ids` lists the IDs of all three instances.
+
+Both methods authorize the connection with your AWS credentials and push a short-lived
+SSH key to the instance, so no key pair is needed.
+
+Then view the logs:
+
+```bash
+sudo journalctl -u gateway -f -o cat
+```
+
+The Connector and SSH server instances are reachable the same way.
 
 ## Clean up
 
