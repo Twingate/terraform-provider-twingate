@@ -28,11 +28,13 @@ See `variables.tf` for the full list of inputs.
 
 ## Network access
 
-A security group (`network.tf`) allows inbound TCP traffic between the Gateway,
-Connector, and SSH server instances, plus SSH (port 22) from anywhere for
-troubleshooting. Outbound connections are unrestricted. Components talk to each other
-over private IPs: the Connector reaches the Gateway on its private address, and the Gateway
-reaches the SSH server on its private address.
+The Gateway, Connector, and SSH server instances run in a private subnet (`network.tf`)
+with no public IPs and no ports open to the internet. Their outbound traffic goes through
+a NAT gateway. A security group allows inbound TCP traffic between the instances, plus SSH
+(port 22) from an EC2 Instance Connect Endpoint for troubleshooting.
+
+Everything talks over private IPs: the Connector reaches the Gateway, and the Gateway
+reaches the SSH server, on their private addresses.
 
 ## Access control
 
@@ -61,8 +63,8 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-SSH into the Gateway instance as `ubuntu` with EC2 Instance Connect, either from the EC2
-console (**Instances > demo-gateway > Connect**) or with the AWS CLI (v2.12+):
+SSH into the Gateway instance as `ubuntu` through the EC2 Instance Connect Endpoint, either
+from the EC2 console (**Instances > demo-gateway > Connect > EC2 Instance Connect Endpoint**) or with the AWS CLI (v2.12+):
 
 ```bash
 aws ec2-instance-connect ssh \
@@ -72,13 +74,13 @@ aws ec2-instance-connect ssh \
 
 `terraform output instance_ids` lists the IDs of all three instances.
 
-Both methods authorize the connection with your AWS credentials and push a short-lived
-SSH key to the instance, so no key pair is needed.
+AWS authorizes both methods with your AWS credentials and pushes a short-lived SSH key to
+the instance, so you don't need a key pair.
 
 Then view the logs:
 
 ```bash
-sudo journalctl -u gateway -f -o cat
+sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
 ```
 
 The Connector and SSH server instances are reachable the same way.
