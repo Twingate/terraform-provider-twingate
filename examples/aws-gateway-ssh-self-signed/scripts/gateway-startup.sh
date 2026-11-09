@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 BINARY_URL="https://github.com/Twingate/gateway/releases/latest/download/gateway_Linux_x86_64.tar.gz"
 GATEWAY_DIR="/etc/gateway"
@@ -26,11 +26,13 @@ cat > "$GATEWAY_DIR/config.yaml" <<'CONFIG'
 ${gateway_config}
 CONFIG
 
-curl -sfL "$BINARY_URL" | tar xz -C "$GATEWAY_DIR"
+# Retry because outbound access through the NAT gateway can lag behind boot.
+curl -sSfL --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 10 \
+  "$BINARY_URL" | tar xz -C "$GATEWAY_DIR"
 
 cat > /etc/systemd/system/gateway.service <<EOF
 [Unit]
-Description=Twingate Access Gateway
+Description=Twingate Gateway
 After=network.target
 
 [Service]
