@@ -69,7 +69,8 @@ from the EC2 console (**Instances > demo-gateway > Connect > EC2 Instance Connec
 ```bash
 aws ec2-instance-connect ssh \
   --instance-id "$(terraform output -json instance_ids | jq -r .gateway)" \
-  --os-user ubuntu
+  --os-user ubuntu \
+  --connection-type eice
 ```
 
 `terraform output instance_ids` lists the IDs of all three instances.

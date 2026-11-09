@@ -26,9 +26,15 @@ cat > "$GATEWAY_DIR/config.yaml" <<'CONFIG'
 ${gateway_config}
 CONFIG
 
+ARCHIVE=$(mktemp)
+
 # Retry because outbound access through the NAT gateway can lag behind boot.
+# Download to a file so a retry restarts the file instead of appending to it.
 curl -sSfL --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 10 \
-  "$BINARY_URL" | tar xz -C "$GATEWAY_DIR"
+  -o "$ARCHIVE" "$BINARY_URL"
+
+tar xzf "$ARCHIVE" -C "$GATEWAY_DIR"
+rm -f "$ARCHIVE"
 
 cat > /etc/systemd/system/gateway.service <<EOF
 [Unit]
