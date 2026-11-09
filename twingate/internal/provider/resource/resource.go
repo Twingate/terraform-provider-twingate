@@ -822,25 +822,32 @@ func getKeyValueMap(typesMap types.Map) map[string]string {
 }
 
 func checkGlobalID(val string) error {
-	const expectedTokens = 2
-
-	data, err := base64.StdEncoding.DecodeString(val)
+	name, err := globalIDType(val)
 	if err != nil {
-		return ErrWrongGlobalID
+		return err
 	}
-
-	tokens := strings.Split(string(data), ":")
-	if len(tokens) != expectedTokens {
-		return ErrWrongGlobalID
-	}
-
-	name := tokens[0]
 
 	if name != "Group" && name != "ServiceAccount" {
 		return ErrWrongGlobalID
 	}
 
 	return nil
+}
+
+func globalIDType(val string) (string, error) {
+	const expectedTokens = 2
+
+	data, err := base64.StdEncoding.DecodeString(val)
+	if err != nil {
+		return "", ErrWrongGlobalID
+	}
+
+	tokens := strings.Split(string(data), ":")
+	if len(tokens) != expectedTokens {
+		return "", ErrWrongGlobalID
+	}
+
+	return tokens[0], nil
 }
 
 func getOptionalBool(val types.Bool) *bool {

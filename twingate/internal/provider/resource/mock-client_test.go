@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,13 +32,45 @@ const (
 func newMockedClient(t *testing.T, responseBody string) (*client.Client, *string) {
 	t.Helper()
 
+	var requestBody string
+
+	apiClient := newHTTPMockedClient(t, func(body string) string {
+		requestBody = body
+
+		return responseBody
+	})
+
+	return apiClient, &requestBody
+}
+
+func newRoutedMockedClient(t *testing.T, defaultResponse string, routes map[string]string) (*client.Client, *[]string) {
+	t.Helper()
+
+	var requests []string
+
+	apiClient := newHTTPMockedClient(t, func(body string) string {
+		requests = append(requests, body)
+
+		for operation, response := range routes {
+			if strings.Contains(body, operation) {
+				return response
+			}
+		}
+
+		return defaultResponse
+	})
+
+	return apiClient, &requests
+}
+
+func newHTTPMockedClient(t *testing.T, respond func(body string) string) *client.Client {
+	t.Helper()
+
 	apiClient := client.NewClient(t.Context(), "https://test.twindev.com", "xxxx",
 		time.Second, 0, client.DefaultAgent, "test", client.CacheOptions{})
 
 	httpmock.ActivateNonDefault(apiClient.HTTPClient)
 	t.Cleanup(httpmock.DeactivateAndReset)
-
-	var requestBody string
 
 	httpmock.RegisterResponder(http.MethodPost, apiClient.GraphqlServerURL, func(req *http.Request) (*http.Response, error) {
 		raw, err := io.ReadAll(req.Body)
@@ -45,12 +78,10 @@ func newMockedClient(t *testing.T, responseBody string) (*client.Client, *string
 			return nil, err
 		}
 
-		requestBody = string(raw)
-
-		return httpmock.NewStringResponse(http.StatusOK, responseBody), nil
+		return httpmock.NewStringResponse(http.StatusOK, respond(string(raw))), nil
 	})
 
-	return apiClient, &requestBody
+	return apiClient
 }
 
 // plannedTagsAll is the `tags_all` value ModifyPlan computes for the given `tags`

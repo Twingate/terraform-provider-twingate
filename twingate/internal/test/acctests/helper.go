@@ -202,6 +202,10 @@ func TerraformResource(name string) string {
 	return ResourceName(resource.TwingateResource, name)
 }
 
+func TerraformResourceAccess(name string) string {
+	return ResourceName(resource.TwingateResourceAccess, name)
+}
+
 func TerraformRemoteNetwork(name string) string {
 	return ResourceName(resource.TwingateRemoteNetwork, name)
 }
@@ -545,6 +549,27 @@ func CheckTwingateGroupDestroy(s *terraform.State) error {
 		group, _ := providerClient.ReadGroup(context.Background(), groupID)
 		if group != nil {
 			return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, groupID)
+		}
+	}
+
+	return nil
+}
+
+func CheckTwingateResourceAccessDestroy(s *terraform.State) error {
+	for _, resourceState := range s.RootModule().Resources {
+		if resourceState.Type != resource.TwingateResourceAccess {
+			continue
+		}
+
+		res, _ := providerClient.ReadResource(context.Background(), resourceState.Primary.Attributes[attr.ResourceID])
+		if res == nil {
+			continue
+		}
+
+		for _, access := range res.GroupsAccess {
+			if access.GroupID == resourceState.Primary.Attributes[attr.GroupID] {
+				return fmt.Errorf("%w with ID %s", ErrResourceStillPresent, resourceState.Primary.ID)
+			}
 		}
 	}
 
