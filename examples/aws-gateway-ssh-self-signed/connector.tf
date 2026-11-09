@@ -15,4 +15,12 @@ resource "aws_instance" "connector" {
   }
 
   tags = { Name = "demo-connector" }
+
+  # The startup script runs once at boot and downloads the Connector, so the full
+  # outbound path (private subnet -> NAT gateway -> internet gateway) must exist
+  # before the instance launches.
+  depends_on = [
+    aws_route_table_association.private,
+    aws_route_table_association.public,
+  ]
 }

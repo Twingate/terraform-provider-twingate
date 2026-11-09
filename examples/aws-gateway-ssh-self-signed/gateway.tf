@@ -9,7 +9,7 @@ locals {
 }
 
 # replace_triggered_by only accepts resource references, so the rendered config is
-# wrapped here to replace the gateway whenever it changes.
+# wrapped here to replace the Gateway whenever it changes.
 resource "terraform_data" "gateway_config" {
   input = local.gateway_config
 }
@@ -38,4 +38,12 @@ resource "aws_instance" "gateway" {
   }
 
   tags = { Name = "demo-gateway" }
+
+  # The startup script runs once at boot and downloads the Gateway binary, so the
+  # full outbound path (private subnet -> NAT gateway -> internet gateway) must
+  # exist before the instance launches.
+  depends_on = [
+    aws_route_table_association.private,
+    aws_route_table_association.public,
+  ]
 }
