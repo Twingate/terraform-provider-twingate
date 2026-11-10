@@ -279,7 +279,13 @@ resource "aws_security_group" "internal" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+```
 
+## Troubleshooting
+
+The instances have no public IPs, so the example adds an EC2 Instance Connect Endpoint to reach them for troubleshooting:
+
+```terraform
 resource "aws_security_group" "eic" {
   name   = "demo-eic-endpoint"
   vpc_id = aws_vpc.main.id
@@ -299,3 +305,5 @@ resource "aws_ec2_instance_connect_endpoint" "main" {
 ```
 
 The EC2 console and `aws ec2-instance-connect ssh` both connect through the endpoint. Each connection is authorized by IAM: the caller needs `ec2-instance-connect:OpenTunnel` on the endpoint and `ec2-instance-connect:SendSSHPublicKey` on the instance. AWS then pushes a short-lived SSH key to the instance, so no key pair is needed.
+
+See the [example README](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/aws-gateway-ssh-self-signed#troubleshooting) for the connection commands and how to view the Gateway logs.

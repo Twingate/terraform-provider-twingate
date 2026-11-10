@@ -63,28 +63,26 @@ ssh ssh-server.int
 
 ## Troubleshooting
 
-SSH into the Gateway instance as `ubuntu` through the EC2 Instance Connect Endpoint, either
-from the EC2 console (**Instances > demo-gateway > Connect > EC2 Instance Connect Endpoint**) or with the AWS CLI (v2.12+):
+SSH into any instance as `ubuntu` through the EC2 Instance Connect Endpoint, either
+from the EC2 console by selecting the instance from the instance list and navigating to the web console (**Connect > EC2 Instance Connect Endpoint**) or with the AWS CLI (v2.12+).
+Set `INSTANCE` to `gateway`, `connector` or `ssh_server`:
 
 ```bash
+INSTANCE=gateway
 aws ec2-instance-connect ssh \
-  --instance-id "$(terraform output -json instance_ids | jq -r .gateway)" \
+  --instance-id "$(terraform output -json instance_ids | jq -r ".$INSTANCE")" \
   --os-user ubuntu \
   --connection-type eice
 ```
 
-`terraform output instance_ids` lists the IDs of all three instances.
-
 AWS authorizes both methods with your AWS credentials and pushes a short-lived SSH key to
 the instance, so you don't need a key pair.
 
-Then view the logs:
+On the Gateway, view the logs:
 
 ```bash
 sudo journalctl -u gateway -f -o cat | jq -rR 'fromjson? // empty'
 ```
-
-The Connector and SSH server instances are reachable the same way.
 
 ## Clean up
 
