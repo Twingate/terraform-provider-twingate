@@ -8,12 +8,6 @@ locals {
   })
 }
 
-# replace_triggered_by only accepts resource references, so the rendered config is
-# wrapped here to replace the Gateway whenever it changes.
-resource "terraform_data" "gateway_config" {
-  input = local.gateway_config
-}
-
 resource "aws_instance" "gateway" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
@@ -27,14 +21,12 @@ resource "aws_instance" "gateway" {
     gateway_config = local.gateway_config
   })
 
+  # cloud-init only runs user_data on first boot, so a new certificate, key or
+  # config replaces the instance instead of updating it in place.
+  user_data_replace_on_change = true
+
   root_block_device {
     encrypted = true
-  }
-
-  lifecycle {
-    replace_triggered_by = [
-      terraform_data.gateway_config,
-    ]
   }
 
   tags = { Name = "demo-gateway" }

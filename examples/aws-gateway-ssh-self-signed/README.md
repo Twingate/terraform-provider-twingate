@@ -10,7 +10,7 @@ self-signed X.509 and SSH certificate authorities.
 
 ## Prerequisites
 
-- Terraform >= 1.4
+- Terraform >= 1.11
 - A Twingate account with an [API token](https://docs.twingate.com/docs/api-overview)
 - An AWS account with credentials configured (`aws configure` or environment variables)
 
