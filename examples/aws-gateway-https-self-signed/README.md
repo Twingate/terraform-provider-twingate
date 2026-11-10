@@ -123,17 +123,17 @@ To rotate it before it expires, or if its private key is compromised:
 
 ## Troubleshooting
 
-SSH into the Gateway instance as `ubuntu` through the EC2 Instance Connect Endpoint, either
-from the EC2 console (**Instances > demo-https-gateway > Connect > EC2 Instance Connect Endpoint**) or with the AWS CLI (v2.12+):
+SSH into any instance as `ubuntu` through the EC2 Instance Connect Endpoint, either
+from the EC2 console by selecting the instance from the instance list and navigating to the web console (**Connect > EC2 Instance Connect Endpoint**) or with the AWS CLI (v2.12+).
+Set `INSTANCE` to `gateway`, `connector` or `httpbin`:
 
 ```bash
+INSTANCE=gateway
 aws ec2-instance-connect ssh \
-  --instance-id "$(terraform output -json instance_ids | jq -r .gateway)" \
+  --instance-id "$(terraform output -json instance_ids | jq -r ".$INSTANCE")" \
   --os-user ubuntu \
   --connection-type eice
 ```
-
-`terraform output instance_ids` lists the IDs of all three instances.
 
 AWS authorizes both methods with your AWS credentials and pushes a short-lived SSH key to
 the instance, so you don't need a key pair.
@@ -149,8 +149,6 @@ On httpbin, check that the container is running:
 ```bash
 sudo docker ps --filter name=httpbin
 ```
-
-The Connector and httpbin instances are reachable the same way.
 
 ## Clean up
 
