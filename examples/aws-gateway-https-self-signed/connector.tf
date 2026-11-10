@@ -10,6 +10,10 @@ resource "aws_instance" "connector" {
     twingate_url  = "https://${var.tg_network}.${var.tg_url}"
   })
 
+  # cloud-init only runs user_data on first boot, so new Connector tokens replace
+  # the instance instead of updating it in place.
+  user_data_replace_on_change = true
+
   root_block_device {
     encrypted = true
   }

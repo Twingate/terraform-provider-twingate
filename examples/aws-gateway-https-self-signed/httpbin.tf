@@ -12,6 +12,10 @@ resource "aws_instance" "httpbin" {
     httpbin_port = local.httpbin_port
   })
 
+  # cloud-init only runs user_data on first boot, so a port change replaces the
+  # instance instead of updating it in place.
+  user_data_replace_on_change = true
+
   root_block_device {
     encrypted = true
   }
