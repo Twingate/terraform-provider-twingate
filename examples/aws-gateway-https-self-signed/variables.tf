@@ -1,0 +1,34 @@
+variable "tg_api_token" {
+  description = "Twingate API token"
+  type        = string
+  sensitive   = true
+}
+
+variable "tg_network" {
+  description = "Twingate network name"
+  type        = string
+}
+
+variable "tg_url" {
+  description = "Twingate URL base domain"
+  type        = string
+  default     = "twingate.com"
+}
+
+variable "resource_alias" {
+  description = "DNS alias for the HTTPS resource (added as a DNS SAN in the TLS cert)"
+  type        = string
+  default     = "aws-http-bin.demo.int"
+}
+
+variable "aws_region" {
+  description = "AWS region for resources"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.small"
+}
