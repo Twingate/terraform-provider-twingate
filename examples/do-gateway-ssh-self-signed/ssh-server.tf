@@ -5,8 +5,11 @@ resource "digitalocean_droplet" "ssh_server" {
   image  = "debian-13-x64"
 
   vpc_uuid = data.digitalocean_vpc.main.id
+  tags     = [digitalocean_tag.vpc_only.id]
 
   user_data = templatefile("${path.module}/scripts/ssh-server-startup.sh", {
     ssh_ca_public_key = tls_private_key.ssh_ca.public_key_openssh
   })
+
+  depends_on = [digitalocean_firewall.vpc_only]
 }
