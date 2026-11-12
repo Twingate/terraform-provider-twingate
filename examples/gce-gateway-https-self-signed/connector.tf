@@ -1,0 +1,27 @@
+resource "google_compute_instance" "connector" {
+  name         = "demo-https-connector"
+  machine_type = "e2-micro"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+    }
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.main.id
+  }
+
+  tags = ["iap-ssh"]
+
+  metadata = {
+    connector-access-token  = twingate_connector_tokens.main.access_token
+    connector-refresh-token = twingate_connector_tokens.main.refresh_token
+    connector-url           = "https://${var.tg_network}.${var.tg_url}"
+  }
+
+  metadata_startup_script = file("${path.module}/scripts/connector-startup.sh")
+
+  # The startup script downloads the Connector installer, so NAT must exist before boot
+  depends_on = [google_compute_router_nat.main]
+}
