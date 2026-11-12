@@ -2,6 +2,8 @@ module github.com/Twingate/terraform-provider-twingate/upgrader
 
 go 1.26.0
 
+toolchain go1.26.10
+
 require (
 	github.com/hashicorp/hcl/v2 v2.25.0
 	github.com/pmezard/go-difflib v1.0.0
