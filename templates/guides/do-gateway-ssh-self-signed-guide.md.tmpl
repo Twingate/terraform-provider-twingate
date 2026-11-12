@@ -35,8 +35,6 @@ The setup deploys three DigitalOcean Droplets:
 - A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
 - A DigitalOcean account with an [API token](https://docs.digitalocean.com/reference/api/create-personal-access-token/).
 
--> **Note:** The example provisions its own VPC. Droplets receive public IPs by default, so no NAT configuration is needed.
-
 ## Setting up the providers
 
 ```terraform
@@ -132,7 +130,7 @@ resource "twingate_x509_certificate_authority" "tls" {
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${digitalocean_reserved_ip.gateway.ip_address}:${local.gateway_port}"
+  address           = "${digitalocean_droplet.gateway.ipv4_address_private}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
@@ -162,6 +160,10 @@ resource "twingate_ssh_resource" "ssh_server" {
   }
 }
 ```
+
+The Gateway is registered with its private IP, so the Connector reaches it inside the VPC.
+
+-> **Note:** The SSH Resource grants access to the `Everyone` group so the example works right away. Once it's running, replace it with the groups that should reach the SSH server.
 
 The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
@@ -214,10 +216,10 @@ locals {
 
 ## Deploying the Droplets
 
-The three Droplets are deployed on a dedicated VPC. Each Droplet uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
+The three Droplets are deployed on the region's default VPC. Each Droplet uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
 
 - **Connector Droplet** — Receives connector tokens via template variables and runs the Twingate connector setup script.
-- **Gateway Droplet** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service. A reserved IP provides a stable address for Twingate registration.
+- **Gateway Droplet** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service. Twingate reaches it on its private IP.
 - **SSH Server Droplet** — Creates a `gateway` user and configures `sshd` to trust the SSH CA:
 
 ```bash
@@ -245,4 +247,33 @@ systemctl restart sshd
 
 The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
-The Gateway Droplet uses a reserved IP so its address is stable and can be registered with Twingate. Keys and certificates are injected into Droplets via `templatefile()` in `user_data`.
+Keys and certificates are injected into Droplets via `templatefile()` in `user_data`.
+
+## Restricting inbound traffic
+
+A DigitalOcean cloud firewall allows inbound traffic to all three Droplets from inside the VPC, plus SSH (port 22) from anywhere for troubleshooting, and leaves outbound connections unrestricted. Add `tags = [digitalocean_tag.vpc_only.id]` and `depends_on = [digitalocean_firewall.vpc_only]` to each Droplet resource to enforce the firewall rules.
+
+```terraform
+resource "digitalocean_tag" "vpc_only" {
+  name = "demo-ssh-vpc-only"
+}
+
+resource "digitalocean_firewall" "vpc_only" {
+  name = "demo-ssh-vpc-only"
+  tags = [digitalocean_tag.vpc_only.id]
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "1-65535"
+    source_addresses = [data.digitalocean_vpc.main.ip_range]
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "22"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # ... matching UDP and ICMP inbound rules, and outbound rules to 0.0.0.0/0 and ::/0
+}
+```
