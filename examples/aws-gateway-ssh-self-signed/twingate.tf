@@ -1,12 +1,13 @@
 # --- AMI Lookup ---
 
-data "aws_ami" "debian" {
+# Ubuntu ships with ec2-instance-connect, so you can SSH in from the EC2 console.
+data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["136693071363"] # Debian official
+  owners      = ["099720109477"] # Canonical
 
   filter {
     name   = "name"
-    values = ["debian-12-amd64-*"]
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
   }
 
   filter {
@@ -33,10 +34,9 @@ resource "tls_self_signed_cert" "x509_ca" {
   is_ca_certificate     = true
 
   allowed_uses = [
+    "cert_signing",
     "digital_signature",
     "key_encipherment",
-    "cert_signing",
-    "crl_signing",
   ]
 }
 
@@ -86,13 +86,22 @@ resource "twingate_ssh_certificate_authority" "ssh" {
 }
 
 resource "twingate_x509_certificate_authority" "tls" {
-  name        = "demo-gateway-x509-ca"
+  # CA names must be unique, so the suffix lets the old and new CA coexist during
+  # rotation. Since the certificate is write-only, the name change is also what
+  # tells Terraform to replace this CA when the certificate changes.
+  name        = "demo-gateway-x509-ca-${substr(sha256(tls_self_signed_cert.x509_ca.cert_pem), 0, 8)}"
   certificate = tls_self_signed_cert.x509_ca.cert_pem
+
+  # The Gateway references this CA, so the API refuses to delete it while in use.
+  # Create the new CA and repoint the Gateway before deleting the old one.
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${aws_network_interface.gateway.private_ip}:${local.gateway_port}"
+  address           = "${aws_instance.gateway.private_ip}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
