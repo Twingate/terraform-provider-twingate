@@ -1,0 +1,64 @@
+# Scans the provider and the upgrader for known vulnerabilities in Go modules
+# AND the Go standard library. Dependabot does not track stdlib CVEs or the
+# go/toolchain directives, so this is the only check that catches a stale
+# toolchain (see the toolchain directive in go.mod).
+name: govulncheck
+permissions:
+  contents: read
+on:
+  pull_request:
+    branches:
+      - main
+      - "hotfix/**"
+  push:
+    branches:
+      - main
+  schedule:
+    # New advisories land without any code change, so re-scan main weekly.
+    - cron: "0 7 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOVULNCHECK_VERSION: v1.9.0
+
+jobs:
+  govulncheck:
+    name: govulncheck (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - "."
+          - "tools/upgrader"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache: true
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      - name: Run govulncheck
+        working-directory: ${{ matrix.module }}
+        run: go run golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION} ./...
+
+      - name: Report Status
+        if: always() && github.event_name == 'schedule'
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # 2.5.0
+        with:
+          status: ${{ job.status }}
+          notification_title: "Terraform Provider {workflow} has {status_message}"
+          message_format: "{emoji} *{workflow} (<{run_url}|${{ matrix.module }}>)* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}>"
+          notify_when: 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_OPS_WEBHOOK }}
