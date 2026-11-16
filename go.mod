@@ -17,7 +17,7 @@ require (
 	github.com/jarcoal/httpmock v1.4.2
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/stretchr/testify v1.12.1
-	golang.org/x/crypto v0.58.0
+	golang.org/x/crypto v0.59.0
 	golang.org/x/sync v0.25.0
 )
 
