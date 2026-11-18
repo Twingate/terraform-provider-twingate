@@ -53,6 +53,40 @@ func newMockedClient(t *testing.T, responseBody string) (*client.Client, *string
 	return apiClient, &requestBody
 }
 
+// newSequencedMockedClient returns an API client served by httpmock that answers
+// successive requests with successive responses. The returned pointer captures
+// every request body in order; a request beyond the last response fails the test.
+func newSequencedMockedClient(t *testing.T, responses ...string) (*client.Client, *[]string) {
+	t.Helper()
+
+	apiClient := client.NewClient(t.Context(), "https://test.twindev.com", "xxxx",
+		time.Second, 0, client.DefaultAgent, "test", client.CacheOptions{})
+
+	httpmock.ActivateNonDefault(apiClient.HTTPClient)
+	t.Cleanup(httpmock.DeactivateAndReset)
+
+	var requestBodies []string
+
+	httpmock.RegisterResponder(http.MethodPost, apiClient.GraphqlServerURL, func(req *http.Request) (*http.Response, error) {
+		raw, err := io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		requestBodies = append(requestBodies, string(raw))
+
+		if len(requestBodies) > len(responses) {
+			t.Errorf("unexpected request #%d: %s", len(requestBodies), raw)
+
+			return httpmock.NewStringResponse(http.StatusInternalServerError, ""), nil
+		}
+
+		return httpmock.NewStringResponse(http.StatusOK, responses[len(requestBodies)-1]), nil
+	})
+
+	return apiClient, &requestBodies
+}
+
 // plannedTagsAll is the `tags_all` value ModifyPlan computes for the given `tags`
 // when the provider declares no default tags.
 func plannedTagsAll(tags types.Map) types.Map {
