@@ -1,0 +1,48 @@
+#!/bin/bash
+set -eo pipefail
+
+BINARY_URL="https://github.com/Twingate/gateway/releases/latest/download/gateway_Linux_x86_64.tar.gz"
+GATEWAY_DIR="/etc/gateway"
+
+mkdir -p "$GATEWAY_DIR"
+
+cat > "$GATEWAY_DIR/tls.crt" <<'CERT'
+${tls_cert}
+CERT
+
+cat > "$GATEWAY_DIR/tls.key" <<'KEY'
+${tls_key}
+KEY
+
+chmod 600 "$GATEWAY_DIR/tls.key"
+
+cat > "$GATEWAY_DIR/config.yaml" <<'CONFIG'
+${gateway_config}
+CONFIG
+
+ARCHIVE=$(mktemp)
+
+# Retry because outbound access through the NAT gateway can lag behind boot.
+# Download to a file so a retry restarts the file instead of appending to it.
+curl -sSfL --retry 10 --retry-delay 5 --retry-all-errors --connect-timeout 10 \
+  -o "$ARCHIVE" "$BINARY_URL"
+
+tar xzf "$ARCHIVE" -C "$GATEWAY_DIR"
+rm -f "$ARCHIVE"
+
+cat > /etc/systemd/system/gateway.service <<EOF
+[Unit]
+Description=Twingate Gateway
+After=network.target
+
+[Service]
+ExecStart=$GATEWAY_DIR/gateway start --config $GATEWAY_DIR/config.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now gateway
