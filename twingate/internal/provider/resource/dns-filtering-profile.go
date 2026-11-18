@@ -430,7 +430,7 @@ func (r *dnsFilteringProfile) Update(ctx context.Context, req resource.UpdateReq
 		}
 
 		originAllowedDomains = origin.AllowedDomains
-		originDeniedDomains = origin.AllowedDomains
+		originDeniedDomains = origin.DeniedDomains
 	}
 
 	if !allowedDomainsIsAuthoritative {
