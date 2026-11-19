@@ -5,6 +5,7 @@ const (
 	Name              = "name"
 	RemoteNetworkID   = "remote_network_id"
 	RemoteNetworkName = "remote_network_name"
+	ResourceID        = "resource_id"
 	Type              = "type"
 	IsActive          = "is_active"
 	Port              = "port"
