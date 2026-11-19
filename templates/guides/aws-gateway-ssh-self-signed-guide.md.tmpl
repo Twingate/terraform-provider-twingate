@@ -1,14 +1,14 @@
 ---
 subcategory: "aws"
 page_title: "AWS SSH Gateway with local SSH CA"
-description: "Deploy a Twingate SSH Access Gateway on AWS using a local SSH CA for SSH certificate signing."
+description: "Deploy a Twingate Gateway on AWS using a local SSH CA for SSH certificate signing."
 ---
 
 # AWS SSH Gateway with local SSH CA
 
-This guide walks through deploying a Twingate SSH Access Gateway on AWS using a local SSH CA. The Gateway holds the SSH CA private key and signs SSH certificates directly, enabling certificate-based authentication without an external signing service. For simplicity, the example also uses a self-signed X.509 CA for TLS.
+This guide walks through deploying a Twingate Gateway on AWS using a local SSH CA. The Gateway holds the SSH CA private key and signs SSH certificates itself, so you don't need an external signing service. To keep things simple, the example also uses a self-signed X.509 CA for TLS.
 
-This guide highlights the key sections. A complete, runnable example with full Terraform configurations, startup scripts, and usage instructions is available in the [`examples/aws-gateway-ssh-self-signed`](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/aws-gateway-ssh-self-signed) directory.
+This guide covers the key sections. The complete, runnable example, including startup scripts and usage instructions, is in the [`examples/aws-gateway-ssh-self-signed`](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/aws-gateway-ssh-self-signed) directory.
 
 ~> **Warning:** This example generates private keys and certificates that are stored unencrypted in the Terraform state. Use a [remote backend with encryption](https://developer.hashicorp.com/terraform/language/settings/backends/configuration) to protect sensitive state data.
 
@@ -34,8 +34,6 @@ The setup deploys three EC2 instances:
 
 - A [Twingate](https://www.twingate.com) account with an [API key](https://docs.twingate.com/docs/api-overview) that has Read, Write, and Provision permissions.
 - An AWS account with credentials configured (`aws configure` or environment variables).
-
--> **Note:** The example provisions its own VPC and subnet. Instances receive public IPs by default, so no NAT configuration is needed.
 
 ## Setting up the providers
 
@@ -99,7 +97,7 @@ resource "tls_self_signed_cert" "x509_ca" {
 }
 ```
 
-A server certificate is then signed by this CA and used by the Gateway for TLS termination. See the full example for the server certificate configuration.
+A server certificate is then signed by this CA and used by the Gateway for TLS termination. See the [full example](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/aws-gateway-ssh-self-signed) for the server certificate configuration.
 
 ### Local SSH CA
 
@@ -126,13 +124,22 @@ resource "twingate_ssh_certificate_authority" "ssh" {
 }
 
 resource "twingate_x509_certificate_authority" "tls" {
-  name        = "demo-gateway-x509-ca"
+  # CA names must be unique, so the suffix lets the old and new CA coexist during
+  # rotation. Since the certificate is write-only, the name change is also what
+  # tells Terraform to replace this CA when the certificate changes.
+  name        = "demo-gateway-x509-ca-${substr(sha256(tls_self_signed_cert.x509_ca.cert_pem), 0, 8)}"
   certificate = tls_self_signed_cert.x509_ca.cert_pem
+
+  # The Gateway references this CA, so the API refuses to delete it while in use.
+  # Create the new CA and repoint the Gateway before deleting the old one.
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "twingate_gateway" "main" {
   remote_network_id = twingate_remote_network.main.id
-  address           = "${aws_network_interface.gateway.private_ip}:${local.gateway_port}"
+  address           = "${aws_instance.gateway.private_ip}:${local.gateway_port}"
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
@@ -163,9 +170,13 @@ resource "twingate_ssh_resource" "ssh_server" {
 }
 ```
 
+The Gateway is registered with its private IP, so the Connector reaches it inside the VPC.
+
+-> **Note:** The SSH Resource grants access to the `Everyone` group so the example works right away. Once it's running, replace it with the groups that should reach the SSH server.
+
 The optional `alias` field lets users connect using a friendly name (e.g., `ssh-server.int`) instead of the raw IP address. When set, the alias is also added as a DNS SAN in the server's TLS certificate so the Gateway can verify the connection.
 
-## Configuring the gateway
+## Configuring the Gateway
 
 The Gateway reads its settings from a YAML configuration file. The TLS and SSH CA paths are hardcoded and must match where the startup script writes those files:
 
@@ -214,10 +225,10 @@ locals {
 
 ## Deploying the EC2 instances
 
-The three instances are deployed on a private subnet with a NAT Gateway for internet access. Each instance uses cloud-init (`user_data`) with `templatefile()` to inject configuration at boot:
+All three instances run in a private subnet with no public IPs. Each one gets its keys, certificates and configuration at boot from cloud-init (`user_data`), rendered with `templatefile()`:
 
 - **Connector Instance** — Receives connector tokens via template variables and runs the Twingate connector setup script.
-- **Gateway Instance** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service.
+- **Gateway Instance** — Downloads the Gateway binary, writes TLS/SSH keys from template variables, and starts a systemd service. Twingate reaches it on its private IP.
 - **SSH Server Instance** — Creates a `gateway` user and configures `sshd` to trust the SSH CA:
 
 ```bash
@@ -245,4 +256,63 @@ systemctl restart sshd
 
 The `AuthorizedPrincipalsFile` directive restricts authentication to certificates carrying the `gateway` principal, so a CA-signed certificate can only ever log in as the `gateway` user.
 
-Keys and certificates are injected into instances via `templatefile()` in `user_data`.
+The Connector and Gateway startup scripts download software at boot. Both instances `depends_on` the private and public route associations, which in turn depend on the NAT gateway. The downloads also retry for a short time, because outbound access through the NAT gateway can lag behind the instance boot.
+
+## Restricting inbound traffic
+
+The instances have no public IPs and no ports open to the internet. A security group allows inbound TCP traffic between the three instances, plus SSH (port 22) from an EC2 Instance Connect Endpoint for troubleshooting. Outbound traffic is unrestricted. All access is authorized through Twingate or AWS IAM.
+
+```terraform
+resource "aws_security_group" "internal" {
+  name   = "demo-internal"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    protocol  = "tcp"
+    from_port = 0
+    to_port   = 65535
+    self      = true
+  }
+
+  ingress {
+    protocol        = "tcp"
+    from_port       = 22
+    to_port         = 22
+    security_groups = [aws_security_group.eic.id]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+```
+
+## Troubleshooting
+
+The instances have no public IPs, so the example adds an EC2 Instance Connect Endpoint to reach them for troubleshooting:
+
+```terraform
+resource "aws_security_group" "eic" {
+  name   = "demo-eic-endpoint"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    protocol    = "tcp"
+    from_port   = 22
+    to_port     = 22
+    cidr_blocks = [aws_subnet.main.cidr_block]
+  }
+}
+
+resource "aws_ec2_instance_connect_endpoint" "main" {
+  subnet_id          = aws_subnet.main.id
+  security_group_ids = [aws_security_group.eic.id]
+}
+```
+
+The EC2 console and `aws ec2-instance-connect ssh` both connect through the endpoint. Each connection is authorized by IAM: the caller needs `ec2-instance-connect:OpenTunnel` on the endpoint and `ec2-instance-connect:SendSSHPublicKey` on the instance. AWS then pushes a short-lived SSH key to the instance, so no key pair is needed.
+
+See the [example README](https://github.com/Twingate/terraform-provider-twingate/tree/main/examples/aws-gateway-ssh-self-signed#troubleshooting) for the connection commands and how to view the Gateway logs.
