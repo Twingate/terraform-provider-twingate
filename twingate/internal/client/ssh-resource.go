@@ -61,13 +61,12 @@ func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.
 
 	res := response.ToModel()
 
-	if len(sshResource.GroupsAccess) > 0 {
-		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(sshResource.GroupsAccess)); err != nil {
-			return nil, err
-		}
+	if err := client.AddResourceAccess(ctx, res.ID, NewAccessInputs(sshResource.GroupsAccess, sshResource.ServiceAccounts)); err != nil {
+		return nil, err
 	}
 
 	res.GroupsAccess = sshResource.GroupsAccess
+	res.ServiceAccounts = sshResource.ServiceAccounts
 
 	return res, nil
 }
@@ -142,6 +141,7 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 
 	res := response.ToModel()
 	res.GroupsAccess = sshResource.GroupsAccess
+	res.ServiceAccounts = sshResource.ServiceAccounts
 
 	return res, nil
 }

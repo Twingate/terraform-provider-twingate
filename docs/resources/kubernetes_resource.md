@@ -62,6 +62,7 @@ resource "twingate_kubernetes_resource" "external_cluster" {
 
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
+- `access_service` (Block Set) Restrict access to certain service account (see [below for nested schema](#nestedblock--access_service))
 - `address` (String) The address of the Kubernetes Resource (IP or FQDN).
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `bearer_token_file` (String) Path to bearer token file. It's required when `in_cluster` is set to `false`.
@@ -104,3 +105,11 @@ Optional:
 - `approval_mode` (String) This will set the approval model for the policy. The valid values are `AUTOMATIC` and `MANUAL`.
 - `duration` (String) This will set the access duration for the policy. Duration must be between 1 hour and 365 days. Examples of valid values include `1h` and `2d`.
 - `mode` (String) This will set the access_policy mode for the policy. The valid values are `MANUAL`, `AUTO_LOCK` and `ACCESS_REQUEST`.
+
+
+<a id="nestedblock--access_service"></a>
+### Nested Schema for `access_service`
+
+Optional:
+
+- `service_account_id` (String) The ID of the service account that should have access to this Resource.

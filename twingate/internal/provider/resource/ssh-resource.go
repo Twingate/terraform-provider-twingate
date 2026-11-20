@@ -60,6 +60,7 @@ type sshResourceModel struct {
 	Upstream         types.Object `tfsdk:"upstream"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
+	ServiceAccess    types.Set    `tfsdk:"access_service"`
 }
 
 type sshPortModel struct {
@@ -173,8 +174,9 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			attr.Upstream:   sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server."),
 		},
 		Blocks: map[string]schema.Block{
-			attr.AccessPolicy: accessPolicyBlock(),
-			attr.AccessGroup:  groupAccessBlock(),
+			attr.AccessPolicy:  accessPolicyBlock(),
+			attr.AccessGroup:   groupAccessBlock(),
+			attr.AccessService: serviceAccessBlock(),
 		},
 	}
 }
@@ -252,6 +254,16 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
+	serviceAccounts := getServiceAccountAccessAttribute(plan.ServiceAccess)
+
+	// Access is granted after the resource is created, so a malformed ID must fail
+	// here or the created resource is left out of Terraform state.
+	if err := checkAccessIDs(accessGroups, serviceAccounts); err != nil {
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateSSHResource)
+
+		return
+	}
+
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationCreate, TwingateSSHResource)
@@ -277,6 +289,7 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		Upstream:         upstream,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
+		ServiceAccounts:  serviceAccounts,
 	})
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -296,6 +309,7 @@ func (r *sshResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	r.helper(ctx, sshRes, &state, &resp.State, &resp.Diagnostics, err, operationRead)
 }
 
+//nolint:funlen
 func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan sshResourceModel
 
@@ -316,6 +330,14 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
+	serviceAccounts := getServiceAccountAccessAttribute(plan.ServiceAccess)
+
+	if err := checkAccessIDs(accessGroups, serviceAccounts); err != nil {
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
+
+		return
+	}
+
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateSSHResource)
@@ -328,8 +350,8 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	if !plan.GroupAccess.Equal(state.GroupAccess) {
-		if err := r.updateSSHResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, accessGroups); err != nil {
+	if !plan.GroupAccess.Equal(state.GroupAccess) || !plan.ServiceAccess.Equal(state.ServiceAccess) {
+		if err := r.updateSSHResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, state.ServiceAccess, accessGroups, serviceAccounts); err != nil {
 			addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
 
 			return
@@ -350,18 +372,21 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		Upstream:         upstream,
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
+		ServiceAccounts:  serviceAccounts,
 	})
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func (r *sshResource) updateSSHResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
+func (r *sshResource) updateSSHResourceAccess(ctx context.Context, resourceID string, stateGroupAccess, stateServiceAccess types.Set, planGroups []model.AccessGroup, planServiceAccounts []string) error {
 	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
 	if err != nil {
 		return fmt.Errorf("failed to parse access_group: %w", err)
 	}
 
 	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
+	idsToDelete = append(idsToDelete, setDifference(getServiceAccountAccessAttribute(stateServiceAccess), planServiceAccounts)...)
+
 	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
 		return fmt.Errorf("failed to remove resource access: %w", err)
 	}
@@ -372,7 +397,9 @@ func (r *sshResource) updateSSHResourceAccess(ctx context.Context, resourceID st
 	}
 
 	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
-	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
+	serviceAccountsToAdd := setDifference(planServiceAccounts, current.ServiceAccounts)
+
+	if err := r.client.AddResourceAccess(ctx, resourceID, client.NewAccessInputs(groupsToAdd, serviceAccountsToAdd)); err != nil {
 		return fmt.Errorf("failed to add resource access: %w", err)
 	}
 
@@ -457,6 +484,11 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 	diagnostics.Append(diags...)
 
 	state.GroupAccess = groupAccess
+
+	serviceAccess, diags := convertServiceAccessToTerraform(ctx, sshRes.ServiceAccounts)
+	diagnostics.Append(diags...)
+
+	state.ServiceAccess = serviceAccess
 
 	if diagnostics.HasError() {
 		return

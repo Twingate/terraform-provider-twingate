@@ -63,6 +63,7 @@ type kubernetesResourceModel struct {
 	TagsAll          types.Map    `tfsdk:"tags_all"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
+	ServiceAccess    types.Set    `tfsdk:"access_service"`
 }
 
 func (r *kubernetesResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -185,8 +186,9 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			attr.TagsAll: tagsAllAttribute(),
 		},
 		Blocks: map[string]schema.Block{
-			attr.AccessPolicy: accessPolicyBlock(),
-			attr.AccessGroup:  groupAccessBlock(),
+			attr.AccessPolicy:  accessPolicyBlock(),
+			attr.AccessGroup:   groupAccessBlock(),
+			attr.AccessService: serviceAccessBlock(),
 		},
 	}
 }
@@ -218,6 +220,16 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationCreate, TwingateKubernetesResource)
+
+		return
+	}
+
+	serviceAccounts := getServiceAccountAccessAttribute(plan.ServiceAccess)
+
+	// Access is granted after the resource is created, so a malformed ID must fail
+	// here or the created resource is left out of Terraform state.
+	if err := checkAccessIDs(accessGroups, serviceAccounts); err != nil {
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateKubernetesResource)
 
 		return
 	}
@@ -257,6 +269,7 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
+		ServiceAccounts:  serviceAccounts,
 	})
 
 	r.helper(ctx, k8sRes, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -326,6 +339,14 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
+	serviceAccounts := getServiceAccountAccessAttribute(plan.ServiceAccess)
+
+	if err := checkAccessIDs(accessGroups, serviceAccounts); err != nil {
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
+
+		return
+	}
+
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateKubernetesResource)
@@ -333,8 +354,8 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	if !plan.GroupAccess.Equal(state.GroupAccess) {
-		if err := r.updateK8sResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, accessGroups); err != nil {
+	if !plan.GroupAccess.Equal(state.GroupAccess) || !plan.ServiceAccess.Equal(state.ServiceAccess) {
+		if err := r.updateK8sResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, state.ServiceAccess, accessGroups, serviceAccounts); err != nil {
 			addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
 
 			return
@@ -353,12 +374,13 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
 		GroupsAccess:     accessGroups,
+		ServiceAccounts:  serviceAccounts,
 	})
 
 	r.helper(ctx, k8sRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func (r *kubernetesResource) updateK8sResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
+func (r *kubernetesResource) updateK8sResourceAccess(ctx context.Context, resourceID string, stateGroupAccess, stateServiceAccess types.Set, planGroups []model.AccessGroup, planServiceAccounts []string) error {
 	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
 	if err != nil {
 		return fmt.Errorf("failed to parse access_group: %w", err)
@@ -366,6 +388,8 @@ func (r *kubernetesResource) updateK8sResourceAccess(ctx context.Context, resour
 
 	// setDifferenceGroups returns IDs of groups to remove
 	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
+	idsToDelete = append(idsToDelete, setDifference(getServiceAccountAccessAttribute(stateServiceAccess), planServiceAccounts)...)
+
 	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
 		return fmt.Errorf("failed to remove resource access: %w", err)
 	}
@@ -376,7 +400,9 @@ func (r *kubernetesResource) updateK8sResourceAccess(ctx context.Context, resour
 	}
 
 	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
-	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
+	serviceAccountsToAdd := setDifference(planServiceAccounts, current.ServiceAccounts)
+
+	if err := r.client.AddResourceAccess(ctx, resourceID, client.NewAccessInputs(groupsToAdd, serviceAccountsToAdd)); err != nil {
 		return fmt.Errorf("failed to add resource access: %w", err)
 	}
 
@@ -460,6 +486,11 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 	diagnostics.Append(diags...)
 
 	state.GroupAccess = groupAccess
+
+	serviceAccess, diags := convertServiceAccessToTerraform(ctx, k8sRes.ServiceAccounts)
+	diagnostics.Append(diags...)
+
+	state.ServiceAccess = serviceAccess
 
 	if diagnostics.HasError() {
 		return

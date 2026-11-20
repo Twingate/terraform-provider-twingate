@@ -22,6 +22,7 @@ type SSHResource struct {
 	Upstream         *SSHUpstream
 	AccessPolicy     *AccessPolicy
 	GroupsAccess     []AccessGroup
+	ServiceAccounts  []string
 }
 
 func (r SSHResource) GetID() string {
