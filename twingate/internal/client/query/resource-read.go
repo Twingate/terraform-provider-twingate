@@ -106,20 +106,36 @@ type PortRange struct {
 func (r gqlResource) ToModel() (*model.Resource, error) {
 	resource := r.ResourceNode.ToModel()
 
-	for _, access := range r.Access.Edges {
-		var securityPolicyID *string
-		if access.SecurityPolicy != nil {
-			securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
-		}
+	var err error
 
+	resource.GroupsAccess, resource.ServiceAccounts, err = accessToModel(r.Access.Edges)
+	if err != nil {
+		return nil, err
+	}
+
+	return resource, nil
+}
+
+func accessToModel(edges []*AccessEdge) ([]model.AccessGroup, []string, error) {
+	var (
+		groupsAccess    []model.AccessGroup
+		serviceAccounts []string
+	)
+
+	for _, access := range edges {
 		switch access.Node.Type {
 		case AccessGroup:
 			groupID := string(access.Node.Group.ID)
 			if groupID == "" {
-				return nil, ErrMissingAccessGroupID
+				return nil, nil, ErrMissingAccessGroupID
 			}
 
-			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
+			var securityPolicyID *string
+			if access.SecurityPolicy != nil {
+				securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
+			}
+
+			groupsAccess = append(groupsAccess, model.AccessGroup{
 				GroupID:          groupID,
 				SecurityPolicyID: securityPolicyID,
 				AccessPolicy:     accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
@@ -127,14 +143,14 @@ func (r gqlResource) ToModel() (*model.Resource, error) {
 		case AccessServiceAccount:
 			serviceAccountID := string(access.Node.ServiceAccount.ID)
 			if serviceAccountID == "" {
-				return nil, ErrMissingAccessServiceAccountID
+				return nil, nil, ErrMissingAccessServiceAccountID
 			}
 
-			resource.ServiceAccounts = append(resource.ServiceAccounts, serviceAccountID)
+			serviceAccounts = append(serviceAccounts, serviceAccountID)
 		}
 	}
 
-	return resource, nil
+	return groupsAccess, serviceAccounts, nil
 }
 
 func (r ResourceNode) ToModel() *model.Resource {

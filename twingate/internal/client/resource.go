@@ -571,6 +571,25 @@ type AccessInput struct {
 	AccessPolicy     *AccessPolicyInput  `json:"accessPolicy"`
 }
 
+func NewAccessInputs(groups []model.AccessGroup, serviceAccounts []string) []AccessInput {
+	access := make([]AccessInput, 0, len(groups)+len(serviceAccounts))
+
+	for _, group := range groups {
+		access = append(access, AccessInput{
+			PrincipalID:      group.GroupID,
+			SecurityPolicyID: group.SecurityPolicyID,
+			ApprovalMode:     NewGroupAccessApprovalMode(group.AccessPolicy),
+			AccessPolicy:     NewAccessPolicyInput(group.AccessPolicy),
+		})
+	}
+
+	for _, serviceAccount := range serviceAccounts {
+		access = append(access, AccessInput{PrincipalID: serviceAccount})
+	}
+
+	return access
+}
+
 func (client *Client) AddResourceAccess(ctx context.Context, resourceID string, access []AccessInput) error {
 	opr := resourceResourceAccess.update()
 

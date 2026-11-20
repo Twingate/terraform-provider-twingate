@@ -61,6 +61,7 @@ type webAppResourceModel struct {
 	RequestHeaderRewrites types.Map    `tfsdk:"request_header_rewrites"`
 	AccessPolicy          types.Set    `tfsdk:"access_policy"`
 	GroupAccess           types.Set    `tfsdk:"access_group"`
+	ServiceAccess         types.Set    `tfsdk:"access_service"`
 }
 
 type webAppUpstreamModel struct {
@@ -192,8 +193,9 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 		},
 		Blocks: map[string]schema.Block{
-			attr.AccessPolicy: accessPolicyBlock(),
-			attr.AccessGroup:  groupAccessBlock(),
+			attr.AccessPolicy:  accessPolicyBlock(),
+			attr.AccessGroup:   groupAccessBlock(),
+			attr.AccessService: serviceAccessBlock(),
 		},
 	}
 }
@@ -286,6 +288,16 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		return nil
 	}
 
+	serviceAccounts := getServiceAccountAccessAttribute(plan.ServiceAccess)
+
+	// Access is granted after the resource is created, so a malformed ID must fail
+	// here or the created resource is left out of Terraform state.
+	if err := checkAccessIDs(accessGroups, serviceAccounts); err != nil {
+		addErr(diagnostics, err, operation, TwingateWebAppResource)
+
+		return nil
+	}
+
 	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
 	if err != nil {
 		addErr(diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operation, TwingateWebAppResource)
@@ -317,6 +329,7 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		RequestHeaderRewrites: getKeyValueMap(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
 		GroupsAccess:          accessGroups,
+		ServiceAccounts:       serviceAccounts,
 	}
 }
 
@@ -371,8 +384,8 @@ func (r *webAppResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if !plan.GroupAccess.Equal(state.GroupAccess) {
-		if err := r.updateWebAppResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, input.GroupsAccess); err != nil {
+	if !plan.GroupAccess.Equal(state.GroupAccess) || !plan.ServiceAccess.Equal(state.ServiceAccess) {
+		if err := r.updateWebAppResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, state.ServiceAccess, input.GroupsAccess, input.ServiceAccounts); err != nil {
 			addErr(&resp.Diagnostics, err, operationUpdate, TwingateWebAppResource)
 
 			return
@@ -386,13 +399,15 @@ func (r *webAppResource) Update(ctx context.Context, req resource.UpdateRequest,
 	r.helper(ctx, webAppRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func (r *webAppResource) updateWebAppResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
+func (r *webAppResource) updateWebAppResourceAccess(ctx context.Context, resourceID string, stateGroupAccess, stateServiceAccess types.Set, planGroups []model.AccessGroup, planServiceAccounts []string) error {
 	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
 	if err != nil {
 		return fmt.Errorf("failed to parse access_group: %w", err)
 	}
 
 	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
+	idsToDelete = append(idsToDelete, setDifference(getServiceAccountAccessAttribute(stateServiceAccess), planServiceAccounts)...)
+
 	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
 		return fmt.Errorf("failed to remove resource access: %w", err)
 	}
@@ -403,7 +418,9 @@ func (r *webAppResource) updateWebAppResourceAccess(ctx context.Context, resourc
 	}
 
 	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
-	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
+	serviceAccountsToAdd := setDifference(planServiceAccounts, current.ServiceAccounts)
+
+	if err := r.client.AddResourceAccess(ctx, resourceID, client.NewAccessInputs(groupsToAdd, serviceAccountsToAdd)); err != nil {
 		return fmt.Errorf("failed to add resource access: %w", err)
 	}
 
@@ -489,6 +506,11 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 	diagnostics.Append(diags...)
 
 	state.GroupAccess = groupAccess
+
+	serviceAccess, diags := convertServiceAccessToTerraform(ctx, webAppRes.ServiceAccounts)
+	diagnostics.Append(diags...)
+
+	state.ServiceAccess = serviceAccess
 
 	if diagnostics.HasError() {
 		return

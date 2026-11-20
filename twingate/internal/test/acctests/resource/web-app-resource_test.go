@@ -343,6 +343,56 @@ func TestAccTwingateWebAppResourceHeaderRewrites(t *testing.T) {
 	})
 }
 
+func TestAccTwingateWebAppResourceAccessGroupsAndServiceAccounts(t *testing.T) {
+	t.Parallel()
+
+	setup := newWebAppTestSetup(t, "10.0.0.1:8080")
+	groupTFName := test.TerraformRandName("test_group")
+	serviceAccountTFName := test.TerraformRandName("test_sa")
+
+	group := fmt.Sprintf(`resource "twingate_group" "%s" { name = "%s" }`, groupTFName, test.RandomName())
+	serviceAccount := createServiceAccount(serviceAccountTFName, test.RandomName())
+	groupAccess := fmt.Sprintf(`access_group { group_id = twingate_group.%s.id }`, groupTFName)
+	serviceAccess := fmt.Sprintf(`access_service { service_account_id = %s.id }`, acctests.TerraformServiceAccount(serviceAccountTFName))
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: group + serviceAccount + setup.config(8080, 80, groupAccess+"\n"+serviceAccess),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessService), "1"),
+					acctests.CheckResourceServiceAccountsLen(setup.theResource, 1),
+				),
+			},
+			{
+				// Remove service account access
+				Config: group + serviceAccount + setup.config(8080, 80, groupAccess),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessService), "0"),
+					acctests.CheckResourceServiceAccountsLen(setup.theResource, 0),
+				),
+			},
+			{
+				// Replace group access with service account access
+				Config: group + serviceAccount + setup.config(8080, 80, serviceAccess),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessGroup), "0"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessService), "1"),
+					acctests.CheckResourceGroupsLen(setup.theResource, 0),
+					acctests.CheckResourceServiceAccountsLen(setup.theResource, 1),
+				),
+			},
+		},
+	})
+}
+
 // Tags and header rewrites share the same API shape: nothing is stored for an
 // empty map, so `tags = {}` must round-trip as an empty map rather than null or
 // Terraform rejects the apply as an inconsistent result.

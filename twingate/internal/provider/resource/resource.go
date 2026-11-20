@@ -601,7 +601,7 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if err = r.client.AddResourceAccess(ctx, resource.ID, convertResourceAccess(resource.ServiceAccounts, resource.GroupsAccess)); err != nil {
+	if err = r.client.AddResourceAccess(ctx, resource.ID, client.NewAccessInputs(resource.GroupsAccess, resource.ServiceAccounts)); err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
 
 		return
@@ -621,24 +621,6 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	r.helper(ctx, resource, &plan, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
-}
-
-func convertResourceAccess(serviceAccounts []string, groupsAccess []model.AccessGroup) []client.AccessInput {
-	access := make([]client.AccessInput, 0, len(serviceAccounts)+len(groupsAccess))
-	for _, account := range serviceAccounts {
-		access = append(access, client.AccessInput{PrincipalID: account})
-	}
-
-	for _, group := range groupsAccess {
-		access = append(access, client.AccessInput{
-			PrincipalID:      group.GroupID,
-			SecurityPolicyID: group.SecurityPolicyID,
-			ApprovalMode:     client.NewGroupAccessApprovalMode(group.AccessPolicy),
-			AccessPolicy:     client.NewAccessPolicyInput(group.AccessPolicy),
-		})
-	}
-
-	return access
 }
 
 func getGroupAccessAttribute(list types.Set) ([]model.AccessGroup, error) {
@@ -765,16 +747,10 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 			len(strings.TrimSpace(access.GroupID)) == 0 {
 			return nil, ErrInvalidAttributeCombination
 		}
-
-		if err := checkGlobalID(access.GroupID); err != nil {
-			return nil, err
-		}
 	}
 
-	for _, id := range serviceAccountIDs {
-		if err := checkGlobalID(id); err != nil {
-			return nil, err
-		}
+	if err := checkAccessIDs(accessGroups, serviceAccountIDs); err != nil {
+		return nil, err
 	}
 
 	isBrowserShortcutEnabled := getOptionalBool(plan.IsBrowserShortcutEnabled)
@@ -807,6 +783,22 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 	}, nil
 }
 
+func checkAccessIDs(groups []model.AccessGroup, serviceAccountIDs []string) error {
+	for _, group := range groups {
+		if err := checkPrincipalGlobalID(group.GroupID); err != nil {
+			return err
+		}
+	}
+
+	for _, id := range serviceAccountIDs {
+		if err := checkPrincipalGlobalID(id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getKeyValueMap(typesMap types.Map) map[string]string {
 	if typesMap.IsNull() || typesMap.IsUnknown() || len(typesMap.Elements()) == 0 {
 		return nil
@@ -821,7 +813,7 @@ func getKeyValueMap(typesMap types.Map) map[string]string {
 	return keyValueMap
 }
 
-func checkGlobalID(val string) error {
+func checkPrincipalGlobalID(val string) error {
 	const expectedTokens = 2
 
 	data, err := base64.StdEncoding.DecodeString(val)
@@ -1078,7 +1070,7 @@ func (r *twingateResource) updateResourceAccess(ctx context.Context, plan, state
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 
-	if err := r.client.AddResourceAccess(ctx, input.ID, convertResourceAccess(serviceAccountsToAdd, groupsToAdd)); err != nil {
+	if err := r.client.AddResourceAccess(ctx, input.ID, client.NewAccessInputs(groupsToAdd, serviceAccountsToAdd)); err != nil {
 		return fmt.Errorf("failed to update resource access: %w", err)
 	}
 

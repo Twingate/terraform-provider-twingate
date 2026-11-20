@@ -425,18 +425,16 @@ func terraformResourceKubernetesResourceWithTags(tfName, gatewayTFName, remoteNe
 	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, tagLines)
 }
 
-func terraformResourceKubernetesResourceWithAccessGroup(tfName, gatewayTFName, remoteNetworkTFName, groupTFName, name, address string) string {
+func terraformResourceKubernetesResourceWithAccess(tfName, gatewayTFName, remoteNetworkTFName, name, address, access string) string {
 	return fmt.Sprintf(`
 	resource "twingate_kubernetes_resource" "%s" {
 	  name              = "%s"
 	  address           = "%s"
 	  gateway_id        = twingate_gateway.%s.id
 	  remote_network_id = twingate_remote_network.%s.id
-	  access_group {
-	    group_id = twingate_group.%s.id
-	  }
+	  %s
 	}
-	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, groupTFName)
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, access)
 }
 
 func terraformResourceKubernetesResourceWithAccessPolicy(tfName, gatewayTFName, remoteNetworkTFName, name, address, mode, duration, approvalMode string) string {
@@ -657,7 +655,7 @@ func TestAccTwingateKubernetesResourceEmptyTags(t *testing.T) {
 	})
 }
 
-func TestAccTwingateKubernetesResourceAccessGroup(t *testing.T) {
+func TestAccTwingateKubernetesResourceAccessGroupsAndServiceAccounts(t *testing.T) {
 	t.Parallel()
 
 	remoteNetworkTFName := test.TerraformRandName("test_rn")
@@ -666,6 +664,7 @@ func TestAccTwingateKubernetesResourceAccessGroup(t *testing.T) {
 	gatewayTFName := test.TerraformRandName("test_gw")
 	k8sResTFName := test.TerraformRandName("test_k8s_res")
 	groupTFName := test.TerraformRandName("test_group")
+	serviceAccountTFName := test.TerraformRandName("test_sa")
 	theResource := acctests.TerraformKubernetesResource(k8sResTFName)
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
@@ -675,6 +674,9 @@ func TestAccTwingateKubernetesResourceAccessGroup(t *testing.T) {
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
 	group := fmt.Sprintf(`resource "twingate_group" "%s" { name = "%s" }`, groupTFName, test.RandomName())
+	serviceAccount := createServiceAccount(serviceAccountTFName, test.RandomName())
+	groupAccess := fmt.Sprintf(`access_group { group_id = twingate_group.%s.id }`, groupTFName)
+	serviceAccess := fmt.Sprintf(`access_service { service_account_id = %s.id }`, acctests.TerraformServiceAccount(serviceAccountTFName))
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -683,20 +685,31 @@ func TestAccTwingateKubernetesResourceAccessGroup(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: prereqs + group + terraformResourceKubernetesResourceWithAccessGroup(k8sResTFName, gatewayTFName, remoteNetworkTFName, groupTFName, name, resourceAddress),
+				Config: prereqs + group + serviceAccount + terraformResourceKubernetesResourceWithAccess(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, groupAccess+"\n"+serviceAccess),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
-					acctests.CheckResourceGroupsLen(theResource, 1),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
 			{
-				// Remove access group
-				Config: prereqs + group + terraformResourceKubernetesResource(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				// Remove service account access
+				Config: prereqs + group + serviceAccount + terraformResourceKubernetesResourceWithAccess(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, groupAccess),
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "0"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 0),
+				),
+			},
+			{
+				// Replace group access with service account access
+				Config: prereqs + group + serviceAccount + terraformResourceKubernetesResourceWithAccess(k8sResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, serviceAccess),
+				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "0"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
 					acctests.CheckResourceGroupsLen(theResource, 0),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
 		},
