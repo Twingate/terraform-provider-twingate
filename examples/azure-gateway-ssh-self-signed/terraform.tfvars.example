@@ -1,0 +1,11 @@
+# Twingate provider settings
+tg_api_token = "your-api-token"
+tg_network   = "your-network"
+# tg_url     = "twingate.com"  # override the default Twingate domain
+
+# Azure settings (credentials come from `az login`)
+subscription_id = "00000000-0000-0000-0000-000000000000" # az account show --query id -o tsv
+# location      = "eastus2"  # must offer the Azure Bastion Developer SKU
+
+# Optional: alias for the SSH resource (added as a DNS SAN in the TLS cert)
+# resource_alias = "ssh-server.int"
