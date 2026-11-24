@@ -9,26 +9,8 @@ type SSHUpstream struct {
 }
 
 type SSHResource struct {
-	ID               string
-	Name             string
-	Address          string
-	GatewayID        string
-	RemoteNetworkID  string
-	IsVisible        *bool
-	Alias            *string
-	SecurityPolicyID *string
-	Tags             map[string]string
-	Downstream       *SSHDownstream
-	Upstream         *SSHUpstream
-	AccessPolicy     *AccessPolicy
-	GroupsAccess     []AccessGroup
-	ServiceAccounts  []string
-}
+	PAMResource
 
-func (r SSHResource) GetID() string {
-	return r.ID
-}
-
-func (r SSHResource) GetName() string {
-	return r.Name
+	Downstream *SSHDownstream
+	Upstream   *SSHUpstream
 }

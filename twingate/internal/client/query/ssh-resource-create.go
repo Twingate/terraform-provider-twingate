@@ -1,9 +1,6 @@
 package query
 
-import (
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
-	"github.com/hasura/go-graphql-client"
-)
+import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 
 //nolint:lll
 type CreateSSHResource struct {
@@ -36,39 +33,16 @@ type SSHUpstream struct {
 }
 
 type gqlSSHResource struct {
-	IDName
-	Address struct {
-		Value string
-	}
-	RemoteNetwork struct {
-		ID graphql.ID
-	}
-	Gateway struct {
-		ID graphql.ID
-	}
-	IsVisible      bool
-	Alias          string
-	SecurityPolicy *gqlSecurityPolicy
-	Tags           []Tag
-	Downstream     SSHDownstream
-	Upstream       SSHUpstream
-	ApprovalMode   string
-	AccessPolicy   *AccessPolicy
+	gqlPAMResource
+
+	Downstream SSHDownstream
+	Upstream   SSHUpstream
 }
 
 func (g gqlSSHResource) ToModel() *model.SSHResource {
 	return &model.SSHResource{
-		ID:               string(g.ID),
-		Name:             g.Name,
-		Address:          g.Address.Value,
-		GatewayID:        string(g.Gateway.ID),
-		RemoteNetworkID:  string(g.RemoteNetwork.ID),
-		IsVisible:        &g.IsVisible,
-		Alias:            optionalString(g.Alias),
-		SecurityPolicyID: securityPolicyID(g.SecurityPolicy),
-		Tags:             tagsToModel(g.Tags),
-		Downstream:       &model.SSHDownstream{Port: g.Downstream.Port},
-		Upstream:         &model.SSHUpstream{Port: g.Upstream.Port},
-		AccessPolicy:     accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
+		PAMResource: g.gqlPAMResource.ToModel(),
+		Downstream:  &model.SSHDownstream{Port: g.Downstream.Port},
+		Upstream:    &model.SSHUpstream{Port: g.Upstream.Port},
 	}
 }

@@ -7,21 +7,15 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customplanmodifier"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customvalidator"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -41,43 +35,14 @@ func NewSSHResourceResource() resource.Resource {
 }
 
 type sshResource struct {
-	client      *client.Client
-	defaultTags map[string]string
+	baseResource
 }
 
 type sshResourceModel struct {
-	ID               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	Address          types.String `tfsdk:"address"`
-	GatewayID        types.String `tfsdk:"gateway_id"`
-	RemoteNetworkID  types.String `tfsdk:"remote_network_id"`
-	IsVisible        types.Bool   `tfsdk:"is_visible"`
-	Alias            types.String `tfsdk:"alias"`
-	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
-	Tags             types.Map    `tfsdk:"tags"`
-	TagsAll          types.Map    `tfsdk:"tags_all"`
-	Downstream       types.Object `tfsdk:"downstream"`
-	Upstream         types.Object `tfsdk:"upstream"`
-	IsAuthoritative  types.Bool   `tfsdk:"is_authoritative"`
-	AccessPolicy     types.Set    `tfsdk:"access_policy"`
-	GroupAccess      types.Set    `tfsdk:"access_group"`
-	ServiceAccess    types.Set    `tfsdk:"access_service"`
-}
+	pamResourceModel
 
-func (m *sshResourceModel) access() accessModel {
-	return accessModel{
-		IsAuthoritative: m.IsAuthoritative,
-		AccessPolicy:    m.AccessPolicy,
-		GroupAccess:     m.GroupAccess,
-		ServiceAccess:   m.ServiceAccess,
-	}
-}
-
-func (m *sshResourceModel) setAccess(access accessModel) {
-	m.IsAuthoritative = access.IsAuthoritative
-	m.AccessPolicy = access.AccessPolicy
-	m.GroupAccess = access.GroupAccess
-	m.ServiceAccess = access.ServiceAccess
+	Downstream types.Object `tfsdk:"downstream"`
+	Upstream   types.Object `tfsdk:"upstream"`
 }
 
 type sshPortModel struct {
@@ -94,27 +59,6 @@ func (r *sshResource) Metadata(_ context.Context, req resource.MetadataRequest, 
 	resp.TypeName = TwingateSSHResource
 }
 
-func (r *sshResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
-	if !ok {
-		return
-	}
-
-	r.client = providerData.Client
-	r.defaultTags = providerData.DefaultTags
-}
-
-// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`
-// and suppresses `access_policy` drift when only the API defaults are in state.
-func (r *sshResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	planTagsAll(ctx, req, resp, r.defaultTags)
-	suppressAccessPolicyDefaultDrift(ctx, req, resp)
-}
-
 func (r *sshResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
 
@@ -125,20 +69,13 @@ func (r *sshResource) ImportState(ctx context.Context, req resource.ImportStateR
 		return
 	}
 
-	setImportedAccess(ctx, &resp.State, &resp.Diagnostics, res.AccessPolicy, resourceAccess{Groups: res.GroupsAccess, ServiceAccounts: res.ServiceAccounts})
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
+	setImportedBaseResource(ctx, &resp.State, &resp.Diagnostics, res.BaseResource, r.defaultTags)
 }
 
-//nolint:funlen
 func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "SSH Resources are Twingate resources accessed via a Gateway.",
-		Attributes: map[string]schema.Attribute{
+		Attributes: withBaseAttributes(map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: "Autogenerated ID of the SSH Resource.",
@@ -165,40 +102,9 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Required:    true,
 				Description: "The ID of the Remote Network the SSH Resource belongs to.",
 			},
-			attr.IsVisible: schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.",
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-				},
-				Default: booldefault.StaticBool(true),
-			},
-			attr.Alias: schema.StringAttribute{
-				Optional:      true,
-				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				PlanModifiers: []planmodifier.String{customplanmodifier.CaseInsensitiveDiff()},
-			},
-			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
-				PlanModifiers: []planmodifier.String{
-					customplanmodifier.UseNullStringWhenValueOmitted(),
-				},
-			},
-			attr.Tags: schema.MapAttribute{
-				ElementType: types.StringType,
-				Optional:    true,
-				Computed:    true,
-				Description: "A map of key-value pair tags to set on this resource.",
-				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
-			},
-			attr.TagsAll:         tagsAllAttribute(),
-			attr.IsAuthoritative: isAuthoritativeAttribute(),
-			attr.Downstream:      sshPortAttribute("The downstream configuration. The connection between the SSH client and the Gateway."),
-			attr.Upstream:        sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server."),
-		},
+			attr.Downstream: sshPortAttribute("The downstream configuration. The connection between the SSH client and the Gateway."),
+			attr.Upstream:   sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server."),
+		}),
 		Blocks: accessBlocks(),
 	}
 }
@@ -269,7 +175,7 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	access, accessPolicy, err := parseAccess(plan.access())
+	pam, err := convertPAMResource(&plan.pamResourceModel)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationCreate, TwingateSSHResource)
 
@@ -282,19 +188,9 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	sshRes, err := r.client.CreateSSHResource(ctx, &model.SSHResource{
-		Name:             plan.Name.ValueString(),
-		Address:          plan.Address.ValueString(),
-		GatewayID:        plan.GatewayID.ValueString(),
-		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
-		IsVisible:        getOptionalBool(plan.IsVisible),
-		Alias:            getOptionalString(plan.Alias),
-		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getKeyValueMap(plan.TagsAll),
-		Downstream:       downstream,
-		Upstream:         upstream,
-		AccessPolicy:     accessPolicy,
-		GroupsAccess:     access.Groups,
-		ServiceAccounts:  access.ServiceAccounts,
+		PAMResource: pam,
+		Downstream:  downstream,
+		Upstream:    upstream,
 	})
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -327,7 +223,7 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	access, accessPolicy, err := parseAccess(plan.access())
+	pam, err := convertPAMResource(&plan.pamResourceModel)
 	if err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
 
@@ -339,30 +235,37 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	if err := updateResourceAccess(ctx, r.client, state.ID.ValueString(), isAccessAuthoritative(plan.IsAuthoritative), plan.access(), state.access(), access, r.readAccess(state.ID.ValueString())); err != nil {
+	if err := updateResourceAccess(ctx, r.client, state.ID.ValueString(), convertAuthoritativeFlag(plan.IsAuthoritative), plan.accessModel, state.accessModel, baseResourceAccess(pam.BaseResource), r.readAccess(state.ID.ValueString())); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
 
 		return
 	}
 
-	sshRes, err := r.client.UpdateSSHResource(ctx, &model.SSHResource{
-		ID:               state.ID.ValueString(),
-		Name:             plan.Name.ValueString(),
-		Address:          plan.Address.ValueString(),
-		GatewayID:        plan.GatewayID.ValueString(),
-		RemoteNetworkID:  plan.RemoteNetworkID.ValueString(),
-		IsVisible:        getOptionalBool(plan.IsVisible),
-		Alias:            getOptionalString(plan.Alias),
-		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:             getKeyValueMap(plan.TagsAll),
-		Downstream:       downstream,
-		Upstream:         upstream,
-		AccessPolicy:     accessPolicy,
-		GroupsAccess:     access.Groups,
-		ServiceAccounts:  access.ServiceAccounts,
-	})
+	pam.ID = state.ID.ValueString()
+
+	var sshRes *model.SSHResource
+
+	if isSSHResourceChanged(&plan, &state) {
+		sshRes, err = r.client.UpdateSSHResource(ctx, &model.SSHResource{
+			PAMResource: pam,
+			Downstream:  downstream,
+			Upstream:    upstream,
+		})
+	} else {
+		sshRes, err = r.client.ReadSSHResource(ctx, pam.ID)
+		if sshRes != nil {
+			keepPlannedAccess(&sshRes.PAMResource, pam)
+		}
+	}
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+}
+
+// isSSHResourceChanged reports whether the update mutation is needed.
+func isSSHResourceChanged(plan, state *sshResourceModel) bool {
+	return isPAMResourceChanged(&plan.pamResourceModel, &state.pamResourceModel) ||
+		!plan.Downstream.Equal(state.Downstream) ||
+		!plan.Upstream.Equal(state.Upstream)
 }
 
 func (r *sshResource) readAccess(resourceID string) func(ctx context.Context) (resourceAccess, error) {
@@ -372,21 +275,12 @@ func (r *sshResource) readAccess(resourceID string) func(ctx context.Context) (r
 			return resourceAccess{}, err //nolint:wrapcheck
 		}
 
-		return resourceAccess{Groups: remote.GroupsAccess, ServiceAccounts: remote.ServiceAccounts}, nil
+		return baseResourceAccess(remote.BaseResource), nil
 	}
 }
 
 func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state sshResourceModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	err := r.client.DeleteSSHResource(ctx, state.ID.ValueString())
-	addErr(&resp.Diagnostics, err, operationDelete, TwingateSSHResource)
+	deleteResource(ctx, req, resp, TwingateSSHResource, r.client.DeleteSSHResource)
 }
 
 func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, state *sshResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
@@ -402,23 +296,11 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 		return
 	}
 
-	state.ID = types.StringValue(sshRes.ID)
-	state.Name = types.StringValue(sshRes.Name)
-	state.Address = types.StringValue(sshRes.Address)
-	state.GatewayID = types.StringValue(sshRes.GatewayID)
-	state.RemoteNetworkID = types.StringValue(sshRes.RemoteNetworkID)
-	state.SecurityPolicyID = types.StringPointerValue(sshRes.SecurityPolicyID)
+	setPAMResourceState(ctx, &state.pamResourceModel, sshRes.PAMResource, diagnostics)
 
-	if !state.IsVisible.IsNull() || sshRes.IsVisible != nil {
-		state.IsVisible = types.BoolPointerValue(sshRes.IsVisible)
+	if diagnostics.HasError() {
+		return
 	}
-
-	if !state.Alias.IsNull() {
-		state.Alias = types.StringPointerValue(sshRes.Alias)
-	}
-
-	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
-	state.TagsAll = utils.ConvertMapValue(sshRes.Tags)
 
 	downstream, diags := sshPortObject(ctx, sshRes.Downstream.Port)
 	diagnostics.Append(diags...)
@@ -432,15 +314,6 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 
 	state.Downstream = downstream
 	state.Upstream = upstream
-
-	access := refreshAccess(ctx, state.access(), sshRes.AccessPolicy,
-		resourceAccess{Groups: sshRes.GroupsAccess, ServiceAccounts: sshRes.ServiceAccounts}, diagnostics)
-
-	if diagnostics.HasError() {
-		return
-	}
-
-	state.setAccess(access)
 
 	diags = respState.Set(ctx, state)
 	diagnostics.Append(diags...)

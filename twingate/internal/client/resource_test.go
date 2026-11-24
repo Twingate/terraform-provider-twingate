@@ -169,3 +169,37 @@ func TestNewAccessInputs(t *testing.T) {
 func strPtr(s string) *string {
 	return &s
 }
+
+func TestResourceVars(t *testing.T) {
+	visible := true
+	base := model.BaseResource{
+		Name:            "resource",
+		Address:         "example.com",
+		RemoteNetworkID: "network-id",
+		IsVisible:       &visible,
+		Tags:            map[string]string{"env": "prod"},
+	}
+
+	baseKeys := []string{"name", "address", "remoteNetworkId", "isVisible", "alias", "securityPolicyId", "tags", "accessPolicy", "approvalMode"}
+
+	t.Run("base", func(t *testing.T) {
+		vars := newVars(baseResourceVars(base)...)
+
+		assert.Len(t, vars, len(baseKeys))
+
+		for _, key := range baseKeys {
+			assert.Contains(t, vars, key)
+		}
+
+		assert.Equal(t, "resource", vars["name"])
+		assert.Equal(t, "example.com", vars["address"])
+	})
+
+	t.Run("PAM adds the gateway and resource specific variables", func(t *testing.T) {
+		vars := pamVars(model.PAMResource{BaseResource: base, GatewayID: "gateway-id"}, gqlVar(int64(22), "port"))
+
+		assert.Len(t, vars, len(baseKeys)+2)
+		assert.Contains(t, vars, "gatewayId")
+		assert.Equal(t, int64(22), vars["port"])
+	})
+}

@@ -171,23 +171,13 @@ func newRoutingMode(routingMode *string) *RoutingMode {
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	opr := resourceResource.create()
 
-	variables := newVars(
-		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlVar(input.Name, "name"),
-		gqlVar(input.Address, "address"),
+	variables := newVars(append(baseResourceVars(input.BaseResource),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
-		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
-		gqlNullable(input.Alias, "alias"),
-		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newRoutingMode(input.RoutingMode), "routingMode"),
-		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
-		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
-		gqlVar(newTagInputs(input.Tags), "tags"),
-
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
-	)
+	)...)
 
 	response := query.CreateResource{}
 	if err := client.mutate(ctx, &response, variables, opr); err != nil {
@@ -407,24 +397,15 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	invalidateResource[*model.Resource](input.ID)
 
-	variables := newVars(
+	variables := newVars(append(baseResourceVars(input.BaseResource),
 		gqlID(input.ID),
-		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlVar(input.Name, "name"),
-		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
 		gqlVar(input.IsActive, "isActive"),
-		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
-		gqlNullable(input.Alias, "alias"),
-		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newRoutingMode(input.RoutingMode), "routingMode"),
-		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
-		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
-		gqlVar(newTagInputs(input.Tags), "tags"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
-	)
+	)...)
 
 	response := query.UpdateResource{}
 	if err := client.mutate(ctx, &response, variables, opr, attr{id: input.ID}); err != nil {

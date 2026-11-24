@@ -8,13 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
-
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	tfattr "github.com/hashicorp/terraform-plugin-framework/attr"
@@ -23,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
@@ -60,64 +55,20 @@ func NewResourceResource() resource.Resource {
 }
 
 type twingateResource struct {
-	client      *client.Client
-	defaultTags map[string]string
+	baseResource
 }
 
 type resourceModel struct {
-	ID                       types.String `tfsdk:"id"`
-	Name                     types.String `tfsdk:"name"`
-	Address                  types.String `tfsdk:"address"`
-	RemoteNetworkID          types.String `tfsdk:"remote_network_id"`
-	IsAuthoritative          types.Bool   `tfsdk:"is_authoritative"`
+	baseResourceModel
+
 	Protocols                types.Object `tfsdk:"protocols"`
-	AccessPolicy             types.Set    `tfsdk:"access_policy"`
-	GroupAccess              types.Set    `tfsdk:"access_group"`
-	ServiceAccess            types.Set    `tfsdk:"access_service"`
 	IsActive                 types.Bool   `tfsdk:"is_active"`
-	IsVisible                types.Bool   `tfsdk:"is_visible"`
 	IsBrowserShortcutEnabled types.Bool   `tfsdk:"is_browser_shortcut_enabled"`
-	Alias                    types.String `tfsdk:"alias"`
-	SecurityPolicyID         types.String `tfsdk:"security_policy_id"`
 	RoutingMode              types.String `tfsdk:"routing_mode"`
-	Tags                     types.Map    `tfsdk:"tags"`
-	TagsAll                  types.Map    `tfsdk:"tags_all"`
 }
 
 func (r *twingateResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = TwingateResource
-}
-
-func (r *twingateResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
-	if !ok {
-		return
-	}
-
-	r.client = providerData.Client
-	r.defaultTags = providerData.DefaultTags
-}
-
-func (m *resourceModel) access() accessModel {
-	return accessModel{
-		IsAuthoritative: m.IsAuthoritative,
-		AccessPolicy:    m.AccessPolicy,
-		GroupAccess:     m.GroupAccess,
-		ServiceAccess:   m.ServiceAccess,
-	}
-}
-
-func (r *twingateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	planTagsAll(ctx, req, resp, r.defaultTags)
-
-	// Suppress access_policy drift when the config omits the block and state holds only
-	// the API default values (mode=MANUAL, approval_mode=MANUAL, no duration).
-	// ModifyPlan runs after all attribute-level plan modifiers, so this override is final.
-	suppressAccessPolicyDefaultDrift(ctx, req, resp)
 }
 
 func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -130,9 +81,7 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root(attr.SecurityPolicyID), types.StringPointerValue(res.SecurityPolicyID))
 	resp.State.SetAttribute(ctx, path.Root(attr.RoutingMode), types.StringPointerValue(res.RoutingMode))
-	resp.State.SetAttribute(ctx, path.Root(attr.Alias), types.StringPointerValue(res.Alias))
 
 	if res.Protocols != nil {
 		protocols, diags := convertProtocolsToTerraform(res.Protocols, nil)
@@ -145,21 +94,14 @@ func (r *twingateResource) ImportState(ctx context.Context, req resource.ImportS
 		resp.State.SetAttribute(ctx, path.Root(attr.Protocols), protocols)
 	}
 
-	setImportedAccess(ctx, &resp.State, &resp.Diagnostics, res.AccessPolicy, resourceAccess{Groups: res.GroupsAccess, ServiceAccounts: res.ServiceAccounts})
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
+	setImportedBaseResource(ctx, &resp.State, &resp.Diagnostics, res.BaseResource, r.defaultTags)
 }
 
-//nolint:funlen
 func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Version:     schemaVersion,
 		Description: "Resources in Twingate represent servers on the private network that clients can connect to. Resources can be defined by IP, CIDR range, FQDN, or DNS zone. For more information, see the Twingate [documentation](https://docs.twingate.com/docs/resources-and-access-nodes).",
-		Attributes: map[string]schema.Attribute{
+		Attributes: withBaseAttributes(map[string]schema.Attribute{
 			attr.Name: schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the Resource",
@@ -179,37 +121,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Set the resource as active or inactive. Default is `true`.",
 				Default:     booldefault.StaticBool(true),
 			},
-			attr.IsAuthoritative: isAuthoritativeAttribute(),
-			attr.Alias: schema.StringAttribute{
-				Optional:      true,
-				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				PlanModifiers: []planmodifier.String{customplanmodifier.CaseInsensitiveDiff()},
-			},
 			attr.Protocols: protocols(),
-			attr.Tags: schema.MapAttribute{
-				ElementType: types.StringType,
-				Optional:    true,
-				Computed:    true,
-				Description: "A map of key-value pair tags to set on this resource.",
-				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
-			},
-			attr.TagsAll: tagsAllAttribute(),
-			// computed
-			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
-				PlanModifiers: []planmodifier.String{
-					customplanmodifier.UseNullStringWhenValueOmitted(),
-				},
-			},
-			attr.IsVisible: schema.BoolAttribute{
-				Optional:      true,
-				Computed:      true,
-				Description:   "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.",
-				Default:       booldefault.StaticBool(true),
-				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
-			},
 			attr.IsBrowserShortcutEnabled: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -233,7 +145,7 @@ func (r *twingateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description:   "Autogenerated ID of the Resource, encoded in base64",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-		},
+		}),
 
 		Blocks: accessBlocks(),
 	}
@@ -421,7 +333,9 @@ func (r *twingateResource) Create(ctx context.Context, req resource.CreateReques
 
 	if !input.IsActive {
 		if err := r.client.UpdateResourceActiveState(ctx, &model.Resource{
-			ID:       resource.ID,
+			BaseResource: model.BaseResource{
+				ID: resource.ID,
+			},
 			IsActive: false,
 		}); err != nil {
 			addErr(&resp.Diagnostics, err, operationCreate, TwingateResource)
@@ -441,33 +355,24 @@ func convertResource(plan *resourceModel) (*model.Resource, error) {
 		return nil, err
 	}
 
-	access, accessPolicy, err := parseAccess(plan.access())
+	base, err := convertBaseResource(&plan.baseResourceModel)
 	if err != nil {
 		return nil, err
 	}
 
 	isBrowserShortcutEnabled := getOptionalBool(plan.IsBrowserShortcutEnabled)
 
-	if err := validateResourceConstraints(plan, access.Groups, protocols, isBrowserShortcutEnabled); err != nil {
+	if err := validateResourceConstraints(plan, base.GroupsAccess, protocols, isBrowserShortcutEnabled); err != nil {
 		return nil, err
 	}
 
 	return &model.Resource{
-		Name:                     plan.Name.ValueString(),
-		RemoteNetworkID:          plan.RemoteNetworkID.ValueString(),
-		Address:                  plan.Address.ValueString(),
+		BaseResource:             base,
 		Protocols:                protocols,
-		AccessPolicy:             accessPolicy,
-		GroupsAccess:             access.Groups,
-		ServiceAccounts:          access.ServiceAccounts,
 		IsActive:                 plan.IsActive.ValueBool(),
 		IsAuthoritative:          convertAuthoritativeFlag(plan.IsAuthoritative),
-		Alias:                    getOptionalString(plan.Alias),
-		IsVisible:                getOptionalBool(plan.IsVisible),
 		IsBrowserShortcutEnabled: isBrowserShortcutEnabled,
-		SecurityPolicyID:         plan.SecurityPolicyID.ValueStringPointer(),
 		RoutingMode:              plan.RoutingMode.ValueStringPointer(),
-		Tags:                     getKeyValueMap(plan.TagsAll),
 	}, nil
 }
 
@@ -638,11 +543,6 @@ func (r *twingateResource) Read(ctx context.Context, req resource.ReadRequest, r
 	resource, err := r.client.ReadResource(ctx, state.ID.ValueString())
 	if resource != nil {
 		resource.IsAuthoritative = convertAuthoritativeFlag(state.IsAuthoritative)
-
-		if resource.SecurityPolicyID == nil && !state.SecurityPolicyID.IsNull() && state.SecurityPolicyID.ValueString() == "" {
-			emptyString := ""
-			resource.SecurityPolicyID = &emptyString
-		}
 	}
 
 	r.helper(ctx, resource, &state, &state, &resp.State, &resp.Diagnostics, err, operationRead)
@@ -665,12 +565,9 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	planSecurityPolicy := input.SecurityPolicyID
 	input.ID = state.ID.ValueString()
 
-	desiredAccess := resourceAccess{Groups: input.GroupsAccess, ServiceAccounts: input.ServiceAccounts}
-
-	if err := updateResourceAccess(ctx, r.client, input.ID, input.IsAuthoritative, plan.access(), state.access(), desiredAccess, r.readAccess(input.ID)); err != nil {
+	if err := updateResourceAccess(ctx, r.client, input.ID, input.IsAuthoritative, plan.accessModel, state.accessModel, baseResourceAccess(input.BaseResource), r.readAccess(input.ID)); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateResource)
 
 		return
@@ -686,28 +583,17 @@ func (r *twingateResource) Update(ctx context.Context, req resource.UpdateReques
 
 	if resource != nil {
 		resource.IsAuthoritative = input.IsAuthoritative
-
-		if resource.SecurityPolicyID == nil && planSecurityPolicy != nil && *planSecurityPolicy == "" {
-			resource.SecurityPolicyID = planSecurityPolicy
-		}
 	}
 
 	r.helper(ctx, resource, &state, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
 func isResourceChanged(plan, state *resourceModel) bool {
-	return !plan.RemoteNetworkID.Equal(state.RemoteNetworkID) ||
-		!plan.Name.Equal(state.Name) ||
-		!plan.Address.Equal(state.Address) ||
+	return isBaseResourceChanged(&plan.baseResourceModel, &state.baseResourceModel) ||
 		!equalProtocolsState(&plan.Protocols, &state.Protocols) ||
 		!plan.IsActive.Equal(state.IsActive) ||
-		!plan.IsVisible.Equal(state.IsVisible) ||
 		!plan.IsBrowserShortcutEnabled.Equal(state.IsBrowserShortcutEnabled) ||
-		!plan.Alias.Equal(state.Alias) ||
-		!plan.SecurityPolicyID.Equal(state.SecurityPolicyID) ||
-		!plan.RoutingMode.Equal(state.RoutingMode) ||
-		!plan.Tags.Equal(state.Tags) || !plan.TagsAll.Equal(state.TagsAll) ||
-		!plan.AccessPolicy.Equal(state.AccessPolicy)
+		!plan.RoutingMode.Equal(state.RoutingMode)
 }
 
 func (r *twingateResource) readAccess(resourceID string) func(ctx context.Context) (resourceAccess, error) {
@@ -717,21 +603,12 @@ func (r *twingateResource) readAccess(resourceID string) func(ctx context.Contex
 			return resourceAccess{}, err //nolint:wrapcheck
 		}
 
-		return resourceAccess{Groups: remote.GroupsAccess, ServiceAccounts: remote.ServiceAccounts}, nil
+		return baseResourceAccess(remote.BaseResource), nil
 	}
 }
 
 func (r *twingateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state resourceModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	err := r.client.DeleteResource(ctx, state.ID.ValueString())
-	addErr(&resp.Diagnostics, err, operationDelete, TwingateResource)
+	deleteResource(ctx, req, resp, TwingateResource, r.client.DeleteResource)
 }
 
 func (r *twingateResource) helper(ctx context.Context, resource *model.Resource, state, reference *resourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
@@ -752,18 +629,6 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 		resource.Protocols = model.DefaultProtocols()
 	}
 
-	if !resource.IsAuthoritative {
-		access, err := filterNonAuthoritativeAccess(reference.access(), resourceAccess{Groups: resource.GroupsAccess, ServiceAccounts: resource.ServiceAccounts})
-		if err != nil {
-			addErr(diagnostics, err, operation, TwingateResource)
-
-			return
-		}
-
-		resource.GroupsAccess = access.Groups
-		resource.ServiceAccounts = access.ServiceAccounts
-	}
-
 	setState(ctx, state, reference, resource, diagnostics)
 
 	if diagnostics.HasError() {
@@ -775,26 +640,25 @@ func (r *twingateResource) helper(ctx context.Context, resource *model.Resource,
 }
 
 func setState(ctx context.Context, state, reference *resourceModel, resource *model.Resource, diagnostics *diag.Diagnostics) {
-	state.ID = types.StringValue(resource.ID)
-	state.Name = types.StringValue(resource.Name)
-	state.RemoteNetworkID = types.StringValue(resource.RemoteNetworkID)
-	state.Address = types.StringValue(resource.Address)
-	state.IsActive = types.BoolValue(resource.IsActive)
-	state.IsAuthoritative = types.BoolValue(resource.IsAuthoritative)
-	state.SecurityPolicyID = types.StringPointerValue(resource.SecurityPolicyID)
-	state.Alias = types.StringPointerValue(resource.Alias)
-	state.RoutingMode = types.StringPointerValue(resource.RoutingMode)
+	// reference fields are read up front: state and reference may be the same model
+	referenceProtocols := reference.Protocols
+	referenceIsBrowserShortcutEnabled := reference.IsBrowserShortcutEnabled
 
-	if !state.IsVisible.IsNull() || !reference.IsVisible.IsUnknown() {
-		state.IsVisible = types.BoolPointerValue(resource.IsVisible)
+	setBaseResourceState(ctx, &state.baseResourceModel, &reference.baseResourceModel, resource.BaseResource, resource.IsAuthoritative, diagnostics)
+
+	if diagnostics.HasError() {
+		return
 	}
 
-	if !state.IsBrowserShortcutEnabled.IsNull() || !reference.IsBrowserShortcutEnabled.IsUnknown() {
+	state.IsActive = types.BoolValue(resource.IsActive)
+	state.RoutingMode = types.StringPointerValue(resource.RoutingMode)
+
+	if !state.IsBrowserShortcutEnabled.IsNull() || !referenceIsBrowserShortcutEnabled.IsUnknown() {
 		state.IsBrowserShortcutEnabled = types.BoolPointerValue(resource.IsBrowserShortcutEnabled)
 	}
 
-	if !state.Protocols.IsNull() || !reference.Protocols.IsUnknown() {
-		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &reference.Protocols)
+	if !state.Protocols.IsNull() || !referenceProtocols.IsUnknown() {
+		protocols, diags := convertProtocolsToTerraform(resource.Protocols, &referenceProtocols)
 		diagnostics.Append(diags...)
 
 		if diagnostics.HasError() {
@@ -805,19 +669,6 @@ func setState(ctx context.Context, state, reference *resourceModel, resource *mo
 			state.Protocols = protocols
 		}
 	}
-
-	access := convertAccessToTerraform(ctx, resource.IsAuthoritative, reference.access(), resource.AccessPolicy,
-		resourceAccess{Groups: resource.GroupsAccess, ServiceAccounts: resource.ServiceAccounts}, diagnostics)
-
-	if diagnostics.HasError() {
-		return
-	}
-
-	state.AccessPolicy = access.AccessPolicy
-	state.GroupAccess = access.GroupAccess
-	state.ServiceAccess = access.ServiceAccess
-	state.TagsAll = utils.ConvertMapValue(resource.Tags)
-	state.Tags = reference.Tags
 }
 
 func convertProtocolsToTerraform(protocols *model.Protocols, reference *types.Object) (types.Object, diag.Diagnostics) {

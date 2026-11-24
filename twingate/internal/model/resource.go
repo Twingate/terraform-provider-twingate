@@ -147,22 +147,13 @@ func equalsOptionalString(s1, s2 *string) bool {
 }
 
 type Resource struct {
-	ID                       string
-	RemoteNetworkID          string
-	Address                  string
-	Name                     string
+	BaseResource
+
 	Protocols                *Protocols
 	IsActive                 bool
-	AccessPolicy             *AccessPolicy
-	GroupsAccess             []AccessGroup
-	ServiceAccounts          []string
 	IsAuthoritative          bool
-	IsVisible                *bool
 	IsBrowserShortcutEnabled *bool
-	Alias                    *string
-	SecurityPolicyID         *string
 	RoutingMode              *string
-	Tags                     map[string]string
 }
 
 func (r Resource) AccessToTerraform() []any {
@@ -182,14 +173,6 @@ func (r Resource) AccessToTerraform() []any {
 	}
 
 	return []any{rawMap}
-}
-
-func (r Resource) GetID() string {
-	return r.ID
-}
-
-func (r Resource) GetName() string {
-	return r.Name
 }
 
 func (r Resource) ToTerraform() any {

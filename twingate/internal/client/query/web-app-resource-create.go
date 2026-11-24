@@ -1,9 +1,6 @@
 package query
 
-import (
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
-	"github.com/hasura/go-graphql-client"
-)
+import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 
 //nolint:lll
 type CreateWebAppResource struct {
@@ -43,22 +40,8 @@ type WebAppDownstream struct {
 }
 
 type gqlWebAppResource struct {
-	IDName
-	Address struct {
-		Value string
-	}
-	RemoteNetwork struct {
-		ID graphql.ID
-	}
-	Gateway struct {
-		ID graphql.ID
-	}
-	IsVisible             bool
-	Alias                 string
-	SecurityPolicy        *gqlSecurityPolicy
-	Tags                  []Tag
-	ApprovalMode          string
-	AccessPolicy          *AccessPolicy
+	gqlPAMResource
+
 	Upstream              WebAppUpstream
 	Downstream            WebAppDownstream
 	RequestHeaderRewrites []KeyValuePair
@@ -66,19 +49,10 @@ type gqlWebAppResource struct {
 
 func (g gqlWebAppResource) ToModel() *model.WebAppResource {
 	return &model.WebAppResource{
-		ID:                    string(g.ID),
-		Name:                  g.Name,
-		Address:               g.Address.Value,
-		GatewayID:             string(g.Gateway.ID),
-		RemoteNetworkID:       string(g.RemoteNetwork.ID),
-		IsVisible:             &g.IsVisible,
-		Alias:                 optionalString(g.Alias),
-		SecurityPolicyID:      securityPolicyID(g.SecurityPolicy),
-		Tags:                  tagsToModel(g.Tags),
+		PAMResource:           g.gqlPAMResource.ToModel(),
 		Upstream:              model.WebAppUpstream{Port: g.Upstream.Port, TLSMode: g.Upstream.TLSMode},
 		Downstream:            model.WebAppDownstream{Port: g.Downstream.Port, TLSMode: g.Downstream.TLSMode},
 		RequestHeaderRewrites: headerRewritesToModel(g.RequestHeaderRewrites),
-		AccessPolicy:          accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
 	}
 }
 

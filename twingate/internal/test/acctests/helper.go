@@ -352,7 +352,9 @@ func DeactivateTwingateResource(resourceName string) sdk.TestCheckFunc {
 		}
 
 		err := providerClient.UpdateResourceActiveState(context.Background(), &model.Resource{
-			ID:       resourceID,
+			BaseResource: model.BaseResource{
+				ID: resourceID,
+			},
 			IsActive: false,
 		})
 		if err != nil {

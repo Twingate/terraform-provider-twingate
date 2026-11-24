@@ -22,19 +22,8 @@ func (q ReadSSHResource) ToModel() (*model.SSHResource, error) {
 }
 
 type gqlSSHResourceNode struct {
-	IDName
-	Address struct {
-		Value string
-	}
-	RemoteNetwork struct {
-		ID graphql.ID
-	}
-	IsVisible           bool
-	Alias               string
-	SecurityPolicy      *gqlSecurityPolicy
-	Tags                []Tag
-	ApprovalMode        string
-	AccessPolicy        *AccessPolicy
+	gqlBaseResource
+
 	Access              Access `graphql:"access(after: $accessEndCursor, first: $pageLimit)"`
 	SSHResourceFragment struct {
 		Gateway struct {
@@ -46,28 +35,14 @@ type gqlSSHResourceNode struct {
 }
 
 func (n gqlSSHResourceNode) ToModel() (*model.SSHResource, error) {
-	res := &model.SSHResource{
-		ID:               string(n.ID),
-		Name:             n.Name,
-		Address:          n.Address.Value,
-		GatewayID:        string(n.SSHResourceFragment.Gateway.ID),
-		RemoteNetworkID:  string(n.RemoteNetwork.ID),
-		IsVisible:        &n.IsVisible,
-		Alias:            optionalString(n.Alias),
-		SecurityPolicyID: securityPolicyID(n.SecurityPolicy),
-		Tags:             tagsToModel(n.Tags),
-		Downstream:       &model.SSHDownstream{Port: n.SSHResourceFragment.Downstream.Port},
-		Upstream:         &model.SSHUpstream{Port: n.SSHResourceFragment.Upstream.Port},
-		AccessPolicy:     accessPolicyToModel(n.AccessPolicy, &n.ApprovalMode),
-	}
-
-	groups, serviceAccounts, err := n.Access.ToModel()
+	pam, err := n.toPAMModel(n.SSHResourceFragment.Gateway.ID, n.Access)
 	if err != nil {
 		return nil, err
 	}
 
-	res.GroupsAccess = groups
-	res.ServiceAccounts = serviceAccounts
-
-	return res, nil
+	return &model.SSHResource{
+		PAMResource: pam,
+		Downstream:  &model.SSHDownstream{Port: n.SSHResourceFragment.Downstream.Port},
+		Upstream:    &model.SSHUpstream{Port: n.SSHResourceFragment.Upstream.Port},
+	}, nil
 }

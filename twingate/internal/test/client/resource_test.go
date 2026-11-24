@@ -16,12 +16,14 @@ import (
 
 func newTestResource() *model.Resource {
 	return &model.Resource{
-		ID:              "test",
-		RemoteNetworkID: "test",
-		Address:         "test",
-		Name:            "testName",
-		GroupsAccess: []model.AccessGroup{
-			{GroupID: b64.StdEncoding.EncodeToString([]byte("testgroup"))},
+		BaseResource: model.BaseResource{
+			ID:              "test",
+			RemoteNetworkID: "test",
+			Address:         "test",
+			Name:            "testName",
+			GroupsAccess: []model.AccessGroup{
+				{GroupID: b64.StdEncoding.EncodeToString([]byte("testgroup"))},
+			},
 		},
 		Protocols: model.DefaultProtocols(),
 		IsActive:  true,
@@ -48,7 +50,12 @@ func TestClientResourceCreateOk(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceOkJson))
 
-		resource, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id", SecurityPolicyID: optionalString("")})
+		resource, err := client.CreateResource(context.Background(), &model.Resource{
+			BaseResource: model.BaseResource{
+				ID:               "test-id",
+				SecurityPolicyID: optionalString(""),
+			},
+		})
 
 		assert.Nil(t, err)
 		assert.EqualValues(t, "test-id", resource.ID)
@@ -76,7 +83,11 @@ func TestClientResourceCreateError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, createResourceErrorJson))
 
-		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
+		_, err := client.CreateResource(context.Background(), &model.Resource{
+			BaseResource: model.BaseResource{
+				ID: "test-id",
+			},
+		})
 
 		assert.EqualError(t, err, "failed to create resource: something went wrong")
 	})
@@ -99,7 +110,11 @@ func TestClientResourceCreateEmptyResponse(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewStringResponder(200, jsonResponse))
 
-		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
+		_, err := client.CreateResource(context.Background(), &model.Resource{
+			BaseResource: model.BaseResource{
+				ID: "test-id",
+			},
+		})
 
 		assert.EqualError(t, err, "failed to create resource: query result is empty")
 	})
@@ -112,7 +127,11 @@ func TestClientResourceCreateRequestError(t *testing.T) {
 		httpmock.RegisterResponder("POST", client.GraphqlServerURL,
 			httpmock.NewErrorResponder(errBadRequest))
 
-		_, err := client.CreateResource(context.Background(), &model.Resource{ID: "test-id"})
+		_, err := client.CreateResource(context.Background(), &model.Resource{
+			BaseResource: model.BaseResource{
+				ID: "test-id",
+			},
+		})
 
 		assert.EqualError(t, err, graphqlErr(client, "failed to create resource", errBadRequest))
 	})
@@ -123,13 +142,16 @@ func TestClientResourceReadOk(t *testing.T) {
 		var defaultBool bool
 
 		expected := &model.Resource{
-			ID:              "resource1",
-			Name:            "test resource",
-			Address:         "test.com",
-			RemoteNetworkID: "network1",
-			GroupsAccess: []model.AccessGroup{
-				{GroupID: "group1"},
-				{GroupID: "group2"},
+			BaseResource: model.BaseResource{
+				ID:              "resource1",
+				Name:            "test resource",
+				Address:         "test.com",
+				RemoteNetworkID: "network1",
+				GroupsAccess: []model.AccessGroup{
+					{GroupID: "group1"},
+					{GroupID: "group2"},
+				},
+				IsVisible: &defaultBool,
 			},
 			Protocols: &model.Protocols{
 				UDP: &model.Protocol{
@@ -145,7 +167,6 @@ func TestClientResourceReadOk(t *testing.T) {
 				},
 				AllowIcmp: true,
 			},
-			IsVisible:                &defaultBool,
 			IsBrowserShortcutEnabled: &defaultBool,
 		}
 
@@ -219,15 +240,18 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 		var defaultBool bool
 
 		expected := &model.Resource{
-			ID:              "resource1",
-			Name:            "test resource",
-			Address:         "test.com",
-			RemoteNetworkID: "network1",
-			GroupsAccess: []model.AccessGroup{
-				{GroupID: "group1"},
-				{GroupID: "group2"},
-				{GroupID: "group3"},
-				{GroupID: "group4"},
+			BaseResource: model.BaseResource{
+				ID:              "resource1",
+				Name:            "test resource",
+				Address:         "test.com",
+				RemoteNetworkID: "network1",
+				GroupsAccess: []model.AccessGroup{
+					{GroupID: "group1"},
+					{GroupID: "group2"},
+					{GroupID: "group3"},
+					{GroupID: "group4"},
+				},
+				IsVisible: &defaultBool,
 			},
 			IsActive: true,
 			Protocols: &model.Protocols{
@@ -244,7 +268,6 @@ func TestClientResourceReadAllGroups(t *testing.T) {
 				},
 				AllowIcmp: true,
 			},
-			IsVisible:                &defaultBool,
 			IsBrowserShortcutEnabled: &defaultBool,
 		}
 
@@ -674,11 +697,51 @@ func TestClientResourcesReadAllOk(t *testing.T) {
 		var defaultBool bool
 
 		expected := []*model.Resource{
-			{ID: "resource1", Name: "tf-acc-resource1", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
-			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
-			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
-			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
-			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource1",
+					Name:      "tf-acc-resource1",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource2",
+					Name:      "resource2",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource3",
+					Name:      "tf-acc-resource3",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource4",
+					Name:      "tf-acc-resource4",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource5",
+					Name:      "tf-acc-resource5",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
 		}
 
 		// response JSON
@@ -1005,7 +1068,13 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 
 		expected := []*model.Resource{
 			{
-				ID: "id-1", Name: "resource-test", Address: "internal.int",
+				BaseResource: model.BaseResource{
+					ID:              "id-1",
+					Name:            "resource-test",
+					Address:         "internal.int",
+					RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+					IsVisible:       &defaultBool,
+				},
 				Protocols: &model.Protocols{
 					TCP: &model.Protocol{
 						Policy: model.PolicyRestricted,
@@ -1019,12 +1088,16 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 						Ports:  []*model.PortRange{},
 					},
 				},
-				RemoteNetworkID:          "UmVtb3RlTmV0d29yazo0MDEzOQ==",
-				IsVisible:                &defaultBool,
 				IsBrowserShortcutEnabled: &defaultBool,
 			},
 			{
-				ID: "id-2", Name: "resource-test", Address: "internal.int",
+				BaseResource: model.BaseResource{
+					ID:              "id-2",
+					Name:            "resource-test",
+					Address:         "internal.int",
+					RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+					IsVisible:       &defaultBool,
+				},
 				Protocols: &model.Protocols{
 					TCP: &model.Protocol{
 						Policy: model.PolicyRestricted,
@@ -1038,12 +1111,16 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 						Ports:  []*model.PortRange{},
 					},
 				},
-				RemoteNetworkID:          "UmVtb3RlTmV0d29yazo0MDEzOQ==",
-				IsVisible:                &defaultBool,
 				IsBrowserShortcutEnabled: &defaultBool,
 			},
 			{
-				ID: "id-3", Name: "resource-test", Address: "internal.int",
+				BaseResource: model.BaseResource{
+					ID:              "id-3",
+					Name:            "resource-test",
+					Address:         "internal.int",
+					RemoteNetworkID: "UmVtb3RlTmV0d29yazo0MDEzOQ==",
+					IsVisible:       &defaultBool,
+				},
 				Protocols: &model.Protocols{
 					TCP: &model.Protocol{
 						Policy: model.PolicyRestricted,
@@ -1057,8 +1134,6 @@ func TestClientResourcesReadByNameOk(t *testing.T) {
 						Ports:  []*model.PortRange{},
 					},
 				},
-				RemoteNetworkID:          "UmVtb3RlTmV0d29yazo0MDEzOQ==",
-				IsVisible:                &defaultBool,
 				IsBrowserShortcutEnabled: &defaultBool,
 			},
 		}
@@ -1520,21 +1595,55 @@ func TestClientFullResourcesReadAllOk(t *testing.T) {
 
 		expected := []*model.Resource{
 			{
-				ID:                       "resource1",
-				Name:                     "tf-acc-resource1",
-				IsVisible:                &defaultBool,
+				BaseResource: model.BaseResource{
+					ID:        "resource1",
+					Name:      "tf-acc-resource1",
+					IsVisible: &defaultBool,
+					GroupsAccess: []model.AccessGroup{
+						{GroupID: "group-1"},
+						{GroupID: "group-2"},
+					},
+					ServiceAccounts: []string{"service-account-2"},
+				},
 				IsBrowserShortcutEnabled: &defaultBool,
 				Protocols:                model.DefaultProtocols(),
-				GroupsAccess: []model.AccessGroup{
-					{GroupID: "group-1"},
-					{GroupID: "group-2"},
-				},
-				ServiceAccounts: []string{"service-account-2"},
 			},
-			{ID: "resource2", Name: "resource2", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
-			{ID: "resource3", Name: "tf-acc-resource3", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
-			{ID: "resource4", Name: "tf-acc-resource4", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
-			{ID: "resource5", Name: "tf-acc-resource5", IsVisible: &defaultBool, IsBrowserShortcutEnabled: &defaultBool, Protocols: model.DefaultProtocols()},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource2",
+					Name:      "resource2",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource3",
+					Name:      "tf-acc-resource3",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource4",
+					Name:      "tf-acc-resource4",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
+			{
+				BaseResource: model.BaseResource{
+					ID:        "resource5",
+					Name:      "tf-acc-resource5",
+					IsVisible: &defaultBool,
+				},
+				IsBrowserShortcutEnabled: &defaultBool,
+				Protocols:                model.DefaultProtocols(),
+			},
 		}
 
 		// response JSON

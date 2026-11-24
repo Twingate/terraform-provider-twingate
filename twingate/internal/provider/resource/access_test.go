@@ -90,12 +90,12 @@ func testGroups(ids ...string) []model.AccessGroup {
 	return groups
 }
 
-func TestIsAccessAuthoritative(t *testing.T) {
+func TestConvertAuthoritativeFlag(t *testing.T) {
 	// State written before `is_authoritative` existed holds null: it must keep the default.
-	assert.True(t, isAccessAuthoritative(types.BoolNull()))
-	assert.True(t, isAccessAuthoritative(types.BoolUnknown()))
-	assert.True(t, isAccessAuthoritative(types.BoolValue(true)))
-	assert.False(t, isAccessAuthoritative(types.BoolValue(false)))
+	assert.True(t, convertAuthoritativeFlag(types.BoolNull()))
+	assert.True(t, convertAuthoritativeFlag(types.BoolUnknown()))
+	assert.True(t, convertAuthoritativeFlag(types.BoolValue(true)))
+	assert.False(t, convertAuthoritativeFlag(types.BoolValue(false)))
 }
 
 func TestParseAccess(t *testing.T) {
@@ -315,38 +315,6 @@ func TestUpdateResourceAccess(t *testing.T) {
 	})
 }
 
-func TestRefreshAccess(t *testing.T) {
-	ctx := t.Context()
-	remote := resourceAccess{Groups: testGroups("g1", "g-external"), ServiceAccounts: []string{"s1", "s-external"}}
-
-	t.Run("null is_authoritative - defaults to authoritative", func(t *testing.T) {
-		var diags diag.Diagnostics
-
-		reference := makeTestAccessModel(ctx, types.BoolNull(), []string{"g1"}, nil)
-		access := refreshAccess(ctx, reference, nil, remote, &diags)
-
-		require.False(t, diags.HasError(), diags)
-		assert.Equal(t, types.BoolValue(true), access.IsAuthoritative)
-		assert.ElementsMatch(t, []string{"s1", "s-external"}, getServiceAccountAccessAttribute(access.ServiceAccess))
-
-		groups, err := getGroupAccessAttribute(access.GroupAccess)
-		require.NoError(t, err)
-		assert.ElementsMatch(t, []string{"g1", "g-external"}, groupIDsOf(groups))
-	})
-
-	t.Run("non-authoritative - external assignments are ignored", func(t *testing.T) {
-		var diags diag.Diagnostics
-
-		reference := makeTestAccessModel(ctx, types.BoolValue(false), []string{"g1"}, []string{"s1"})
-		access := refreshAccess(ctx, reference, nil, remote, &diags)
-
-		require.False(t, diags.HasError(), diags)
-		assert.Equal(t, types.BoolValue(false), access.IsAuthoritative)
-		assert.Equal(t, reference.GroupAccess, access.GroupAccess)
-		assert.Equal(t, reference.ServiceAccess, access.ServiceAccess)
-	})
-}
-
 // accessPrincipalIDs extracts the principal IDs, in order, from a resourceAccessAdd request.
 func accessPrincipalIDs(t *testing.T, requestBody string) []string {
 	t.Helper()
@@ -369,18 +337,30 @@ func accessPrincipalIDs(t *testing.T, requestBody string) []string {
 	return ids
 }
 
-// pamModel is implemented by the models of all PAM resources.
-type pamModel interface {
-	access() accessModel
-	setAccess(access accessModel)
+// pamModelOf returns the part every PAM resource model shares.
+func pamModelOf(t *testing.T, model any) *pamResourceModel {
+	t.Helper()
+
+	switch typed := model.(type) {
+	case *kubernetesResourceModel:
+		return &typed.pamResourceModel
+	case *sshResourceModel:
+		return &typed.pamResourceModel
+	case *webAppResourceModel:
+		return &typed.pamResourceModel
+	}
+
+	require.FailNow(t, "not a PAM resource model", "%T", model)
+
+	return nil
 }
 
 type pamResourceCase struct {
 	name        string
 	newResource func(apiClient *client.Client) resource.ResourceWithImportState
 	// newModel returns a valid plan without any access.
-	newModel   func(t *testing.T) pamModel
-	emptyModel func() pamModel
+	newModel   func(t *testing.T) any
+	emptyModel func() any
 	// entityResponse is the answer of the create or update mutation.
 	entityResponse func(t *testing.T, create bool) string
 }
@@ -398,16 +378,16 @@ func pamResourceCases() []pamResourceCase {
 		{
 			name: TwingateKubernetesResource,
 			newResource: func(apiClient *client.Client) resource.ResourceWithImportState {
-				return &kubernetesResource{client: apiClient}
+				return &kubernetesResource{baseResource: baseResource{client: apiClient}}
 			},
-			newModel: func(t *testing.T) pamModel {
+			newModel: func(t *testing.T) any {
 				t.Helper()
 
 				plan := testKubernetesModel(t, types.MapNull(types.StringType))
 
 				return &plan
 			},
-			emptyModel: func() pamModel { return &kubernetesResourceModel{} },
+			emptyModel: func() any { return &kubernetesResourceModel{} },
 			entityResponse: func(t *testing.T, create bool) string {
 				t.Helper()
 
@@ -417,16 +397,16 @@ func pamResourceCases() []pamResourceCase {
 		{
 			name: TwingateSSHResource,
 			newResource: func(apiClient *client.Client) resource.ResourceWithImportState {
-				return &sshResource{client: apiClient}
+				return &sshResource{baseResource: baseResource{client: apiClient}}
 			},
-			newModel: func(t *testing.T) pamModel {
+			newModel: func(t *testing.T) any {
 				t.Helper()
 
 				plan := testSSHModel(t, types.MapNull(types.StringType))
 
 				return &plan
 			},
-			emptyModel: func() pamModel { return &sshResourceModel{} },
+			emptyModel: func() any { return &sshResourceModel{} },
 			entityResponse: func(t *testing.T, create bool) string {
 				t.Helper()
 
@@ -436,16 +416,16 @@ func pamResourceCases() []pamResourceCase {
 		{
 			name: TwingateWebAppResource,
 			newResource: func(apiClient *client.Client) resource.ResourceWithImportState {
-				return &webAppResource{client: apiClient}
+				return &webAppResource{baseResource: baseResource{client: apiClient}}
 			},
-			newModel: func(t *testing.T) pamModel {
+			newModel: func(t *testing.T) any {
 				t.Helper()
 
 				plan := testWebAppModel(t, types.MapNull(types.StringType), types.MapNull(types.StringType))
 
 				return &plan
 			},
-			emptyModel: func() pamModel { return &webAppResourceModel{} },
+			emptyModel: func() any { return &webAppResourceModel{} },
 			entityResponse: func(t *testing.T, create bool) string {
 				t.Helper()
 
@@ -496,21 +476,19 @@ func (c pamResourceCase) readResponse(t *testing.T, groupIDs, serviceAccountIDs 
 	return ""
 }
 
-func (c pamResourceCase) model(t *testing.T, id types.String, isAuthoritative types.Bool, groupIDs, serviceAccountIDs []string) pamModel {
+func (c pamResourceCase) model(t *testing.T, id types.String, isAuthoritative types.Bool, groupIDs, serviceAccountIDs []string) any {
 	t.Helper()
 
 	plan := c.newModel(t)
-	plan.setAccess(makeTestAccessModel(t.Context(), isAuthoritative, groupIDs, serviceAccountIDs))
+	pam := pamModelOf(t, plan)
+	pam.ID = id
 
-	// every PAM model starts with the ID field
-	switch typed := plan.(type) {
-	case *kubernetesResourceModel:
-		typed.ID = id
-	case *sshResourceModel:
-		typed.ID = id
-	case *webAppResourceModel:
-		typed.ID = id
+	if k8s, ok := plan.(*kubernetesResourceModel); ok {
+		// what an in-cluster Kubernetes Resource holds in state after create
+		k8s.Address = types.StringValue(defaultKubernetesAddress)
 	}
+
+	pam.accessModel = makeTestAccessModel(t.Context(), isAuthoritative, groupIDs, serviceAccountIDs)
 
 	return plan
 }
@@ -547,7 +525,7 @@ func TestPAMResourceCreateAssignsAccess(t *testing.T) {
 
 			state := c.emptyModel()
 			readStateInto(t, resp.State, state)
-			assertAccessState(t, state.access(), true, []string{group}, []string{serviceAccount})
+			assertAccessState(t, pamModelOf(t, state).accessModel, true, []string{group}, []string{serviceAccount})
 		})
 	}
 }
@@ -599,7 +577,9 @@ func TestPAMResourceUpdateAccess(t *testing.T) {
 					c.readResponse(t, []string{group, externalGroup}, []string{oldService, externalService}),
 					accessRemoveResponse,
 					accessAddResponse,
-					c.entityResponse(t, false),
+					// only the access changed: the resource is read back, not updated.
+					// The read still returns the previous assignments, which must not reach state.
+					c.readResponse(t, []string{group, externalGroup}, []string{oldService, externalService}),
 				)
 				res := c.newResource(apiClient)
 
@@ -615,24 +595,26 @@ func TestPAMResourceUpdateAccess(t *testing.T) {
 
 				require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 				require.Len(t, *requests, 4)
+				assert.NotContains(t, (*requests)[3], "mutation")
 				assert.ElementsMatch(t, mode.expectedRemoved, requestVariable(t, (*requests)[1], "principalIds"))
 				assert.Equal(t, []string{newService}, accessPrincipalIDs(t, (*requests)[2]))
 
 				state := c.emptyModel()
 				readStateInto(t, resp.State, state)
-				assertAccessState(t, state.access(), mode.isAuthoritative, []string{group}, []string{newService})
+				assertAccessState(t, pamModelOf(t, state).accessModel, mode.isAuthoritative, []string{group}, []string{newService})
 			})
 		}
 	}
 }
 
-// An update that leaves the access blocks alone must not touch the remote access.
+// An update that changes nothing the API stores (here only `is_authoritative`)
+// sends no mutation at all: neither for the access nor for the resource.
 func TestPAMResourceUpdateKeepsUnchangedAccess(t *testing.T) {
 	group, serviceAccount := testGroupID("1"), testServiceAccountID("1")
 
 	for _, c := range pamResourceCases() {
 		t.Run(c.name, func(t *testing.T) {
-			apiClient, requests := newSequencedMockedClient(t, c.entityResponse(t, false))
+			apiClient, requests := newSequencedMockedClient(t, c.readResponse(t, []string{group}, []string{serviceAccount}))
 			res := c.newResource(apiClient)
 
 			// State written before `is_authoritative` existed holds null.
@@ -647,10 +629,11 @@ func TestPAMResourceUpdateKeepsUnchangedAccess(t *testing.T) {
 
 			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 			require.Len(t, *requests, 1)
+			assert.NotContains(t, (*requests)[0], "mutation")
 
 			state := c.emptyModel()
 			readStateInto(t, resp.State, state)
-			assertAccessState(t, state.access(), true, []string{group}, []string{serviceAccount})
+			assertAccessState(t, pamModelOf(t, state).accessModel, true, []string{group}, []string{serviceAccount})
 		})
 	}
 }
@@ -704,9 +687,9 @@ func TestPAMResourceReadAccess(t *testing.T) {
 
 				state := c.emptyModel()
 				readStateInto(t, resp.State, state)
-				assertAccessState(t, state.access(), mode.expectedFlag, mode.expectedGroups, mode.expectedServices)
+				assertAccessState(t, pamModelOf(t, state).accessModel, mode.expectedFlag, mode.expectedGroups, mode.expectedServices)
 				// access_policy is not configured, so the API default stays out of state
-				assert.True(t, state.access().AccessPolicy.IsNull())
+				assert.True(t, pamModelOf(t, state).AccessPolicy.IsNull())
 			})
 		}
 	}
@@ -740,6 +723,39 @@ func TestPAMResourceImportAccess(t *testing.T) {
 
 			assertAccessState(t, access, true, []string{group}, []string{serviceAccount})
 			assert.Len(t, access.AccessPolicy.Elements(), 1)
+		})
+	}
+}
+
+// A change to the resource itself sends the update mutation and leaves the
+// unchanged access alone.
+func TestPAMResourceUpdateSendsMutationWhenChanged(t *testing.T) {
+	group, serviceAccount := testGroupID("1"), testServiceAccountID("1")
+
+	for _, c := range pamResourceCases() {
+		t.Run(c.name, func(t *testing.T) {
+			apiClient, requests := newSequencedMockedClient(t, c.entityResponse(t, false))
+			res := c.newResource(apiClient)
+
+			stateModel := c.model(t, types.StringValue(testResourceID), types.BoolValue(true), []string{group}, []string{serviceAccount})
+			pamModelOf(t, stateModel).Name = types.StringValue("old-" + testResourceName)
+
+			planModel := c.model(t, types.StringValue(testResourceID), types.BoolValue(true), []string{group}, []string{serviceAccount})
+
+			resp := &resource.UpdateResponse{State: stateOf(t, res, stateModel)}
+			res.Update(t.Context(), resource.UpdateRequest{
+				Plan:  planOf(t, res, planModel),
+				State: stateOf(t, res, stateModel),
+			}, resp)
+
+			require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+			require.Len(t, *requests, 1)
+			assert.Contains(t, (*requests)[0], "mutation")
+			assert.Equal(t, testResourceName, requestVariable(t, (*requests)[0], "name"))
+
+			state := c.emptyModel()
+			readStateInto(t, resp.State, state)
+			assertAccessState(t, pamModelOf(t, state).accessModel, true, []string{group}, []string{serviceAccount})
 		})
 	}
 }

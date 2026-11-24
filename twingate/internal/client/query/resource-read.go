@@ -61,23 +61,12 @@ type Tag struct {
 }
 
 type ResourceNode struct {
-	IDName
-	Address struct {
-		Value string
-	}
-	RemoteNetwork struct {
-		ID graphql.ID
-	}
+	gqlBaseResource
+
 	Protocols                *Protocols
 	IsActive                 bool
-	IsVisible                bool
 	IsBrowserShortcutEnabled bool
-	Alias                    string
-	SecurityPolicy           *gqlSecurityPolicy
-	Tags                     []Tag
-	ApprovalMode             string
 	RoutingMode              string
-	AccessPolicy             *AccessPolicy
 }
 
 type AccessPolicy struct {
@@ -157,25 +146,12 @@ func (a Access) ToModel() ([]model.AccessGroup, []string, error) {
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
-	var securityPolicy string
-	if r.SecurityPolicy != nil {
-		securityPolicy = string(r.SecurityPolicy.ID)
-	}
-
 	return &model.Resource{
-		ID:                       string(r.ID),
-		Name:                     r.Name,
-		Address:                  r.Address.Value,
-		RemoteNetworkID:          string(r.RemoteNetwork.ID),
+		BaseResource:             r.gqlBaseResource.ToModel(),
 		Protocols:                protocolsToModel(r.Protocols),
 		IsActive:                 r.IsActive,
-		IsVisible:                &r.IsVisible,
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
-		Alias:                    optionalString(r.Alias),
-		SecurityPolicyID:         optionalString(securityPolicy),
 		RoutingMode:              optionalString(r.RoutingMode),
-		Tags:                     tagsToModel(r.Tags),
-		AccessPolicy:             accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
 	}
 }
 

@@ -35,10 +35,10 @@ import (
 
 // accessModel is the Terraform side of a resource's access configuration.
 type accessModel struct {
-	IsAuthoritative types.Bool
-	AccessPolicy    types.Set
-	GroupAccess     types.Set
-	ServiceAccess   types.Set
+	IsAuthoritative types.Bool `tfsdk:"is_authoritative"`
+	AccessPolicy    types.Set  `tfsdk:"access_policy"`
+	GroupAccess     types.Set  `tfsdk:"access_group"`
+	ServiceAccess   types.Set  `tfsdk:"access_service"`
 }
 
 // resourceAccess is the API side of a resource's access: who can reach it.
@@ -64,17 +64,6 @@ func isAuthoritativeAttribute() schema.BoolAttribute {
 		PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 		Default:       booldefault.StaticBool(true),
 	}
-}
-
-// isAccessAuthoritative reads the `is_authoritative` flag, falling back to the
-// default (`true`) when it is not set: state written before the attribute
-// existed holds null, and must keep behaving authoritatively.
-func isAccessAuthoritative(val types.Bool) bool {
-	if val.IsNull() || val.IsUnknown() {
-		return true
-	}
-
-	return val.ValueBool()
 }
 
 // parseAccess converts and validates the access blocks of a plan.
@@ -232,26 +221,6 @@ func convertAccessToTerraform(ctx context.Context, isAuthoritative bool, referen
 		GroupAccess:     groupAccess,
 		ServiceAccess:   serviceAccess,
 	}
-}
-
-// refreshAccess is the read path of the PAM resources: it applies the
-// `is_authoritative` flag of the reference to the remote access and converts
-// the result to Terraform. The result must be ignored when diagnostics holds an error.
-func refreshAccess(ctx context.Context, reference accessModel, remoteAccessPolicy *model.AccessPolicy, remote resourceAccess, diagnostics *diag.Diagnostics) accessModel {
-	isAuthoritative := isAccessAuthoritative(reference.IsAuthoritative)
-
-	if !isAuthoritative {
-		filtered, err := filterNonAuthoritativeAccess(reference, remote)
-		if err != nil {
-			diagnostics.AddAttributeError(path.Root(attr.AccessGroup), "failed to parse access_group attribute", err.Error())
-
-			return reference
-		}
-
-		remote = filtered
-	}
-
-	return convertAccessToTerraform(ctx, isAuthoritative, reference, remoteAccessPolicy, remote, diagnostics)
 }
 
 // setImportedAccess writes the access of an imported resource to state.

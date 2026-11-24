@@ -207,16 +207,18 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 						Edges: []*ResourceEdge{
 							{
 								Node: &gqlNetworkResource{ResourceNode: ResourceNode{
-									IDName: IDName{
-										ID:   "resource-id",
-										Name: "resource-name",
+									gqlBaseResource: gqlBaseResource{
+										IDName: IDName{
+											ID:   "resource-id",
+											Name: "resource-name",
+										},
+										RemoteNetwork: struct {
+											ID graphql.ID
+										}{
+											ID: "resource-network-id",
+										},
+										IsVisible: true,
 									},
-									RemoteNetwork: struct {
-										ID graphql.ID
-									}{
-										ID: "resource-network-id",
-									},
-									IsVisible:                true,
 									IsBrowserShortcutEnabled: false,
 								}},
 							},
@@ -226,10 +228,12 @@ func TestReadResourcesByNameQueryToModel(t *testing.T) {
 			},
 			expected: []*model.Resource{
 				{
-					ID:                       "resource-id",
-					Name:                     "resource-name",
-					RemoteNetworkID:          "resource-network-id",
-					IsVisible:                &boolTrue,
+					BaseResource: model.BaseResource{
+						ID:              "resource-id",
+						Name:            "resource-name",
+						RemoteNetworkID: "resource-network-id",
+						IsVisible:       &boolTrue,
+					},
 					IsBrowserShortcutEnabled: &boolFalse,
 					Protocols:                model.DefaultProtocols(),
 				},
@@ -251,7 +255,9 @@ func TestResourceNodeToModelRoutingMode(t *testing.T) {
 	bypass := model.RoutingModeBypassTwingate
 
 	node := ResourceNode{
-		IDName:      IDName{ID: "resource-id", Name: "resource-name"},
+		gqlBaseResource: gqlBaseResource{
+			IDName: IDName{ID: "resource-id", Name: "resource-name"},
+		},
 		RoutingMode: bypass,
 	}
 
@@ -2360,9 +2366,11 @@ func TestCreateResource_IsEmpty(t *testing.T) {
 				ResourceEntityResponse{
 					Entity: &gqlResource{
 						ResourceNode: ResourceNode{
-							IDName: IDName{
-								ID:   "123",
-								Name: "Resource 1",
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{
+									ID:   "123",
+									Name: "Resource 1",
+								},
 							},
 						},
 					},
@@ -2399,9 +2407,11 @@ func TestReadResource_IsEmpty(t *testing.T) {
 			query: ReadResource{
 				Resource: &gqlResource{
 					ResourceNode: ResourceNode{
-						IDName: IDName{
-							ID:   "123",
-							Name: "Resource 1",
+						gqlBaseResource: gqlBaseResource{
+							IDName: IDName{
+								ID:   "123",
+								Name: "Resource 1",
+							},
 						},
 					},
 				},
@@ -2440,9 +2450,11 @@ func TestUpdateResource_IsEmpty(t *testing.T) {
 				ResourceEntityResponse: ResourceEntityResponse{
 					Entity: &gqlResource{
 						ResourceNode: ResourceNode{
-							IDName: IDName{
-								ID:   "123",
-								Name: "Resource 1",
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{
+									ID:   "123",
+									Name: "Resource 1",
+								},
 							},
 						},
 					},
@@ -2481,9 +2493,11 @@ func TestUpdateResourceRemoveGroups_IsEmpty(t *testing.T) {
 				ResourceEntityResponse: ResourceEntityResponse{
 					Entity: &gqlResource{
 						ResourceNode: ResourceNode{
-							IDName: IDName{
-								ID:   "123",
-								Name: "Resource 1",
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{
+									ID:   "123",
+									Name: "Resource 1",
+								},
 							},
 						},
 					},
@@ -2522,9 +2536,11 @@ func TestReadResource_ToModel(t *testing.T) {
 			query: ReadResource{
 				Resource: &gqlResource{
 					ResourceNode: ResourceNode{
-						IDName: IDName{
-							ID:   "resource123",
-							Name: "Resource Name",
+						gqlBaseResource: gqlBaseResource{
+							IDName: IDName{
+								ID:   "resource123",
+								Name: "Resource Name",
+							},
 						},
 					},
 					Access: Access{
@@ -2535,8 +2551,11 @@ func TestReadResource_ToModel(t *testing.T) {
 				},
 			},
 			expected: &model.Resource{
-				ID:   "resource123",
-				Name: "Resource Name",
+				BaseResource: model.BaseResource{
+					ID:        "resource123",
+					Name:      "Resource Name",
+					IsVisible: optionalBool(false),
+				},
 				Protocols: &model.Protocols{
 					TCP: &model.Protocol{
 						Policy: model.PolicyAllowAll,
@@ -2546,7 +2565,6 @@ func TestReadResource_ToModel(t *testing.T) {
 					},
 					AllowIcmp: true,
 				},
-				IsVisible:                optionalBool(false),
 				IsBrowserShortcutEnabled: optionalBool(false),
 			},
 			expectedError: nil,
@@ -2556,12 +2574,14 @@ func TestReadResource_ToModel(t *testing.T) {
 			query: ReadResource{
 				Resource: &gqlResource{
 					ResourceNode: ResourceNode{
-						IDName: IDName{
-							ID:   "resource456",
-							Name: "Another Resource",
-						},
-						SecurityPolicy: &gqlSecurityPolicy{
-							IDName{ID: "policy123", Name: "Policy 1"},
+						gqlBaseResource: gqlBaseResource{
+							IDName: IDName{
+								ID:   "resource456",
+								Name: "Another Resource",
+							},
+							SecurityPolicy: &gqlSecurityPolicy{
+								IDName{ID: "policy123", Name: "Policy 1"},
+							},
 						},
 						Protocols: &Protocols{
 							TCP: &Protocol{
@@ -2610,20 +2630,23 @@ func TestReadResource_ToModel(t *testing.T) {
 				},
 			},
 			expected: &model.Resource{
-				ID:               "resource456",
-				Name:             "Another Resource",
-				SecurityPolicyID: optionalString("policy123"),
-				GroupsAccess: []model.AccessGroup{
-					{
-						GroupID:          "group123",
-						SecurityPolicyID: optionalString("policy789"),
-						AccessPolicy: &model.AccessPolicy{
-							Mode:     optionalString(model.ApprovalModeManual),
-							Duration: optionalString("30d"),
+				BaseResource: model.BaseResource{
+					ID:               "resource456",
+					Name:             "Another Resource",
+					SecurityPolicyID: optionalString("policy123"),
+					GroupsAccess: []model.AccessGroup{
+						{
+							GroupID:          "group123",
+							SecurityPolicyID: optionalString("policy789"),
+							AccessPolicy: &model.AccessPolicy{
+								Mode:     optionalString(model.ApprovalModeManual),
+								Duration: optionalString("30d"),
+							},
 						},
 					},
+					ServiceAccounts: []string{"serviceAccount456"},
+					IsVisible:       optionalBool(false),
 				},
-				ServiceAccounts: []string{"serviceAccount456"},
 				Protocols: &model.Protocols{
 					TCP: &model.Protocol{
 						Ports: []*model.PortRange{
@@ -2637,7 +2660,6 @@ func TestReadResource_ToModel(t *testing.T) {
 					},
 					AllowIcmp: false,
 				},
-				IsVisible:                optionalBool(false),
 				IsBrowserShortcutEnabled: optionalBool(false),
 			},
 			expectedError: nil,
@@ -2720,9 +2742,11 @@ func TestReadResourcesByName_IsEmpty(t *testing.T) {
 						Edges: []*ResourceEdge{
 							{
 								Node: &gqlNetworkResource{ResourceNode: ResourceNode{
-									IDName: IDName{
-										ID:   "123",
-										Name: "TestResource",
+									gqlBaseResource: gqlBaseResource{
+										IDName: IDName{
+											ID:   "123",
+											Name: "TestResource",
+										},
 									},
 								}},
 							},
@@ -2939,9 +2963,11 @@ func TestReadResources_IsEmpty(t *testing.T) {
 						Edges: []*ResourceEdge{
 							{
 								Node: &gqlNetworkResource{ResourceNode: ResourceNode{
-									IDName: IDName{
-										ID:   "123",
-										Name: "TestResource",
+									gqlBaseResource: gqlBaseResource{
+										IDName: IDName{
+											ID:   "123",
+											Name: "TestResource",
+										},
 									},
 								}},
 							},
@@ -2997,9 +3023,11 @@ func TestReadFullResources_IsEmpty(t *testing.T) {
 							{
 								Node: &gqlResource{
 									ResourceNode: ResourceNode{
-										IDName: IDName{
-											ID:   "123",
-											Name: "TestResource",
+										gqlBaseResource: gqlBaseResource{
+											IDName: IDName{
+												ID:   "123",
+												Name: "TestResource",
+											},
 										},
 									},
 								},
@@ -3056,9 +3084,11 @@ func TestReadFullResources_ToModel(t *testing.T) {
 							{
 								Node: &gqlResource{
 									ResourceNode: ResourceNode{
-										IDName: IDName{
-											ID:   "123",
-											Name: "Resource A",
+										gqlBaseResource: gqlBaseResource{
+											IDName: IDName{
+												ID:   "123",
+												Name: "Resource A",
+											},
 										},
 									},
 								},
@@ -3066,9 +3096,11 @@ func TestReadFullResources_ToModel(t *testing.T) {
 							{
 								Node: &gqlResource{
 									ResourceNode: ResourceNode{
-										IDName: IDName{
-											ID:   "456",
-											Name: "Resource B",
+										gqlBaseResource: gqlBaseResource{
+											IDName: IDName{
+												ID:   "456",
+												Name: "Resource B",
+											},
 										},
 									},
 								},
@@ -3079,8 +3111,11 @@ func TestReadFullResources_ToModel(t *testing.T) {
 			},
 			expected: []*model.Resource{
 				{
-					ID:   "123",
-					Name: "Resource A",
+					BaseResource: model.BaseResource{
+						ID:        "123",
+						Name:      "Resource A",
+						IsVisible: optionalBool(false),
+					},
 					Protocols: &model.Protocols{
 						TCP: &model.Protocol{
 							Policy: model.PolicyAllowAll,
@@ -3090,12 +3125,14 @@ func TestReadFullResources_ToModel(t *testing.T) {
 						},
 						AllowIcmp: true,
 					},
-					IsVisible:                optionalBool(false),
 					IsBrowserShortcutEnabled: optionalBool(false),
 				},
 				{
-					ID:   "456",
-					Name: "Resource B",
+					BaseResource: model.BaseResource{
+						ID:        "456",
+						Name:      "Resource B",
+						IsVisible: optionalBool(false),
+					},
 					Protocols: &model.Protocols{
 						TCP: &model.Protocol{
 							Policy: model.PolicyAllowAll,
@@ -3105,7 +3142,6 @@ func TestReadFullResources_ToModel(t *testing.T) {
 						},
 						AllowIcmp: true,
 					},
-					IsVisible:                optionalBool(false),
 					IsBrowserShortcutEnabled: optionalBool(false),
 				},
 			},
@@ -4773,7 +4809,11 @@ func TestCreateSSHResourceQueryIsEmpty(t *testing.T) {
 			query: CreateSSHResource{
 				SSHResourceEntityResponse: SSHResourceEntityResponse{
 					Entity: &gqlSSHResource{
-						IDName: IDName{ID: graphql.ID("ssh-res-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{ID: graphql.ID("ssh-res-id")},
+							},
+						},
 					},
 				},
 			},
@@ -4804,24 +4844,32 @@ func TestCreateSSHResourceQueryToModel(t *testing.T) {
 			query: CreateSSHResource{
 				SSHResourceEntityResponse: SSHResourceEntityResponse{
 					Entity: &gqlSSHResource{
-						IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "my-ssh-res"},
-						Address:       struct{ Value string }{Value: "10.0.0.1"},
-						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
-						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
-						Downstream:    SSHDownstream{Port: 22},
-						Upstream:      SSHUpstream{Port: 2222},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "my-ssh-res"},
+								Address:       struct{ Value string }{Value: "10.0.0.1"},
+								RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+							},
+							Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						},
+						Downstream: SSHDownstream{Port: 22},
+						Upstream:   SSHUpstream{Port: 2222},
 					},
 				},
 			},
 			expected: &model.SSHResource{
-				ID:              "ssh-res-id",
-				Name:            "my-ssh-res",
-				Address:         "10.0.0.1",
-				RemoteNetworkID: "rn-id",
-				GatewayID:       "gw-id",
-				IsVisible:       optionalBool(false),
-				Downstream:      &model.SSHDownstream{Port: 22},
-				Upstream:        &model.SSHUpstream{Port: 2222},
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "ssh-res-id",
+						Name:            "my-ssh-res",
+						Address:         "10.0.0.1",
+						RemoteNetworkID: "rn-id",
+						IsVisible:       optionalBool(false),
+					},
+					GatewayID: "gw-id",
+				},
+				Downstream: &model.SSHDownstream{Port: 22},
+				Upstream:   &model.SSHUpstream{Port: 2222},
 			},
 		},
 	}
@@ -4849,7 +4897,11 @@ func TestUpdateSSHResourceQueryIsEmpty(t *testing.T) {
 			query: UpdateSSHResource{
 				SSHResourceEntityResponse: SSHResourceEntityResponse{
 					Entity: &gqlSSHResource{
-						IDName: IDName{ID: graphql.ID("ssh-res-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{ID: graphql.ID("ssh-res-id")},
+							},
+						},
 					},
 				},
 			},
@@ -4880,24 +4932,32 @@ func TestUpdateSSHResourceQueryToModel(t *testing.T) {
 			query: UpdateSSHResource{
 				SSHResourceEntityResponse: SSHResourceEntityResponse{
 					Entity: &gqlSSHResource{
-						IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "updated-ssh-res"},
-						Address:       struct{ Value string }{Value: "10.0.0.2"},
-						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
-						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
-						Downstream:    SSHDownstream{Port: 22},
-						Upstream:      SSHUpstream{Port: 2222},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "updated-ssh-res"},
+								Address:       struct{ Value string }{Value: "10.0.0.2"},
+								RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+							},
+							Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						},
+						Downstream: SSHDownstream{Port: 22},
+						Upstream:   SSHUpstream{Port: 2222},
 					},
 				},
 			},
 			expected: &model.SSHResource{
-				ID:              "ssh-res-id",
-				Name:            "updated-ssh-res",
-				Address:         "10.0.0.2",
-				RemoteNetworkID: "rn-id",
-				GatewayID:       "gw-id",
-				IsVisible:       optionalBool(false),
-				Downstream:      &model.SSHDownstream{Port: 22},
-				Upstream:        &model.SSHUpstream{Port: 2222},
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "ssh-res-id",
+						Name:            "updated-ssh-res",
+						Address:         "10.0.0.2",
+						RemoteNetworkID: "rn-id",
+						IsVisible:       optionalBool(false),
+					},
+					GatewayID: "gw-id",
+				},
+				Downstream: &model.SSHDownstream{Port: 22},
+				Upstream:   &model.SSHUpstream{Port: 2222},
 			},
 		},
 	}
@@ -4924,7 +4984,9 @@ func TestReadSSHResourceQueryIsEmpty(t *testing.T) {
 			name: "Non-nil resource - IsEmpty false",
 			query: ReadSSHResource{
 				Resource: &gqlSSHResourceNode{
-					IDName: IDName{ID: graphql.ID("ssh-res-id")},
+					gqlBaseResource: gqlBaseResource{
+						IDName: IDName{ID: graphql.ID("ssh-res-id")},
+					},
 				},
 			},
 			expected: false,
@@ -4953,9 +5015,11 @@ func TestReadSSHResourceQueryToModel(t *testing.T) {
 			name: "Non-nil resource - returns model",
 			query: ReadSSHResource{
 				Resource: &gqlSSHResourceNode{
-					IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "my-ssh-res"},
-					Address:       struct{ Value string }{Value: "10.0.0.1"},
-					RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					gqlBaseResource: gqlBaseResource{
+						IDName:        IDName{ID: graphql.ID("ssh-res-id"), Name: "my-ssh-res"},
+						Address:       struct{ Value string }{Value: "10.0.0.1"},
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					},
 					SSHResourceFragment: struct {
 						Gateway struct {
 							ID graphql.ID
@@ -4970,14 +5034,18 @@ func TestReadSSHResourceQueryToModel(t *testing.T) {
 				},
 			},
 			expected: &model.SSHResource{
-				ID:              "ssh-res-id",
-				Name:            "my-ssh-res",
-				Address:         "10.0.0.1",
-				RemoteNetworkID: "rn-id",
-				GatewayID:       "gw-id",
-				IsVisible:       optionalBool(false),
-				Downstream:      &model.SSHDownstream{Port: 22},
-				Upstream:        &model.SSHUpstream{Port: 2222},
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "ssh-res-id",
+						Name:            "my-ssh-res",
+						Address:         "10.0.0.1",
+						RemoteNetworkID: "rn-id",
+						IsVisible:       optionalBool(false),
+					},
+					GatewayID: "gw-id",
+				},
+				Downstream: &model.SSHDownstream{Port: 22},
+				Upstream:   &model.SSHUpstream{Port: 2222},
 			},
 		},
 	}
@@ -5007,7 +5075,11 @@ func TestCreateKubernetesResourceQueryIsEmpty(t *testing.T) {
 			query: CreateKubernetesResource{
 				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
 					Entity: &gqlKubernetesResource{
-						IDName: IDName{ID: graphql.ID("k8s-res-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{ID: graphql.ID("k8s-res-id")},
+							},
+						},
 					},
 				},
 			},
@@ -5038,20 +5110,28 @@ func TestCreateKubernetesResourceQueryToModel(t *testing.T) {
 			query: CreateKubernetesResource{
 				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
 					Entity: &gqlKubernetesResource{
-						IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "my-k8s-res"},
-						Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
-						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
-						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "my-k8s-res"},
+								Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
+								RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+							},
+							Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						},
 					},
 				},
 			},
 			expected: &model.KubernetesResource{
-				ID:              "k8s-res-id",
-				Name:            "my-k8s-res",
-				Address:         "kubernetes.default.svc.cluster.local",
-				RemoteNetworkID: "rn-id",
-				GatewayID:       "gw-id",
-				IsVisible:       optionalBool(false),
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "k8s-res-id",
+						Name:            "my-k8s-res",
+						Address:         "kubernetes.default.svc.cluster.local",
+						RemoteNetworkID: "rn-id",
+						IsVisible:       optionalBool(false),
+					},
+					GatewayID: "gw-id",
+				},
 			},
 		},
 	}
@@ -5079,7 +5159,11 @@ func TestUpdateKubernetesResourceQueryIsEmpty(t *testing.T) {
 			query: UpdateKubernetesResource{
 				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
 					Entity: &gqlKubernetesResource{
-						IDName: IDName{ID: graphql.ID("k8s-res-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{ID: graphql.ID("k8s-res-id")},
+							},
+						},
 					},
 				},
 			},
@@ -5110,20 +5194,28 @@ func TestUpdateKubernetesResourceQueryToModel(t *testing.T) {
 			query: UpdateKubernetesResource{
 				KubernetesResourceEntityResponse: KubernetesResourceEntityResponse{
 					Entity: &gqlKubernetesResource{
-						IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "updated-k8s-res"},
-						Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
-						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
-						Gateway:       struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "updated-k8s-res"},
+								Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
+								RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+							},
+							Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						},
 					},
 				},
 			},
 			expected: &model.KubernetesResource{
-				ID:              "k8s-res-id",
-				Name:            "updated-k8s-res",
-				Address:         "kubernetes.default.svc.cluster.local",
-				RemoteNetworkID: "rn-id",
-				GatewayID:       "gw-id",
-				IsVisible:       optionalBool(false),
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "k8s-res-id",
+						Name:            "updated-k8s-res",
+						Address:         "kubernetes.default.svc.cluster.local",
+						RemoteNetworkID: "rn-id",
+						IsVisible:       optionalBool(false),
+					},
+					GatewayID: "gw-id",
+				},
 			},
 		},
 	}
@@ -5150,7 +5242,9 @@ func TestReadKubernetesResourceQueryIsEmpty(t *testing.T) {
 			name: "Non-nil resource - IsEmpty false",
 			query: ReadKubernetesResource{
 				Resource: &gqlKubernetesResourceNode{
-					IDName: IDName{ID: graphql.ID("k8s-res-id")},
+					gqlBaseResource: gqlBaseResource{
+						IDName: IDName{ID: graphql.ID("k8s-res-id")},
+					},
 				},
 			},
 			expected: false,
@@ -5179,9 +5273,11 @@ func TestReadKubernetesResourceQueryToModel(t *testing.T) {
 			name: "Non-nil resource - returns model",
 			query: ReadKubernetesResource{
 				Resource: &gqlKubernetesResourceNode{
-					IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "my-k8s-res"},
-					Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
-					RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					gqlBaseResource: gqlBaseResource{
+						IDName:        IDName{ID: graphql.ID("k8s-res-id"), Name: "my-k8s-res"},
+						Address:       struct{ Value string }{Value: "kubernetes.default.svc.cluster.local"},
+						RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+					},
 					KubernetesResourceFragment: struct {
 						Gateway struct {
 							ID graphql.ID
@@ -5192,12 +5288,16 @@ func TestReadKubernetesResourceQueryToModel(t *testing.T) {
 				},
 			},
 			expected: &model.KubernetesResource{
-				ID:              "k8s-res-id",
-				Name:            "my-k8s-res",
-				Address:         "kubernetes.default.svc.cluster.local",
-				RemoteNetworkID: "rn-id",
-				GatewayID:       "gw-id",
-				IsVisible:       optionalBool(false),
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "k8s-res-id",
+						Name:            "my-k8s-res",
+						Address:         "kubernetes.default.svc.cluster.local",
+						RemoteNetworkID: "rn-id",
+						IsVisible:       optionalBool(false),
+					},
+					GatewayID: "gw-id",
+				},
 			},
 		},
 	}
@@ -5345,7 +5445,11 @@ func TestCreateWebAppResourceQueryIsEmpty(t *testing.T) {
 			query: CreateWebAppResource{
 				WebAppResourceEntityResponse: WebAppResourceEntityResponse{
 					Entity: &gqlWebAppResource{
-						IDName: IDName{ID: graphql.ID("web-res-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{ID: graphql.ID("web-res-id")},
+							},
+						},
 					},
 				},
 			},
@@ -5376,10 +5480,14 @@ func TestCreateWebAppResourceQueryToModel(t *testing.T) {
 			query: CreateWebAppResource{
 				WebAppResourceEntityResponse: WebAppResourceEntityResponse{
 					Entity: &gqlWebAppResource{
-						IDName:                IDName{ID: graphql.ID("web-res-id"), Name: "web-res"},
-						Address:               struct{ Value string }{Value: "internal.acme.com"},
-						RemoteNetwork:         struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
-						Gateway:               struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName:        IDName{ID: graphql.ID("web-res-id"), Name: "web-res"},
+								Address:       struct{ Value string }{Value: "internal.acme.com"},
+								RemoteNetwork: struct{ ID graphql.ID }{ID: graphql.ID("rn-id")},
+							},
+							Gateway: struct{ ID graphql.ID }{ID: graphql.ID("gw-id")},
+						},
 						Upstream:              WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
 						Downstream:            WebAppDownstream{Port: 80, TLSMode: model.TLSServerModeNone},
 						RequestHeaderRewrites: []KeyValuePair{{Key: "x-user", Value: "{{username}}"}},
@@ -5387,11 +5495,15 @@ func TestCreateWebAppResourceQueryToModel(t *testing.T) {
 				},
 			},
 			expected: &model.WebAppResource{
-				ID:                    "web-res-id",
-				Name:                  "web-res",
-				Address:               "internal.acme.com",
-				RemoteNetworkID:       "rn-id",
-				GatewayID:             "gw-id",
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "web-res-id",
+						Name:            "web-res",
+						Address:         "internal.acme.com",
+						RemoteNetworkID: "rn-id",
+					},
+					GatewayID: "gw-id",
+				},
 				Upstream:              model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
 				Downstream:            model.WebAppDownstream{Port: 80, TLSMode: model.TLSServerModeNone},
 				RequestHeaderRewrites: map[string]string{"x-user": "{{username}}"},
@@ -5437,7 +5549,11 @@ func TestUpdateWebAppResourceQueryIsEmpty(t *testing.T) {
 			query: UpdateWebAppResource{
 				WebAppResourceEntityResponse: WebAppResourceEntityResponse{
 					Entity: &gqlWebAppResource{
-						IDName: IDName{ID: graphql.ID("web-res-id")},
+						gqlPAMResource: gqlPAMResource{
+							gqlBaseResource: gqlBaseResource{
+								IDName: IDName{ID: graphql.ID("web-res-id")},
+							},
+						},
 					},
 				},
 			},
@@ -5470,8 +5586,10 @@ func TestReadWebAppResourceQuery(t *testing.T) {
 	t.Run("Non-nil resource - reads fields from the inline fragment", func(t *testing.T) {
 		query := ReadWebAppResource{
 			Resource: &gqlWebAppResourceNode{
-				IDName:  IDName{ID: graphql.ID("web-res-id"), Name: "web-res"},
-				Address: struct{ Value string }{Value: "internal.acme.com"},
+				gqlBaseResource: gqlBaseResource{
+					IDName:  IDName{ID: graphql.ID("web-res-id"), Name: "web-res"},
+					Address: struct{ Value string }{Value: "internal.acme.com"},
+				},
 			},
 		}
 		query.Resource.WebAppResourceFragment.Gateway.ID = graphql.ID("gw-id")

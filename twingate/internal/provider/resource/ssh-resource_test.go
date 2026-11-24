@@ -14,21 +14,27 @@ func testSSHModel(t *testing.T, tags types.Map) sshResourceModel {
 	t.Helper()
 
 	return sshResourceModel{
-		ID:               types.StringUnknown(),
-		Name:             types.StringValue(testResourceName),
-		Address:          types.StringValue(testResourceAddress),
-		GatewayID:        types.StringValue(testGatewayID),
-		RemoteNetworkID:  types.StringValue(testRemoteNetworkID),
-		IsVisible:        types.BoolValue(true),
-		Alias:            types.StringNull(),
-		SecurityPolicyID: types.StringNull(),
-		Tags:             tags,
-		TagsAll:          plannedTagsAll(tags),
-		Downstream:       sshPortObjectOf(t, defaultSSHPort),
-		Upstream:         sshPortObjectOf(t, defaultSSHPort),
-		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
-		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
-		ServiceAccess:    makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+		pamResourceModel: pamResourceModel{
+			baseResourceModel: baseResourceModel{
+				accessModel: accessModel{
+					AccessPolicy:  makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
+					GroupAccess:   makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+					ServiceAccess: makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+				},
+				ID:               types.StringUnknown(),
+				Name:             types.StringValue(testResourceName),
+				Address:          types.StringValue(testResourceAddress),
+				RemoteNetworkID:  types.StringValue(testRemoteNetworkID),
+				IsVisible:        types.BoolValue(true),
+				Alias:            types.StringNull(),
+				SecurityPolicyID: types.StringNull(),
+				Tags:             tags,
+				TagsAll:          plannedTagsAll(tags),
+			},
+			GatewayID: types.StringValue(testGatewayID),
+		},
+		Downstream: sshPortObjectOf(t, defaultSSHPort),
+		Upstream:   sshPortObjectOf(t, defaultSSHPort),
 	}
 }
 
@@ -77,7 +83,7 @@ func TestSSHResourceTags(t *testing.T) {
 	for _, c := range cases {
 		t.Run("create: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceCreate", c.apiTags, 22, 22))
-			sshRes := &sshResource{client: apiClient}
+			sshRes := &sshResource{baseResource: baseResource{client: apiClient}}
 
 			resp := &resource.CreateResponse{State: nullStateOf(t, sshRes)}
 			sshRes.Create(t.Context(), resource.CreateRequest{
@@ -96,7 +102,7 @@ func TestSSHResourceTags(t *testing.T) {
 
 		t.Run("update: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceUpdate", c.apiTags, 22, 22))
-			sshRes := &sshResource{client: apiClient}
+			sshRes := &sshResource{baseResource: baseResource{client: apiClient}}
 
 			stateModel := testSSHModel(t, stringMap(map[string]string{"stale": "tag"}))
 			stateModel.ID = types.StringValue(testResourceID)
@@ -157,7 +163,7 @@ func TestSSHResourcePorts(t *testing.T) {
 	for _, c := range cases {
 		t.Run("create: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceCreate", nil, c.apiDownstreamPort, c.apiUpstreamPort))
-			sshRes := &sshResource{client: apiClient}
+			sshRes := &sshResource{baseResource: baseResource{client: apiClient}}
 
 			planModel := testSSHModel(t, types.MapNull(types.StringType))
 			planModel.Downstream = c.planDownstream
@@ -181,10 +187,12 @@ func TestSSHResourcePorts(t *testing.T) {
 
 		t.Run("update: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, sshEntityResponse(t, "sshResourceUpdate", nil, c.apiDownstreamPort, c.apiUpstreamPort))
-			sshRes := &sshResource{client: apiClient}
+			sshRes := &sshResource{baseResource: baseResource{client: apiClient}}
 
 			stateModel := testSSHModel(t, types.MapNull(types.StringType))
 			stateModel.ID = types.StringValue(testResourceID)
+			// the name differs so the update mutation is sent even when the ports stay the same
+			stateModel.Name = types.StringValue("old-" + testResourceName)
 			stateModel.Downstream = sshPortObjectOf(t, 22)
 			stateModel.Upstream = sshPortObjectOf(t, 22)
 

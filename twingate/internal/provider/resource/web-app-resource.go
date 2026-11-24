@@ -7,10 +7,8 @@ import (
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customplanmodifier"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/customvalidator"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/provider/providerdata"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -19,9 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -41,44 +36,15 @@ func NewWebAppResourceResource() resource.Resource {
 }
 
 type webAppResource struct {
-	client      *client.Client
-	defaultTags map[string]string
+	baseResource
 }
 
 type webAppResourceModel struct {
-	ID                    types.String `tfsdk:"id"`
-	Name                  types.String `tfsdk:"name"`
-	Address               types.String `tfsdk:"address"`
-	GatewayID             types.String `tfsdk:"gateway_id"`
-	RemoteNetworkID       types.String `tfsdk:"remote_network_id"`
-	IsVisible             types.Bool   `tfsdk:"is_visible"`
-	Alias                 types.String `tfsdk:"alias"`
-	SecurityPolicyID      types.String `tfsdk:"security_policy_id"`
-	Tags                  types.Map    `tfsdk:"tags"`
-	TagsAll               types.Map    `tfsdk:"tags_all"`
+	pamResourceModel
+
 	Upstream              types.Object `tfsdk:"upstream"`
 	Downstream            types.Object `tfsdk:"downstream"`
 	RequestHeaderRewrites types.Map    `tfsdk:"request_header_rewrites"`
-	IsAuthoritative       types.Bool   `tfsdk:"is_authoritative"`
-	AccessPolicy          types.Set    `tfsdk:"access_policy"`
-	GroupAccess           types.Set    `tfsdk:"access_group"`
-	ServiceAccess         types.Set    `tfsdk:"access_service"`
-}
-
-func (m *webAppResourceModel) access() accessModel {
-	return accessModel{
-		IsAuthoritative: m.IsAuthoritative,
-		AccessPolicy:    m.AccessPolicy,
-		GroupAccess:     m.GroupAccess,
-		ServiceAccess:   m.ServiceAccess,
-	}
-}
-
-func (m *webAppResourceModel) setAccess(access accessModel) {
-	m.IsAuthoritative = access.IsAuthoritative
-	m.AccessPolicy = access.AccessPolicy
-	m.GroupAccess = access.GroupAccess
-	m.ServiceAccess = access.ServiceAccess
 }
 
 type webAppUpstreamModel struct {
@@ -105,27 +71,6 @@ func (r *webAppResource) Metadata(_ context.Context, req resource.MetadataReques
 	resp.TypeName = TwingateWebAppResource
 }
 
-func (r *webAppResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	providerData, ok := req.ProviderData.(*providerdata.ProviderData)
-	if !ok {
-		return
-	}
-
-	r.client = providerData.Client
-	r.defaultTags = providerData.DefaultTags
-}
-
-// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`
-// and suppresses `access_policy` drift when only the API defaults are in state.
-func (r *webAppResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	planTagsAll(ctx, req, resp, r.defaultTags)
-	suppressAccessPolicyDefaultDrift(ctx, req, resp)
-}
-
 func (r *webAppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root(attr.ID), req, resp)
 
@@ -136,20 +81,13 @@ func (r *webAppResource) ImportState(ctx context.Context, req resource.ImportSta
 		return
 	}
 
-	setImportedAccess(ctx, &resp.State, &resp.Diagnostics, res.AccessPolicy, resourceAccess{Groups: res.GroupsAccess, ServiceAccounts: res.ServiceAccounts})
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	setImportedTags(ctx, &resp.State, res.Tags, r.defaultTags)
+	setImportedBaseResource(ctx, &resp.State, &resp.Diagnostics, res.BaseResource, r.defaultTags)
 }
 
-//nolint:funlen
 func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Web App Resources are Twingate resources accessed via a Gateway.",
-		Attributes: map[string]schema.Attribute{
+		Attributes: withBaseAttributes(map[string]schema.Attribute{
 			attr.ID: schema.StringAttribute{
 				Computed:    true,
 				Description: "Autogenerated ID of the Web App Resource.",
@@ -176,39 +114,8 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Required:    true,
 				Description: "The ID of the Remote Network the Web App Resource belongs to.",
 			},
-			attr.IsVisible: schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.",
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-				},
-				Default: booldefault.StaticBool(true),
-			},
-			attr.Alias: schema.StringAttribute{
-				Optional:      true,
-				Description:   "Set a DNS alias address for the Resource. Must be a DNS-valid name string.",
-				PlanModifiers: []planmodifier.String{customplanmodifier.CaseInsensitiveDiff()},
-			},
-			attr.SecurityPolicyID: schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The ID of a `twingate_security_policy` to set as this Resource's Security Policy. Default is 'Null' which points to `Default Policy` on Admin console.",
-				PlanModifiers: []planmodifier.String{
-					customplanmodifier.UseNullStringWhenValueOmitted(),
-				},
-			},
-			attr.Tags: schema.MapAttribute{
-				ElementType: types.StringType,
-				Optional:    true,
-				Computed:    true,
-				Description: "A map of key-value pair tags to set on this resource.",
-				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
-			},
-			attr.TagsAll:         tagsAllAttribute(),
-			attr.IsAuthoritative: isAuthoritativeAttribute(),
-			attr.Upstream:        webAppUpstream(),
-			attr.Downstream:      webAppDownstream(),
+			attr.Upstream:   webAppUpstream(),
+			attr.Downstream: webAppDownstream(),
 			attr.RequestHeaderRewrites: schema.MapAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
@@ -217,7 +124,7 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 					customvalidator.CaseInsensitiveUniqueKeys(),
 				},
 			},
-		},
+		}),
 		Blocks: accessBlocks(),
 	}
 }
@@ -303,7 +210,7 @@ func webAppDownstreamObject(ctx context.Context, downstream model.WebAppDownstre
 }
 
 func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResourceModel, diagnostics *diag.Diagnostics, operation string) *model.WebAppResource {
-	access, accessPolicy, err := parseAccess(plan.access())
+	pam, err := convertPAMResource(&plan.pamResourceModel)
 	if err != nil {
 		addErr(diagnostics, err, operation, TwingateWebAppResource)
 
@@ -321,20 +228,10 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 	}
 
 	return &model.WebAppResource{
-		Name:                  plan.Name.ValueString(),
-		Address:               plan.Address.ValueString(),
-		GatewayID:             plan.GatewayID.ValueString(),
-		RemoteNetworkID:       plan.RemoteNetworkID.ValueString(),
-		IsVisible:             getOptionalBool(plan.IsVisible),
-		Alias:                 getOptionalString(plan.Alias),
-		SecurityPolicyID:      plan.SecurityPolicyID.ValueStringPointer(),
-		Tags:                  getKeyValueMap(plan.TagsAll),
+		PAMResource:           pam,
 		Upstream:              model.WebAppUpstream{Port: upstream.Port.ValueInt64(), TLSMode: upstream.TLSMode.ValueString()},
 		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64(), TLSMode: downstream.TLSMode.ValueString()},
 		RequestHeaderRewrites: getKeyValueMap(plan.RequestHeaderRewrites),
-		AccessPolicy:          accessPolicy,
-		GroupsAccess:          access.Groups,
-		ServiceAccounts:       access.ServiceAccounts,
 	}
 }
 
@@ -390,17 +287,36 @@ func (r *webAppResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	input.ID = state.ID.ValueString()
-	desiredAccess := resourceAccess{Groups: input.GroupsAccess, ServiceAccounts: input.ServiceAccounts}
 
-	if err := updateResourceAccess(ctx, r.client, input.ID, isAccessAuthoritative(plan.IsAuthoritative), plan.access(), state.access(), desiredAccess, r.readAccess(input.ID)); err != nil {
+	if err := updateResourceAccess(ctx, r.client, input.ID, convertAuthoritativeFlag(plan.IsAuthoritative), plan.accessModel, state.accessModel, baseResourceAccess(input.BaseResource), r.readAccess(input.ID)); err != nil {
 		addErr(&resp.Diagnostics, err, operationUpdate, TwingateWebAppResource)
 
 		return
 	}
 
-	webAppRes, err := r.client.UpdateWebAppResource(ctx, input)
+	var (
+		webAppRes *model.WebAppResource
+		err       error
+	)
+
+	if isWebAppResourceChanged(&plan, &state) {
+		webAppRes, err = r.client.UpdateWebAppResource(ctx, input)
+	} else {
+		webAppRes, err = r.client.ReadWebAppResource(ctx, input.ID)
+		if webAppRes != nil {
+			keepPlannedAccess(&webAppRes.PAMResource, input.PAMResource)
+		}
+	}
 
 	r.helper(ctx, webAppRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
+}
+
+// isWebAppResourceChanged reports whether the update mutation is needed.
+func isWebAppResourceChanged(plan, state *webAppResourceModel) bool {
+	return isPAMResourceChanged(&plan.pamResourceModel, &state.pamResourceModel) ||
+		!plan.Upstream.Equal(state.Upstream) ||
+		!plan.Downstream.Equal(state.Downstream) ||
+		!plan.RequestHeaderRewrites.Equal(state.RequestHeaderRewrites)
 }
 
 func (r *webAppResource) readAccess(resourceID string) func(ctx context.Context) (resourceAccess, error) {
@@ -410,21 +326,12 @@ func (r *webAppResource) readAccess(resourceID string) func(ctx context.Context)
 			return resourceAccess{}, err //nolint:wrapcheck
 		}
 
-		return resourceAccess{Groups: remote.GroupsAccess, ServiceAccounts: remote.ServiceAccounts}, nil
+		return baseResourceAccess(remote.BaseResource), nil
 	}
 }
 
 func (r *webAppResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state webAppResourceModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	err := r.client.DeleteWebAppResource(ctx, state.ID.ValueString())
-	addErr(&resp.Diagnostics, err, operationDelete, TwingateWebAppResource)
+	deleteResource(ctx, req, resp, TwingateWebAppResource, r.client.DeleteWebAppResource)
 }
 
 func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppResource, state *webAppResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
@@ -440,23 +347,12 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 		return
 	}
 
-	state.ID = types.StringValue(webAppRes.ID)
-	state.Name = types.StringValue(webAppRes.Name)
-	state.Address = types.StringValue(webAppRes.Address)
-	state.GatewayID = types.StringValue(webAppRes.GatewayID)
-	state.RemoteNetworkID = types.StringValue(webAppRes.RemoteNetworkID)
-	state.SecurityPolicyID = types.StringPointerValue(webAppRes.SecurityPolicyID)
+	setPAMResourceState(ctx, &state.pamResourceModel, webAppRes.PAMResource, diagnostics)
 
-	if !state.IsVisible.IsNull() || webAppRes.IsVisible != nil {
-		state.IsVisible = types.BoolPointerValue(webAppRes.IsVisible)
+	if diagnostics.HasError() {
+		return
 	}
 
-	if !state.Alias.IsNull() {
-		state.Alias = types.StringPointerValue(webAppRes.Alias)
-	}
-
-	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
-	state.TagsAll = utils.ConvertMapValue(webAppRes.Tags)
 	state.RequestHeaderRewrites = utils.ConvertMapValueWithReference(webAppRes.RequestHeaderRewrites, state.RequestHeaderRewrites)
 
 	upstream, diags := webAppUpstreamObject(ctx, webAppRes.Upstream)
@@ -471,15 +367,6 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 
 	state.Upstream = upstream
 	state.Downstream = downstream
-
-	access := refreshAccess(ctx, state.access(), webAppRes.AccessPolicy,
-		resourceAccess{Groups: webAppRes.GroupsAccess, ServiceAccounts: webAppRes.ServiceAccounts}, diagnostics)
-
-	if diagnostics.HasError() {
-		return
-	}
-
-	state.setAccess(access)
 
 	diags = respState.Set(ctx, state)
 	diagnostics.Append(diags...)

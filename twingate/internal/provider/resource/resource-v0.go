@@ -191,18 +191,21 @@ func upgradeResourceStateV0() resource.StateUpgrader {
 			}
 
 			upgradedState := resourceModel{
-				ID:              priorState.ID,
-				Name:            priorState.Name,
-				Address:         priorState.Address,
-				RemoteNetworkID: priorState.RemoteNetworkID,
-				Protocols:       protocolsState,
-				IsActive:        priorState.IsActive,
-
-				AccessPolicy:  makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
-				GroupAccess:   groupAccess,
-				ServiceAccess: serviceAccess,
-				Tags:          types.MapNull(types.StringType),
-				TagsAll:       types.MapNull(types.StringType),
+				baseResourceModel: baseResourceModel{
+					accessModel: accessModel{
+						AccessPolicy:  makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+						GroupAccess:   groupAccess,
+						ServiceAccess: serviceAccess,
+					},
+					ID:              priorState.ID,
+					Name:            priorState.Name,
+					Address:         priorState.Address,
+					RemoteNetworkID: priorState.RemoteNetworkID,
+					Tags:            types.MapNull(types.StringType),
+					TagsAll:         types.MapNull(types.StringType),
+				},
+				Protocols: protocolsState,
+				IsActive:  priorState.IsActive,
 			}
 
 			if !priorState.IsAuthoritative.IsNull() {

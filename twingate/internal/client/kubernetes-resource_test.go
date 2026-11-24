@@ -28,8 +28,22 @@ func TestReadKubernetesResources(t *testing.T) {
 				{"node":{"__typename":"KubernetesResource","id":"k8s-2","name":"k8s-resource-2"}}
 			]}}}`,
 			expected: []*model.KubernetesResource{
-				{ID: "k8s-1", Name: "k8s-resource-1"},
-				{ID: "k8s-2", Name: "k8s-resource-2"},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "k8s-1",
+							Name: "k8s-resource-1",
+						},
+					},
+				},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "k8s-2",
+							Name: "k8s-resource-2",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -40,7 +54,14 @@ func TestReadKubernetesResources(t *testing.T) {
 				{"node":{"__typename":"NetworkResource","id":"net-1","name":"network-resource-1"}}
 			]}}}`,
 			expected: []*model.KubernetesResource{
-				{ID: "k8s-1", Name: "k8s-resource-1"},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "k8s-1",
+							Name: "k8s-resource-1",
+						},
+					},
+				},
 			},
 		},
 		{

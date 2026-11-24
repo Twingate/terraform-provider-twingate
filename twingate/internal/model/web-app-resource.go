@@ -25,27 +25,9 @@ type WebAppDownstream struct {
 }
 
 type WebAppResource struct {
-	ID                    string
-	Name                  string
-	Address               string
-	GatewayID             string
-	RemoteNetworkID       string
-	IsVisible             *bool
-	Alias                 *string
-	SecurityPolicyID      *string
-	Tags                  map[string]string
+	PAMResource
+
 	Upstream              WebAppUpstream
 	Downstream            WebAppDownstream
 	RequestHeaderRewrites map[string]string
-	AccessPolicy          *AccessPolicy
-	GroupsAccess          []AccessGroup
-	ServiceAccounts       []string
-}
-
-func (r WebAppResource) GetID() string {
-	return r.ID
-}
-
-func (r WebAppResource) GetName() string {
-	return r.Name
 }

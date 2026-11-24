@@ -12,18 +12,7 @@ import (
 func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource *model.KubernetesResource) (*model.KubernetesResource, error) {
 	opr := resourceKubernetesResource.create()
 
-	variables := newVars(
-		gqlVar(k8sResource.Name, "name"),
-		gqlVar(k8sResource.Address, "address"),
-		gqlID(k8sResource.GatewayID, "gatewayId"),
-		gqlID(k8sResource.RemoteNetworkID, "remoteNetworkId"),
-		gqlNullable(k8sResource.IsVisible, "isVisible"),
-		gqlNullable(k8sResource.Alias, "alias"),
-		gqlNullableID(k8sResource.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(newTagInputs(k8sResource.Tags), "tags"),
-		gqlVar(NewAccessPolicyInput(k8sResource.AccessPolicy), "accessPolicy"),
-		gqlVar(NewAccessApprovalMode(k8sResource.AccessPolicy), "approvalMode"),
-	)
+	variables := pamVars(k8sResource.PAMResource)
 
 	response := query.CreateKubernetesResource{}
 
@@ -33,12 +22,9 @@ func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource 
 
 	res := response.ToModel()
 
-	if err := client.AddResourceAccess(ctx, res.ID, NewAccessInputs(k8sResource.ServiceAccounts, k8sResource.GroupsAccess)); err != nil {
+	if err := client.addPAMResourceAccess(ctx, &res.PAMResource, k8sResource.PAMResource); err != nil {
 		return nil, err
 	}
-
-	res.GroupsAccess = k8sResource.GroupsAccess
-	res.ServiceAccounts = k8sResource.ServiceAccounts
 
 	return res, nil
 }
@@ -89,19 +75,7 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	variables := newVars(
-		gqlID(k8sResource.ID),
-		gqlVar(k8sResource.Name, "name"),
-		gqlVar(k8sResource.Address, "address"),
-		gqlID(k8sResource.GatewayID, "gatewayId"),
-		gqlID(k8sResource.RemoteNetworkID, "remoteNetworkId"),
-		gqlNullable(k8sResource.IsVisible, "isVisible"),
-		gqlNullable(k8sResource.Alias, "alias"),
-		gqlNullableID(k8sResource.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(newTagInputs(k8sResource.Tags), "tags"),
-		gqlVar(NewAccessPolicyInput(k8sResource.AccessPolicy), "accessPolicy"),
-		gqlVar(NewAccessApprovalMode(k8sResource.AccessPolicy), "approvalMode"),
-	)
+	variables := pamVars(k8sResource.PAMResource, gqlID(k8sResource.ID))
 
 	response := query.UpdateKubernetesResource{}
 
@@ -111,8 +85,7 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 
 	res := response.ToModel()
 
-	res.GroupsAccess = k8sResource.GroupsAccess
-	res.ServiceAccounts = k8sResource.ServiceAccounts
+	keepPAMResourceAccess(&res.PAMResource, k8sResource.PAMResource)
 
 	return res, nil
 }
@@ -140,8 +113,12 @@ func (client *Client) ReadKubernetesResources(ctx context.Context) ([]*model.Kub
 		},
 		func(edge *query.ShallowResourceEdge) *model.KubernetesResource {
 			return &model.KubernetesResource{
-				ID:   string(edge.Node.ID),
-				Name: edge.Node.Name,
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:   string(edge.Node.ID),
+						Name: edge.Node.Name,
+					},
+				},
 			}
 		}), nil
 }

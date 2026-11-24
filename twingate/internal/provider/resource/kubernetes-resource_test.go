@@ -52,22 +52,28 @@ func inClusterKubernetesModel(t *testing.T) kubernetesResourceModel {
 	t.Helper()
 
 	return kubernetesResourceModel{
-		ID:               types.StringUnknown(),
-		Name:             types.StringValue(testK8sName),
-		Address:          types.StringNull(),
-		BearerTokenFile:  types.StringNull(),
-		CAFile:           types.StringNull(),
-		GatewayID:        types.StringValue(testK8sGatewayID),
-		RemoteNetworkID:  types.StringValue(testK8sNetworkID),
-		InCluster:        types.BoolValue(true),
-		IsVisible:        types.BoolValue(true),
-		Alias:            types.StringNull(),
-		SecurityPolicyID: types.StringNull(),
-		Tags:             types.MapNull(types.StringType),
-		TagsAll:          types.MapNull(types.StringType),
-		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
-		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
-		ServiceAccess:    makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+		pamResourceModel: pamResourceModel{
+			baseResourceModel: baseResourceModel{
+				accessModel: accessModel{
+					AccessPolicy:  makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
+					GroupAccess:   makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+					ServiceAccess: makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+				},
+				ID:               types.StringUnknown(),
+				Name:             types.StringValue(testK8sName),
+				Address:          types.StringNull(),
+				RemoteNetworkID:  types.StringValue(testK8sNetworkID),
+				IsVisible:        types.BoolValue(true),
+				Alias:            types.StringNull(),
+				SecurityPolicyID: types.StringNull(),
+				Tags:             types.MapNull(types.StringType),
+				TagsAll:          types.MapNull(types.StringType),
+			},
+			GatewayID: types.StringValue(testK8sGatewayID),
+		},
+		BearerTokenFile: types.StringNull(),
+		CAFile:          types.StringNull(),
+		InCluster:       types.BoolValue(true),
 	}
 }
 
@@ -153,7 +159,7 @@ func newMockedKubernetesResource(t *testing.T, responseBody string) (*kubernetes
 		return httpmock.NewStringResponse(http.StatusOK, responseBody), nil
 	})
 
-	return &kubernetesResource{client: apiClient}, &requestBody
+	return &kubernetesResource{baseResource: baseResource{client: apiClient}}, &requestBody
 }
 
 func assertOperationError(t *testing.T, diags diag.Diagnostics, operation, detail string) {
@@ -455,22 +461,28 @@ func testKubernetesModel(t *testing.T, tags types.Map) kubernetesResourceModel {
 	t.Helper()
 
 	return kubernetesResourceModel{
-		ID:               types.StringUnknown(),
-		Name:             types.StringValue(testResourceName),
-		Address:          types.StringNull(),
-		BearerTokenFile:  types.StringNull(),
-		CAFile:           types.StringNull(),
-		GatewayID:        types.StringValue(testGatewayID),
-		RemoteNetworkID:  types.StringValue(testRemoteNetworkID),
-		InCluster:        types.BoolValue(true),
-		IsVisible:        types.BoolValue(true),
-		Alias:            types.StringNull(),
-		SecurityPolicyID: types.StringNull(),
-		Tags:             tags,
-		TagsAll:          plannedTagsAll(tags),
-		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
-		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
-		ServiceAccess:    makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+		pamResourceModel: pamResourceModel{
+			baseResourceModel: baseResourceModel{
+				accessModel: accessModel{
+					AccessPolicy:  makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
+					GroupAccess:   makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+					ServiceAccess: makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+				},
+				ID:               types.StringUnknown(),
+				Name:             types.StringValue(testResourceName),
+				Address:          types.StringNull(),
+				RemoteNetworkID:  types.StringValue(testRemoteNetworkID),
+				IsVisible:        types.BoolValue(true),
+				Alias:            types.StringNull(),
+				SecurityPolicyID: types.StringNull(),
+				Tags:             tags,
+				TagsAll:          plannedTagsAll(tags),
+			},
+			GatewayID: types.StringValue(testGatewayID),
+		},
+		BearerTokenFile: types.StringNull(),
+		CAFile:          types.StringNull(),
+		InCluster:       types.BoolValue(true),
 	}
 }
 
@@ -519,7 +531,7 @@ func TestKubernetesResourceTags(t *testing.T) {
 	for _, c := range cases {
 		t.Run("create: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, kubernetesEntityResponse(t, "kubernetesResourceCreate", c.apiTags))
-			k8sResource := &kubernetesResource{client: apiClient}
+			k8sResource := &kubernetesResource{baseResource: baseResource{client: apiClient}}
 
 			resp := &resource.CreateResponse{State: nullStateOf(t, k8sResource)}
 			k8sResource.Create(t.Context(), resource.CreateRequest{
@@ -538,7 +550,7 @@ func TestKubernetesResourceTags(t *testing.T) {
 
 		t.Run("update: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, kubernetesEntityResponse(t, "kubernetesResourceUpdate", c.apiTags))
-			k8sResource := &kubernetesResource{client: apiClient}
+			k8sResource := &kubernetesResource{baseResource: baseResource{client: apiClient}}
 
 			stateModel := testKubernetesModel(t, stringMap(map[string]string{"stale": "tag"}))
 			stateModel.ID = types.StringValue(testResourceID)

@@ -151,9 +151,18 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 		},
 		{
 			input: []*model.Resource{
-				{ID: "resource-id", Name: "name", Address: "address", RemoteNetworkID: "network-id"},
 				{
-					ID: "resource-1",
+					BaseResource: model.BaseResource{
+						ID:              "resource-id",
+						Name:            "name",
+						Address:         "address",
+						RemoteNetworkID: "network-id",
+					},
+				},
+				{
+					BaseResource: model.BaseResource{
+						ID: "resource-1",
+					},
 					Protocols: &model.Protocols{
 						AllowIcmp: true,
 						TCP: &model.Protocol{
@@ -168,7 +177,12 @@ func TestConverterResourcesToTerraform(t *testing.T) {
 						},
 					},
 				},
-				{ID: "resource-2", RoutingMode: strPtrRoutingMode(model.RoutingModeBypassTwingate)},
+				{
+					BaseResource: model.BaseResource{
+						ID: "resource-2",
+					},
+					RoutingMode: strPtrRoutingMode(model.RoutingModeBypassTwingate),
+				},
 			},
 			expected: []resourceModel{
 				{

@@ -187,17 +187,21 @@ func upgradeResourceStateV1() resource.StateUpgrader {
 			resp.Diagnostics.Append(diags...)
 
 			upgradedState := resourceModel{
-				ID:              priorState.ID,
-				Name:            priorState.Name,
-				Address:         priorState.Address,
-				RemoteNetworkID: priorState.RemoteNetworkID,
-				Protocols:       priorState.Protocols,
-				AccessPolicy:    makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
-				GroupAccess:     accessGroup,
-				ServiceAccess:   accessServiceAccount,
-				IsActive:        priorState.IsActive,
-				Tags:            types.MapNull(types.StringType),
-				TagsAll:         types.MapNull(types.StringType),
+				baseResourceModel: baseResourceModel{
+					accessModel: accessModel{
+						AccessPolicy:  makeObjectsSetNull(ctx, accessPolicyAttributeTypes()),
+						GroupAccess:   accessGroup,
+						ServiceAccess: accessServiceAccount,
+					},
+					ID:              priorState.ID,
+					Name:            priorState.Name,
+					Address:         priorState.Address,
+					RemoteNetworkID: priorState.RemoteNetworkID,
+					Tags:            types.MapNull(types.StringType),
+					TagsAll:         types.MapNull(types.StringType),
+				},
+				Protocols: priorState.Protocols,
+				IsActive:  priorState.IsActive,
 			}
 
 			if !priorState.IsAuthoritative.IsNull() {

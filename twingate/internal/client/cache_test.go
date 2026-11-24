@@ -49,7 +49,11 @@ func TestClientCache_SetClient(t *testing.T) {
 }
 
 func TestHandler_SetAndGetResource(t *testing.T) {
-	mockResource := &model.Resource{ID: "resource1"}
+	mockResource := &model.Resource{
+		BaseResource: model.BaseResource{
+			ID: "resource1",
+		},
+	}
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return []*model.Resource{
@@ -69,7 +73,11 @@ func TestHandler_SetAndGetResource(t *testing.T) {
 }
 
 func TestHandler_InvalidateResource(t *testing.T) {
-	mockResource := &model.Resource{ID: "resource2"}
+	mockResource := &model.Resource{
+		BaseResource: model.BaseResource{
+			ID: "resource2",
+		},
+	}
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
 		readResources: func(ctx context.Context) ([]*model.Resource, error) {
 			return []*model.Resource{
@@ -89,8 +97,16 @@ func TestHandler_InvalidateResource(t *testing.T) {
 
 func TestHandler_Init(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "resource1"},
-		{ID: "resource2"},
+		{
+			BaseResource: model.BaseResource{
+				ID: "resource1",
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID: "resource2",
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -402,8 +418,18 @@ func TestHandler_MatchGroupsByTypeNameInvalidRegexp(t *testing.T) {
 
 func TestHandler_MatchResourcesByName(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod"},
-		{ID: "res2", Name: "test"},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod",
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test",
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -428,9 +454,24 @@ func TestHandler_MatchResourcesByName(t *testing.T) {
 
 func TestHandler_MatchResourcesByNameIn(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod"},
-		{ID: "res2", Name: "test"},
-		{ID: "res3", Name: "stage"},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod",
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test",
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "stage",
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -459,9 +500,27 @@ func TestHandler_MatchResourcesByNameIn(t *testing.T) {
 
 func TestHandler_MatchResourcesByNameAndTag(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod", Tags: map[string]string{"env": "prod"}},
-		{ID: "res2", Name: "test", Tags: map[string]string{"env": "stage"}},
-		{ID: "res3", Name: "test", Tags: map[string]string{"env": "dev"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod",
+				Tags: map[string]string{"env": "prod"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test",
+				Tags: map[string]string{"env": "stage"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test",
+				Tags: map[string]string{"env": "dev"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -487,9 +546,27 @@ func TestHandler_MatchResourcesByNameAndTag(t *testing.T) {
 
 func TestHandler_MatchResourceByNamePrefix(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod", Tags: map[string]string{"env": "prod", "app": "app"}},
-		{ID: "res2", Name: "test_a", Tags: map[string]string{"env": "stage", "app": "app"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod",
+				Tags: map[string]string{"env": "prod", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test_a",
+				Tags: map[string]string{"env": "stage", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -516,9 +593,27 @@ func TestHandler_MatchResourceByNamePrefix(t *testing.T) {
 
 func TestHandler_MatchResourceByNameSuffix(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod_ok", Tags: map[string]string{"env": "prod", "app": "app"}},
-		{ID: "res2", Name: "test_ok", Tags: map[string]string{"env": "stage", "app": "app"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod_ok",
+				Tags: map[string]string{"env": "prod", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test_ok",
+				Tags: map[string]string{"env": "stage", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -545,9 +640,27 @@ func TestHandler_MatchResourceByNameSuffix(t *testing.T) {
 
 func TestHandler_MatchResourceByNameContains(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod", "app": "app"}},
-		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage", "app": "app"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod_new_ok",
+				Tags: map[string]string{"env": "prod", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test_new_ok",
+				Tags: map[string]string{"env": "stage", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -574,10 +687,34 @@ func TestHandler_MatchResourceByNameContains(t *testing.T) {
 
 func TestHandler_MatchResourceByNameExclude(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod", "app": "app"}},
-		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage", "app": "app"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
-		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod_new_ok",
+				Tags: map[string]string{"env": "prod", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test_new_ok",
+				Tags: map[string]string{"env": "stage", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res4",
+				Name: "test_c",
+				Tags: map[string]string{"env": "test", "app": "app"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -604,10 +741,34 @@ func TestHandler_MatchResourceByNameExclude(t *testing.T) {
 
 func TestHandler_MatchResourceByNameRegexp(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
-		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
-		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod_new_ok",
+				Tags: map[string]string{"env": "prod"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test_new_ok",
+				Tags: map[string]string{"env": "stage"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res4",
+				Name: "test_c",
+				Tags: map[string]string{"env": "test", "app": "app"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -634,10 +795,34 @@ func TestHandler_MatchResourceByNameRegexp(t *testing.T) {
 
 func TestHandler_MatchResourceByNameInvalidRegexp(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
-		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
-		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod_new_ok",
+				Tags: map[string]string{"env": "prod"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test_new_ok",
+				Tags: map[string]string{"env": "stage"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res4",
+				Name: "test_c",
+				Tags: map[string]string{"env": "test", "app": "app"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -660,15 +845,51 @@ func TestHandler_MatchResourceByNameInvalidRegexp(t *testing.T) {
 
 func TestHandler_MatchResourceByNameWithFilter(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
-		{ID: "res2", Name: "test_new_ok", Tags: map[string]string{"env": "stage"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
-		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "test_app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod_new_ok",
+				Tags: map[string]string{"env": "prod"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res2",
+				Name: "test_new_ok",
+				Tags: map[string]string{"env": "stage"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res4",
+				Name: "test_c",
+				Tags: map[string]string{"env": "test", "app": "test_app"},
+			},
+		},
 	}
 
 	mockFilteredResources := []*model.Resource{
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
-		{ID: "res4", Name: "test_c", Tags: map[string]string{"env": "test", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res4",
+				Name: "test_c",
+				Tags: map[string]string{"env": "test", "app": "app"},
+			},
+		},
 	}
 
 	handler := &handler[*model.Resource, *model.ResourcesFilter]{
@@ -695,12 +916,30 @@ func TestHandler_MatchResourceByNameWithFilter(t *testing.T) {
 
 func TestHandler_ResourcesCacheReady(t *testing.T) {
 	mockResources := []*model.Resource{
-		{ID: "res1", Name: "prod_new_ok", Tags: map[string]string{"env": "prod"}},
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res1",
+				Name: "prod_new_ok",
+				Tags: map[string]string{"env": "prod"},
+			},
+		},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
 	}
 
 	mockFilteredResources := []*model.Resource{
-		{ID: "res3", Name: "test_b", Tags: map[string]string{"env": "dev", "app": "app"}},
+		{
+			BaseResource: model.BaseResource{
+				ID:   "res3",
+				Name: "test_b",
+				Tags: map[string]string{"env": "dev", "app": "app"},
+			},
+		},
 	}
 
 	tests := []struct {

@@ -270,11 +270,13 @@ func convertUsers(userIDs []tfattr.Value) []string {
 	})
 }
 
+// convertAuthoritativeFlag reads an `is_authoritative` flag, falling back to the
+// default (`true`) when it is not set: an omitted value is unknown while applying,
+// and state written before the attribute existed holds null.
 func convertAuthoritativeFlag(val types.Bool) bool {
-	if !val.IsUnknown() {
-		return val.ValueBool()
+	if val.IsNull() || val.IsUnknown() {
+		return true
 	}
 
-	// default value
-	return true
+	return val.ValueBool()
 }
