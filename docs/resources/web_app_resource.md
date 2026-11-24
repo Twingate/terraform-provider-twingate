@@ -42,7 +42,7 @@ resource "twingate_service_account" "ci" {
 }
 
 data "twingate_security_policy" "test_policy" {
-  name = "Test Policy"
+  name = "Default Policy"
 }
 
 resource "twingate_web_app_resource" "internal_app" {

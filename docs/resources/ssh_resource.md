@@ -48,7 +48,7 @@ resource "twingate_service_account" "ci" {
 }
 
 data "twingate_security_policy" "test_policy" {
-  name = "Test Policy"
+  name = "Default Policy"
 }
 
 resource "twingate_ssh_resource" "ssh_server" {
