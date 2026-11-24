@@ -5637,3 +5637,14 @@ func TestHeaderRewritesToModel(t *testing.T) {
 		})
 	}
 }
+
+// A security policy without an ID is treated like no security policy at all.
+func TestSecurityPolicyID(t *testing.T) {
+	assert.Nil(t, securityPolicyID(nil))
+	assert.Nil(t, securityPolicyID(&gqlSecurityPolicy{}))
+
+	id := securityPolicyID(&gqlSecurityPolicy{IDName: IDName{ID: "policy-id"}})
+	if assert.NotNil(t, id) {
+		assert.Equal(t, "policy-id", *id)
+	}
+}
