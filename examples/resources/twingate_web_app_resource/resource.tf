@@ -26,6 +26,10 @@ resource "twingate_service_account" "ci" {
   name = "CI"
 }
 
+data "twingate_security_policy" "test_policy" {
+  name = "Default Policy"
+}
+
 resource "twingate_web_app_resource" "internal_app" {
   name              = "Internal App"
   gateway_id        = twingate_gateway.main.id
@@ -44,12 +48,35 @@ resource "twingate_web_app_resource" "internal_app" {
     "X-Twingate-User" = "{{username}}"
   }
 
+  is_visible = true
+  is_authoritative = true
+
   # Optional. Grant access to groups and service accounts.
   access_group {
     group_id = twingate_group.devops.id
+    security_policy_id = data.twingate_security_policy.test_policy.id
+    access_policy {
+      mode          = "AUTO_LOCK"
+      approval_mode = "AUTOMATIC"
+      duration      = "30d"
+    }
   }
 
   access_service {
     service_account_id = twingate_service_account.ci.id
+  }
+
+  security_policy_id = data.twingate_security_policy.test_policy.id
+
+  access_policy {
+    mode          = "AUTO_LOCK"
+    approval_mode = "MANUAL"
+    duration      = "12d"
+  }
+
+  tags = {
+    environment = "dev"
+    owner       = "devops"
+    project     = "api"
   }
 }

@@ -965,8 +965,18 @@ func terraformResourceKubernetesResourceWithAccess(tfName, gatewayTFName, remote
 	  gateway_id        = twingate_gateway.%s.id
 	  remote_network_id = twingate_remote_network.%s.id
 	  is_authoritative  = %v
+	  access_policy {
+	    mode          = "AUTO_LOCK"
+	    duration      = "2d"
+	    approval_mode = "MANUAL"
+	  }
 	  access_group {
 	    group_id = twingate_group.%s.id
+	    access_policy {
+	      mode          = "AUTO_LOCK"
+	      duration      = "5d"
+	      approval_mode = "AUTOMATIC"
+	    }
 	  }
 	  access_service {
 	    service_account_id = twingate_service_account.%s.id
@@ -1013,12 +1023,10 @@ func TestAccTwingateKubernetesResourceAccessService(t *testing.T) {
 			},
 			{
 				ResourceName: theResource,
-				ImportState:  true,
-				ImportStateCheck: acctests.CheckImportState(map[string]string{
-					attr.IsAuthoritative:         "true",
-					attr.Len(attr.AccessGroup):   "1",
-					attr.Len(attr.AccessService): "1",
-				}),
+				// the config declares the access policy, the group and the service account,
+				// so every imported access attribute is compared with the applied state
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 			{
 				Config: prereqs + terraformResourceKubernetesResourceWithAccess(resTFName, gatewayTFName, remoteNetworkTFName, groupTFName, serviceAccountTFName, name, resourceAddress, false),
