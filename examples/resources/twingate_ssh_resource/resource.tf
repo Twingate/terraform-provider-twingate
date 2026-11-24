@@ -24,6 +24,14 @@ resource "twingate_gateway" "main" {
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
 
+resource "twingate_group" "devops" {
+  name = "DevOps"
+}
+
+resource "twingate_service_account" "ci" {
+  name = "CI"
+}
+
 resource "twingate_ssh_resource" "ssh_server" {
   name       = "SSH Server"
   gateway_id = twingate_gateway.main.id
@@ -37,5 +45,14 @@ resource "twingate_ssh_resource" "ssh_server" {
   }
   upstream = {
     port = 22
+  }
+
+  # Optional. Grant access to groups and service accounts.
+  access_group {
+    group_id = twingate_group.devops.id
+  }
+
+  access_service {
+    service_account_id = twingate_service_account.ci.id
   }
 }

@@ -61,27 +61,13 @@ func (n gqlSSHResourceNode) ToModel() (*model.SSHResource, error) {
 		AccessPolicy:     accessPolicyToModel(n.AccessPolicy, &n.ApprovalMode),
 	}
 
-	for _, access := range n.Access.Edges {
-		if access.Node.Type != AccessGroup {
-			continue
-		}
-
-		groupID := string(access.Node.Group.ID)
-		if groupID == "" {
-			return nil, ErrMissingAccessGroupID
-		}
-
-		var secPolicyID *string
-		if access.SecurityPolicy != nil {
-			secPolicyID = optionalString(string(access.SecurityPolicy.ID))
-		}
-
-		res.GroupsAccess = append(res.GroupsAccess, model.AccessGroup{
-			GroupID:          groupID,
-			SecurityPolicyID: secPolicyID,
-			AccessPolicy:     accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
-		})
+	groups, serviceAccounts, err := n.Access.ToModel()
+	if err != nil {
+		return nil, err
 	}
+
+	res.GroupsAccess = groups
+	res.ServiceAccounts = serviceAccounts
 
 	return res, nil
 }

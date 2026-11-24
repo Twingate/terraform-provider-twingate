@@ -106,20 +106,39 @@ type PortRange struct {
 func (r gqlResource) ToModel() (*model.Resource, error) {
 	resource := r.ResourceNode.ToModel()
 
-	for _, access := range r.Access.Edges {
-		var securityPolicyID *string
-		if access.SecurityPolicy != nil {
-			securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
-		}
+	groups, serviceAccounts, err := r.Access.ToModel()
+	if err != nil {
+		return nil, err
+	}
 
+	resource.GroupsAccess = groups
+	resource.ServiceAccounts = serviceAccounts
+
+	return resource, nil
+}
+
+// ToModel splits access edges into group access and service account IDs.
+// It is shared by all resource kinds that expose the `access` connection.
+func (a Access) ToModel() ([]model.AccessGroup, []string, error) {
+	var (
+		groups          []model.AccessGroup
+		serviceAccounts []string
+	)
+
+	for _, access := range a.Edges {
 		switch access.Node.Type {
 		case AccessGroup:
 			groupID := string(access.Node.Group.ID)
 			if groupID == "" {
-				return nil, ErrMissingAccessGroupID
+				return nil, nil, ErrMissingAccessGroupID
 			}
 
-			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
+			var securityPolicyID *string
+			if access.SecurityPolicy != nil {
+				securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
+			}
+
+			groups = append(groups, model.AccessGroup{
 				GroupID:          groupID,
 				SecurityPolicyID: securityPolicyID,
 				AccessPolicy:     accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
@@ -127,14 +146,14 @@ func (r gqlResource) ToModel() (*model.Resource, error) {
 		case AccessServiceAccount:
 			serviceAccountID := string(access.Node.ServiceAccount.ID)
 			if serviceAccountID == "" {
-				return nil, ErrMissingAccessServiceAccountID
+				return nil, nil, ErrMissingAccessServiceAccountID
 			}
 
-			resource.ServiceAccounts = append(resource.ServiceAccounts, serviceAccountID)
+			serviceAccounts = append(serviceAccounts, serviceAccountID)
 		}
 	}
 
-	return resource, nil
+	return groups, serviceAccounts, nil
 }
 
 func (r ResourceNode) ToModel() *model.Resource {

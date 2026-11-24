@@ -378,6 +378,8 @@ func TestAccTwingateKubernetesResourceImport(t *testing.T) {
 				ResourceName:      theResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// import brings in the API default access_policy, which the config does not declare
+				ImportStateVerifyIgnore: []string{attr.AccessPolicy},
 			},
 		},
 	})
@@ -952,5 +954,90 @@ func TestAccTwingateKubernetesResourceDefaultTags(t *testing.T) {
 		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
 		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
 		Steps:                    defaultTagsSteps(theResource, prereqs+resourceConfig, defaultTags),
+	})
+}
+
+func terraformResourceKubernetesResourceWithAccess(tfName, gatewayTFName, remoteNetworkTFName, groupTFName, serviceAccountTFName, name, address string, isAuthoritative bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_kubernetes_resource" "%s" {
+	  name              = "%s"
+	  address           = "%s"
+	  gateway_id        = twingate_gateway.%s.id
+	  remote_network_id = twingate_remote_network.%s.id
+	  is_authoritative  = %v
+	  access_group {
+	    group_id = twingate_group.%s.id
+	  }
+	  access_service {
+	    service_account_id = twingate_service_account.%s.id
+	  }
+	}
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, isAuthoritative, groupTFName, serviceAccountTFName)
+}
+
+func TestAccTwingateKubernetesResourceAccessService(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	resTFName := test.TerraformRandName("test_res")
+	groupTFName := test.TerraformRandName("test_group")
+	serviceAccountTFName := test.TerraformRandName("test_sa")
+	theResource := acctests.TerraformKubernetesResource(resTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	name := test.RandomName()
+	resourceAddress := defaultAddress
+	gatewayAddress := "10.0.1.5:8080"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress) +
+		terraformResourceTwingateGroup(groupTFName, test.RandomGroupName()) +
+		createServiceAccount(serviceAccountTFName, test.RandomName())
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateKubernetesResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: prereqs + terraformResourceKubernetesResourceWithAccess(resTFName, gatewayTFName, remoteNetworkTFName, groupTFName, serviceAccountTFName, name, resourceAddress, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.IsAuthoritative, "true"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
+				),
+			},
+			{
+				ResourceName: theResource,
+				ImportState:  true,
+				ImportStateCheck: acctests.CheckImportState(map[string]string{
+					attr.IsAuthoritative:         "true",
+					attr.Len(attr.AccessGroup):   "1",
+					attr.Len(attr.AccessService): "1",
+				}),
+			},
+			{
+				Config: prereqs + terraformResourceKubernetesResourceWithAccess(resTFName, gatewayTFName, remoteNetworkTFName, groupTFName, serviceAccountTFName, name, resourceAddress, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsAuthoritative, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
+				),
+			},
+			{
+				// Remove access
+				Config: prereqs + terraformResourceKubernetesResource(resTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.IsAuthoritative, "true"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "0"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "0"),
+				),
+			},
+		},
 	})
 }

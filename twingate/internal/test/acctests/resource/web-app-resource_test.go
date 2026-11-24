@@ -127,6 +127,8 @@ func TestAccTwingateWebAppResourceCreate(t *testing.T) {
 				ResourceName:      setup.theResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// import brings in the API default access_policy, which the config does not declare
+				ImportStateVerifyIgnore: []string{attr.AccessPolicy},
 			},
 		},
 	})
@@ -172,6 +174,8 @@ func TestAccTwingateWebAppResourceImport(t *testing.T) {
 				ResourceName:      setup.theResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// import brings in the API default access_policy, which the config does not declare
+				ImportStateVerifyIgnore: []string{attr.AccessPolicy},
 			},
 		},
 	})
@@ -574,5 +578,73 @@ func TestAccTwingateWebAppResourceDefaultTags(t *testing.T) {
 		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
 		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
 		Steps:                    defaultTagsSteps(setup.theResource, config, defaultTags),
+	})
+}
+
+func TestAccTwingateWebAppResourceAccessService(t *testing.T) {
+	t.Parallel()
+
+	setup := newWebAppTestSetup(t, "10.0.0.1:8080")
+	groupTFName := test.TerraformRandName("test_group")
+	serviceAccountTFName := test.TerraformRandName("test_sa")
+
+	principals := terraformResourceTwingateGroup(groupTFName, test.RandomGroupName()) +
+		createServiceAccount(serviceAccountTFName, test.RandomName())
+
+	access := func(isAuthoritative bool) string {
+		return fmt.Sprintf(`
+	  is_authoritative = %v
+	  access_group {
+	    group_id = twingate_group.%s.id
+	  }
+	  access_service {
+	    service_account_id = twingate_service_account.%s.id
+	  }
+	`, isAuthoritative, groupTFName, serviceAccountTFName)
+	}
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateWebAppResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: principals + setup.config(8080, 80, access(true)),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.IsAuthoritative, "true"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessService), "1"),
+				),
+			},
+			{
+				ResourceName: setup.theResource,
+				ImportState:  true,
+				ImportStateCheck: acctests.CheckImportState(map[string]string{
+					attr.IsAuthoritative:         "true",
+					attr.Len(attr.AccessGroup):   "1",
+					attr.Len(attr.AccessService): "1",
+				}),
+			},
+			{
+				Config: principals + setup.config(8080, 80, access(false)),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(setup.theResource, attr.IsAuthoritative, "false"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessService), "1"),
+				),
+			},
+			{
+				// Remove access
+				Config: principals + setup.config(8080, 80, ""),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(setup.theResource),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.IsAuthoritative, "true"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessGroup), "0"),
+					sdk.TestCheckResourceAttr(setup.theResource, attr.Len(attr.AccessService), "0"),
+				),
+			},
+		},
 	})
 }

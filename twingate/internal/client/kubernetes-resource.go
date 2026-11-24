@@ -33,30 +33,14 @@ func (client *Client) CreateKubernetesResource(ctx context.Context, k8sResource 
 
 	res := response.ToModel()
 
-	if len(k8sResource.GroupsAccess) > 0 {
-		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(k8sResource.GroupsAccess)); err != nil {
-			return nil, err
-		}
+	if err := client.AddResourceAccess(ctx, res.ID, NewAccessInputs(k8sResource.ServiceAccounts, k8sResource.GroupsAccess)); err != nil {
+		return nil, err
 	}
 
 	res.GroupsAccess = k8sResource.GroupsAccess
+	res.ServiceAccounts = k8sResource.ServiceAccounts
 
 	return res, nil
-}
-
-func convertGroupsToAccessInput(groups []model.AccessGroup) []AccessInput {
-	access := make([]AccessInput, 0, len(groups))
-
-	for _, group := range groups {
-		access = append(access, AccessInput{
-			PrincipalID:      group.GroupID,
-			SecurityPolicyID: group.SecurityPolicyID,
-			ApprovalMode:     NewGroupAccessApprovalMode(group.AccessPolicy),
-			AccessPolicy:     NewAccessPolicyInput(group.AccessPolicy),
-		})
-	}
-
-	return access
 }
 
 func (client *Client) ReadKubernetesResource(ctx context.Context, resourceID string) (*model.KubernetesResource, error) {
@@ -128,6 +112,7 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 	res := response.ToModel()
 
 	res.GroupsAccess = k8sResource.GroupsAccess
+	res.ServiceAccounts = k8sResource.ServiceAccounts
 
 	return res, nil
 }

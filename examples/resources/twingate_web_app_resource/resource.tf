@@ -18,6 +18,14 @@ resource "twingate_gateway" "main" {
   x509_ca_id        = twingate_x509_certificate_authority.tls.id
 }
 
+resource "twingate_group" "devops" {
+  name = "DevOps"
+}
+
+resource "twingate_service_account" "ci" {
+  name = "CI"
+}
+
 resource "twingate_web_app_resource" "internal_app" {
   name              = "Internal App"
   gateway_id        = twingate_gateway.main.id
@@ -34,5 +42,14 @@ resource "twingate_web_app_resource" "internal_app" {
   }
   request_header_rewrites = {
     "X-Twingate-User" = "{{username}}"
+  }
+
+  # Optional. Grant access to groups and service accounts.
+  access_group {
+    group_id = twingate_group.devops.id
+  }
+
+  access_service {
+    service_account_id = twingate_service_account.ci.id
   }
 }

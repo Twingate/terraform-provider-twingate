@@ -58,8 +58,26 @@ type sshResourceModel struct {
 	TagsAll          types.Map    `tfsdk:"tags_all"`
 	Downstream       types.Object `tfsdk:"downstream"`
 	Upstream         types.Object `tfsdk:"upstream"`
+	IsAuthoritative  types.Bool   `tfsdk:"is_authoritative"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
+	ServiceAccess    types.Set    `tfsdk:"access_service"`
+}
+
+func (m *sshResourceModel) access() accessModel {
+	return accessModel{
+		IsAuthoritative: m.IsAuthoritative,
+		AccessPolicy:    m.AccessPolicy,
+		GroupAccess:     m.GroupAccess,
+		ServiceAccess:   m.ServiceAccess,
+	}
+}
+
+func (m *sshResourceModel) setAccess(access accessModel) {
+	m.IsAuthoritative = access.IsAuthoritative
+	m.AccessPolicy = access.AccessPolicy
+	m.GroupAccess = access.GroupAccess
+	m.ServiceAccess = access.ServiceAccess
 }
 
 type sshPortModel struct {
@@ -90,9 +108,11 @@ func (r *sshResource) Configure(_ context.Context, req resource.ConfigureRequest
 	r.defaultTags = providerData.DefaultTags
 }
 
-// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`.
+// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`
+// and suppresses `access_policy` drift when only the API defaults are in state.
 func (r *sshResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	planTagsAll(ctx, req, resp, r.defaultTags)
+	suppressAccessPolicyDefaultDrift(ctx, req, resp)
 }
 
 func (r *sshResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -102,6 +122,12 @@ func (r *sshResource) ImportState(ctx context.Context, req resource.ImportStateR
 	if err != nil {
 		resp.Diagnostics.AddError("failed to import state", err.Error())
 
+		return
+	}
+
+	setImportedAccess(ctx, &resp.State, &resp.Diagnostics, res.AccessPolicy, resourceAccess{Groups: res.GroupsAccess, ServiceAccounts: res.ServiceAccounts})
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -168,14 +194,12 @@ func (r *sshResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.TagsAll:    tagsAllAttribute(),
-			attr.Downstream: sshPortAttribute("The downstream configuration. The connection between the SSH client and the Gateway."),
-			attr.Upstream:   sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server."),
+			attr.TagsAll:         tagsAllAttribute(),
+			attr.IsAuthoritative: isAuthoritativeAttribute(),
+			attr.Downstream:      sshPortAttribute("The downstream configuration. The connection between the SSH client and the Gateway."),
+			attr.Upstream:        sshPortAttribute("The upstream configuration. The connection between the Gateway and the SSH server."),
 		},
-		Blocks: map[string]schema.Block{
-			attr.AccessPolicy: accessPolicyBlock(),
-			attr.AccessGroup:  groupAccessBlock(),
-		},
+		Blocks: accessBlocks(),
 	}
 }
 
@@ -245,16 +269,9 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	access, accessPolicy, err := parseAccess(plan.access())
 	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationCreate, TwingateSSHResource)
-
-		return
-	}
-
-	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
-	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationCreate, TwingateSSHResource)
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateSSHResource)
 
 		return
 	}
@@ -276,7 +293,8 @@ func (r *sshResource) Create(ctx context.Context, req resource.CreateRequest, re
 		Downstream:       downstream,
 		Upstream:         upstream,
 		AccessPolicy:     accessPolicy,
-		GroupsAccess:     accessGroups,
+		GroupsAccess:     access.Groups,
+		ServiceAccounts:  access.ServiceAccounts,
 	})
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -309,16 +327,9 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	access, accessPolicy, err := parseAccess(plan.access())
 	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationUpdate, TwingateSSHResource)
-
-		return
-	}
-
-	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
-	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateSSHResource)
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
 
 		return
 	}
@@ -328,12 +339,10 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	if !plan.GroupAccess.Equal(state.GroupAccess) {
-		if err := r.updateSSHResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, accessGroups); err != nil {
-			addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
+	if err := updateResourceAccess(ctx, r.client, state.ID.ValueString(), isAccessAuthoritative(plan.IsAuthoritative), plan.access(), state.access(), access, r.readAccess(state.ID.ValueString())); err != nil {
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateSSHResource)
 
-			return
-		}
+		return
 	}
 
 	sshRes, err := r.client.UpdateSSHResource(ctx, &model.SSHResource{
@@ -349,34 +358,22 @@ func (r *sshResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		Downstream:       downstream,
 		Upstream:         upstream,
 		AccessPolicy:     accessPolicy,
-		GroupsAccess:     accessGroups,
+		GroupsAccess:     access.Groups,
+		ServiceAccounts:  access.ServiceAccounts,
 	})
 
 	r.helper(ctx, sshRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func (r *sshResource) updateSSHResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
-	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
-	if err != nil {
-		return fmt.Errorf("failed to parse access_group: %w", err)
-	}
+func (r *sshResource) readAccess(resourceID string) func(ctx context.Context) (resourceAccess, error) {
+	return func(ctx context.Context) (resourceAccess, error) {
+		remote, err := r.client.ReadSSHResource(ctx, resourceID)
+		if err != nil {
+			return resourceAccess{}, err //nolint:wrapcheck
+		}
 
-	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
-	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
-		return fmt.Errorf("failed to remove resource access: %w", err)
+		return resourceAccess{Groups: remote.GroupsAccess, ServiceAccounts: remote.ServiceAccounts}, nil
 	}
-
-	current, err := r.client.ReadSSHResource(ctx, resourceID)
-	if err != nil {
-		return fmt.Errorf("failed to read resource access: %w", err)
-	}
-
-	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
-	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
-		return fmt.Errorf("failed to add resource access: %w", err)
-	}
-
-	return nil
 }
 
 func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -392,7 +389,6 @@ func (r *sshResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateSSHResource)
 }
 
-//nolint:funlen
 func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, state *sshResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -437,30 +433,14 @@ func (r *sshResource) helper(ctx context.Context, sshRes *model.SSHResource, sta
 	state.Downstream = downstream
 	state.Upstream = upstream
 
-	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
-	if err != nil {
-		diagnostics.AddAttributeError(
-			path.Root(attr.AccessPolicy),
-			"failed to parse access_policy attribute",
-			err.Error(),
-		)
-
-		return
-	}
-
-	accessPolicy, diags := convertAccessPolicyToTerraform(ctx, sshRes.AccessPolicy, referenceAccessPolicy)
-	diagnostics.Append(diags...)
-
-	state.AccessPolicy = accessPolicy
-
-	groupAccess, diags := convertGroupsAccessToTerraform(ctx, sshRes.GroupsAccess, state.GroupAccess)
-	diagnostics.Append(diags...)
-
-	state.GroupAccess = groupAccess
+	access := refreshAccess(ctx, state.access(), sshRes.AccessPolicy,
+		resourceAccess{Groups: sshRes.GroupsAccess, ServiceAccounts: sshRes.ServiceAccounts}, diagnostics)
 
 	if diagnostics.HasError() {
 		return
 	}
+
+	state.setAccess(access)
 
 	diags = respState.Set(ctx, state)
 	diagnostics.Append(diags...)

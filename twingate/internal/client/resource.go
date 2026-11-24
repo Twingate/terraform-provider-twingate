@@ -564,6 +564,26 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
 }
 
+// NewAccessInputs converts service account and group access into the input of the
+// resourceAccessAdd mutation. It is shared by all resource kinds.
+func NewAccessInputs(serviceAccounts []string, groupsAccess []model.AccessGroup) []AccessInput {
+	access := make([]AccessInput, 0, len(serviceAccounts)+len(groupsAccess))
+	for _, account := range serviceAccounts {
+		access = append(access, AccessInput{PrincipalID: account})
+	}
+
+	for _, group := range groupsAccess {
+		access = append(access, AccessInput{
+			PrincipalID:      group.GroupID,
+			SecurityPolicyID: group.SecurityPolicyID,
+			ApprovalMode:     NewGroupAccessApprovalMode(group.AccessPolicy),
+			AccessPolicy:     NewAccessPolicyInput(group.AccessPolicy),
+		})
+	}
+
+	return access
+}
+
 type AccessInput struct {
 	PrincipalID      string              `json:"principalId"`
 	SecurityPolicyID *string             `json:"securityPolicyId"`

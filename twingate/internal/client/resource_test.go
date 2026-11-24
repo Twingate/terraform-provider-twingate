@@ -94,3 +94,78 @@ func TestNewProtocol(t *testing.T) {
 		})
 	}
 }
+
+func TestNewAccessInputs(t *testing.T) {
+	autoLock := model.AccessPolicyModeAutoLock
+	duration := "2h"
+	approvalMode := model.ApprovalModeManual
+	seconds := int64(7200)
+	approval := AccessApprovalMode(approvalMode)
+
+	cases := []struct {
+		name            string
+		serviceAccounts []string
+		groups          []model.AccessGroup
+		expected        []AccessInput
+	}{
+		{
+			name:     "nil access - returns empty slice",
+			expected: []AccessInput{},
+		},
+		{
+			name:   "group without security policy or access policy",
+			groups: []model.AccessGroup{{GroupID: "group-1"}},
+			expected: []AccessInput{
+				{PrincipalID: "group-1", AccessPolicy: &AccessPolicyInput{Mode: model.AccessPolicyModeManual}},
+			},
+		},
+		{
+			name:   "group with security policy",
+			groups: []model.AccessGroup{{GroupID: "group-1", SecurityPolicyID: strPtr("sp-1")}},
+			expected: []AccessInput{
+				{PrincipalID: "group-1", SecurityPolicyID: strPtr("sp-1"), AccessPolicy: &AccessPolicyInput{Mode: model.AccessPolicyModeManual}},
+			},
+		},
+		{
+			name: "group with access policy",
+			groups: []model.AccessGroup{
+				{GroupID: "group-1", AccessPolicy: &model.AccessPolicy{Mode: &autoLock, Duration: &duration, ApprovalMode: &approvalMode}},
+			},
+			expected: []AccessInput{
+				{
+					PrincipalID:  "group-1",
+					ApprovalMode: &approval,
+					AccessPolicy: &AccessPolicyInput{Mode: model.AccessPolicyModeAutoLock, DurationSeconds: &seconds},
+				},
+			},
+		},
+		{
+			name:            "service accounts only",
+			serviceAccounts: []string{"sa-1", "sa-2"},
+			expected: []AccessInput{
+				{PrincipalID: "sa-1"},
+				{PrincipalID: "sa-2"},
+			},
+		},
+		{
+			name:            "service accounts go before groups",
+			serviceAccounts: []string{"sa-1"},
+			groups:          []model.AccessGroup{{GroupID: "group-1"}, {GroupID: "group-2", SecurityPolicyID: strPtr("sp-2")}},
+			expected: []AccessInput{
+				{PrincipalID: "sa-1"},
+				{PrincipalID: "group-1", AccessPolicy: &AccessPolicyInput{Mode: model.AccessPolicyModeManual}},
+				{PrincipalID: "group-2", SecurityPolicyID: strPtr("sp-2"), AccessPolicy: &AccessPolicyInput{Mode: model.AccessPolicyModeManual}},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, NewAccessInputs(c.serviceAccounts, c.groups))
+		})
+	}
+}
+
+func strPtr(s string) *string {
+	return &s
+}

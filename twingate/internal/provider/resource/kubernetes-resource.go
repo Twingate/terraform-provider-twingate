@@ -3,7 +3,6 @@ package resource
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/attr"
 	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/client"
@@ -61,8 +60,26 @@ type kubernetesResourceModel struct {
 	SecurityPolicyID types.String `tfsdk:"security_policy_id"`
 	Tags             types.Map    `tfsdk:"tags"`
 	TagsAll          types.Map    `tfsdk:"tags_all"`
+	IsAuthoritative  types.Bool   `tfsdk:"is_authoritative"`
 	AccessPolicy     types.Set    `tfsdk:"access_policy"`
 	GroupAccess      types.Set    `tfsdk:"access_group"`
+	ServiceAccess    types.Set    `tfsdk:"access_service"`
+}
+
+func (m *kubernetesResourceModel) access() accessModel {
+	return accessModel{
+		IsAuthoritative: m.IsAuthoritative,
+		AccessPolicy:    m.AccessPolicy,
+		GroupAccess:     m.GroupAccess,
+		ServiceAccess:   m.ServiceAccess,
+	}
+}
+
+func (m *kubernetesResourceModel) setAccess(access accessModel) {
+	m.IsAuthoritative = access.IsAuthoritative
+	m.AccessPolicy = access.AccessPolicy
+	m.GroupAccess = access.GroupAccess
+	m.ServiceAccess = access.ServiceAccess
 }
 
 func (r *kubernetesResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -83,9 +100,11 @@ func (r *kubernetesResource) Configure(_ context.Context, req resource.Configure
 	r.defaultTags = providerData.DefaultTags
 }
 
-// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`.
+// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`
+// and suppresses `access_policy` drift when only the API defaults are in state.
 func (r *kubernetesResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	planTagsAll(ctx, req, resp, r.defaultTags)
+	suppressAccessPolicyDefaultDrift(ctx, req, resp)
 }
 
 func (r *kubernetesResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -95,6 +114,12 @@ func (r *kubernetesResource) ImportState(ctx context.Context, req resource.Impor
 	if err != nil {
 		resp.Diagnostics.AddError("failed to import state", err.Error())
 
+		return
+	}
+
+	setImportedAccess(ctx, &resp.State, &resp.Diagnostics, res.AccessPolicy, resourceAccess{Groups: res.GroupsAccess, ServiceAccounts: res.ServiceAccounts})
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -182,12 +207,10 @@ func (r *kubernetesResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.TagsAll: tagsAllAttribute(),
+			attr.TagsAll:         tagsAllAttribute(),
+			attr.IsAuthoritative: isAuthoritativeAttribute(),
 		},
-		Blocks: map[string]schema.Block{
-			attr.AccessPolicy: accessPolicyBlock(),
-			attr.AccessGroup:  groupAccessBlock(),
-		},
+		Blocks: accessBlocks(),
 	}
 }
 
@@ -215,16 +238,9 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		}
 	}
 
-	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	access, accessPolicy, err := parseAccess(plan.access())
 	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationCreate, TwingateKubernetesResource)
-
-		return
-	}
-
-	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
-	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationCreate, TwingateKubernetesResource)
+		addErr(&resp.Diagnostics, err, operationCreate, TwingateKubernetesResource)
 
 		return
 	}
@@ -256,7 +272,8 @@ func (r *kubernetesResource) Create(ctx context.Context, req resource.CreateRequ
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
-		GroupsAccess:     accessGroups,
+		GroupsAccess:     access.Groups,
+		ServiceAccounts:  access.ServiceAccounts,
 	})
 
 	r.helper(ctx, k8sRes, &plan, &resp.State, &resp.Diagnostics, err, operationCreate)
@@ -319,26 +336,17 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	access, accessPolicy, err := parseAccess(plan.access())
 	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operationUpdate, TwingateKubernetesResource)
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
 
 		return
 	}
 
-	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
-	if err != nil {
-		addErr(&resp.Diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operationUpdate, TwingateKubernetesResource)
+	if err := updateResourceAccess(ctx, r.client, state.ID.ValueString(), isAccessAuthoritative(plan.IsAuthoritative), plan.access(), state.access(), access, r.readAccess(state.ID.ValueString())); err != nil {
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
 
 		return
-	}
-
-	if !plan.GroupAccess.Equal(state.GroupAccess) {
-		if err := r.updateK8sResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, accessGroups); err != nil {
-			addErr(&resp.Diagnostics, err, operationUpdate, TwingateKubernetesResource)
-
-			return
-		}
 	}
 
 	k8sRes, err := r.client.UpdateKubernetesResource(ctx, &model.KubernetesResource{
@@ -352,35 +360,22 @@ func (r *kubernetesResource) Update(ctx context.Context, req resource.UpdateRequ
 		SecurityPolicyID: plan.SecurityPolicyID.ValueStringPointer(),
 		Tags:             getKeyValueMap(plan.TagsAll),
 		AccessPolicy:     accessPolicy,
-		GroupsAccess:     accessGroups,
+		GroupsAccess:     access.Groups,
+		ServiceAccounts:  access.ServiceAccounts,
 	})
 
 	r.helper(ctx, k8sRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func (r *kubernetesResource) updateK8sResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
-	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
-	if err != nil {
-		return fmt.Errorf("failed to parse access_group: %w", err)
-	}
+func (r *kubernetesResource) readAccess(resourceID string) func(ctx context.Context) (resourceAccess, error) {
+	return func(ctx context.Context) (resourceAccess, error) {
+		remote, err := r.client.ReadKubernetesResource(ctx, resourceID)
+		if err != nil {
+			return resourceAccess{}, err //nolint:wrapcheck
+		}
 
-	// setDifferenceGroups returns IDs of groups to remove
-	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
-	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
-		return fmt.Errorf("failed to remove resource access: %w", err)
+		return resourceAccess{Groups: remote.GroupsAccess, ServiceAccounts: remote.ServiceAccounts}, nil
 	}
-
-	current, err := r.client.ReadKubernetesResource(ctx, resourceID)
-	if err != nil {
-		return fmt.Errorf("failed to read resource access: %w", err)
-	}
-
-	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
-	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
-		return fmt.Errorf("failed to add resource access: %w", err)
-	}
-
-	return nil
 }
 
 func (r *kubernetesResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -396,7 +391,6 @@ func (r *kubernetesResource) Delete(ctx context.Context, req resource.DeleteRequ
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateKubernetesResource)
 }
 
-//nolint:funlen
 func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.KubernetesResource, state *kubernetesResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -440,31 +434,15 @@ func (r *kubernetesResource) helper(ctx context.Context, k8sRes *model.Kubernete
 	// `tags` keeps the user-declared value; `tags_all` mirrors the API so drift shows there.
 	state.TagsAll = utils.ConvertMapValue(k8sRes.Tags)
 
-	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
-	if err != nil {
-		diagnostics.AddAttributeError(
-			path.Root(attr.AccessPolicy),
-			"failed to parse access_policy attribute",
-			err.Error(),
-		)
-
-		return
-	}
-
-	accessPolicy, diags := convertAccessPolicyToTerraform(ctx, k8sRes.AccessPolicy, referenceAccessPolicy)
-	diagnostics.Append(diags...)
-
-	state.AccessPolicy = accessPolicy
-
-	groupAccess, diags := convertGroupsAccessToTerraform(ctx, k8sRes.GroupsAccess, state.GroupAccess)
-	diagnostics.Append(diags...)
-
-	state.GroupAccess = groupAccess
+	access := refreshAccess(ctx, state.access(), k8sRes.AccessPolicy,
+		resourceAccess{Groups: k8sRes.GroupsAccess, ServiceAccounts: k8sRes.ServiceAccounts}, diagnostics)
 
 	if diagnostics.HasError() {
 		return
 	}
 
-	diags = respState.Set(ctx, state)
+	state.setAccess(access)
+
+	diags := respState.Set(ctx, state)
 	diagnostics.Append(diags...)
 }

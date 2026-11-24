@@ -59,8 +59,26 @@ type webAppResourceModel struct {
 	Upstream              types.Object `tfsdk:"upstream"`
 	Downstream            types.Object `tfsdk:"downstream"`
 	RequestHeaderRewrites types.Map    `tfsdk:"request_header_rewrites"`
+	IsAuthoritative       types.Bool   `tfsdk:"is_authoritative"`
 	AccessPolicy          types.Set    `tfsdk:"access_policy"`
 	GroupAccess           types.Set    `tfsdk:"access_group"`
+	ServiceAccess         types.Set    `tfsdk:"access_service"`
+}
+
+func (m *webAppResourceModel) access() accessModel {
+	return accessModel{
+		IsAuthoritative: m.IsAuthoritative,
+		AccessPolicy:    m.AccessPolicy,
+		GroupAccess:     m.GroupAccess,
+		ServiceAccess:   m.ServiceAccess,
+	}
+}
+
+func (m *webAppResourceModel) setAccess(access accessModel) {
+	m.IsAuthoritative = access.IsAuthoritative
+	m.AccessPolicy = access.AccessPolicy
+	m.GroupAccess = access.GroupAccess
+	m.ServiceAccess = access.ServiceAccess
 }
 
 type webAppUpstreamModel struct {
@@ -101,9 +119,11 @@ func (r *webAppResource) Configure(_ context.Context, req resource.ConfigureRequ
 	r.defaultTags = providerData.DefaultTags
 }
 
-// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`.
+// ModifyPlan merges provider default tags with the user-declared tags into `tags_all`
+// and suppresses `access_policy` drift when only the API defaults are in state.
 func (r *webAppResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	planTagsAll(ctx, req, resp, r.defaultTags)
+	suppressAccessPolicyDefaultDrift(ctx, req, resp)
 }
 
 func (r *webAppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -113,6 +133,12 @@ func (r *webAppResource) ImportState(ctx context.Context, req resource.ImportSta
 	if err != nil {
 		resp.Diagnostics.AddError("failed to import state", err.Error())
 
+		return
+	}
+
+	setImportedAccess(ctx, &resp.State, &resp.Diagnostics, res.AccessPolicy, resourceAccess{Groups: res.GroupsAccess, ServiceAccounts: res.ServiceAccounts})
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -179,9 +205,10 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "A map of key-value pair tags to set on this resource.",
 				Default:     mapdefault.StaticValue(types.MapNull(types.StringType)),
 			},
-			attr.TagsAll:    tagsAllAttribute(),
-			attr.Upstream:   webAppUpstream(),
-			attr.Downstream: webAppDownstream(),
+			attr.TagsAll:         tagsAllAttribute(),
+			attr.IsAuthoritative: isAuthoritativeAttribute(),
+			attr.Upstream:        webAppUpstream(),
+			attr.Downstream:      webAppDownstream(),
 			attr.RequestHeaderRewrites: schema.MapAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
@@ -191,10 +218,7 @@ func (r *webAppResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				},
 			},
 		},
-		Blocks: map[string]schema.Block{
-			attr.AccessPolicy: accessPolicyBlock(),
-			attr.AccessGroup:  groupAccessBlock(),
-		},
+		Blocks: accessBlocks(),
 	}
 }
 
@@ -279,16 +303,9 @@ func webAppDownstreamObject(ctx context.Context, downstream model.WebAppDownstre
 }
 
 func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResourceModel, diagnostics *diag.Diagnostics, operation string) *model.WebAppResource {
-	accessGroups, err := getGroupAccessAttribute(plan.GroupAccess)
+	access, accessPolicy, err := parseAccess(plan.access())
 	if err != nil {
-		addErr(diagnostics, fmt.Errorf("failed to parse access_group: %w", err), operation, TwingateWebAppResource)
-
-		return nil
-	}
-
-	accessPolicy, err := getAccessPolicyAttribute(plan.AccessPolicy)
-	if err != nil {
-		addErr(diagnostics, fmt.Errorf("failed to parse access_policy: %w", err), operation, TwingateWebAppResource)
+		addErr(diagnostics, err, operation, TwingateWebAppResource)
 
 		return nil
 	}
@@ -316,7 +333,8 @@ func (r *webAppResource) buildResource(ctx context.Context, plan *webAppResource
 		Downstream:            model.WebAppDownstream{Port: downstream.Port.ValueInt64(), TLSMode: downstream.TLSMode.ValueString()},
 		RequestHeaderRewrites: getKeyValueMap(plan.RequestHeaderRewrites),
 		AccessPolicy:          accessPolicy,
-		GroupsAccess:          accessGroups,
+		GroupsAccess:          access.Groups,
+		ServiceAccounts:       access.ServiceAccounts,
 	}
 }
 
@@ -371,43 +389,29 @@ func (r *webAppResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if !plan.GroupAccess.Equal(state.GroupAccess) {
-		if err := r.updateWebAppResourceAccess(ctx, state.ID.ValueString(), state.GroupAccess, input.GroupsAccess); err != nil {
-			addErr(&resp.Diagnostics, err, operationUpdate, TwingateWebAppResource)
-
-			return
-		}
-	}
-
 	input.ID = state.ID.ValueString()
+	desiredAccess := resourceAccess{Groups: input.GroupsAccess, ServiceAccounts: input.ServiceAccounts}
+
+	if err := updateResourceAccess(ctx, r.client, input.ID, isAccessAuthoritative(plan.IsAuthoritative), plan.access(), state.access(), desiredAccess, r.readAccess(input.ID)); err != nil {
+		addErr(&resp.Diagnostics, err, operationUpdate, TwingateWebAppResource)
+
+		return
+	}
 
 	webAppRes, err := r.client.UpdateWebAppResource(ctx, input)
 
 	r.helper(ctx, webAppRes, &plan, &resp.State, &resp.Diagnostics, err, operationUpdate)
 }
 
-func (r *webAppResource) updateWebAppResourceAccess(ctx context.Context, resourceID string, stateGroupAccess types.Set, planGroups []model.AccessGroup) error {
-	oldGroups, err := getGroupAccessAttribute(stateGroupAccess)
-	if err != nil {
-		return fmt.Errorf("failed to parse access_group: %w", err)
-	}
+func (r *webAppResource) readAccess(resourceID string) func(ctx context.Context) (resourceAccess, error) {
+	return func(ctx context.Context) (resourceAccess, error) {
+		remote, err := r.client.ReadWebAppResource(ctx, resourceID)
+		if err != nil {
+			return resourceAccess{}, err //nolint:wrapcheck
+		}
 
-	idsToDelete := setDifferenceGroups(oldGroups, planGroups)
-	if err := r.client.RemoveResourceAccess(ctx, resourceID, idsToDelete); err != nil {
-		return fmt.Errorf("failed to remove resource access: %w", err)
+		return resourceAccess{Groups: remote.GroupsAccess, ServiceAccounts: remote.ServiceAccounts}, nil
 	}
-
-	current, err := r.client.ReadWebAppResource(ctx, resourceID)
-	if err != nil {
-		return fmt.Errorf("failed to read resource access: %w", err)
-	}
-
-	groupsToAdd := setDifferenceGroupAccess(planGroups, current.GroupsAccess)
-	if err := r.client.AddResourceAccess(ctx, resourceID, convertResourceAccess(nil, groupsToAdd)); err != nil {
-		return fmt.Errorf("failed to add resource access: %w", err)
-	}
-
-	return nil
 }
 
 func (r *webAppResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -423,7 +427,6 @@ func (r *webAppResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	addErr(&resp.Diagnostics, err, operationDelete, TwingateWebAppResource)
 }
 
-//nolint:funlen
 func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppResource, state *webAppResourceModel, respState *tfsdk.State, diagnostics *diag.Diagnostics, err error, operation string) {
 	if err != nil {
 		if errors.Is(err, client.ErrGraphqlResultIsEmpty) {
@@ -469,30 +472,14 @@ func (r *webAppResource) helper(ctx context.Context, webAppRes *model.WebAppReso
 	state.Upstream = upstream
 	state.Downstream = downstream
 
-	referenceAccessPolicy, err := getAccessPolicyAttribute(state.AccessPolicy)
-	if err != nil {
-		diagnostics.AddAttributeError(
-			path.Root(attr.AccessPolicy),
-			"failed to parse access_policy attribute",
-			err.Error(),
-		)
-
-		return
-	}
-
-	accessPolicy, diags := convertAccessPolicyToTerraform(ctx, webAppRes.AccessPolicy, referenceAccessPolicy)
-	diagnostics.Append(diags...)
-
-	state.AccessPolicy = accessPolicy
-
-	groupAccess, diags := convertGroupsAccessToTerraform(ctx, webAppRes.GroupsAccess, state.GroupAccess)
-	diagnostics.Append(diags...)
-
-	state.GroupAccess = groupAccess
+	access := refreshAccess(ctx, state.access(), webAppRes.AccessPolicy,
+		resourceAccess{Groups: webAppRes.GroupsAccess, ServiceAccounts: webAppRes.ServiceAccounts}, diagnostics)
 
 	if diagnostics.HasError() {
 		return
 	}
+
+	state.setAccess(access)
 
 	diags = respState.Set(ctx, state)
 	diagnostics.Append(diags...)

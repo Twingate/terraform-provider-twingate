@@ -76,13 +76,12 @@ func (client *Client) CreateWebAppResource(ctx context.Context, webAppResource *
 	// entity is missing, so ToModel never returns nil here.
 	res := response.ToModel()
 
-	if len(webAppResource.GroupsAccess) > 0 {
-		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(webAppResource.GroupsAccess)); err != nil {
-			return nil, err
-		}
+	if err := client.AddResourceAccess(ctx, res.ID, NewAccessInputs(webAppResource.ServiceAccounts, webAppResource.GroupsAccess)); err != nil {
+		return nil, err
 	}
 
 	res.GroupsAccess = webAppResource.GroupsAccess
+	res.ServiceAccounts = webAppResource.ServiceAccounts
 
 	return res, nil
 }
@@ -147,6 +146,7 @@ func (client *Client) UpdateWebAppResource(ctx context.Context, webAppResource *
 	res := response.ToModel()
 
 	res.GroupsAccess = webAppResource.GroupsAccess
+	res.ServiceAccounts = webAppResource.ServiceAccounts
 
 	return res, nil
 }
