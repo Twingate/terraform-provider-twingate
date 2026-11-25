@@ -204,3 +204,18 @@ func TestReadPAMResourceInvalidAccess(t *testing.T) {
 		}
 	}
 }
+
+func TestCopyAccess(t *testing.T) {
+	src := model.BaseResource{
+		ID:              "src",
+		GroupsAccess:    []model.AccessGroup{{GroupID: testAccessGroupID}},
+		ServiceAccounts: []string{testAccessServiceAccountID},
+	}
+	dst := model.BaseResource{ID: "dst", ServiceAccounts: []string{"stale"}}
+
+	copyAccess(&dst, src)
+
+	assert.Equal(t, "dst", dst.ID)
+	assert.Equal(t, src.GroupsAccess, dst.GroupsAccess)
+	assert.Equal(t, src.ServiceAccounts, dst.ServiceAccounts)
+}

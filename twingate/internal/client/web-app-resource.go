@@ -130,7 +130,7 @@ func (client *Client) UpdateWebAppResource(ctx context.Context, webAppResource *
 
 	res := response.ToModel()
 
-	keepPAMResourceAccess(&res.PAMResource, webAppResource.PAMResource)
+	copyAccess(&res.BaseResource, webAppResource.BaseResource)
 
 	return res, nil
 }

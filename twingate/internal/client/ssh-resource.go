@@ -117,7 +117,7 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 	}
 
 	res := response.ToModel()
-	keepPAMResourceAccess(&res.PAMResource, sshResource.PAMResource)
+	copyAccess(&res.BaseResource, sshResource.BaseResource)
 
 	return res, nil
 }

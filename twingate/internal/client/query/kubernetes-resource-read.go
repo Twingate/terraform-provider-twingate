@@ -33,8 +33,9 @@ type gqlKubernetesResourceNode struct {
 }
 
 func (n gqlKubernetesResourceNode) ToModel() (*model.KubernetesResource, error) {
-	pam, err := n.toPAMModel(n.KubernetesResourceFragment.Gateway.ID, n.Access)
-	if err != nil {
+	pam := gqlPAMResource{gqlBaseResource: n.gqlBaseResource, Gateway: n.KubernetesResourceFragment.Gateway}.ToModel()
+
+	if err := setAccess(&pam.BaseResource, n.Access); err != nil {
 		return nil, err
 	}
 

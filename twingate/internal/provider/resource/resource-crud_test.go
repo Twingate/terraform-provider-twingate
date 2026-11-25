@@ -16,7 +16,7 @@ const (
 	deleteResponse = `{"data":{"resourceDelete":{"ok":true,"error":null}}}`
 )
 
-// resourceEntity is the `twingate_resource` node the API returns, with the
+// resourceEntity is the Network resource node the API returns, with the
 // given principals assigned.
 func resourceEntity(t *testing.T, groupIDs, serviceAccountIDs []string) string {
 	t.Helper()
@@ -68,7 +68,7 @@ func resourceReadResponse(t *testing.T, groupIDs, serviceAccountIDs []string) st
 	return `{"data":{"resource":` + resourceEntity(t, groupIDs, serviceAccountIDs) + `}}`
 }
 
-// testResourceModelWithAccess is a `twingate_resource` model holding the given access.
+// testResourceModelWithAccess is a Network resource model holding the given access.
 func testResourceModelWithAccess(t *testing.T, id types.String, isAuthoritative bool, groupIDs, serviceAccountIDs []string) resourceModel {
 	t.Helper()
 
@@ -79,7 +79,7 @@ func testResourceModelWithAccess(t *testing.T, id types.String, isAuthoritative 
 	return res
 }
 
-// The planned access is assigned right after `twingate_resource` is created
+// The planned access is assigned right after a Network resource is created
 // and lands in state.
 func TestResourceCreateAssignsAccess(t *testing.T) {
 	group, serviceAccount := testGroupID("1"), testServiceAccountID("1")

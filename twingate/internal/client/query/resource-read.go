@@ -95,31 +95,28 @@ type PortRange struct {
 func (r gqlResource) ToModel() (*model.Resource, error) {
 	resource := r.ResourceNode.ToModel()
 
-	groups, serviceAccounts, err := r.Access.ToModel()
-	if err != nil {
+	if err := setAccess(&resource.BaseResource, r.Access); err != nil {
 		return nil, err
 	}
-
-	resource.GroupsAccess = groups
-	resource.ServiceAccounts = serviceAccounts
 
 	return resource, nil
 }
 
-// ToModel splits access edges into group access and service account IDs.
-// It is shared by all resource kinds that expose the `access` connection.
-func (a Access) ToModel() ([]model.AccessGroup, []string, error) {
+// setAccess splits the access edges into group access and service account IDs
+// and sets them on resource. It is shared by the Network resource and the PAM
+// resources. The resource is left untouched when an edge cannot be converted.
+func setAccess(resource *model.BaseResource, access Access) error {
 	var (
 		groups          []model.AccessGroup
 		serviceAccounts []string
 	)
 
-	for _, access := range a.Edges {
+	for _, access := range access.Edges {
 		switch access.Node.Type {
 		case AccessGroup:
 			groupID := string(access.Node.Group.ID)
 			if groupID == "" {
-				return nil, nil, ErrMissingAccessGroupID
+				return ErrMissingAccessGroupID
 			}
 
 			var securityPolicyID *string
@@ -135,14 +132,17 @@ func (a Access) ToModel() ([]model.AccessGroup, []string, error) {
 		case AccessServiceAccount:
 			serviceAccountID := string(access.Node.ServiceAccount.ID)
 			if serviceAccountID == "" {
-				return nil, nil, ErrMissingAccessServiceAccountID
+				return ErrMissingAccessServiceAccountID
 			}
 
 			serviceAccounts = append(serviceAccounts, serviceAccountID)
 		}
 	}
 
-	return groups, serviceAccounts, nil
+	resource.GroupsAccess = groups
+	resource.ServiceAccounts = serviceAccounts
+
+	return nil
 }
 
 func (r ResourceNode) ToModel() *model.Resource {

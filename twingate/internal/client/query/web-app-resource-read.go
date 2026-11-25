@@ -36,8 +36,9 @@ type gqlWebAppResourceNode struct {
 }
 
 func (n gqlWebAppResourceNode) ToModel() (*model.WebAppResource, error) {
-	pam, err := n.toPAMModel(n.WebAppResourceFragment.Gateway.ID, n.Access)
-	if err != nil {
+	pam := gqlPAMResource{gqlBaseResource: n.gqlBaseResource, Gateway: n.WebAppResourceFragment.Gateway}.ToModel()
+
+	if err := setAccess(&pam.BaseResource, n.Access); err != nil {
 		return nil, err
 	}
 

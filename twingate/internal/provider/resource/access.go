@@ -28,10 +28,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// This file holds the access handling shared by `twingate_resource` and the PAM
-// resources (`twingate_kubernetes_resource`, `twingate_ssh_resource`,
-// `twingate_web_app_resource`): the `is_authoritative` attribute and the
-// `access_policy`, `access_group` and `access_service` blocks.
+// This file holds the access handling shared by the Network resource
+// (`twingate_resource`) and the PAM resources (`twingate_kubernetes_resource`,
+// `twingate_ssh_resource`, `twingate_web_app_resource`): the `is_authoritative`
+// attribute and the `access_policy`, `access_group` and `access_service` blocks.
 
 // accessModel is the Terraform side of a resource's access configuration.
 type accessModel struct {

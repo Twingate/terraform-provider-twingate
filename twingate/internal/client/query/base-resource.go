@@ -53,26 +53,6 @@ func (g gqlPAMResource) ToModel() model.PAMResource {
 	}
 }
 
-// toPAMModel converts a resource node of the read query. The Gateway and the
-// access live outside of the base fields there: the Gateway in a type fragment,
-// the access in a paginated connection.
-func (g gqlBaseResource) toPAMModel(gatewayID graphql.ID, access Access) (model.PAMResource, error) {
-	res := model.PAMResource{
-		BaseResource: g.ToModel(),
-		GatewayID:    string(gatewayID),
-	}
-
-	groups, serviceAccounts, err := access.ToModel()
-	if err != nil {
-		return model.PAMResource{}, err
-	}
-
-	res.GroupsAccess = groups
-	res.ServiceAccounts = serviceAccounts
-
-	return res, nil
-}
-
 func securityPolicyID(policy *gqlSecurityPolicy) *string {
 	if policy == nil {
 		return nil

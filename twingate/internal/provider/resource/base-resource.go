@@ -23,8 +23,8 @@ import (
 )
 
 // baseResourceModel holds the attributes every resource kind has in common:
-// `twingate_resource` and the PAM resources (Kubernetes, SSH and Web App).
-// `twingate_resource` is the reference for how these attributes behave.
+// the Network resource and the PAM resources (Kubernetes, SSH and Web App).
+// The Network resource is the reference for how these attributes behave.
 type baseResourceModel struct {
 	ID               types.String `tfsdk:"id"`
 	Name             types.String `tfsdk:"name"`

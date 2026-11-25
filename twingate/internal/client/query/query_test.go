@@ -5648,3 +5648,52 @@ func TestSecurityPolicyID(t *testing.T) {
 		assert.Equal(t, "policy-id", *id)
 	}
 }
+
+// Access edges are split into group access and service account IDs; an edge
+// without a principal ID is an error and leaves the resource untouched.
+func TestSetAccess(t *testing.T) {
+	edge := func(typename string, id graphql.ID) *AccessEdge {
+		edge := &AccessEdge{Node: Principal{Type: typename}}
+
+		switch typename {
+		case AccessGroup:
+			edge.Node.Group.ID = id
+		case AccessServiceAccount:
+			edge.Node.ServiceAccount.ID = id
+		}
+
+		return edge
+	}
+
+	access := func(edges ...*AccessEdge) Access {
+		return Access{PaginatedResource: PaginatedResource[*AccessEdge]{Edges: edges}}
+	}
+
+	t.Run("groups and service accounts", func(t *testing.T) {
+		resource := model.BaseResource{ID: "resource-id"}
+
+		err := setAccess(&resource, access(edge(AccessGroup, "g1"), edge(AccessServiceAccount, "s1"), edge("User", "u1")))
+
+		assert.NoError(t, err)
+		assert.Equal(t, "resource-id", resource.ID)
+		assert.Equal(t, []model.AccessGroup{{GroupID: "g1"}}, resource.GroupsAccess)
+		assert.Equal(t, []string{"s1"}, resource.ServiceAccounts)
+	})
+
+	cases := map[string]error{
+		AccessGroup:          ErrMissingAccessGroupID,
+		AccessServiceAccount: ErrMissingAccessServiceAccountID,
+	}
+
+	for typename, expected := range cases {
+		t.Run("missing ID: "+typename, func(t *testing.T) {
+			resource := model.BaseResource{ServiceAccounts: []string{"kept"}}
+
+			err := setAccess(&resource, access(edge(AccessServiceAccount, "s1"), edge(typename, "")))
+
+			assert.ErrorIs(t, err, expected)
+			assert.Equal(t, []string{"kept"}, resource.ServiceAccounts)
+			assert.Nil(t, resource.GroupsAccess)
+		})
+	}
+}

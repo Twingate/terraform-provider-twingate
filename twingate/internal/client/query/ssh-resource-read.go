@@ -35,8 +35,9 @@ type gqlSSHResourceNode struct {
 }
 
 func (n gqlSSHResourceNode) ToModel() (*model.SSHResource, error) {
-	pam, err := n.toPAMModel(n.SSHResourceFragment.Gateway.ID, n.Access)
-	if err != nil {
+	pam := gqlPAMResource{gqlBaseResource: n.gqlBaseResource, Gateway: n.SSHResourceFragment.Gateway}.ToModel()
+
+	if err := setAccess(&pam.BaseResource, n.Access); err != nil {
 		return nil, err
 	}
 

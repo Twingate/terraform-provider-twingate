@@ -189,8 +189,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		return nil, err //nolint:wrapcheck
 	}
 
-	resource.GroupsAccess = input.GroupsAccess
-	resource.ServiceAccounts = input.ServiceAccounts
+	copyAccess(&resource.BaseResource, input.BaseResource)
 	resource.IsAuthoritative = input.IsAuthoritative
 
 	if input.IsVisible == nil {

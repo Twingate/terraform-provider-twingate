@@ -230,7 +230,7 @@ func TestResourcesShareBaseSchema(t *testing.T) {
 	}
 }
 
-// The PAM resources follow `twingate_resource` on read: the alias always comes
+// The PAM resources follow the Network resource on read: the alias always comes
 // from the API and an explicitly configured empty security policy is kept.
 func TestPAMResourceReadFollowsReferenceBehaviour(t *testing.T) {
 	for _, c := range pamResourceCases() {

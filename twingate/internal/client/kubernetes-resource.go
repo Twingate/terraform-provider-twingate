@@ -85,7 +85,7 @@ func (client *Client) UpdateKubernetesResource(ctx context.Context, k8sResource 
 
 	res := response.ToModel()
 
-	keepPAMResourceAccess(&res.PAMResource, k8sResource.PAMResource)
+	copyAccess(&res.BaseResource, k8sResource.BaseResource)
 
 	return res, nil
 }

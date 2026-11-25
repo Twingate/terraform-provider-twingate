@@ -1,6 +1,6 @@
 package model
 
-// BaseResource holds what every resource kind has in common: `twingate_resource`
+// BaseResource holds what every resource kind has in common: the Network resource
 // and the PAM resources (Kubernetes, SSH and Web App).
 type BaseResource struct {
 	ID               string

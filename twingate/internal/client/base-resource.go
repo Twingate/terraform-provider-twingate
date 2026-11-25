@@ -39,14 +39,15 @@ func (client *Client) addPAMResourceAccess(ctx context.Context, created *model.P
 		return err
 	}
 
-	keepPAMResourceAccess(created, input)
+	copyAccess(&created.BaseResource, input.BaseResource)
 
 	return nil
 }
 
-// keepPAMResourceAccess records the planned access on the model returned by a
-// mutation: the mutation payload does not include the access connection.
-func keepPAMResourceAccess(res *model.PAMResource, input model.PAMResource) {
-	res.GroupsAccess = input.GroupsAccess
-	res.ServiceAccounts = input.ServiceAccounts
+// copyAccess copies the group access and service accounts of src to dst.
+// It records the planned access on the model a mutation returns: the mutation
+// payload does not include the access connection, or not the planned one.
+func copyAccess(dst *model.BaseResource, src model.BaseResource) {
+	dst.GroupsAccess = src.GroupsAccess
+	dst.ServiceAccounts = src.ServiceAccounts
 }
