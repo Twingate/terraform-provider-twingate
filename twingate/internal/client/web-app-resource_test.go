@@ -28,8 +28,22 @@ func TestReadWebAppResources(t *testing.T) {
 				{"node":{"__typename":"WebAppResource","id":"web-2","name":"web-resource-2"}}
 			]}}}`,
 			expected: []*model.WebAppResource{
-				{ID: "web-1", Name: "web-resource-1"},
-				{ID: "web-2", Name: "web-resource-2"},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "web-1",
+							Name: "web-resource-1",
+						},
+					},
+				},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "web-2",
+							Name: "web-resource-2",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -40,7 +54,14 @@ func TestReadWebAppResources(t *testing.T) {
 				{"node":{"__typename":"NetworkResource","id":"net-1","name":"network-resource-1"}}
 			]}}}`,
 			expected: []*model.WebAppResource{
-				{ID: "web-1", Name: "web-resource-1"},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "web-1",
+							Name: "web-resource-1",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -172,34 +193,42 @@ func expectedWebAppResource() *model.WebAppResource {
 	duration := "1h"
 
 	return &model.WebAppResource{
-		ID:                    "web-1",
-		Name:                  "web-resource",
-		Address:               "internal.acme.com",
-		GatewayID:             "gw-1",
-		RemoteNetworkID:       "rn-1",
-		IsVisible:             &isVisible,
-		Alias:                 &alias,
-		SecurityPolicyID:      &securityPolicyID,
-		Tags:                  map[string]string{"env": "prod"},
+		PAMResource: model.PAMResource{
+			BaseResource: model.BaseResource{
+				ID:               "web-1",
+				Name:             "web-resource",
+				Address:          "internal.acme.com",
+				RemoteNetworkID:  "rn-1",
+				IsVisible:        &isVisible,
+				Alias:            &alias,
+				SecurityPolicyID: &securityPolicyID,
+				Tags:             map[string]string{"env": "prod"},
+				AccessPolicy: &model.AccessPolicy{
+					Mode:         &accessMode,
+					Duration:     &duration,
+					ApprovalMode: &approvalMode,
+				},
+			},
+			GatewayID: "gw-1",
+		},
 		Upstream:              model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
 		Downstream:            model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13},
 		RequestHeaderRewrites: map[string]string{"x-user": "{{username}}"},
-		AccessPolicy: &model.AccessPolicy{
-			Mode:         &accessMode,
-			Duration:     &duration,
-			ApprovalMode: &approvalMode,
-		},
 	}
 }
 
 func webAppInput() *model.WebAppResource {
 	return &model.WebAppResource{
-		Name:            "web-resource",
-		Address:         "internal.acme.com",
-		GatewayID:       "gw-1",
-		RemoteNetworkID: "rn-1",
-		Upstream:        model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
-		Downstream:      model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13},
+		PAMResource: model.PAMResource{
+			BaseResource: model.BaseResource{
+				Name:            "web-resource",
+				Address:         "internal.acme.com",
+				RemoteNetworkID: "rn-1",
+			},
+			GatewayID: "gw-1",
+		},
+		Upstream:   model.WebAppUpstream{Port: 8080, TLSMode: model.TLSClientModeVerifyFull},
+		Downstream: model.WebAppDownstream{Port: 443, TLSMode: model.TLSServerModeTLS13},
 	}
 }
 

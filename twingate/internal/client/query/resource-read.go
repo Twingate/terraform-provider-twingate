@@ -61,23 +61,12 @@ type Tag struct {
 }
 
 type ResourceNode struct {
-	IDName
-	Address struct {
-		Value string
-	}
-	RemoteNetwork struct {
-		ID graphql.ID
-	}
+	gqlBaseResource
+
 	Protocols                *Protocols
 	IsActive                 bool
-	IsVisible                bool
 	IsBrowserShortcutEnabled bool
-	Alias                    string
-	SecurityPolicy           *gqlSecurityPolicy
-	Tags                     []Tag
-	ApprovalMode             string
 	RoutingMode              string
-	AccessPolicy             *AccessPolicy
 }
 
 type AccessPolicy struct {
@@ -106,20 +95,36 @@ type PortRange struct {
 func (r gqlResource) ToModel() (*model.Resource, error) {
 	resource := r.ResourceNode.ToModel()
 
-	for _, access := range r.Access.Edges {
-		var securityPolicyID *string
-		if access.SecurityPolicy != nil {
-			securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
-		}
+	if err := setAccess(&resource.BaseResource, r.Access); err != nil {
+		return nil, err
+	}
 
+	return resource, nil
+}
+
+// setAccess splits the access edges into group access and service account IDs
+// and sets them on resource. It is shared by the Network resource and the PAM
+// resources. The resource is left untouched when an edge cannot be converted.
+func setAccess(resource *model.BaseResource, access Access) error {
+	var (
+		groups          []model.AccessGroup
+		serviceAccounts []string
+	)
+
+	for _, access := range access.Edges {
 		switch access.Node.Type {
 		case AccessGroup:
 			groupID := string(access.Node.Group.ID)
 			if groupID == "" {
-				return nil, ErrMissingAccessGroupID
+				return ErrMissingAccessGroupID
 			}
 
-			resource.GroupsAccess = append(resource.GroupsAccess, model.AccessGroup{
+			var securityPolicyID *string
+			if access.SecurityPolicy != nil {
+				securityPolicyID = optionalString(string(access.SecurityPolicy.ID))
+			}
+
+			groups = append(groups, model.AccessGroup{
 				GroupID:          groupID,
 				SecurityPolicyID: securityPolicyID,
 				AccessPolicy:     accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
@@ -127,36 +132,26 @@ func (r gqlResource) ToModel() (*model.Resource, error) {
 		case AccessServiceAccount:
 			serviceAccountID := string(access.Node.ServiceAccount.ID)
 			if serviceAccountID == "" {
-				return nil, ErrMissingAccessServiceAccountID
+				return ErrMissingAccessServiceAccountID
 			}
 
-			resource.ServiceAccounts = append(resource.ServiceAccounts, serviceAccountID)
+			serviceAccounts = append(serviceAccounts, serviceAccountID)
 		}
 	}
 
-	return resource, nil
+	resource.GroupsAccess = groups
+	resource.ServiceAccounts = serviceAccounts
+
+	return nil
 }
 
 func (r ResourceNode) ToModel() *model.Resource {
-	var securityPolicy string
-	if r.SecurityPolicy != nil {
-		securityPolicy = string(r.SecurityPolicy.ID)
-	}
-
 	return &model.Resource{
-		ID:                       string(r.ID),
-		Name:                     r.Name,
-		Address:                  r.Address.Value,
-		RemoteNetworkID:          string(r.RemoteNetwork.ID),
+		BaseResource:             r.gqlBaseResource.ToModel(),
 		Protocols:                protocolsToModel(r.Protocols),
 		IsActive:                 r.IsActive,
-		IsVisible:                &r.IsVisible,
 		IsBrowserShortcutEnabled: &r.IsBrowserShortcutEnabled,
-		Alias:                    optionalString(r.Alias),
-		SecurityPolicyID:         optionalString(securityPolicy),
 		RoutingMode:              optionalString(r.RoutingMode),
-		Tags:                     tagsToModel(r.Tags),
-		AccessPolicy:             accessPolicyToModel(r.AccessPolicy, &r.ApprovalMode),
 	}
 }
 

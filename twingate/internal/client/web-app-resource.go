@@ -43,28 +43,19 @@ func newKeyValueInputs(pairs map[string]string) []KeyValueInputObject {
 	return inputs
 }
 
+// newWebAppResourceVars are the variables only a Web App resource takes.
 func newWebAppResourceVars(webAppResource *model.WebAppResource) []gqlVarOption {
 	return []gqlVarOption{
-		gqlVar(webAppResource.Name, "name"),
-		gqlVar(webAppResource.Address, "address"),
-		gqlID(webAppResource.GatewayID, "gatewayId"),
-		gqlID(webAppResource.RemoteNetworkID, "remoteNetworkId"),
-		gqlNullable(webAppResource.IsVisible, "isVisible"),
-		gqlNullable(webAppResource.Alias, "alias"),
-		gqlNullableID(webAppResource.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(newTagInputs(webAppResource.Tags), "tags"),
 		gqlVar(WebAppUpstreamInput{Port: webAppResource.Upstream.Port, TLSMode: webAppResource.Upstream.TLSMode}, "upstream"),
 		gqlVar(WebAppDownstreamInput{Port: webAppResource.Downstream.Port, TLSMode: webAppResource.Downstream.TLSMode}, "downstream"),
 		gqlVar(newKeyValueInputs(webAppResource.RequestHeaderRewrites), "requestHeaderRewrites"),
-		gqlVar(NewAccessPolicyInput(webAppResource.AccessPolicy), "accessPolicy"),
-		gqlVar(NewAccessApprovalMode(webAppResource.AccessPolicy), "approvalMode"),
 	}
 }
 
 func (client *Client) CreateWebAppResource(ctx context.Context, webAppResource *model.WebAppResource) (*model.WebAppResource, error) {
 	opr := resourceWebAppResource.create()
 
-	variables := newVars(newWebAppResourceVars(webAppResource)...)
+	variables := pamVars(webAppResource.PAMResource, newWebAppResourceVars(webAppResource)...)
 
 	response := query.CreateWebAppResource{}
 
@@ -76,13 +67,9 @@ func (client *Client) CreateWebAppResource(ctx context.Context, webAppResource *
 	// entity is missing, so ToModel never returns nil here.
 	res := response.ToModel()
 
-	if len(webAppResource.GroupsAccess) > 0 {
-		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(webAppResource.GroupsAccess)); err != nil {
-			return nil, err
-		}
+	if err := client.addPAMResourceAccess(ctx, &res.PAMResource, webAppResource.PAMResource); err != nil {
+		return nil, err
 	}
-
-	res.GroupsAccess = webAppResource.GroupsAccess
 
 	return res, nil
 }
@@ -133,10 +120,7 @@ func (client *Client) UpdateWebAppResource(ctx context.Context, webAppResource *
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	variables := newVars(append(
-		[]gqlVarOption{gqlID(webAppResource.ID)},
-		newWebAppResourceVars(webAppResource)...,
-	)...)
+	variables := pamVars(webAppResource.PAMResource, append(newWebAppResourceVars(webAppResource), gqlID(webAppResource.ID))...)
 
 	response := query.UpdateWebAppResource{}
 
@@ -146,7 +130,7 @@ func (client *Client) UpdateWebAppResource(ctx context.Context, webAppResource *
 
 	res := response.ToModel()
 
-	res.GroupsAccess = webAppResource.GroupsAccess
+	copyAccess(&res.BaseResource, webAppResource.BaseResource)
 
 	return res, nil
 }
@@ -174,8 +158,12 @@ func (client *Client) ReadWebAppResources(ctx context.Context) ([]*model.WebAppR
 		},
 		func(edge *query.ShallowResourceEdge) *model.WebAppResource {
 			return &model.WebAppResource{
-				ID:   string(edge.Node.ID),
-				Name: edge.Node.Name,
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:   string(edge.Node.ID),
+						Name: edge.Node.Name,
+					},
+				},
 			}
 		}), nil
 }

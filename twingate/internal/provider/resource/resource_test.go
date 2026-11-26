@@ -12,23 +12,27 @@ func testResourceModel(t *testing.T) resourceModel {
 	t.Helper()
 
 	return resourceModel{
-		ID:                       types.StringUnknown(),
-		Name:                     types.StringValue(testResourceName),
-		Address:                  types.StringValue(testResourceAddress),
-		RemoteNetworkID:          types.StringValue(testRemoteNetworkID),
-		IsAuthoritative:          types.BoolNull(),
+		baseResourceModel: baseResourceModel{
+			accessModel: accessModel{
+				IsAuthoritative: types.BoolNull(),
+				AccessPolicy:    makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
+				GroupAccess:     makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+				ServiceAccess:   makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+			},
+			ID:               types.StringUnknown(),
+			Name:             types.StringValue(testResourceName),
+			Address:          types.StringValue(testResourceAddress),
+			RemoteNetworkID:  types.StringValue(testRemoteNetworkID),
+			IsVisible:        types.BoolNull(),
+			Alias:            types.StringNull(),
+			SecurityPolicyID: types.StringNull(),
+			Tags:             types.MapNull(types.StringType),
+			TagsAll:          types.MapNull(types.StringType),
+		},
 		Protocols:                defaultProtocolsObject(),
-		AccessPolicy:             makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
-		GroupAccess:              makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
-		ServiceAccess:            makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
 		IsActive:                 types.BoolValue(true),
-		IsVisible:                types.BoolNull(),
 		IsBrowserShortcutEnabled: types.BoolNull(),
-		Alias:                    types.StringNull(),
-		SecurityPolicyID:         types.StringNull(),
 		RoutingMode:              types.StringNull(),
-		Tags:                     types.MapNull(types.StringType),
-		TagsAll:                  types.MapNull(types.StringType),
 	}
 }
 

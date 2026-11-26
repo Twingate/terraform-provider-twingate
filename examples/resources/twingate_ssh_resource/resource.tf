@@ -24,6 +24,18 @@ resource "twingate_gateway" "main" {
   ssh_ca_id         = twingate_ssh_certificate_authority.ssh.id
 }
 
+resource "twingate_group" "devops" {
+  name = "DevOps"
+}
+
+resource "twingate_service_account" "ci" {
+  name = "CI"
+}
+
+data "twingate_security_policy" "test_policy" {
+  name = "Default Policy"
+}
+
 resource "twingate_ssh_resource" "ssh_server" {
   name       = "SSH Server"
   gateway_id = twingate_gateway.main.id
@@ -37,5 +49,37 @@ resource "twingate_ssh_resource" "ssh_server" {
   }
   upstream = {
     port = 22
+  }
+
+  is_visible = true
+  is_authoritative = true
+
+  # Optional. Grant access to groups and service accounts.
+  access_group {
+    group_id = twingate_group.devops.id
+    security_policy_id = data.twingate_security_policy.test_policy.id
+    access_policy {
+      mode          = "AUTO_LOCK"
+      approval_mode = "AUTOMATIC"
+      duration      = "30d"
+    }
+  }
+
+  access_service {
+    service_account_id = twingate_service_account.ci.id
+  }
+
+  security_policy_id = data.twingate_security_policy.test_policy.id
+
+  access_policy {
+    mode          = "AUTO_LOCK"
+    approval_mode = "MANUAL"
+    duration      = "12d"
+  }
+
+  tags = {
+    environment = "dev"
+    owner       = "devops"
+    project     = "api"
   }
 }

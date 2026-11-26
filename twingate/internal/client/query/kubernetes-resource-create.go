@@ -1,9 +1,6 @@
 package query
 
-import (
-	"github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
-	"github.com/hasura/go-graphql-client"
-)
+import "github.com/Twingate/terraform-provider-twingate/v5/twingate/internal/model"
 
 //nolint:lll
 type CreateKubernetesResource struct {
@@ -28,48 +25,9 @@ type KubernetesResourceEntityResponse struct {
 }
 
 type gqlKubernetesResource struct {
-	IDName
-	Address struct {
-		Value string
-	}
-	RemoteNetwork struct {
-		ID graphql.ID
-	}
-	Gateway struct {
-		ID graphql.ID
-	}
-	IsVisible      bool
-	Alias          string
-	SecurityPolicy *gqlSecurityPolicy
-	Tags           []Tag
-	ApprovalMode   string
-	AccessPolicy   *AccessPolicy
+	gqlPAMResource
 }
 
 func (g gqlKubernetesResource) ToModel() *model.KubernetesResource {
-	return &model.KubernetesResource{
-		ID:               string(g.ID),
-		Name:             g.Name,
-		Address:          g.Address.Value,
-		GatewayID:        string(g.Gateway.ID),
-		RemoteNetworkID:  string(g.RemoteNetwork.ID),
-		IsVisible:        &g.IsVisible,
-		Alias:            optionalString(g.Alias),
-		SecurityPolicyID: securityPolicyID(g.SecurityPolicy),
-		Tags:             tagsToModel(g.Tags),
-		AccessPolicy:     accessPolicyToModel(g.AccessPolicy, &g.ApprovalMode),
-	}
-}
-
-func securityPolicyID(policy *gqlSecurityPolicy) *string {
-	if policy == nil {
-		return nil
-	}
-
-	id := string(policy.ID)
-	if id == "" {
-		return nil
-	}
-
-	return &id
+	return &model.KubernetesResource{PAMResource: g.gqlPAMResource.ToModel()}
 }

@@ -171,23 +171,13 @@ func newRoutingMode(routingMode *string) *RoutingMode {
 func (client *Client) CreateResource(ctx context.Context, input *model.Resource) (*model.Resource, error) {
 	opr := resourceResource.create()
 
-	variables := newVars(
-		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlVar(input.Name, "name"),
-		gqlVar(input.Address, "address"),
+	variables := newVars(append(baseResourceVars(input.BaseResource),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
-		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
-		gqlNullable(input.Alias, "alias"),
-		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newRoutingMode(input.RoutingMode), "routingMode"),
-		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
-		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
-		gqlVar(newTagInputs(input.Tags), "tags"),
-
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
-	)
+	)...)
 
 	response := query.CreateResource{}
 	if err := client.mutate(ctx, &response, variables, opr); err != nil {
@@ -199,8 +189,7 @@ func (client *Client) CreateResource(ctx context.Context, input *model.Resource)
 		return nil, err //nolint:wrapcheck
 	}
 
-	resource.GroupsAccess = input.GroupsAccess
-	resource.ServiceAccounts = input.ServiceAccounts
+	copyAccess(&resource.BaseResource, input.BaseResource)
 	resource.IsAuthoritative = input.IsAuthoritative
 
 	if input.IsVisible == nil {
@@ -407,24 +396,15 @@ func (client *Client) UpdateResource(ctx context.Context, input *model.Resource)
 
 	invalidateResource[*model.Resource](input.ID)
 
-	variables := newVars(
+	variables := newVars(append(baseResourceVars(input.BaseResource),
 		gqlID(input.ID),
-		gqlID(input.RemoteNetworkID, "remoteNetworkId"),
-		gqlVar(input.Name, "name"),
-		gqlVar(input.Address, "address"),
 		gqlVar(newProtocolsInput(input.Protocols), "protocols"),
 		gqlVar(input.IsActive, "isActive"),
-		gqlNullable(input.IsVisible, "isVisible"),
 		gqlNullable(input.IsBrowserShortcutEnabled, "isBrowserShortcutEnabled"),
-		gqlNullable(input.Alias, "alias"),
-		gqlNullableID(input.SecurityPolicyID, "securityPolicyId"),
 		gqlVar(newRoutingMode(input.RoutingMode), "routingMode"),
-		gqlVar(NewAccessApprovalMode(input.AccessPolicy), "approvalMode"),
-		gqlVar(NewAccessPolicyInput(input.AccessPolicy), "accessPolicy"),
-		gqlVar(newTagInputs(input.Tags), "tags"),
 		cursor(query.CursorAccess),
 		pageLimit(client.pageLimit),
-	)
+	)...)
 
 	response := query.UpdateResource{}
 	if err := client.mutate(ctx, &response, variables, opr, attr{id: input.ID}); err != nil {
@@ -562,6 +542,26 @@ func (client *Client) RemoveResourceAccess(ctx context.Context, resourceID strin
 	response := query.RemoveResourceAccess{}
 
 	return client.mutate(ctx, &response, variables, opr, attr{id: resourceID})
+}
+
+// NewAccessInputs converts service account and group access into the input of the
+// resourceAccessAdd mutation. It is shared by all resource kinds.
+func NewAccessInputs(serviceAccounts []string, groupsAccess []model.AccessGroup) []AccessInput {
+	access := make([]AccessInput, 0, len(serviceAccounts)+len(groupsAccess))
+	for _, account := range serviceAccounts {
+		access = append(access, AccessInput{PrincipalID: account})
+	}
+
+	for _, group := range groupsAccess {
+		access = append(access, AccessInput{
+			PrincipalID:      group.GroupID,
+			SecurityPolicyID: group.SecurityPolicyID,
+			ApprovalMode:     NewGroupAccessApprovalMode(group.AccessPolicy),
+			AccessPolicy:     NewAccessPolicyInput(group.AccessPolicy),
+		})
+	}
+
+	return access
 }
 
 type AccessInput struct {

@@ -33,15 +33,19 @@ func expectedSSHResource() *model.SSHResource {
 	isVisible := true
 
 	return &model.SSHResource{
-		ID:              "ssh-1",
-		Name:            "ssh-resource",
-		Address:         "10.0.0.1",
-		GatewayID:       "gw-1",
-		RemoteNetworkID: "rn-1",
-		IsVisible:       &isVisible,
-		Tags:            map[string]string{"env": "prod"},
-		Downstream:      &model.SSHDownstream{Port: 2222},
-		Upstream:        &model.SSHUpstream{Port: 22},
+		PAMResource: model.PAMResource{
+			BaseResource: model.BaseResource{
+				ID:              "ssh-1",
+				Name:            "ssh-resource",
+				Address:         "10.0.0.1",
+				RemoteNetworkID: "rn-1",
+				IsVisible:       &isVisible,
+				Tags:            map[string]string{"env": "prod"},
+			},
+			GatewayID: "gw-1",
+		},
+		Downstream: &model.SSHDownstream{Port: 2222},
+		Upstream:   &model.SSHUpstream{Port: 22},
 	}
 }
 
@@ -71,15 +75,33 @@ func TestSSHResourcePortVariables(t *testing.T) {
 		expectedUpstream   any
 	}{
 		{
-			name:               "ports unset - null is sent",
-			input:              &model.SSHResource{ID: "ssh-1", Name: "ssh-resource", Address: "10.0.0.1", GatewayID: "gw-1", RemoteNetworkID: "rn-1"},
+			name: "ports unset - null is sent",
+			input: &model.SSHResource{
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "ssh-1",
+						Name:            "ssh-resource",
+						Address:         "10.0.0.1",
+						RemoteNetworkID: "rn-1",
+					},
+					GatewayID: "gw-1",
+				},
+			},
 			expectedDownstream: nil,
 			expectedUpstream:   nil,
 		},
 		{
 			name: "ports set - port inputs are sent",
 			input: &model.SSHResource{
-				ID: "ssh-1", Name: "ssh-resource", Address: "10.0.0.1", GatewayID: "gw-1", RemoteNetworkID: "rn-1",
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:              "ssh-1",
+						Name:            "ssh-resource",
+						Address:         "10.0.0.1",
+						RemoteNetworkID: "rn-1",
+					},
+					GatewayID: "gw-1",
+				},
 				Downstream: &model.SSHDownstream{Port: 2222},
 				Upstream:   &model.SSHUpstream{Port: 22},
 			},
@@ -177,8 +199,22 @@ func TestReadSSHResources(t *testing.T) {
 				{"node":{"__typename":"SSHResource","id":"ssh-2","name":"ssh-resource-2"}}
 			]}}}`,
 			expected: []*model.SSHResource{
-				{ID: "ssh-1", Name: "ssh-resource-1"},
-				{ID: "ssh-2", Name: "ssh-resource-2"},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "ssh-1",
+							Name: "ssh-resource-1",
+						},
+					},
+				},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "ssh-2",
+							Name: "ssh-resource-2",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -189,7 +225,14 @@ func TestReadSSHResources(t *testing.T) {
 				{"node":{"__typename":"NetworkResource","id":"net-1","name":"network-resource-1"}}
 			]}}}`,
 			expected: []*model.SSHResource{
-				{ID: "ssh-1", Name: "ssh-resource-1"},
+				{
+					PAMResource: model.PAMResource{
+						BaseResource: model.BaseResource{
+							ID:   "ssh-1",
+							Name: "ssh-resource-1",
+						},
+					},
+				},
 			},
 		},
 		{

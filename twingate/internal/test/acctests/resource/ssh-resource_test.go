@@ -344,6 +344,8 @@ func TestAccTwingateSSHResourceImport(t *testing.T) {
 				ResourceName:      theResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// import brings in the API default access_policy, which the config does not declare
+				ImportStateVerifyIgnore: []string{attr.AccessPolicy},
 			},
 		},
 	})
@@ -866,6 +868,8 @@ func defaultTagsSteps(theResource, config string, defaultTags map[string]string)
 			ResourceName:      theResource,
 			ImportState:       true,
 			ImportStateVerify: true,
+			// import brings in the API default access_policy, which the config does not declare
+			ImportStateVerifyIgnore: []string{attr.AccessPolicy},
 		},
 		{
 			Config: acctests.TerraformProviderWithDefaultTags(map[string]string{tagEnv: "prod"}) + config,
@@ -879,4 +883,97 @@ func defaultTagsSteps(theResource, config string, defaultTags map[string]string)
 			),
 		},
 	}
+}
+
+func terraformResourceSSHResourceWithAccess(tfName, gatewayTFName, remoteNetworkTFName, groupTFName, serviceAccountTFName, name, address string, isAuthoritative bool) string {
+	return fmt.Sprintf(`
+	resource "twingate_ssh_resource" "%s" {
+	  name              = "%s"
+	  address           = "%s"
+	  gateway_id        = twingate_gateway.%s.id
+	  remote_network_id = twingate_remote_network.%s.id
+	  is_authoritative  = %v
+	  access_policy {
+	    mode          = "AUTO_LOCK"
+	    duration      = "2d"
+	    approval_mode = "MANUAL"
+	  }
+	  access_group {
+	    group_id = twingate_group.%s.id
+	    access_policy {
+	      mode          = "AUTO_LOCK"
+	      duration      = "5d"
+	      approval_mode = "AUTOMATIC"
+	    }
+	  }
+	  access_service {
+	    service_account_id = twingate_service_account.%s.id
+	  }
+	}
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, isAuthoritative, groupTFName, serviceAccountTFName)
+}
+
+func TestAccTwingateSSHResourceAccessService(t *testing.T) {
+	t.Parallel()
+
+	remoteNetworkTFName := test.TerraformRandName("test_rn")
+	x509TFName := test.TerraformRandName("test_x509")
+	sshCATFName := test.TerraformRandName("test_ssh_ca")
+	gatewayTFName := test.TerraformRandName("test_gw")
+	resTFName := test.TerraformRandName("test_res")
+	groupTFName := test.TerraformRandName("test_group")
+	serviceAccountTFName := test.TerraformRandName("test_sa")
+	theResource := acctests.TerraformSSHResource(resTFName)
+	certPEM := acctests.GenerateCACertPEM(t)
+	publicKey := acctests.GenerateSSHPublicKey(t)
+	name := test.RandomName()
+	resourceAddress := "10.0.1.5"
+	gatewayAddress := "10.0.1.5:8080"
+
+	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress) +
+		terraformResourceTwingateGroup(groupTFName, test.RandomGroupName()) +
+		createServiceAccount(serviceAccountTFName, test.RandomName())
+
+	sdk.Test(t, sdk.TestCase{
+		ProtoV6ProviderFactories: acctests.ProviderFactories,
+		PreCheck:                 func() { acctests.PreCheck(t) },
+		TerraformVersionChecks:   acctests.VersionCheckForWriteOnlyAttributes(),
+		CheckDestroy:             acctests.CheckTwingateSSHResourceDestroy,
+		Steps: []sdk.TestStep{
+			{
+				Config: prereqs + terraformResourceSSHResourceWithAccess(resTFName, gatewayTFName, remoteNetworkTFName, groupTFName, serviceAccountTFName, name, resourceAddress, true),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.IsAuthoritative, "true"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
+				),
+			},
+			{
+				ResourceName: theResource,
+				// the config declares the access policy, the group and the service account,
+				// so every imported access attribute is compared with the applied state
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: prereqs + terraformResourceSSHResourceWithAccess(resTFName, gatewayTFName, remoteNetworkTFName, groupTFName, serviceAccountTFName, name, resourceAddress, false),
+				Check: acctests.ComposeTestCheckFunc(
+					sdk.TestCheckResourceAttr(theResource, attr.IsAuthoritative, "false"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
+				),
+			},
+			{
+				// Remove access
+				Config: prereqs + terraformResourceSSHResource(resTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				Check: acctests.ComposeTestCheckFunc(
+					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.IsAuthoritative, "true"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "0"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "0"),
+				),
+			},
+		},
+	})
 }

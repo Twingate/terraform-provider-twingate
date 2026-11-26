@@ -38,19 +38,9 @@ func newSSHUpstreamInput(upstream *model.SSHUpstream) *SSHUpstreamInput {
 func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.SSHResource) (*model.SSHResource, error) {
 	opr := resourceSSHResource.create()
 
-	variables := newVars(
-		gqlVar(sshResource.Name, "name"),
-		gqlVar(sshResource.Address, "address"),
-		gqlID(sshResource.GatewayID, "gatewayId"),
-		gqlID(sshResource.RemoteNetworkID, "remoteNetworkId"),
-		gqlNullable(sshResource.IsVisible, "isVisible"),
-		gqlNullable(sshResource.Alias, "alias"),
-		gqlNullableID(sshResource.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(newTagInputs(sshResource.Tags), "tags"),
+	variables := pamVars(sshResource.PAMResource,
 		gqlNullable(newSSHDownstreamInput(sshResource.Downstream), "downstream"),
 		gqlNullable(newSSHUpstreamInput(sshResource.Upstream), "upstream"),
-		gqlVar(NewAccessPolicyInput(sshResource.AccessPolicy), "accessPolicy"),
-		gqlVar(NewAccessApprovalMode(sshResource.AccessPolicy), "approvalMode"),
 	)
 
 	response := query.CreateSSHResource{}
@@ -61,13 +51,9 @@ func (client *Client) CreateSSHResource(ctx context.Context, sshResource *model.
 
 	res := response.ToModel()
 
-	if len(sshResource.GroupsAccess) > 0 {
-		if err := client.AddResourceAccess(ctx, res.ID, convertGroupsToAccessInput(sshResource.GroupsAccess)); err != nil {
-			return nil, err
-		}
+	if err := client.addPAMResourceAccess(ctx, &res.PAMResource, sshResource.PAMResource); err != nil {
+		return nil, err
 	}
-
-	res.GroupsAccess = sshResource.GroupsAccess
 
 	return res, nil
 }
@@ -118,20 +104,10 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 		return nil, opr.apiError(ErrGraphqlIDIsEmpty)
 	}
 
-	variables := newVars(
+	variables := pamVars(sshResource.PAMResource,
 		gqlID(sshResource.ID),
-		gqlVar(sshResource.Name, "name"),
-		gqlVar(sshResource.Address, "address"),
-		gqlID(sshResource.GatewayID, "gatewayId"),
-		gqlID(sshResource.RemoteNetworkID, "remoteNetworkId"),
-		gqlNullable(sshResource.IsVisible, "isVisible"),
-		gqlNullable(sshResource.Alias, "alias"),
-		gqlNullableID(sshResource.SecurityPolicyID, "securityPolicyId"),
-		gqlVar(newTagInputs(sshResource.Tags), "tags"),
 		gqlNullable(newSSHDownstreamInput(sshResource.Downstream), "downstream"),
 		gqlNullable(newSSHUpstreamInput(sshResource.Upstream), "upstream"),
-		gqlVar(NewAccessPolicyInput(sshResource.AccessPolicy), "accessPolicy"),
-		gqlVar(NewAccessApprovalMode(sshResource.AccessPolicy), "approvalMode"),
 	)
 
 	response := query.UpdateSSHResource{}
@@ -141,7 +117,7 @@ func (client *Client) UpdateSSHResource(ctx context.Context, sshResource *model.
 	}
 
 	res := response.ToModel()
-	res.GroupsAccess = sshResource.GroupsAccess
+	copyAccess(&res.BaseResource, sshResource.BaseResource)
 
 	return res, nil
 }
@@ -169,8 +145,12 @@ func (client *Client) ReadSSHResources(ctx context.Context) ([]*model.SSHResourc
 		},
 		func(edge *query.ShallowResourceEdge) *model.SSHResource {
 			return &model.SSHResource{
-				ID:   string(edge.Node.ID),
-				Name: edge.Node.Name,
+				PAMResource: model.PAMResource{
+					BaseResource: model.BaseResource{
+						ID:   string(edge.Node.ID),
+						Name: edge.Node.Name,
+					},
+				},
 			}
 		}), nil
 }

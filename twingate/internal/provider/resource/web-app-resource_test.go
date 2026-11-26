@@ -99,21 +99,28 @@ func testWebAppModel(t *testing.T, tags, headerRewrites types.Map) webAppResourc
 	require.False(t, diags.HasError(), diags)
 
 	return webAppResourceModel{
-		ID:                    types.StringUnknown(),
-		Name:                  types.StringValue(testResourceName),
-		Address:               types.StringValue(testResourceAddress),
-		GatewayID:             types.StringValue(testGatewayID),
-		RemoteNetworkID:       types.StringValue(testRemoteNetworkID),
-		IsVisible:             types.BoolValue(true),
-		Alias:                 types.StringNull(),
-		SecurityPolicyID:      types.StringNull(),
-		Tags:                  tags,
-		TagsAll:               plannedTagsAll(tags),
+		pamResourceModel: pamResourceModel{
+			baseResourceModel: baseResourceModel{
+				accessModel: accessModel{
+					AccessPolicy:  makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
+					GroupAccess:   makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+					ServiceAccess: makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
+				},
+				ID:               types.StringUnknown(),
+				Name:             types.StringValue(testResourceName),
+				Address:          types.StringValue(testResourceAddress),
+				RemoteNetworkID:  types.StringValue(testRemoteNetworkID),
+				IsVisible:        types.BoolValue(true),
+				Alias:            types.StringNull(),
+				SecurityPolicyID: types.StringNull(),
+				Tags:             tags,
+				TagsAll:          plannedTagsAll(tags),
+			},
+			GatewayID: types.StringValue(testGatewayID),
+		},
 		Upstream:              upstream,
 		Downstream:            downstream,
 		RequestHeaderRewrites: headerRewrites,
-		AccessPolicy:          makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
-		GroupAccess:           makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
 	}
 }
 
@@ -172,7 +179,7 @@ func TestWebAppResourceKeyValueMaps(t *testing.T) {
 	for _, c := range cases {
 		t.Run("create: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, webAppEntityResponse(t, "webAppResourceCreate", c.apiTags, c.apiHeaderRewrites))
-			webAppRes := &webAppResource{client: apiClient}
+			webAppRes := &webAppResource{baseResource: baseResource{client: apiClient}}
 
 			resp := &resource.CreateResponse{State: nullStateOf(t, webAppRes)}
 			webAppRes.Create(t.Context(), resource.CreateRequest{
@@ -195,7 +202,7 @@ func TestWebAppResourceKeyValueMaps(t *testing.T) {
 
 		t.Run("update: "+c.name, func(t *testing.T) {
 			apiClient, requestBody := newMockedClient(t, webAppEntityResponse(t, "webAppResourceUpdate", c.apiTags, c.apiHeaderRewrites))
-			webAppRes := &webAppResource{client: apiClient}
+			webAppRes := &webAppResource{baseResource: baseResource{client: apiClient}}
 
 			stateModel := testWebAppModel(t, stringMap(map[string]string{"stale": "tag"}), stringMap(map[string]string{"x-stale": "1"}))
 			stateModel.ID = types.StringValue(testResourceID)

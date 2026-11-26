@@ -108,10 +108,12 @@ func TestResourceModel(t *testing.T) {
 		},
 		{
 			resource: model.Resource{
-				ID:              "id",
-				Name:            "name",
-				Address:         "address",
-				RemoteNetworkID: "network-id",
+				BaseResource: model.BaseResource{
+					ID:              "id",
+					Name:            "name",
+					Address:         "address",
+					RemoteNetworkID: "network-id",
+				},
 				Protocols: &model.Protocols{
 					AllowIcmp: true,
 					UDP: &model.Protocol{
@@ -251,8 +253,10 @@ func TestResourceAccessToTerraform(t *testing.T) {
 		},
 		{
 			resource: model.Resource{
-				GroupsAccess: []model.AccessGroup{
-					{GroupID: "group-1"},
+				BaseResource: model.BaseResource{
+					GroupsAccess: []model.AccessGroup{
+						{GroupID: "group-1"},
+					},
 				},
 			},
 			expected: []any{
@@ -263,7 +267,9 @@ func TestResourceAccessToTerraform(t *testing.T) {
 		},
 		{
 			resource: model.Resource{
-				ServiceAccounts: []string{"service-1"},
+				BaseResource: model.BaseResource{
+					ServiceAccounts: []string{"service-1"},
+				},
 				IsAuthoritative: true,
 			},
 			expected: []any{
@@ -440,7 +446,13 @@ func TestAccessPolicy_ParseDurationSupportsDays(t *testing.T) {
 }
 
 func TestResourceMatchByNameIn(t *testing.T) {
-	resource := model.Resource{ID: "id", Name: "Resource A", Tags: map[string]string{"env": "prod"}}
+	resource := model.Resource{
+		BaseResource: model.BaseResource{
+			ID:   "id",
+			Name: "Resource A",
+			Tags: map[string]string{"env": "prod"},
+		},
+	}
 
 	cases := []struct {
 		filter   *model.ResourcesFilter

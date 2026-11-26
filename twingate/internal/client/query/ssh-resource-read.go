@@ -22,19 +22,8 @@ func (q ReadSSHResource) ToModel() (*model.SSHResource, error) {
 }
 
 type gqlSSHResourceNode struct {
-	IDName
-	Address struct {
-		Value string
-	}
-	RemoteNetwork struct {
-		ID graphql.ID
-	}
-	IsVisible           bool
-	Alias               string
-	SecurityPolicy      *gqlSecurityPolicy
-	Tags                []Tag
-	ApprovalMode        string
-	AccessPolicy        *AccessPolicy
+	gqlBaseResource
+
 	Access              Access `graphql:"access(after: $accessEndCursor, first: $pageLimit)"`
 	SSHResourceFragment struct {
 		Gateway struct {
@@ -46,42 +35,15 @@ type gqlSSHResourceNode struct {
 }
 
 func (n gqlSSHResourceNode) ToModel() (*model.SSHResource, error) {
-	res := &model.SSHResource{
-		ID:               string(n.ID),
-		Name:             n.Name,
-		Address:          n.Address.Value,
-		GatewayID:        string(n.SSHResourceFragment.Gateway.ID),
-		RemoteNetworkID:  string(n.RemoteNetwork.ID),
-		IsVisible:        &n.IsVisible,
-		Alias:            optionalString(n.Alias),
-		SecurityPolicyID: securityPolicyID(n.SecurityPolicy),
-		Tags:             tagsToModel(n.Tags),
-		Downstream:       &model.SSHDownstream{Port: n.SSHResourceFragment.Downstream.Port},
-		Upstream:         &model.SSHUpstream{Port: n.SSHResourceFragment.Upstream.Port},
-		AccessPolicy:     accessPolicyToModel(n.AccessPolicy, &n.ApprovalMode),
+	pam := gqlPAMResource{gqlBaseResource: n.gqlBaseResource, Gateway: n.SSHResourceFragment.Gateway}.ToModel()
+
+	if err := setAccess(&pam.BaseResource, n.Access); err != nil {
+		return nil, err
 	}
 
-	for _, access := range n.Access.Edges {
-		if access.Node.Type != AccessGroup {
-			continue
-		}
-
-		groupID := string(access.Node.Group.ID)
-		if groupID == "" {
-			return nil, ErrMissingAccessGroupID
-		}
-
-		var secPolicyID *string
-		if access.SecurityPolicy != nil {
-			secPolicyID = optionalString(string(access.SecurityPolicy.ID))
-		}
-
-		res.GroupsAccess = append(res.GroupsAccess, model.AccessGroup{
-			GroupID:          groupID,
-			SecurityPolicyID: secPolicyID,
-			AccessPolicy:     accessPolicyToModel(access.AccessPolicy, access.ApprovalMode),
-		})
-	}
-
-	return res, nil
+	return &model.SSHResource{
+		PAMResource: pam,
+		Downstream:  &model.SSHDownstream{Port: n.SSHResourceFragment.Downstream.Port},
+		Upstream:    &model.SSHUpstream{Port: n.SSHResourceFragment.Upstream.Port},
+	}, nil
 }

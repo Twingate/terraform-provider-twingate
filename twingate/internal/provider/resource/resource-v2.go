@@ -230,22 +230,26 @@ func upgradeResourceStateV2() resource.StateUpgrader {
 			resp.Diagnostics.Append(diags...)
 
 			upgradedState := resourceModel{
-				ID:                       priorState.ID,
-				Name:                     priorState.Name,
-				Address:                  priorState.Address,
-				RemoteNetworkID:          priorState.RemoteNetworkID,
+				baseResourceModel: baseResourceModel{
+					accessModel: accessModel{
+						AccessPolicy:    accessPolicy,
+						GroupAccess:     accessGroup,
+						ServiceAccess:   priorState.ServiceAccess,
+						IsAuthoritative: priorState.IsAuthoritative,
+					},
+					ID:               priorState.ID,
+					Name:             priorState.Name,
+					Address:          priorState.Address,
+					RemoteNetworkID:  priorState.RemoteNetworkID,
+					Alias:            priorState.Alias,
+					SecurityPolicyID: priorState.SecurityPolicyID,
+					IsVisible:        priorState.IsVisible,
+					Tags:             priorState.Tags,
+					TagsAll:          priorState.TagsAll,
+				},
 				Protocols:                priorState.Protocols,
-				Alias:                    priorState.Alias,
-				SecurityPolicyID:         priorState.SecurityPolicyID,
-				AccessPolicy:             accessPolicy,
-				GroupAccess:              accessGroup,
-				ServiceAccess:            priorState.ServiceAccess,
 				IsActive:                 priorState.IsActive,
-				IsVisible:                priorState.IsVisible,
-				IsAuthoritative:          priorState.IsAuthoritative,
 				IsBrowserShortcutEnabled: priorState.IsBrowserShortcutEnabled,
-				Tags:                     priorState.Tags,
-				TagsAll:                  priorState.TagsAll,
 			}
 
 			resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
