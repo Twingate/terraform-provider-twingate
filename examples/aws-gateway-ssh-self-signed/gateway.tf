@@ -8,29 +8,11 @@ locals {
   })
 }
 
-# A dedicated ENI gives the gateway a stable private IP that is known before the
-# instance is created, so twingate_gateway can use it as its address.
-resource "aws_network_interface" "gateway" {
-  subnet_id       = aws_subnet.main.id
-  security_groups = [aws_security_group.internal.id]
-
-  tags = { Name = "demo-gateway-eni" }
-}
-
-# replace_triggered_by only accepts resource references, so the rendered config is
-# wrapped here to replace the gateway whenever it changes.
-resource "terraform_data" "gateway_config" {
-  input = local.gateway_config
-}
-
 resource "aws_instance" "gateway" {
-  ami           = data.aws_ami.debian.id
-  instance_type = var.instance_type
-
-  network_interface {
-    network_interface_id = aws_network_interface.gateway.id
-    device_index         = 0
-  }
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.main.id
+  vpc_security_group_ids = [aws_security_group.internal.id]
 
   user_data = templatefile("${path.module}/scripts/gateway-startup.sh", {
     tls_cert       = tls_locally_signed_cert.server.cert_pem
@@ -39,15 +21,21 @@ resource "aws_instance" "gateway" {
     gateway_config = local.gateway_config
   })
 
+  # cloud-init only runs user_data on first boot, so a new certificate, key or
+  # config replaces the instance instead of updating it in place.
+  user_data_replace_on_change = true
+
   root_block_device {
     encrypted = true
   }
 
-  lifecycle {
-    replace_triggered_by = [
-      terraform_data.gateway_config,
-    ]
-  }
-
   tags = { Name = "demo-gateway" }
+
+  # The startup script runs once at boot and downloads the Gateway binary, so the
+  # full outbound path (private subnet -> NAT gateway -> internet gateway) must
+  # exist before the instance launches.
+  depends_on = [
+    aws_route_table_association.private,
+    aws_route_table_association.public,
+  ]
 }
