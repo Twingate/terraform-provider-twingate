@@ -408,18 +408,16 @@ func terraformResourceSSHResourceWithPorts(tfName, gatewayTFName, remoteNetworkT
 	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, downstreamPort, upstreamPort)
 }
 
-func terraformResourceSSHResourceWithAccessGroup(tfName, gatewayTFName, remoteNetworkTFName, groupTFName, name, address string) string {
+func terraformResourceSSHResourceWithAccess(tfName, gatewayTFName, remoteNetworkTFName, name, address, access string) string {
 	return fmt.Sprintf(`
 	resource "twingate_ssh_resource" "%s" {
 	  name              = "%s"
 	  address           = "%s"
 	  gateway_id        = twingate_gateway.%s.id
 	  remote_network_id = twingate_remote_network.%s.id
-	  access_group {
-	    group_id = twingate_group.%s.id
-	  }
+	  %s
 	}
-	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, groupTFName)
+	`, tfName, name, address, gatewayTFName, remoteNetworkTFName, access)
 }
 
 func terraformResourceSSHResourceWithAccessPolicy(tfName, gatewayTFName, remoteNetworkTFName, name, address, mode, duration, approvalMode string) string {
@@ -699,7 +697,7 @@ func TestAccTwingateSSHResourcePorts(t *testing.T) {
 	})
 }
 
-func TestAccTwingateSSHResourceAccessGroup(t *testing.T) {
+func TestAccTwingateSSHResourceAccessGroupsAndServiceAccounts(t *testing.T) {
 	t.Parallel()
 
 	remoteNetworkTFName := test.TerraformRandName("test_rn")
@@ -708,6 +706,7 @@ func TestAccTwingateSSHResourceAccessGroup(t *testing.T) {
 	gatewayTFName := test.TerraformRandName("test_gw")
 	sshResTFName := test.TerraformRandName("test_ssh_res")
 	groupTFName := test.TerraformRandName("test_group")
+	serviceAccountTFName := test.TerraformRandName("test_sa")
 	theResource := acctests.TerraformSSHResource(sshResTFName)
 	certPEM := acctests.GenerateCACertPEM(t)
 	publicKey := acctests.GenerateSSHPublicKey(t)
@@ -717,6 +716,9 @@ func TestAccTwingateSSHResourceAccessGroup(t *testing.T) {
 
 	prereqs := sshResourcePrerequisites(test.RandomName(), remoteNetworkTFName, x509TFName, certPEM, sshCATFName, publicKey, gatewayTFName, gatewayAddress)
 	group := fmt.Sprintf(`resource "twingate_group" "%s" { name = "%s" }`, groupTFName, test.RandomName())
+	serviceAccount := createServiceAccount(serviceAccountTFName, test.RandomName())
+	groupAccess := fmt.Sprintf(`access_group { group_id = twingate_group.%s.id }`, groupTFName)
+	serviceAccess := fmt.Sprintf(`access_service { service_account_id = %s.id }`, acctests.TerraformServiceAccount(serviceAccountTFName))
 
 	sdk.Test(t, sdk.TestCase{
 		ProtoV6ProviderFactories: acctests.ProviderFactories,
@@ -725,18 +727,31 @@ func TestAccTwingateSSHResourceAccessGroup(t *testing.T) {
 		CheckDestroy:             acctests.CheckTwingateSSHResourceDestroy,
 		Steps: []sdk.TestStep{
 			{
-				Config: prereqs + group + terraformResourceSSHResourceWithAccessGroup(sshResTFName, gatewayTFName, remoteNetworkTFName, groupTFName, name, resourceAddress),
+				Config: prereqs + group + serviceAccount + terraformResourceSSHResourceWithAccess(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, groupAccess+"\n"+serviceAccess),
 				Check: acctests.ComposeTestCheckFunc(
 					acctests.CheckTwingateResourceExists(theResource),
 					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
 			{
-				// Remove access group
-				Config: prereqs + group + terraformResourceSSHResource(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress),
+				// Remove service account access
+				Config: prereqs + group + serviceAccount + terraformResourceSSHResourceWithAccess(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, groupAccess),
 				Check: acctests.ComposeTestCheckFunc(
-					acctests.CheckTwingateResourceExists(theResource),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "1"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "0"),
+					acctests.CheckResourceServiceAccountsLen(theResource, 0),
+				),
+			},
+			{
+				// Replace group access with service account access
+				Config: prereqs + group + serviceAccount + terraformResourceSSHResourceWithAccess(sshResTFName, gatewayTFName, remoteNetworkTFName, name, resourceAddress, serviceAccess),
+				Check: acctests.ComposeTestCheckFunc(
 					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessGroup), "0"),
+					sdk.TestCheckResourceAttr(theResource, attr.Len(attr.AccessService), "1"),
+					acctests.CheckResourceGroupsLen(theResource, 0),
+					acctests.CheckResourceServiceAccountsLen(theResource, 1),
 				),
 			},
 		},

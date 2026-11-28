@@ -39,6 +39,7 @@ type WebAppResource struct {
 	RequestHeaderRewrites map[string]string
 	AccessPolicy          *AccessPolicy
 	GroupsAccess          []AccessGroup
+	ServiceAccounts       []string
 }
 
 func (r WebAppResource) GetID() string {

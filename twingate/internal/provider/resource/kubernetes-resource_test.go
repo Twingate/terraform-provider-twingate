@@ -67,6 +67,7 @@ func inClusterKubernetesModel(t *testing.T) kubernetesResourceModel {
 		TagsAll:          types.MapNull(types.StringType),
 		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+		ServiceAccess:    makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
 	}
 }
 
@@ -469,6 +470,7 @@ func testKubernetesModel(t *testing.T, tags types.Map) kubernetesResourceModel {
 		TagsAll:          plannedTagsAll(tags),
 		AccessPolicy:     makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:      makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+		ServiceAccess:    makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
 	}
 }
 

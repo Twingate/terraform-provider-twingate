@@ -12,6 +12,7 @@ type KubernetesResource struct {
 	Tags             map[string]string
 	AccessPolicy     *AccessPolicy
 	GroupsAccess     []AccessGroup
+	ServiceAccounts  []string
 }
 
 func (r KubernetesResource) GetID() string {

@@ -114,6 +114,7 @@ func testWebAppModel(t *testing.T, tags, headerRewrites types.Map) webAppResourc
 		RequestHeaderRewrites: headerRewrites,
 		AccessPolicy:          makeObjectsSetNull(t.Context(), accessPolicyAttributeTypes()),
 		GroupAccess:           makeObjectsSetNull(t.Context(), accessGroupAttributeTypes()),
+		ServiceAccess:         makeObjectsSetNull(t.Context(), accessServiceAccountAttributeTypes()),
 	}
 }
 

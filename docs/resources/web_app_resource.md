@@ -69,6 +69,7 @@ resource "twingate_web_app_resource" "internal_app" {
 
 - `access_group` (Block Set) Restrict access to certain group (see [below for nested schema](#nestedblock--access_group))
 - `access_policy` (Block Set) Restrict access according to JIT access policy (see [below for nested schema](#nestedblock--access_policy))
+- `access_service` (Block Set) Restrict access to certain service account (see [below for nested schema](#nestedblock--access_service))
 - `alias` (String) Set a DNS alias address for the Resource. Must be a DNS-valid name string.
 - `is_visible` (Boolean) Controls whether this Resource will be visible in the main Resource list in the Twingate Client. Default is `true`.
 - `request_header_rewrites` (Map of String) A map of HTTP headers to rewrite on requests forwarded to the upstream resource. Header names are compared case-insensitively.
@@ -132,3 +133,11 @@ Optional:
 - `approval_mode` (String) This will set the approval model for the policy. The valid values are `AUTOMATIC` and `MANUAL`.
 - `duration` (String) This will set the access duration for the policy. Duration must be between 1 hour and 365 days. Examples of valid values include `1h` and `2d`.
 - `mode` (String) This will set the access_policy mode for the policy. The valid values are `MANUAL`, `AUTO_LOCK` and `ACCESS_REQUEST`.
+
+
+<a id="nestedblock--access_service"></a>
+### Nested Schema for `access_service`
+
+Optional:
+
+- `service_account_id` (String) The ID of the service account that should have access to this Resource.
