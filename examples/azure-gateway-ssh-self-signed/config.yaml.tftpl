@@ -1,0 +1,26 @@
+twingate:
+  network: ${twingate_network}
+  host: ${twingate_host}
+
+port: ${port}
+metricsPort: 9090
+
+tls:
+  certificates:
+    files:
+      - certificateFile: /etc/gateway/tls.crt
+        privateKeyFile: /etc/gateway/tls.key
+
+ssh:
+  gateway:
+    username: gateway
+    key:
+      type: ed25519
+    hostCertificate:
+      ttl: 24h
+    userCertificate:
+      ttl: 5m
+
+  ca:
+    local:
+      privateKeyFile: /etc/gateway/ssh-ca.key
